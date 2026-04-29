@@ -44,6 +44,8 @@ It writes smoke notes under:
 
 Both paths are ignored by git. Commit only sanitized research summaries under `docs/research/`.
 
+Round-1 disk footprint after the first bootstrap was about 1.5G. Kotlin is the largest checkout.
+
 ## Smoke Detection
 
 The bootstrap script records:
