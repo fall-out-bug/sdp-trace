@@ -1,0 +1,9 @@
+{
+  "gate": "scope-and-tests",
+  "verdict": "pass",
+  "evidence": [
+    "go-service-change-001"
+  ],
+  "rationale": "The diff is scoped to the handler and tests, and the test command passed.",
+  "confidence": 0.9
+}

@@ -1,0 +1,24 @@
+{
+  "id": "go-service-change-001",
+  "scope": "Add input validation to POST /widgets",
+  "items": [
+    {
+      "kind": "diff",
+      "source": "git diff -- api/widgets.go api/widgets_test.go",
+      "summary": "Change touches handler and tests only.",
+      "status": "pass"
+    },
+    {
+      "kind": "test",
+      "source": "go test ./...",
+      "summary": "All Go tests passed locally.",
+      "status": "pass"
+    },
+    {
+      "kind": "review",
+      "source": "human-review:team-lead",
+      "summary": "Reviewer confirmed validation behavior matches spec.",
+      "status": "pass"
+    }
+  ]
+}

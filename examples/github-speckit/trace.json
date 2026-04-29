@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {
+      "id": "spec-001",
+      "kind": "spec",
+      "label": "Reject invalid widget names"
+    },
+    {
+      "id": "task-001",
+      "kind": "task",
+      "label": "Add validation and tests"
+    },
+    {
+      "id": "evidence-001",
+      "kind": "evidence",
+      "label": "go test ./..."
+    },
+    {
+      "id": "decision-001",
+      "kind": "decision",
+      "label": "accepted"
+    }
+  ],
+  "edges": [
+    {
+      "from": "task-001",
+      "to": "spec-001",
+      "relation": "implements"
+    },
+    {
+      "from": "task-001",
+      "to": "evidence-001",
+      "relation": "produces"
+    },
+    {
+      "from": "decision-001",
+      "to": "evidence-001",
+      "relation": "references"
+    }
+  ]
+}

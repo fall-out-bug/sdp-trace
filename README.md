@@ -44,4 +44,14 @@ sdp-trace -> no SDP runtime
 - [Team lead playbook, English](docs/team-lead-playbook.en.md)
 - [Team lead playbook, Russian](docs/team-lead-playbook.ru.md)
 - [Adoption ladder](docs/adoption-ladder.md)
+- [Core concepts](docs/concepts.md)
 - [SpecKit compatibility](docs/speckit-compatibility.md)
+- [Schema reference](schema/README.md)
+
+## Minimal Flow
+
+```text
+spec -> plan -> task -> change -> evidence -> gate verdict -> decision record
+```
+
+The important rule: a verdict may only say what the evidence supports. When evidence is missing, use `not_assessed`.

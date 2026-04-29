@@ -1,0 +1,24 @@
+{
+  "id": "jvm-bazel-change-001",
+  "scope": "Assess //payments/api Kotlin service built with Bazel",
+  "items": [
+    {
+      "kind": "file",
+      "source": "payments/api/BUILD.bazel",
+      "summary": "Bazel target exists for the scoped service.",
+      "status": "pass"
+    },
+    {
+      "kind": "command",
+      "source": "bazel test //payments/api/...",
+      "summary": "Command expected for scoped verification. Output not captured in this example.",
+      "status": "not_assessed"
+    },
+    {
+      "kind": "manual",
+      "source": "team-lead",
+      "summary": "No Maven or Gradle assumptions were used for this assessment.",
+      "status": "pass"
+    }
+  ]
+}
