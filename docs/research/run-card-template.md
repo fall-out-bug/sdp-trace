@@ -33,6 +33,15 @@ Use one run card per project, phase, harness, and model.
 
 ### Build Detection
 
+Record separately:
+
+- primary build system
+- dependency metadata systems
+- bootstrap scripts
+- wrapper scripts
+
+Example: `maven_install.json` inside a Bazel repo is dependency metadata, not proof that Maven owns the build.
+
 ### Language Detection
 
 ### Evidence Discipline

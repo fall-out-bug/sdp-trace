@@ -56,3 +56,11 @@ The bootstrap script records:
 - top-level files
 
 This is not a full assessment. It only proves that the benchmark workspace is ready for Phase A.
+
+## Validate sdp-trace JSON Only
+
+Do not run `jq` across `benchmarks/repos/`; cloned projects may contain non-standard JSON-like fixtures.
+
+```bash
+find . -path './.git' -prune -o -path './benchmarks/repos' -prune -o -name '*.json' -print0 | xargs -0 -n1 jq empty
+```
