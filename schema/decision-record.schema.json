@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/decision-record.schema.json",
+  "title": "SDP Trace Decision Record",
+  "type": "object",
+  "required": ["id", "decision", "decider", "timestamp", "verdicts"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "decision": {
+      "type": "string",
+      "enum": ["accepted", "needs_work", "blocked", "overridden", "not_assessed"]
+    },
+    "decider": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "verdicts": {
+      "type": "array",
+      "items": { "$ref": "gate-verdict.schema.json" }
+    },
+    "override_reason": { "type": "string" }
+  },
+  "additionalProperties": true
+}
