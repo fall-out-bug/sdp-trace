@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "spring-framework",
+      "name": "Spring Framework",
+      "repo": "https://github.com/spring-projects/spring-framework.git",
+      "web": "https://github.com/spring-projects/spring-framework",
+      "primary_stack": ["Java", "Kotlin"],
+      "build_system": "Gradle",
+      "round": 1
+    },
+    {
+      "id": "kafka",
+      "name": "Apache Kafka",
+      "repo": "https://github.com/apache/kafka.git",
+      "web": "https://github.com/apache/kafka",
+      "primary_stack": ["Java", "Scala"],
+      "build_system": "Gradle",
+      "round": 1
+    },
+    {
+      "id": "kotlin",
+      "name": "JetBrains Kotlin",
+      "repo": "https://github.com/JetBrains/kotlin.git",
+      "web": "https://github.com/JetBrains/kotlin",
+      "primary_stack": ["Kotlin", "Java"],
+      "build_system": "Gradle",
+      "round": 1
+    },
+    {
+      "id": "flink",
+      "name": "Apache Flink",
+      "repo": "https://github.com/apache/flink.git",
+      "web": "https://github.com/apache/flink",
+      "primary_stack": ["Java", "Scala"],
+      "build_system": "Maven",
+      "round": 1
+    },
+    {
+      "id": "bazel",
+      "name": "Bazel",
+      "repo": "https://github.com/bazelbuild/bazel.git",
+      "web": "https://github.com/bazelbuild/bazel",
+      "primary_stack": ["Java", "Starlark", "Python"],
+      "build_system": "Bazel",
+      "round": 1
+    }
+  ]
+}

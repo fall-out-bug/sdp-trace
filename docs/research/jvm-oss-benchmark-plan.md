@@ -120,6 +120,14 @@ Recommended local output path:
 
 These run outputs should not be committed until sanitized. Research summaries belong in `docs/research/`.
 
+## Bootstrap
+
+Use the local bootstrap runbook before Phase A:
+
+- [bootstrap-runbook.md](bootstrap-runbook.md)
+
+The project manifest lives at `benchmarks/jvm-oss/projects.json`.
+
 ## Round-1 Decision
 
 Proceed with these five projects. They cover Gradle, Maven, Bazel, Java, Kotlin, Scala, compiler/tooling, enterprise framework, and distributed runtime use cases.

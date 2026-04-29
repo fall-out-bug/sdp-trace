@@ -1,4 +1,6 @@
 .DS_Store
 .sdp/
+.sdp-trace-runs/
+benchmarks/repos/
 dist/
 tmp/
