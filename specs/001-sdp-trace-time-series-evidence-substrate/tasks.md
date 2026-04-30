@@ -68,34 +68,52 @@
 
 **Checkpoint**: `sdp-gate` has a clear inherited input contract.
 
-## Phase 5: User Story 3 - Pilot Evaluates Harness, Model, and JVM Stack Slices (Priority: P1)
+## Phase 5: Self-Trace v0 - First Consumer Test (Priority: P1)
+
+**Goal**: Use the new `sdp-trace` contracts to trace development of this SpecKit feature before running the customer pilot matrix.
+
+**Independent Test**: `examples/self-trace/assessment-input.json` can describe this feature's spec, plan, tasks, commits, evidence, observations, metric stream, and `not_assessed` gaps without a gate decision.
+
+**Beads mirror**: `sdp-trace-cdn.12`
+
+- [ ] T020 [US1] Add `examples/self-trace/evidence-events.json` covering commits, touched files, commands run, schema checks, and SpecKit task status
+- [ ] T021 [US1] Add `examples/self-trace/provenance-records.json` covering human actor, Codex session, command summaries, and missing fields as `not_assessed`
+- [ ] T022 [US1] Add `examples/self-trace/observations.json` recording that SpecKit artifacts exist, Beads mirrors SpecKit, schema syntax passed, and boundary docs remain partial until T005-T007 complete
+- [ ] T023 [US1] Add `examples/self-trace/metric-stream.json` with at least evidence completeness, `not_assessed` count, schema validity, and SpecKit task completion samples
+- [ ] T024 [US2] Add `examples/self-trace/trace-snapshot.json` linking spec, plan, tasks, changes, evidence, observations, and metric samples
+- [ ] T025 [US2] Add `examples/self-trace/assessment-input.json` as the first policy-engine handoff package, without pass/fail/degradation decision
+- [ ] T026 [US4] Record self-trace validation notes in `docs/research/self-trace-v0-summary.md`
+
+**Checkpoint**: `sdp-trace` can describe its own development at v0 before claiming external pilot readiness.
+
+## Phase 6: User Story 3 - Pilot Evaluates Harness, Model, and JVM Stack Slices (Priority: P1)
 
 **Goal**: Create repeatable pilot run-cards and evidence paths for the customer-requested matrix.
 
 **Independent Test**: Each run-card lists prompt, expected artifacts, provenance fields, unsupported claims, validation, and `not_assessed` behavior.
 
-- [ ] T020 [P] [US3] Add OpenCode run-card covering MiniMax, Kimi, and GLM in `docs/research/opencode-model-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
-- [ ] T021 [P] [US3] Add harness run-card for Superpowers, `gsd`, `gsd2`, and Oh My OpenAgent in `docs/research/harness-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
-- [ ] T022 [US3] Add Kotlin+Bazel pilot fixture plan in `docs/research/kotlin-bazel-fixture-plan.md` (Beads mirror: `sdp-trace-cdn.7`)
-- [ ] T023 [US3] Update `docs/jvm-bazel-guide.md` with Kotlin+Bazel-specific evidence requirements
-- [ ] T024 [US3] Add or update `examples/jvm-bazel/` with a Kotlin+Bazel evidence bundle or fixture placeholder that is explicitly `not_assessed` until run
-- [ ] T025 [US3] Update `docs/harness-compatibility-matrix.md` only with evidence-backed status or `TBD`/`not_assessed` (Beads mirror: `sdp-trace-cdn.10`)
-- [ ] T026 [US3] Update `docs/model-compatibility.md` only with evidence-backed status or `TBD`/`not_assessed` (Beads mirror: `sdp-trace-cdn.10`)
+- [ ] T027 [P] [US3] Add OpenCode run-card covering MiniMax, Kimi, and GLM in `docs/research/opencode-model-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
+- [ ] T028 [P] [US3] Add harness run-card for Superpowers, `gsd`, `gsd2`, and Oh My OpenAgent in `docs/research/harness-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
+- [ ] T029 [US3] Add Kotlin+Bazel pilot fixture plan in `docs/research/kotlin-bazel-fixture-plan.md` (Beads mirror: `sdp-trace-cdn.7`)
+- [ ] T030 [US3] Update `docs/jvm-bazel-guide.md` with Kotlin+Bazel-specific evidence requirements
+- [ ] T031 [US3] Add or update `examples/jvm-bazel/` with a Kotlin+Bazel evidence bundle or fixture placeholder that is explicitly `not_assessed` until run
+- [ ] T032 [US3] Update `docs/harness-compatibility-matrix.md` only with evidence-backed status or `TBD`/`not_assessed` (Beads mirror: `sdp-trace-cdn.10`)
+- [ ] T033 [US3] Update `docs/model-compatibility.md` only with evidence-backed status or `TBD`/`not_assessed` (Beads mirror: `sdp-trace-cdn.10`)
 
 **Checkpoint**: Pilot scope is executable without unsupported compatibility claims.
 
-## Phase 6: User Story 4 - Repository Observer Finds SpecKit Evidence (Priority: P2)
+## Phase 7: User Story 4 - Repository Observer Finds SpecKit Evidence (Priority: P2)
 
 **Goal**: Make the evidence package self-explanatory from committed files.
 
 **Independent Test**: A reviewer can follow `quickstart.md`, validate schemas, and identify what remains `not_assessed`.
 
-- [ ] T027 [US4] Select and document JSON Schema validator strategy in `schema/README.md` (Beads mirror: `sdp-trace-cdn.8`)
-- [ ] T028 [US4] Add pass and `not_assessed` fixtures for new schemas under `examples/`
-- [ ] T029 [US4] Add validation command that excludes `.git`, `.beads`, `.sdp-trace-runs`, and `benchmarks/repos/` (Beads mirror: `sdp-trace-cdn.8`)
-- [ ] T030 [US4] Build customer pilot evidence package outline in `docs/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
-- [ ] T031 [US4] Verify `jq empty schema/*.json`
-- [ ] T032 [US4] Verify all committed examples are parseable JSON where applicable
+- [ ] T034 [US4] Select and document JSON Schema validator strategy in `schema/README.md` (Beads mirror: `sdp-trace-cdn.8`)
+- [ ] T035 [US4] Add pass and `not_assessed` fixtures for new schemas under `examples/`
+- [ ] T036 [US4] Add validation command that excludes `.git`, `.beads`, `.sdp-trace-runs`, and `benchmarks/repos/` (Beads mirror: `sdp-trace-cdn.8`)
+- [ ] T037 [US4] Build customer pilot evidence package outline in `docs/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
+- [ ] T038 [US4] Verify `jq empty schema/*.json`
+- [ ] T039 [US4] Verify all committed examples are parseable JSON where applicable
 
 **Checkpoint**: The repository itself explains the plan, proof, gaps, and execution path.
 
@@ -107,15 +125,17 @@
 - **Phase 2**: Depends on Phase 1.
 - **Phase 3**: Depends on boundary clarity from Phase 2.
 - **Phase 4**: Depends on Phase 2 and can run partly in parallel with Phase 3.
-- **Phase 5**: Depends on evidence/provenance contract direction from Phase 4.
-- **Phase 6**: Depends on schema and pilot artifacts from Phases 3-5.
+- **Phase 5**: Depends on minimal schemas from Phases 3-4 and runs before external pilot claims.
+- **Phase 6**: Depends on self-trace learning from Phase 5.
+- **Phase 7**: Depends on schema and pilot artifacts from Phases 3-6.
 
 ### Parallel Opportunities
 
 - T008 and T009 can run in parallel.
 - T015 and T016 can run in parallel.
-- T020 and T021 can run in parallel.
-- T025 and T026 can run in parallel after pilot evidence exists.
+- T020 through T023 can run in parallel once minimal schemas exist.
+- T027 and T028 can run in parallel.
+- T032 and T033 can run in parallel after pilot evidence exists.
 
 ## Implementation Strategy
 
@@ -125,7 +145,8 @@
 2. Complete Phase 2.
 3. Complete T008, T009, T015, T016, and T017.
 4. Add one valid example and one `not_assessed` example.
-5. Stop and review the contract before running the full pilot matrix.
+5. Complete Self-Trace v0 tasks T020-T026.
+6. Stop and review the contract before running the full pilot matrix.
 
 ### Evidence Discipline
 

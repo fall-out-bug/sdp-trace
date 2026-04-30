@@ -60,6 +60,7 @@ examples/
 ├── opencode/
 ├── superpowers/
 ├── github-speckit/
+├── self-trace/
 └── jvm-bazel/
 
 docs/
@@ -98,6 +99,7 @@ Task breakdown lives in [tasks.md](tasks.md). Beads issues mirror these tasks fo
 | Create harness and model run-cards | `sdp-trace-cdn.6` |
 | Add JVM/Kotlin/Bazel fixture plan | `sdp-trace-cdn.7` |
 | Add schema validation and fixture strategy | `sdp-trace-cdn.8` |
+| Self-trace this feature with the new contracts | `sdp-trace-cdn.12` |
 | Build customer pilot evidence package outline | `sdp-trace-cdn.9` |
 | Update compatibility matrices from evidence | `sdp-trace-cdn.10` |
 | Reframe CTO and team docs | `sdp-trace-cdn.11` |
@@ -108,6 +110,31 @@ Task breakdown lives in [tasks.md](tasks.md). Beads issues mirror these tasks fo
 |---|---|---|
 | Multiple schema artifacts | Separate evidence events, observations, metric streams, and assessment inputs have different consumers and validation needs. | One large schema would make `sdp-gate` inheritance less clear and would force unrelated fields into every artifact. |
 | Pilot matrix across harness/model/stack | Customer pilot explicitly asks for OpenCode, MiniMax/Kimi/GLM, Superpowers/GSD-style harnesses, and JVM/Kotlin/Bazel. | A single Codex or JVM baseline would not prove portability. |
+
+## Self-Trace Milestone
+
+`sdp-trace` starts tracing itself after the minimal contract set exists and before broad pilot execution.
+
+Minimum prerequisite tasks:
+
+- boundary and public language aligned: T005-T007
+- observation and metric stream schemas drafted: T008-T009
+- evidence, provenance, and assessment input schemas drafted: T015-T017
+- at least one valid example and one `not_assessed` example exist
+
+Self-trace output:
+
+```text
+examples/self-trace/
+├── evidence-events.json
+├── provenance-records.json
+├── observations.json
+├── metric-stream.json
+├── trace-snapshot.json
+└── assessment-input.json
+```
+
+The first self-trace is not a gate decision. It is a consumer test proving the contracts can describe the development of this SpecKit feature itself.
 
 ## Verification Commands
 
