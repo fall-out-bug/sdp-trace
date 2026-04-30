@@ -39,6 +39,7 @@ sdp-trace -> no SDP runtime
 
 ## Start Here
 
+- [Current SpecKit feature spec](specs/001-sdp-trace-time-series-evidence-substrate/spec.md)
 - [CTO brief, English](docs/cto-brief.en.md)
 - [CTO brief, Russian](docs/cto-brief.ru.md)
 - [Team lead playbook, English](docs/team-lead-playbook.en.md)
