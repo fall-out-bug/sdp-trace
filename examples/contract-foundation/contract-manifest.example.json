@@ -234,7 +234,7 @@
     {
       "path": "package.json",
       "kind": "validation_script",
-      "sha256": "903f18a485d2474140df095a5080053afeb35adf7c449250dc3370be928d347a"
+      "sha256": "1ed64eed9d53f956a0055891ad78f97827dfc23f54d72384ca257630468f2e56"
     },
     {
       "path": "README.md",
@@ -269,7 +269,7 @@
     {
       "path": "schema/contract-release-verification.schema.json",
       "kind": "schema",
-      "sha256": "5dbba40522d3bba1df2537dbb8a4b588f68bd61790abce188252e343f4f59958"
+      "sha256": "e36f3f6833bc244d32f54967d0f0e155990d891557a4785afdc47984ce129b77"
     },
     {
       "path": "schema/evidence-bundle.schema.json",
@@ -309,7 +309,7 @@
     {
       "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "889568c2a7a28c438bbd5086a8d3d46f73cd01636530937b28e9384ffd8bceda"
+      "sha256": "e03da1ae8cfc52f7ac03d91eeeb231e3f2ba6302df5ca237b3c79864bb52cda8"
     },
     {
       "path": "schema/risk-classification.schema.json",
@@ -349,7 +349,7 @@
     {
       "path": "scripts/validate-contracts.sh",
       "kind": "validation_script",
-      "sha256": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3"
+      "sha256": "c2eaa8e2479685159ea6d8516045a89242096ed39f4b058f9b49711a50af6435"
     },
     {
       "path": "scripts/validate-json-schema.mjs",
@@ -384,7 +384,7 @@
     {
       "path": "scripts/verify-self-attestation.sh",
       "kind": "validation_script",
-      "sha256": "75e9803167392aa3569a1a8c90a1f69cc8430b4f3eb59c5de5792c397d564c8e"
+      "sha256": "dc4865925b24f5d9b00bb5b75949aac7dc2262e93650b2e89fb9e691debcc241"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
@@ -424,7 +424,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md",
       "kind": "doc",
-      "sha256": "7a142f6191bdae65f09ba819ccd286bd2061f8ace428ae081ae6cd8c92bec19c"
+      "sha256": "846863e1e9e3a3e29f474d7e1c6f4a0819a84fdaad920e557b6b20335f5a5201"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-implementation-plan.md",
@@ -494,7 +494,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "54f1a44c9acaf101953b411947622347287dddaec0d1356edb24968ca8360794"
+      "sha256": "9fe98b88b3ff9b9345d6863bce7f1cc42e52acb7f9661eefc06b34c157adae12"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
@@ -514,32 +514,32 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
       "kind": "doc",
-      "sha256": "dc921d57ca7811d68d87e53d129f059afd2a30fe07d40f875913ddb817498896"
+      "sha256": "3301f71f0f2871e281af56d8c3b12a011c7bf9fed5d5bcf1292cefe33856e6c7"
     },
     {
       "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
       "kind": "doc",
-      "sha256": "fff728211f22f0b7eb3c4811e668d32485515e41afc81c506564bb23debb55a4"
+      "sha256": "4e28148df2d75d84b6f73cebc6f37d9d8897b658477712d2754b9948e6c98075"
     },
     {
       "path": "scripts/run-opencode-minimax-kotlin-bazel-proof.sh",
       "kind": "validation_script",
-      "sha256": "687b12574ab4bcd4ec9b9c7d6ca696f496c0aa1511a10cf4ea08d35451b78211"
+      "sha256": "454fed35176499d3ec4052b828d6dc18e2b66010aa0b7836c952f1776c056287"
     },
     {
       "path": "scripts/validate-e2e-pilot-package.sh",
       "kind": "validation_script",
-      "sha256": "c5636ae449347599bc9058a1ade0ef905d629c18950a056e2f72b1c8626d8406"
+      "sha256": "0344e21328e5d5729ce28cf0ad8010a693fecadb6dff3ef247f28d87495da796"
     },
     {
       "path": "scripts/test-e2e-pilot-package.sh",
       "kind": "validation_script",
-      "sha256": "9e150bf20bbffe65138fffb0f54c1242fb7ecef151fc3255f91ceb364dd2beba"
+      "sha256": "0ce39c9f0dedc9bbe776a0bbf651385d603f089c694959f254c3e8cec3e45ee3"
     },
     {
       "path": "scripts/test-e2e-runner.sh",
       "kind": "validation_script",
-      "sha256": "9bbf882654a2a4ef603fc0431e3618ffbfd2669efcc4c4e77cdb7b4cca4a7d74"
+      "sha256": "1cefe5a6f0bdced49a60d17fe99a922b0dff468e24ae3e918b4a9519339207cc"
     },
     {
       "path": "examples/pilot-fixtures/kotlin-bazel-service/MODULE.bazel",
@@ -559,12 +559,12 @@
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
       "kind": "fixture",
-      "sha256": "c546e96c382cbfc0356d5940114b24d4c85f5be408014784d6f3e0e42d0e1069"
+      "sha256": "ddcef9ec974246535db754d132915262cab29275a2455ae43685d1054f091c4d"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/run-report.md",
       "kind": "fixture",
-      "sha256": "dd991251667709e51ee0a0e978c69d67493a8b2c8e3818617bda6ce76d7f2836"
+      "sha256": "c7b759f0f9b6c5a5e8453e439c5c021585940b3ec41e2266b47b4054fa46d2cc"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
@@ -574,40 +574,40 @@
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/proof-states.json",
       "kind": "fixture",
-      "sha256": "d3423752730ec03adc7ba88bbd3534da3ec9b2648f4f1c38b75bddf53b2ef98f"
+      "sha256": "550446681fa90dd7ceef14baa63989858fa4783ecbedceb0be368d493db5bbb9"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
       "kind": "fixture",
-      "sha256": "bc7a95d6b506977b9960d3c62304b729a698ea06f64d1989984cc72b371f1200"
+      "sha256": "e7330ad1618cadcba79943dad0f04b9fe73cfd99e67657ef18694c640e20b36a"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/provenance-records.json",
       "kind": "fixture",
-      "sha256": "15b2c40ff8c9fcee6ebbcebd407b3929eaa2b878af274c0d24ce4af2f2811fc6"
+      "sha256": "1ae3361f091f1b94ba0beb94726917d0ab7c367ebdad431015f9fdc8d230ebfd"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/observations.json",
       "kind": "fixture",
-      "sha256": "5b925cec2a6c50bf8c8d0be2ff609cb7f4938a583c19d12f9b3a582fc66dd20c"
+      "sha256": "0419dc495892ffae41bac4a64a44b71ee9da4e07a6ba8e01d508e2e3e7112430"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/metric-stream.json",
       "kind": "fixture",
-      "sha256": "cce541c1e387a1d34145bb9031d6a1dd30f8bf173570947ea2efde8f76ec0c00"
+      "sha256": "8ec2d014919eeabaefe764d9290fda10c3f6fecc13f492bef606efc6997fc913"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/trace-snapshot.json",
       "kind": "fixture",
-      "sha256": "d21ad3a818ebc99f8a7f96fd550300a7dc5fc5e043d5c6b97cd3ebe6c116edec"
+      "sha256": "974f74eae02d89debde7cf24e3949635fe836aa9ec7d9252938d866270a53fec"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json",
       "kind": "fixture",
-      "sha256": "bdc11e55bd84356234a2a94e9cf572c8c01499bc5bf71d740d528cb1d891c4d3"
+      "sha256": "b591a1aa577bcdc72a5772eda96192eca08b29ca1911354580c02055da915d70"
     }
   ],
-  "source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+  "source_commit": "7727d8ab02664b9f6e408e99869eaa4e73653049",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",

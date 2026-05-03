@@ -70,7 +70,7 @@
       "summary": "Contract validation command validates committed contract foundation examples and is extended by self-trace validation.",
       "artifact": {
         "uri": "scripts/validate-contracts.sh",
-        "sha256": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+        "sha256": "c2eaa8e2479685159ea6d8516045a89242096ed39f4b058f9b49711a50af6435",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -318,7 +318,7 @@
       "summary": "Verifier tests assert that unsupported authoritative claim tags are rejected with a named reason.",
       "artifact": {
         "uri": "scripts/test-verify.sh",
-        "sha256": "3571831428c07d294b92a79c2b52b6d22c7f7fbaf1e5b0af58373294daf1d8f8",
+        "sha256": "47b6d7cdbc0e87986bd1b5259cf23110e3b46a5370081d23d24fe7a6cf6d8638",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -367,7 +367,7 @@
       "summary": "Verifier tests assert that prose mentioning verified, complete, or trusted claims is ignored unless it has an authoritative claim tag.",
       "artifact": {
         "uri": "scripts/test-verify.sh",
-        "sha256": "3571831428c07d294b92a79c2b52b6d22c7f7fbaf1e5b0af58373294daf1d8f8",
+        "sha256": "47b6d7cdbc0e87986bd1b5259cf23110e3b46a5370081d23d24fe7a6cf6d8638",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -607,7 +607,7 @@
       "tool_name": "rtk",
       "command": "scripts/validate-contracts.sh",
       "captured_at": "2026-04-30T20:50:00Z",
-      "payload_digest": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+      "payload_digest": "c2eaa8e2479685159ea6d8516045a89242096ed39f4b058f9b49711a50af6435",
       "digest_algorithm": "sha256",
       "chain_scope": "self-trace-v0",
       "unavailable_fields": [
@@ -695,7 +695,7 @@
         "scripts/validate-claim-consistency.mjs"
       ],
       "captured_at": "2026-05-03T12:50:00Z",
-      "payload_digest": "3571831428c07d294b92a79c2b52b6d22c7f7fbaf1e5b0af58373294daf1d8f8",
+      "payload_digest": "47b6d7cdbc0e87986bd1b5259cf23110e3b46a5370081d23d24fe7a6cf6d8638",
       "digest_algorithm": "sha256",
       "chain_scope": "block-07-slice-1-claim-consistency",
       "unavailable_fields": [
