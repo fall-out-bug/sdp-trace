@@ -1,0 +1,51 @@
+{
+  "id": "contract-manifest-negative-modified",
+  "contract_version": "0.1.0",
+  "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "schema_versions": [
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/assessment-input.schema.json",
+      "schema_version": "0.1.0"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "docs/cto-brief.en.md",
+      "kind": "doc",
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ],
+  "source_commit": "working-tree-block-01",
+  "previous_manifest_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "issued_at": "2026-04-30T10:00:00Z",
+  "valid_until": "2026-07-30T10:00:00Z",
+  "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
+  "approval_refs": [
+    "negative-fixture"
+  ],
+  "compatibility_notes": [
+    "This fixture must fail digest verification."
+  ],
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "negative-fixture",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "second"
+  }
+}

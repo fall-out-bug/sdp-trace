@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/consumer-schema-version-declaration.schema.json",
+  "title": "SDP Trace Consumer Schema Version Declaration",
+  "type": "object",
+  "required": [
+    "consumer",
+    "schema_version",
+    "supported_schema_versions",
+    "last_validated_fixture_refs",
+    "compatibility_notes",
+    "accountability"
+  ],
+  "properties": {
+    "consumer": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "supported_schema_versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["schema_id", "supported_versions"],
+        "properties": {
+          "schema_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/schemaId" },
+          "supported_versions": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+          "unsupported_versions": { "type": "string" },
+          "pending_versions": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "last_validated_fixture_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "compatibility_notes": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+    },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
+  },
+  "additionalProperties": false
+}

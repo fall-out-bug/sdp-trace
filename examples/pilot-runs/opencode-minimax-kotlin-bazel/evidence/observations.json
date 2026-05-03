@@ -1,0 +1,23 @@
+[
+  {
+    "id": "observation-opencode-minimax-kotlin-bazel-proof",
+    "schema_version": "0.1.0",
+    "scope": "opencode-minimax-kotlin-bazel",
+    "observed_at": "2026-05-01T14:28:53Z",
+    "statement": "The OpenCode + MiniMax + Kotlin+Bazel proof package is incomplete and must not be used as product proof.",
+    "evidence_refs": [
+      "evidence-opencode-available",
+      "evidence-minimax-model-listed",
+      "evidence-minimax-access-verified",
+      "evidence-kotlin-bazel-target-identified",
+      "evidence-opencode-minimax-run-completed",
+      "evidence-bazel-commands-executed",
+      "evidence-sdp-trace-package-valid",
+      "evidence-sanitized-report-committed"
+    ],
+    "provenance_refs": [
+      "provenance-opencode-minimax-kotlin-bazel-run"
+    ],
+    "assessment_status": "partial"
+  }
+]

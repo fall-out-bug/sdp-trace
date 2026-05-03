@@ -1,0 +1,127 @@
+{
+  "schema_version": "0.1.0",
+  "proof_profile": "opencode-minimax-kotlin-bazel-e2e-v1",
+  "completion_state": "incomplete",
+  "generated_at": "2026-05-01T14:28:53Z",
+  "tested_on": {
+    "repository": "examples/pilot-fixtures/kotlin-bazel-service",
+    "source_ref": "working-tree-scope:e7afea8291ec62f74543045fb39549d6f786d227eff9a732907ee3245618c9ae",
+    "source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+    "source_commit_artifacts_verified": false,
+    "source_content_sha256": "e7afea8291ec62f74543045fb39549d6f786d227eff9a732907ee3245618c9ae",
+    "source_artifacts": [
+      {
+        "path": "MODULE.bazel",
+        "sha256": "b0d7c78060dc50d9aeba514e968bf84ff2ceb2362aff0eb6890ec8d48321c016"
+      },
+      {
+        "path": "services/example/BUILD.bazel",
+        "sha256": "a1a3ea84601a5897ab6b382eac3e18bda6a0a797690130cbf30000d5af8190a8"
+      },
+      {
+        "path": "services/example/Hello.kt",
+        "sha256": "9aff584dc92a33627445c05cbd7c92cd822292170090a2a81092213a6fb70670"
+      }
+    ],
+    "scope": "services/example",
+    "bazel_target": "//services/example:compile_hello_jar",
+    "bazel_command": "bazel build --symlink_prefix=/ //services/example:compile_hello_jar",
+    "model": "minimax-coding-plan/MiniMax-M2.5",
+    "opencode_version": "1.14.31",
+    "bazel_version": "bazel 9.1.0 Homebrew",
+    "kotlin_version": "Kotlin version 2.3.21-release-298 (JRE 17.0.19+0)",
+    "kotlinc_version": "info: kotlinc-jvm 2.3.21 (JRE 17.0.19+0)"
+  },
+  "command_results": {
+    "opencode_run": {
+      "started_at": "2026-05-01T14:29:15Z",
+      "ended_at": "2026-05-01T14:29:43Z",
+      "exit_code": "0",
+      "stdout_sha256": "c8c43b4716c509096074bc94cd8e985c7d3c0ccc70ebcc655533547f68c21711",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "bazel_command": {
+      "started_at": "2026-05-01T14:29:43Z",
+      "ended_at": "2026-05-01T14:29:44Z",
+      "exit_code": "0",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2ea0839a6e384a346efa4aa6b37b6e658fa83766b63517c845c18a464e553e76"
+    },
+    "opencode_models_sha256": "9273de269bc9e27b2af03f747ca6424beb213df2b8b23d0f91d50c4eb2b0f82e",
+    "bazel_query_sha256": "b56523a2d82f087c21aa2ede1e88beaab89258927c89c31d5874b7763d62d9df",
+    "bazel_target_build_sha256": "1f1458ca4ba8648fe6a1637f9652fbc76fd89d3dffd7b0ee5e380cece31a98a3",
+    "git_status_before_sha256": "d1b2bf13291b1977af4ddc02c3fe473a53a7e8650d76fcee64a3c911a5f53a3d",
+    "git_status_after_sha256": "d1b2bf13291b1977af4ddc02c3fe473a53a7e8650d76fcee64a3c911a5f53a3d",
+    "git_status_after_bazel_sha256": "d1b2bf13291b1977af4ddc02c3fe473a53a7e8650d76fcee64a3c911a5f53a3d"
+  },
+  "states": [
+    {
+      "name": "opencode_available",
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-opencode-available"
+      ],
+      "reason": "opencode --version succeeded",
+      "next_required_evidence": null
+    },
+    {
+      "name": "minimax_model_listed",
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-minimax-model-listed"
+      ],
+      "reason": "requested MiniMax model id appears in opencode models output",
+      "next_required_evidence": null
+    },
+    {
+      "name": "minimax_access_verified",
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-minimax-access-verified"
+      ],
+      "reason": "successful opencode run verifies access to requested model id",
+      "next_required_evidence": null
+    },
+    {
+      "name": "kotlin_bazel_target_identified",
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-kotlin-bazel-target-identified"
+      ],
+      "reason": "bazel query succeeded and target rule output ties Kotlin/Bazel files to the supplied target",
+      "next_required_evidence": null
+    },
+    {
+      "name": "opencode_minimax_run_completed",
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-opencode-minimax-run-completed"
+      ],
+      "reason": "opencode run completed with requested MiniMax model id and produced captured output",
+      "next_required_evidence": null
+    },
+    {
+      "name": "bazel_commands_executed",
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-bazel-commands-executed"
+      ],
+      "reason": "operator-approved bazel command completed",
+      "next_required_evidence": null
+    },
+    {
+      "name": "sdp_trace_package_valid",
+      "state": "not_assessed",
+      "evidence_refs": [],
+      "reason": "Package validation is a separate repository step",
+      "next_required_evidence": "Provide evidence for sdp_trace_package_valid."
+    },
+    {
+      "name": "sanitized_report_committed",
+      "state": "not_assessed",
+      "evidence_refs": [],
+      "reason": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step",
+      "next_required_evidence": "Provide evidence for sanitized_report_committed."
+    }
+  ]
+}

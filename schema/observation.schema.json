@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/observation.schema.json",
+  "title": "SDP Trace Observation",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "scope",
+    "observed_at",
+    "statement",
+    "evidence_refs",
+    "provenance_refs",
+    "assessment_status"
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "scope": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "observed_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "statement": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "provenance_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "assessment_status": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/assessmentState" },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
+  },
+  "additionalProperties": false
+}

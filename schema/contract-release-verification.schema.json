@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/contract-release-verification.schema.json",
+  "title": "SDP Trace Contract Release Verification",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "manifest_ref",
+    "manifest_digest",
+    "manifest_digest_status",
+    "artifact_digest_status",
+    "signature_profile",
+    "signature_status",
+    "identity_policy_status",
+    "identity_policy_ref",
+    "source_commit",
+    "source_commit_status",
+    "source_commit_artifact_status",
+    "source_commit_artifact_counts",
+    "external_trust_profile",
+    "external_attestation_ref",
+    "transparency_evidence_ref",
+    "source_uri_status",
+    "protected_ref_status",
+    "workflow_identity_status",
+    "approval_status",
+    "production_release_verified",
+    "transparency_log_status",
+    "freshness_status",
+    "verified_at",
+    "trusted_contract_release",
+    "accountability"
+  ],
+  "if": {
+    "properties": { "trusted_contract_release": { "const": true } },
+    "required": ["trusted_contract_release"]
+  },
+  "then": {
+    "properties": {
+      "manifest_digest_status": { "const": "matched" },
+      "artifact_digest_status": { "const": "matched" },
+      "signature_status": { "const": "valid" },
+      "identity_policy_status": { "const": "matched" },
+      "transparency_log_status": {
+        "enum": ["included", "compensating_control_recorded"]
+      },
+      "freshness_status": { "const": "current" },
+      "source_commit_status": { "const": "matched" },
+      "source_commit_artifact_status": { "const": "matched" },
+      "source_commit_artifact_counts": {
+        "type": "object",
+        "properties": {
+          "checked": { "type": "integer", "minimum": 1 },
+          "missing": { "const": 0 },
+          "mismatched": { "const": 0 }
+        },
+        "required": ["checked", "missing", "mismatched"]
+      },
+      "external_trust_profile": {
+        "enum": [
+          "sigstore-rekor-keyless-v1",
+          "customer-pki-private-equivalent-v1"
+        ]
+      },
+      "external_attestation_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+      "transparency_evidence_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+      "source_uri_status": { "const": "matched" },
+      "protected_ref_status": { "const": "matched" },
+      "workflow_identity_status": { "const": "matched" },
+      "approval_status": { "const": "matched" },
+      "production_release_verified": {
+        "type": "object",
+        "properties": {
+          "state": { "const": "assessed" },
+          "value": { "const": true }
+        },
+        "required": ["state", "value"]
+      }
+    },
+    "required": [
+      "signer_identity",
+      "oidc_issuer",
+      "source_commit",
+      "source_commit_status",
+      "source_commit_artifact_status",
+      "source_commit_artifact_counts",
+      "external_trust_profile",
+      "external_attestation_ref",
+      "transparency_evidence_ref",
+      "source_uri_status",
+      "protected_ref_status",
+      "workflow_identity_status",
+      "approval_status",
+      "production_release_verified"
+    ]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "trusted_contract_release": { "const": true },
+          "external_trust_profile": { "const": "sigstore-rekor-keyless-v1" }
+        },
+        "required": ["trusted_contract_release", "external_trust_profile"]
+      },
+      "then": {
+        "properties": {
+          "transparency_log_status": { "const": "included" }
+        }
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": { "source_commit_status": { "const": "not_assessed" } },
+            "required": ["source_commit_status"]
+          },
+          {
+            "properties": { "source_commit_artifact_status": { "const": "not_assessed" } },
+            "required": ["source_commit_artifact_status"]
+          }
+        ]
+      },
+      "then": {
+        "required": ["source_commit_reason"]
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": { "external_trust_profile": { "const": "not_assessed" } },
+            "required": ["external_trust_profile"]
+          },
+          {
+            "properties": { "source_uri_status": { "const": "not_assessed" } },
+            "required": ["source_uri_status"]
+          },
+          {
+            "properties": { "protected_ref_status": { "const": "not_assessed" } },
+            "required": ["protected_ref_status"]
+          },
+          {
+            "properties": { "workflow_identity_status": { "const": "not_assessed" } },
+            "required": ["workflow_identity_status"]
+          },
+          {
+            "properties": { "approval_status": { "const": "not_assessed" } },
+            "required": ["approval_status"]
+          }
+        ]
+      },
+      "then": {
+        "required": ["external_trust_reason"]
+      }
+    }
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "artifact_role": {
+      "type": "string",
+      "enum": ["verifier_output", "untrusted_example"]
+    },
+    "trust_scope": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "release_verification_state": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "manifest_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "manifest_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "manifest_digest_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "artifact_digest_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "signature_profile": { "const": "sdp-trace-signature/sigstore-dsse-keyless-v1" },
+    "signature_status": {
+      "type": "string",
+      "enum": ["valid", "invalid", "missing", "stale", "not_assessed"]
+    },
+    "signer_identity": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "oidc_issuer": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "identity_policy_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "identity_policy_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "source_commit_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "source_commit_artifact_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "source_commit_artifact_counts": {
+      "type": "object",
+      "required": ["checked", "missing", "mismatched"],
+      "properties": {
+        "checked": { "type": "integer", "minimum": 0 },
+        "missing": { "type": "integer", "minimum": 0 },
+        "mismatched": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "source_commit_reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "external_trust_profile": {
+      "type": "string",
+      "enum": [
+        "sigstore-rekor-keyless-v1",
+        "customer-pki-private-equivalent-v1",
+        "local-dev-private-equivalent-v1",
+        "not_assessed"
+      ]
+    },
+    "external_attestation_ref": {
+      "anyOf": [
+        { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+        { "type": "null" }
+      ]
+    },
+    "transparency_evidence_ref": {
+      "anyOf": [
+        { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+        { "type": "null" }
+      ]
+    },
+    "source_uri_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "protected_ref_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "workflow_identity_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "missing", "not_assessed"]
+    },
+    "external_trust_reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "production_release_verified": { "$ref": "#/$defs/proofStateBoolean" },
+    "transparency_log_status": {
+      "type": "string",
+      "enum": ["included", "unavailable", "compensating_control_recorded", "not_required", "not_assessed"]
+    },
+    "freshness_status": {
+      "type": "string",
+      "enum": ["current", "expired", "rollback_suspected", "not_assessed"]
+    },
+    "verified_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "trusted_contract_release": { "type": "boolean" },
+    "private_equivalent_profile": { "type": "string" },
+    "provenance_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
+  },
+  "$defs": {
+    "proofStateBoolean": {
+      "type": "object",
+      "required": ["state", "value"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["assessed", "not_assessed"]
+        },
+        "value": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "assessed" } },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": { "value": { "type": "boolean" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "not_assessed" } },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": { "value": { "type": "null" } },
+            "required": ["reason"]
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

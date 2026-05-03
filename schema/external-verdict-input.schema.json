@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/external-verdict-input.schema.json",
+  "title": "SDP Trace External Verdict Input",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "producer",
+    "producer_type",
+    "origin",
+    "verdict_kind",
+    "verdict_value",
+    "generated_at",
+    "redaction_status",
+    "provenance_refs"
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "producer": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "producer_type": {
+      "type": "string",
+      "enum": ["policy_engine", "reviewer", "ci_system", "customer", "other"]
+    },
+    "origin": { "const": "external" },
+    "verdict_kind": {
+      "type": "string",
+      "enum": ["gate", "degradation", "readiness", "evidence_strength", "quality_score", "override", "custom"]
+    },
+    "verdict_value": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" }
+      ]
+    },
+    "policy_ref": { "type": "string" },
+    "generated_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "artifact": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" },
+    "redaction_status": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/redactionStatus" },
+    "provenance_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
+  },
+  "additionalProperties": false
+}

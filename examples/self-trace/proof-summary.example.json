@@ -1,0 +1,159 @@
+{
+  "id": "proof-summary-repo-baseline",
+  "schema_version": "0.1.0",
+  "artifact_role": "untrusted_shape_example",
+  "profile": "repo_baseline_structural",
+  "result": "pass",
+  "trust_scope": "untrusted_shape_only",
+  "generated_at": "1970-01-01T00:00:00Z",
+  "generated_by": {
+    "tool": "scripts/verify.sh",
+    "version": "0.1.0",
+    "invocation": "scripts/verify.sh --profile baseline --json --allow-dirty --example",
+    "source_subject_ref": "source:0000000000000000000000000000000000000000",
+    "gate_set_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "source_subject": {
+    "id": "source:0000000000000000000000000000000000000000",
+    "type": "git_commit_v1",
+    "commit": "0000000000000000000000000000000000000000",
+    "dirty": true,
+    "dirty_allowed": true
+  },
+  "spec_subject": {
+    "id": "spec:block-07-minimum-trust-kernel",
+    "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel.md",
+    "digest_algorithm": "sha256",
+    "digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "gate_set_subject": {
+    "id": "gate-set:repo-baseline-v0",
+    "digest_algorithm": "sha256",
+    "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "files": [
+      {
+        "path": "schema/proof-summary.schema.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "path": "scripts/check-artifact-safety.sh",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "path": "scripts/validate-claim-consistency.mjs",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "path": "scripts/validate-json-schema.mjs",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "path": "scripts/validate-pilot-matrices.mjs",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "path": "scripts/validate-self-trace.sh",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "path": "scripts/verify.sh",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "claims": [
+    "repo_baseline structural checks executed only",
+    "external production trust not claimed",
+    "authoritative claim tags checked by Slice 1 validator",
+    "cross-reference integrity not assessed until Slice 5"
+  ],
+  "states": [
+    {
+      "id": "source_checkout_clean",
+      "result": "not_assessed",
+      "required": false,
+      "method": "git status --porcelain",
+      "reason": "dirty checkout allowed by explicit --allow-dirty; this output cannot support source-bound or external trust"
+    },
+    {
+      "id": "spec_subject_present",
+      "result": "pass",
+      "required": true,
+      "method": "test -f specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel.md"
+    },
+    {
+      "id": "gate_set_files_present",
+      "result": "pass",
+      "required": true,
+      "method": "test -f required gate-set files"
+    },
+    {
+      "id": "schema_json_valid",
+      "result": "pass",
+      "required": true,
+      "method": "jq empty schema/*.json"
+    },
+    {
+      "id": "committed_examples_parse",
+      "result": "pass",
+      "required": true,
+      "method": "jq empty for committed examples"
+    },
+    {
+      "id": "portable_schema_examples_valid",
+      "result": "pass",
+      "required": true,
+      "method": "validate portable schema/example pairs"
+    },
+    {
+      "id": "negative_fixtures_rejected",
+      "result": "pass",
+      "required": true,
+      "method": "execute negative schema fixtures"
+    },
+    {
+      "id": "self_trace_package_valid",
+      "result": "pass",
+      "required": true,
+      "method": "scripts/validate-self-trace.sh"
+    },
+    {
+      "id": "artifact_safety_valid",
+      "result": "pass",
+      "required": true,
+      "method": "scripts/check-artifact-safety.sh"
+    },
+    {
+      "id": "claim_tags_consistent",
+      "result": "pass",
+      "required": true,
+      "method": "scripts/validate-claim-consistency.mjs"
+    },
+    {
+      "id": "cross_reference_integrity",
+      "result": "not_assessed",
+      "required": false,
+      "method": "cross-reference integrity is Slice 5",
+      "reason": "Slice 5 not implemented",
+      "next_required_evidence": "Implement scripts/validate-cross-references.mjs"
+    }
+  ],
+  "failures": [],
+  "not_assessed": [
+    {
+      "id": "source_checkout_clean",
+      "result": "not_assessed",
+      "required": false,
+      "method": "git status --porcelain",
+      "reason": "dirty checkout allowed by explicit --allow-dirty; this output cannot support source-bound or external trust"
+    },
+    {
+      "id": "cross_reference_integrity",
+      "result": "not_assessed",
+      "required": false,
+      "method": "cross-reference integrity is Slice 5",
+      "reason": "Slice 5 not implemented",
+      "next_required_evidence": "Implement scripts/validate-cross-references.mjs"
+    }
+  ]
+}

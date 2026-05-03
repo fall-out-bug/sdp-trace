@@ -1,24 +1,45 @@
 {
+  "schema_version": "0.1.0",
   "nodes": [
     {
       "id": "spec-001",
       "kind": "spec",
-      "label": "Reject invalid widget names"
+      "label": "Block 01 contract foundation"
+    },
+    {
+      "id": "plan-001",
+      "kind": "plan",
+      "label": "Contract foundation implementation plan"
     },
     {
       "id": "task-001",
       "kind": "task",
-      "label": "Add validation and tests"
+      "label": "Add validated evidence contracts"
     },
     {
       "id": "evidence-001",
       "kind": "evidence",
-      "label": "go test ./..."
+      "label": "scripts/validate-contracts.sh"
     },
     {
-      "id": "decision-001",
-      "kind": "decision",
-      "label": "accepted"
+      "id": "observation-001",
+      "kind": "observation",
+      "label": "Contract fixtures validate without native policy verdicts"
+    },
+    {
+      "id": "metric-stream-001",
+      "kind": "metric_stream",
+      "label": "evidence_coverage_ratio prior/current/delta"
+    },
+    {
+      "id": "external-verdict-001",
+      "kind": "external_verdict",
+      "label": "external governance review evidence"
+    },
+    {
+      "id": "accountability-001",
+      "kind": "accountability",
+      "label": "human-held release accountability"
     }
   ],
   "edges": [
@@ -28,14 +49,34 @@
       "relation": "implements"
     },
     {
+      "from": "plan-001",
+      "to": "spec-001",
+      "relation": "supports"
+    },
+    {
       "from": "task-001",
       "to": "evidence-001",
       "relation": "produces"
     },
     {
-      "from": "decision-001",
+      "from": "observation-001",
       "to": "evidence-001",
-      "relation": "references"
+      "relation": "derived_from"
+    },
+    {
+      "from": "metric-stream-001",
+      "to": "evidence-001",
+      "relation": "supports"
+    },
+    {
+      "from": "external-verdict-001",
+      "to": "evidence-001",
+      "relation": "records_external"
+    },
+    {
+      "from": "task-001",
+      "to": "accountability-001",
+      "relation": "accountable_to"
     }
   ]
 }

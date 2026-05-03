@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/proof-summary.schema.json",
+  "title": "SDP Trace Proof Summary",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "artifact_role",
+    "profile",
+    "result",
+    "trust_scope",
+    "generated_at",
+    "generated_by",
+    "source_subject",
+    "spec_subject",
+    "gate_set_subject",
+    "claims",
+    "states",
+    "failures",
+    "not_assessed"
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "artifact_role": {
+      "type": "string",
+      "enum": ["verifier_output", "untrusted_shape_example"]
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "repo_baseline_structural",
+        "repo_baseline",
+        "source_bound_local_release",
+        "external_production_trust",
+        "observed_slice"
+      ]
+    },
+    "result": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify"]
+    },
+    "trust_scope": {
+      "type": "string",
+      "enum": [
+        "none_dirty_checkout",
+        "untrusted_shape_only",
+        "local_dirty_structural_only",
+        "clean_checkout_structural",
+        "source_bound_local_release",
+        "external_production_trust"
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "generated_by": {
+      "type": "object",
+      "required": ["tool", "version", "invocation", "source_subject_ref", "gate_set_digest"],
+      "properties": {
+        "tool": { "const": "scripts/verify.sh" },
+        "version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "invocation": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "source_subject_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "gate_set_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "source_subject": {
+      "type": "object",
+      "required": ["id", "type", "commit", "dirty", "dirty_allowed"],
+      "properties": {
+        "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "type": { "const": "git_commit_v1" },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "dirty": { "type": "boolean" },
+        "dirty_allowed": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "spec_subject": {
+      "type": "object",
+      "required": ["id", "path", "digest_algorithm", "digest"],
+      "properties": {
+        "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "path": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+        "digest_algorithm": { "const": "sha256" },
+        "digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "gate_set_subject": {
+      "type": "object",
+      "required": ["id", "digest_algorithm", "digest", "files"],
+      "properties": {
+        "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "digest_algorithm": { "const": "sha256" },
+        "digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+              "sha256": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "claims": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+    },
+    "states": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/state" }
+    },
+    "failures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/state" }
+    },
+    "not_assessed": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/state" }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "object",
+      "required": ["id", "result", "required", "method"],
+      "properties": {
+        "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail", "not_assessed", "cannot_verify", "incomplete"]
+        },
+        "required": { "type": "boolean" },
+        "method": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "next_required_evidence": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "enum": ["fail", "not_assessed", "cannot_verify", "incomplete"]
+              }
+            },
+            "required": ["result"]
+          },
+          "then": {
+            "required": ["reason"]
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "profile": { "const": "repo_baseline_structural" } },
+        "required": ["profile"]
+      },
+      "then": {
+        "properties": {
+          "states": {
+            "items": {
+              "not": {
+                "properties": {
+                  "id": { "const": "production_release_verified" }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "profile": { "const": "repo_baseline" } },
+        "required": ["profile"]
+      },
+      "then": {
+        "properties": {
+          "states": {
+            "items": {
+              "not": {
+                "properties": {
+                  "id": { "const": "production_release_verified" }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "artifact_role": { "const": "untrusted_shape_example" } },
+        "required": ["artifact_role"]
+      },
+      "then": {
+        "properties": {
+          "trust_scope": {
+            "const": "untrusted_shape_only"
+          },
+          "generated_at": {
+            "const": "1970-01-01T00:00:00Z"
+          },
+          "generated_by": {
+            "properties": {
+              "invocation": {
+                "pattern": "(^| )--example($| )"
+              },
+              "source_subject_ref": {
+                "const": "source:0000000000000000000000000000000000000000"
+              },
+              "gate_set_digest": {
+                "const": "0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          },
+          "source_subject": {
+            "properties": {
+              "id": {
+                "const": "source:0000000000000000000000000000000000000000"
+              },
+              "commit": {
+                "const": "0000000000000000000000000000000000000000"
+              }
+            }
+          },
+          "spec_subject": {
+            "properties": {
+              "digest": {
+                "const": "0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          },
+          "gate_set_subject": {
+            "properties": {
+              "digest": {
+                "const": "0000000000000000000000000000000000000000000000000000000000000000"
+              },
+              "files": {
+                "items": {
+                  "properties": {
+                    "sha256": {
+                      "const": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

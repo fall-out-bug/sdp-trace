@@ -1,0 +1,44 @@
+{
+  "id": "assessment-input-negative-native-policy",
+  "schema_version": "0.1.0",
+  "scope": "negative example",
+  "trace_snapshot_ref": "examples/github-speckit/trace.json",
+  "evidence_events": [],
+  "provenance_records": [],
+  "metric_streams": [],
+  "observations": [],
+  "not_assessed": [],
+  "generated_at": "2026-04-30T10:10:00Z",
+  "producer": "sdp-trace-contract-foundation",
+  "verdict": "pass",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-engineering-dri",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "assessment_input",
+    "accountability_claim": "content_approval",
+    "approval_ref": "negative-fixture",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "first"
+  },
+  "risk_classification": {
+    "schema_version": "0.1.0",
+    "observed_autonomy_level": "assistive",
+    "observed_impact_level": "low",
+    "classification_source": "human_dri",
+    "classification_ref": "negative-fixture"
+  },
+  "contract_release_verification_ref": "examples/contract-foundation/contract-release-verification.example.json"
+}

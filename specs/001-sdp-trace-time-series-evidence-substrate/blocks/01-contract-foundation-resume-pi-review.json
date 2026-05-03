@@ -1,0 +1,77 @@
+{
+  "id": "block-01-resume-pi-review-2026-05-01",
+  "block": "01-contract-foundation",
+  "review_type": "clean_context_pi_code_review",
+  "reviewed_at": "2026-05-01T00:00:00Z",
+  "reviewers": [
+    {
+      "provider": "kimi-coding",
+      "model": "k2p6",
+      "command": "pi --provider kimi-coding --model k2p6 --no-context-files --tools read,grep,find,ls,bash -p <block-01-review-prompt>"
+    },
+    {
+      "provider": "zai",
+      "model": "glm-5.1",
+      "command": "pi --provider zai --model glm-5.1 --no-context-files --tools read,grep,find,ls,bash -p <block-01-review-prompt>",
+      "status": "interrupted_after_timeout",
+      "note": "No review payload was returned before interruption; the successful Kimi review and a narrow Kimi no-tools re-review are recorded below."
+    }
+  ],
+  "initial_review": {
+    "reviewer": "pi-clean-context-codex",
+    "block": "01-contract-foundation",
+    "verdict": "pass",
+    "findings": [
+      {
+        "priority": "P2",
+        "severity": "major",
+        "title": "Positive fixture claims verified_hash with stale artifact digest",
+        "file": "examples/contract-foundation/positive-assessment-input.json",
+        "evidence": "artifact.sha256 and provenance_records[0].payload_digest contained 897962cf88598a4fb553b8c2b7c2d2af4d9d3d49cc0a1c1195776cf9b43eb8a7 for scripts/validate-contracts.sh, but the current file digest was d82e30736d3fff747446ba3d63de059c7664d33161a5523a0179b68f7bb9093f.",
+        "speckit_or_beads_ref": "T035, T036",
+        "required_fix": "Update the artifact.sha256 and payload_digest in the positive fixture to match the current scripts/validate-contracts.sh digest, or mark integrity as not_assessed."
+      },
+      {
+        "priority": "P3",
+        "severity": "minor",
+        "title": "Pinned ajv-cli@5.0.0 dependency chain carries documented high-severity audit findings",
+        "file": "package-lock.json, docs/research/block-01-validation-summary.md",
+        "evidence": "npm audit reports two high severity vulnerabilities via fast-json-patch <3.1.1 in the ajv-cli@5.0.0 dependency chain. The project documents this as residual risk and warns against auto-fixing because the validator strategy is pinned.",
+        "speckit_or_beads_ref": "T034, sdp-trace-bd2",
+        "required_fix": "Replace ajv-cli with a local validator strategy that does not carry the fast-json-patch audit finding."
+      }
+    ]
+  },
+  "resolution": {
+    "p2": {
+      "status": "fixed",
+      "files": [
+        "examples/contract-foundation/positive-assessment-input.json",
+        "examples/self-trace/evidence-events.json",
+        "examples/self-trace/provenance-records.json",
+        "examples/self-trace/assessment-input.json",
+        "examples/self-trace/negative-native-policy-field.json",
+        "examples/contract-foundation/contract-manifest.example.json",
+        "examples/contract-foundation/contract-release-verification.example.json",
+        "examples/contract-foundation/contract-release.dsse.json",
+        "examples/contract-foundation/local-dev-signing-public.pem"
+      ],
+      "evidence": "All stale validate-contracts.sh digests were replaced with d82e30736d3fff747446ba3d63de059c7664d33161a5523a0179b68f7bb9093f. Contract manifest, local DSSE envelope, and release verification digest were regenerated."
+    },
+    "p3": {
+      "status": "fixed",
+      "beads_issue": "sdp-trace-bd2",
+      "evidence": "Validation moved from ajv-cli@5.0.0 to pinned local ajv@8.20.0 through scripts/validate-json-schema.mjs. package.json and package-lock.json pin ajv to exact 8.20.0, not a semver range. npm audit --json reports zero vulnerabilities."
+    }
+  },
+  "re_review": {
+    "reviewer": "assistant",
+    "block": "01",
+    "verdict": "pass",
+    "findings": []
+  },
+  "verification": {
+    "command": "rtk npm run validate",
+    "exit_code": 0
+  }
+}

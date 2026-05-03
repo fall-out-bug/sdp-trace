@@ -1,0 +1,68 @@
+{
+  "id": "block-02-self-trace-pi-review-2026-05-01",
+  "block": "02-self-trace-proof",
+  "review_type": "clean_context_pi_code_review",
+  "reviewed_at": "2026-05-01T00:00:00Z",
+  "initial_review": {
+    "reviewer": "clean-context-code-reviewer",
+    "verdict": "pass",
+    "findings": [
+      {
+        "priority": "P3",
+        "severity": "minor",
+        "title": "Self-Trace Assessment Input Lacks Explicit Not_Assessed Gaps Enumeration",
+        "file": "examples/self-trace/assessment-input.json",
+        "disposition": "rejected_with_evidence",
+        "evidence": "assessment-input.json already contains a top-level not_assessed array. It now explicitly includes immutable_source_commit, external_attestation, and fresh_checkout_validation."
+      },
+      {
+        "priority": "P3",
+        "severity": "minor",
+        "title": "Crisis Socratic Review Artifact Reference Ambiguity",
+        "file": "examples/self-trace/evidence-events.json",
+        "disposition": "clarified",
+        "evidence": "Crisis Kimi critic, GLM critic, and MiniMax judge artifacts are recorded as review evidence events with external_ref and SHA-256 artifact digests; provenance-records.json records pi provider/model/tool metadata. self-trace-v0-summary.md now calls this out explicitly."
+      },
+      {
+        "priority": "P3",
+        "severity": "minor",
+        "title": "Negative Native Policy Field Validation Coverage Gap",
+        "file": "scripts/validate-self-trace.sh",
+        "disposition": "fixed",
+        "evidence": "validate-self-trace.sh now recursively rejects native policy keys in assessment-input.json and trace-snapshot.json, while still allowing external verdict input fields."
+      },
+      {
+        "priority": "P3",
+        "severity": "minor",
+        "title": "Human-Held Escalation Path Lacks Timestamped Acknowledgment",
+        "file": "examples/self-trace/trace-snapshot.json",
+        "disposition": "fixed_without_overclaiming",
+        "evidence": "The accountability node now records DRI, approver, risk owner, escalation, an escalation_trigger_condition, and last_human_acknowledgment as not_assessed because no timestamped human acknowledgment artifact is committed."
+      },
+      {
+        "priority": "P3",
+        "severity": "minor",
+        "title": "Metric Stream Missing Fresh Checkout Isolation Evidence",
+        "file": "examples/self-trace/metric-stream.json",
+        "disposition": "fixed_without_overclaiming",
+        "evidence": "fresh_checkout_validation is recorded as not_assessed in metric-stream and assessment input because the current evidence was reproduced in the shared worktree, not a fresh checkout."
+      }
+    ]
+  },
+  "secondary_review": {
+    "provider": "zai",
+    "model": "glm-5.1",
+    "status": "interrupted_after_timeout",
+    "note": "Read-only tool review produced no payload before timeout."
+  },
+  "re_review": {
+    "reviewer": "pi",
+    "block": "Block 02 Self-Trace Proof",
+    "verdict": "pass",
+    "findings": []
+  },
+  "verification": {
+    "command": "rtk scripts/validate-self-trace.sh",
+    "exit_code": 0
+  }
+}

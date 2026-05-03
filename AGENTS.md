@@ -3,11 +3,9 @@
 `sdp-trace` is the portable trust substrate for AI-assisted delivery.
 
 ## Purpose
-
 Define traceability, provenance, evidence, gate verdicts, and decision records that work across coding agents and harnesses.
 
 ## Boundary
-
 This repo must stay independent from `sdp_lab`, Beads, Operator Mode, and any specific harness runtime.
 
 Allowed:
@@ -23,23 +21,74 @@ Not allowed:
 - hidden assumptions about Claude, Codex, OpenCode, or GitHub
 
 ## Product Language
-
 Use SpecKit-aligned terms first: spec, plan, task, evidence, gate, decision, trace, provenance.
 
 Avoid internal SDP terms unless a doc explicitly maps them.
 
 ## Quality Bar
-
 Every claim about a gate or verdict must be evidence-backed or marked `not_assessed`.
 
 No opaque health scores.
 
-## Commands
+## Decomposition Rule
+If `AGENTS.md` exceeds 100 lines or any module needs more than 10 skills, the module is too large, under-decomposed, or overengineered.
 
+## Trust Rules
+The repository has already failed once by letting prose, task checkboxes, and checked-in JSON overclaim what current verification could not replay. Do not repeat that failure.
+
+- Machine proof wins over prose, task checkboxes, reports, review ledgers, and mirrors.
+- Dirty checkout output is local structural evidence only, not external trust.
+- Checked-in proof JSON is not authority unless live-verified or externally signed.
+- No deferred trust closure: missing external evidence keeps the block open.
+- Prose is not authoritative. Use `sdp-trace-claim` tags for claims.
+
+## Required Work Loop
+Every non-trivial implementation chunk needs:
+
+1. SpecKit delta.
+2. Trace coverage when verifier behavior or trust claims change.
+3. Test-first behavior when behavior changes.
+4. Live verifier state: `pass`, `fail`, `cannot_verify`, or `not_assessed`.
+5. Strict review with recorded disposition.
+6. Fresh verification before completion claims.
+
+If a chunk cannot be traced or verified yet, mark the state `not_assessed` or `cannot_verify` with a concrete reason instead of closing it.
+
+## pi Review Rules
+For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
+
+- Use MiniMax and ZAI/GLM for multi-file strict review.
+- Use Kimi only for one-file micro-reviews with low/off thinking.
+- Stop and replace hung pi reviews.
+
+## Claim Tags
+Use `docs/claim-authoring.md` for authoritative claim syntax.
+
+Current Slice 1 validator intentionally accepts only narrow evidence forms. Do not introduce arbitrary `proof:*`, `state:*`, or `none` evidence unless cross-reference verification has been implemented.
+
+## Commands
 No build is required yet.
 
-Run schema checks with:
+Schema checks:
 
 ```bash
 jq empty schema/*.json
+```
+
+Baseline verifier:
+
+```bash
+npm run verify:baseline
+```
+
+Dirty local structural verifier:
+
+```bash
+scripts/verify.sh --profile baseline --allow-dirty --json
+```
+
+Self-trace:
+
+```bash
+scripts/validate-self-trace.sh
 ```

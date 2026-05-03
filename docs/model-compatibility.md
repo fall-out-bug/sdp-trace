@@ -1,15 +1,15 @@
-# Model Compatibility
+# Model Evidence Matrix
 
-`sdp-trace` does not require a specific model, but gate quality depends on model behavior when a model contributes findings.
+This legacy-named matrix records model-slice evidence state. It does not claim model support, readiness, or compatibility as a native `sdp-trace` outcome.
 
 ## Evaluation Matrix
 
-| Model family | Scout | Gate findings | PR review | JSON/schema | JVM/Bazel | Notes |
-|---|---|---|---|---|---|---|
-| GLM | TBD | TBD | TBD | TBD | TBD | Target family |
-| MiniMax | TBD | TBD | TBD | TBD | TBD | Target family |
-| Kimi | TBD | TBD | TBD | TBD | TBD | Target family |
-| MiMo | TBD | TBD | TBD | TBD | TBD | Target family |
+| Target | Scope | Evidence state | Reason code | Artifact reference | External verdict reference | Gap reason | Next required evidence |
+|---|---|---|---|---|---|---|---|
+| OpenCode + MiniMax | OpenCode model slice on Block 06 Kotlin+Bazel fixture | `observed` | `run_artifact_available` | `examples/pilot-runs/opencode-minimax-kotlin-bazel` | `none` | Evidence is limited to `minimax-coding-plan/MiniMax-M2.5` on the Block 06 Kotlin+Bazel fixture. | Run additional MiniMax provider/model ids and target stacks before expanding beyond this exact slice. |
+| OpenCode + Kimi | OpenCode model slice | `not_assessed` | `no_run_artifact` | `none` | `none` | No committed OpenCode run with observed Kimi identity. | Run `docs/research/opencode-model-run-card.md` and commit sanitized evidence/provenance/export-limitations summary. |
+| OpenCode + GLM | OpenCode model slice | `not_assessed` | `no_run_artifact` | `none` | `none` | No committed OpenCode run with observed GLM identity. | Run `docs/research/opencode-model-run-card.md` and commit sanitized evidence/provenance/export-limitations summary. |
+| MiMo | Model family discovery | `not_assessed` | `discovery_required` | `none` | `none` | No committed routing path or model identity evidence. | Define harness/model slice before adding run-card assessment. |
 
 ## Required Measurements
 

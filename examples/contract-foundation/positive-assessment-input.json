@@ -1,0 +1,220 @@
+{
+  "id": "assessment-input-contract-foundation-positive",
+  "schema_version": "0.1.0",
+  "scope": "sdp-trace Block 01 Contract Foundation",
+  "trace_snapshot_ref": "examples/github-speckit/trace.json",
+  "evidence_events": [
+    {
+      "id": "evidence-schema-validation",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "scripts/validate-contracts.sh",
+      "observed_at": "2026-04-30T10:00:00Z",
+      "collected_at": "2026-04-30T10:00:00Z",
+      "actor": {
+        "id": "codex-session",
+        "actor_type": "ai_agent",
+        "display_name": "Codex implementation session"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "Contract validation command executed on committed fixtures.",
+      "artifact": {
+        "uri": "scripts/validate-contracts.sh",
+        "sha256": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "integrity_status": "verified_hash",
+      "dedupe_key": "contract-validation-2026-04-30",
+      "conflict_refs": [],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-release-captain",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    }
+  ],
+  "provenance_records": [
+    {
+      "id": "provenance-codex-contract-foundation",
+      "schema_version": "0.1.0",
+      "actor_id": "codex-session",
+      "actor_type": "ai_agent",
+      "harness": "codex",
+      "tool_name": "rtk",
+      "command": "scripts/validate-contracts.sh",
+      "captured_at": "2026-04-30T10:00:00Z",
+      "payload_digest": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+      "digest_algorithm": "sha256",
+      "chain_scope": "block-01-contract-foundation",
+      "unavailable_fields": [
+        {
+          "field": "model_version",
+          "state": "not_assessed",
+          "reason": "The local session did not expose a stable model version string."
+        }
+      ]
+    }
+  ],
+  "metric_streams": [
+    {
+      "id": "metric-evidence-coverage",
+      "schema_version": "0.1.0",
+      "metric_name": "evidence_coverage_ratio",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "block-01-contract-foundation",
+        "phase": "contract-foundation"
+      },
+      "samples": [
+        {
+          "id": "sample-evidence-coverage-previous",
+          "value": 0.5,
+          "unit": "ratio",
+          "window_start": "2026-04-29T00:00:00Z",
+          "window_end": "2026-04-29T23:59:59Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "block-01-contract-foundation"
+          },
+          "evidence_refs": [
+            "evidence-schema-validation"
+          ],
+          "provenance_refs": [
+            "provenance-codex-contract-foundation"
+          ],
+          "assessment_state": "assessed"
+        },
+        {
+          "id": "sample-evidence-coverage-current",
+          "value": 0.75,
+          "unit": "ratio",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T23:59:59Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "block-01-contract-foundation"
+          },
+          "evidence_refs": [
+            "evidence-schema-validation"
+          ],
+          "provenance_refs": [
+            "provenance-codex-contract-foundation"
+          ],
+          "assessment_state": "assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-evidence-coverage",
+          "previous_sample_ref": "sample-evidence-coverage-previous",
+          "current_sample_ref": "sample-evidence-coverage-current",
+          "previous_value": 0.5,
+          "current_value": 0.75,
+          "delta": 0.25,
+          "unit": "ratio",
+          "evidence_coverage": {
+            "current": "assessed",
+            "previous": "assessed"
+          },
+          "assessment_state": "assessed"
+        }
+      ],
+      "assessment_state": "assessed",
+      "created_at": "2026-04-30T10:00:00Z",
+      "updated_at": "2026-04-30T10:00:00Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "observation-contract-validation",
+      "schema_version": "0.1.0",
+      "scope": "block-01-contract-foundation",
+      "observed_at": "2026-04-30T10:00:00Z",
+      "statement": "Contract foundation fixtures provide structural evidence without native policy verdicts.",
+      "evidence_refs": [
+        "evidence-schema-validation"
+      ],
+      "provenance_refs": [
+        "provenance-codex-contract-foundation"
+      ],
+      "assessment_status": "assessed"
+    }
+  ],
+  "external_verdict_inputs": [
+    {
+      "id": "external-verdict-governance-judge",
+      "schema_version": "0.1.0",
+      "producer": "pi-review",
+      "producer_type": "reviewer",
+      "origin": "external",
+      "verdict_kind": "quality_score",
+      "verdict_value": "governance judge pass recorded as external review evidence",
+      "policy_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-governance-judge-result.json",
+      "generated_at": "2026-04-30T10:00:00Z",
+      "redaction_status": "none",
+      "provenance_refs": [
+        "provenance-codex-contract-foundation"
+      ]
+    }
+  ],
+  "not_assessed": [],
+  "generated_at": "2026-04-30T10:00:00Z",
+  "producer": "sdp-trace-contract-foundation",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-engineering-dri",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "assessment_input",
+    "accountability_claim": "content_approval",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "first"
+  },
+  "risk_classification": {
+    "schema_version": "0.1.0",
+    "observed_autonomy_level": "collaborative",
+    "observed_impact_level": "medium",
+    "classification_source": "human_dri",
+    "classification_ref": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
+    "declared_oversight": {
+      "origin": "external",
+      "policy_ref": "docs/accountability-model.md",
+      "required_oversight": "independent_review",
+      "review_independence": "different_actor_required"
+    }
+  },
+  "contract_release_verification_ref": "examples/contract-foundation/contract-release-verification.example.json"
+}

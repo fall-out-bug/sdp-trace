@@ -1,11 +1,11 @@
 # Evidence Policy
 
-Evidence policy defines what must be present before a gate may return `pass`.
+Evidence policy defines what an external policy consumer may require before it returns `pass`.
 
 ## Rules
 
-1. A gate cannot pass on model confidence alone.
-2. A missing required source produces `not_assessed` or `fail`, never `pass`.
+1. A policy consumer cannot pass on model confidence alone.
+2. A missing required source produces `not_assessed` or an external failure verdict, never native `sdp-trace` success.
 3. Manual evidence is allowed, but it must name the human actor and reason.
 4. Generated claims must link to inspected files, commands, tests, or review artifacts.
 5. Opaque health scores are not evidence.
@@ -19,4 +19,4 @@ Evidence policy defines what must be present before a gate may return `pass`.
 | Weak | Model summary or inferred claim. | "looks good" from an agent |
 | None | Missing or unavailable. | no tests found and no explanation |
 
-Weak evidence can support a `warn`. It should not support `pass` for blocking gates.
+Weak evidence can support an external `warn`. It should not support external `pass` for blocking gates.

@@ -4,6 +4,9 @@
 benchmarks/repos/
 dist/
 tmp/
+node_modules/
+examples/pilot-fixtures/**/MODULE.bazel.lock
+examples/pilot-fixtures/**/bazel-*
 
 # Beads / Dolt files (added by bd init)
 .dolt/

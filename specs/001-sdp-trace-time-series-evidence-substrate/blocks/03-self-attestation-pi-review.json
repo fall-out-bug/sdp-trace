@@ -1,0 +1,69 @@
+{
+  "id": "block-03-self-attestation-pi-review-2026-05-01",
+  "block": "03-self-attestation-proof",
+  "review_type": "clean_context_pi_code_review",
+  "reviewed_at": "2026-05-01T00:00:00Z",
+  "invalid_review": {
+    "provider": "zai",
+    "model": "glm-5.1",
+    "verdict": "needs_revision",
+    "disposition": "rejected_stale_context",
+    "reason": "The review payload described a different implementation surface: flags --file/--json, files self-attestation-local-dev.json and self-attestation-wrong-signer.json, keys/local-dev.pub, heredoc JSON output, and Python/grep parsing. The actual implementation uses --case/--output/--all, self-attestation-negative-*.json fixtures, jq-based JSON serialization, OpenSSL DSSE envelope verification, and expected-negative detection.",
+    "registered_findings": [
+      "JSON output uses lowercase shell variable name for externally_attested",
+      "script exits 1 on --all but spec says it should exit 0",
+      "wrong-signer negative fixture passes locally_attested instead of failing",
+      "All self-attestation fixtures have digest_verified=fail including the positive fixture",
+      "stale-manifest fixture has valid 40-char hex source_commit, does not fail schema_valid",
+      "missing-external fixture does not explicitly exercise missing-external attestation failure",
+      "wrong-signer fixture has malformed dsse_payload_type",
+      "check_local_attestation structural fallback is too permissive",
+      "generate-local-dev-dsse.sh writes placeholder digest then overwrites",
+      "contract-release-verification fixture has release_signer but production_release_verified reports not_assessed",
+      "Verifier heredoc may produce invalid JSON if file path contains double quotes or backslashes",
+      "contract-release.dsse.json uses nested payload structure unlike other fixtures",
+      "docs/research/self-attestation-summary.md does not mention not_assessed sentinel value or local-dev trust boundary",
+      "generate-local-dev-dsse.sh uses git rev-parse HEAD as fallback zero-commit"
+    ]
+  },
+  "applicable_re_review": {
+    "reviewer": "re-review",
+    "block": "Block 03 Self-Attestation Proof",
+    "verdict": "pass",
+    "findings": []
+  },
+  "verification": {
+    "commands": [
+      {
+        "command": "rtk scripts/verify-self-attestation.sh --all",
+        "exit_code": 0
+      },
+      {
+        "command": "rtk npm run validate",
+        "exit_code": 0
+      }
+    ],
+    "positive_proof_states": {
+      "schema_valid": {
+        "state": "assessed",
+        "value": true
+      },
+      "digest_verified": {
+        "state": "assessed",
+        "value": true
+      },
+      "locally_attested": {
+        "state": "assessed",
+        "value": true
+      },
+      "externally_attested": {
+        "state": "not_assessed",
+        "value": null
+      },
+      "production_release_verified": {
+        "state": "not_assessed",
+        "value": null
+      }
+    }
+  }
+}

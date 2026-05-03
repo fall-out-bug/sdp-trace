@@ -1,4 +1,6 @@
 {
+  "origin": "external",
+  "producer": "sdp-gate-example",
   "gate": "scope-and-tests",
   "verdict": "pass",
   "evidence": [

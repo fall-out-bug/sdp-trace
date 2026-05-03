@@ -1,0 +1,385 @@
+{
+  "schema_version": "0.1.0",
+  "nodes": [
+    {
+      "id": "spec-001",
+      "kind": "spec",
+      "label": "sdp-trace time-series evidence substrate"
+    },
+    {
+      "id": "plan-001",
+      "kind": "plan",
+      "label": "self-proof as first product proof"
+    },
+    {
+      "id": "task-T011",
+      "kind": "task",
+      "label": "Define process metric catalog"
+    },
+    {
+      "id": "task-T020-T026",
+      "kind": "task",
+      "label": "Self-trace package artifacts"
+    },
+    {
+      "id": "task-T052-T056",
+      "kind": "task",
+      "label": "Self-trace validation, crisis evidence, accountability, metrics, negative fixture"
+    },
+    {
+      "id": "change-metric-catalog",
+      "kind": "change",
+      "label": "docs/process-metric-catalog.md"
+    },
+    {
+      "id": "change-self-trace-package",
+      "kind": "change",
+      "label": "examples/self-trace"
+    },
+    {
+      "id": "evidence-metric-catalog-created",
+      "kind": "evidence",
+      "label": "Metric catalog file hash"
+    },
+    {
+      "id": "evidence-contract-validation-pass",
+      "kind": "evidence",
+      "label": "Contract validation command"
+    },
+    {
+      "id": "evidence-crisis-judge-pass",
+      "kind": "external_verdict",
+      "label": "MiniMax crisis judge pass for roadmap honesty"
+    },
+    {
+      "id": "observation-block01-is-scaffold",
+      "kind": "observation",
+      "label": "Block 01 is scaffold, not product proof"
+    },
+    {
+      "id": "metric-self-trace-task-completion",
+      "kind": "metric_stream",
+      "label": "Self-trace task completion movement"
+    },
+    {
+      "id": "metric-self-trace-review-contradictions",
+      "kind": "metric_stream",
+      "label": "Review contradiction count movement"
+    },
+    {
+      "id": "accountability-self-trace",
+      "kind": "accountability",
+      "label": "Human-held DRI and escalation for self-trace proof",
+      "dri": "role:sdp-trace-engineering-dri",
+      "approver": "role:sdp-trace-cto",
+      "risk_owner": "role:sdp-trace-risk-owner",
+      "escalation": "role:sdp-trace-cto",
+      "escalation_trigger_condition": "Any unresolved P0-P3 review finding, failed validation command, or unsupported pilot-readiness claim escalates to role:sdp-trace-cto.",
+      "last_human_acknowledgment": {
+        "state": "not_assessed",
+        "reason": "This public self-trace fixture records human-held roles, but no timestamped human acknowledgment artifact is committed."
+      }
+    },
+    {
+      "id": "contract-release-verification-local",
+      "kind": "contract_release_verification",
+      "label": "Local private-equivalent release verification record"
+    },
+    {
+      "id": "plan-block-07-minimum-trust-kernel",
+      "kind": "plan",
+      "label": "Block 07 minimum trust kernel implementation plan"
+    },
+    {
+      "id": "task-block-07-slice-1-claim-consistency",
+      "kind": "task",
+      "label": "Block 07 Slice 1 claim consistency baseline"
+    },
+    {
+      "id": "change-claim-consistency-validator",
+      "kind": "change",
+      "label": "scripts/validate-claim-consistency.mjs and verifier integration"
+    },
+    {
+      "id": "change-claim-authoring-docs",
+      "kind": "change",
+      "label": "docs/claim-authoring.md and T070 claim tag"
+    },
+    {
+      "id": "evidence-claim-consistency-validation-pass",
+      "kind": "evidence",
+      "label": "Claim consistency validation pass"
+    },
+    {
+      "id": "evidence-unsupported-claim-tag-rejected",
+      "kind": "evidence",
+      "label": "Unsupported claim tag rejected"
+    },
+    {
+      "id": "evidence-nonauthoritative-prose-ignored",
+      "kind": "evidence",
+      "label": "Non-authoritative prose ignored"
+    },
+    {
+      "id": "observation-block-07-slice-1-claim-consistency-assessed",
+      "kind": "observation",
+      "label": "Slice 1 claim consistency assessed without Block 07 closure"
+    },
+    {
+      "id": "accountability-block-07-slice-1",
+      "kind": "accountability",
+      "label": "Human-held DRI and escalation for Block 07 Slice 1 claim consistency",
+      "dri": "role:sdp-trace-engineering-dri",
+      "approver": "role:sdp-trace-cto",
+      "risk_owner": "role:sdp-trace-risk-owner",
+      "escalation": "role:sdp-trace-cto",
+      "escalation_trigger_condition": "Any unsupported authoritative claim, false pass claim, stale closure contradiction, or failed claim-consistency validation escalates to role:sdp-trace-cto.",
+      "last_human_acknowledgment": {
+        "state": "not_assessed",
+        "reason": "This public self-trace fixture records human-held roles, but no timestamped human acknowledgment artifact is committed."
+      }
+    },
+    {
+      "id": "task-block-07-slices-2-5",
+      "kind": "task",
+      "label": "Block 07 Slices 2-5 verifier-backed trust repair"
+    },
+    {
+      "id": "change-false-closure-repair",
+      "kind": "change",
+      "label": "False closure claims repaired"
+    },
+    {
+      "id": "change-e2e-package-mode-split",
+      "kind": "change",
+      "label": "E2E package and complete validation modes split"
+    },
+    {
+      "id": "change-cross-reference-validator",
+      "kind": "change",
+      "label": "Cross-reference integrity validator"
+    },
+    {
+      "id": "evidence-block-07-slice-2-false-closure-repaired",
+      "kind": "evidence",
+      "label": "Slice 2 false closure repair evidence"
+    },
+    {
+      "id": "evidence-block-07-slice-4-package-mode-valid",
+      "kind": "evidence",
+      "label": "Slice 4 package mode evidence"
+    },
+    {
+      "id": "evidence-block-07-slice-5-cross-reference-valid",
+      "kind": "evidence",
+      "label": "Slice 5 cross-reference evidence"
+    },
+    {
+      "id": "observation-block-07-slices-2-5-assessed",
+      "kind": "observation",
+      "label": "Block 07 Slices 2-5 assessed"
+    },
+    {
+      "id": "accountability-block-07-slices-2-5",
+      "kind": "accountability",
+      "label": "Block 07 Slices 2-5 accountable roles"
+    }
+  ],
+  "edges": [
+    {
+      "from": "plan-001",
+      "to": "spec-001",
+      "relation": "supports"
+    },
+    {
+      "from": "task-T011",
+      "to": "spec-001",
+      "relation": "implements"
+    },
+    {
+      "from": "task-T020-T026",
+      "to": "spec-001",
+      "relation": "implements"
+    },
+    {
+      "from": "task-T052-T056",
+      "to": "spec-001",
+      "relation": "implements"
+    },
+    {
+      "from": "task-T011",
+      "to": "change-metric-catalog",
+      "relation": "produces"
+    },
+    {
+      "from": "task-T020-T026",
+      "to": "change-self-trace-package",
+      "relation": "produces"
+    },
+    {
+      "from": "change-metric-catalog",
+      "to": "evidence-metric-catalog-created",
+      "relation": "produces"
+    },
+    {
+      "from": "change-self-trace-package",
+      "to": "evidence-contract-validation-pass",
+      "relation": "produces"
+    },
+    {
+      "from": "evidence-crisis-judge-pass",
+      "to": "evidence-contract-validation-pass",
+      "relation": "records_external"
+    },
+    {
+      "from": "observation-block01-is-scaffold",
+      "to": "evidence-crisis-judge-pass",
+      "relation": "derived_from"
+    },
+    {
+      "from": "metric-self-trace-task-completion",
+      "to": "evidence-contract-validation-pass",
+      "relation": "supports"
+    },
+    {
+      "from": "metric-self-trace-review-contradictions",
+      "to": "evidence-crisis-judge-pass",
+      "relation": "supports"
+    },
+    {
+      "from": "change-self-trace-package",
+      "to": "accountability-self-trace",
+      "relation": "accountable_to"
+    },
+    {
+      "from": "contract-release-verification-local",
+      "to": "change-self-trace-package",
+      "relation": "verifies"
+    },
+    {
+      "from": "plan-block-07-minimum-trust-kernel",
+      "to": "spec-001",
+      "relation": "supports"
+    },
+    {
+      "from": "task-block-07-slice-1-claim-consistency",
+      "to": "plan-block-07-minimum-trust-kernel",
+      "relation": "implements"
+    },
+    {
+      "from": "task-block-07-slice-1-claim-consistency",
+      "to": "change-claim-consistency-validator",
+      "relation": "produces"
+    },
+    {
+      "from": "task-block-07-slice-1-claim-consistency",
+      "to": "change-claim-authoring-docs",
+      "relation": "produces"
+    },
+    {
+      "from": "change-claim-consistency-validator",
+      "to": "evidence-claim-consistency-validation-pass",
+      "relation": "produces"
+    },
+    {
+      "from": "change-claim-consistency-validator",
+      "to": "evidence-unsupported-claim-tag-rejected",
+      "relation": "produces"
+    },
+    {
+      "from": "change-claim-consistency-validator",
+      "to": "evidence-nonauthoritative-prose-ignored",
+      "relation": "produces"
+    },
+    {
+      "from": "observation-block-07-slice-1-claim-consistency-assessed",
+      "to": "evidence-claim-consistency-validation-pass",
+      "relation": "derived_from"
+    },
+    {
+      "from": "observation-block-07-slice-1-claim-consistency-assessed",
+      "to": "evidence-unsupported-claim-tag-rejected",
+      "relation": "derived_from"
+    },
+    {
+      "from": "observation-block-07-slice-1-claim-consistency-assessed",
+      "to": "evidence-nonauthoritative-prose-ignored",
+      "relation": "derived_from"
+    },
+    {
+      "from": "change-claim-consistency-validator",
+      "to": "accountability-block-07-slice-1",
+      "relation": "accountable_to"
+    },
+    {
+      "from": "change-claim-authoring-docs",
+      "to": "accountability-block-07-slice-1",
+      "relation": "accountable_to"
+    },
+    {
+      "from": "task-block-07-slices-2-5",
+      "to": "plan-block-07-minimum-trust-kernel",
+      "relation": "implements"
+    },
+    {
+      "from": "task-block-07-slices-2-5",
+      "to": "change-false-closure-repair",
+      "relation": "produces"
+    },
+    {
+      "from": "task-block-07-slices-2-5",
+      "to": "change-e2e-package-mode-split",
+      "relation": "produces"
+    },
+    {
+      "from": "task-block-07-slices-2-5",
+      "to": "change-cross-reference-validator",
+      "relation": "produces"
+    },
+    {
+      "from": "change-false-closure-repair",
+      "to": "evidence-block-07-slice-2-false-closure-repaired",
+      "relation": "produces"
+    },
+    {
+      "from": "change-e2e-package-mode-split",
+      "to": "evidence-block-07-slice-4-package-mode-valid",
+      "relation": "produces"
+    },
+    {
+      "from": "change-cross-reference-validator",
+      "to": "evidence-block-07-slice-5-cross-reference-valid",
+      "relation": "produces"
+    },
+    {
+      "from": "observation-block-07-slices-2-5-assessed",
+      "to": "evidence-block-07-slice-2-false-closure-repaired",
+      "relation": "derived_from"
+    },
+    {
+      "from": "observation-block-07-slices-2-5-assessed",
+      "to": "evidence-block-07-slice-4-package-mode-valid",
+      "relation": "derived_from"
+    },
+    {
+      "from": "observation-block-07-slices-2-5-assessed",
+      "to": "evidence-block-07-slice-5-cross-reference-valid",
+      "relation": "derived_from"
+    },
+    {
+      "from": "change-false-closure-repair",
+      "to": "accountability-block-07-slices-2-5",
+      "relation": "accountable_to"
+    },
+    {
+      "from": "change-e2e-package-mode-split",
+      "to": "accountability-block-07-slices-2-5",
+      "relation": "accountable_to"
+    },
+    {
+      "from": "change-cross-reference-validator",
+      "to": "accountability-block-07-slices-2-5",
+      "relation": "accountable_to"
+    }
+  ]
+}

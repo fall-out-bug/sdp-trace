@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/assessment-input.schema.json",
+  "title": "SDP Trace Assessment Input",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "scope",
+    "trace_snapshot_ref",
+    "evidence_events",
+    "provenance_records",
+    "metric_streams",
+    "observations",
+    "not_assessed",
+    "generated_at",
+    "producer",
+    "accountability",
+    "risk_classification",
+    "contract_release_verification_ref"
+  ],
+  "propertyNames": {
+    "not": {
+      "enum": [
+        "verdict",
+        "decision",
+        "gate_result",
+        "gate_verdict",
+        "readiness",
+        "readiness_verdict",
+        "degradation_status",
+        "policy_result",
+        "policy_threshold",
+        "evidence_strength",
+        "quality_score",
+        "override_result"
+      ]
+    }
+  },
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "scope": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "trace_snapshot_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "evidence_bundle_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "evidence_events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/evidence-event.schema.json" }
+    },
+    "provenance_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/provenance-record.schema.json" }
+    },
+    "metric_streams": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/metric-stream.schema.json" }
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/observation.schema.json" }
+    },
+    "external_verdict_inputs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/external-verdict-input.schema.json" }
+    },
+    "not_assessed": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/notAssessedEntry" }
+    },
+    "generated_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "producer": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" },
+    "risk_classification": { "$ref": "https://schemas.sdp.dev/trace/risk-classification.schema.json" },
+    "contract_release_verification_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,75 @@
+{
+  "id": "self-attestation-local-dev-positive",
+  "schema_version": "0.1.0",
+  "generated_at": "2026-05-01T14:14:57Z",
+  "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
+  "manifest_digest": "e70625f66f2135af95fd271124de99462e2cf659c5825d5cbd5c777f4391ac51",
+  "manifest_digest_status": "matched",
+  "artifact_digest_status": "matched",
+  "dsse_envelope_ref": "examples/contract-foundation/contract-release.dsse.json",
+  "signature_status": "valid",
+  "signer_identity": "local-dev-dsse-openssl-v1:0de3d42a8f3beab21879daa6bb8d131ea4c03029ab21180155242911b7ae0158",
+  "expected_signer_identity": "local-dev-dsse-openssl-v1:0de3d42a8f3beab21879daa6bb8d131ea4c03029ab21180155242911b7ae0158",
+  "policy_expected_signer_identity": "local-dev-dsse-openssl-v1:0de3d42a8f3beab21879daa6bb8d131ea4c03029ab21180155242911b7ae0158",
+  "signer_identity_status": "matched",
+  "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
+  "identity_policy_status": "matched",
+  "source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+  "expected_source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+  "source_commit_status": "mismatch",
+  "source_commit_artifact_status": "mismatch",
+  "source_commit_artifact_counts": {
+    "checked": 27,
+    "missing": 82,
+    "mismatched": 27
+  },
+  "external_trust_profile": "not_assessed",
+  "external_attestation_ref": null,
+  "transparency_evidence_ref": null,
+  "source_uri_status": "not_assessed",
+  "protected_ref_status": "not_assessed",
+  "workflow_identity_status": "not_assessed",
+  "approval_status": "not_assessed",
+  "production_release_verified": {
+    "state": "not_assessed",
+    "value": null,
+    "reason": "Production release verification requires external attestation in addition to local digest and DSSE checks."
+  },
+  "freshness_status": "current",
+  "verification_artifact_ref": "examples/contract-foundation/contract-release-verification.example.json",
+  "verification_artifact_status": "matched",
+  "proof_states": {
+    "schema_valid": {
+      "state": "assessed",
+      "value": true
+    },
+    "digest_verified": {
+      "state": "assessed",
+      "value": true
+    },
+    "locally_attested": {
+      "state": "assessed",
+      "value": false,
+      "reason": "source_commit verification found missing or mismatched manifest artifacts; this proof cannot claim source-content attestation"
+    },
+    "source_commit_artifacts_verified": {
+      "state": "assessed",
+      "value": false,
+      "reason": "source_commit verification found missing or mismatched manifest artifacts; this proof cannot claim source-content attestation"
+    },
+    "externally_attested": {
+      "state": "not_assessed",
+      "value": null,
+      "reason": "No Sigstore/Rekor bundle or customer PKI attestation is committed for this local development proof."
+    },
+    "production_release_verified": {
+      "state": "not_assessed",
+      "value": null,
+      "reason": "Production release verification requires external attestation in addition to local digest and DSSE checks."
+    }
+  },
+  "trusted_contract_release": false,
+  "expected_negative": false,
+  "negative_reason": "",
+  "negative_detected": false
+}

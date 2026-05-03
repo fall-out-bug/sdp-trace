@@ -1,26 +1,23 @@
-# sdp-trace CTO Brief
+# sdp-trace for CTOs in One Minute
 
-AI coding is easy to start and hard to govern.
+AI-assisted delivery increases speed, but it weakens control: a week later it is hard to know what was promised, who or what did the work, what evidence exists, what is missing, and who owns the next step.
 
-The risk is not that an agent writes code. The risk is that nobody can later explain the scope, provenance, evidence, and quality decision behind the change.
+`sdp-trace` is not here to say "everything is fine" or "we are degrading." It exists to record a verifiable chain:
 
-`sdp-trace` is a portable trust layer for AI-assisted delivery. It lets teams keep their existing harness while making changes traceable, evidence-backed, and gateable.
+```text
+idea -> spec -> task -> change -> evidence -> provenance -> accountability -> metric movement -> verified contract
+```
 
-## What It Controls
+For the CTO, this means the process can be inspected over time. Not through opinions or opaque scores, but through prior/current/delta values, evidence coverage, and explicit `not_assessed` gaps.
 
-- Scope: what change was intended.
-- Provenance: who or what performed the work.
-- Evidence: tests, CI, reviews, commands, diffs, and referenced files.
-- Gate verdict: `pass`, `warn`, `fail`, or `not_assessed`.
-- Decision record: why the change was accepted, blocked, or overridden.
+For the CEO, this means the accountable owner is not AI. Every significant artifact has a human-held DRI, approver, risk owner, and escalation path.
 
-## What It Does Not Promise
+For the CIO, this means the contract cannot be silently simplified. Schemas, docs, validation scripts, and fixtures are covered by a contract manifest with digest verification and a release verification profile.
 
-- It does not replace code review.
-- It does not guarantee compliance.
-- It does not prove code is bug-free.
-- It does not require replacing Claude Code, Codex, OpenCode, Cursor, or an internal harness.
+`sdp-trace` deliberately does not make policy decisions: pass/fail, readiness, degradation, thresholds, and overrides belong to `sdp-gate` or another external policy consumer.
 
-## First Adoption Step
+Block 01 builds the contract scaffold: evidence contracts, accountability, manifest verification, signing profile, negative fixtures, and proof that missing data remains `not_assessed`.
 
-Start with one repo and one real AI-assisted change. Produce an evidence bundle and a gate verdict. If the verdict helps reviewers make a better decision, expand to PR gates through `sdp-gate`.
+The product is not allowed to ask a customer for trust until it traces itself. The next proof must show this repository's own spec, plan, tasks, changes, evidence, provenance, accountability, reviews, metrics, and missing data under the same contracts.
+
+Repository evidence starts at `specs/001-sdp-trace-time-series-evidence-substrate/`, `schema/README.md`, `examples/contract-foundation/`, and `docs/research/block-01-validation-summary.md`.

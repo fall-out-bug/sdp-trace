@@ -1,0 +1,183 @@
+[
+  {
+    "id": "provenance-codex-self-trace",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "apply_patch",
+    "command": "create self-trace artifacts",
+    "context_refs": [
+      "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
+      "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md"
+    ],
+    "captured_at": "2026-04-30T20:50:00Z",
+    "payload_digest": "5a85260a43b25b47e33ee243e17ed4bfe54b8a4378c17a068881848f6aea87e7",
+    "digest_algorithm": "sha256",
+    "chain_scope": "self-trace-v0",
+    "unavailable_fields": [
+      {
+        "field": "model_version",
+        "state": "not_assessed",
+        "reason": "The local Codex session does not expose a stable model version string."
+      },
+      {
+        "field": "immutable_source_commit",
+        "state": "not_assessed",
+        "reason": "Self-trace is being produced before a final commit exists."
+      }
+    ]
+  },
+  {
+    "id": "provenance-rtk-validation",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "rtk",
+    "command": "scripts/validate-contracts.sh",
+    "captured_at": "2026-04-30T20:50:00Z",
+    "payload_digest": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+    "digest_algorithm": "sha256",
+    "chain_scope": "self-trace-v0",
+    "unavailable_fields": [
+      {
+        "field": "ci_run_id",
+        "state": "not_assessed",
+        "reason": "Validation was run locally, not in CI."
+      }
+    ]
+  },
+  {
+    "id": "provenance-pi-kimi-crisis-critic",
+    "schema_version": "0.1.0",
+    "actor_id": "pi-kimi-k2p6",
+    "actor_type": "ai_agent",
+    "harness": "pi",
+    "model_family": "Kimi",
+    "model_version": "k2p6",
+    "tool_name": "pi",
+    "command": "pi --provider kimi-coding --model k2p6 --no-tools --no-context-files",
+    "captured_at": "2026-04-30T20:50:00Z",
+    "payload_digest": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498",
+    "digest_algorithm": "sha256",
+    "chain_scope": "crisis-self-proof-review"
+  },
+  {
+    "id": "provenance-pi-glm-crisis-critic",
+    "schema_version": "0.1.0",
+    "actor_id": "pi-glm-5-1",
+    "actor_type": "ai_agent",
+    "harness": "pi",
+    "model_family": "GLM",
+    "model_version": "glm-5.1",
+    "tool_name": "pi",
+    "command": "pi --provider zai --model glm-5.1 --no-tools --no-context-files",
+    "captured_at": "2026-04-30T20:50:00Z",
+    "payload_digest": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e",
+    "digest_algorithm": "sha256",
+    "chain_scope": "crisis-self-proof-review"
+  },
+  {
+    "id": "provenance-pi-minimax-crisis-judge",
+    "schema_version": "0.1.0",
+    "actor_id": "pi-minimax-m2-7",
+    "actor_type": "ai_agent",
+    "harness": "pi",
+    "model_family": "MiniMax",
+    "model_version": "MiniMax-M2.7",
+    "tool_name": "pi",
+    "command": "pi --provider minimax --model MiniMax-M2.7 --no-tools --no-context-files",
+    "captured_at": "2026-04-30T20:50:00Z",
+    "payload_digest": "e9bf0b045d27923d1ba4b09b72043c52153f1525bb79a791b41b99d8d5075b52",
+    "digest_algorithm": "sha256",
+    "chain_scope": "crisis-self-proof-review"
+  },
+  {
+    "id": "provenance-codex-block-07-slice-1",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "apply_patch",
+    "command": "implement Block 07 Slice 1 claim consistency validator, specs, and trace coverage",
+    "context_refs": [
+      "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md",
+      "docs/claim-authoring.md",
+      "scripts/validate-claim-consistency.mjs"
+    ],
+    "captured_at": "2026-05-03T12:50:00Z",
+    "payload_digest": "6b69fd276fdba9d37005d282b2464c9470d6cd31b043f75662c08b5fd3f14c4b",
+    "digest_algorithm": "sha256",
+    "chain_scope": "block-07-slice-1-claim-consistency"
+  },
+  {
+    "id": "provenance-rtk-claim-consistency-validation",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "rtk",
+    "command": "npm test; scripts/verify.sh --profile baseline --allow-dirty --json",
+    "context_refs": [
+      "scripts/test-verify.sh",
+      "scripts/verify.sh",
+      "scripts/validate-claim-consistency.mjs"
+    ],
+    "captured_at": "2026-05-03T12:50:00Z",
+    "payload_digest": "3571831428c07d294b92a79c2b52b6d22c7f7fbaf1e5b0af58373294daf1d8f8",
+    "digest_algorithm": "sha256",
+    "chain_scope": "block-07-slice-1-claim-consistency",
+    "unavailable_fields": [
+      {
+        "field": "ci_run_id",
+        "state": "not_assessed",
+        "reason": "Validation was run locally, not in CI."
+      }
+    ]
+  },
+  {
+    "id": "provenance-codex-block-07-slices-2-5",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "apply_patch",
+    "command": "implement Block 07 Slice 2 false-closure repair, Slice 4 package mode split, Slice 3/6 profile surface, and Slice 5 cross-reference validation",
+    "context_refs": [
+      "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md",
+      "scripts/verify.sh",
+      "scripts/validate-e2e-pilot-package.sh",
+      "scripts/validate-cross-references.mjs"
+    ],
+    "captured_at": "2026-05-03T15:05:00Z",
+    "payload_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "digest_algorithm": "sha256",
+    "chain_scope": "block-07-slices-2-5"
+  },
+  {
+    "id": "provenance-rtk-block-07-slices-2-5-validation",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "rtk",
+    "command": "scripts/test-verify.sh; scripts/test-e2e-pilot-package.sh; scripts/validate-cross-references.mjs",
+    "context_refs": [
+      "scripts/test-verify.sh",
+      "scripts/test-e2e-pilot-package.sh",
+      "scripts/validate-cross-references.mjs"
+    ],
+    "captured_at": "2026-05-03T15:05:00Z",
+    "payload_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "digest_algorithm": "sha256",
+    "chain_scope": "block-07-slices-2-5",
+    "unavailable_fields": [
+      {
+        "field": "ci_run_id",
+        "state": "not_assessed",
+        "reason": "Validation was run locally, not in CI."
+      }
+    ]
+  }
+]

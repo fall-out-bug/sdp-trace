@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `/specs/001-sdp-trace-time-series-evidence-substrate/`
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/sdp-trace-sdp-gate-boundary.md`
-**Tests**: Include schema syntax checks now; add JSON Schema validation after validator selection.
+**Tests**: Include schema syntax checks now; schemas target JSON Schema Draft 2020-12 and committed examples validate with pinned local `ajv@8.20.0` through `scripts/validate-json-schema.mjs` once schema/example pairs exist.
 
 **Organization**: Tasks are grouped by user story to preserve independent value and reviewability.
 
@@ -18,7 +18,7 @@
 
 - [x] T001 [US4] Add root README pointer to `specs/001-sdp-trace-time-series-evidence-substrate/spec.md`
 - [x] T002 [US4] Link Beads epic `sdp-trace-cdn` and child issues to this spec with `bd update --spec-id`
-- [ ] T003 [US4] Document in `docs/speckit-compatibility.md` that Beads is secondary execution tracking, not the planning source of truth
+- [x] T003 [US4] Document in `docs/speckit-compatibility.md` that Beads is secondary execution tracking, not the planning source of truth
 
 **Checkpoint**: A repository observer can start from `specs/001-sdp-trace-time-series-evidence-substrate/` without Beads.
 
@@ -27,11 +27,21 @@
 **Purpose**: Prevent policy/runtime coupling before schema work starts.
 
 - [x] T004 [US2] Write source-mapped extraction memo in `specs/001-sdp-trace-time-series-evidence-substrate/research.md` from `sdp_lab` sources (Beads mirror: `sdp-trace-cdn.1`)
-- [ ] T005 [US2] Finalize `contracts/sdp-trace-sdp-gate-boundary.md` and update `docs/concepts.md` with the same boundary (Beads mirror: `sdp-trace-cdn.2`)
-- [ ] T006 [US2] Audit `README.md`, `docs/cto-brief.en.md`, `docs/cto-brief.ru.md`, `docs/team-lead-playbook.en.md`, and `docs/team-lead-playbook.ru.md` for language implying `sdp-trace` owns policy decisions (Beads mirror: `sdp-trace-cdn.11`)
-- [ ] T007 [US2] Replace or narrow gate/decision wording so external verdicts are recorded inputs, not `sdp-trace` decisions (Beads mirror: `sdp-trace-cdn.11`)
+- [x] T005 [US2] Finalize `contracts/sdp-trace-sdp-gate-boundary.md` and update `docs/concepts.md` with the same boundary (Beads mirror: `sdp-trace-cdn.2`)
+- [x] T006 [US2] Audit `README.md`, `docs/cto-brief.en.md`, `docs/cto-brief.ru.md`, `docs/team-lead-playbook.en.md`, and `docs/team-lead-playbook.ru.md` for language implying `sdp-trace` owns policy decisions (Beads mirror: `sdp-trace-cdn.11`)
+- [x] T007 [US2] Replace or narrow gate/decision wording so external verdicts are recorded inputs, not `sdp-trace` decisions (Beads mirror: `sdp-trace-cdn.11`)
+- [x] T051 [US4] Rewrite `docs/cto-brief.en.md` and `docs/cto-brief.ru.md` as one-minute CTO decision narratives mapped to SpecKit evidence, with no marketing claims or native `sdp-trace` policy verdicts (Beads mirror: `sdp-trace-cdn.11`)
+- [x] T034 [US4] Document JSON Schema Draft 2020-12, pinned local `ajv@8.20.0`, schema IDs, and schema versioning in `schema/README.md` before new schema authoring starts (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T040 [US2] Document committed artifact safety rules: sanitization, SHA-256 digests, redaction notes, `integrity_status`, and no secrets or raw customer data in committed examples
+- [x] T044 [US5] Design `schema/accountability.schema.json` for human-held DRI, approver, escalation, risk owner, authority scope, approval reference, and line of defense (Beads mirror: `sdp-trace-cdn.2`)
+- [x] T045 [US5] Design `schema/risk-classification.schema.json` for observed autonomy, observed impact, classification source, and external oversight assertions without internal pass/fail or oversight derivation (Beads mirror: `sdp-trace-cdn.2`)
+- [x] T046 [US5] Design `schema/contract-manifest.schema.json` and example manifest covering schema, doc, validation script, fixture, source commit, approval, compatibility, and previous-manifest digests (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T047 [US5] Design `schema/contract-release-verification.schema.json` and signing profile docs for `sdp-trace-signature/sigstore-dsse-keyless-v1` (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T048 [US5] Add negative fixtures for AI-as-sole-accountable-owner and modified contract manifest digest mismatch (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T049 [US5] Add trusted signer identity policy example and mismatch fixture covering OIDC issuer, source URI, protected ref, workflow identity, release captain, and required approval refs (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T050 [US5] Produce one local contract release verification evidence record for the target signing profile shape or approved private equivalent before claiming contract scaffolding complete (Beads mirror: `sdp-trace-cdn.8`)
 
-**Checkpoint**: `sdp-trace` and `sdp-gate` ownership is clear before new schemas are added.
+**Checkpoint**: `sdp-trace` and `sdp-gate` ownership, CTO narrative, validator strategy, and artifact safety rules are clear before new schemas are added.
 
 ## Phase 3: User Story 1 - CTO Reviews Process Movement (Priority: P1)
 
@@ -41,16 +51,16 @@
 
 ### Contract and Schema Tasks
 
-- [ ] T008 [P] [US1] Design `schema/observation.schema.json` for evidence-backed observations (Beads mirror: `sdp-trace-cdn.3`)
-- [ ] T009 [P] [US1] Design `schema/metric-stream.schema.json` for metric samples and streams (Beads mirror: `sdp-trace-cdn.3`)
-- [ ] T010 [US1] Add examples under `examples/github-speckit/` showing current-window vs previous-window movement without policy verdicts
-- [ ] T011 [US1] Define metric catalog in `docs/process-metric-catalog.md` with units, dimensions, evidence source, and `not_assessed` rule (Beads mirror: `sdp-trace-cdn.5`)
-- [ ] T012 [US1] Update `schema/trace.schema.json` or document a replacement path so trace snapshots can include observations and metric samples
+- [x] T008 [P] [US1] Design `schema/observation.schema.json` for evidence-backed observations (Beads mirror: `sdp-trace-cdn.3`)
+- [x] T009 [P] [US1] Design `schema/metric-stream.schema.json` for metric samples, stream comparisons, prior/current values, deltas, evidence coverage, and no interpretation labels (Beads mirror: `sdp-trace-cdn.3`)
+- [x] T010 [US1] Add examples under `examples/github-speckit/` showing current-window vs previous-window movement without policy verdicts or degradation labels
+- [x] T011 [US1] Define metric catalog in `docs/process-metric-catalog.md` with units, dimensions, evidence source, and `not_assessed` rule (Beads mirror: `sdp-trace-cdn.5`)
+- [x] T012 [US1] Update `schema/trace.schema.json` or document a replacement path so trace snapshots can include observations and metric samples
 
 ### Verification Tasks
 
-- [ ] T013 [US1] Run `jq empty schema/*.json`
-- [ ] T014 [US1] Record validation output in a sanitized evidence note under `docs/research/`
+- [x] T013 [US1] Run `jq empty schema/*.json`
+- [x] T014 [US1] Record validation output in a sanitized evidence note under `docs/research/`
 
 **Checkpoint**: CTO-facing process movement exists as data, not as a policy verdict.
 
@@ -60,47 +70,120 @@
 
 **Independent Test**: An assessment input example contains evidence, observations, metric streams, and `not_assessed`, but no pass/fail/degradation decision.
 
-- [ ] T015 [P] [US2] Design `schema/evidence-event.schema.json` from portable evidence-event concepts (Beads mirror: `sdp-trace-cdn.4`)
-- [ ] T016 [P] [US2] Design `schema/provenance-record.schema.json` for actor/model/harness/tool provenance (Beads mirror: `sdp-trace-cdn.4`)
-- [ ] T017 [US2] Design `schema/assessment-input.schema.json` for policy-engine handoff
-- [ ] T018 [US2] Add `examples/go-service/assessment-input.json` or equivalent portable example
-- [ ] T019 [US2] Update `schema/README.md` with ownership and validation rules
+- [x] T015 [P] [US2] Design `schema/evidence-event.schema.json` from portable evidence-event concepts, including redaction, hash, integrity, pending, duplicate, and conflict metadata (Beads mirror: `sdp-trace-cdn.4`)
+- [x] T016 [P] [US2] Design `schema/provenance-record.schema.json` for actor/model/harness/tool provenance, SHA-256 payload digests, and optional same-chain `hash_prev` (Beads mirror: `sdp-trace-cdn.4`)
+- [x] T017 [US2] Design `schema/assessment-input.schema.json` for policy-engine handoff with no native policy verdicts
+- [x] T018 [US2] Add `schema/external-verdict-input.schema.json` and examples that record external verdicts or evidence-strength assertions as externally produced inputs
+- [x] T019 [US2] Add `examples/go-service/assessment-input.json` or equivalent portable example
+- [x] T041 [US2] Add a negative validation example showing that a native `sdp-trace` assessment input cannot contain pass/fail/readiness/degradation fields
+- [x] T042 [US2] Update `schema/README.md` with ownership, external verdict, validation, versioning, and migration rules
 
 **Checkpoint**: `sdp-gate` has a clear inherited input contract.
 
-## Phase 5: Self-Trace v0 - First Consumer Test (Priority: P1)
+## Phase 5: Self-Trace v0 - Mandatory Product Proof (Priority: P0)
 
-**Goal**: Use the new `sdp-trace` contracts to trace development of this SpecKit feature before running the customer pilot matrix.
+**Goal**: Use the new `sdp-trace` contracts to trace development of this SpecKit feature before running the customer pilot matrix or making any product trust claim.
 
 **Independent Test**: `examples/self-trace/assessment-input.json` can describe this feature's spec, plan, tasks, commits, evidence, observations, metric stream, and `not_assessed` gaps without a gate decision.
 
 **Beads mirror**: `sdp-trace-cdn.12`
 
-- [ ] T020 [US1] Add `examples/self-trace/evidence-events.json` covering commits, touched files, commands run, schema checks, and SpecKit task status
-- [ ] T021 [US1] Add `examples/self-trace/provenance-records.json` covering human actor, Codex session, command summaries, and missing fields as `not_assessed`
-- [ ] T022 [US1] Add `examples/self-trace/observations.json` recording that SpecKit artifacts exist, Beads mirrors SpecKit, schema syntax passed, and boundary docs remain partial until T005-T007 complete
-- [ ] T023 [US1] Add `examples/self-trace/metric-stream.json` with at least evidence completeness, `not_assessed` count, schema validity, and SpecKit task completion samples
-- [ ] T024 [US2] Add `examples/self-trace/trace-snapshot.json` linking spec, plan, tasks, changes, evidence, observations, and metric samples
-- [ ] T025 [US2] Add `examples/self-trace/assessment-input.json` as the first policy-engine handoff package, without pass/fail/degradation decision
-- [ ] T026 [US4] Record self-trace validation notes in `docs/research/self-trace-v0-summary.md`
+**Hard rule**: If T020-T026 are incomplete, `sdp-trace` has not proven itself. Pilot work remains blocked.
 
-**Checkpoint**: `sdp-trace` can describe its own development at v0 before claiming external pilot readiness.
+- [x] T020 [US1] Add `examples/self-trace/evidence-events.json` covering commits, touched files, commands run, schema checks, SpecKit task status, redaction notes, and integrity status
+- [x] T021 [US1] Add `examples/self-trace/provenance-records.json` covering human actor, Codex session, command summaries, payload digests, and missing fields as `not_assessed`
+- [x] T022 [US1] Add `examples/self-trace/observations.json` recording that SpecKit artifacts exist, Beads mirrors SpecKit, schema syntax passed, and boundary docs remain partial until T005-T007 complete
+- [x] T023 [US1] Add `examples/self-trace/metric-stream.json` with at least evidence completeness, `not_assessed` count, schema validity, and SpecKit task completion samples
+- [x] T024 [US2] Add `examples/self-trace/trace-snapshot.json` linking spec, plan, tasks, changes, evidence, observations, metric samples, and any external verdict inputs as external
+- [x] T025 [US2] Add `examples/self-trace/assessment-input.json` as the first policy-engine handoff package, without pass/fail/degradation decision
+- [x] T026 [US4] Record self-trace validation notes in `docs/research/self-trace-v0-summary.md`
+- [x] T052 [US4] Add a self-trace validation command that validates `examples/self-trace/assessment-input.json` and every referenced self-trace artifact from a fresh checkout (Beads mirror: `sdp-trace-cdn.12`)
+- [x] T053 [US4] Record the crisis Socratic review artifacts as external review evidence in the self-trace package (Beads mirror: `sdp-trace-cdn.12`)
+- [x] T054 [US5] Ensure self-trace accountability names human-held DRI, approver, risk owner, and escalation for the repository proof itself (Beads mirror: `sdp-trace-cdn.12`)
+- [x] T055 [US1] Add self-trace metric samples for contract task completion, evidence coverage, `not_assessed` count, schema validity, and review contradiction count (Beads mirror: `sdp-trace-cdn.12`)
+- [x] T056 [US2] Add a negative self-trace fixture proving a self-trace package with native pass/fail/readiness/degradation fields fails validation (Beads mirror: `sdp-trace-cdn.12`)
+
+**Checkpoint**: `sdp-trace` can describe its own development at v0 before claiming external pilot readiness. Without this checkpoint, the product remains conceptually unproven.
+
+## Phase 5A: Self-Attested Contract Release (Priority: P0)
+
+**Goal**: Prove the contract release against an immutable source reference and explicit attestation level before treating the contract as trusted.
+
+**Independent Test**: A fresh checkout can run one command that reports `schema_valid`, `digest_verified`, `locally_attested`, `externally_attested`, and `production_release_verified` as separate states, with missing states recorded as `not_assessed`.
+
+**Beads mirror**: `sdp-trace-cdn.13`
+
+- [x] T057 [US5] Replace local manifest `source_commit` placeholders with an immutable git commit or signed source reference before trusted-release claims (Beads mirror: `sdp-trace-cdn.13`)
+- [x] T058 [US5] Add `scripts/verify-self-attestation.sh` or equivalent release verifier that reports separate proof states instead of one overloaded trusted flag (Beads mirror: `sdp-trace-cdn.13`)
+- [x] T059 [US5] Add a self-attestation evidence record under `examples/self-trace/` covering manifest digest, DSSE envelope binding, signer identity, freshness, and rollback status (Beads mirror: `sdp-trace-cdn.13`)
+- [x] T060 [US5] Add negative self-attestation fixtures for wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, and modified verification artifact (Beads mirror: `sdp-trace-cdn.13`)
+- [x] T061 [US4] Record a self-attestation summary under `docs/research/self-attestation-summary.md` with exact commands and residual `not_assessed` items (Beads mirror: `sdp-trace-cdn.13`)
+
+**Checkpoint**: Local development proof may remain useful, but product trust claims remain blocked until self-attestation records the actual proof state without hiding missing external trust anchors.
+
+## Phase 5B: Source-Bound Release Finalization and External Trust Design (Priority: P0)
+
+**Goal**: Define the next release-finalization step that can close local source-content proof while keeping external production trust explicit and evidence-backed.
+
+**Independent Test**: A repository observer can read Block 04 spec and Socratic dialogue, then distinguish a source-bound local release from an externally trusted production release without relying on Beads context.
+
+**Beads mirror**: `sdp-trace-cdn.21`
+
+- [x] T062 [US5] Add `blocks/04-release-finalization-external-trust.md` defining source-bound local finalization plus external Sigstore/Rekor and customer PKI trust design (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T063 [US5] Add `blocks/04-release-finalization-socratic.md` recording challenge/resolution dialogue for local DSSE, dirty worktree proof, external trust anchors, customer PKI, pilot claims, and circular digest risk (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T064 [US5] Add implementation plan for a source-bound local finalization guard that refuses dirty-tree source-content proof and verifies manifest artifact digests against a committed source reference; release-proof regeneration remains a separate future step (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T065 [US5] Extend self-attestation result or adjacent schema to record external trust profile, transparency evidence, protected ref status, workflow identity status, approval status, and production release verification without generic trust shortcuts (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T066 [US5] Add external trust negative fixtures for missing Rekor/customer audit evidence, OIDC issuer mismatch, source URI mismatch, protected ref mismatch, workflow identity mismatch, approval mismatch, and expired freshness (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T067 [US4] Update release docs and self-attestation summary to use distinct terms: source-bound local release and externally trusted production release (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T068 [US4] Run Socratic review and obtain explicit consensus before implementing Block 04 code or changing release artifacts (Beads mirror: `sdp-trace-cdn.21`)
+- [x] T069 [US4] Run pi review for Block 04 specs and implementation, register every finding in Beads, and close every valid finding including P3/minor items (Beads mirror: `sdp-trace-cdn.21`)
+- [ ] T070 [US4] Stale historical closure: re-verify `rtk npm run validate`, `rtk git diff --check`, `rtk scripts/verify-self-attestation.sh --all`, and source-bound finalization guard fixtures before Block 04 can be treated as currently closed (Beads mirror: `sdp-trace-cdn.21`)
+<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=stale; profile=repo_baseline; evidence=state:claim_tags_consistent -->
+
+**Checkpoint**: Block 04 implementation artifacts exist, but current closure is stale until T070 is re-verified by live commands. External trust remains `not_assessed` unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
 
 ## Phase 6: User Story 3 - Pilot Evaluates Harness, Model, and JVM Stack Slices (Priority: P1)
 
 **Goal**: Create repeatable pilot run-cards and evidence paths for the customer-requested matrix.
 
-**Independent Test**: Each run-card lists prompt, expected artifacts, provenance fields, unsupported claims, validation, and `not_assessed` behavior.
+**Independent Test**: Each run-card lists prompt, expected artifacts, provenance fields, `unbacked_claim` capture, validation, and `not_assessed` behavior.
 
-- [ ] T027 [P] [US3] Add OpenCode run-card covering MiniMax, Kimi, and GLM in `docs/research/opencode-model-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
-- [ ] T028 [P] [US3] Add harness run-card for Superpowers, `gsd`, `gsd2`, and Oh My OpenAgent in `docs/research/harness-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
-- [ ] T029 [US3] Add Kotlin+Bazel pilot fixture plan in `docs/research/kotlin-bazel-fixture-plan.md` (Beads mirror: `sdp-trace-cdn.7`)
-- [ ] T030 [US3] Update `docs/jvm-bazel-guide.md` with Kotlin+Bazel-specific evidence requirements
-- [ ] T031 [US3] Add or update `examples/jvm-bazel/` with a Kotlin+Bazel evidence bundle or fixture placeholder that is explicitly `not_assessed` until run
-- [ ] T032 [US3] Update `docs/harness-compatibility-matrix.md` only with evidence-backed status or `TBD`/`not_assessed` (Beads mirror: `sdp-trace-cdn.10`)
-- [ ] T033 [US3] Update `docs/model-compatibility.md` only with evidence-backed status or `TBD`/`not_assessed` (Beads mirror: `sdp-trace-cdn.10`)
+- [x] T027 [P] [US3] Add OpenCode run-card covering MiniMax, Kimi, and GLM in `docs/research/opencode-model-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
+- [x] T028 [P] [US3] Add harness run-card for the Superpowers-style harness pattern, `gsd`, `gsd2`, and Oh My OpenAgent in `docs/research/harness-run-card.md` without introducing a Superpowers dependency (Beads mirror: `sdp-trace-cdn.6`)
+- [x] T029 [US3] Add Kotlin+Bazel pilot fixture plan in `docs/research/kotlin-bazel-fixture-plan.md` (Beads mirror: `sdp-trace-cdn.7`)
+- [x] T030 [US3] Update `docs/jvm-bazel-guide.md` with Kotlin+Bazel-specific evidence requirements
+- [x] T031 [US3] Add or update `examples/jvm-bazel/` with a Kotlin+Bazel evidence bundle or fixture placeholder that is explicitly `not_assessed` until run; do not call the Kotlin+Bazel gap closed until a committed run artifact exists
+- [x] T032 [US3] Update `docs/harness-compatibility-matrix.md` as a legacy-named evidence matrix with evidence state, reason code, artifact reference, gap reason, and next required evidence only (Beads mirror: `sdp-trace-cdn.10`)
+- [x] T033 [US3] Update `docs/model-compatibility.md` as a legacy-named evidence matrix with evidence state, reason code, artifact reference, gap reason, and next required evidence only (Beads mirror: `sdp-trace-cdn.10`)
+- [x] T071 [US3] Add Block 05 spec, Socratic dialogue, and implementation plan for customer pilot run-cards and evidence-package scope (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T072 [US3] Run pi review for Block 05 spec artifacts and register every valid finding in Beads, including minor/P3 findings (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T073 [US3] Close every valid Block 05 spec-gate review finding before implementation starts; implementation-target findings remain open under T027-T033/T037 (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T074 [US3] Run pi review for Block 05 implementation and register every valid finding in Beads, including minor/P3 findings (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T075 [US4] Verify Block 05 validation commands and close `sdp-trace-cdn.22` only after implementation review findings are closed (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T076 [US4] Add committed Block 05 pi-review ledger with findings, severity, disposition, evidence, and optional Beads mirror IDs (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T077 [US4] Add deterministic pilot matrix validation and wire it into `scripts/validate-contracts.sh` (Beads mirror: `sdp-trace-cdn.22`)
 
 **Checkpoint**: Pilot scope is executable without unsupported compatibility claims.
+
+## Phase 6A: User Story 3A - First Real Product Proof (Priority: P0)
+
+**Goal**: Prove one real E2E value path with OpenCode + MiniMax + Kotlin+Bazel without turning external tools into product dependencies.
+
+**Independent Test**: In an environment with OpenCode, MiniMax model access, and a Kotlin+Bazel target, a pilot operator can run the Block 06 command and validate a generated `sdp-trace` evidence package. A committed sanitized report states the tested-on environment and residual `not_assessed` gaps.
+
+**Beads mirror**: `sdp-trace-drq`
+
+- [x] T078 [US3] Add Block 06 spec, Socratic dialogue, and implementation plan for OpenCode + MiniMax + Kotlin+Bazel E2E proof (Beads mirror: `sdp-trace-drq`)
+- [x] T079 [US3] Run pi review for Block 06 spec artifacts, record every valid finding in `blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md`, and mirror every valid finding in Beads including minor/P3 findings (Beads mirror: `sdp-trace-drq`)
+- [x] T080 [US3] Close every valid Block 06 spec-gate review finding in the committed review ledger before implementation starts; Beads closure mirrors the ledger (Beads mirror: `sdp-trace-drq`)
+- [x] T081 [US3] Add reference runner `scripts/run-opencode-minimax-kotlin-bazel-proof.sh` that shells out to external OpenCode/Bazel tools without adding repository dependencies (Beads mirror: `sdp-trace-drq`)
+- [x] T082 [US3] Add `scripts/validate-e2e-pilot-package.sh` and proof-state checks for generated E2E pilot packages (Beads mirror: `sdp-trace-drq`)
+- [x] T083 [US3] Produce a committed sanitized OpenCode + MiniMax + Kotlin+Bazel proof package from a real run, or keep Block 06 incomplete with explicit `not_assessed` reason (Beads mirror: `sdp-trace-drq`)
+- [x] T084 [US3] Update OpenCode/Kotlin+Bazel docs and exact matrix rows only from the committed Block 06 proof package (Beads mirror: `sdp-trace-drq`)
+- [ ] T085 [US4] Run pi review for Block 06 implementation, record every valid finding in `blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md`, and mirror every valid finding in Beads including minor/P3 findings (Beads mirror: `sdp-trace-drq`)
+- [ ] T086 [US4] Verify `npm run validate`, `jq empty schema/*.json`, `git diff --check`, and Block 06 package validation before closing the review ledger and mirroring closure to `sdp-trace-drq` (Beads mirror: `sdp-trace-drq`)
+
+**Checkpoint**: The repository has at least one real, validated, sanitized product proof package for the exact first tested slice, or the product proof remains explicitly incomplete.
 
 ## Phase 7: User Story 4 - Repository Observer Finds SpecKit Evidence (Priority: P2)
 
@@ -108,14 +191,27 @@
 
 **Independent Test**: A reviewer can follow `quickstart.md`, validate schemas, and identify what remains `not_assessed`.
 
-- [ ] T034 [US4] Select and document JSON Schema validator strategy in `schema/README.md` (Beads mirror: `sdp-trace-cdn.8`)
-- [ ] T035 [US4] Add pass and `not_assessed` fixtures for new schemas under `examples/`
-- [ ] T036 [US4] Add validation command that excludes `.git`, `.beads`, `.sdp-trace-runs`, and `benchmarks/repos/` (Beads mirror: `sdp-trace-cdn.8`)
-- [ ] T037 [US4] Build customer pilot evidence package outline in `docs/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
-- [ ] T038 [US4] Verify `jq empty schema/*.json`
-- [ ] T039 [US4] Verify all committed examples are parseable JSON where applicable
+- [x] T035 [US4] Add pass and `not_assessed` fixtures for new schemas under `examples/`
+- [x] T036 [US4] Add validation command that uses pinned local `ajv@8.20.0` and excludes `.git`, `.beads`, `.sdp-trace-runs`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T037 [US4] Build customer pilot evidence package outline in `docs/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
+- [x] T038 [US4] Verify `jq empty schema/*.json`
+- [x] T039 [US4] Verify all committed examples are parseable JSON where applicable
+- [x] T043 [US4] Verify schema-version fields and compatibility notes for all committed examples that claim a schema contract
 
 **Checkpoint**: The repository itself explains the plan, proof, gaps, and execution path.
+
+## Phase 8: Agent and Human Usage Discovery (Queued After Block 07)
+
+**Goal**: Make the first-use path clear for both agents and human reviewers without creating claims that outrun the verifier.
+
+**Activation Gate**: Do not elaborate or implement this phase until Block 07 has either closed under live verifier evidence or remains open with a verifier-derived blocking state that this phase can explain honestly.
+
+- [ ] T087 [US4] After Block 07, run design review for `blocks/08-agent-human-usage-discovery.md` with separate agent-path and human-path critiques
+- [ ] T088 [US4] Define the agent entrypoint: profile selection, verifier command surface, evidence emission rules, and forbidden claims
+- [ ] T089 [US4] Define the human entrypoint: five-minute verification path, proof-scope explanation, dirty checkout warning, and `not_assessed` interpretation
+- [ ] T090 [US4] Review Block 08 with a fresh agent and record every valid finding before implementation planning
+
+**Checkpoint**: Agents and humans can independently discover how to use `sdp-trace`, and both paths converge on the same verifier-derived proof states.
 
 ## Dependencies & Execution Order
 
@@ -123,19 +219,26 @@
 
 - **Phase 1**: Start immediately.
 - **Phase 2**: Depends on Phase 1.
-- **Phase 3**: Depends on boundary clarity from Phase 2.
+- **Phase 3**: Depends on boundary clarity, T034 validator strategy, T040 artifact safety, and T044-T050 accountability/signing contract foundations from Phase 2.
 - **Phase 4**: Depends on Phase 2 and can run partly in parallel with Phase 3.
 - **Phase 5**: Depends on minimal schemas from Phases 3-4 and runs before external pilot claims.
-- **Phase 6**: Depends on self-trace learning from Phase 5.
+- **Phase 6**: Depends on self-trace and self-attestation learning from Phase 5 and Phase 5A and must not record support, readiness, or compatibility as native `sdp-trace` outcomes.
+- **Phase 6A**: Depends on Phase 6 run-card design and must prove one real OpenCode + MiniMax + Kotlin+Bazel slice before any product packaging or pilot-readiness claim.
 - **Phase 7**: Depends on schema and pilot artifacts from Phases 3-6.
+- **Phase 8**: Depends on Block 07 live verifier outcome. It must not mask missing trust evidence with onboarding or documentation polish.
 
 ### Parallel Opportunities
 
 - T008 and T009 can run in parallel.
 - T015 and T016 can run in parallel.
+- T044 and T045 can run in parallel.
+- T046 and T047 can run in parallel after T034 and T040.
+- T049 can run after T047.
+- T050 can run after T046, T047, and T049.
 - T020 through T023 can run in parallel once minimal schemas exist.
 - T027 and T028 can run in parallel.
 - T032 and T033 can run in parallel after pilot evidence exists.
+- T081 and T082 can run in parallel after T080 closes, because the runner and validator have separate write scopes.
 
 ## Implementation Strategy
 
@@ -143,14 +246,17 @@
 
 1. Complete Phase 1.
 2. Complete Phase 2.
-3. Complete T008, T009, T015, T016, and T017.
-4. Add one valid example and one `not_assessed` example.
-5. Complete Self-Trace v0 tasks T020-T026.
-6. Stop and review the contract before running the full pilot matrix.
+3. Complete T034, T040, and T044-T050 before new evidence/assessment schema authoring.
+4. Complete T008, T009, T015, T016, T017, and T018.
+5. Add one valid example, one `not_assessed` example, one negative policy-verdict example, one negative AI-accountability example, and one negative modified-manifest example.
+6. Complete Self-Trace v0 tasks T020-T026 and T052-T056.
+7. Complete Self-Attested Contract Release tasks T057-T061 or explicitly record external attestation as `not_assessed`.
+8. Complete Block 05 run-cards without claiming observed behavior.
+9. Complete Block 06 for OpenCode + MiniMax + Kotlin+Bazel before product packaging or pilot-readiness claims.
 
 ### Evidence Discipline
 
-- Do not claim harness/model/stack compatibility without committed evidence.
+- Do not record harness/model/stack support, readiness, or compatibility as native `sdp-trace` outcomes. Record observed evidence state or an explicitly external verdict input.
 - Do not add policy thresholds to `sdp-trace`.
 - Keep raw pilot outputs ignored until sanitized.
 - Every public claim must link to a file, command, example, or `not_assessed` entry.

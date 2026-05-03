@@ -60,7 +60,7 @@ Evidence should be referenced, not paraphrased into vague claims.
 
 ## Gate
 
-A check applied to evidence.
+A policy check applied to evidence by `sdp-gate` or another external policy consumer.
 
 Examples:
 
@@ -70,17 +70,35 @@ Examples:
 - generated code is identified
 - docs were updated when public behavior changed
 
-## Verdict
+## External Verdict
 
-The gate outcome:
+The externally produced gate or policy outcome:
 
 - `pass`: evidence satisfies the gate
 - `warn`: evidence exists but risk remains
 - `fail`: evidence proves the gate is not satisfied
 - `not_assessed`: evidence is missing or insufficient
 
+## Assessment Input
+
+A package of evidence, observations, metric streams, accountability, `not_assessed` gaps, and external verdict inputs prepared for a policy consumer.
+
+`sdp-trace` owns assessment input structure. It does not decide whether the package passes a policy.
+
+## Accountability
+
+Human-held ownership for the next step.
+
+AI actors may produce, review, critique, or judge artifacts, but they cannot be the sole accountable owner, approver, risk owner, or escalation owner.
+
+## Contract Manifest
+
+A versioned list of schema, docs, validation script, fixture, source commit, approval, and compatibility-note digests.
+
+Schema-valid files are not automatically trusted contract releases. Trusted release status requires manifest digest verification and signature or approved private-equivalent verification.
+
 ## Decision Record
 
-The final decision and rationale.
+The final external decision and rationale.
 
-Decision records are for humans. They explain why a change was accepted, blocked, returned for work, or overridden.
+Decision records are for humans or policy consumers. They explain why a change was accepted, blocked, returned for work, or overridden.

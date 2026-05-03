@@ -1,0 +1,96 @@
+[
+  {
+    "id": "observation-block01-is-scaffold",
+    "schema_version": "0.1.0",
+    "scope": "self-trace-v0",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "statement": "Block 01 is contract scaffolding, not product proof; customer trust is blocked until self-trace and self-attestation pass.",
+    "evidence_refs": [
+      "evidence-crisis-judge-pass"
+    ],
+    "provenance_refs": [
+      "provenance-pi-minimax-crisis-judge",
+      "provenance-codex-self-trace"
+    ],
+    "assessment_status": "assessed"
+  },
+  {
+    "id": "observation-self-proof-crisis-accepted",
+    "schema_version": "0.1.0",
+    "scope": "self-trace-v0",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "statement": "Independent crisis critics found the old roadmap insufficient because sdp-trace had not traced itself.",
+    "evidence_refs": [
+      "evidence-crisis-kimi-critic",
+      "evidence-crisis-glm-critic"
+    ],
+    "provenance_refs": [
+      "provenance-pi-kimi-crisis-critic",
+      "provenance-pi-glm-crisis-critic"
+    ],
+    "assessment_status": "assessed"
+  },
+  {
+    "id": "observation-metric-catalog-grounded",
+    "schema_version": "0.1.0",
+    "scope": "self-trace-v0",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "statement": "The process metric catalog now defines metric names, units, dimensions, evidence sources, not_assessed rules, and privacy risk without policy thresholds.",
+    "evidence_refs": [
+      "evidence-metric-catalog-created"
+    ],
+    "provenance_refs": [
+      "provenance-codex-self-trace"
+    ],
+    "assessment_status": "assessed"
+  },
+  {
+    "id": "observation-external-attestation-missing",
+    "schema_version": "0.1.0",
+    "scope": "self-trace-v0",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "statement": "External attestation and production release verification remain not_assessed until Block 03 records a reproducible proof state.",
+    "evidence_refs": [
+      "evidence-crisis-judge-pass"
+    ],
+    "provenance_refs": [
+      "provenance-pi-minimax-crisis-judge",
+      "provenance-codex-self-trace"
+    ],
+    "assessment_status": "not_assessed"
+  },
+  {
+    "id": "observation-block-07-slice-1-claim-consistency-assessed",
+    "schema_version": "0.1.0",
+    "scope": "block-07-slice-1-claim-consistency",
+    "observed_at": "2026-05-03T12:50:00Z",
+    "statement": "Block 07 Slice 1 claim tags are mechanically checked for the committed authoritative tag surface; this does not close Block 07 or assess cross-reference integrity.",
+    "evidence_refs": [
+      "evidence-claim-consistency-validation-pass",
+      "evidence-unsupported-claim-tag-rejected",
+      "evidence-nonauthoritative-prose-ignored"
+    ],
+    "provenance_refs": [
+      "provenance-codex-block-07-slice-1",
+      "provenance-rtk-claim-consistency-validation"
+    ],
+    "assessment_status": "assessed"
+  },
+  {
+    "id": "observation-block-07-slices-2-5-assessed",
+    "schema_version": "0.1.0",
+    "scope": "block-07-slices-2-5",
+    "observed_at": "2026-05-03T15:05:00Z",
+    "statement": "Block 07 now freezes current false closure claims, separates incomplete E2E package validation from complete proof validation, exposes source-bound and external-trust verifier profiles, and validates cross-reference integrity.",
+    "evidence_refs": [
+      "evidence-block-07-slice-2-false-closure-repaired",
+      "evidence-block-07-slice-4-package-mode-valid",
+      "evidence-block-07-slice-5-cross-reference-valid"
+    ],
+    "provenance_refs": [
+      "provenance-codex-block-07-slices-2-5",
+      "provenance-rtk-block-07-slices-2-5-validation"
+    ],
+    "assessment_status": "assessed"
+  }
+]

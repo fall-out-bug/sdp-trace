@@ -5,6 +5,10 @@
   "type": "object",
   "required": ["nodes", "edges"],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
     "nodes": {
       "type": "array",
       "items": { "$ref": "#/$defs/node" }
@@ -22,10 +26,30 @@
         "id": { "type": "string", "minLength": 1 },
         "kind": {
           "type": "string",
-          "enum": ["spec", "plan", "task", "change", "evidence", "gate", "decision", "actor"]
+          "enum": [
+            "spec",
+            "plan",
+            "task",
+            "change",
+            "evidence",
+            "observation",
+            "metric_sample",
+            "metric_stream",
+            "external_verdict",
+            "decision",
+            "actor",
+            "accountability",
+            "contract_manifest",
+            "contract_release_verification"
+          ]
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
         },
         "label": { "type": "string" }
       },
+      "propertyNames": { "$ref": "#/$defs/noNativePolicyKey" },
       "additionalProperties": true
     },
     "edge": {
@@ -36,11 +60,43 @@
         "to": { "type": "string", "minLength": 1 },
         "relation": {
           "type": "string",
-          "enum": ["implements", "produces", "checks", "decides", "performed_by", "references"]
+          "enum": [
+            "implements",
+            "produces",
+            "checks",
+            "performed_by",
+            "references",
+            "supports",
+            "derived_from",
+            "consumes",
+            "records_external",
+            "accountable_to",
+            "verifies"
+          ]
         }
       },
+      "propertyNames": { "$ref": "#/$defs/noNativePolicyKey" },
       "additionalProperties": true
+    },
+    "noNativePolicyKey": {
+      "not": {
+        "enum": [
+          "verdict",
+          "decision",
+          "gate_result",
+          "gate_verdict",
+          "readiness",
+          "readiness_verdict",
+          "degradation_status",
+          "policy_result",
+          "policy_threshold",
+          "evidence_strength",
+          "quality_score",
+          "override_result"
+        ]
+      }
     }
   },
+  "propertyNames": { "$ref": "#/$defs/noNativePolicyKey" },
   "additionalProperties": true
 }

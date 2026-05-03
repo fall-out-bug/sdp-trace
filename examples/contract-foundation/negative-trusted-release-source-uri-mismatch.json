@@ -1,0 +1,59 @@
+{
+  "id": "negative-trusted-release-source-uri-mismatch",
+  "schema_version": "0.1.0",
+  "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
+  "manifest_digest": "5bb2cd19d515d7d5a1de19fffa1fce40f584c62fa11c1bfac5a5fc90374a6ead",
+  "manifest_digest_status": "matched",
+  "artifact_digest_status": "matched",
+  "signature_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "signature_status": "valid",
+  "signer_identity": "repo:example/sdp-trace:ref:refs/heads/main",
+  "oidc_issuer": "https://token.actions.githubusercontent.com",
+  "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
+  "identity_policy_status": "matched",
+  "source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+  "source_commit_status": "matched",
+  "source_commit_artifact_status": "matched",
+  "source_commit_artifact_counts": {
+    "checked": 42,
+    "missing": 0,
+    "mismatched": 0
+  },
+  "external_trust_profile": "sigstore-rekor-keyless-v1",
+  "external_attestation_ref": "examples/contract-foundation/contract-release.dsse.json",
+  "transparency_evidence_ref": "rekor://sha256/c30df4710ccbc008b616b8cdb777790675c8927d5738e1e67dcc21875b97654a",
+  "source_uri_status": "mismatch",
+  "protected_ref_status": "matched",
+  "workflow_identity_status": "matched",
+  "approval_status": "matched",
+  "production_release_verified": {
+    "state": "assessed",
+    "value": true
+  },
+  "transparency_log_status": "included",
+  "freshness_status": "current",
+  "verified_at": "2026-05-01T10:00:00Z",
+  "trusted_contract_release": true,
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "second"
+  }
+}

@@ -1,0 +1,353 @@
+[
+  {
+    "id": "metric-self-trace-task-completion",
+    "schema_version": "0.1.0",
+    "metric_name": "contract_task_completion_ratio",
+    "dimensions": {
+      "repository": "sdp-trace",
+      "scope": "self-trace-v0",
+      "spec_id": "001-sdp-trace-time-series-evidence-substrate",
+      "block": "02-self-trace-proof"
+    },
+    "samples": [
+      {
+        "id": "sample-task-completion-before-self-trace",
+        "value": 0.59,
+        "unit": "ratio",
+        "window_start": "2026-04-30T00:00:00Z",
+        "window_end": "2026-04-30T20:40:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-crisis-judge-pass"
+        ],
+        "provenance_refs": [
+          "provenance-codex-self-trace"
+        ],
+        "assessment_state": "assessed"
+      },
+      {
+        "id": "sample-task-completion-after-self-trace",
+        "value": 0.79,
+        "unit": "ratio",
+        "window_start": "2026-04-30T20:40:00Z",
+        "window_end": "2026-04-30T20:50:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-metric-catalog-created",
+          "evidence-contract-validation-pass"
+        ],
+        "provenance_refs": [
+          "provenance-codex-self-trace"
+        ],
+        "assessment_state": "assessed"
+      }
+    ],
+    "comparisons": [
+      {
+        "id": "comparison-self-trace-task-completion",
+        "previous_sample_ref": "sample-task-completion-before-self-trace",
+        "current_sample_ref": "sample-task-completion-after-self-trace",
+        "previous_value": 0.59,
+        "current_value": 0.79,
+        "delta": 0.2,
+        "unit": "ratio",
+        "evidence_coverage": {
+          "current": "assessed",
+          "previous": "assessed"
+        },
+        "assessment_state": "assessed"
+      }
+    ],
+    "assessment_state": "assessed",
+    "not_assessed": [
+      {
+        "field": "fresh_checkout_validation",
+        "state": "not_assessed",
+        "reason": "Validation was reproduced in the current worktree. A fresh checkout or CI run is Block 03/future release evidence scope."
+      }
+    ],
+    "created_at": "2026-04-30T20:50:00Z",
+    "updated_at": "2026-04-30T20:50:00Z"
+  },
+  {
+    "id": "metric-self-trace-evidence-coverage",
+    "schema_version": "0.1.0",
+    "metric_name": "evidence_coverage_ratio",
+    "dimensions": {
+      "repository": "sdp-trace",
+      "scope": "self-trace-v0",
+      "block": "02-self-trace-proof"
+    },
+    "samples": [
+      {
+        "id": "sample-evidence-coverage-before-self-trace",
+        "value": 0.5,
+        "unit": "ratio",
+        "window_start": "2026-04-30T00:00:00Z",
+        "window_end": "2026-04-30T20:40:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-crisis-kimi-critic",
+          "evidence-crisis-glm-critic"
+        ],
+        "provenance_refs": [
+          "provenance-pi-kimi-crisis-critic",
+          "provenance-pi-glm-crisis-critic"
+        ],
+        "assessment_state": "assessed"
+      },
+      {
+        "id": "sample-evidence-coverage-after-self-trace",
+        "value": 1,
+        "unit": "ratio",
+        "window_start": "2026-04-30T20:40:00Z",
+        "window_end": "2026-04-30T20:50:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-metric-catalog-created",
+          "evidence-contract-validation-pass",
+          "evidence-crisis-judge-pass"
+        ],
+        "provenance_refs": [
+          "provenance-codex-self-trace",
+          "provenance-pi-minimax-crisis-judge"
+        ],
+        "assessment_state": "assessed"
+      }
+    ],
+    "comparisons": [
+      {
+        "id": "comparison-self-trace-evidence-coverage",
+        "previous_sample_ref": "sample-evidence-coverage-before-self-trace",
+        "current_sample_ref": "sample-evidence-coverage-after-self-trace",
+        "previous_value": 0.5,
+        "current_value": 1,
+        "delta": 0.5,
+        "unit": "ratio",
+        "evidence_coverage": {
+          "current": "assessed",
+          "previous": "assessed"
+        },
+        "assessment_state": "assessed"
+      }
+    ],
+    "assessment_state": "assessed",
+    "created_at": "2026-04-30T20:50:00Z",
+    "updated_at": "2026-04-30T20:50:00Z"
+  },
+  {
+    "id": "metric-self-trace-not-assessed-count",
+    "schema_version": "0.1.0",
+    "metric_name": "not_assessed_item_count",
+    "dimensions": {
+      "repository": "sdp-trace",
+      "scope": "self-trace-v0",
+      "block": "02-self-trace-proof"
+    },
+    "samples": [
+      {
+        "id": "sample-not-assessed-before-self-trace",
+        "value": 2,
+        "unit": "count",
+        "window_start": "2026-04-30T00:00:00Z",
+        "window_end": "2026-04-30T20:40:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-crisis-judge-pass"
+        ],
+        "provenance_refs": [
+          "provenance-pi-minimax-crisis-judge"
+        ],
+        "assessment_state": "assessed"
+      },
+      {
+        "id": "sample-not-assessed-after-self-trace",
+        "value": 2,
+        "unit": "count",
+        "window_start": "2026-04-30T20:40:00Z",
+        "window_end": "2026-04-30T20:50:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-crisis-judge-pass"
+        ],
+        "provenance_refs": [
+          "provenance-codex-self-trace"
+        ],
+        "assessment_state": "assessed"
+      }
+    ],
+    "comparisons": [
+      {
+        "id": "comparison-self-trace-not-assessed-count",
+        "previous_sample_ref": "sample-not-assessed-before-self-trace",
+        "current_sample_ref": "sample-not-assessed-after-self-trace",
+        "previous_value": 2,
+        "current_value": 2,
+        "delta": 0,
+        "unit": "count",
+        "evidence_coverage": {
+          "current": "assessed",
+          "previous": "assessed"
+        },
+        "assessment_state": "assessed"
+      }
+    ],
+    "assessment_state": "assessed",
+    "created_at": "2026-04-30T20:50:00Z",
+    "updated_at": "2026-04-30T20:50:00Z"
+  },
+  {
+    "id": "metric-self-trace-schema-validation",
+    "schema_version": "0.1.0",
+    "metric_name": "schema_validation_state",
+    "dimensions": {
+      "repository": "sdp-trace",
+      "scope": "self-trace-v0",
+      "block": "02-self-trace-proof"
+    },
+    "samples": [
+      {
+        "id": "sample-schema-validation-before-self-trace",
+        "value": "passed",
+        "unit": "enum",
+        "window_start": "2026-04-30T00:00:00Z",
+        "window_end": "2026-04-30T20:40:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "contract-foundation"
+        },
+        "evidence_refs": [
+          "evidence-contract-validation-pass"
+        ],
+        "provenance_refs": [
+          "provenance-rtk-validation"
+        ],
+        "assessment_state": "assessed"
+      },
+      {
+        "id": "sample-schema-validation-after-self-trace",
+        "value": "passed",
+        "unit": "enum",
+        "window_start": "2026-04-30T20:40:00Z",
+        "window_end": "2026-04-30T20:50:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "self-trace-v0"
+        },
+        "evidence_refs": [
+          "evidence-contract-validation-pass"
+        ],
+        "provenance_refs": [
+          "provenance-rtk-validation"
+        ],
+        "assessment_state": "assessed"
+      }
+    ],
+    "comparisons": [
+      {
+        "id": "comparison-self-trace-schema-validation",
+        "previous_sample_ref": "sample-schema-validation-before-self-trace",
+        "current_sample_ref": "sample-schema-validation-after-self-trace",
+        "previous_value": "passed",
+        "current_value": "passed",
+        "delta": "unchanged",
+        "unit": "enum",
+        "evidence_coverage": {
+          "current": "assessed",
+          "previous": "assessed"
+        },
+        "assessment_state": "assessed"
+      }
+    ],
+    "assessment_state": "assessed",
+    "created_at": "2026-04-30T20:50:00Z",
+    "updated_at": "2026-04-30T20:50:00Z"
+  },
+  {
+    "id": "metric-self-trace-review-contradictions",
+    "schema_version": "0.1.0",
+    "metric_name": "review_contradiction_count",
+    "dimensions": {
+      "repository": "sdp-trace",
+      "scope": "self-trace-v0",
+      "block": "02-self-trace-proof"
+    },
+    "samples": [
+      {
+        "id": "sample-review-contradictions-before-resolution",
+        "value": 2,
+        "unit": "count",
+        "window_start": "2026-04-30T00:00:00Z",
+        "window_end": "2026-04-30T20:40:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "crisis-review"
+        },
+        "evidence_refs": [
+          "evidence-crisis-kimi-critic",
+          "evidence-crisis-glm-critic"
+        ],
+        "provenance_refs": [
+          "provenance-pi-kimi-crisis-critic",
+          "provenance-pi-glm-crisis-critic"
+        ],
+        "assessment_state": "assessed"
+      },
+      {
+        "id": "sample-review-contradictions-after-resolution",
+        "value": 1,
+        "unit": "count",
+        "window_start": "2026-04-30T20:40:00Z",
+        "window_end": "2026-04-30T20:50:00Z",
+        "dimensions": {
+          "repository": "sdp-trace",
+          "scope": "crisis-review"
+        },
+        "evidence_refs": [
+          "evidence-crisis-judge-pass"
+        ],
+        "provenance_refs": [
+          "provenance-pi-minimax-crisis-judge"
+        ],
+        "assessment_state": "assessed"
+      }
+    ],
+    "comparisons": [
+      {
+        "id": "comparison-self-trace-review-contradictions",
+        "previous_sample_ref": "sample-review-contradictions-before-resolution",
+        "current_sample_ref": "sample-review-contradictions-after-resolution",
+        "previous_value": 2,
+        "current_value": 1,
+        "delta": -1,
+        "unit": "count",
+        "evidence_coverage": {
+          "current": "assessed",
+          "previous": "assessed"
+        },
+        "assessment_state": "assessed"
+      }
+    ],
+    "assessment_state": "assessed",
+    "created_at": "2026-04-30T20:50:00Z",
+    "updated_at": "2026-04-30T20:50:00Z"
+  }
+]

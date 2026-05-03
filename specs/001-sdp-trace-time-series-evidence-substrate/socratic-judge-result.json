@@ -1,0 +1,42 @@
+{
+  "role": "judge",
+  "judge_provider": "minimax/MiniMax-M2.7",
+  "critic_provider": "kimi-coding/k2p6",
+  "source_review": "sdp_lab/docs/reviews/2026-04-30-f163-sdp-trace-spec-interrogate.md",
+  "resolution_notes": "specs/001-sdp-trace-time-series-evidence-substrate/socratic-resolution-notes.md",
+  "items": [
+    {
+      "question_id": "B1",
+      "status": "resolved",
+      "evidence_ref": "spec.md US1 boundary; data-model.md Metric Stream rules; contracts/sdp-trace-sdp-gate-boundary.md Rule 9",
+      "assessment": "The CTO degradation question is answered with movement data. Interpretation labels are explicitly external verdicts."
+    },
+    {
+      "question_id": "B2",
+      "status": "resolved",
+      "evidence_ref": "data-model.md Evidence Event external_assertions and External Verdict Input; spec.md FR-017; boundary contract Rules 3 and 8",
+      "assessment": "External verdicts, evidence strength, and policy-adjacent fields have explicit producer, origin, and policy-reference structure."
+    },
+    {
+      "question_id": "B3",
+      "status": "resolved",
+      "evidence_ref": "plan.md T034 prerequisite; research.md Decision 6; schema/README.md validation target; tasks.md Phase 2",
+      "assessment": "JSON Schema Draft 2020-12 and ajv-cli@5.0.0 validation strategy are pinned before schema authoring."
+    },
+    {
+      "question_id": "B4",
+      "status": "resolved",
+      "evidence_ref": "spec.md FR-016; data-model.md integrity_status and redaction fields; research.md Decision 8",
+      "assessment": "Evidence and provenance references now have explicit safety, redaction, digest, and integrity-status rules."
+    },
+    {
+      "question_id": "B5",
+      "status": "resolved",
+      "evidence_ref": "schema/README.md compatibility section; boundary contract Schema Compatibility Rule; data-model.md Assessment Input schema_version",
+      "assessment": "Schema versioning and backward compatibility are defined, and sdp-gate must declare supported versions."
+    }
+  ],
+  "new_contradictions": [],
+  "scope_creep": [],
+  "verdict": "PASS"
+}

@@ -12,7 +12,8 @@ A harness integration should provide:
 - tool calls or command log
 - changed files or diff reference
 - evidence references
-- gate verdict output location
+- assessment input output location
+- optional external verdict input location when a policy consumer runs
 
 ## Harness Families To Validate
 

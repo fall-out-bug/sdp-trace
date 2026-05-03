@@ -1,0 +1,22 @@
+{
+  "dri": {
+    "identity_ref": "ai:codex-session",
+    "actor_type": "ai_agent"
+  },
+  "approver": {
+    "identity_ref": "ai:codex-session",
+    "actor_type": "ai_agent"
+  },
+  "escalation": {
+    "identity_ref": "ai:codex-session",
+    "actor_type": "ai_agent"
+  },
+  "authority_scope": "contract_release",
+  "accountability_claim": "release_approval",
+  "approval_ref": "negative-fixture",
+  "risk_owner": {
+    "identity_ref": "ai:codex-session",
+    "actor_type": "ai_agent"
+  },
+  "line_of_defense": "first"
+}

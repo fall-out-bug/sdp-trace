@@ -1,0 +1,12 @@
+{
+  "schema_version": "0.1.0",
+  "nodes": [
+    {
+      "id": "trace-node-with-native-policy",
+      "kind": "task",
+      "label": "Negative trace fixture",
+      "verdict": "pass"
+    }
+  ],
+  "edges": []
+}

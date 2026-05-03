@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/accountability.schema.json",
+  "title": "SDP Trace Accountability Record",
+  "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability"
+}

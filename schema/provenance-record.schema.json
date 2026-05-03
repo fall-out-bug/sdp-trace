@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/provenance-record.schema.json",
+  "title": "SDP Trace Provenance Record",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "actor_id",
+    "actor_type",
+    "captured_at",
+    "payload_digest",
+    "digest_algorithm"
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "actor_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "actor_type": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/actorType" },
+    "harness": { "type": "string" },
+    "model_family": { "type": "string" },
+    "model_version": { "type": "string" },
+    "tool_name": { "type": "string" },
+    "command": { "type": "string" },
+    "prompt_ref": { "type": "string" },
+    "context_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "captured_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "hash_prev": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "payload_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "digest_algorithm": { "const": "sha256" },
+    "chain_scope": { "type": "string" },
+    "unavailable_fields": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/unavailableField" }
+    }
+  },
+  "additionalProperties": false
+}

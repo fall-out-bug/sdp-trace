@@ -1,0 +1,466 @@
+{
+  "id": "assessment-input-opencode-minimax-kotlin-bazel",
+  "schema_version": "0.1.0",
+  "scope": "opencode-minimax-kotlin-bazel",
+  "trace_snapshot_ref": "evidence/trace-snapshot.json",
+  "evidence_events": [
+    {
+      "id": "evidence-opencode-available",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:28:53Z",
+      "collected_at": "2026-05-01T14:28:53Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "opencode --version succeeded",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-minimax-model-listed",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:28:53Z",
+      "collected_at": "2026-05-01T14:28:53Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "requested MiniMax model id appears in opencode models output",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-minimax-access-verified",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:29:43Z",
+      "collected_at": "2026-05-01T14:29:43Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "successful opencode run verifies access to requested model id",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-kotlin-bazel-target-identified",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:28:53Z",
+      "collected_at": "2026-05-01T14:28:53Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "bazel query succeeded and target rule output ties Kotlin/Bazel files to the supplied target",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-opencode-minimax-run-completed",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:29:43Z",
+      "collected_at": "2026-05-01T14:29:43Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "opencode run completed with requested MiniMax model id and produced captured output",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-bazel-commands-executed",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:29:44Z",
+      "collected_at": "2026-05-01T14:29:44Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "operator-approved bazel command completed",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-sdp-trace-package-valid",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:28:53Z",
+      "collected_at": "2026-05-01T14:28:53Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "not_assessed",
+      "summary": "Package validation is a separate repository step",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-sanitized-report-committed",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "run-report.md",
+      "observed_at": "2026-05-01T14:28:53Z",
+      "collected_at": "2026-05-01T14:28:53Z",
+      "actor": {
+        "id": "pilot-operator",
+        "actor_type": "human_user",
+        "display_name": "Pilot operator"
+      },
+      "event_type": "command",
+      "status": "not_assessed",
+      "summary": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step",
+      "redaction_status": "redacted",
+      "integrity_status": "verified_hash",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    }
+  ],
+  "provenance_records": [
+    {
+      "id": "provenance-opencode-minimax-kotlin-bazel-run",
+      "schema_version": "0.1.0",
+      "actor_id": "pilot-operator",
+      "actor_type": "human_user",
+      "harness": "opencode",
+      "model_family": "MiniMax",
+      "model_version": "minimax-coding-plan/MiniMax-M2.5",
+      "tool_name": "opencode",
+      "command": "opencode run --model minimax-coding-plan/MiniMax-M2.5 --format json --dir examples/pilot-fixtures/kotlin-bazel-service <prompt_sha256:925677f4d1eef274735b960cfeb402012ed212413db4c917baf577e1d57a654a>",
+      "prompt_ref": "sha256:925677f4d1eef274735b960cfeb402012ed212413db4c917baf577e1d57a654a",
+      "captured_at": "2026-05-01T14:28:53Z",
+      "payload_digest": "c8c43b4716c509096074bc94cd8e985c7d3c0ccc70ebcc655533547f68c21711",
+      "digest_algorithm": "sha256",
+      "chain_scope": "opencode-minimax-kotlin-bazel",
+      "unavailable_fields": [
+        {
+          "field": "complete_product_proof",
+          "state": "not_assessed",
+          "reason": "At least one required proof state was not observed."
+        }
+      ]
+    }
+  ],
+  "metric_streams": [
+    {
+      "id": "metric-opencode-minimax-kotlin-bazel-proof-states",
+      "schema_version": "0.1.0",
+      "metric_name": "observed_required_proof_state_count",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "opencode-minimax-kotlin-bazel",
+        "model_family": "MiniMax",
+        "harness": "OpenCode",
+        "stack": "Kotlin",
+        "build_system": "Bazel"
+      },
+      "samples": [
+        {
+          "id": "sample-opencode-minimax-kotlin-bazel-observed-proof-states",
+          "value": 6,
+          "unit": "count",
+          "window_start": "2026-05-01T14:28:53Z",
+          "window_end": "2026-05-01T14:28:53Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "opencode-minimax-kotlin-bazel"
+          },
+          "evidence_refs": [
+            "evidence-opencode-available",
+            "evidence-minimax-model-listed",
+            "evidence-minimax-access-verified",
+            "evidence-kotlin-bazel-target-identified",
+            "evidence-opencode-minimax-run-completed",
+            "evidence-bazel-commands-executed",
+            "evidence-sdp-trace-package-valid",
+            "evidence-sanitized-report-committed"
+          ],
+          "provenance_refs": [
+            "provenance-opencode-minimax-kotlin-bazel-run"
+          ],
+          "assessment_state": "partial"
+        }
+      ],
+      "comparisons": [],
+      "assessment_state": "partial",
+      "created_at": "2026-05-01T14:28:53Z",
+      "updated_at": "2026-05-01T14:28:53Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "observation-opencode-minimax-kotlin-bazel-proof",
+      "schema_version": "0.1.0",
+      "scope": "opencode-minimax-kotlin-bazel",
+      "observed_at": "2026-05-01T14:28:53Z",
+      "statement": "The OpenCode + MiniMax + Kotlin+Bazel proof package is incomplete and must not be used as product proof.",
+      "evidence_refs": [
+        "evidence-opencode-available",
+        "evidence-minimax-model-listed",
+        "evidence-minimax-access-verified",
+        "evidence-kotlin-bazel-target-identified",
+        "evidence-opencode-minimax-run-completed",
+        "evidence-bazel-commands-executed",
+        "evidence-sdp-trace-package-valid",
+        "evidence-sanitized-report-committed"
+      ],
+      "provenance_refs": [
+        "provenance-opencode-minimax-kotlin-bazel-run"
+      ],
+      "assessment_status": "partial"
+    }
+  ],
+  "not_assessed": [
+    {
+      "field": "sdp_trace_package_valid",
+      "state": "not_assessed",
+      "reason": "Package validation is a separate repository step"
+    },
+    {
+      "field": "sanitized_report_committed",
+      "state": "not_assessed",
+      "reason": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step"
+    }
+  ],
+  "generated_at": "2026-05-01T14:28:53Z",
+  "producer": "sdp-trace Block 06 reference runner",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-engineering-dri",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "assessment_input",
+    "accountability_claim": "recording_only",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "first"
+  },
+  "risk_classification": {
+    "schema_version": "0.1.0",
+    "observed_autonomy_level": "collaborative",
+    "observed_impact_level": "low",
+    "classification_source": "human_dri",
+    "classification_ref": "run-report.md"
+  },
+  "contract_release_verification_ref": "examples/contract-foundation/contract-release-verification.example.json"
+}

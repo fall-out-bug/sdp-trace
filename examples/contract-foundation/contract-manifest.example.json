@@ -1,0 +1,643 @@
+{
+  "id": "contract-manifest-block-01",
+  "contract_version": "0.1.0",
+  "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "schema_versions": [
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/accountability.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/assessment-input.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/common.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/consumer-schema-version-declaration.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/contract-manifest.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/contract-release-verification.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/evidence-event.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/external-verdict-input.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/metric-stream.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/observation.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/provenance-record.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/risk-classification.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/trace.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/trusted-identity-policy.schema.json",
+      "schema_version": "0.1.0"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "docs/accountability-model.md",
+      "kind": "doc",
+      "sha256": "214e53273c4d4dc3533f9a1551cdb671253f3b14b598020d5c6d122b9a43e599"
+    },
+    {
+      "path": "docs/concepts.md",
+      "kind": "doc",
+      "sha256": "f1462307a9463f4df0289656ba5ce7a5d6dd8ceee40e36eaa06ee6646d80733e"
+    },
+    {
+      "path": "docs/contract-release-signing.md",
+      "kind": "doc",
+      "sha256": "343b30cad6bec7482b98222f9f051348f0265b1bdf8d9e5bed987b5df9fe16dc"
+    },
+    {
+      "path": "docs/cto-brief.en.md",
+      "kind": "doc",
+      "sha256": "ea47adb962eea9d718e79b88c67df4f364234d7e8c1d41f529ab3fe569879eb1"
+    },
+    {
+      "path": "docs/cto-brief.ru.md",
+      "kind": "doc",
+      "sha256": "195c1db7e6509de7d79d5f4a0cf901e2b5c285c0f7d1c251ac764de72f7bd57a"
+    },
+    {
+      "path": "docs/harness-compatibility-matrix.md",
+      "kind": "compatibility_note",
+      "sha256": "a181ec960dac654ceee42eef02f96b975c2e53d677c3b2fc27faaa6295a2f212"
+    },
+    {
+      "path": "docs/jvm-bazel-guide.md",
+      "kind": "doc",
+      "sha256": "eddc853223d353a271a10e416b7a7cc07d25f2d87c6ca088dcac96540553bec8"
+    },
+    {
+      "path": "docs/model-compatibility.md",
+      "kind": "compatibility_note",
+      "sha256": "d38e9b001b507bc5c66b395f07f0d2df95bfbfaba039b1775cb6ef281803e0ca"
+    },
+    {
+      "path": "docs/research/customer-pilot-evidence-package.md",
+      "kind": "doc",
+      "sha256": "2bdb7277728182e7c75300c79b2f2cc44d6430d83a1ac611515d35f9c44e7cb0"
+    },
+    {
+      "path": "docs/research/harness-run-card.md",
+      "kind": "doc",
+      "sha256": "44fdd1255bdb3d8bf6741818b06f09d441c1bb551b364947aa6de25318133cfc"
+    },
+    {
+      "path": "docs/research/kotlin-bazel-fixture-plan.md",
+      "kind": "doc",
+      "sha256": "0ba0a00d7f6c9afb90cff54c436e7bd5a18f1f5f54496c7346c2ac224a2ad3c2"
+    },
+    {
+      "path": "docs/research/opencode-model-run-card.md",
+      "kind": "doc",
+      "sha256": "d972e0698ec68f619111c1b9475a1391e7c0adbca08c01b18620c4597544fa4c"
+    },
+    {
+      "path": "docs/research/run-card-template.md",
+      "kind": "doc",
+      "sha256": "ebf285497630528ec57b3cdd13e3f81b737a3951d4d7c32c20b78e20ae7382bc"
+    },
+    {
+      "path": "docs/research/self-attestation-summary.md",
+      "kind": "doc",
+      "sha256": "72d823a844fa59a387318cbade49741e810b248f5799b4d8194ab5616fe9ae2c"
+    },
+    {
+      "path": "docs/speckit-compatibility.md",
+      "kind": "compatibility_note",
+      "sha256": "d1503f280289c63a5a35c42efba9392a0e7a7b5f6cb3b31dedcb1e560610006a"
+    },
+    {
+      "path": "docs/team-lead-playbook.en.md",
+      "kind": "doc",
+      "sha256": "232eb5e37064429655402ff5e4b0d46fba9f11e2ae212131765672504c24e712"
+    },
+    {
+      "path": "docs/team-lead-playbook.ru.md",
+      "kind": "doc",
+      "sha256": "f6d4f08c5413939e01eb15263e8303a1dfe8f86743957743a9b6d716da97b4b5"
+    },
+    {
+      "path": "examples/contract-foundation/local-dev-wrong-public.pem",
+      "kind": "fixture",
+      "sha256": "e6e4f0995aaa9420a21a22d213576fdd8a8ddd67ceb45c5843388bdb39c220a6"
+    },
+    {
+      "path": "examples/contract-foundation/negative-ai-sole-accountable-owner.json",
+      "kind": "fixture",
+      "sha256": "99347a0a15e7a2fa04c0b65998ed921f31a5b94452e3a32788b897076f75d71d"
+    },
+    {
+      "path": "examples/contract-foundation/negative-assessed-metric-without-evidence.json",
+      "kind": "fixture",
+      "sha256": "867803b017ca307abd094b90c0b060aacd504e9e574a563dc799b29b9bfdbb10"
+    },
+    {
+      "path": "examples/contract-foundation/negative-modified-contract-manifest.json",
+      "kind": "fixture",
+      "sha256": "dbec89f9b1d498f6b3fd8ceb66f04435206a94f67baae288d9cb262fe730c352"
+    },
+    {
+      "path": "examples/contract-foundation/negative-native-policy-field.json",
+      "kind": "fixture",
+      "sha256": "f1372a30df6185cc7094581e98c12fbcba215e9bdc676aee7e8a51ebc2455c3a"
+    },
+    {
+      "path": "examples/contract-foundation/negative-native-policy-trace.json",
+      "kind": "fixture",
+      "sha256": "e4d651cf11760171ae48ad80941de1fd35b6a33dc7a2b3549b21a59ee5c566bc"
+    },
+    {
+      "path": "examples/contract-foundation/not-assessed-assessment-input.json",
+      "kind": "fixture",
+      "sha256": "53fcaa0d3f1700d705d4538fc0d0b016b9dfdb2e28ebbc42cb65b86e4f50c085"
+    },
+    {
+      "path": "examples/contract-foundation/positive-assessment-input.json",
+      "kind": "fixture",
+      "sha256": "21316c8e9d5411803090229e89f1c72693f5b37d5eeee155131b220b9969802c"
+    },
+    {
+      "path": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
+      "kind": "fixture",
+      "sha256": "a51d5a81a47e9bf4cfbd57a1b28ef40ea1e99cd2030e962c5a7bb3ee7e041665"
+    },
+    {
+      "path": "examples/contract-foundation/trusted-identity-policy-wrong-profile.example.json",
+      "kind": "fixture",
+      "sha256": "1a5c42efdcc65c6fc290433d35dcd689fc4b103fb755e8e7a8934de30b3ffcdd"
+    },
+    {
+      "path": "examples/contract-foundation/trusted-identity-policy.example.json",
+      "kind": "fixture",
+      "sha256": "b5973baa6c343ba2e4d56e285b9dc0a96dc6babc0fd47fb0d51f36b8fc5ec007"
+    },
+    {
+      "path": "examples/github-speckit/trace.json",
+      "kind": "fixture",
+      "sha256": "df572053ce038540bb61dc3ad0e4f4a8b8e66025f8ec26f52bedfdd4ccbeafbc"
+    },
+    {
+      "path": "examples/go-service/evidence-bundle.json",
+      "kind": "fixture",
+      "sha256": "0cc2a4ba8d8b5fbc34738b86fc717f6e85df1c39dc715d990d6592d3fda1f966"
+    },
+    {
+      "path": "examples/go-service/gate-verdict.json",
+      "kind": "fixture",
+      "sha256": "4043936f06c05441fc6124f8d198baac6ed3071ace3977d3e4c2d5f1f2133d28"
+    },
+    {
+      "path": "examples/jvm-bazel/evidence-bundle.json",
+      "kind": "fixture",
+      "sha256": "ca8aa3ee30dc7fc2121b7f017a73820c409a29c7bfd0b5c56eeb7fea2bacdec6"
+    },
+    {
+      "path": "examples/jvm-bazel/README.md",
+      "kind": "doc",
+      "sha256": "e1120b5442b50f35f2e687684f4555cfc986d0a8378ac9ccaee1c51c81032273"
+    },
+    {
+      "path": "package-lock.json",
+      "kind": "validation_script",
+      "sha256": "98c5924aafbd83ca39b1699696e13f148a949352c1e881cc6f94e71b0964079f"
+    },
+    {
+      "path": "package.json",
+      "kind": "validation_script",
+      "sha256": "903f18a485d2474140df095a5080053afeb35adf7c449250dc3370be928d347a"
+    },
+    {
+      "path": "README.md",
+      "kind": "doc",
+      "sha256": "c677f5b9e883654a8a1453719044ad3087bcfa82aeb2b95d72fa6d4209366d0a"
+    },
+    {
+      "path": "schema/accountability.schema.json",
+      "kind": "schema",
+      "sha256": "6d7c865a0a875437aa24f687e2cc3cf9a738e8f7fce911b21b103bb413521f62"
+    },
+    {
+      "path": "schema/assessment-input.schema.json",
+      "kind": "schema",
+      "sha256": "0f7dbc1c32366b59ec5fa8f61a1ffd7551ad1c7baf529bdfec05f424eff9dada"
+    },
+    {
+      "path": "schema/common.schema.json",
+      "kind": "schema",
+      "sha256": "025a1c4e0a5fe5974e16b66a7c54a26da18c5fc6fa051ddcac8f82e74274a3e8"
+    },
+    {
+      "path": "schema/consumer-schema-version-declaration.schema.json",
+      "kind": "schema",
+      "sha256": "e1a5c891179cb8c0217839724d8af1a67d4eda84e15ba43f5eb788e812ba4f3b"
+    },
+    {
+      "path": "schema/contract-manifest.schema.json",
+      "kind": "schema",
+      "sha256": "0b8ded3564f934807fa55b624af6ac4f7e4bd6978114ddb5145d868fbf834759"
+    },
+    {
+      "path": "schema/contract-release-verification.schema.json",
+      "kind": "schema",
+      "sha256": "5dbba40522d3bba1df2537dbb8a4b588f68bd61790abce188252e343f4f59958"
+    },
+    {
+      "path": "schema/evidence-bundle.schema.json",
+      "kind": "schema",
+      "sha256": "9c4de49b7a4a40e73fb1cab087a5ce72fce4b593921cae5856ca848bf7109228"
+    },
+    {
+      "path": "schema/evidence-event.schema.json",
+      "kind": "schema",
+      "sha256": "451b5526a3c5d7e6b7c574d1ff1c5d929325f19fe24c529924ffdcf998b8ae0a"
+    },
+    {
+      "path": "schema/external-verdict-input.schema.json",
+      "kind": "schema",
+      "sha256": "062f89b7e6a7e02efc62e742642c3b9e43bdcf3afac661af94ac46ea3fbe9edd"
+    },
+    {
+      "path": "schema/gate-verdict.schema.json",
+      "kind": "schema",
+      "sha256": "226f261e7e4d4256ade2fdebd3f6b250fa956ca77992a17f7ef35a808b713a28"
+    },
+    {
+      "path": "schema/metric-stream.schema.json",
+      "kind": "schema",
+      "sha256": "733b2820fedc2d56030273169ee5ba8e30cbe23c590fc8f11f3c80ac7e7aa318"
+    },
+    {
+      "path": "schema/observation.schema.json",
+      "kind": "schema",
+      "sha256": "8dbfc4e84e37e49b421aef3b70f9b34b5582dbce22a3d707684034498ee0c663"
+    },
+    {
+      "path": "schema/provenance-record.schema.json",
+      "kind": "schema",
+      "sha256": "c7a5c80490640b34078fda861eab2cd2401dbd779960b4277bb41d94d3daafda"
+    },
+    {
+      "path": "schema/README.md",
+      "kind": "doc",
+      "sha256": "889568c2a7a28c438bbd5086a8d3d46f73cd01636530937b28e9384ffd8bceda"
+    },
+    {
+      "path": "schema/risk-classification.schema.json",
+      "kind": "schema",
+      "sha256": "a4c23ac836e44b16dbdf442c69e97a9672baaf3f5f70e606b096e2cc424e0919"
+    },
+    {
+      "path": "schema/self-attestation-case.schema.json",
+      "kind": "schema",
+      "sha256": "d235fae3cc1d3ab83fd266cf569ae25c77f2e4d6956356270900b72d92dca157"
+    },
+    {
+      "path": "schema/trace.schema.json",
+      "kind": "schema",
+      "sha256": "904179375303db3b86ea125f7a21ad7fe63860ced4d3d9d35fcd632332717cb2"
+    },
+    {
+      "path": "schema/trusted-identity-policy.schema.json",
+      "kind": "schema",
+      "sha256": "370285a35b7fbea1c3ab311a7a78855c98f451266295180bb23e734d8c18955e"
+    },
+    {
+      "path": "scripts/check-artifact-safety.sh",
+      "kind": "validation_script",
+      "sha256": "69cd449f3563f3a891bcfc319e11d7e91c66cac974472b4e8f8b23d71d4469de"
+    },
+    {
+      "path": "scripts/finalize-source-bound-release.sh",
+      "kind": "validation_script",
+      "sha256": "6018eb27dbafe4d28701f275e1ff35c437e00a9bc71031e4525b42590fb22338"
+    },
+    {
+      "path": "scripts/generate-local-dev-dsse.sh",
+      "kind": "validation_script",
+      "sha256": "555333ab03828371c143bd60e99143ff3565d7962e9981d755fa7912ac66530a"
+    },
+    {
+      "path": "scripts/validate-contracts.sh",
+      "kind": "validation_script",
+      "sha256": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3"
+    },
+    {
+      "path": "scripts/validate-json-schema.mjs",
+      "kind": "validation_script",
+      "sha256": "8b1eacde5f5b2bf350efb9c9c22794ceaf38fe3b4b5633e912cfda9fe58322f4"
+    },
+    {
+      "path": "scripts/validate-pilot-matrices.mjs",
+      "kind": "validation_script",
+      "sha256": "1f8a503ae5fcce9bdd77ae1aa4e969b410822b5ec9f0128d9696906d371f9aef"
+    },
+    {
+      "path": "scripts/validate-self-trace.sh",
+      "kind": "validation_script",
+      "sha256": "b4928b86970ede20dee57039d45ec1bf03294a89c0bab2569f7345714bd6c3c1"
+    },
+    {
+      "path": "scripts/verify-artifact-hashes.sh",
+      "kind": "validation_script",
+      "sha256": "a64d88a62ee1d49e15360e1c631600d55e4fb2446d6453c20e285fd002763893"
+    },
+    {
+      "path": "scripts/verify-contract-manifest.sh",
+      "kind": "validation_script",
+      "sha256": "652f25b807bd5f99f75eb092f2f4edd5724928ceefd1866844eff533efb51fbe"
+    },
+    {
+      "path": "scripts/verify-release-signature.sh",
+      "kind": "validation_script",
+      "sha256": "c38be9437f9cec0938d21c30fc2cc13a9995ecbdaed560cb5481d9bfcefc1cb9"
+    },
+    {
+      "path": "scripts/verify-self-attestation.sh",
+      "kind": "validation_script",
+      "sha256": "75e9803167392aa3569a1a8c90a1f69cc8430b4f3eb59c5de5792c397d564c8e"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
+      "kind": "doc",
+      "sha256": "5bc48cf6df17d656de1a760961dcbd634509eb49af32e606bb439d3c78b431e0"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+      "kind": "doc",
+      "sha256": "7aa4534bb5e50403bcf032ac99fefb90b62a9709d501b1c9c5897326d613bc21"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
+      "kind": "fixture",
+      "sha256": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
+      "kind": "fixture",
+      "sha256": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+      "kind": "doc",
+      "sha256": "5a85260a43b25b47e33ee243e17ed4bfe54b8a4378c17a068881848f6aea87e7"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
+      "kind": "doc",
+      "sha256": "b08f1fee0f2ee26ce39eaf5409a212f2d5c299d535e6ae80a745644a6a914abd"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/03-self-attestation-proof.md",
+      "kind": "doc",
+      "sha256": "06498fdea426ae7b8500543682de03c5b1b123cd5ac8914b0dd346c20e669c7a"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md",
+      "kind": "doc",
+      "sha256": "7a142f6191bdae65f09ba819ccd286bd2061f8ace428ae081ae6cd8c92bec19c"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-implementation-plan.md",
+      "kind": "doc",
+      "sha256": "efd730f25ed7dd8fec214cb37f655d61b97849c9a74576dcbc05a7adf438a96f"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-socratic.md",
+      "kind": "doc",
+      "sha256": "98e14b91fcc6dccc872bf9543bfdbab045a149db0379fad035af7bc0734e389b"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-evidence-package.md",
+      "kind": "doc",
+      "sha256": "deaee7c995f96753f8ff57791f95c3da7cc7dd4a7102ec84a559f5326e5579ae"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-implementation-plan.md",
+      "kind": "doc",
+      "sha256": "af49975f245227f97dfa4bc24ae807f25b145b6342b542c1b3361ab513435ac1"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-review-ledger.md",
+      "kind": "doc",
+      "sha256": "b99eff5246762a9c4f9735605abe929f5233abdac5ea6ac1cd98ba71999e6bd9"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-socratic.md",
+      "kind": "doc",
+      "sha256": "f73260e768fe3555b387c1ad25c800fec78998cb7ec04260ff40bdb58697e110"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/blocks-01-03-final-review-fixes.json",
+      "kind": "doc",
+      "sha256": "2e081de7f28972e0bc8be529b683eef3534edf02472d2640e91f1ff1a44bb88e"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md",
+      "kind": "doc",
+      "sha256": "5294fb67ee26ba52e949edfe5fb953040a178b2e7a0a7cd32d66bc1d50013918"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/data-model.md",
+      "kind": "doc",
+      "sha256": "34d5d74c37cc2b1a7a1194e935eaf05832401ace66117769cef22934266c15e5"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/plan.md",
+      "kind": "doc",
+      "sha256": "c788f0f4f84a72b50e835c90b1aa8b4e8f9a4e00362c4b032b87cd6e80da2dcd"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/quickstart.md",
+      "kind": "doc",
+      "sha256": "159c54e277a90344cb3f6073f1b9049ff0f25040df5369de8f200ead75fde368"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/research.md",
+      "kind": "doc",
+      "sha256": "305af1399e490a2042990f0536999b6d4cf20ee7b23059589c2279a64b8dd697"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
+      "kind": "doc",
+      "sha256": "2cf702cc18fe000259c5c6774ec2555589dcf3e42849c9b22109bdaa76cc7674"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
+      "kind": "doc",
+      "sha256": "54f1a44c9acaf101953b411947622347287dddaec0d1356edb24968ca8360794"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+      "kind": "doc",
+      "sha256": "2a0f54ea9ba88b3d3790b09a17bb01750bb8d3f37b63875dbb8db3afeb6b904d"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
+      "kind": "doc",
+      "sha256": "89a5a5f45b9170b5339562fabc08fae2f47153033ee5280575145fa00c480a77"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-implementation-plan.md",
+      "kind": "doc",
+      "sha256": "4975437cfabd7042774d79f402bcd62f817d95a155f58bdbbd799a105e15967b"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
+      "kind": "doc",
+      "sha256": "dc921d57ca7811d68d87e53d129f059afd2a30fe07d40f875913ddb817498896"
+    },
+    {
+      "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
+      "kind": "doc",
+      "sha256": "fff728211f22f0b7eb3c4811e668d32485515e41afc81c506564bb23debb55a4"
+    },
+    {
+      "path": "scripts/run-opencode-minimax-kotlin-bazel-proof.sh",
+      "kind": "validation_script",
+      "sha256": "687b12574ab4bcd4ec9b9c7d6ca696f496c0aa1511a10cf4ea08d35451b78211"
+    },
+    {
+      "path": "scripts/validate-e2e-pilot-package.sh",
+      "kind": "validation_script",
+      "sha256": "c5636ae449347599bc9058a1ade0ef905d629c18950a056e2f72b1c8626d8406"
+    },
+    {
+      "path": "scripts/test-e2e-pilot-package.sh",
+      "kind": "validation_script",
+      "sha256": "9e150bf20bbffe65138fffb0f54c1242fb7ecef151fc3255f91ceb364dd2beba"
+    },
+    {
+      "path": "scripts/test-e2e-runner.sh",
+      "kind": "validation_script",
+      "sha256": "9bbf882654a2a4ef603fc0431e3618ffbfd2669efcc4c4e77cdb7b4cca4a7d74"
+    },
+    {
+      "path": "examples/pilot-fixtures/kotlin-bazel-service/MODULE.bazel",
+      "kind": "fixture",
+      "sha256": "b0d7c78060dc50d9aeba514e968bf84ff2ceb2362aff0eb6890ec8d48321c016"
+    },
+    {
+      "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/BUILD.bazel",
+      "kind": "fixture",
+      "sha256": "a1a3ea84601a5897ab6b382eac3e18bda6a0a797690130cbf30000d5af8190a8"
+    },
+    {
+      "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/Hello.kt",
+      "kind": "fixture",
+      "sha256": "9aff584dc92a33627445c05cbd7c92cd822292170090a2a81092213a6fb70670"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
+      "kind": "fixture",
+      "sha256": "c546e96c382cbfc0356d5940114b24d4c85f5be408014784d6f3e0e42d0e1069"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/run-report.md",
+      "kind": "fixture",
+      "sha256": "dd991251667709e51ee0a0e978c69d67493a8b2c8e3818617bda6ce76d7f2836"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
+      "kind": "fixture",
+      "sha256": "4892b8a6dc320e2a80bffa5398e4e525972dd514155c2635d5655b5c9b620773"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/proof-states.json",
+      "kind": "fixture",
+      "sha256": "d3423752730ec03adc7ba88bbd3534da3ec9b2648f4f1c38b75bddf53b2ef98f"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
+      "kind": "fixture",
+      "sha256": "bc7a95d6b506977b9960d3c62304b729a698ea06f64d1989984cc72b371f1200"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/provenance-records.json",
+      "kind": "fixture",
+      "sha256": "15b2c40ff8c9fcee6ebbcebd407b3929eaa2b878af274c0d24ce4af2f2811fc6"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/observations.json",
+      "kind": "fixture",
+      "sha256": "5b925cec2a6c50bf8c8d0be2ff609cb7f4938a583c19d12f9b3a582fc66dd20c"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/metric-stream.json",
+      "kind": "fixture",
+      "sha256": "cce541c1e387a1d34145bb9031d6a1dd30f8bf173570947ea2efde8f76ec0c00"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/trace-snapshot.json",
+      "kind": "fixture",
+      "sha256": "d21ad3a818ebc99f8a7f96fd550300a7dc5fc5e043d5c6b97cd3ebe6c116edec"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json",
+      "kind": "fixture",
+      "sha256": "bdc11e55bd84356234a2a94e9cf572c8c01499bc5bf71d740d528cb1d891c4d3"
+    }
+  ],
+  "source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+  "issued_at": "2026-04-30T10:00:00Z",
+  "valid_until": "2026-07-30T10:00:00Z",
+  "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
+  "approval_refs": [
+    "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md"
+  ],
+  "compatibility_notes": [
+    "Block 01 contract foundation is pre-v1 and may change with migration notes.",
+    "sdp-gate consumes declarations, not runtime dependencies."
+  ],
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "second"
+  }
+}

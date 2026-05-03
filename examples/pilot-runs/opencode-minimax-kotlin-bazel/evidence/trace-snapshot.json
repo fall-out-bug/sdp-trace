@@ -1,0 +1,102 @@
+{
+  "schema_version": "0.1.0",
+  "nodes": [
+    {
+      "id": "block06-spec",
+      "kind": "spec",
+      "label": "Block 06 spec"
+    },
+    {
+      "id": "evidence-opencode-available",
+      "kind": "evidence",
+      "label": "opencode --version succeeded"
+    },
+    {
+      "id": "evidence-minimax-model-listed",
+      "kind": "evidence",
+      "label": "requested MiniMax model id appears in opencode models output"
+    },
+    {
+      "id": "evidence-minimax-access-verified",
+      "kind": "evidence",
+      "label": "successful opencode run verifies access to requested model id"
+    },
+    {
+      "id": "evidence-kotlin-bazel-target-identified",
+      "kind": "evidence",
+      "label": "bazel query succeeded and target rule output ties Kotlin/Bazel files to the supplied target"
+    },
+    {
+      "id": "evidence-opencode-minimax-run-completed",
+      "kind": "evidence",
+      "label": "opencode run completed with requested MiniMax model id and produced captured output"
+    },
+    {
+      "id": "evidence-bazel-commands-executed",
+      "kind": "evidence",
+      "label": "operator-approved bazel command completed"
+    },
+    {
+      "id": "evidence-sdp-trace-package-valid",
+      "kind": "evidence",
+      "label": "Package validation is a separate repository step"
+    },
+    {
+      "id": "evidence-sanitized-report-committed",
+      "kind": "evidence",
+      "label": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step"
+    },
+    {
+      "id": "observation-opencode-minimax-kotlin-bazel-proof",
+      "kind": "observation",
+      "label": "Block 06 proof observation"
+    },
+    {
+      "id": "metric-opencode-minimax-kotlin-bazel-proof-states",
+      "kind": "metric_stream",
+      "label": "Block 06 proof-state metric"
+    }
+  ],
+  "edges": [
+    {
+      "from": "evidence-opencode-available",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-minimax-model-listed",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-minimax-access-verified",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-kotlin-bazel-target-identified",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-opencode-minimax-run-completed",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-bazel-commands-executed",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-sdp-trace-package-valid",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    },
+    {
+      "from": "evidence-sanitized-report-committed",
+      "to": "observation-opencode-minimax-kotlin-bazel-proof",
+      "relation": "supports"
+    }
+  ]
+}

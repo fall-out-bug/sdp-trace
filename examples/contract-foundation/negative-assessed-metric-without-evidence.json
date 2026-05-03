@@ -1,0 +1,29 @@
+{
+  "id": "negative-assessed-metric-without-evidence",
+  "schema_version": "0.1.0",
+  "metric_name": "schema_validity",
+  "dimensions": {
+    "block": "negative-fixture"
+  },
+  "samples": [
+    {
+      "id": "sample-without-evidence",
+      "value": true,
+      "unit": "boolean",
+      "window_start": "2026-05-01T00:00:00Z",
+      "window_end": "2026-05-01T00:00:00Z",
+      "dimensions": {
+        "block": "negative-fixture"
+      },
+      "evidence_refs": [],
+      "provenance_refs": [
+        "provenance-negative-fixture"
+      ],
+      "assessment_state": "assessed"
+    }
+  ],
+  "comparisons": [],
+  "assessment_state": "assessed",
+  "created_at": "2026-05-01T00:00:00Z",
+  "updated_at": "2026-05-01T00:00:00Z"
+}

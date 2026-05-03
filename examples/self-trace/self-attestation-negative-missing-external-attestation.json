@@ -1,0 +1,17 @@
+{
+  "id": "self-attestation-negative-missing-external-attestation",
+  "schema_version": "0.1.0",
+  "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
+  "dsse_envelope_ref": "examples/contract-foundation/contract-release.dsse.json",
+  "public_key_ref": "examples/contract-foundation/local-dev-signing-public.pem",
+  "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
+  "expected_source_commit": "1c9a1241a36c4892d0d6dd95b2c444db831d87f4",
+  "expected_signer_identity": "local-dev-dsse-openssl-v1:0de3d42a8f3beab21879daa6bb8d131ea4c03029ab21180155242911b7ae0158",
+  "reference_time": "2026-05-01T00:00:00Z",
+  "verification_artifact_ref": "examples/contract-foundation/contract-release-verification.example.json",
+  "verification_artifact_sha256": "d77c78ef31b78fb7578b978c2e6160e32963af09d10edd30d5a4ce88c14bb833",
+  "require_external_attestation": true,
+  "expected_negative": true,
+  "negative_reason": "missing_external_attestation",
+  "expected_proof_states": {}
+}

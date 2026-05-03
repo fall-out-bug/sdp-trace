@@ -1,0 +1,45 @@
+{
+  "id": "trusted-identity-policy-sdp-trace-local-dev",
+  "schema_version": "0.1.0",
+  "oidc_issuer": "https://token.actions.githubusercontent.com",
+  "source_uri": "https://github.com/example/sdp-trace",
+  "protected_ref": "refs/heads/main",
+  "workflow_identity": ".github/workflows/contract-release.yml",
+  "release_captain": {
+    "identity_ref": "role:sdp-trace-release-captain",
+    "actor_type": "human_role"
+  },
+  "required_approval_refs": [
+    "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md"
+  ],
+  "allowed_private_equivalent_profile": {
+    "profile": "local-dev-dsse-openssl-v1",
+    "envelope_binding": "DSSE PAE over in-toto statement payload",
+    "trusted_identity_source": "committed public key fingerprint for local development evidence",
+    "freshness_evidence": "contract manifest valid_until",
+    "audit_evidence": "committed contract release verification record"
+  },
+  "created_at": "2026-04-30T10:00:00Z",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "second"
+  }
+}

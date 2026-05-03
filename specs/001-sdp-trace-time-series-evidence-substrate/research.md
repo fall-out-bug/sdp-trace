@@ -43,6 +43,19 @@ Rejected source ideas:
 
 **Rationale**: The user clarified that the baseline source is not important. The process moves over time; we need evidence-backed observations of movement.
 
+Movement is represented structurally:
+
+- previous window reference
+- current window reference
+- previous value
+- current value
+- delta
+- unit
+- dimensions
+- evidence coverage and `not_assessed` gaps
+
+The words degrading, improving, pass, fail, ready, and blocked are not native movement labels in `sdp-trace`.
+
 **Alternatives Rejected**:
 
 - Fixed baseline entity: rejected because it overfits to one evaluation method.
@@ -65,3 +78,33 @@ Rejected source ideas:
 **Decision**: Harness/model/stack matrices must remain `TBD` or `not_assessed` until backed by committed examples or sanitized run summaries.
 
 **Rationale**: The repository quality bar forbids unsupported claims. This is especially important for OpenCode+MiniMax/Kimi/GLM and less-known harnesses.
+
+## Decision 6: Pin JSON Schema Draft and Validator Before Schema Work
+
+**Decision**: New schemas target JSON Schema Draft 2020-12. The full-validation command uses pinned local `ajv@8.20.0` through `scripts/validate-json-schema.mjs`.
+
+**Rationale**: Existing schemas already declare Draft 2020-12. Selecting the draft and validator before authoring new schemas prevents incompatible schema features, invalid examples, and rework across `sdp-gate` consumers.
+
+**Alternatives Rejected**:
+
+- Keep validator selection late: rejected because schema authors would not know which draft and features are allowed.
+- Use `jq` only: rejected because `jq empty` checks JSON syntax, not schema conformance.
+- Choose a harness-specific runtime validator: rejected because validation tooling must not imply dependency on any AI harness runtime.
+
+## Decision 7: Record External Assertions Instead of Native Strength
+
+**Decision**: `sdp-trace` does not assign evidence strength, quality scores, readiness, degradation, pass/fail, or override semantics. If another producer emits such a value, `sdp-trace` records it as an external verdict input or external assertion with producer, origin, policy reference when available, artifact reference, and provenance.
+
+**Rationale**: Evidence strength is policy-adjacent. Recording it as a native trace judgment would erode the `sdp-trace` / `sdp-gate` boundary.
+
+## Decision 8: Use Digest-And-Redaction Integrity for Committed Evidence
+
+**Decision**: Committed evidence references use sanitized summaries, SHA-256 digests when artifacts are committed, redaction notes when raw content is withheld, and `integrity_status` for unverified external references.
+
+**Rationale**: A self-trace or pilot example must be inspectable without leaking secrets, credentials, customer data, or raw prompts. SHA-256 digests provide continuity for committed artifacts but are not authentication signatures. Signing and write authorization are external policy unless a future schema version adds them.
+
+## Decision 9: Version Schemas Before sdp-gate Inherits Them
+
+**Decision**: Every new schema gets a stable `$id` and semver schema version. `sdp-gate` or any other consumer must declare supported versions.
+
+**Rationale**: `sdp-gate` builds on `sdp-trace`; silent breaking changes would break inherited policy inputs. Before v1.0, breaking changes are allowed only when examples and compatibility notes are updated with the same change.

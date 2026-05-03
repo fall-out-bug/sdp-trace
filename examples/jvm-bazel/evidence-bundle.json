@@ -1,24 +1,41 @@
 {
   "id": "jvm-bazel-change-001",
-  "scope": "Assess //payments/api Kotlin service built with Bazel",
+  "scope": "Design fixture for assessing //payments/api Kotlin service built with Bazel",
+  "evidence_state": "not_assessed",
+  "reason_code": "design_fixture_only",
+  "not_assessed_reason": "This committed bundle documents the expected evidence shape only. No real Kotlin+Bazel repository, source fixture, command output, or harness run artifact is committed.",
   "items": [
     {
       "kind": "file",
       "source": "payments/api/BUILD.bazel",
-      "summary": "Bazel target exists for the scoped service.",
-      "status": "pass"
+      "summary": "Placeholder for required scoped Bazel target evidence. No committed source fixture is present.",
+      "status": "not_assessed",
+      "status_origin": "not_assessed",
+      "reason_code": "design_fixture_only"
     },
     {
       "kind": "command",
       "source": "bazel test //payments/api/...",
       "summary": "Command expected for scoped verification. Output not captured in this example.",
-      "status": "not_assessed"
+      "status": "not_assessed",
+      "status_origin": "not_assessed",
+      "reason_code": "no_run_artifact"
+    },
+    {
+      "kind": "file",
+      "source": "payments/api/**/*.kt or payments/api/BUILD.bazel kt_jvm_* rule",
+      "summary": "Placeholder for required Kotlin source, script, kt_jvm_* rule, or Kotlin toolchain evidence tied to the scoped target. No committed source fixture is present.",
+      "status": "not_assessed",
+      "status_origin": "not_assessed",
+      "reason_code": "design_fixture_only"
     },
     {
       "kind": "manual",
       "source": "team-lead",
-      "summary": "No Maven or Gradle assumptions were used for this assessment.",
-      "status": "pass"
+      "summary": "Placeholder for manual review that Maven or Gradle metadata was not used as build ownership proof.",
+      "status": "not_assessed",
+      "status_origin": "not_assessed",
+      "reason_code": "design_fixture_only"
     }
   ]
 }

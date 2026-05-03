@@ -6,19 +6,22 @@
       "kind": "diff",
       "source": "git diff -- api/widgets.go api/widgets_test.go",
       "summary": "Change touches handler and tests only.",
-      "status": "pass"
+      "status": "pass",
+      "status_origin": "external"
     },
     {
       "kind": "test",
       "source": "go test ./...",
       "summary": "All Go tests passed locally.",
-      "status": "pass"
+      "status": "pass",
+      "status_origin": "external"
     },
     {
       "kind": "review",
       "source": "human-review:team-lead",
       "summary": "Reviewer confirmed validation behavior matches spec.",
-      "status": "pass"
+      "status": "pass",
+      "status_origin": "external"
     }
   ]
 }

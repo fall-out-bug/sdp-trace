@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/common.schema.json",
+  "title": "SDP Trace Common Definitions",
+  "type": "object",
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "schemaId": {
+      "type": "string",
+      "pattern": "^https://schemas\\.sdp\\.dev/trace/.+\\.schema\\.json$"
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actorType": {
+      "type": "string",
+      "enum": ["human_user", "human_role", "human_group", "ai_agent", "model", "system", "tool", "organization", "other"]
+    },
+    "accountableActorType": {
+      "type": "string",
+      "enum": ["human_user", "human_role", "human_group"]
+    },
+    "accountableIdentity": {
+      "type": "object",
+      "required": ["identity_ref", "actor_type"],
+      "properties": {
+        "identity_ref": { "$ref": "#/$defs/nonEmptyString" },
+        "actor_type": { "$ref": "#/$defs/accountableActorType" },
+        "display_name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "accountability": {
+      "type": "object",
+      "required": [
+        "dri",
+        "approver",
+        "escalation",
+        "authority_scope",
+        "accountability_claim",
+        "approval_ref",
+        "risk_owner",
+        "line_of_defense"
+      ],
+      "properties": {
+        "dri": { "$ref": "#/$defs/accountableIdentity" },
+        "approver": { "$ref": "#/$defs/accountableIdentity" },
+        "escalation": { "$ref": "#/$defs/accountableIdentity" },
+        "authority_scope": {
+          "type": "string",
+          "enum": ["idea", "spec", "plan", "task", "evidence", "assessment_input", "contract_release", "external_verdict", "custom"]
+        },
+        "accountability_claim": {
+          "type": "string",
+          "enum": ["recording_only", "content_approval", "risk_acceptance", "release_approval"]
+        },
+        "approval_ref": { "$ref": "#/$defs/ref" },
+        "risk_owner": { "$ref": "#/$defs/accountableIdentity" },
+        "line_of_defense": {
+          "type": "string",
+          "enum": ["first", "second", "third"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "redactionStatus": {
+      "type": "string",
+      "enum": ["none", "redacted", "withheld", "not_assessed"]
+    },
+    "integrityStatus": {
+      "type": "string",
+      "enum": ["verified_hash", "external_asserted", "unverified", "not_assessed"]
+    },
+    "assessmentState": {
+      "type": "string",
+      "enum": ["assessed", "partial", "not_assessed"]
+    },
+    "notAssessedEntry": {
+      "type": "object",
+      "required": ["field", "state", "reason"],
+      "properties": {
+        "field": { "$ref": "#/$defs/nonEmptyString" },
+        "state": { "const": "not_assessed" },
+        "reason": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "unavailableField": {
+      "type": "object",
+      "required": ["field", "state", "reason"],
+      "properties": {
+        "field": { "$ref": "#/$defs/nonEmptyString" },
+        "state": { "const": "not_assessed" },
+        "reason": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "artifactRef": {
+      "type": "object",
+      "required": ["uri", "redaction_status", "integrity_status"],
+      "properties": {
+        "uri": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "hash_algorithm": { "const": "sha256" },
+        "redaction_status": { "$ref": "#/$defs/redactionStatus" },
+        "redaction_note": { "type": "string" },
+        "integrity_status": { "$ref": "#/$defs/integrityStatus" }
+      },
+      "additionalProperties": false
+    },
+    "actor": {
+      "type": "object",
+      "required": ["id", "actor_type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "actor_type": { "$ref": "#/$defs/actorType" },
+        "display_name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

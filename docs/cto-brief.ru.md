@@ -1,26 +1,23 @@
-# sdp-trace: кратко для CTO
+# sdp-trace для CTO за одну минуту
 
-AI coding легко начать и трудно контролировать.
+AI-assisted delivery ускоряет работу, но ломает управляемость: через неделю трудно понять, что именно было обещано, кто или что это сделал, какие доказательства есть, где данные отсутствуют и кто отвечает за следующий шаг.
 
-Риск не в том, что агент пишет код. Риск в том, что потом никто не может объяснить scope, происхождение, evidence и quality decision по изменению.
+`sdp-trace` нужен не для того, чтобы сказать "все хорошо" или "мы деградируем". Он нужен, чтобы зафиксировать проверяемую цепочку:
 
-`sdp-trace` — переносимый trust layer для AI-assisted delivery. Он позволяет оставить текущий harness, но сделать изменения трассируемыми, доказуемыми и проверяемыми через gates.
+```text
+идея -> спецификация -> задача -> изменение -> evidence -> provenance -> accountability -> движение метрик -> проверенный контракт
+```
 
-## Что контролирует
+Для CTO это означает: процесс можно смотреть во времени. Не через ощущения и не через opaque score, а через prior/current/delta, coverage evidence и явные `not_assessed` gaps.
 
-- Scope: какое изменение было задумано.
-- Provenance: кто или что выполняло работу.
-- Evidence: тесты, CI, review, команды, diff и файлы.
-- Gate verdict: `pass`, `warn`, `fail` или `not_assessed`.
-- Decision record: почему изменение приняли, заблокировали или пропустили через override.
+Для CEO это означает: "ответственный" не ИИ. У каждого значимого артефакта есть human-held DRI, approver, risk owner и escalation.
 
-## Чего не обещает
+Для CIO это означает: контракт нельзя тихо упростить. Schemas, docs, validation scripts и fixtures входят в contract manifest с digest-проверкой и release verification profile.
 
-- Не заменяет code review.
-- Не гарантирует compliance.
-- Не доказывает отсутствие багов.
-- Не требует заменять Claude Code, Codex, OpenCode, Cursor или внутренний harness.
+`sdp-trace` сознательно не принимает policy decisions: pass/fail, readiness, degradation, thresholds и overrides принадлежат `sdp-gate` или другому внешнему policy consumer.
 
-## Первый шаг внедрения
+Block 01 строит contract scaffold: evidence contracts, accountability, manifest verification, signing profile, negative fixtures и proof that missing data stays `not_assessed`.
 
-Возьмите один repo и одно реальное AI-assisted изменение. Соберите evidence bundle и gate verdict. Если verdict помогает reviewer принять решение быстрее и увереннее, расширяйте сценарий через `sdp-gate`.
+Продукт не имеет права просить доверия у заказчика, пока не отследит сам себя. Следующее доказательство должно показать собственные spec, plan, tasks, changes, evidence, provenance, accountability, reviews, metrics и missing data этого репозитория по тем же контрактам.
+
+Репозиторные доказательства начинаются в `specs/001-sdp-trace-time-series-evidence-substrate/`, `schema/README.md`, `examples/contract-foundation/` и `docs/research/block-01-validation-summary.md`.

@@ -1,0 +1,869 @@
+{
+  "id": "assessment-input-self-trace-negative-native-policy-field",
+  "schema_version": "0.1.0",
+  "scope": "sdp-trace Self-Trace v0",
+  "trace_snapshot_ref": "examples/self-trace/trace-snapshot.json",
+  "evidence_events": [
+    {
+      "id": "evidence-metric-catalog-created",
+      "schema_version": "0.1.0",
+      "source": "repository-file",
+      "external_ref": "docs/process-metric-catalog.md",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "collected_at": "2026-04-30T20:50:00Z",
+      "actor": {
+        "id": "codex-session",
+        "actor_type": "ai_agent",
+        "display_name": "Codex implementation session"
+      },
+      "event_type": "file",
+      "status": "success",
+      "summary": "Process metric catalog was added with names, units, dimensions, evidence sources, not_assessed rules, and privacy risk.",
+      "artifact": {
+        "uri": "docs/process-metric-catalog.md",
+        "sha256": "0cd4e32785e440b31d7817ca05afc6148b74cb777e347f1bd55cda20e2cd3e26",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "integrity_status": "verified_hash",
+      "dedupe_key": "self-trace-metric-catalog-2026-04-30",
+      "conflict_refs": [],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md#T011",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-contract-validation-pass",
+      "schema_version": "0.1.0",
+      "source": "local-command",
+      "external_ref": "scripts/validate-contracts.sh",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "collected_at": "2026-04-30T20:50:00Z",
+      "actor": {
+        "id": "codex-session",
+        "actor_type": "ai_agent",
+        "display_name": "Codex implementation session"
+      },
+      "event_type": "command",
+      "status": "success",
+      "summary": "Contract validation command validates committed contract foundation examples and is extended by self-trace validation.",
+      "artifact": {
+        "uri": "scripts/validate-contracts.sh",
+        "sha256": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "integrity_status": "verified_hash",
+      "dedupe_key": "self-trace-contract-validation-2026-04-30",
+      "conflict_refs": [],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "docs/research/block-01-validation-summary.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    },
+    {
+      "id": "evidence-crisis-kimi-critic",
+      "schema_version": "0.1.0",
+      "source": "pi-review",
+      "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "collected_at": "2026-04-30T20:50:00Z",
+      "actor": {
+        "id": "pi-kimi-k2p6",
+        "actor_type": "ai_agent",
+        "display_name": "Kimi crisis critic"
+      },
+      "event_type": "review",
+      "status": "warning",
+      "summary": "Kimi crisis critic returned needs_revision and identified self-trace and signing proof blockers.",
+      "artifact": {
+        "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
+        "sha256": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "integrity_status": "verified_hash",
+      "dedupe_key": "crisis-kimi-critic-2026-04-30",
+      "conflict_refs": [],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "second"
+      }
+    },
+    {
+      "id": "evidence-crisis-glm-critic",
+      "schema_version": "0.1.0",
+      "source": "pi-review",
+      "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "collected_at": "2026-04-30T20:50:00Z",
+      "actor": {
+        "id": "pi-glm-5-1",
+        "actor_type": "ai_agent",
+        "display_name": "GLM crisis critic"
+      },
+      "event_type": "review",
+      "status": "warning",
+      "summary": "GLM crisis critic returned needs_revision and challenged the absence of self-trace artifacts.",
+      "artifact": {
+        "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
+        "sha256": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "integrity_status": "verified_hash",
+      "dedupe_key": "crisis-glm-critic-2026-04-30",
+      "conflict_refs": [],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "second"
+      }
+    },
+    {
+      "id": "evidence-crisis-judge-pass",
+      "schema_version": "0.1.0",
+      "source": "pi-review",
+      "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "collected_at": "2026-04-30T20:50:00Z",
+      "actor": {
+        "id": "pi-minimax-m2-7",
+        "actor_type": "ai_agent",
+        "display_name": "MiniMax crisis judge"
+      },
+      "event_type": "review",
+      "status": "success",
+      "summary": "MiniMax crisis judge accepted roadmap honesty while keeping T011 and self-proof implementation as blockers.",
+      "artifact": {
+        "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
+        "sha256": "e9bf0b045d27923d1ba4b09b72043c52153f1525bb79a791b41b99d8d5075b52",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "integrity_status": "verified_hash",
+      "dedupe_key": "crisis-judge-2026-04-30",
+      "conflict_refs": [
+        "evidence-crisis-kimi-critic",
+        "evidence-crisis-glm-critic"
+      ],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "second"
+      }
+    }
+  ],
+  "provenance_records": [
+    {
+      "id": "provenance-codex-self-trace",
+      "schema_version": "0.1.0",
+      "actor_id": "codex-session",
+      "actor_type": "ai_agent",
+      "harness": "codex",
+      "tool_name": "apply_patch",
+      "command": "create self-trace artifacts",
+      "context_refs": [
+        "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
+        "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md"
+      ],
+      "captured_at": "2026-04-30T20:50:00Z",
+      "payload_digest": "5a85260a43b25b47e33ee243e17ed4bfe54b8a4378c17a068881848f6aea87e7",
+      "digest_algorithm": "sha256",
+      "chain_scope": "self-trace-v0",
+      "unavailable_fields": [
+        {
+          "field": "model_version",
+          "state": "not_assessed",
+          "reason": "The local Codex session does not expose a stable model version string."
+        },
+        {
+          "field": "immutable_source_commit",
+          "state": "not_assessed",
+          "reason": "Self-trace is being produced before a final commit exists."
+        }
+      ]
+    },
+    {
+      "id": "provenance-rtk-validation",
+      "schema_version": "0.1.0",
+      "actor_id": "codex-session",
+      "actor_type": "ai_agent",
+      "harness": "codex",
+      "tool_name": "rtk",
+      "command": "scripts/validate-contracts.sh",
+      "captured_at": "2026-04-30T20:50:00Z",
+      "payload_digest": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+      "digest_algorithm": "sha256",
+      "chain_scope": "self-trace-v0",
+      "unavailable_fields": [
+        {
+          "field": "ci_run_id",
+          "state": "not_assessed",
+          "reason": "Validation was run locally, not in CI."
+        }
+      ]
+    },
+    {
+      "id": "provenance-pi-kimi-crisis-critic",
+      "schema_version": "0.1.0",
+      "actor_id": "pi-kimi-k2p6",
+      "actor_type": "ai_agent",
+      "harness": "pi",
+      "model_family": "Kimi",
+      "model_version": "k2p6",
+      "tool_name": "pi",
+      "command": "pi --provider kimi-coding --model k2p6 --no-tools --no-context-files",
+      "captured_at": "2026-04-30T20:50:00Z",
+      "payload_digest": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498",
+      "digest_algorithm": "sha256",
+      "chain_scope": "crisis-self-proof-review"
+    },
+    {
+      "id": "provenance-pi-glm-crisis-critic",
+      "schema_version": "0.1.0",
+      "actor_id": "pi-glm-5-1",
+      "actor_type": "ai_agent",
+      "harness": "pi",
+      "model_family": "GLM",
+      "model_version": "glm-5.1",
+      "tool_name": "pi",
+      "command": "pi --provider zai --model glm-5.1 --no-tools --no-context-files",
+      "captured_at": "2026-04-30T20:50:00Z",
+      "payload_digest": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e",
+      "digest_algorithm": "sha256",
+      "chain_scope": "crisis-self-proof-review"
+    },
+    {
+      "id": "provenance-pi-minimax-crisis-judge",
+      "schema_version": "0.1.0",
+      "actor_id": "pi-minimax-m2-7",
+      "actor_type": "ai_agent",
+      "harness": "pi",
+      "model_family": "MiniMax",
+      "model_version": "MiniMax-M2.7",
+      "tool_name": "pi",
+      "command": "pi --provider minimax --model MiniMax-M2.7 --no-tools --no-context-files",
+      "captured_at": "2026-04-30T20:50:00Z",
+      "payload_digest": "e9bf0b045d27923d1ba4b09b72043c52153f1525bb79a791b41b99d8d5075b52",
+      "digest_algorithm": "sha256",
+      "chain_scope": "crisis-self-proof-review"
+    }
+  ],
+  "metric_streams": [
+    {
+      "id": "metric-self-trace-task-completion",
+      "schema_version": "0.1.0",
+      "metric_name": "contract_task_completion_ratio",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "self-trace-v0",
+        "spec_id": "001-sdp-trace-time-series-evidence-substrate",
+        "block": "02-self-trace-proof"
+      },
+      "samples": [
+        {
+          "id": "sample-task-completion-before-self-trace",
+          "value": 0.59,
+          "unit": "ratio",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T20:40:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-crisis-judge-pass"
+          ],
+          "provenance_refs": [
+            "provenance-codex-self-trace"
+          ],
+          "assessment_state": "assessed"
+        },
+        {
+          "id": "sample-task-completion-after-self-trace",
+          "value": 0.79,
+          "unit": "ratio",
+          "window_start": "2026-04-30T20:40:00Z",
+          "window_end": "2026-04-30T20:50:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-metric-catalog-created",
+            "evidence-contract-validation-pass"
+          ],
+          "provenance_refs": [
+            "provenance-codex-self-trace"
+          ],
+          "assessment_state": "assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-self-trace-task-completion",
+          "previous_sample_ref": "sample-task-completion-before-self-trace",
+          "current_sample_ref": "sample-task-completion-after-self-trace",
+          "previous_value": 0.59,
+          "current_value": 0.79,
+          "delta": 0.2,
+          "unit": "ratio",
+          "evidence_coverage": {
+            "current": "assessed",
+            "previous": "assessed"
+          },
+          "assessment_state": "assessed"
+        }
+      ],
+      "assessment_state": "assessed",
+      "not_assessed": [
+        {
+          "field": "fresh_checkout_validation",
+          "state": "not_assessed",
+          "reason": "Validation was reproduced in the current worktree. A fresh checkout or CI run is Block 03/future release evidence scope."
+        }
+      ],
+      "created_at": "2026-04-30T20:50:00Z",
+      "updated_at": "2026-04-30T20:50:00Z"
+    },
+    {
+      "id": "metric-self-trace-evidence-coverage",
+      "schema_version": "0.1.0",
+      "metric_name": "evidence_coverage_ratio",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "self-trace-v0",
+        "block": "02-self-trace-proof"
+      },
+      "samples": [
+        {
+          "id": "sample-evidence-coverage-before-self-trace",
+          "value": 0.5,
+          "unit": "ratio",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T20:40:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-crisis-kimi-critic",
+            "evidence-crisis-glm-critic"
+          ],
+          "provenance_refs": [
+            "provenance-pi-kimi-crisis-critic",
+            "provenance-pi-glm-crisis-critic"
+          ],
+          "assessment_state": "assessed"
+        },
+        {
+          "id": "sample-evidence-coverage-after-self-trace",
+          "value": 1,
+          "unit": "ratio",
+          "window_start": "2026-04-30T20:40:00Z",
+          "window_end": "2026-04-30T20:50:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-metric-catalog-created",
+            "evidence-contract-validation-pass",
+            "evidence-crisis-judge-pass"
+          ],
+          "provenance_refs": [
+            "provenance-codex-self-trace",
+            "provenance-pi-minimax-crisis-judge"
+          ],
+          "assessment_state": "assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-self-trace-evidence-coverage",
+          "previous_sample_ref": "sample-evidence-coverage-before-self-trace",
+          "current_sample_ref": "sample-evidence-coverage-after-self-trace",
+          "previous_value": 0.5,
+          "current_value": 1,
+          "delta": 0.5,
+          "unit": "ratio",
+          "evidence_coverage": {
+            "current": "assessed",
+            "previous": "assessed"
+          },
+          "assessment_state": "assessed"
+        }
+      ],
+      "assessment_state": "assessed",
+      "created_at": "2026-04-30T20:50:00Z",
+      "updated_at": "2026-04-30T20:50:00Z"
+    },
+    {
+      "id": "metric-self-trace-not-assessed-count",
+      "schema_version": "0.1.0",
+      "metric_name": "not_assessed_item_count",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "self-trace-v0",
+        "block": "02-self-trace-proof"
+      },
+      "samples": [
+        {
+          "id": "sample-not-assessed-before-self-trace",
+          "value": 2,
+          "unit": "count",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T20:40:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-crisis-judge-pass"
+          ],
+          "provenance_refs": [
+            "provenance-pi-minimax-crisis-judge"
+          ],
+          "assessment_state": "assessed"
+        },
+        {
+          "id": "sample-not-assessed-after-self-trace",
+          "value": 2,
+          "unit": "count",
+          "window_start": "2026-04-30T20:40:00Z",
+          "window_end": "2026-04-30T20:50:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-crisis-judge-pass"
+          ],
+          "provenance_refs": [
+            "provenance-codex-self-trace"
+          ],
+          "assessment_state": "assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-self-trace-not-assessed-count",
+          "previous_sample_ref": "sample-not-assessed-before-self-trace",
+          "current_sample_ref": "sample-not-assessed-after-self-trace",
+          "previous_value": 2,
+          "current_value": 2,
+          "delta": 0,
+          "unit": "count",
+          "evidence_coverage": {
+            "current": "assessed",
+            "previous": "assessed"
+          },
+          "assessment_state": "assessed"
+        }
+      ],
+      "assessment_state": "assessed",
+      "created_at": "2026-04-30T20:50:00Z",
+      "updated_at": "2026-04-30T20:50:00Z"
+    },
+    {
+      "id": "metric-self-trace-schema-validation",
+      "schema_version": "0.1.0",
+      "metric_name": "schema_validation_state",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "self-trace-v0",
+        "block": "02-self-trace-proof"
+      },
+      "samples": [
+        {
+          "id": "sample-schema-validation-before-self-trace",
+          "value": "passed",
+          "unit": "enum",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T20:40:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "contract-foundation"
+          },
+          "evidence_refs": [
+            "evidence-contract-validation-pass"
+          ],
+          "provenance_refs": [
+            "provenance-rtk-validation"
+          ],
+          "assessment_state": "assessed"
+        },
+        {
+          "id": "sample-schema-validation-after-self-trace",
+          "value": "passed",
+          "unit": "enum",
+          "window_start": "2026-04-30T20:40:00Z",
+          "window_end": "2026-04-30T20:50:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "self-trace-v0"
+          },
+          "evidence_refs": [
+            "evidence-contract-validation-pass"
+          ],
+          "provenance_refs": [
+            "provenance-rtk-validation"
+          ],
+          "assessment_state": "assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-self-trace-schema-validation",
+          "previous_sample_ref": "sample-schema-validation-before-self-trace",
+          "current_sample_ref": "sample-schema-validation-after-self-trace",
+          "previous_value": "passed",
+          "current_value": "passed",
+          "delta": "unchanged",
+          "unit": "enum",
+          "evidence_coverage": {
+            "current": "assessed",
+            "previous": "assessed"
+          },
+          "assessment_state": "assessed"
+        }
+      ],
+      "assessment_state": "assessed",
+      "created_at": "2026-04-30T20:50:00Z",
+      "updated_at": "2026-04-30T20:50:00Z"
+    },
+    {
+      "id": "metric-self-trace-review-contradictions",
+      "schema_version": "0.1.0",
+      "metric_name": "review_contradiction_count",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "self-trace-v0",
+        "block": "02-self-trace-proof"
+      },
+      "samples": [
+        {
+          "id": "sample-review-contradictions-before-resolution",
+          "value": 2,
+          "unit": "count",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T20:40:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "crisis-review"
+          },
+          "evidence_refs": [
+            "evidence-crisis-kimi-critic",
+            "evidence-crisis-glm-critic"
+          ],
+          "provenance_refs": [
+            "provenance-pi-kimi-crisis-critic",
+            "provenance-pi-glm-crisis-critic"
+          ],
+          "assessment_state": "assessed"
+        },
+        {
+          "id": "sample-review-contradictions-after-resolution",
+          "value": 1,
+          "unit": "count",
+          "window_start": "2026-04-30T20:40:00Z",
+          "window_end": "2026-04-30T20:50:00Z",
+          "dimensions": {
+            "repository": "sdp-trace",
+            "scope": "crisis-review"
+          },
+          "evidence_refs": [
+            "evidence-crisis-judge-pass"
+          ],
+          "provenance_refs": [
+            "provenance-pi-minimax-crisis-judge"
+          ],
+          "assessment_state": "assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-self-trace-review-contradictions",
+          "previous_sample_ref": "sample-review-contradictions-before-resolution",
+          "current_sample_ref": "sample-review-contradictions-after-resolution",
+          "previous_value": 2,
+          "current_value": 1,
+          "delta": -1,
+          "unit": "count",
+          "evidence_coverage": {
+            "current": "assessed",
+            "previous": "assessed"
+          },
+          "assessment_state": "assessed"
+        }
+      ],
+      "assessment_state": "assessed",
+      "created_at": "2026-04-30T20:50:00Z",
+      "updated_at": "2026-04-30T20:50:00Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "observation-block01-is-scaffold",
+      "schema_version": "0.1.0",
+      "scope": "self-trace-v0",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "statement": "Block 01 is contract scaffolding, not product proof; customer trust is blocked until self-trace and self-attestation pass.",
+      "evidence_refs": [
+        "evidence-crisis-judge-pass"
+      ],
+      "provenance_refs": [
+        "provenance-pi-minimax-crisis-judge",
+        "provenance-codex-self-trace"
+      ],
+      "assessment_status": "assessed"
+    },
+    {
+      "id": "observation-self-proof-crisis-accepted",
+      "schema_version": "0.1.0",
+      "scope": "self-trace-v0",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "statement": "Independent crisis critics found the old roadmap insufficient because sdp-trace had not traced itself.",
+      "evidence_refs": [
+        "evidence-crisis-kimi-critic",
+        "evidence-crisis-glm-critic"
+      ],
+      "provenance_refs": [
+        "provenance-pi-kimi-crisis-critic",
+        "provenance-pi-glm-crisis-critic"
+      ],
+      "assessment_status": "assessed"
+    },
+    {
+      "id": "observation-metric-catalog-grounded",
+      "schema_version": "0.1.0",
+      "scope": "self-trace-v0",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "statement": "The process metric catalog now defines metric names, units, dimensions, evidence sources, not_assessed rules, and privacy risk without policy thresholds.",
+      "evidence_refs": [
+        "evidence-metric-catalog-created"
+      ],
+      "provenance_refs": [
+        "provenance-codex-self-trace"
+      ],
+      "assessment_status": "assessed"
+    },
+    {
+      "id": "observation-external-attestation-missing",
+      "schema_version": "0.1.0",
+      "scope": "self-trace-v0",
+      "observed_at": "2026-04-30T20:50:00Z",
+      "statement": "External attestation and production release verification remain not_assessed until Block 03 records a reproducible proof state.",
+      "evidence_refs": [
+        "evidence-crisis-judge-pass"
+      ],
+      "provenance_refs": [
+        "provenance-pi-minimax-crisis-judge",
+        "provenance-codex-self-trace"
+      ],
+      "assessment_status": "not_assessed"
+    }
+  ],
+  "external_verdict_inputs": [
+    {
+      "id": "external-verdict-crisis-judge-roadmap-honesty",
+      "schema_version": "0.1.0",
+      "producer": "pi-minimax-crisis-judge",
+      "producer_type": "reviewer",
+      "origin": "external",
+      "verdict_kind": "quality_score",
+      "verdict_value": "pass for revised roadmap honesty; product proof remains blocked by self-trace and self-attestation implementation",
+      "policy_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
+      "generated_at": "2026-04-30T20:50:00Z",
+      "artifact": {
+        "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
+        "sha256": "e9bf0b045d27923d1ba4b09b72043c52153f1525bb79a791b41b99d8d5075b52",
+        "hash_algorithm": "sha256",
+        "redaction_status": "none",
+        "integrity_status": "verified_hash"
+      },
+      "redaction_status": "none",
+      "provenance_refs": [
+        "provenance-pi-minimax-crisis-judge"
+      ],
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-engineering-dri",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "assessment_input",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    }
+  ],
+  "not_assessed": [
+    {
+      "field": "immutable_source_commit",
+      "state": "not_assessed",
+      "reason": "Self-trace v0 is produced before a final commit exists; Block 03 must replace working-tree placeholders with immutable source references."
+    },
+    {
+      "field": "external_attestation",
+      "state": "not_assessed",
+      "reason": "External Sigstore/Rekor or customer PKI attestation is out of Block 02 scope and is tracked by Block 03."
+    },
+    {
+      "field": "fresh_checkout_validation",
+      "state": "not_assessed",
+      "reason": "Self-trace validation was run in the shared working tree. Fresh checkout reproduction is tracked as release evidence, not claimed by Block 02."
+    }
+  ],
+  "generated_at": "2026-04-30T20:50:00Z",
+  "producer": "sdp-trace-self-trace-v0",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-engineering-dri",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "assessment_input",
+    "accountability_claim": "recording_only",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "first"
+  },
+  "risk_classification": {
+    "schema_version": "0.1.0",
+    "observed_autonomy_level": "collaborative",
+    "observed_impact_level": "medium",
+    "classification_source": "human_dri",
+    "classification_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
+    "declared_oversight": {
+      "origin": "external",
+      "policy_ref": "docs/accountability-model.md",
+      "required_oversight": "independent_review",
+      "review_independence": "different_actor_required"
+    }
+  },
+  "contract_release_verification_ref": "examples/contract-foundation/contract-release-verification.example.json",
+  "readiness": "ready"
+}

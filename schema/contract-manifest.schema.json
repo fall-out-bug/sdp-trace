@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/contract-manifest.schema.json",
+  "title": "SDP Trace Contract Manifest",
+  "type": "object",
+  "required": [
+    "id",
+    "contract_version",
+    "signing_profile",
+    "schema_versions",
+    "artifacts",
+    "source_commit",
+    "issued_at",
+    "trusted_identity_policy_ref",
+    "approval_refs",
+    "compatibility_notes",
+    "accountability"
+  ],
+  "oneOf": [
+    { "required": ["valid_until"], "not": { "required": ["freshness_policy"] } },
+    { "required": ["freshness_policy"], "not": { "required": ["valid_until"] } }
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "contract_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "signing_profile": { "const": "sdp-trace-signature/sigstore-dsse-keyless-v1" },
+    "schema_versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["schema_id", "schema_version"],
+        "properties": {
+          "schema_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/schemaId" },
+          "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "kind", "sha256"],
+        "properties": {
+          "path": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+          "kind": {
+            "type": "string",
+            "enum": ["schema", "doc", "validation_script", "fixture", "source_commit", "compatibility_note"]
+          },
+          "sha256": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "source_commit": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "previous_manifest_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "issued_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "valid_until": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "freshness_policy": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "trusted_identity_policy_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "approval_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "compatibility_notes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+    },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
+  },
+  "additionalProperties": false
+}

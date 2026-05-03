@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/self-attestation-case.schema.json",
+  "title": "SDP Trace Self-Attestation Verification Case",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "manifest_ref",
+    "dsse_envelope_ref",
+    "public_key_ref",
+    "trusted_identity_policy_ref",
+    "expected_source_commit",
+    "reference_time",
+    "verification_artifact_ref",
+    "verification_artifact_sha256",
+    "require_external_attestation",
+    "expected_negative",
+    "expected_proof_states"
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "manifest_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "dsse_envelope_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "public_key_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "trusted_identity_policy_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "expected_source_commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "expected_signer_identity": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "reference_time": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "verification_artifact_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "verification_artifact_sha256": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "require_external_attestation": { "type": "boolean" },
+    "expected_negative": { "type": "boolean" },
+    "negative_reason": {
+      "type": "string",
+      "enum": [
+        "wrong_source_commit",
+        "wrong_signer",
+        "wrong_policy",
+        "stale_manifest",
+        "missing_external_attestation",
+        "modified_verification_artifact"
+      ]
+    },
+    "expected_proof_states": {
+      "type": "object",
+      "properties": {
+        "schema_valid": { "type": "boolean" },
+        "digest_verified": { "type": "boolean" },
+        "locally_attested": { "type": "boolean" },
+        "source_commit_artifacts_verified": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "externally_attested": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "production_release_verified": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "trusted_contract_release": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "if": {
+    "properties": { "expected_negative": { "const": true } },
+    "required": ["expected_negative"]
+  },
+  "then": {
+    "required": ["negative_reason"]
+  },
+  "additionalProperties": false
+}

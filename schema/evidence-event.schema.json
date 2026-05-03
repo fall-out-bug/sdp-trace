@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/evidence-event.schema.json",
+  "title": "SDP Trace Evidence Event",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "source",
+    "external_ref",
+    "observed_at",
+    "collected_at",
+    "actor",
+    "event_type",
+    "status",
+    "summary",
+    "redaction_status",
+    "integrity_status"
+  ],
+  "properties": {
+    "id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "source": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "external_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "observed_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "collected_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "actor": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/actor" },
+    "event_type": {
+      "type": "string",
+      "enum": ["command", "file", "test", "ci_run", "review", "scan", "deployment", "harness_log", "model_output", "manual", "custom"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failure", "warning", "skipped", "pending", "not_assessed"]
+    },
+    "summary": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "artifact": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" },
+    "redaction_status": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/redactionStatus" },
+    "redaction_note": { "type": "string" },
+    "integrity_status": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/integrityStatus" },
+    "dedupe_key": { "type": "string" },
+    "conflict_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
+    },
+    "external_assertions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["origin", "producer", "assertion_kind", "assertion_value"],
+        "properties": {
+          "origin": { "const": "external" },
+          "producer": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+          "assertion_kind": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+          "assertion_value": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "number" },
+              { "type": "boolean" }
+            ]
+          },
+          "policy_ref": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
+  },
+  "additionalProperties": false
+}

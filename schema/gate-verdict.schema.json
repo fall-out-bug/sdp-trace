@@ -1,10 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.sdp.dev/trace/gate-verdict.schema.json",
-  "title": "SDP Trace Gate Verdict",
+  "title": "External Gate Verdict",
   "type": "object",
-  "required": ["gate", "verdict", "evidence"],
+  "required": ["origin", "producer", "gate", "verdict", "evidence"],
   "properties": {
+    "origin": { "const": "external" },
+    "producer": { "type": "string", "minLength": 1 },
     "gate": { "type": "string", "minLength": 1 },
     "verdict": {
       "type": "string",

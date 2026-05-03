@@ -1,0 +1,202 @@
+{
+  "id": "assessment-input-contract-foundation-not-assessed",
+  "schema_version": "0.1.0",
+  "scope": "sdp-trace Block 01 unavailable model metadata",
+  "trace_snapshot_ref": "examples/github-speckit/trace.json",
+  "evidence_events": [
+    {
+      "id": "evidence-pending-harness-log",
+      "schema_version": "0.1.0",
+      "source": "harness-log",
+      "external_ref": "local-run:not-committed",
+      "observed_at": "2026-04-30T10:05:00Z",
+      "collected_at": "2026-04-30T10:05:00Z",
+      "actor": {
+        "id": "codex-session",
+        "actor_type": "ai_agent"
+      },
+      "event_type": "harness_log",
+      "status": "pending",
+      "summary": "Raw harness logs are unavailable for committed example and remain pending.",
+      "redaction_status": "withheld",
+      "redaction_note": "Raw logs may contain private prompt contents and are not committed.",
+      "integrity_status": "not_assessed",
+      "accountability": {
+        "dri": {
+          "identity_ref": "role:sdp-trace-evidence-owner",
+          "actor_type": "human_role"
+        },
+        "approver": {
+          "identity_ref": "role:sdp-trace-release-captain",
+          "actor_type": "human_role"
+        },
+        "escalation": {
+          "identity_ref": "role:sdp-trace-cto",
+          "actor_type": "human_role"
+        },
+        "authority_scope": "evidence",
+        "accountability_claim": "recording_only",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+        "risk_owner": {
+          "identity_ref": "role:sdp-trace-risk-owner",
+          "actor_type": "human_role"
+        },
+        "line_of_defense": "first"
+      }
+    }
+  ],
+  "provenance_records": [
+    {
+      "id": "provenance-unavailable-model",
+      "schema_version": "0.1.0",
+      "actor_id": "codex-session",
+      "actor_type": "ai_agent",
+      "captured_at": "2026-04-30T10:05:00Z",
+      "payload_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+      "digest_algorithm": "sha256",
+      "unavailable_fields": [
+        {
+          "field": "model_version",
+          "state": "not_assessed",
+          "reason": "Provider did not expose model version in the local session."
+        },
+        {
+          "field": "raw_harness_log",
+          "state": "not_assessed",
+          "reason": "Raw log is withheld from committed examples."
+        }
+      ]
+    }
+  ],
+  "metric_streams": [
+    {
+      "id": "metric-log-availability",
+      "schema_version": "0.1.0",
+      "metric_name": "raw_log_availability",
+      "dimensions": {
+        "repository": "sdp-trace",
+        "scope": "block-01-contract-foundation"
+      },
+      "samples": [
+        {
+          "id": "sample-log-availability-previous",
+          "value": null,
+          "unit": "boolean",
+          "window_start": "2026-04-29T00:00:00Z",
+          "window_end": "2026-04-29T23:59:59Z",
+          "dimensions": {
+            "repository": "sdp-trace"
+          },
+          "evidence_refs": [
+            "evidence-pending-harness-log"
+          ],
+          "provenance_refs": [
+            "provenance-unavailable-model"
+          ],
+          "not_assessed_reason": "No prior sanitized raw-log evidence was committed.",
+          "assessment_state": "not_assessed"
+        },
+        {
+          "id": "sample-log-availability-current",
+          "value": null,
+          "unit": "boolean",
+          "window_start": "2026-04-30T00:00:00Z",
+          "window_end": "2026-04-30T23:59:59Z",
+          "dimensions": {
+            "repository": "sdp-trace"
+          },
+          "evidence_refs": [
+            "evidence-pending-harness-log"
+          ],
+          "provenance_refs": [
+            "provenance-unavailable-model"
+          ],
+          "not_assessed_reason": "Raw harness logs are not committed and no sanitized artifact is available yet.",
+          "assessment_state": "not_assessed"
+        }
+      ],
+      "comparisons": [
+        {
+          "id": "comparison-log-availability",
+          "previous_sample_ref": "sample-log-availability-previous",
+          "current_sample_ref": "sample-log-availability-current",
+          "previous_value": null,
+          "current_value": null,
+          "delta": null,
+          "unit": "boolean",
+          "evidence_coverage": {
+            "current": "not_assessed",
+            "previous": "not_assessed"
+          },
+          "assessment_state": "not_assessed",
+          "not_assessed_reason": "Comparable prior and current raw-log evidence is unavailable."
+        }
+      ],
+      "assessment_state": "not_assessed",
+      "not_assessed": [
+        {
+          "field": "samples.raw_log_availability",
+          "state": "not_assessed",
+          "reason": "Raw logs are withheld and no sanitized derivative exists."
+        }
+      ],
+      "created_at": "2026-04-30T10:05:00Z",
+      "updated_at": "2026-04-30T10:05:00Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "observation-missing-logs",
+      "schema_version": "0.1.0",
+      "scope": "block-01-contract-foundation",
+      "observed_at": "2026-04-30T10:05:00Z",
+      "statement": "Missing raw logs remain not_assessed instead of being converted into success.",
+      "evidence_refs": [
+        "evidence-pending-harness-log"
+      ],
+      "provenance_refs": [
+        "provenance-unavailable-model"
+      ],
+      "assessment_status": "not_assessed"
+    }
+  ],
+  "not_assessed": [
+    {
+      "field": "raw_harness_log",
+      "state": "not_assessed",
+      "reason": "Raw logs may contain private prompt contents and are withheld from committed examples."
+    }
+  ],
+  "generated_at": "2026-04-30T10:05:00Z",
+  "producer": "sdp-trace-contract-foundation",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-evidence-owner",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "assessment_input",
+    "accountability_claim": "recording_only",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "first"
+  },
+  "risk_classification": {
+    "schema_version": "0.1.0",
+    "observed_autonomy_level": "collaborative",
+    "observed_impact_level": "medium",
+    "classification_source": "human_dri",
+    "classification_ref": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md"
+  },
+  "contract_release_verification_ref": "examples/contract-foundation/contract-release-verification.example.json"
+}

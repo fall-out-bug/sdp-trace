@@ -26,6 +26,10 @@
         "status": {
           "type": "string",
           "enum": ["pass", "warn", "fail", "not_assessed"]
+        },
+        "status_origin": {
+          "type": "string",
+          "enum": ["external", "not_assessed"]
         }
       },
       "additionalProperties": true

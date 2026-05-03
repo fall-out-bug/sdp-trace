@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/risk-classification.schema.json",
+  "title": "SDP Trace Risk Classification",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "observed_autonomy_level",
+    "observed_impact_level",
+    "classification_source",
+    "classification_ref"
+  ],
+  "properties": {
+    "schema_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+    "observed_autonomy_level": {
+      "type": "string",
+      "enum": ["assistive", "collaborative", "delegated", "autonomous"]
+    },
+    "observed_impact_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "classification_source": {
+      "type": "string",
+      "enum": ["human_dri", "customer_policy", "external_governance_policy", "policy_engine", "not_assessed"]
+    },
+    "classification_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+    "declared_oversight": {
+      "type": "object",
+      "required": ["origin", "policy_ref", "required_oversight", "review_independence"],
+      "properties": {
+        "origin": { "const": "external" },
+        "policy_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" },
+        "required_oversight": {
+          "type": "string",
+          "enum": ["author_review", "independent_review", "maker_checker", "executive_approval"]
+        },
+        "review_independence": {
+          "type": "string",
+          "enum": ["same_actor_allowed", "different_actor_required", "different_line_required", "external_assurance_required"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "risk_notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

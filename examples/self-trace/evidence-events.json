@@ -1,0 +1,523 @@
+[
+  {
+    "id": "evidence-metric-catalog-created",
+    "schema_version": "0.1.0",
+    "source": "repository-file",
+    "external_ref": "docs/process-metric-catalog.md",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "collected_at": "2026-04-30T20:50:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "file",
+    "status": "success",
+    "summary": "Process metric catalog was added with names, units, dimensions, evidence sources, not_assessed rules, and privacy risk.",
+    "artifact": {
+      "uri": "docs/process-metric-catalog.md",
+      "sha256": "0cd4e32785e440b31d7817ca05afc6148b74cb777e347f1bd55cda20e2cd3e26",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "self-trace-metric-catalog-2026-04-30",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md#T011",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-contract-validation-pass",
+    "schema_version": "0.1.0",
+    "source": "local-command",
+    "external_ref": "scripts/validate-contracts.sh",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "collected_at": "2026-04-30T20:50:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "command",
+    "status": "success",
+    "summary": "Contract validation command validates committed contract foundation examples and is extended by self-trace validation.",
+    "artifact": {
+      "uri": "scripts/validate-contracts.sh",
+      "sha256": "1bac807e652b46a4d025a3bdb3e31ab705ece1aae157469ac4fb7009f695f9c3",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "self-trace-contract-validation-2026-04-30",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "docs/research/block-01-validation-summary.md",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-crisis-kimi-critic",
+    "schema_version": "0.1.0",
+    "source": "pi-review",
+    "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "collected_at": "2026-04-30T20:50:00Z",
+    "actor": {
+      "id": "pi-kimi-k2p6",
+      "actor_type": "ai_agent",
+      "display_name": "Kimi crisis critic"
+    },
+    "event_type": "review",
+    "status": "warning",
+    "summary": "Kimi crisis critic returned needs_revision and identified self-trace and signing proof blockers.",
+    "artifact": {
+      "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
+      "sha256": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "crisis-kimi-critic-2026-04-30",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "second"
+    }
+  },
+  {
+    "id": "evidence-crisis-glm-critic",
+    "schema_version": "0.1.0",
+    "source": "pi-review",
+    "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "collected_at": "2026-04-30T20:50:00Z",
+    "actor": {
+      "id": "pi-glm-5-1",
+      "actor_type": "ai_agent",
+      "display_name": "GLM crisis critic"
+    },
+    "event_type": "review",
+    "status": "warning",
+    "summary": "GLM crisis critic returned needs_revision and challenged the absence of self-trace artifacts.",
+    "artifact": {
+      "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
+      "sha256": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "crisis-glm-critic-2026-04-30",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "second"
+    }
+  },
+  {
+    "id": "evidence-crisis-judge-pass",
+    "schema_version": "0.1.0",
+    "source": "pi-review",
+    "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
+    "observed_at": "2026-04-30T20:50:00Z",
+    "collected_at": "2026-04-30T20:50:00Z",
+    "actor": {
+      "id": "pi-minimax-m2-7",
+      "actor_type": "ai_agent",
+      "display_name": "MiniMax crisis judge"
+    },
+    "event_type": "review",
+    "status": "success",
+    "summary": "MiniMax crisis judge accepted roadmap honesty while keeping T011 and self-proof implementation as blockers.",
+    "artifact": {
+      "uri": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
+      "sha256": "e9bf0b045d27923d1ba4b09b72043c52153f1525bb79a791b41b99d8d5075b52",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "crisis-judge-2026-04-30",
+    "conflict_refs": [
+      "evidence-crisis-kimi-critic",
+      "evidence-crisis-glm-critic"
+    ],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "second"
+    }
+  },
+  {
+    "id": "evidence-claim-consistency-validation-pass",
+    "schema_version": "0.1.0",
+    "source": "local-command",
+    "external_ref": "scripts/validate-claim-consistency.mjs",
+    "observed_at": "2026-05-03T12:50:00Z",
+    "collected_at": "2026-05-03T12:50:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "command",
+    "status": "success",
+    "summary": "Claim consistency validator checks committed authoritative claim tags and is invoked by the baseline verifier.",
+    "artifact": {
+      "uri": "scripts/validate-claim-consistency.mjs",
+      "sha256": "6b69fd276fdba9d37005d282b2464c9470d6cd31b043f75662c08b5fd3f14c4b",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-slice-1-claim-consistency-validation",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md#slice-1-claim-tags-and-claim-consistency-baseline",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-unsupported-claim-tag-rejected",
+    "schema_version": "0.1.0",
+    "source": "local-test",
+    "external_ref": "scripts/test-verify.sh",
+    "observed_at": "2026-05-03T12:50:00Z",
+    "collected_at": "2026-05-03T12:50:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "test",
+    "status": "success",
+    "summary": "Verifier tests assert that unsupported authoritative claim tags are rejected with a named reason.",
+    "artifact": {
+      "uri": "scripts/test-verify.sh",
+      "sha256": "3571831428c07d294b92a79c2b52b6d22c7f7fbaf1e5b0af58373294daf1d8f8",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-slice-1-unsupported-claim-tag-rejected",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md#slice-1-claim-tags-and-claim-consistency-baseline",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-nonauthoritative-prose-ignored",
+    "schema_version": "0.1.0",
+    "source": "local-test",
+    "external_ref": "scripts/test-verify.sh",
+    "observed_at": "2026-05-03T12:50:00Z",
+    "collected_at": "2026-05-03T12:50:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "test",
+    "status": "success",
+    "summary": "Verifier tests assert that prose mentioning verified, complete, or trusted claims is ignored unless it has an authoritative claim tag.",
+    "artifact": {
+      "uri": "scripts/test-verify.sh",
+      "sha256": "3571831428c07d294b92a79c2b52b6d22c7f7fbaf1e5b0af58373294daf1d8f8",
+      "hash_algorithm": "sha256",
+      "redaction_status": "none",
+      "integrity_status": "verified_hash"
+    },
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-slice-1-nonauthoritative-prose-ignored",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md#slice-1-claim-tags-and-claim-consistency-baseline",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-block-07-slice-2-false-closure-repaired",
+    "schema_version": "0.1.0",
+    "source": "local-test",
+    "external_ref": "scripts/test-verify.sh",
+    "observed_at": "2026-05-03T15:05:00Z",
+    "collected_at": "2026-05-03T15:05:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "test",
+    "status": "success",
+    "summary": "Block 07 Slice 2 test coverage rejects stale closure claims, downgrades mismatched release verification evidence, and aligns Block 06 report text with incomplete proof states.",
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-slice-2-false-closure-repaired",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md#slice-2-freeze-and-repair-current-false-closure-claims",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-block-07-slice-4-package-mode-valid",
+    "schema_version": "0.1.0",
+    "source": "local-test",
+    "external_ref": "scripts/test-e2e-pilot-package.sh",
+    "observed_at": "2026-05-03T15:05:00Z",
+    "collected_at": "2026-05-03T15:05:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "test",
+    "status": "success",
+    "summary": "Block 07 Slice 4 tests prove incomplete E2E packages pass package mode and fail complete mode with named proof states.",
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-slice-4-package-mode-valid",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md#slice-4-e2e-package-validation-modes",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  },
+  {
+    "id": "evidence-block-07-slice-5-cross-reference-valid",
+    "schema_version": "0.1.0",
+    "source": "local-test",
+    "external_ref": "scripts/validate-cross-references.mjs",
+    "observed_at": "2026-05-03T15:05:00Z",
+    "collected_at": "2026-05-03T15:05:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "test",
+    "status": "success",
+    "summary": "Block 07 Slice 5 cross-reference validator resolves self-trace and E2E evidence, provenance, trace-edge, and observed proof-state references.",
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-slice-5-cross-reference-valid",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md#slice-5-cross-reference-integrity",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
+  }
+]

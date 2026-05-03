@@ -1,0 +1,115 @@
+{
+  "id": "blocks-01-03-final-review-fixes-2026-05-01",
+  "scope": "Blocks 01-03 final review findings",
+  "reviewed_at": "2026-05-01T10:00:00Z",
+  "review_sources": [
+    {
+      "reviewer": "pi-cli-kimi-coding-k2p6",
+      "status": "attempted_timeout",
+      "note": "The direct pi CLI process did not return a review payload and was stopped; no findings are claimed from this attempt."
+    },
+    {
+      "reviewer": "pi-cli-zai-glm-5.1",
+      "status": "attempted_timeout",
+      "note": "The direct pi CLI process did not return a review payload and was stopped; no findings are claimed from this attempt."
+    },
+    {
+      "reviewer": "clean-context-review-agent-01",
+      "status": "completed",
+      "finding_count": 6
+    },
+    {
+      "reviewer": "clean-context-review-agent-02",
+      "status": "completed",
+      "finding_count": 5
+    }
+  ],
+  "findings": [
+    {
+      "priority": "P0",
+      "severity": "critical",
+      "title": "Attestation source commit did not contain the attested release",
+      "beads_issue": "sdp-trace-cdn.14",
+      "speckit_refs": ["FR-031", "SC-017", "T057", "T058"],
+      "status": "fixed",
+      "resolution": "scripts/verify-self-attestation.sh now compares manifest artifact paths and digests against source_commit. In the current dirty working tree, known missing or mismatched source artifacts are assessed negative evidence: source_commit_artifacts_verified is false, source_commit_status is mismatch, locally_attested is false, and trusted_contract_release remains false."
+    },
+    {
+      "priority": "P0",
+      "severity": "critical",
+      "title": "Verifier ignored trusted identity policy and did not fail broken positive proofs",
+      "beads_issue": "sdp-trace-cdn.15",
+      "speckit_refs": ["FR-025", "AC14", "T049", "T060"],
+      "status": "fixed",
+      "resolution": "The verifier derives the local private-equivalent signer from trusted_identity_policy_ref plus the public key fingerprint, checks the DSSE predicate policy ref and profile, validates case shape with schema/self-attestation-case.schema.json, asserts positive structural proof states, and includes a wrong-policy negative fixture."
+    },
+    {
+      "priority": "P1",
+      "severity": "major",
+      "title": "Local release artifact contradicted Block 03 trust state",
+      "beads_issue": "sdp-trace-cdn.19",
+      "speckit_refs": ["FR-024", "FR-025", "SC-015", "SC-017", "T058", "T059"],
+      "status": "fixed",
+      "resolution": "examples/contract-foundation/contract-release-verification.example.json now records trusted_contract_release false for the local-dev artifact, and contract-release-verification.schema.json rejects trusted true when transparency-log status is not an assessed accepted value."
+    },
+    {
+      "priority": "P1",
+      "severity": "major",
+      "title": "Self-trace recorded stale verified hashes",
+      "beads_issue": "sdp-trace-cdn.16",
+      "speckit_refs": ["SC-007", "T020", "T052", "T035", "T036"],
+      "status": "fixed",
+      "resolution": "Stale scripts/validate-contracts.sh digests were refreshed, and scripts/verify-artifact-hashes.sh now recomputes local artifact hashes for JSON examples that claim verified_hash or local-file payload_digest."
+    },
+    {
+      "priority": "P2",
+      "severity": "major",
+      "title": "Metric schema permitted assessed samples without evidence",
+      "beads_issue": "sdp-trace-cdn.17",
+      "speckit_refs": ["FR-004", "FR-027", "T009", "T055"],
+      "status": "fixed",
+      "resolution": "schema/metric-stream.schema.json now requires minItems: 1 for evidence_refs unless the sample is not_assessed, and examples/contract-foundation/negative-assessed-metric-without-evidence.json is an expect-fail fixture."
+    },
+    {
+      "priority": "P2",
+      "severity": "major",
+      "title": "Trace contract accepted native policy verdict fields",
+      "beads_issue": "sdp-trace-cdn.18",
+      "speckit_refs": ["FR-002", "FR-017", "T056", "AC05"],
+      "status": "fixed",
+      "resolution": "schema/trace.schema.json now rejects prohibited native policy field names through propertyNames while preserving non-policy extension fields. examples/contract-foundation/negative-native-policy-trace.json is an expect-fail fixture. Legacy gate/evidence examples now mark pass/fail status as external."
+    },
+    {
+      "priority": "P3",
+      "severity": "minor",
+      "title": "Validator migration was contradicted by current-facing resolution notes",
+      "beads_issue": "sdp-trace-cdn.20",
+      "speckit_refs": ["T034", "T036"],
+      "status": "fixed",
+      "resolution": "socratic-resolution-notes.md and 01-contract-foundation-socratic.md now mark ajv-cli@5.0.0 as superseded by exact local ajv@8.20.0 through scripts/validate-json-schema.mjs."
+    }
+  ],
+  "verification": [
+    {
+      "command": "rtk npm run validate",
+      "exit_code": 0
+    },
+    {
+      "command": "rtk scripts/verify-self-attestation.sh --all",
+      "exit_code": 0
+    },
+    {
+      "command": "rtk scripts/verify-artifact-hashes.sh",
+      "exit_code": 0
+    },
+    {
+      "command": "rtk scripts/verify-contract-manifest.sh examples/contract-foundation/contract-manifest.example.json",
+      "exit_code": 0
+    }
+  ],
+  "residual_not_assessed": [
+    "source_commit_artifacts_verified is assessed false in the shared dirty worktree because the immutable source_commit does not contain the current manifest artifact set; a future clean source-bound release can assess it true after committing manifest subject artifacts and running the source-bound finalization guard",
+    "externally_attested remains not_assessed until Sigstore/Rekor or accepted customer PKI evidence is committed",
+    "production_release_verified remains not_assessed until external attestation and release policy checks are assessed"
+  ]
+}

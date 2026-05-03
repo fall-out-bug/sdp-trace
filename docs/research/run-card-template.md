@@ -14,20 +14,28 @@ Use one run card per project, phase, harness, and model.
 | Model |  |
 | Operator |  |
 | Date |  |
+| Prompt SHA-256 |  |
+| Prompt release approval | not_assessed |
 
 ## Prompt
 
 ```text
-<exact prompt>
+<redacted prompt, prompt summary, or prompt SHA-256>
 ```
+
+Record the exact prompt only when the accountable evidence owner explicitly approves it for release. Otherwise commit a prompt hash, redaction note, and access-neutral reference.
 
 ## Expected Artifacts
 
-- `repo-map.md`
 - `evidence-bundle.json`
-- `trace.json`
-- `gate-verdict.json`
-- `notes.md`
+- `provenance-records.json`
+- `trace-snapshot.json`
+- `export-limitations.md`
+- `redaction-note.md`
+- optional external-verdict input
+- optional `assessment-input.json`
+- optional `repo-map.md`
+- optional `notes.md`
 
 ## Observations
 
@@ -54,17 +62,21 @@ Example: `maven_install.json` inside a Bazel repo is dependency metadata, not pr
 
 ### Runtime / Token Practicality
 
-## Verdict
+## Evidence State
 
-| Dimension | Verdict | Notes |
-|---|---|---|
-| Build detection | pass / warn / fail / not_assessed |  |
-| Language detection | pass / warn / fail / not_assessed |  |
-| Evidence discipline | pass / warn / fail / not_assessed |  |
-| Scope discipline | pass / warn / fail / not_assessed |  |
-| Structured output | pass / warn / fail / not_assessed |  |
-| Uncertainty handling | pass / warn / fail / not_assessed |  |
-| Practicality | pass / warn / fail / not_assessed |  |
+Use `observed` only when a committed sanitized run artifact or evidence summary supports the row. Use `not_assessed` for missing runs, missing exports, unsafe commands, or design fixtures.
+
+| Dimension | Evidence state | Reason code | Artifact reference | External verdict reference | Notes |
+|---|---|---|---|---|---|
+| Build detection | observed / not_assessed |  |  | none |  |
+| Language detection | observed / not_assessed |  |  | none |  |
+| Evidence discipline | observed / not_assessed |  |  | none |  |
+| Scope discipline | observed / not_assessed |  |  | none |  |
+| Structured output | observed / not_assessed |  |  | none |  |
+| Uncertainty handling | observed / not_assessed |  |  | none |  |
+| Practicality | observed / not_assessed |  |  | none |  |
+
+External tools may emit their own verdict values. Record those only in an external-verdict input with producer, origin, policy reference when available, and artifact reference.
 
 ## Follow-Ups
 

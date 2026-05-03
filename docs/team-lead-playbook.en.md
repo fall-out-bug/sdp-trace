@@ -7,25 +7,22 @@ Use `sdp-trace` when your team already has an AI coding workflow and needs a sha
 1. Define the scope.
 2. Capture provenance: human, agent, model, tools, and commands.
 3. Attach evidence: tests, CI, review comments, files, and diffs.
-4. Run or record gate checks.
-5. Publish a verdict: `pass`, `warn`, `fail`, or `not_assessed`.
-6. Record the decision and any override reason.
+4. Record accountability: human-held DRI, approver, risk owner, and escalation path.
+5. Package an assessment input with evidence, observations, movement data, and `not_assessed` gaps.
+6. Record any gate verdict as an external verdict input produced by `sdp-gate` or another policy consumer.
 
 ## Team Defaults
 
 Agree on:
 
 - required evidence per change type
-- what blocks merge
-- who may override
+- what external policy blocks merge
+- who may approve or override in the policy layer
 - which harnesses are supported
 - what `not_assessed` means
 
-## Reading Verdicts
+## Reading External Verdicts
 
-- `pass`: evidence satisfies the gate.
-- `warn`: evidence is incomplete or risk exists, but the team may proceed.
-- `fail`: gate criteria are not met.
-- `not_assessed`: the gate could not make a defensible decision.
+External verdicts may use values such as `pass`, `warn`, `fail`, or `not_assessed`, but they are not native `sdp-trace` decisions.
 
-`not_assessed` is not a pass.
+`not_assessed` is not a pass. Missing evidence must stay visible in the assessment input.

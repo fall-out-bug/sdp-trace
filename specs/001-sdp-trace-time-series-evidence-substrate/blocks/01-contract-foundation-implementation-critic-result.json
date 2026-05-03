@@ -1,0 +1,111 @@
+{
+  "reviewer_provider": "critic",
+  "reviewer_model": "socratic-critic-v1",
+  "verdict": "needs_revision",
+  "critical_findings": [
+    {
+      "file": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
+      "issue": "Consumer schema-version declaration schema does not exist, yet validation script calls validate against it and contract manifest lists it as an artifact",
+      "why_it_matters": "AC09 requires consumer schema-version declaration example to validate. The consumer-schema-version-declaration.schema.json file does not exist in the provided files. The validation script calls `validate schema/consumer-schema-version-declaration.schema.json examples/contract-foundation/sdp-gate-consumer-declaration.example.json` which will fail because the schema file is missing. Contract manifest artifact list also references this schema by SHA-256 digest, implying it was committed.",
+      "acceptance_risk": "AC09 fails. Positive validation cannot complete. Contract manifest references an artifact that does not exist as a file."
+    },
+    {
+      "file": "examples/contract-foundation/contract-release.dsse.json",
+      "issue": "DSSE envelope file referenced in validation script does not exist, and contract manifest does not list it as an artifact",
+      "why_it_matters": "scripts/validate-contracts.sh calls `scripts/verify-release-signature.sh examples/contract-foundation/contract-release.dsse.json examples/contract-foundation/local-dev-signing-public.pem`. Neither file exists in the provided files. The contract manifest does not list these files as artifacts, so they are not covered by digest verification. The verification script itself (verify-release-signature.sh) is also missing from the provided files.",
+      "acceptance_risk": "Full validation script fails because required files are absent. Real release signature verification evidence (AC16) cannot be produced without these artifacts."
+    },
+    {
+      "file": "schema/contract-release-verification.schema.json",
+      "issue": "Schema allows trusted_contract_release: true with identity_policy_status: mismatch, creating a verifiable contradiction",
+      "why_it_matters": "The if/then constraint checks manifest_digest_status, artifact_digest_status, signature_status, identity_policy_status, and freshness_status = current when trusted_contract_release is true. However, the negative-unauthorized-signer.json fixture sets trusted_contract_release: true and identity_policy_status: mismatch simultaneously and passes validation. The reason is subtle: the if/then requires those specific status fields to equal certain values, but the values themselves can be inconsistent with each other. The schema does not encode a rule that identity_policy_status: mismatch and trusted_contract_release: true is a logical contradiction.",
+      "acceptance_risk": "A checkout can claim trusted_contract_release: true while identity policy verification actually failed. This violates the structural trust boundary spec: 'missing, stale, invalid, or not_assessed signature verification can be recorded as evidence, but it must not support a trusted_contract_release claim.'"
+    },
+    {
+      "file": "examples/contract-foundation/negative-ai-sole-accountable-owner.json",
+      "issue": "Negative fixture validates against accountability.schema.json directly, not through a schema that enforces actor_type rejection",
+      "why_it_matters": "The common schema defines accountableActorType as enum with human_user, human_role, human_group. The accountability schema references this. However, the negative fixture is an accountability object with AI actor_type values. When validated against accountability.schema.json directly, it validates because accountability.schema.json itself is just a $ref to the common definitions. The schema does not contain a constraint that rejects ai_agent actor_type in accountable fields. The negative test passes the schema because the schema only enforces the structure, not the actor-type restriction that is stated in requirements.",
+      "acceptance_risk": "AC10 requires that AI-as-sole-accountable-owner fails validation. The fixture fails because it is the wrong shape (missing required fields like schema_version, id), not because the schema correctly enforces actor-type restrictions. A fixture with correct shape and ai_agent types might pass validation incorrectly."
+    }
+  ],
+  "major_findings": [
+    {
+      "file": "scripts/verify-release-signature.sh",
+      "issue": "Verification script file does not exist, but validate-contracts.sh calls it and contract manifest artifact list includes it with a specific SHA-256",
+      "why_it_matters": "validate-contracts.sh includes `scripts/verify-release-signature.sh` and the contract manifest lists this script with sha256: c38be9437f9cec0938d21c30fc2cc13a9995ecbdaed560cb5481d9bfcefc1cb9. This implies the file was committed with a specific digest, but the file is not in the provided files.",
+      "acceptance_risk": "Manifest digest verification will fail because verify-release-signature.sh is missing from checkout. AC16 requires real release signature verification evidence, which cannot exist without the script."
+    },
+    {
+      "file": "scripts/generate-local-dev-dsse.sh",
+      "issue": "DSSE generation script listed in contract manifest does not exist",
+      "why_it_matters": "The contract manifest example lists scripts/generate-local-dev-dsse.sh with sha256: 192346a5bf547e300d29939476ffd2651e9ab178c418d008757abc06cf43bb9f, implying this file was committed. It is not present in the provided files.",
+      "acceptance_risk": "Contract manifest references an artifact that does not exist. Manifest digest verification will fail for this artifact path."
+    },
+    {
+      "file": "examples/contract-foundation/not-assessed-assessment-input.json",
+      "issue": "Negative comparison references sample-log-availability-previous which is not defined in the samples array",
+      "why_it_matters": "The comparison object references previous_sample_ref: 'sample-log-availability-previous' but the samples array only contains one entry: 'sample-log-availability-current'. A prior sample ref that does not exist in the samples array means the comparison cannot be resolved. The spec requires metric streams to show movement through prior/current/delta values. An unresolvable comparison fails the structural movement requirement.",
+      "acceptance_risk": "The not_assessed fixture may validate structurally but produces an unresolvable comparison reference that violates the data model requirement for prior/current/delta linkage."
+    },
+    {
+      "file": "schema/metric-stream.schema.json",
+      "issue": "Stream-level assessment_state constraint does not propagate worst-case assessment_state from samples to stream level",
+      "why_it_matters": "The if/then sets stream assessment_state to partial/not_assessed when the array contains at least one sample with that state, using JSON Schema 'contains' semantics. This correctly propagates worst-case. However, the spec AC15 requires 'expose stream-level assessment_state when any sample or comparison is partial or not_assessed'. The current schema correctly implements this. This is a functional check, not a finding.",
+      "acceptance_risk": "Not a finding - the schema correctly implements AC15."
+    }
+  ],
+  "minor_findings": [
+    {
+      "file": "docs/cto-brief.en.md and docs/cto-brief.ru.md",
+      "issue": "CTO briefs do not map problem statements to specific SpecKit artifact paths",
+      "why_it_matters": "AC18 requires CTO brief to be mapped to SpecKit evidence. The brief states 'evidence contracts', 'accountability', 'manifest verification', 'signing profile', 'negative fixtures', 'not_assessed proof' but does not link these to specific file paths, SHA-256 digests, or validation command outputs. A CTO who wants to verify the claims independently cannot follow the narrative to concrete evidence.",
+      "acceptance_risk": "CTO brief is readable in under one minute but does not enable independent verification of the claims."
+    },
+    {
+      "file": "examples/contract-foundation/positive-assessment-input.json",
+      "issue": "Single evidence event and provenance record may not satisfy the 'evidence bundle' pattern implied by evidence_bundle_refs",
+      "why_it_matters": "The assessment input has evidence_bundle_refs pointing to the assessment input itself. This circular reference does not demonstrate the capability to reference separate evidence bundles. The spec requires assessment inputs to reference separate evidence packages that provide effective accountability for referenced evidence items.",
+      "acceptance_risk": "Low - the fixture demonstrates the field but not the full pattern. Block 01 contract foundation may be incomplete for evidence bundle inheritance semantics."
+    },
+    {
+      "file": "examples/contract-foundation/contract-release-verification.example.json",
+      "issue": "Local development private equivalent does not include transparency log status that satisfies the private-equivalent audit requirement",
+      "why_it_matters": "The trusted-identity-policy allows a private-equivalent profile, but the example sets transparency_log_status: not_required. The contract-release-signing.md states the equivalent must record 'audit-log or compensating-control status'. not_required implies no audit evidence, which may not satisfy the private-equivalent requirement for air-gapped environments.",
+      "acceptance_risk": "For private/customer environments that cannot use public Sigstore, the transparency log status as not_required may not meet the documented private-equivalent requirements."
+    },
+    {
+      "file": "examples/contract-foundation/negative-modified-contract-manifest.json",
+      "issue": "Modified manifest fixture uses source_commit: working-tree-block-01 instead of a real git commit hash",
+      "why_it_matters": "The spec requires source commit traceability. The negative fixture uses a descriptive string that is not a valid git SHA. While the purpose is to demonstrate digest mismatch, the source_commit field should reflect the intended artifact state to properly test manifest verification.",
+      "acceptance_risk": "Low - the fixture demonstrates digest mismatch but the source_commit field does not reflect real traceability."
+    }
+  ],
+  "socratic_questions": [
+    "If consumer-schema-version-declaration.schema.json does not exist, what prevents the contract manifest from claiming a valid SHA-256 digest for a non-existent artifact?",
+    "If verify-release-signature.sh does not exist, how did the contract manifest compute its SHA-256 digest? Did the file exist at some point and was subsequently deleted?",
+    "If the negative-unauthorized-signer.json fixture passes validation but represents a contradictory state (trusted_contract_release: true with identity_policy_status: mismatch), what stops a real deployment from recording the same contradictory state?",
+    "If the negative-ai-sole-accountable-owner.json fixture fails because it lacks required fields (id, schema_version) rather than because the schema rejects ai_agent actor_type, does the schema actually enforce the requirement that AI actors cannot be sole accountable owners?",
+    "If the contract manifest example lists artifacts with SHA-256 digests, but those digests reference files that do not exist (local-dev-signing-public.pem, contract-release.dsse.json), how can manifest digest verification succeed?",
+    "The spec states Block 01 is not complete as a trusted contract foundation until 'at least one real release verification evidence record is produced'. If the DSSE envelope and signing artifacts do not exist, how was real release verification evidence produced?",
+    "If T011 (metric catalog in docs/process-metric-catalog.md) was not completed, does the absence of documented metric definitions violate the spec's requirement for process movement evidence?",
+    "The contract manifest includes local-dev-signing-public.pem in artifact digests, but the schema's allowed_private_equivalent_profile does not include this key. What is the actual signing architecture for local development vs production?"
+  ],
+  "evidence_checked": [
+    "All 14 schema files in schema/*.schema.json",
+    "All 9 example/fixture files in examples/contract-foundation/",
+    "examples/github-speckit/trace.json",
+    "scripts/validate-contracts.sh",
+    "scripts/check-artifact-safety.sh",
+    "scripts/verify-contract-manifest.sh",
+    "docs/cto-brief.en.md",
+    "docs/cto-brief.ru.md",
+    "docs/accountability-model.md",
+    "docs/contract-release-signing.md",
+    "schema/README.md",
+    "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+    "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
+    "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md",
+    "Missing files confirmed by absence: package.json, package-lock.json, scripts/verify-release-signature.sh, scripts/generate-local-dev-dsse.sh, examples/contract-foundation/contract-release.dsse.json, examples/contract-foundation/local-dev-signing-public.pem, schema/consumer-schema-version-declaration.schema.json, docs/process-metric-catalog.md"
+  ],
+  "no_solution_policy_observed": true
+}

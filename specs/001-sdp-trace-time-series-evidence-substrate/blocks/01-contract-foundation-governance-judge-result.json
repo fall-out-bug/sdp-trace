@@ -1,0 +1,23 @@
+{
+  "role": "judge",
+  "judge_provider": "kimi-coding/k2p6",
+  "verdict": "PASS",
+  "blocking_unresolved": [],
+  "major_unresolved": [],
+  "minor_unresolved": [],
+  "scope_creep": [],
+  "contradictions": [],
+  "evidence": [
+    "Evidence events may omit accountability only when contained in a package providing effective accountability for every referenced item; assessment inputs cannot claim completeness with unaccountable evidence.",
+    "Trusted identity policy mandates OIDC issuer, source URI, protected ref, workflow identity, release captain, and required approval refs; signer mismatch fails verification.",
+    "Risk classification records observed autonomy/impact and externally declared oversight only; sdp-trace is prohibited from deriving required_oversight.",
+    "Metric streams require stream-level assessment_state partial or not_assessed when any sample or comparison is unassessed.",
+    "Artifact safety scan is explicitly a lower-bound automated check; accountable evidence-owner approval remains required for customer-facing examples.",
+    "Contract manifests must declare exactly one of valid_until or freshness_policy; omission fails validation.",
+    "Accountable identity objects restrict actor_type to human_user, human_role, or human_group, enabling machine-readable rejection of AI-as-sole-accountable-owner.",
+    "Offline structural validation and release verification are separated; private equivalents must specify envelope binding, identity source, timestamp/freshness evidence, and audit-log status.",
+    "Rollback protection is explicitly limited to previous_manifest_digest continuity plus freshness; full TUF features are excluded to a future block.",
+    "Block completion requires one real release verification evidence record for the target profile or approved private equivalent; schema-only is insufficient."
+  ],
+  "next_cycle_required": false
+}

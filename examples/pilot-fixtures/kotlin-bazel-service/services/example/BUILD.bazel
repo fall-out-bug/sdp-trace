@@ -1,0 +1,6 @@
+genrule(
+    name = "compile_hello_jar",
+    srcs = ["Hello.kt"],
+    outs = ["hello.jar"],
+    cmd = "PATH=/opt/homebrew/bin:/usr/local/bin:$$PATH kotlinc $(location Hello.kt) -include-runtime -d $@",
+)

@@ -1,0 +1,24 @@
+{
+  "role": "critic",
+  "critic_provider": "zai/glm-5.1",
+  "status": "author_revised",
+  "blocking": [
+    "GQ1: optional accountability on evidence can leave critical assessment evidence without a human owner",
+    "GQ2: signing profile needs an explicit trusted signer identity policy",
+    "GQ3: risk classification can leak policy through required oversight fields"
+  ],
+  "major": [
+    "GQ4: line-of-defense labels alone do not prove independence",
+    "GQ5: metric streams need stream-level assessment state",
+    "GQ6: artifact safety scan must not overclaim data-safety proof",
+    "GQ7: freshness must be explicit",
+    "GQ8: AI-as-sole-owner rejection needs machine-readable actor type",
+    "GQ9: offline validation and networked signing verification must be separated"
+  ],
+  "minor": [
+    "GQ10: rollback/freshness must not become hidden TUF implementation",
+    "GQ11: authority scope must distinguish recording from content approval",
+    "GQ12: signing profile needs real verification evidence before trusted completion"
+  ],
+  "author_resolution": "Updated Block 01 spec, parent spec, data model, tasks, quickstart, boundary contract, and implementation plan with effective accountability, trusted identity policy, externalized oversight declarations, stream-level assessment state, explicit freshness, private-equivalent release verification requirements, and real signing verification evidence as a completion condition."
+}

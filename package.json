@@ -1,0 +1,25 @@
+{
+  "name": "sdp-trace",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Portable evidence, accountability, and trace contract substrate for AI-assisted delivery.",
+  "scripts": {
+    "validate": "npm run verify:baseline",
+    "verify": "npm run verify:baseline",
+    "verify:baseline": "scripts/verify.sh --profile baseline",
+    "verify:source-bound": "scripts/verify.sh --profile source-bound",
+    "verify:external-trust": "scripts/verify.sh --profile external-trust",
+    "verify:slice": "scripts/validate-e2e-pilot-package.sh --mode package examples/pilot-runs/opencode-minimax-kotlin-bazel",
+    "test": "scripts/test-verify.sh",
+    "check:artifacts": "scripts/check-artifact-safety.sh",
+    "test:verify": "scripts/test-verify.sh",
+    "validate:contracts": "scripts/validate-contracts.sh",
+    "test:e2e-pilot": "scripts/test-e2e-pilot-package.sh && scripts/test-e2e-runner.sh && scripts/validate-e2e-pilot-package.sh examples/pilot-runs/opencode-minimax-kotlin-bazel",
+    "verify:manifest": "scripts/verify-contract-manifest.sh examples/contract-foundation/contract-manifest.example.json",
+    "verify:release": "scripts/verify-release-signature.sh examples/contract-foundation/contract-release.dsse.json examples/contract-foundation/local-dev-signing-public.pem",
+    "verify:self-attestation": "scripts/verify-self-attestation.sh --all"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0"
+  }
+}
