@@ -184,7 +184,7 @@
     {
       "path": "examples/contract-foundation/positive-assessment-input.json",
       "kind": "fixture",
-      "sha256": "21316c8e9d5411803090229e89f1c72693f5b37d5eeee155131b220b9969802c"
+      "sha256": "b4e8983abe2754b987fc4810cc22b8211d3dc1e728d663c43b38f755d4d1dd62"
     },
     {
       "path": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
@@ -607,7 +607,7 @@
       "sha256": "b591a1aa577bcdc72a5772eda96192eca08b29ca1911354580c02055da915d70"
     }
   ],
-  "source_commit": "7727d8ab02664b9f6e408e99869eaa4e73653049",
+  "source_commit": "61107b8a9e2707f1a6a9985ab1fb33edc90f5b82",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
