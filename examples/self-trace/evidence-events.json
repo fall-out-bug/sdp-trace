@@ -519,5 +519,47 @@
       },
       "line_of_defense": "first"
     }
+  },
+  {
+    "id": "evidence-block-07-source-bound-repair-scoped",
+    "schema_version": "0.1.0",
+    "source": "repository-file",
+    "external_ref": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md#t091",
+    "observed_at": "2026-05-03T16:20:00Z",
+    "collected_at": "2026-05-03T16:20:00Z",
+    "actor": {
+      "id": "codex-session",
+      "actor_type": "ai_agent",
+      "display_name": "Codex implementation session"
+    },
+    "event_type": "manual",
+    "status": "success",
+    "summary": "T091 scopes Block 07 follow-up work to regenerating current source-bound local release artifacts while keeping external production trust open without real external evidence.",
+    "redaction_status": "none",
+    "integrity_status": "verified_hash",
+    "dedupe_key": "block-07-source-bound-repair-scoped",
+    "conflict_refs": [],
+    "accountability": {
+      "dri": {
+        "identity_ref": "role:sdp-trace-engineering-dri",
+        "actor_type": "human_role"
+      },
+      "approver": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "escalation": {
+        "identity_ref": "role:sdp-trace-cto",
+        "actor_type": "human_role"
+      },
+      "authority_scope": "evidence",
+      "accountability_claim": "recording_only",
+      "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md#t091",
+      "risk_owner": {
+        "identity_ref": "role:sdp-trace-risk-owner",
+        "actor_type": "human_role"
+      },
+      "line_of_defense": "first"
+    }
   }
 ]

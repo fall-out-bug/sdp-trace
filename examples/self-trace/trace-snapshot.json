@@ -183,6 +183,21 @@
       "id": "accountability-block-07-slices-2-5",
       "kind": "accountability",
       "label": "Block 07 Slices 2-5 accountable roles"
+    },
+    {
+      "id": "task-T091",
+      "kind": "task",
+      "label": "Regenerate source-bound local release artifacts without external trust closure"
+    },
+    {
+      "id": "change-source-bound-local-release-artifacts",
+      "kind": "change",
+      "label": "Current source-bound local release artifacts"
+    },
+    {
+      "id": "evidence-block-07-source-bound-repair-scoped",
+      "kind": "evidence",
+      "label": "T091 source-bound repair scope"
     }
   ],
   "edges": [
@@ -380,6 +395,21 @@
       "from": "change-cross-reference-validator",
       "to": "accountability-block-07-slices-2-5",
       "relation": "accountable_to"
+    },
+    {
+      "from": "task-T091",
+      "to": "plan-block-07-minimum-trust-kernel",
+      "relation": "implements"
+    },
+    {
+      "from": "task-T091",
+      "to": "change-source-bound-local-release-artifacts",
+      "relation": "produces"
+    },
+    {
+      "from": "task-T091",
+      "to": "evidence-block-07-source-bound-repair-scoped",
+      "relation": "produces"
     }
   ]
 }

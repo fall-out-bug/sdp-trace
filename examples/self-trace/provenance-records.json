@@ -179,5 +179,30 @@
         "reason": "Validation was run locally, not in CI."
       }
     ]
+  },
+  {
+    "id": "provenance-codex-block-07-source-bound-repair-start",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "apply_patch",
+    "command": "create T091 and trace scaffolding before source-bound local release repair",
+    "context_refs": [
+      "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
+      "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md",
+      "examples/self-trace/trace-snapshot.json"
+    ],
+    "captured_at": "2026-05-03T16:20:00Z",
+    "payload_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "digest_algorithm": "sha256",
+    "chain_scope": "block-07-source-bound-repair",
+    "unavailable_fields": [
+      {
+        "field": "external_trust_anchor",
+        "state": "not_assessed",
+        "reason": "This chunk is limited to source-bound local release repair and does not commit Sigstore/Rekor or customer PKI evidence."
+      }
+    ]
   }
 ]
