@@ -1,6 +1,6 @@
 # Block 08: Agent and Human Usage Discovery
 
-Status: queued; do not elaborate or implement before Block 07 closure
+Status: unblocked for design review after Block 07 `closed_for_block_08_activation`
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Audience: implementation agents, CTO, CIO, CISO, repository observers
 
@@ -21,6 +21,14 @@ Do not start Block 08 design review, implementation planning, or code changes un
 - remained open with a verifier-derived blocking state that Block 08 can explain honestly.
 
 Block 08 must not become a workaround for missing Block 07 proof.
+
+Current activation basis:
+
+- `repo_baseline_structural`: pass
+- `source_bound_local_release`: pass
+- `external_production_trust`: fail with explicit missing external evidence states
+
+This is sufficient for discovery because the external production trust blocker is explicit. It is not sufficient for any customer-facing production trust claim.
 
 ## Future Scope
 

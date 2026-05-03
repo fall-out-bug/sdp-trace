@@ -198,6 +198,21 @@
       "id": "evidence-block-07-source-bound-repair-scoped",
       "kind": "evidence",
       "label": "T091 source-bound repair scope"
+    },
+    {
+      "id": "task-T092",
+      "kind": "task",
+      "label": "Block 07 Slice 7 machine-checkable closure"
+    },
+    {
+      "id": "change-block-07-review-ledger-schema",
+      "kind": "change",
+      "label": "Block 07 review ledger schema and closure validation"
+    },
+    {
+      "id": "evidence-block-07-slice-7-closure-scoped",
+      "kind": "evidence",
+      "label": "T092 Slice 7 closure scope"
     }
   ],
   "edges": [
@@ -409,6 +424,21 @@
     {
       "from": "task-T091",
       "to": "evidence-block-07-source-bound-repair-scoped",
+      "relation": "produces"
+    },
+    {
+      "from": "task-T092",
+      "to": "plan-block-07-minimum-trust-kernel",
+      "relation": "implements"
+    },
+    {
+      "from": "task-T092",
+      "to": "change-block-07-review-ledger-schema",
+      "relation": "produces"
+    },
+    {
+      "from": "task-T092",
+      "to": "evidence-block-07-slice-7-closure-scoped",
       "relation": "produces"
     }
   ]

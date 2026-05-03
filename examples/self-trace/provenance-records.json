@@ -37,7 +37,7 @@
     "tool_name": "rtk",
     "command": "scripts/validate-contracts.sh",
     "captured_at": "2026-04-30T20:50:00Z",
-    "payload_digest": "c2eaa8e2479685159ea6d8516045a89242096ed39f4b058f9b49711a50af6435",
+    "payload_digest": "8bc15878275cc8fe3a03d23ff4a0e34cd2368ff6fd8eae15021940f6fb579b81",
     "digest_algorithm": "sha256",
     "chain_scope": "self-trace-v0",
     "unavailable_fields": [
@@ -125,7 +125,7 @@
       "scripts/validate-claim-consistency.mjs"
     ],
     "captured_at": "2026-05-03T12:50:00Z",
-    "payload_digest": "0b29ee73eca0a066ed337869de760adbeb6c744828f4e26d7b4b6aae1c29affe",
+    "payload_digest": "eae24e1b8f33172a87a54435bd020258b948aa6effcc92cacbfab7587b924e59",
     "digest_algorithm": "sha256",
     "chain_scope": "block-07-slice-1-claim-consistency",
     "unavailable_fields": [
@@ -202,6 +202,31 @@
         "field": "external_trust_anchor",
         "state": "not_assessed",
         "reason": "This chunk is limited to source-bound local release repair and does not commit Sigstore/Rekor or customer PKI evidence."
+      }
+    ]
+  },
+  {
+    "id": "provenance-codex-block-07-slice-7-start",
+    "schema_version": "0.1.0",
+    "actor_id": "codex-session",
+    "actor_type": "ai_agent",
+    "harness": "codex",
+    "tool_name": "apply_patch",
+    "command": "create T092 and trace scaffolding before Block 07 Slice 7 closure work",
+    "context_refs": [
+      "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
+      "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md",
+      "examples/self-trace/trace-snapshot.json"
+    ],
+    "captured_at": "2026-05-03T17:20:00Z",
+    "payload_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "digest_algorithm": "sha256",
+    "chain_scope": "block-07-slice-7-closure",
+    "unavailable_fields": [
+      {
+        "field": "external_trust_anchor",
+        "state": "not_assessed",
+        "reason": "Slice 7 records the verifier-derived external production trust blocker; it does not add Sigstore/Rekor or customer PKI evidence."
       }
     ]
   }

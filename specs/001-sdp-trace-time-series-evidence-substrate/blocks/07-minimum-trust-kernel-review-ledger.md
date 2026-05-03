@@ -86,6 +86,16 @@ This ledger records review findings for Block 07 before implementation. It is re
 | B07-S4-F001 | major | subagent verifier audit | E2E package validator conflated incomplete package shape with completed proof. | accepted | Added `--mode package` and `--mode complete`; committed incomplete package validates only in package mode. | closed by tests |
 | B07-S5-F001 | major | subagent trace audit | Cross-reference integrity needed mechanical validation before broader evidence refs can be trusted. | accepted | Added `scripts/validate-cross-references.mjs` and wired it into baseline verifier. | closed by validator and negative fixture |
 
-## Blocking State
+## Slice 7 Closure
 
-The human owner authorized implementation start on 2026-05-03. Slice 0 may be used only as a structural verifier baseline. Slice 1 validates committed authoritative claim tags. Slices 2, 3, 4, and 5 now have verifier/test coverage. Block 07 remains open until external self-release evidence is available or the external production trust profile remains explicitly failed/cannot_verify under live verifier output, and until Slice 7 final ledger/schema closure is completed.
+Machine-readable closure is recorded in `07-minimum-trust-kernel-review-ledger.json` and validated by `schema/review-ledger.schema.json` plus `scripts/validate-review-ledger.mjs`.
+
+Closure state: `closed_for_block_08_activation`.
+
+Live verifier boundary:
+
+- `repo_baseline_structural`: pass
+- `source_bound_local_release`: pass
+- `external_production_trust`: fail because no Sigstore/Rekor or accepted customer PKI evidence is committed
+
+This closes Block 07 for Block 08 discovery because Block 08 now has an honest verifier-derived outcome to explain. It does not close external production trust and does not permit `trusted_contract_release: true`.

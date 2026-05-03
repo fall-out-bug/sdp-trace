@@ -1,0 +1,128 @@
+{
+  "id": "block-07-minimum-trust-kernel-review-ledger",
+  "schema_version": "0.1.0",
+  "scope": "Block 07 minimum trust kernel",
+  "ledger_type": "implementation_closure",
+  "closure_state": "closed_for_block_08_activation",
+  "generated_at": "2026-05-03T17:25:00Z",
+  "findings": [
+    {
+      "id": "B07-S2-F001",
+      "severity": "critical",
+      "source": "subagent Slice 2 audit",
+      "summary": "T070 and Block 04/06 artifacts overclaimed current closure and proof completion.",
+      "disposition": "accepted",
+      "closure": "closed",
+      "evidence_refs": ["scripts/test-verify.sh", "scripts/verify.sh --profile baseline"]
+    },
+    {
+      "id": "B07-S2-F002",
+      "severity": "major",
+      "source": "subagent Slice 2 audit",
+      "summary": "Checked-in release verification and self-attestation JSON looked authoritative while manifest verification mismatched.",
+      "disposition": "accepted",
+      "closure": "closed",
+      "evidence_refs": ["scripts/verify.sh --profile source-bound", "examples/contract-foundation/contract-release-verification.example.json"]
+    },
+    {
+      "id": "B07-S4-F001",
+      "severity": "major",
+      "source": "subagent verifier audit",
+      "summary": "E2E package validator conflated incomplete package shape with completed proof.",
+      "disposition": "accepted",
+      "closure": "closed",
+      "evidence_refs": ["npm run verify:slice -- --slice opencode-minimax-kotlin-bazel"]
+    },
+    {
+      "id": "B07-S5-F001",
+      "severity": "major",
+      "source": "subagent trace audit",
+      "summary": "Cross-reference integrity needed mechanical validation before broader evidence refs can be trusted.",
+      "disposition": "accepted",
+      "closure": "closed",
+      "evidence_refs": ["scripts/validate-cross-references.mjs"]
+    },
+    {
+      "id": "B07-S7-F001",
+      "severity": "major",
+      "source": "Slice 7 closure review",
+      "summary": "Review ledger closure had to be machine-checkable instead of Markdown-only.",
+      "disposition": "accepted",
+      "closure": "closed",
+      "evidence_refs": ["schema/review-ledger.schema.json", "scripts/validate-review-ledger.mjs"]
+    },
+    {
+      "id": "B07-S7-F002",
+      "severity": "critical",
+      "source": "Slice 7 closure review",
+      "summary": "External production trust remains unavailable because no Sigstore/Rekor or accepted customer PKI evidence is committed.",
+      "disposition": "recorded",
+      "closure": "blocking",
+      "evidence_refs": ["scripts/verify.sh --profile external-trust"]
+    }
+  ],
+  "profile_results": [
+    {
+      "profile": "repo_baseline_structural",
+      "result": "pass",
+      "evidence_ref": "scripts/verify.sh --profile baseline"
+    },
+    {
+      "profile": "source_bound_local_release",
+      "result": "pass",
+      "evidence_ref": "scripts/verify.sh --profile source-bound"
+    },
+    {
+      "profile": "external_production_trust",
+      "result": "fail",
+      "evidence_ref": "scripts/verify.sh --profile external-trust",
+      "reason": "No Sigstore/Rekor bundle or accepted customer PKI evidence is committed."
+    }
+  ],
+  "blocking_states": [
+    {
+      "profile": "external_production_trust",
+      "state_id": "external_trust_profile_selected",
+      "result": "fail",
+      "reason": "no supported external trust profile evidence is committed for this repository self-release"
+    },
+    {
+      "profile": "external_production_trust",
+      "state_id": "external_attestation_present",
+      "result": "not_assessed",
+      "reason": "No Sigstore/Rekor bundle or accepted customer PKI evidence is committed"
+    },
+    {
+      "profile": "external_production_trust",
+      "state_id": "production_release_verified",
+      "result": "fail",
+      "reason": "production release verification requires every external production trust state to pass"
+    }
+  ],
+  "activation_decision": {
+    "block_08_allowed": true,
+    "reason": "Block 07 has live baseline and source-bound local release pass states plus an explicit verifier-derived external production trust blocker that Block 08 can explain honestly."
+  },
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-engineering-dri",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "evidence",
+    "accountability_claim": "recording_only",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-review-ledger.json",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "first"
+  }
+}

@@ -166,6 +166,7 @@ validate_schema_examples() {
   node scripts/validate-json-schema.mjs schema/assessment-input.schema.json examples/contract-foundation/not-assessed-assessment-input.json || return 1
   node scripts/validate-json-schema.mjs schema/contract-manifest.schema.json examples/contract-foundation/contract-manifest.example.json || return 1
   node scripts/validate-json-schema.mjs schema/contract-release-verification.schema.json examples/contract-foundation/contract-release-verification.example.json || return 1
+  node scripts/validate-json-schema.mjs schema/review-ledger.schema.json specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-review-ledger.json || return 1
   node scripts/validate-json-schema.mjs schema/trusted-identity-policy.schema.json examples/contract-foundation/trusted-identity-policy.example.json || return 1
   node scripts/validate-json-schema.mjs schema/trusted-identity-policy.schema.json examples/contract-foundation/trusted-identity-policy-wrong-profile.example.json || return 1
   node scripts/validate-json-schema.mjs schema/consumer-schema-version-declaration.schema.json examples/contract-foundation/sdp-gate-consumer-declaration.example.json || return 1
@@ -211,6 +212,7 @@ gate_files=(
   "scripts/validate-claim-consistency.mjs"
   "scripts/validate-self-trace.sh"
   "scripts/validate-cross-references.mjs"
+  "scripts/validate-review-ledger.mjs"
   "scripts/check-artifact-safety.sh"
   "scripts/validate-pilot-matrices.mjs"
   "scripts/verify-self-attestation.sh"
@@ -257,6 +259,7 @@ run_state "self_trace_package_valid" "scripts/validate-self-trace.sh" scripts/va
 run_state "artifact_safety_valid" "scripts/check-artifact-safety.sh" scripts/check-artifact-safety.sh
 run_state "claim_tags_consistent" "scripts/validate-claim-consistency.mjs" scripts/validate-claim-consistency.mjs
 run_state "cross_reference_integrity" "scripts/validate-cross-references.mjs" scripts/validate-cross-references.mjs
+run_state "review_ledger_valid" "scripts/validate-review-ledger.mjs" scripts/validate-review-ledger.mjs
 
 if [[ "$profile_id" == "source_bound_local_release" || "$profile_id" == "external_production_trust" ]]; then
   self_attestation_json="$tmp_dir/self-attestation.json"

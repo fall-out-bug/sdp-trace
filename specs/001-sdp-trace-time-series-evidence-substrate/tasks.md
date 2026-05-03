@@ -182,7 +182,8 @@
 - [x] T084 [US3] Update OpenCode/Kotlin+Bazel docs and exact matrix rows only from the committed Block 06 proof package (Beads mirror: `sdp-trace-drq`)
 - [ ] T085 [US4] Run pi review for Block 06 implementation, record every valid finding in `blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md`, and mirror every valid finding in Beads including minor/P3 findings (Beads mirror: `sdp-trace-drq`)
 - [ ] T086 [US4] Verify `npm run validate`, `jq empty schema/*.json`, `git diff --check`, and Block 06 package validation before closing the review ledger and mirroring closure to `sdp-trace-drq` (Beads mirror: `sdp-trace-drq`)
-- [ ] T091 [US4] Regenerate source-bound local release artifacts for the current committed source subject, verify `source_bound_local_release`, and keep `external_production_trust` open unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
+- [x] T091 [US4] Regenerate source-bound local release artifacts for the current committed source subject, verify `source_bound_local_release`, and keep `external_production_trust` open unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
+- [x] T092 [US4] Add Block 07 Slice 7 review-ledger schema, machine-checkable closure ledger, validator wiring, and final verifier-derived closure statement that keeps external production trust explicitly blocked without blocking Block 08 discovery.
 
 **Checkpoint**: The repository has at least one real, validated, sanitized product proof package for the exact first tested slice, or the product proof remains explicitly incomplete.
 

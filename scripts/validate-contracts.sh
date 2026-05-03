@@ -43,6 +43,7 @@ validate schema/assessment-input.schema.json examples/contract-foundation/positi
 validate schema/assessment-input.schema.json examples/contract-foundation/not-assessed-assessment-input.json
 validate schema/contract-manifest.schema.json examples/contract-foundation/contract-manifest.example.json
 validate schema/contract-release-verification.schema.json examples/contract-foundation/contract-release-verification.example.json
+validate schema/review-ledger.schema.json specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-review-ledger.json
 validate schema/trusted-identity-policy.schema.json examples/contract-foundation/trusted-identity-policy.example.json
 validate schema/trusted-identity-policy.schema.json examples/contract-foundation/trusted-identity-policy-wrong-profile.example.json
 validate schema/consumer-schema-version-declaration.schema.json examples/contract-foundation/sdp-gate-consumer-declaration.example.json

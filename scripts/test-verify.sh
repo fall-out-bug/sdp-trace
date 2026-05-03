@@ -164,6 +164,7 @@ fi
 node scripts/validate-json-schema.mjs schema/proof-summary.schema.json "$external_trust_json" >/dev/null
 
 scripts/validate-cross-references.mjs >/dev/null
+scripts/validate-review-ledger.mjs >/dev/null
 mkdir -p "$cross_ref_fixture"
 cp examples/self-trace/*.json "$cross_ref_fixture/"
 jq '.[0].evidence_refs = ["evidence-does-not-exist"]' \
