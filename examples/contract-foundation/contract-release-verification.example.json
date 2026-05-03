@@ -5,16 +5,16 @@
   "trust_scope": "source_bound_local_release",
   "release_verification_state": "pass",
   "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
-  "manifest_digest": "c05fb02cded5cf5ba517a0e5eb3cbc1c3e4c222be6f5951c83b80683986efcb1",
+  "manifest_digest": "496ad317e2c32abb57e1500f54827e42126578b59170e61add2eb77c409a0ecb",
   "manifest_digest_status": "matched",
   "artifact_digest_status": "matched",
   "signature_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
   "signature_status": "valid",
-  "signer_identity": "local-dev-dsse-openssl-v1:1ae12f19caabf4c35469544ce8179bd4cb017f8be07b3144896dbb1f8cdbbc64",
+  "signer_identity": "local-dev-dsse-openssl-v1:d3cf17bf84b99397406aad0636e0f378075e599753dc7333f053c965a7002b31",
   "oidc_issuer": "local-dev-private-equivalent",
   "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
   "identity_policy_status": "matched",
-  "source_commit": "8e177826d56809e20fc15d955f21d15ae46a0b41",
+  "source_commit": "5616dc56603c280b28932e996d5b14fc023eafa4",
   "source_commit_status": "matched",
   "source_commit_artifact_status": "matched",
   "source_commit_artifact_counts": {
@@ -36,11 +36,11 @@
   },
   "transparency_log_status": "not_assessed",
   "freshness_status": "current",
-  "verified_at": "2026-05-03T17:45:55Z",
+  "verified_at": "2026-05-03T18:00:10Z",
   "trusted_contract_release": false,
   "private_equivalent_profile": "local-dev-dsse-openssl-v1",
   "provenance_refs": [
-    "provenance-codex-block-07-source-bound-repair-start"
+    "provenance-codex-block-07-slice-7-start"
   ],
   "accountability": {
     "dri": {

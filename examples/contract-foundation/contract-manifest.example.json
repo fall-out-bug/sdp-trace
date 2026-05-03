@@ -184,7 +184,7 @@
     {
       "path": "examples/contract-foundation/positive-assessment-input.json",
       "kind": "fixture",
-      "sha256": "b4e8983abe2754b987fc4810cc22b8211d3dc1e728d663c43b38f755d4d1dd62"
+      "sha256": "0e1dcdac3930a243acfc0cb91d3335d6ac4f5d1288278e524f6c8d2f5361da28"
     },
     {
       "path": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
@@ -349,7 +349,7 @@
     {
       "path": "scripts/validate-contracts.sh",
       "kind": "validation_script",
-      "sha256": "c2eaa8e2479685159ea6d8516045a89242096ed39f4b058f9b49711a50af6435"
+      "sha256": "8bc15878275cc8fe3a03d23ff4a0e34cd2368ff6fd8eae15021940f6fb579b81"
     },
     {
       "path": "scripts/validate-json-schema.mjs",
@@ -494,7 +494,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "9fe98b88b3ff9b9345d6863bce7f1cc42e52acb7f9661eefc06b34c157adae12"
+      "sha256": "dfa5e4e88d22c6fa6c5bc36266c9d71ac0079981a7bee78c7116ee244af5935f"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
@@ -607,7 +607,7 @@
       "sha256": "b591a1aa577bcdc72a5772eda96192eca08b29ca1911354580c02055da915d70"
     }
   ],
-  "source_commit": "8e177826d56809e20fc15d955f21d15ae46a0b41",
+  "source_commit": "5616dc56603c280b28932e996d5b14fc023eafa4",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
