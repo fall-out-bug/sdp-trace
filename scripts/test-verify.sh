@@ -49,11 +49,12 @@ set +e
 scripts/validate-claim-consistency.mjs --files "$t070_false_pass_fixture" >"$tmp_dir/t070-false-pass.out" 2>&1
 t070_false_pass_status="$?"
 set -e
-if [[ "$t070_false_pass_status" -eq 0 ]]; then
-  echo "Expected T070 pass claim to fail when current closure commands do not pass" >&2
+if [[ "$t070_false_pass_status" -ne 0 ]]; then
+  echo "Expected T070 pass claim fixture to pass after source-bound local release repair" >&2
+  cat "$tmp_dir/t070-false-pass.out" >&2
   exit 1
 fi
-grep -q "command_set:block04-t070 did not pass" "$tmp_dir/t070-false-pass.out"
+grep -q "claim tags valid" "$tmp_dir/t070-false-pass.out"
 
 printf '%s\n' '<!-- sdp-trace-claim: claim=task_closed; subject=T071; state=stale; profile=repo_baseline; evidence=proof:unverified-artifact -->' >"$unverified_evidence_fixture"
 set +e
@@ -77,13 +78,13 @@ if [[ "$none_evidence_status" -eq 0 ]]; then
 fi
 grep -q "unsupported evidence value" "$tmp_dir/none-evidence.out"
 
-if [[ "$(jq -r '.artifact_digest_status' "$contract_release_verification")" == "matched" ]]; then
-  echo "Contract release verification example must not claim matched artifact digests while manifest verification reports mismatches" >&2
+if [[ "$(jq -r '.artifact_digest_status' "$contract_release_verification")" != "matched" ]]; then
+  echo "Contract release verification example must claim matched artifact digests after source-bound local release repair" >&2
   exit 1
 fi
 
-if [[ "$(jq -r '.expected_proof_states.digest_verified' "$self_attestation_case")" != "false" ]]; then
-  echo "Self-attestation positive case must not expect digest_verified=true while current manifest artifact verification mismatches" >&2
+if [[ "$(jq -r '.expected_proof_states.digest_verified' "$self_attestation_case")" != "true" ]]; then
+  echo "Self-attestation positive case must expect digest_verified=true after source-bound local release repair" >&2
   exit 1
 fi
 
@@ -113,17 +114,19 @@ if [[ -n "$(git status --porcelain)" ]]; then
     ([.states[] | select(.id == "source_checkout_clean" and .result == "cannot_verify")] | length == 1)
   ' "$source_bound_json" >/dev/null
 else
-  if [[ "$source_bound_status" -ne 1 ]]; then
-    echo "Expected source-bound verifier to fail from source-bound proof mismatch in a clean checkout" >&2
+  if [[ "$source_bound_status" -ne 0 ]]; then
+    echo "Expected source-bound verifier to pass in a clean checkout after source-bound local release repair" >&2
     cat "$source_bound_json" >&2
     exit 1
   fi
   jq -e '
     .profile == "source_bound_local_release" and
-    .result == "fail" and
+    .result == "pass" and
     .trust_scope == "source_bound_local_release" and
     ([.states[] | select(.id == "source_checkout_clean" and .result == "pass")] | length == 1) and
-    ([.states[] | select(.id == "artifact_subject_verified" and .result == "fail")] | length == 1)
+    ([.states[] | select(.id == "artifact_subject_verified" and .result == "pass")] | length == 1) and
+    ([.states[] | select(.id == "source_subject_verified" and .result == "pass")] | length == 1) and
+    ([.states[] | select(.id == "local_envelope_verified" and .result == "pass")] | length == 1)
   ' "$source_bound_json" >/dev/null
 fi
 node scripts/validate-json-schema.mjs schema/proof-summary.schema.json "$source_bound_json" >/dev/null

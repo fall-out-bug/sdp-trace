@@ -318,7 +318,7 @@
       "summary": "Verifier tests assert that unsupported authoritative claim tags are rejected with a named reason.",
       "artifact": {
         "uri": "scripts/test-verify.sh",
-        "sha256": "47b6d7cdbc0e87986bd1b5259cf23110e3b46a5370081d23d24fe7a6cf6d8638",
+        "sha256": "0b29ee73eca0a066ed337869de760adbeb6c744828f4e26d7b4b6aae1c29affe",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -367,7 +367,7 @@
       "summary": "Verifier tests assert that prose mentioning verified, complete, or trusted claims is ignored unless it has an authoritative claim tag.",
       "artifact": {
         "uri": "scripts/test-verify.sh",
-        "sha256": "47b6d7cdbc0e87986bd1b5259cf23110e3b46a5370081d23d24fe7a6cf6d8638",
+        "sha256": "0b29ee73eca0a066ed337869de760adbeb6c744828f4e26d7b4b6aae1c29affe",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -695,7 +695,7 @@
         "scripts/validate-claim-consistency.mjs"
       ],
       "captured_at": "2026-05-03T12:50:00Z",
-      "payload_digest": "47b6d7cdbc0e87986bd1b5259cf23110e3b46a5370081d23d24fe7a6cf6d8638",
+      "payload_digest": "0b29ee73eca0a066ed337869de760adbeb6c744828f4e26d7b4b6aae1c29affe",
       "digest_algorithm": "sha256",
       "chain_scope": "block-07-slice-1-claim-consistency",
       "unavailable_fields": [
