@@ -41,6 +41,9 @@ The repository has already failed once by letting prose, task checkboxes, and ch
 - Checked-in proof JSON is not authority unless live-verified or externally signed.
 - No deferred trust closure: missing external evidence keeps the block open.
 - Prose is not authoritative. Use `sdp-trace-claim` tags for claims.
+- Source-bound proof requires a clean immutable source commit; if a changed file is a manifest subject, commit it first, then regenerate release proof in a separate commit.
+- Do not close task checkboxes, review ledgers, or docs after source-bound proof without another source-bound cycle if those files are manifest subjects.
+- Keep mirrored self-trace data synchronized: `assessment-input.json` must mirror self-trace arrays, and hash references must match current files.
 
 ## Required Work Loop
 Every non-trivial implementation chunk needs:
@@ -69,26 +72,9 @@ Current Slice 1 validator intentionally accepts only narrow evidence forms. Do n
 ## Commands
 No build is required yet.
 
-Schema checks:
-
-```bash
-jq empty schema/*.json
-```
-
-Baseline verifier:
-
-```bash
-npm run verify:baseline
-```
-
-Dirty local structural verifier:
-
-```bash
-scripts/verify.sh --profile baseline --allow-dirty --json
-```
-
-Self-trace:
-
-```bash
-scripts/validate-self-trace.sh
-```
+- Schema checks: `jq empty schema/*.json`
+- Baseline verifier: `npm run verify:baseline`
+- Dirty local structural verifier: `scripts/verify.sh --profile baseline --allow-dirty --json`
+- Source-bound verifier: `npm run verify:source-bound`
+- External-trust verifier: `npm run verify:external-trust`
+- Self-trace: `scripts/validate-self-trace.sh`
