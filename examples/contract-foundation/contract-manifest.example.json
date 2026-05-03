@@ -607,7 +607,7 @@
       "sha256": "b591a1aa577bcdc72a5772eda96192eca08b29ca1911354580c02055da915d70"
     }
   ],
-  "source_commit": "61107b8a9e2707f1a6a9985ab1fb33edc90f5b82",
+  "source_commit": "8e177826d56809e20fc15d955f21d15ae46a0b41",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
