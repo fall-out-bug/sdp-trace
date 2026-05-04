@@ -11,12 +11,14 @@ Self-attestation separates contract shape, digest integrity, local DSSE attestat
 ## Commands
 
 ```bash
-rtk scripts/verify-self-attestation.sh --case examples/self-trace/self-attestation-verification.json
-rtk scripts/verify-self-attestation.sh --all
-rtk npm run validate
+scripts/verify-self-attestation.sh --case examples/self-trace/self-attestation-verification.json
+scripts/verify-self-attestation.sh --all
+npm run validate
 ```
 
-Observed result on 2026-05-01: the local structural case reports assessed `schema_valid`, assessed `digest_verified`, assessed `source_commit_artifacts_verified: false`, assessed `locally_attested: false`, `externally_attested: not_assessed`, and `production_release_verified: not_assessed`. `locally_attested` is false because the shared working tree contains final artifacts that are not present in the manifest `source_commit`; the verifier treats that known source-content mismatch as assessed negative evidence, not `not_assessed`. The negative suite detects wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, modified verification artifact, and unsupported production-trust claims.
+Observed result on 2026-05-01: the local structural case reported assessed `schema_valid`, assessed `digest_verified`, assessed `source_commit_artifacts_verified: false`, assessed `locally_attested: false`, `externally_attested: not_assessed`, and `production_release_verified: not_assessed`. `locally_attested` was false because the shared working tree contained final artifacts that were not present in the manifest `source_commit`.
+
+Regenerated on 2026-05-04 after Block 06 manifest subjects changed. The manifest digests, DSSE envelope, public key, verification artifact, and self-attestation case were refreshed. Current observed result: assessed `schema_valid: true`, assessed `digest_verified: true`, assessed `source_commit_artifacts_verified: true`, assessed `locally_attested: true`, `externally_attested: not_assessed`, `production_release_verified: not_assessed`. The negative suite continues to detect wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, modified verification artifact, and unsupported production-trust claims.
 
 Block 04 adds the next release-finalization boundary: a source-bound local release can assess source-content proof only from a clean git tree and a source commit containing every manifest artifact with matching digest. It still cannot claim an externally trusted production release without accepted Sigstore/Rekor or customer PKI evidence.
 
@@ -51,7 +53,7 @@ Block 04 adds the next release-finalization boundary: a source-bound local relea
 
 - External Sigstore/Rekor or customer PKI attestation is not committed.
 - Production release verification is not claimed.
-- Source-content verification is assessed false in this dirty working tree session when the verifier can compare the manifest against the immutable `source_commit` and finds missing or mismatched artifacts. The source-bound finalization guard is committed so a future release branch can run it after committing final artifacts; separate release-proof generation can then refresh the manifest digest, DSSE envelope, and result.
+- Source-content verification is assessed true after the 2026-05-04 manifest refresh. The source-bound finalization guard was used to verify that the selected `source_commit` contains every manifest artifact path with matching digest before regenerating the release proof.
 - Release verification example fields `source_uri_status`, `protected_ref_status`, `workflow_identity_status`, and `approval_status` remain `not_assessed` because no external Sigstore/Rekor or accepted customer PKI evidence is committed.
 - Fresh checkout reproducibility is not claimed in this dirty working tree session.
 - The manifest `source_commit` is an immutable reference, but this repository still needs an external trust artifact before `trusted_contract_release: true`.

@@ -249,8 +249,8 @@
       "schema_version": "0.1.0",
       "source": "local-command",
       "external_ref": "run-report.md",
-      "observed_at": "2026-05-01T14:28:53Z",
-      "collected_at": "2026-05-01T14:28:53Z",
+      "observed_at": "2026-05-04T00:00:00Z",
+      "collected_at": "2026-05-04T00:00:00Z",
       "actor": {
         "id": "pilot-operator",
         "actor_type": "human_user",
@@ -289,8 +289,8 @@
       "schema_version": "0.1.0",
       "source": "local-command",
       "external_ref": "run-report.md",
-      "observed_at": "2026-05-01T14:28:53Z",
-      "collected_at": "2026-05-01T14:28:53Z",
+      "observed_at": "2026-05-04T00:00:00Z",
+      "collected_at": "2026-05-04T00:00:00Z",
       "actor": {
         "id": "pilot-operator",
         "actor_type": "human_user",
