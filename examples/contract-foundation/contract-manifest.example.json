@@ -239,7 +239,7 @@
     {
       "path": "README.md",
       "kind": "doc",
-      "sha256": "c677f5b9e883654a8a1453719044ad3087bcfa82aeb2b95d72fa6d4209366d0a"
+      "sha256": "d1be265be5c6749ddf6a730cb9695a8ef0f692d7c4e99032f7df8ac4f0ec98bf"
     },
     {
       "path": "schema/accountability.schema.json",
@@ -349,7 +349,7 @@
     {
       "path": "scripts/validate-contracts.sh",
       "kind": "validation_script",
-      "sha256": "8bc15878275cc8fe3a03d23ff4a0e34cd2368ff6fd8eae15021940f6fb579b81"
+      "sha256": "d8b3db196eabf30d2296cbec0be8cd7169a950a848a2f0407e77e80bf5e253c2"
     },
     {
       "path": "scripts/validate-json-schema.mjs",
@@ -494,7 +494,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "dfa5e4e88d22c6fa6c5bc36266c9d71ac0079981a7bee78c7116ee244af5935f"
+      "sha256": "27cbce311f2607cc7fe229e64bf30629b059f1081ecb75d2164f451292c0409b"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
@@ -607,7 +607,7 @@
       "sha256": "b591a1aa577bcdc72a5772eda96192eca08b29ca1911354580c02055da915d70"
     }
   ],
-  "source_commit": "5616dc56603c280b28932e996d5b14fc023eafa4",
+  "source_commit": "994be07463a4a351294a151cd730e0f8606523a5",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
