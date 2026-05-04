@@ -1,6 +1,6 @@
 # Block 08: Agent and Human Usage Discovery
 
-Status: implemented discovery + validation state (design and implementation review evidence synced)
+Status: implemented discovery + validation state; source-bound proof refreshed, external trust intentionally open
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Audience: implementation agents, CTO, CIO, CISO, repository observers
 

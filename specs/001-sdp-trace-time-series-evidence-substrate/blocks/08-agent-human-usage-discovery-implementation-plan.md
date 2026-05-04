@@ -10,7 +10,7 @@
 
 ---
 
-Status: implementation artifacts and implementation-review closure sync completed; source-bound proof sync remains pending for manifest alignment
+Status: implemented; implementation-review closure and source-bound proof sync completed, external trust remains intentionally open
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 
 ## Goal

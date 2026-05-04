@@ -1,6 +1,6 @@
 # Block 08 Review Ledger
 
-Status: design and implementation review findings recorded and closed
+Status: design and implementation review findings recorded and closed; source-bound proof refreshed, external trust explicitly open
 Parent: `08-agent-human-usage-discovery.md`
 
 This is a repository-visible ledger covering pre-implementation design findings and Block 08 implementation-review findings.
@@ -66,3 +66,13 @@ This is a repository-visible ledger covering pre-implementation design findings 
 - `pi` / `GLM` post-fix rerun returned `No valid findings`; implementation fixes for F027-F031 were considered closed.
 - `pi` / `kimi-coding/kimi-for-coding` post-fix micro-review returned `No valid findings`; implementation fixes for F036-F039 were considered closed.
 - `pi` / `minimax/MiniMax-M2.5` post-fix rerun surfaced the exit-code and quick-reference issues recorded as B08-F033-B08-F034; after those fixes, the final narrow replacement failed to start after an earlier hang, so no new unresolved implementation finding was recorded.
+
+## Final Verification
+
+- `rtk scripts/validate-discovery-entrypoints.sh`: pass
+- `rtk scripts/test-discovery-entrypoints.sh`: pass
+- `rtk scripts/validate-contracts.sh`: pass
+- `rtk npm run validate`: pass (`repo_baseline_structural`)
+- `rtk npm run verify:source-bound`: pass (`source_bound_local_release`)
+- `rtk npm run verify:external-trust`: fail with expected blocker states (`external_trust_profile_selected: fail`, downstream external states `not_assessed`, `production_release_verified: fail`)
+- `rtk git diff --check`: pass
