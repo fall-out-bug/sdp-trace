@@ -70,7 +70,7 @@
       "summary": "Contract validation command validates committed contract foundation examples and is extended by self-trace validation.",
       "artifact": {
         "uri": "scripts/validate-contracts.sh",
-        "sha256": "8bc15878275cc8fe3a03d23ff4a0e34cd2368ff6fd8eae15021940f6fb579b81",
+        "sha256": "d8b3db196eabf30d2296cbec0be8cd7169a950a848a2f0407e77e80bf5e253c2",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -292,7 +292,7 @@
       "tool_name": "rtk",
       "command": "scripts/validate-contracts.sh",
       "captured_at": "2026-04-30T20:50:00Z",
-      "payload_digest": "8bc15878275cc8fe3a03d23ff4a0e34cd2368ff6fd8eae15021940f6fb579b81",
+      "payload_digest": "d8b3db196eabf30d2296cbec0be8cd7169a950a848a2f0407e77e80bf5e253c2",
       "digest_algorithm": "sha256",
       "chain_scope": "self-trace-v0",
       "unavailable_fields": [
