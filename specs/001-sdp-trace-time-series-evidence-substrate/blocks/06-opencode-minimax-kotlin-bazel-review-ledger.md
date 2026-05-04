@@ -31,8 +31,8 @@ Status: spec review findings closed; implementation evidence ready for pi review
 
 | ID | Beads mirror | Severity | Finding | Disposition | Evidence |
 |---|---|---|---|---|---|
-| F011 | `sdp-trace-drq.11` | major | Runner accepted shell-shaped `--bazel-command` values after only checking that the target string appeared. | Fixed locally; closure pending final validation. | Runner now rejects non-`bazel`/`bazelisk` commands and shell metacharacters before execution; `scripts/test-e2e-runner.sh` covers rejection. |
-| F012 | `sdp-trace-drq.12` | major | Package validator required proof-state `evidence_refs` but did not verify that they resolve to committed evidence event ids. | Fixed locally; closure pending final validation. | `scripts/validate-e2e-pilot-package.sh` now resolves every proof-state evidence ref against `evidence/evidence-events.json`; `scripts/test-e2e-pilot-package.sh` covers dangling refs. |
+| F011 | `sdp-trace-drq.11` | major | Runner accepted shell-shaped `--bazel-command` values after only checking that the target string appeared. | Closed. | Runner now rejects non-`bazel`/`bazelisk` commands and shell metacharacters before execution; `scripts/test-e2e-runner.sh` covers rejection; `npm run test:e2e-pilot` passed. |
+| F012 | `sdp-trace-drq.12` | major | Package validator required proof-state `evidence_refs` but did not verify that they resolve to committed evidence event ids. | Closed. | `scripts/validate-e2e-pilot-package.sh` now resolves every proof-state evidence ref against `evidence/evidence-events.json`; `scripts/test-e2e-pilot-package.sh` covers dangling refs; `npm run test:e2e-pilot` passed. |
 
 ## Implementation Evidence Before Review
 

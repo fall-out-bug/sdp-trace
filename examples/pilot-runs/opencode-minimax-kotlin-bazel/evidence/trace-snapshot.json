@@ -39,12 +39,12 @@
     {
       "id": "evidence-sdp-trace-package-valid",
       "kind": "evidence",
-      "label": "Package validation is a separate repository step"
+      "label": "Package validation passed for committed proof package"
     },
     {
       "id": "evidence-sanitized-report-committed",
       "kind": "evidence",
-      "label": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step"
+      "label": "Sanitized report committed to repository"
     },
     {
       "id": "observation-opencode-minimax-kotlin-bazel-proof",
