@@ -208,10 +208,10 @@
 
 **Activation Gate**: Do not elaborate or implement this phase until Block 07 has either closed under live verifier evidence or remains open with a verifier-derived blocking state that this phase can explain honestly.
 
-- [ ] T087 [US4] After Block 07, run design review for `blocks/08-agent-human-usage-discovery.md` with separate agent-path and human-path critiques
-- [ ] T088 [US4] Define the agent entrypoint: profile selection, verifier command surface, evidence emission rules, and forbidden claims
-- [ ] T089 [US4] Define the human entrypoint: five-minute verification path, proof-scope explanation, dirty checkout warning, and `not_assessed` interpretation
-- [ ] T090 [US4] Review Block 08 with a fresh agent and record every valid finding before implementation planning
+- [x] T087 [US4] After Block 07, run design review for `blocks/08-agent-human-usage-discovery.md` with separate agent-path and human-path critiques
+- [x] T088 [US4] Define the agent entrypoint: profile selection, verifier command surface, evidence emission rules, and forbidden claims
+- [x] T089 [US4] Define the human entrypoint: five-minute verification path, proof-scope explanation, dirty checkout warning, and `not_assessed` interpretation
+- [x] T090 [US4] Review Block 08 with a fresh agent and record every valid finding before implementation planning
 
 **Checkpoint**: Agents and humans can independently discover how to use `sdp-trace`, and both paths converge on the same verifier-derived proof states.
 

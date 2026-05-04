@@ -137,3 +137,4 @@ scripts/validate-self-trace.sh
 scripts/verify-artifact-hashes.sh
 scripts/verify-self-attestation.sh --all
 scripts/check-artifact-safety.sh
+scripts/validate-discovery-entrypoints.sh
