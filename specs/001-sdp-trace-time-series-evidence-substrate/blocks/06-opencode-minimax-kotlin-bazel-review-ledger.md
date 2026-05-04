@@ -2,7 +2,7 @@
 
 Block: `06-opencode-minimax-kotlin-bazel-e2e-proof`
 Beads mirror: `sdp-trace-drq`
-Status: spec review findings closed; implementation evidence ready for pi review
+Status: spec review findings closed; implementation review findings closed
 
 ## Review Rules
 
