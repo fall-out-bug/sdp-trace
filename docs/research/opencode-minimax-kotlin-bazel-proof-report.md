@@ -1,6 +1,6 @@
 # OpenCode + MiniMax + Kotlin+Bazel Proof Report
 
-Status: incomplete package with observed subset for the exact Block 06 slice
+Status: complete package for the exact Block 06 slice
 Spec task: T083
 Proof package: `examples/pilot-runs/opencode-minimax-kotlin-bazel/`
 
@@ -28,7 +28,7 @@ Proof package: `examples/pilot-runs/opencode-minimax-kotlin-bazel/`
 
 ## Proof State Summary
 
-The committed package records `completion_state: incomplete`. These proof states are currently `observed`:
+The committed package records `completion_state: complete`. All required proof states are `observed`:
 
 - `opencode_available`
 - `minimax_model_listed`
@@ -36,9 +36,6 @@ The committed package records `completion_state: incomplete`. These proof states
 - `kotlin_bazel_target_identified`
 - `opencode_minimax_run_completed`
 - `bazel_commands_executed`
-
-These required proof states remain `not_assessed` in `proof-states.json`:
-
 - `sdp_trace_package_valid`
 - `sanitized_report_committed`
 

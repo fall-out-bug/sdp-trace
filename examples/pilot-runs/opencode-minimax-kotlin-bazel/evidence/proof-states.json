@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "proof_profile": "opencode-minimax-kotlin-bazel-e2e-v1",
-  "completion_state": "incomplete",
+  "completion_state": "complete",
   "generated_at": "2026-05-01T14:28:53Z",
   "tested_on": {
     "repository": "examples/pilot-fixtures/kotlin-bazel-service",
@@ -111,17 +111,21 @@
     },
     {
       "name": "sdp_trace_package_valid",
-      "state": "not_assessed",
-      "evidence_refs": [],
-      "reason": "Package validation is a separate repository step",
-      "next_required_evidence": "Provide evidence for sdp_trace_package_valid."
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-sdp-trace-package-valid"
+      ],
+      "reason": "Package validation passed for committed proof package",
+      "next_required_evidence": null
     },
     {
       "name": "sanitized_report_committed",
-      "state": "not_assessed",
-      "evidence_refs": [],
-      "reason": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step",
-      "next_required_evidence": "Provide evidence for sanitized_report_committed."
+      "state": "observed",
+      "evidence_refs": [
+        "evidence-sanitized-report-committed"
+      ],
+      "reason": "Sanitized report committed to repository",
+      "next_required_evidence": null
     }
   ]
 }

@@ -14,12 +14,6 @@
     "payload_digest": "c8c43b4716c509096074bc94cd8e985c7d3c0ccc70ebcc655533547f68c21711",
     "digest_algorithm": "sha256",
     "chain_scope": "opencode-minimax-kotlin-bazel",
-    "unavailable_fields": [
-      {
-        "field": "complete_product_proof",
-        "state": "not_assessed",
-        "reason": "At least one required proof state was not observed."
-      }
-    ]
+    "unavailable_fields": []
   }
 ]

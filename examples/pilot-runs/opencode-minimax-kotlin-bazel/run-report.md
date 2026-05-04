@@ -1,6 +1,6 @@
 # OpenCode + MiniMax + Kotlin+Bazel Run Report
 
-Completion state: incomplete
+Completion state: complete
 
 ## Tested-On Environment
 
@@ -43,8 +43,8 @@ Completion state: incomplete
 | kotlin_bazel_target_identified | observed | bazel query succeeded and target rule output ties Kotlin/Bazel files to the supplied target |
 | opencode_minimax_run_completed | observed | opencode run completed with requested MiniMax model id and produced captured output |
 | bazel_commands_executed | observed | operator-approved bazel command completed |
-| sdp_trace_package_valid | not_assessed | Package validation is a separate repository step |
-| sanitized_report_committed | not_assessed | Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step |
+| sdp_trace_package_valid | observed | Package validation passed for committed proof package |
+| sanitized_report_committed | observed | Sanitized report committed to repository |
 
 ## Boundary
 

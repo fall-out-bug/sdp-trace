@@ -129,7 +129,7 @@
     {
       "path": "docs/research/self-attestation-summary.md",
       "kind": "doc",
-      "sha256": "72d823a844fa59a387318cbade49741e810b248f5799b4d8194ab5616fe9ae2c"
+      "sha256": "11877861bd5e31d13ba8d0af2d0039b93c2861e196dbebe172236dd0ea616463"
     },
     {
       "path": "docs/speckit-compatibility.md",
@@ -494,7 +494,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "27cbce311f2607cc7fe229e64bf30629b059f1081ecb75d2164f451292c0409b"
+      "sha256": "f6ff10f64e3ed6d6b8bbb09e002892a7007b3cb9708660da8ab5a6ca72407401"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
@@ -514,12 +514,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
       "kind": "doc",
-      "sha256": "3301f71f0f2871e281af56d8c3b12a011c7bf9fed5d5bcf1292cefe33856e6c7"
+      "sha256": "f6f538e87226fcf403d0a51c2cb43960b96de0c98c1fa4d82e276bb8b0ca0cda"
     },
     {
       "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
       "kind": "doc",
-      "sha256": "4e28148df2d75d84b6f73cebc6f37d9d8897b658477712d2754b9948e6c98075"
+      "sha256": "13813af07a7d50334a076eb7f620a2331037bb1aa4e75b2ce9853b475d54553b"
     },
     {
       "path": "scripts/run-opencode-minimax-kotlin-bazel-proof.sh",
@@ -559,12 +559,12 @@
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
       "kind": "fixture",
-      "sha256": "ddcef9ec974246535db754d132915262cab29275a2455ae43685d1054f091c4d"
+      "sha256": "9e540f7dc6dcf6ba350a90ee6514e0cfcd9cf3510d701915333b386ac04aabfa"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/run-report.md",
       "kind": "fixture",
-      "sha256": "c7b759f0f9b6c5a5e8453e439c5c021585940b3ec41e2266b47b4054fa46d2cc"
+      "sha256": "af973e3efc4f9ea5c3d131b8d94ad3673702f59451cfd18a017de0a057db4d52"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
@@ -574,40 +574,40 @@
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/proof-states.json",
       "kind": "fixture",
-      "sha256": "550446681fa90dd7ceef14baa63989858fa4783ecbedceb0be368d493db5bbb9"
+      "sha256": "edd58fd24fed1428b60570e73b087e0807b9281e7502b67f10c1e91d1ef9823f"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
       "kind": "fixture",
-      "sha256": "e7330ad1618cadcba79943dad0f04b9fe73cfd99e67657ef18694c640e20b36a"
+      "sha256": "b6eec483007e94194f7329049add0ff6ea05f8307bf88cc5c26d1a610a5db9b7"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/provenance-records.json",
       "kind": "fixture",
-      "sha256": "1ae3361f091f1b94ba0beb94726917d0ab7c367ebdad431015f9fdc8d230ebfd"
+      "sha256": "4662f5075818156b16ccbab86933d3f244857efe447f14d5d40b866f73ef7bda"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/observations.json",
       "kind": "fixture",
-      "sha256": "0419dc495892ffae41bac4a64a44b71ee9da4e07a6ba8e01d508e2e3e7112430"
+      "sha256": "6ed49eb6764d9ad214f8ef20906643ba92d6dc2ffadaaccf507949d04dea1f79"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/metric-stream.json",
       "kind": "fixture",
-      "sha256": "8ec2d014919eeabaefe764d9290fda10c3f6fecc13f492bef606efc6997fc913"
+      "sha256": "cce153a34c9c0671ca52b9ed972d26fce7e97559e184b1edfb5dcd49de69feb6"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/trace-snapshot.json",
       "kind": "fixture",
-      "sha256": "974f74eae02d89debde7cf24e3949635fe836aa9ec7d9252938d866270a53fec"
+      "sha256": "5485b2c7600e20a4ad37ba012a0553179283ef398e40dba9d07502654e209b6e"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json",
       "kind": "fixture",
-      "sha256": "b591a1aa577bcdc72a5772eda96192eca08b29ca1911354580c02055da915d70"
+      "sha256": "e48cfdfacfeab3bae8c0d2c52efc3e1b39b3fb4564a5d007b6c6f670db0b40ad"
     }
   ],
-  "source_commit": "e9cbc10f41173fa5b82fd19884eb2923491e2cb2",
+  "source_commit": "c44a887a2de1a912d9b0fb1057b5e539c71e7bc6",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",

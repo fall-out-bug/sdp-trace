@@ -244,16 +244,16 @@
     "schema_version": "0.1.0",
     "source": "local-command",
     "external_ref": "run-report.md",
-    "observed_at": "2026-05-01T14:28:53Z",
-    "collected_at": "2026-05-01T14:28:53Z",
+    "observed_at": "2026-05-04T00:00:00Z",
+    "collected_at": "2026-05-04T00:00:00Z",
     "actor": {
       "id": "pilot-operator",
       "actor_type": "human_user",
       "display_name": "Pilot operator"
     },
     "event_type": "command",
-    "status": "not_assessed",
-    "summary": "Package validation is a separate repository step",
+    "status": "success",
+    "summary": "Package validation passed for committed proof package",
     "redaction_status": "redacted",
     "integrity_status": "verified_hash",
     "accountability": {
@@ -284,16 +284,16 @@
     "schema_version": "0.1.0",
     "source": "local-command",
     "external_ref": "run-report.md",
-    "observed_at": "2026-05-01T14:28:53Z",
-    "collected_at": "2026-05-01T14:28:53Z",
+    "observed_at": "2026-05-04T00:00:00Z",
+    "collected_at": "2026-05-04T00:00:00Z",
     "actor": {
       "id": "pilot-operator",
       "actor_type": "human_user",
       "display_name": "Pilot operator"
     },
     "event_type": "command",
-    "status": "not_assessed",
-    "summary": "Runner output is local under .sdp-trace-runs; committed sanitized report is a separate step",
+    "status": "success",
+    "summary": "Sanitized report committed to repository",
     "redaction_status": "redacted",
     "integrity_status": "verified_hash",
     "accountability": {
