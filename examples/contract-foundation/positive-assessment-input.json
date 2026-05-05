@@ -21,7 +21,7 @@
       "summary": "Contract validation command executed on committed fixtures.",
       "artifact": {
         "uri": "scripts/validate-contracts.sh",
-        "sha256": "d8b3db196eabf30d2296cbec0be8cd7169a950a848a2f0407e77e80bf5e253c2",
+        "sha256": "00e0a2e515feec5f0b8f3a87e942ea316b946e120d3628b77f4900623456cef0",
         "hash_algorithm": "sha256",
         "redaction_status": "none",
         "integrity_status": "verified_hash"
@@ -64,7 +64,7 @@
       "tool_name": "rtk",
       "command": "scripts/validate-contracts.sh",
       "captured_at": "2026-04-30T10:00:00Z",
-      "payload_digest": "d8b3db196eabf30d2296cbec0be8cd7169a950a848a2f0407e77e80bf5e253c2",
+      "payload_digest": "00e0a2e515feec5f0b8f3a87e942ea316b946e120d3628b77f4900623456cef0",
       "digest_algorithm": "sha256",
       "chain_scope": "block-01-contract-foundation",
       "unavailable_fields": [
