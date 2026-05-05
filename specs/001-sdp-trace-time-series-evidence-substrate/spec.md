@@ -138,6 +138,10 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - OpenCode returns a successful answer but no exportable structured session: preserve stdout/stderr digests and sanitized summary, and record export limitation as evidence.
 - Bazel is not installed in the proof environment: Kotlin+Bazel scope detection may be assessed, but Bazel command execution remains `not_assessed`.
 - One OpenCode + MiniMax + Kotlin+Bazel run succeeds: only that exact tested slice can move to observed evidence; other models, harnesses, and stacks remain `not_assessed`.
+- A recorder attaches after development work has already started: pre-attachment history is explicitly `not_assessed` or `cannot_verify`; the trace MUST NOT imply full-run provenance.
+- A local event chain verifies internally but has no witness anchor: the chain may support local development reconstruction only; it MUST NOT support accountability, external trust, or audit-grade claims.
+- A requirement changes after commands or test evidence already exist: the original task remains immutable and the change is recorded as a superseding event rather than rewriting expectations.
+- Command output or agent transcript contains a secret: the recorder must choose a safe retention/redaction state and must not silently preserve raw secrets in committed artifacts or claim unavailable raw evidence as verified.
 
 ## Requirements
 
@@ -191,6 +195,15 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-045**: The Block 06 proof package MUST include machine-readable proof states, evidence events, provenance records, observations, metric stream, trace snapshot, assessment input, redaction note, and tested-on report.
 - **FR-046**: Raw provider output, raw customer source, credentials, private prompts, and private logs MUST NOT be committed as Block 06 evidence.
 - **FR-047**: Matrix updates based on Block 06 MUST cite the committed proof package and MUST NOT generalize one observed slice into broad support, readiness, compatibility, pass/fail, or degradation claims.
+- **FR-048**: `sdp-trace` MUST support a flight-recorder event model that records source baseline, task/expectation lock, model/harness identity, command events, file mutation evidence, test evidence, redaction state, witness anchor, and run closure as ordered event-chain data.
+- **FR-049**: Flight-recorder events MUST use deterministic canonicalization, declared schema version, declared hash algorithm, `prev_event_hash`, and `event_hash`; changing, deleting, or reordering committed events MUST be verifier-detectable.
+- **FR-050**: A local flight-recorder chain MUST NOT be treated as accountability or audit-grade evidence unless it is bound to a witness anchor outside the mutable run artifact.
+- **FR-051**: Flight-recorder verifier profiles MUST distinguish local structural chain validity, witnessed run validity, and forensic usefulness; each profile MUST emit `pass`, `fail`, `not_assessed`, or `cannot_verify` states with machine-readable reasons.
+- **FR-052**: Mid-flight recorder attachment MUST create a visible `not_assessed` boundary for pre-attachment history; no profile may infer provenance for activity before attachment.
+- **FR-053**: Requirement, task, prompt, or expectation changes after run start MUST be represented as superseding events that preserve the original locked event and link to the replacement event.
+- **FR-054**: Flight-recorder evidence retention MUST distinguish `digest_only`, `sanitized_excerpt`, `encrypted_raw_ref`, `external_artifact_ref`, and `not_assessed`; profiles that require forensic reconstruction MUST reject insufficient retention for critical events.
+- **FR-055**: Flight-recorder redaction MUST be verifier-visible and MUST distinguish safe redaction, sealed raw evidence, unresolved redaction, and unverifiable redaction; unresolved redaction MUST fail profiles that require forensic or accountability evidence.
+- **FR-056**: Flight-recorder query surfaces MUST expose run summary, provenance, late-attach gaps, requirement supersession timeline, command timeline, file mutations, test evidence, redaction issues, and witness state without producing policy verdicts.
 
 ### Key Entities
 
@@ -209,6 +222,9 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **Pilot Run-Card**: A repeatable harness/model/stack assessment recipe with prompt, expected artifacts, provenance capture, validation, and `not_assessed` rules.
 - **E2E Pilot Proof Package**: A sanitized artifact set produced from a real external tool run, containing evidence events, provenance records, observations, metric stream, trace snapshot, assessment input, redaction note, tested-on report, and explicit proof states.
 - **External Verdict Input**: A verdict, score, evidence-strength assertion, or decision produced outside `sdp-trace` and recorded as evidence with producer, policy reference, artifact reference, and origin.
+- **Flight Recorder Event**: An ordered event in a recorder run, with declared schema version, canonical payload digest, previous event hash, event hash, recorder identity, redaction state, and optional witness reference.
+- **Witness Anchor**: A record outside the mutable run artifact that binds run id, source baseline, task hash, recorder version, and chain head so local chain replacement can be detected.
+- **Requirement Supersession Event**: An append-only event that changes task or expectation scope by referencing an earlier locked event; it never edits or replaces the earlier event.
 
 ## Success Criteria
 
@@ -244,6 +260,9 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **SC-028**: `scripts/validate-e2e-pilot-package.sh` rejects a committed proof package that omits required proof states in `evidence/proof-states.json` or includes raw output.
 - **SC-029**: Model and harness matrices cite the Block 06 proof package only for the exact observed OpenCode + MiniMax + Kotlin+Bazel slice.
 - **SC-030**: If a real OpenCode + MiniMax run cannot be completed, Block 06 remains open and the incomplete package cannot be used as product proof.
+- **SC-031**: A Block 09 design, Socratic review synthesis, and implementation plan define the flight-recorder trust kernel before any new external demo repo work starts.
+- **SC-032**: Flight-recorder fixtures prove that event mutation, event deletion, event reordering, missing witness, witness mismatch, late attachment, task rewrite, and unresolved redaction are detected or explicitly reported by verifier states.
+- **SC-033**: A reviewer can run documented flight-recorder query commands against committed fixtures and identify source baseline, task, model/harness identity, command timeline, file mutations, test evidence, redaction state, witness state, and `not_assessed` gaps without reading raw JSONL manually.
 
 ## Assumptions
 

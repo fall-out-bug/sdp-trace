@@ -47,6 +47,12 @@ validate schema/review-ledger.schema.json specs/001-sdp-trace-time-series-eviden
 validate schema/trusted-identity-policy.schema.json examples/contract-foundation/trusted-identity-policy.example.json
 validate schema/trusted-identity-policy.schema.json examples/contract-foundation/trusted-identity-policy-wrong-profile.example.json
 validate schema/consumer-schema-version-declaration.schema.json examples/contract-foundation/sdp-gate-consumer-declaration.example.json
+validate schema/flight-recorder-event.schema.json examples/flight-recorder/local-positive/events/000-run-started.json
+validate schema/flight-recorder-event.schema.json examples/flight-recorder/witnessed-positive/events/000-run-started.json
+validate schema/flight-recorder-run.schema.json examples/flight-recorder/local-positive/run.json
+validate schema/flight-recorder-run.schema.json examples/flight-recorder/witnessed-positive/run.json
+validate schema/flight-recorder-witness.schema.json examples/flight-recorder/witnessed-positive/witness.json
+scripts/test-flight-recorder.sh
 node scripts/validate-pilot-matrices.mjs
 scripts/test-e2e-pilot-package.sh
 scripts/test-e2e-runner.sh

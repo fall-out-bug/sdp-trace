@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-negative-missing-witness",
+  "profile": "witnessed_run_recorder",
+  "trust_scope": "untrusted_shape_only",
+  "artifact_role": "negative_schema_fixture",
+  "created_at": "2026-05-05T11:02:00Z",
+  "closed_at": "2026-05-05T11:02:01Z",
+  "event_refs": [
+    {
+      "sequence": 0,
+      "event_type": "run_started",
+      "event_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "uri": "events/000-run-started.json"
+    }
+  ],
+  "source_summary": {
+    "source_kind": "directory_snapshot",
+    "source_baseline_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    }
+  },
+  "task_summary": {
+    "task_ref": "T097-negative-missing-witness",
+    "task_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    }
+  },
+  "model_summary": {
+    "identity_ref": "not_assessed",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    }
+  },
+  "harness_summary": {
+    "identity_ref": "portable-shape-fixture",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    }
+  },
+  "evidence_retention_summary": {
+    "retention_modes": [
+      "digest_only"
+    ],
+    "critical_digest_only_count": 0,
+    "not_assessed_count": 0
+  },
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "event_chain_witnessed": {
+      "state": "fail",
+      "reason": "Witnessed profile is missing witness_ref and event_chain_head."
+    },
+    "source_baseline_recorded": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "task_locked": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "late_attach_boundary_explicit": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "model_identity_recorded": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "command_events_bound": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "file_mutations_bound": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "redaction_resolved": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    },
+    "run_closed": {
+      "state": "not_assessed",
+      "reason": "Negative schema fixture."
+    }
+  }
+}

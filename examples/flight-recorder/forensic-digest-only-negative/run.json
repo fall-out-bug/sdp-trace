@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-forensic-digest-only-negative-001",
+  "profile": "externally_witnessed_run",
+  "trust_scope": "externally_witnessed_run",
+  "artifact_role": "run_manifest",
+  "created_at": "2026-05-05T11:00:00Z",
+  "closed_at": "2026-05-05T11:30:59Z",
+  "event_refs": [
+    {
+      "sequence": 0,
+      "event_hash": "75e5f90aee9b2c3f42bf489a2e0ad94289ff91de7272a16e63693d75edae5df7",
+      "uri": "events/000-run-started.json",
+      "event_type": "run_started"
+    },
+    {
+      "sequence": 1,
+      "event_hash": "5a891276adf78f9a830939a43bf164aa0a10474151931a157a5f9d7af66b5fee",
+      "uri": "events/001-source-baseline-recorded.json",
+      "event_type": "source_baseline_recorded"
+    },
+    {
+      "sequence": 2,
+      "event_hash": "641b8e96c4a4f5948b2c23a0735d743138c77e068fa23a7dfbad339dfca3da6e",
+      "uri": "events/002-task-locked.json",
+      "event_type": "task_locked"
+    },
+    {
+      "sequence": 3,
+      "event_hash": "61b17c726d1c5226e56e081a91dcf5ea8546c57876e0694a263114c30a201946",
+      "uri": "events/003-test-output-observed.json",
+      "event_type": "test_output_observed"
+    },
+    {
+      "sequence": 4,
+      "event_hash": "5f5796bf32fa3eef0026168b12ede2b87ea587d84c3a770aa64638f1d0f83016",
+      "uri": "events/004-run-closed.json",
+      "event_type": "run_closed"
+    }
+  ],
+  "event_chain_head": "5f5796bf32fa3eef0026168b12ede2b87ea587d84c3a770aa64638f1d0f83016",
+  "source_summary": {
+    "source_kind": "git_tree",
+    "source_ref": "fixture:fr-forensic-digest-only-negative-001",
+    "source_baseline_hash": "5e692b4e0ce6cbf0ec55ff19aaa976bbd6145caa4d31b6082a560621e4e32db2",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "task_summary": {
+    "task_ref": "T101-forensic-digest-only",
+    "task_hash": "3f3b6098c8ee6bd6470ef7c4ff974817f958e2d216393a2fa95455f3eb91775a",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "model_summary": {
+    "identity_ref": "not_assessed:model",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Fixture omits provider identity proof."
+    }
+  },
+  "harness_summary": {
+    "identity_ref": "not_assessed:harness",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Fixture omits harness identity proof."
+    }
+  },
+  "evidence_retention_summary": {
+    "retention_modes": [
+      "not_assessed"
+    ],
+    "critical_digest_only_count": 0,
+    "not_assessed_count": 0
+  },
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "event_chain_witnessed": {
+      "state": "not_assessed",
+      "reason": "Local fixture."
+    },
+    "source_baseline_recorded": {
+      "state": "pass"
+    },
+    "task_locked": {
+      "state": "pass"
+    },
+    "late_attach_boundary_explicit": {
+      "state": "pass"
+    },
+    "model_identity_recorded": {
+      "state": "not_assessed",
+      "reason": "Fixture omits model identity."
+    },
+    "command_events_bound": {
+      "state": "not_assessed",
+      "reason": "Fixture may omit command events."
+    },
+    "file_mutations_bound": {
+      "state": "not_assessed",
+      "reason": "Fixture omits file mutation events."
+    },
+    "redaction_resolved": {
+      "state": "pass"
+    },
+    "run_closed": {
+      "state": "pass"
+    }
+  }
+}

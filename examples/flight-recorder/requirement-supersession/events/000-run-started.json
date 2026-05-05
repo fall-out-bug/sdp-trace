@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 0,
+  "event_type": "run_started",
+  "event_time": "2026-05-05T11:10:00Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "e29807b6f801463433f37330f24248b74a830371d87a554435762eacfe02d9d5",
+  "prev_event_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "b581f2f6f9f89167256fc77dce238da9a08e1191891eed902086d1fcee47b6fa",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Started requirement supersession fixture",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "profile": "local_development_recorder",
+    "attachment_mode": "full_run",
+    "operator": {
+      "id": "operator:fixture",
+      "actor_type": "human_user",
+      "display_name": "Fixture Operator"
+    }
+  }
+}

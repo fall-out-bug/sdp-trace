@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-forensic-digest-only-negative-001",
+  "sequence": 3,
+  "event_type": "test_output_observed",
+  "event_time": "2026-05-05T11:30:10Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "7d5da7a247c54e1b5e7f97a727f347a93cc3286f7b72d49266bd26a72feafb14",
+  "prev_event_hash": "641b8e96c4a4f5948b2c23a0735d743138c77e068fa23a7dfbad339dfca3da6e",
+  "event_hash": "61b17c726d1c5226e56e081a91dcf5ea8546c57876e0694a263114c30a201946",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Critical test output retained only as digest",
+    "trust_scope": "externally_witnessed_run",
+    "artifact_role": "recorded_event",
+    "test_command_id": "cmd-test",
+    "output_retention": {
+      "mode": "digest_only",
+      "digest": "c0554179a6cc149dd92daffa490860c12810f9cc9e33213ca0dd5858c85a8d18"
+    },
+    "forensic_importance": "critical"
+  }
+}

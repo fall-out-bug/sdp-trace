@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 4,
+  "event_type": "requirement_superseded",
+  "event_time": "2026-05-05T11:10:20Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "821ab86a799ab41e13608cf89373da1b65a9defa7578b5f317ab9f0d1f5e13d7",
+  "prev_event_hash": "f6190485b795b551c26a66793fb25ee7dfc9330f96b3fb935f35da9f26ef9b80",
+  "event_hash": "d6a9a598e4fdf2e857148fabeb5b5d7e85e4985ea8d9c36aa1fa4be3a55bf4f5",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Requirement changed without mutating original task event",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "superseded_event_hash": "5892439210f2b459c3db517883aa1de7604bbf55c3b8a61c88519d13bf42643b",
+    "replacement_task_hash": "1e4a2aca854f2cd29cf526787b523d86d65e297ac31533252e6d23b74a98d1e9",
+    "reason": "User clarified entitlement rollout scope after first command."
+  }
+}

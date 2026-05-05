@@ -14,6 +14,8 @@
     "check:artifacts": "scripts/check-artifact-safety.sh",
     "test:verify": "scripts/test-verify.sh",
     "validate:contracts": "scripts/validate-contracts.sh",
+    "test:flight-recorder": "scripts/test-flight-recorder.sh",
+    "verify:flight-recorder": "scripts/verify-flight-recorder.mjs --profile local examples/flight-recorder/local-positive",
     "test:e2e-pilot": "scripts/test-e2e-pilot-package.sh && scripts/test-e2e-runner.sh && scripts/validate-e2e-pilot-package.sh examples/pilot-runs/opencode-minimax-kotlin-bazel",
     "verify:manifest": "scripts/verify-contract-manifest.sh examples/contract-foundation/contract-manifest.example.json",
     "verify:release": "scripts/verify-release-signature.sh examples/contract-foundation/contract-release.dsse.json examples/contract-foundation/local-dev-signing-public.pem",

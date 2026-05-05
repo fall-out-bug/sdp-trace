@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "profile": "local_development_recorder",
+  "trust_scope": "local_development_recorder",
+  "artifact_role": "run_manifest",
+  "created_at": "2026-05-05T11:00:00Z",
+  "closed_at": "2026-05-05T11:10:59Z",
+  "event_refs": [
+    {
+      "sequence": 0,
+      "event_hash": "b581f2f6f9f89167256fc77dce238da9a08e1191891eed902086d1fcee47b6fa",
+      "uri": "events/000-run-started.json",
+      "event_type": "run_started"
+    },
+    {
+      "sequence": 1,
+      "event_hash": "1b10bd223cb8c6072dbda0fdf0d13ef66c69d1a3116cee9f91e2be43a9b4c03c",
+      "uri": "events/001-source-baseline-recorded.json",
+      "event_type": "source_baseline_recorded"
+    },
+    {
+      "sequence": 2,
+      "event_hash": "5892439210f2b459c3db517883aa1de7604bbf55c3b8a61c88519d13bf42643b",
+      "uri": "events/002-task-locked.json",
+      "event_type": "task_locked"
+    },
+    {
+      "sequence": 3,
+      "event_hash": "f6190485b795b551c26a66793fb25ee7dfc9330f96b3fb935f35da9f26ef9b80",
+      "uri": "events/003-command-started.json",
+      "event_type": "command_started"
+    },
+    {
+      "sequence": 4,
+      "event_hash": "d6a9a598e4fdf2e857148fabeb5b5d7e85e4985ea8d9c36aa1fa4be3a55bf4f5",
+      "uri": "events/004-requirement-superseded.json",
+      "event_type": "requirement_superseded"
+    },
+    {
+      "sequence": 5,
+      "event_hash": "10f8faff31607f4bb3175fa60b90eff696c11788bc150ee536b280901a0d2dc6",
+      "uri": "events/005-command-started.json",
+      "event_type": "command_started"
+    },
+    {
+      "sequence": 6,
+      "event_hash": "2cdb3ff74a5f57dc9ec9d39e87abfd6ea429cb1364789b793b33a493d017270c",
+      "uri": "events/006-run-closed.json",
+      "event_type": "run_closed"
+    }
+  ],
+  "event_chain_head": "2cdb3ff74a5f57dc9ec9d39e87abfd6ea429cb1364789b793b33a493d017270c",
+  "source_summary": {
+    "source_kind": "git_tree",
+    "source_ref": "fixture:fr-requirement-supersession-001",
+    "source_baseline_hash": "d2cf4024089d3f2d50ea09ee68ec267d07fdb3875affb266ee81c3d525349d08",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "task_summary": {
+    "task_ref": "T100-requirement-supersession-original",
+    "task_hash": "c62373176025d15197fa5bbf2a723631ff3c7f904b1a1b51b9f3c25fec696587",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "model_summary": {
+    "identity_ref": "not_assessed:model",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Fixture omits provider identity proof."
+    }
+  },
+  "harness_summary": {
+    "identity_ref": "not_assessed:harness",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Fixture omits harness identity proof."
+    }
+  },
+  "evidence_retention_summary": {
+    "retention_modes": [
+      "not_assessed"
+    ],
+    "critical_digest_only_count": 0,
+    "not_assessed_count": 0
+  },
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "event_chain_witnessed": {
+      "state": "not_assessed",
+      "reason": "Local fixture."
+    },
+    "source_baseline_recorded": {
+      "state": "pass"
+    },
+    "task_locked": {
+      "state": "pass"
+    },
+    "late_attach_boundary_explicit": {
+      "state": "pass"
+    },
+    "model_identity_recorded": {
+      "state": "not_assessed",
+      "reason": "Fixture omits model identity."
+    },
+    "command_events_bound": {
+      "state": "pass"
+    },
+    "file_mutations_bound": {
+      "state": "not_assessed",
+      "reason": "Fixture omits file mutation events."
+    },
+    "redaction_resolved": {
+      "state": "pass"
+    },
+    "run_closed": {
+      "state": "pass"
+    }
+  }
+}

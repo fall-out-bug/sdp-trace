@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-late-attach-001",
+  "sequence": 2,
+  "event_type": "task_locked",
+  "event_time": "2026-05-05T11:00:02Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "51edc781474c2860f9d602d42ae70d9ffb386662e2152a93cd09e7f7bc8d3fdf",
+  "prev_event_hash": "070d2d157f606e472f5258d9e10fe53625ff7222e9f2f8cebb4eb0db978408ee",
+  "event_hash": "2085633ff71d3d347023c5f2e21349c1075a28d72e2d630c75daecc27b837ff9",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Locked task from attachment point only",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "task_hash": "0818e5c9f828283fb013df2d33b25a4bea1ec34a48c93c3c61a4fdfb513933ad",
+    "task_ref": "T100-late-attach-fixture"
+  }
+}

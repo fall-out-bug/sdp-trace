@@ -19,6 +19,9 @@ These schemas define the portable `sdp-trace` contract.
 | `metric-stream.schema.json` | Records process movement across windows without interpretation labels. |
 | `external-verdict-input.schema.json` | Records externally produced verdicts or quality assertions as external evidence. |
 | `assessment-input.schema.json` | Packages trace evidence for a policy consumer such as `sdp-gate`. |
+| `flight-recorder-event.schema.json` | Records one ordered Block 09 recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
+| `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
+| `flight-recorder-witness.schema.json` | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
 | `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |
 | `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
 | `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |
@@ -116,6 +119,8 @@ After v1.0:
 `sdp-trace` does not decide pass/fail, readiness, degradation, threshold sufficiency, or override outcomes. Those policy decisions belong to `sdp-gate` or another external policy consumer.
 
 External verdicts may be recorded only through `external-verdict-input.schema.json` with explicit `origin: "external"`.
+
+Flight-recorder schemas add Block 09 run evidence, not trust authority. A schema-valid local recorder chain can support local reconstruction only. Accountability, audit-grade, or external-trust claims require a verifier profile that checks witness evidence outside the mutable run artifact. Late-attach gaps remain `not_assessed`; requirement changes are represented by supersession events; unresolved redaction remains visible to verifier profiles and must not be hidden by summaries or query output.
 
 ## Accountability and Signing
 

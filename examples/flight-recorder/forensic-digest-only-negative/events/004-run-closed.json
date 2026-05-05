@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-forensic-digest-only-negative-001",
+  "sequence": 4,
+  "event_type": "run_closed",
+  "event_time": "2026-05-05T11:30:59Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "e887ca4411b6ca83379b27902921375ee7d5832e7444578bc21835b4f9499d94",
+  "prev_event_hash": "61b17c726d1c5226e56e081a91dcf5ea8546c57876e0694a263114c30a201946",
+  "event_hash": "5f5796bf32fa3eef0026168b12ede2b87ea587d84c3a770aa64638f1d0f83016",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Closed fixture run",
+    "trust_scope": "externally_witnessed_run",
+    "artifact_role": "recorded_event",
+    "closed_at": "2026-05-05T11:30:59Z",
+    "chain_head": "61b17c726d1c5226e56e081a91dcf5ea8546c57876e0694a263114c30a201946",
+    "closure_state": "closed"
+  }
+}

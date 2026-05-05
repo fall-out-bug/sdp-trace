@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 5,
+  "event_type": "command_started",
+  "event_time": "2026-05-05T11:10:30Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "222d2f1f0411591ee9272106321ca0ff848fa347282b709308b53a987d661869",
+  "prev_event_hash": "d6a9a598e4fdf2e857148fabeb5b5d7e85e4985ea8d9c36aa1fa4be3a55bf4f5",
+  "event_hash": "10f8faff31607f4bb3175fa60b90eff696c11788bc150ee536b280901a0d2dc6",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Command ran after supersession against replacement task hash",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "command_id": "cmd-replacement",
+    "argv": [
+      "bazel",
+      "test",
+      "//entitlements/..."
+    ],
+    "argv_digest": "441a7a857edc1600421b815162723eed1070a1a8dd89d82befc07236964480cb",
+    "working_directory": "/workspace/demo",
+    "started_at": "2026-05-05T11:10:30Z",
+    "task_hash": "1e4a2aca854f2cd29cf526787b523d86d65e297ac31533252e6d23b74a98d1e9"
+  }
+}

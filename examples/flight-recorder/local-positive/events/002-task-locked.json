@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-local-positive-001",
+  "sequence": 2,
+  "event_type": "task_locked",
+  "event_time": "2026-05-05T10:00:02Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "e14b14e07b38089df446cef9c471ae49e4a05f8e858c59890316e3231ba07fa4",
+  "prev_event_hash": "a54afe3e9f9d560a98822b1ad582f1b4a7213e9c9d30c396a627759092f67801",
+  "event_hash": "21532ae102c3ab699ed4ab844f0b5f76d0e3cafb490b4cffcda0f25e7fb468b7",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Locked task expectation before work evidence",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "task_hash": "f7bd775e441ea7cddf9682bfbc79f87ca12a88432c182c01c1548f51c19d3ec9",
+    "task_ref": "T097-local-verifier-fixture"
+  }
+}

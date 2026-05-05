@@ -1,0 +1,457 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/flight-recorder-event.schema.json",
+  "title": "SDP Trace Flight Recorder Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "sequence",
+    "event_type",
+    "event_time",
+    "hash_algorithm",
+    "canonicalization",
+    "event_payload_digest",
+    "prev_event_hash",
+    "event_hash",
+    "recorder_identity",
+    "redaction_state",
+    "event_payload"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "run_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "event_type": { "$ref": "#/$defs/eventType" },
+    "event_time": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "hash_algorithm": { "const": "sha256" },
+    "canonicalization": {
+      "type": "object",
+      "required": ["algorithm", "version"],
+      "properties": {
+        "algorithm": { "const": "json-canonicalization-scheme" },
+        "version": { "const": "1.0.0" }
+      },
+      "additionalProperties": false
+    },
+    "event_payload_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "prev_event_hash": {
+      "description": "64 zeroes for the first event, otherwise the previous event_hash.",
+      "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256"
+    },
+    "event_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "recorder_identity": { "$ref": "#/$defs/recorderIdentity" },
+    "redaction_state": { "$ref": "#/$defs/redactionState" },
+    "witness_ref": { "$ref": "#/$defs/witnessRef" },
+    "event_payload": {
+      "type": "object",
+      "required": ["summary", "trust_scope", "artifact_role"],
+      "properties": {
+        "summary": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "trust_scope": { "$ref": "#/$defs/trustScope" },
+        "artifact_role": { "$ref": "#/$defs/artifactRole" },
+        "forensic_importance": { "enum": ["critical", "standard", "not_assessed"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "event_type": { "const": "run_started" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["profile", "attachment_mode", "operator"],
+            "properties": {
+              "profile": { "$ref": "#/$defs/recorderProfile" },
+              "attachment_mode": { "enum": ["full_run", "mid_flight"] },
+              "operator": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/actor" },
+              "late_attach_boundary": { "$ref": "#/$defs/lateAttachBoundary" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": { "const": "run_started" },
+          "event_payload": {
+            "properties": { "attachment_mode": { "const": "mid_flight" } },
+            "required": ["attachment_mode"]
+          }
+        },
+        "required": ["event_type", "event_payload"]
+      },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["late_attach_boundary"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "source_baseline_recorded" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["source_baseline_hash", "source_kind"],
+            "properties": {
+              "source_baseline_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "source_kind": { "enum": ["git_commit", "git_tree", "directory_snapshot", "not_assessed"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "enum": ["task_locked", "expectation_locked"] } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["task_hash", "task_ref"],
+            "properties": {
+              "task_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "task_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "model_identity_observed" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["model_identity"],
+            "properties": {
+              "model_identity": { "$ref": "#/$defs/identityObservation" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "harness_identity_observed" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["harness_identity"],
+            "properties": {
+              "harness_identity": { "$ref": "#/$defs/identityObservation" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "command_started" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["command_id", "argv", "argv_digest", "working_directory", "started_at"],
+            "properties": {
+              "command_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+              "argv": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+              },
+              "argv_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "working_directory": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+              "started_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "command_finished" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["command_id", "finished_at", "exit_state", "stdout_retention", "stderr_retention"],
+            "properties": {
+              "command_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+              "finished_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+              "exit_state": {
+                "type": "object",
+                "required": ["kind"],
+                "properties": {
+                  "kind": { "enum": ["exit_code", "signal", "cannot_verify", "not_assessed"] },
+                  "code": { "type": "integer" },
+                  "signal": { "type": "string" },
+                  "reason": { "type": "string" }
+                },
+                "additionalProperties": false
+              },
+              "stdout_retention": { "$ref": "#/$defs/evidenceRetention" },
+              "stderr_retention": { "$ref": "#/$defs/evidenceRetention" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "enum": ["file_state_observed", "file_mutation_observed"] } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["path_scope", "source_baseline_hash", "tree_or_diff_digest"],
+            "properties": {
+              "path_scope": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+              },
+              "source_baseline_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "tree_or_diff_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "attributed_command_id": {
+                "oneOf": [
+                  { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+                  { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/notAssessedEntry" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "test_output_observed" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["test_command_id", "output_retention"],
+            "properties": {
+              "test_command_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+              "output_retention": { "$ref": "#/$defs/evidenceRetention" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "artifact_captured" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["artifact_ref", "retention"],
+            "properties": {
+              "artifact_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" },
+              "retention": { "$ref": "#/$defs/evidenceRetention" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "requirement_superseded" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["superseded_event_hash", "replacement_task_hash", "reason"],
+            "properties": {
+              "superseded_event_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "replacement_task_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "redaction_applied" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["redaction_authority", "reason_code", "redacted_payload_digest"],
+            "properties": {
+              "redaction_authority": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+              "reason_code": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+              "redacted_payload_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "witness_anchor_recorded" } }, "required": ["event_type"] },
+      "then": {
+        "required": ["witness_ref"],
+        "properties": {
+          "event_payload": {
+            "required": ["chain_head", "witness_ref"],
+            "properties": {
+              "chain_head": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "witness_ref": { "$ref": "#/$defs/witnessRef" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "run_closed" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["closed_at", "chain_head", "closure_state"],
+            "properties": {
+              "closed_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+              "chain_head": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "closure_state": { "enum": ["closed", "interrupted", "cannot_verify"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "recorder_interrupted" } }, "required": ["event_type"] },
+      "then": {
+        "properties": {
+          "event_payload": {
+            "required": ["interrupted_at", "reason"],
+            "properties": {
+              "interrupted_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+              "reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "run_started",
+        "source_baseline_recorded",
+        "task_locked",
+        "expectation_locked",
+        "model_identity_observed",
+        "harness_identity_observed",
+        "command_started",
+        "command_finished",
+        "file_state_observed",
+        "file_mutation_observed",
+        "test_output_observed",
+        "artifact_captured",
+        "requirement_superseded",
+        "redaction_applied",
+        "witness_anchor_recorded",
+        "run_closed",
+        "recorder_interrupted"
+      ]
+    },
+    "recorderProfile": {
+      "type": "string",
+      "enum": ["local_development_recorder", "witnessed_run_recorder", "externally_witnessed_run"]
+    },
+    "trustScope": {
+      "type": "string",
+      "enum": ["local_development_recorder", "witnessed_run_recorder", "externally_witnessed_run", "untrusted_shape_only"]
+    },
+    "artifactRole": {
+      "type": "string",
+      "enum": ["recorded_event", "run_manifest", "witness_entry", "untrusted_shape_example", "negative_schema_fixture", "negative_verifier_fixture"]
+    },
+    "recorderIdentity": {
+      "type": "object",
+      "required": ["recorder_id", "recorder_version"],
+      "properties": {
+        "recorder_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "recorder_version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/semver" },
+        "adapter": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "redactionState": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["not_required", "redacted", "sealed_raw_available", "not_assessed", "cannot_verify"]
+        },
+        "reason": { "type": "string" },
+        "redaction_authority": { "type": "string" },
+        "sealed_raw_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" }
+      },
+      "additionalProperties": false
+    },
+    "witnessRef": {
+      "type": "object",
+      "required": ["witness_id", "uri"],
+      "properties": {
+        "witness_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "uri": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "identityObservation": {
+      "type": "object",
+      "required": ["identity_ref", "verification_state"],
+      "properties": {
+        "identity_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "observed_version": { "type": "string" },
+        "verification_state": { "$ref": "#/$defs/verifierState" },
+        "evidence_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" }
+      },
+      "additionalProperties": false
+    },
+    "evidenceRetention": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+        },
+        "digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "artifact_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" },
+        "excerpt": { "type": "string" },
+        "access_note": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "lateAttachBoundary": {
+      "type": "object",
+      "required": ["state", "boundary_time", "reason", "unavailable_scope"],
+      "properties": {
+        "state": { "const": "not_assessed" },
+        "boundary_time": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+        "reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "unavailable_scope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "source_baseline_before_attach",
+              "task_state_before_attach",
+              "model_identity_before_attach",
+              "harness_identity_before_attach",
+              "commands_before_attach",
+              "file_mutations_before_attach",
+              "test_output_before_attach"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "verifierState": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": { "enum": ["pass", "fail", "cannot_verify", "not_assessed"] },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

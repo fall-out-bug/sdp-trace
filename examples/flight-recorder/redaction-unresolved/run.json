@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-redaction-unresolved-001",
+  "profile": "local_development_recorder",
+  "trust_scope": "local_development_recorder",
+  "artifact_role": "run_manifest",
+  "created_at": "2026-05-05T11:00:00Z",
+  "closed_at": "2026-05-05T11:20:59Z",
+  "event_refs": [
+    {
+      "sequence": 0,
+      "event_hash": "6ff09d6a664b4c894eb590af98743fc3cac7ad93aa197ebeb8de715e73f92e22",
+      "uri": "events/000-run-started.json",
+      "event_type": "run_started"
+    },
+    {
+      "sequence": 1,
+      "event_hash": "407fe2bb4d3fed173073e8eababdcac15d0cc82b735e81cebd8c3f378f925cf7",
+      "uri": "events/001-source-baseline-recorded.json",
+      "event_type": "source_baseline_recorded"
+    },
+    {
+      "sequence": 2,
+      "event_hash": "31517dd85b7a4b353051858e78de1ad3329a0363af98de1a6295dcf597c7cf1f",
+      "uri": "events/002-task-locked.json",
+      "event_type": "task_locked"
+    },
+    {
+      "sequence": 3,
+      "event_hash": "931798f7246aa2a90f21156b536f65fb9db26a46b74ab39bfb59e97bbfe934c1",
+      "uri": "events/003-test-output-observed.json",
+      "event_type": "test_output_observed"
+    },
+    {
+      "sequence": 4,
+      "event_hash": "3d50dae79623d75a7d41174df9f34a1aa5885a27595e605c056075f59b0e70d6",
+      "uri": "events/004-run-closed.json",
+      "event_type": "run_closed"
+    }
+  ],
+  "event_chain_head": "3d50dae79623d75a7d41174df9f34a1aa5885a27595e605c056075f59b0e70d6",
+  "source_summary": {
+    "source_kind": "git_tree",
+    "source_ref": "fixture:fr-redaction-unresolved-001",
+    "source_baseline_hash": "8646f82c4ccb0e860a866558a47ae85873427728b6eb4a4f15fa4e64ee365531",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "task_summary": {
+    "task_ref": "T101-redaction-unresolved",
+    "task_hash": "6e9d84ecdab536ce3d7ff6e71084118fb809d3fb550988451d111388dcdc14f4",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "model_summary": {
+    "identity_ref": "not_assessed:model",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Fixture omits provider identity proof."
+    }
+  },
+  "harness_summary": {
+    "identity_ref": "not_assessed:harness",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "Fixture omits harness identity proof."
+    }
+  },
+  "evidence_retention_summary": {
+    "retention_modes": [
+      "not_assessed"
+    ],
+    "critical_digest_only_count": 0,
+    "not_assessed_count": 0
+  },
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "event_chain_witnessed": {
+      "state": "not_assessed",
+      "reason": "Local fixture."
+    },
+    "source_baseline_recorded": {
+      "state": "pass"
+    },
+    "task_locked": {
+      "state": "pass"
+    },
+    "late_attach_boundary_explicit": {
+      "state": "pass"
+    },
+    "model_identity_recorded": {
+      "state": "not_assessed",
+      "reason": "Fixture omits model identity."
+    },
+    "command_events_bound": {
+      "state": "not_assessed",
+      "reason": "Fixture may omit command events."
+    },
+    "file_mutations_bound": {
+      "state": "not_assessed",
+      "reason": "Fixture omits file mutation events."
+    },
+    "redaction_resolved": {
+      "state": "fail",
+      "reason": "Fixture intentionally contains unresolved redaction."
+    },
+    "run_closed": {
+      "state": "pass"
+    }
+  }
+}

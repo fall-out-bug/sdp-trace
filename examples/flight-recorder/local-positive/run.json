@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-local-positive-001",
+  "profile": "local_development_recorder",
+  "trust_scope": "local_development_recorder",
+  "artifact_role": "run_manifest",
+  "created_at": "2026-05-05T10:00:00Z",
+  "closed_at": "2026-05-05T10:00:03Z",
+  "event_refs": [
+    {
+      "sequence": 0,
+      "event_hash": "e424b33664720e96f778ef3f9a7f7b2a516f945e2b27d99760d14359bd631eca",
+      "uri": "events/000-run-started.json",
+      "event_type": "run_started"
+    },
+    {
+      "sequence": 1,
+      "event_hash": "a54afe3e9f9d560a98822b1ad582f1b4a7213e9c9d30c396a627759092f67801",
+      "uri": "events/001-source-baseline-recorded.json",
+      "event_type": "source_baseline_recorded"
+    },
+    {
+      "sequence": 2,
+      "event_hash": "21532ae102c3ab699ed4ab844f0b5f76d0e3cafb490b4cffcda0f25e7fb468b7",
+      "uri": "events/002-task-locked.json",
+      "event_type": "task_locked"
+    },
+    {
+      "sequence": 3,
+      "event_hash": "ef421cc024455fec2dd5f57e8f33b78d8e95b830f98a25efcf8a471185b4d4b3",
+      "uri": "events/003-run-closed.json",
+      "event_type": "run_closed"
+    }
+  ],
+  "event_chain_head": "ef421cc024455fec2dd5f57e8f33b78d8e95b830f98a25efcf8a471185b4d4b3",
+  "source_summary": {
+    "source_kind": "git_tree",
+    "source_ref": "fixture:fr-local-positive-001",
+    "source_baseline_hash": "ddb83366fc87a4714fd7bb0759301c92ad4d1003f2c7e564a6f58ac64fe0eabc",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "task_summary": {
+    "task_ref": "T097-local-verifier-fixture",
+    "task_hash": "f7bd775e441ea7cddf9682bfbc79f87ca12a88432c182c01c1548f51c19d3ec9",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "model_summary": {
+    "identity_ref": "not_assessed:model",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "No model identity event in T097 fixture."
+    }
+  },
+  "harness_summary": {
+    "identity_ref": "not_assessed:harness",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "No harness identity event in T097 fixture."
+    }
+  },
+  "evidence_retention_summary": {
+    "retention_modes": [
+      "not_assessed"
+    ],
+    "critical_digest_only_count": 0,
+    "not_assessed_count": 2,
+    "notes": "T097 fixture covers chain and witness shape before command/test evidence slices."
+  },
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "event_chain_witnessed": {
+      "state": "not_assessed",
+      "reason": "Local recorder profile has no witness anchor."
+    },
+    "source_baseline_recorded": {
+      "state": "pass"
+    },
+    "task_locked": {
+      "state": "pass"
+    },
+    "late_attach_boundary_explicit": {
+      "state": "not_assessed",
+      "reason": "Full-run fixture has no late-attach boundary."
+    },
+    "model_identity_recorded": {
+      "state": "not_assessed",
+      "reason": "Slice T097 fixture does not include model identity events."
+    },
+    "command_events_bound": {
+      "state": "not_assessed",
+      "reason": "Slice T097 fixture does not include command events."
+    },
+    "file_mutations_bound": {
+      "state": "not_assessed",
+      "reason": "Slice T097 fixture does not include file mutation events."
+    },
+    "redaction_resolved": {
+      "state": "pass"
+    },
+    "run_closed": {
+      "state": "pass"
+    }
+  }
+}

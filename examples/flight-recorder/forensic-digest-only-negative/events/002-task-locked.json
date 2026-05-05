@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-forensic-digest-only-negative-001",
+  "sequence": 2,
+  "event_type": "task_locked",
+  "event_time": "2026-05-05T11:30:02Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "58bde654081d02073adb860741d360271b9b7fb0dccc32d006928adb25fb77b1",
+  "prev_event_hash": "5a891276adf78f9a830939a43bf164aa0a10474151931a157a5f9d7af66b5fee",
+  "event_hash": "641b8e96c4a4f5948b2c23a0735d743138c77e068fa23a7dfbad339dfca3da6e",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Locked task",
+    "trust_scope": "externally_witnessed_run",
+    "artifact_role": "recorded_event",
+    "task_hash": "3f3b6098c8ee6bd6470ef7c4ff974817f958e2d216393a2fa95455f3eb91775a",
+    "task_ref": "T101-forensic-digest-only"
+  }
+}
