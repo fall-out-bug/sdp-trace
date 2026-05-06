@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
@@ -364,6 +365,17 @@ func writeJSONFileForTest(t *testing.T, path string, value any) {
 	}
 }
 
+func readJSONFileForTest(t *testing.T, path string, value any) {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, value); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestWrapPropagatesNonZeroExitCode(t *testing.T) {
 	falseCmd := mustFindCommand(t, "false")
 	runDir := filepath.Join(t.TempDir(), "run")
@@ -557,6 +569,457 @@ func TestGateCommandCannotVerifyWhenWitnessOmitsRunArtifact(t *testing.T) {
 	}
 }
 
+func TestProtectedGateRequiresCheckpointPolicyAndWitnessFlags(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	exit := run([]string{"gate", "--profile", "protected", "--out", gatePath, t.TempDir()}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("protected gate missing inputs exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(gatePath); !os.IsNotExist(err) {
+		t.Fatalf("protected gate wrote artifact despite usage error")
+	}
+}
+
+func TestProtectedGateMalformedNamedInputIsUsageError(t *testing.T) {
+	for _, malformed := range []string{"checkpoint", "policy", "witness"} {
+		t.Run(malformed, func(t *testing.T) {
+			dir := t.TempDir()
+			checkpointPath := filepath.Join(dir, "checkpoint.json")
+			policyPath := filepath.Join(dir, "policy.json")
+			witnessPath := filepath.Join(dir, "witness.json")
+			gatePath := filepath.Join(dir, "gate-result.json")
+			writeJSONFileForTest(t, checkpointPath, checkpoint.SignedCheckpoint{})
+			writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{SchemaVersion: checkpoint.PolicySchemaVersion})
+			writeJSONFileForTest(t, witnessPath, demo.WitnessSummary{Kind: "github-actions", Status: demo.GatePass, TrustScope: "ci_witnessed", Reason: "ci_identity_present"})
+			switch malformed {
+			case "checkpoint":
+				if err := os.WriteFile(checkpointPath, []byte(`{not-json`), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			case "policy":
+				if err := os.WriteFile(policyPath, []byte(`{not-json`), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			case "witness":
+				if err := os.WriteFile(witnessPath, []byte(`{not-json`), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run([]string{
+				"gate",
+				"--profile", "protected",
+				"--out", gatePath,
+				"--checkpoint", checkpointPath,
+				"--checkpoint-policy", policyPath,
+				"--witness", witnessPath,
+				dir,
+			}, &out, &errOut)
+			if exit != exitUsage {
+				t.Fatalf("protected gate malformed input exit %d err=%s out=%s", exit, errOut.String(), out.String())
+			}
+			if _, err := os.Stat(gatePath); !os.IsNotExist(err) {
+				t.Fatalf("protected gate wrote artifact despite malformed input")
+			}
+		})
+	}
+}
+
+func TestProtectedGatePreviewRendersAbsentInputsWithoutWriting(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "SECRET_TOKEN_BLOCK16")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--profile", "protected", root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("protected preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"selected_profile": "protected"`) ||
+		!strings.Contains(out.String(), `"checkpoint": "absent"`) ||
+		!strings.Contains(out.String(), `"checkpoint_policy": "absent"`) ||
+		!strings.Contains(out.String(), `"witness": "absent"`) {
+		t.Fatalf("protected preview missing inspectability statuses: %s", out.String())
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK16") {
+		t.Fatalf("protected preview leaked secret-like value: %s", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, "gate-result.json")); !os.IsNotExist(err) {
+		t.Fatalf("protected preview wrote gate artifact")
+	}
+}
+
+func TestDefaultGateDoesNotEmitProtectedFields(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "ok")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "ok")
+	contractPath := writeGateContract(t, t.TempDir())
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "--out", gatePath, "--contract", contractPath, root}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.Contains(out.String(), `"protected_gate"`) || strings.Contains(out.String(), `"selected_profile"`) || strings.Contains(out.String(), `"protected_conditions"`) {
+		t.Fatalf("default gate emitted protected fields: %s", out.String())
+	}
+}
+
+func TestProtectedGateRejectsLocalSignedCheckpointCLI(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"run",
+		"--task", "task-1",
+		"--use-default-contract",
+		"--output-dir", runDir,
+		"--", echo, "SECRET_TOKEN_BLOCK16",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("run exit %d err=%s", exit, errOut.String())
+	}
+	key, err := checkpoint.GenerateKeyPair("local-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(t.TempDir(), "key.json")
+	writeJSONFileForTest(t, keyPath, key)
+	checkpointPath := filepath.Join(t.TempDir(), "checkpoint.json")
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"checkpoint", "create", "--run", runDir, "--out", checkpointPath, "--private-key", keyPath, "--signer-id", "local-dev"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("checkpoint create exit %d err=%s", exit, errOut.String())
+	}
+	policyPath := filepath.Join(t.TempDir(), "policy.json")
+	writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{
+		SchemaVersion: checkpoint.PolicySchemaVersion,
+		PolicyID:      "local-policy",
+		AllowedSigners: []checkpoint.TrustedSigner{{
+			SignerID:  "local-dev",
+			Authority: checkpoint.AuthorityLocalDevelopment,
+			PublicKey: key.PublicKey,
+		}},
+	})
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	if err := os.WriteFile(witnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "generated_at": "2026-05-06T00:00:00Z",
+	  "source": {"repository": "", "ref": "", "commit_sha": ""},
+	  "run_artifacts": [],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	gatePath := filepath.Join(t.TempDir(), "protected-gate.json")
+	exit = run([]string{
+		"gate",
+		"--profile", "protected",
+		"--out", gatePath,
+		"--checkpoint", checkpointPath,
+		"--checkpoint-policy", policyPath,
+		"--witness", witnessPath,
+		runDir,
+	}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("protected gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"protected_gate": "fail"`) ||
+		!strings.Contains(out.String(), `"reason_code": "local_signed_not_protected"`) {
+		t.Fatalf("protected gate missing local-signed failure: %s", out.String())
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK16") {
+		t.Fatalf("protected gate leaked secret-like value: %s", out.String())
+	}
+}
+
+func TestProtectedGatePassesWithCISignedCheckpointAndBoundWitnessCLI(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"run",
+		"--task", "task-1",
+		"--use-default-contract",
+		"--output-dir", runDir,
+		"--", echo, "ok",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("run exit %d err=%s", exit, errOut.String())
+	}
+	key, err := checkpoint.GenerateKeyPair("ci-signer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(t.TempDir(), "key.json")
+	writeJSONFileForTest(t, keyPath, key)
+	checkpointPath := filepath.Join(t.TempDir(), "checkpoint.json")
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"checkpoint", "create", "--run", runDir, "--out", checkpointPath, "--private-key", keyPath, "--signer-id", "ci-signer"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("checkpoint create exit %d err=%s", exit, errOut.String())
+	}
+	var signed checkpoint.SignedCheckpoint
+	readJSONFileForTest(t, checkpointPath, &signed)
+	signed.Signer.Authority = checkpoint.AuthorityCIIsolatedJob
+	writeJSONFileForTest(t, checkpointPath, signed)
+	policyPath := filepath.Join(t.TempDir(), "policy.json")
+	writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{
+		SchemaVersion: checkpoint.PolicySchemaVersion,
+		PolicyID:      "ci-policy",
+		AllowedSigners: []checkpoint.TrustedSigner{{
+			SignerID:  "ci-signer",
+			Authority: checkpoint.AuthorityCIIsolatedJob,
+			PublicKey: key.PublicKey,
+		}},
+	})
+	digest := sha256FileForTest(t, filepath.Join(runDir, "run.json"))
+	runArtifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	freshGeneratedAt := time.Now().UTC().Format(time.RFC3339)
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	if err := os.WriteFile(witnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "generated_at": "`+freshGeneratedAt+`",
+	  "source": {"repository": "", "ref": "", "commit_sha": ""},
+	  "ci_identity": {"run_id": "`+runArtifact.Manifest.RunID+`"},
+	  "run_artifacts": [{"path": "run/run.json", "sha256": "`+digest+`"}],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	gatePath := filepath.Join(t.TempDir(), "protected-gate.json")
+	exit = run([]string{
+		"gate",
+		"--profile", "protected",
+		"--out", gatePath,
+		"--checkpoint", checkpointPath,
+		"--checkpoint-policy", policyPath,
+		"--witness", witnessPath,
+		runDir,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("protected gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"protected_gate": "pass"`) ||
+		!strings.Contains(out.String(), `"reason_code": "protected_trust_scope_satisfied"`) ||
+		!strings.Contains(out.String(), `"gate_mode": "protected"`) ||
+		!strings.Contains(out.String(), `"trust_cap": "ci_signed"`) ||
+		!strings.Contains(out.String(), `"ci_witness_gate": "pass"`) {
+		t.Fatalf("protected gate did not pass with CI signed checkpoint: %s", out.String())
+	}
+
+	noFreshnessWitnessPath := filepath.Join(t.TempDir(), "ci-witness-no-freshness.json")
+	if err := os.WriteFile(noFreshnessWitnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "source": {"repository": "", "ref": "", "commit_sha": ""},
+	  "ci_identity": {"run_id": "`+runArtifact.Manifest.RunID+`"},
+	  "run_artifacts": [{"path": "run/run.json", "sha256": "`+digest+`"}],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness without freshness: %v", err)
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"gate",
+		"--profile", "protected",
+		"--out", filepath.Join(t.TempDir(), "protected-gate.json"),
+		"--checkpoint", checkpointPath,
+		"--checkpoint-policy", policyPath,
+		"--witness", noFreshnessWitnessPath,
+		runDir,
+	}, &out, &errOut)
+	if exit != exitCannotVerify || !strings.Contains(out.String(), `"protected_gate": "cannot_verify"`) {
+		t.Fatalf("protected cannot_verify exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestBlock16CommittedFixturesHaveRequiredProtectedRows(t *testing.T) {
+	fixtureDir := filepath.Join("..", "..", "examples", "block16-protected-gate")
+	entries, err := os.ReadDir(fixtureDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".gate-result.json") {
+			continue
+		}
+		seen++
+		var result demo.GateResult
+		readJSONFileForTest(t, filepath.Join(fixtureDir, entry.Name()), &result)
+		if result.SchemaVersion != demo.GateSchemaVersionBlock16 || result.SelectedProfile != demo.GateProfileProtected {
+			t.Fatalf("%s has schema/profile %s/%s", entry.Name(), result.SchemaVersion, result.SelectedProfile)
+		}
+		if result.GateMode != demo.GateProfileProtected {
+			t.Fatalf("%s gate_mode = %s", entry.Name(), result.GateMode)
+		}
+		if len(result.ProtectedConditions) != 10 {
+			t.Fatalf("%s protected condition count = %d", entry.Name(), len(result.ProtectedConditions))
+		}
+		for i, id := range []string{
+			"protected_profile_explicitly_selected",
+			"all_required_runs_present",
+			"all_required_evidence_observed",
+			"ci_witness_bound",
+			"witness_freshness_valid",
+			"checkpoint_signature_valid",
+			"checkpoint_run_binding_valid",
+			"checkpoint_signer_authorized",
+			"protected_trust_scope_satisfied",
+			"override_does_not_upgrade_profile",
+		} {
+			if result.ProtectedConditions[i].ID != id {
+				t.Fatalf("%s condition %d = %s, want %s", entry.Name(), i, result.ProtectedConditions[i].ID, id)
+			}
+		}
+		if got := protectedFixtureGate(result.ProtectedConditions); result.ProtectedGate != got {
+			t.Fatalf("%s protected_gate = %s, want %s from condition rows", entry.Name(), result.ProtectedGate, got)
+		}
+		trustScope := result.ProtectedConditions[8]
+		if trustScope.State == demo.GatePass {
+			for _, condition := range result.ProtectedConditions[3:8] {
+				if condition.State != demo.GatePass {
+					t.Fatalf("%s protected trust scope passes while %s is %s", entry.Name(), condition.ID, condition.State)
+				}
+			}
+			if result.CheckpointVerification == nil ||
+				result.CheckpointVerification.Result != checkpoint.StatePass ||
+				result.CheckpointVerification.TrustScope != checkpoint.TrustScopeCISigned {
+				t.Fatalf("%s protected trust scope passes with checkpoint %+v", entry.Name(), result.CheckpointVerification)
+			}
+		}
+		if result.CheckpointVerification != nil &&
+			result.CheckpointVerification.TrustScope == checkpoint.TrustScopeLocalSigned &&
+			result.ProtectedConditions[7].State == demo.GatePass {
+			t.Fatalf("%s local-signed checkpoint overclaims protected signer authorization", entry.Name())
+		}
+	}
+	if seen != 13 {
+		t.Fatalf("fixture count = %d, want 13", seen)
+	}
+}
+
+func protectedFixtureGate(conditions []demo.ProtectedCondition) string {
+	gate := demo.GatePass
+	for _, condition := range conditions {
+		if condition.ID == "override_does_not_upgrade_profile" {
+			continue
+		}
+		state := condition.State
+		if state == demo.GateMissingTelemetry || state == "not_integrated" {
+			state = demo.GateCannotVerify
+		}
+		if protectedFixtureSeverity(state) > protectedFixtureSeverity(gate) {
+			gate = state
+		}
+	}
+	return gate
+}
+
+func protectedFixtureSeverity(state string) int {
+	switch state {
+	case demo.GateFail:
+		return 5
+	case demo.GateCannotVerify:
+		return 4
+	case demo.GateNotAssessed:
+		return 2
+	case demo.GatePass:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func TestGateExplainRendersProtectedFields(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "protected-gate.json")
+	if err := os.WriteFile(gatePath, []byte(`{
+	  "schema_version": "block16-gate-result-v1",
+	  "generated_at": "2026-05-06T00:00:00Z",
+	  "selected_profile": "protected",
+	  "local_gate": "pass",
+	  "ci_witness_gate": "pass",
+	  "audit_grade_gate": "cannot_verify",
+	  "protected_gate": "fail",
+	  "gate_mode": "protected",
+	  "trust_cap": "local_signed",
+	  "checkpoint_verification": {"schema_version":"block15-checkpoint-verification-v1","result":"pass","trust_scope":"local_signed","payload_digest_state":"pass","signature_state":"pass","run_binding_state":"pass","chain_binding_state":"pass","source_binding_state":"pass","nonce_binding_state":"pass","sequence_state":"pass","signer_authority_state":"pass","replay_freshness_state":"not_assessed","reasons":[]},
+	  "protected_conditions": [{"id":"protected_trust_scope_satisfied","state":"fail","reason_code":"local_signed_not_protected","reason":"local signed is not protected"}],
+	  "required_runs": [],
+	  "required_evidence": [],
+	  "observed_evidence": [],
+	  "witness_bindings": [],
+	  "override_requests": [],
+	  "gate_conditions": [],
+	  "reasons": ["local_signed_not_protected: local signed is not protected"],
+	  "next_actions": ["Provide CI signed checkpoint evidence."],
+	  "missing_audit_evidence": [],
+	  "runs": [{"name": "run-a", "command": "deploy SECRET_TOKEN_BLOCK16"}]
+	}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate explain exit %d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(out.String(), "Selected profile: protected") ||
+		!strings.Contains(out.String(), "Protected gate: fail") ||
+		!strings.Contains(out.String(), "Protected condition protected_trust_scope_satisfied: fail") ||
+		!strings.Contains(out.String(), "Checkpoint result: pass") {
+		t.Fatalf("protected explain missing protected fields: %s", out.String())
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK16") {
+		t.Fatalf("protected explain leaked secret-like command: %s", out.String())
+	}
+}
+
+func TestGateExplainUnsupportedArtifactCannotVerify(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "unsupported-gate.json")
+	if err := os.WriteFile(gatePath, []byte(`{"schema_version":"unknown-gate-result-v1"}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("unsupported explain exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
 func TestGateExplainDoesNotPrintRawSecretLikeCommand(t *testing.T) {
 	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
 	if err := os.WriteFile(gatePath, []byte(`{
@@ -658,6 +1121,32 @@ func TestGateExitCodeChecksRequiredRunStatesDirectly(t *testing.T) {
 	}
 	if got := gateExitCode(result); got != 1 {
 		t.Fatalf("exit code = %d", got)
+	}
+}
+
+func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
+	cases := []struct {
+		name          string
+		protectedGate string
+		want          int
+	}{
+		{name: "pass", protectedGate: demo.GatePass, want: 0},
+		{name: "fail", protectedGate: demo.GateFail, want: 1},
+		{name: "cannot_verify", protectedGate: demo.GateCannotVerify, want: exitCannotVerify},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := demo.GateResult{
+				SelectedProfile: demo.GateProfileProtected,
+				ProtectedGate:   tc.protectedGate,
+				LocalGate:       demo.GateFail,
+				CIWitnessGate:   demo.GateFail,
+				AuditGradeGate:  demo.GateFail,
+			}
+			if got := gateExitCode(result); got != tc.want {
+				t.Fatalf("exit code = %d, want %d", got, tc.want)
+			}
+		})
 	}
 }
 

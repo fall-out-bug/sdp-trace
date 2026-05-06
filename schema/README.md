@@ -26,7 +26,7 @@ These schemas define the portable `sdp-trace` contract.
 | `trusted-checkpoint-policy.schema.json` | Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence. |
 | `checkpoint-verification.schema.json` | Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks. |
 | `ci-witness.schema.json` | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
-| `gate-result.schema.json` | Records Block 14 advisory gate facts, required-run state, CI witness binding state, override visibility, and next-action hints without native policy ownership. |
+| `gate-result.schema.json` | Records version-separated Block 14 advisory gate facts and Block 16 protected profile facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |
 | `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |
 | `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
 | `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |
@@ -60,6 +60,12 @@ Validation commands exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/
 ## Compatibility
 
 Before `sdp-trace` v1.0, schema changes may be breaking only when examples and compatibility notes are updated in the same change.
+
+`gate-result.schema.json` accepts both `block14-gate-result-v1` and
+`block16-gate-result-v1`. Block 14 artifacts do not require protected profile
+fields; Block 16 protected-profile artifacts require `selected_profile`,
+`protected_gate`, `checkpoint_verification`, and `protected_conditions` so
+readers can avoid inferring protected conclusions from older advisory output.
 
 After v1.0:
 

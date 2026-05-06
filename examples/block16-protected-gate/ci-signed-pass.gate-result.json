@@ -1,0 +1,104 @@
+{
+  "schema_version": "block16-gate-result-v1",
+  "generated_at": "2026-05-06T00:00:00Z",
+  "local_gate": "pass",
+  "ci_witness_gate": "pass",
+  "audit_grade_gate": "cannot_verify",
+  "gate_mode": "protected",
+  "trust_cap": "ci_signed",
+  "selected_profile": "protected",
+  "protected_gate": "pass",
+  "checkpoint_verification": {
+    "schema_version": "block15-checkpoint-verification-v1",
+    "checkpoint_id": "checkpoint-ci",
+    "run_id": "run-ci",
+    "result": "pass",
+    "trust_scope": "ci_signed",
+    "payload_digest_state": "pass",
+    "signature_state": "pass",
+    "run_binding_state": "pass",
+    "chain_binding_state": "pass",
+    "source_binding_state": "pass",
+    "nonce_binding_state": "pass",
+    "sequence_state": "pass",
+    "signer_authority_state": "pass",
+    "replay_freshness_state": "not_assessed",
+    "reasons": []
+  },
+  "protected_conditions": [
+    {
+      "id": "protected_profile_explicitly_selected",
+      "state": "pass",
+      "reason_code": "protected_profile_selected",
+      "reason": "protected profile was explicitly selected"
+    },
+    {
+      "id": "all_required_runs_present",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required run observations are evaluated from contract declarations"
+    },
+    {
+      "id": "all_required_evidence_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "contract evidence ids are matched against observed run events"
+    },
+    {
+      "id": "ci_witness_bound",
+      "state": "pass",
+      "reason_code": "ci_witness_bound",
+      "reason": "CI witness source and artifact bindings match protected profile input"
+    },
+    {
+      "id": "witness_freshness_valid",
+      "state": "pass",
+      "reason_code": "witness_fresh",
+      "reason": "CI witness freshness is within the protected profile window"
+    },
+    {
+      "id": "checkpoint_signature_valid",
+      "state": "pass",
+      "reason_code": "checkpoint_signature_valid",
+      "reason": "checkpoint signature verification passed"
+    },
+    {
+      "id": "checkpoint_run_binding_valid",
+      "state": "pass",
+      "reason_code": "checkpoint_binding_valid",
+      "reason": "checkpoint binding matches the selected run context"
+    },
+    {
+      "id": "checkpoint_signer_authorized",
+      "state": "pass",
+      "reason_code": "checkpoint_signer_authorized",
+      "reason": "checkpoint signer is authorized for CI signed protected profile"
+    },
+    {
+      "id": "protected_trust_scope_satisfied",
+      "state": "pass",
+      "reason_code": "protected_trust_scope_satisfied",
+      "reason": "CI signed checkpoint and CI witness binding satisfy protected profile"
+    },
+    {
+      "id": "override_does_not_upgrade_profile",
+      "state": "pass",
+      "reason_code": "no_override_present",
+      "reason": "no override request is available to upgrade the profile"
+    }
+  ],
+  "required_runs": [],
+  "required_evidence": [],
+  "observed_evidence": [],
+  "witness_bindings": [],
+  "override_requests": [],
+  "gate_conditions": [],
+  "reasons": [
+    "protected_trust_scope_satisfied: CI signed checkpoint and CI witness binding satisfy protected profile"
+  ],
+  "next_actions": [],
+  "missing_audit_evidence": [
+    "external_witness_checkpoint"
+  ],
+  "runs": []
+}

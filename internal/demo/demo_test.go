@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
@@ -222,6 +223,320 @@ func TestLocalSignedCheckpointDoesNotUpgradeProtectedFutureGate(t *testing.T) {
 	}
 	if gate.AuditGradeGate != GateCannotVerify {
 		t.Fatalf("local signed checkpoint must not upgrade audit gate, got %s", gate.AuditGradeGate)
+	}
+}
+
+func TestProtectedGateRejectsLocalSignedCheckpointAndKeepsConditionRows(t *testing.T) {
+	contract := traceContractForTest()
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}
+
+	gate := EvaluateProtectedGate(rows, contract, ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeLocalSigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		PolicyProvided: true,
+		Witness: &WitnessSummary{
+			Kind:        "github-actions",
+			Status:      GatePass,
+			TrustScope:  "ci_witnessed",
+			Reason:      "ci_identity_present",
+			GeneratedAt: "2026-05-06T00:00:00Z",
+			Source:      WitnessSourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+		Now:                mustParseTime(t, "2026-05-06T00:10:00Z"),
+	})
+
+	if gate.SelectedProfile != GateProfileProtected {
+		t.Fatalf("selected profile = %s", gate.SelectedProfile)
+	}
+	if gate.ProtectedGate != GateFail {
+		t.Fatalf("protected gate = %s reasons=%v", gate.ProtectedGate, gate.Reasons)
+	}
+	for _, id := range protectedConditionIDs {
+		if !containsProtectedCondition(gate.ProtectedConditions, id) {
+			t.Fatalf("protected condition %s missing from %+v", id, gate.ProtectedConditions)
+		}
+	}
+	condition := findProtectedCondition(t, gate.ProtectedConditions, "protected_trust_scope_satisfied")
+	if condition.State != GateFail || condition.ReasonCode != "local_signed_not_protected" {
+		t.Fatalf("trust scope condition = %+v", condition)
+	}
+}
+
+func TestProtectedGateMapsAbsentAndStaleWitnessFreshness(t *testing.T) {
+	contract := traceContractForTest()
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}
+	base := ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeCISigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		PolicyProvided:     true,
+		WitnessExpectation: WitnessExpectation{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+		Now:                mustParseTime(t, "2026-05-06T12:00:00Z"),
+	}
+
+	absent := base
+	absent.Witness = &WitnessSummary{
+		Kind:       "github-actions",
+		Status:     GatePass,
+		TrustScope: "ci_witnessed",
+		Reason:     "ci_identity_present",
+		Source:     WitnessSourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+	}
+	absentGate := EvaluateProtectedGate(rows, contract, absent)
+	absentCondition := findProtectedCondition(t, absentGate.ProtectedConditions, "witness_freshness_valid")
+	if absentGate.ProtectedGate != GateCannotVerify || absentCondition.State != GateCannotVerify || absentCondition.ReasonCode != "missing_witness_freshness" {
+		t.Fatalf("absent freshness gate=%s condition=%+v", absentGate.ProtectedGate, absentCondition)
+	}
+
+	stale := base
+	stale.Witness = &WitnessSummary{
+		Kind:        "github-actions",
+		Status:      GatePass,
+		TrustScope:  "ci_witnessed",
+		Reason:      "ci_identity_present",
+		GeneratedAt: "2026-05-04T12:00:00Z",
+		Source:      WitnessSourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+	}
+	staleGate := EvaluateProtectedGate(rows, contract, stale)
+	staleCondition := findProtectedCondition(t, staleGate.ProtectedConditions, "witness_freshness_valid")
+	if staleGate.ProtectedGate != GateFail || staleCondition.State != GateFail || staleCondition.ReasonCode != "stale_witness" {
+		t.Fatalf("stale freshness gate=%s condition=%+v", staleGate.ProtectedGate, staleCondition)
+	}
+}
+
+func TestProtectedGateMalformedOverrideDoesNotDowngradeFailure(t *testing.T) {
+	contract := traceContractForTest()
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed", OverrideRequests: []OverrideRequest{{OverrideID: "override-1", State: GateCannotVerify, Reason: "malformed"}}},
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}
+
+	gate := EvaluateProtectedGate(rows, contract, ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeLocalSigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		PolicyProvided: true,
+	})
+
+	if gate.ProtectedGate != GateFail {
+		t.Fatalf("malformed override downgraded protected failure: %+v", gate)
+	}
+	override := findProtectedCondition(t, gate.ProtectedConditions, "override_does_not_upgrade_profile")
+	if override.State != GateCannotVerify || override.ReasonCode != "override_cannot_verify_non_upgrading" {
+		t.Fatalf("override condition = %+v", override)
+	}
+}
+
+func TestProtectedGateMapsMissingTelemetryToTopLevelCannotVerify(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredEvidence = nil
+	contract.RequiredRuns = []trace.RequiredRun{
+		{ID: "agent_session", WrapperName: "agent-session", Profile: GateModeObservation},
+		{ID: "verification_run", WrapperName: "verification-run", Profile: GateModeObservation},
+	}
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+	}
+	gate := EvaluateProtectedGate(rows, contract, ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeCISigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		PolicyProvided: true,
+		Witness: &WitnessSummary{
+			Kind:        "github-actions",
+			Status:      GatePass,
+			TrustScope:  "ci_witnessed",
+			Reason:      "ci_identity_present",
+			GeneratedAt: "2026-05-06T00:00:00Z",
+		},
+		Now: mustParseTime(t, "2026-05-06T00:10:00Z"),
+	})
+	if gate.ProtectedGate != GateCannotVerify {
+		t.Fatalf("protected gate = %s, want cannot_verify", gate.ProtectedGate)
+	}
+	condition := findProtectedCondition(t, gate.ProtectedConditions, "all_required_runs_present")
+	if condition.State != GateMissingTelemetry {
+		t.Fatalf("required-runs condition = %+v", condition)
+	}
+}
+
+func TestProtectedGateMissingPolicyCannotVerify(t *testing.T) {
+	contract := traceContractForTest()
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}
+	gate := EvaluateProtectedGate(rows, contract, ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeCISigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		Witness: &WitnessSummary{
+			Kind:        "github-actions",
+			Status:      GatePass,
+			TrustScope:  "ci_witnessed",
+			Reason:      "ci_identity_present",
+			GeneratedAt: "2026-05-06T00:00:00Z",
+		},
+		Now: mustParseTime(t, "2026-05-06T00:10:00Z"),
+	})
+	condition := findProtectedCondition(t, gate.ProtectedConditions, "checkpoint_signer_authorized")
+	if gate.ProtectedGate != GateCannotVerify || condition.State != GateCannotVerify || condition.ReasonCode != "missing_policy" {
+		t.Fatalf("gate=%s signer condition=%+v", gate.ProtectedGate, condition)
+	}
+	trustScope := findProtectedCondition(t, gate.ProtectedConditions, "protected_trust_scope_satisfied")
+	if trustScope.State != GateCannotVerify || trustScope.ReasonCode != "missing_policy" {
+		t.Fatalf("trust scope condition=%+v", trustScope)
+	}
+}
+
+func TestProtectedGateValidOverrideDoesNotUpgradeFailure(t *testing.T) {
+	contract := traceContractForTest()
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed", OverrideRequests: []OverrideRequest{{OverrideID: "override-1", State: GatePass, Reason: "accepted for advisory only"}}},
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}
+	gate := EvaluateProtectedGate(rows, contract, ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeLocalSigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		PolicyProvided: true,
+	})
+	override := findProtectedCondition(t, gate.ProtectedConditions, "override_does_not_upgrade_profile")
+	if gate.ProtectedGate != GateFail || override.State != GatePass || override.ReasonCode != "override_visible_non_upgrading" {
+		t.Fatalf("gate=%s override=%+v", gate.ProtectedGate, override)
+	}
+}
+
+func TestProtectedGateRequiresWitnessRunIDBinding(t *testing.T) {
+	state, reasons := witnessBindingState(WitnessSummary{
+		Kind:        "github-actions",
+		Status:      GatePass,
+		TrustScope:  "ci_witnessed",
+		Reason:      "ci_identity_present",
+		GeneratedAt: "2026-05-06T00:00:00Z",
+	}, WitnessExpectation{RunID: "trace-run-1"})
+	if state != GateCannotVerify || !contains(reasons, "ci witness run id binding is missing") {
+		t.Fatalf("state=%s reasons=%v", state, reasons)
+	}
+
+	state, reasons = witnessBindingState(WitnessSummary{
+		Kind:        "github-actions",
+		Status:      GatePass,
+		TrustScope:  "ci_witnessed",
+		Reason:      "ci_identity_present",
+		GeneratedAt: "2026-05-06T00:00:00Z",
+		CIIdentity:  WitnessCIIdentity{RunID: "other-run"},
+	}, WitnessExpectation{RunID: "trace-run-1"})
+	if state != GateFail || !contains(reasons, "ci witness run id mismatch: expected trace-run-1 got other-run") {
+		t.Fatalf("state=%s reasons=%v", state, reasons)
+	}
+}
+
+func TestProtectedGateReasonsUseSeverityBeforeConditionOrder(t *testing.T) {
+	contract := traceContractForTest()
+	rows := []RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}
+	gate := EvaluateProtectedGate(rows, contract, ProtectedGateInput{
+		Checkpoint: checkpoint.VerificationResult{
+			Result:               checkpoint.StatePass,
+			TrustScope:           checkpoint.TrustScopeLocalSigned,
+			SignatureState:       checkpoint.StatePass,
+			RunBindingState:      checkpoint.StatePass,
+			ChainBindingState:    checkpoint.StatePass,
+			SourceBindingState:   checkpoint.StatePass,
+			NonceBindingState:    checkpoint.StatePass,
+			SignerAuthorityState: checkpoint.StatePass,
+		},
+		PolicyProvided: true,
+	})
+	failIndex := indexOfReasonPrefix(gate.Reasons, "checkpoint_signer_not_protected:")
+	cannotVerifyIndex := indexOfReasonPrefix(gate.Reasons, "missing_ci_witness:")
+	if failIndex == -1 || cannotVerifyIndex == -1 {
+		t.Fatalf("expected fail and cannot_verify reasons: %v", gate.Reasons)
+	}
+	if failIndex > cannotVerifyIndex {
+		t.Fatalf("fail reason ordered after cannot_verify reason: %v", gate.Reasons)
+	}
+}
+
+func TestReportAndGateArtifactsDoNotLeakSecretLikeCommand(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "SECRET_TOKEN_DEMO_TABLE")
+	contractPath := writeDemoContract(t, t.TempDir())
+	reportDir := filepath.Join(t.TempDir(), "report")
+	if _, err := WriteReport(root, reportDir, contractPath); err != nil {
+		t.Fatalf("WriteReport: %v", err)
+	}
+	evidence, err := os.ReadFile(filepath.Join(reportDir, "evidence-table.json"))
+	if err != nil {
+		t.Fatalf("read evidence table: %v", err)
+	}
+	if strings.Contains(string(evidence), "SECRET_TOKEN_DEMO_TABLE") {
+		t.Fatalf("evidence table leaked secret-like command: %s", string(evidence))
+	}
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	if _, err := WriteGate(root, gatePath, contractPath); err != nil {
+		t.Fatalf("WriteGate: %v", err)
+	}
+	gateRaw, err := os.ReadFile(gatePath)
+	if err != nil {
+		t.Fatalf("read gate result: %v", err)
+	}
+	if strings.Contains(string(gateRaw), "SECRET_TOKEN_DEMO_TABLE") {
+		t.Fatalf("gate result leaked secret-like command: %s", string(gateRaw))
 	}
 }
 
@@ -473,6 +788,44 @@ func containsGateCondition(values []GateCondition, target string) bool {
 		}
 	}
 	return false
+}
+
+func containsProtectedCondition(values []ProtectedCondition, target string) bool {
+	for _, value := range values {
+		if value.ID == target {
+			return true
+		}
+	}
+	return false
+}
+
+func findProtectedCondition(t *testing.T, values []ProtectedCondition, target string) ProtectedCondition {
+	t.Helper()
+	for _, value := range values {
+		if value.ID == target {
+			return value
+		}
+	}
+	t.Fatalf("protected condition %s not found in %+v", target, values)
+	return ProtectedCondition{}
+}
+
+func indexOfReasonPrefix(values []string, prefix string) int {
+	for i, value := range values {
+		if strings.HasPrefix(value, prefix) {
+			return i
+		}
+	}
+	return -1
+}
+
+func mustParseTime(t *testing.T, value string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
 }
 
 func findRequiredRun(t *testing.T, runs []RequiredRunResult, id string) RequiredRunResult {

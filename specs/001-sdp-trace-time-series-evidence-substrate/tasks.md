@@ -301,6 +301,40 @@ selected run context and was not replayed from another run. Protected
 enforcement and audit-grade trust remain blocked until external policy-consumer
 and external witness work exist.
 
+## Phase 12: Protected Gate Enforcement Profile
+
+**Goal**: Make protected gate evaluation explicit, deterministic, and
+fail-closed for missing or invalid protected evidence without making
+`sdp-trace` the native merge, release, readiness, degradation, override
+approval, or risk-acceptance policy owner.
+
+**Independent Test**: A reviewer can run committed fixtures showing missing
+checkpoint evidence, local-development checkpoint evidence, signer-policy
+mismatch, missing CI witness binding, stale CI witness evidence, CI witness
+mismatch, override presence, and a valid CI-authority protected profile with
+deterministic protected gate states and exit codes.
+
+**Activation Gate**: Do not implement protected profile behavior until
+`blocks/16-protected-gate-enforcement-profile.md` is explicitly approved.
+Protected profile pass is verifier-derived evidence for an external CI or
+policy owner; it is not a native `sdp-trace` merge or release decision.
+
+- [ ] T126 [US5] Add Block 16 spec and implementation plan for protected gate profile selection, fail-closed evidence requirements, protected trust scope, exit semantics, explain/preview behavior, and no-overclaim boundary.
+- [ ] T127 [US2] Add a new Block 16 gate-result schema version with selected profile, protected gate state, checkpoint verification summary, protected condition rows, explicit protected trust-scope enum, and Block 14 read compatibility without introducing native policy decision fields.
+- [ ] T128 [US5] Add protected gate profile evaluation that requires explicit `--profile protected`, signed checkpoint input, trusted-checkpoint policy input, required runs, and required evidence before protected pass is possible.
+- [ ] T129 [US5] Map checkpoint verification facts into protected profile state, proving local-development signed checkpoints and untrusted checkpoint shapes cannot pass protected gate.
+- [ ] T130 [US5] Bind CI signer authority to CI witness repository, ref, commit, run id, artifact digest, and freshness checks; missing binding or absent/unbounded freshness data is `cannot_verify`, contradictory binding or stale data is `fail`.
+- [ ] T131 [US4] Add protected profile CLI flags, deterministic exit-code behavior, usage errors for omitted required gate inputs, and preview rendering for absent protected inputs.
+- [ ] T132 [US4] Extend `gate explain` and `gate preview` with protected-profile input requirements, checkpoint state, signer authority state, witness binding state, override state, stable reason codes, and next actions.
+- [ ] T133 [US4] Add safety-sensitive negative tests proving protected gate, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, or checkpoint key material.
+- [ ] T134 [US5] Add committed Block 16 fixtures for missing checkpoint, local-development checkpoint, local-development checkpoint with invalid run binding, missing signer policy, signer mismatch, missing CI witness, absent freshness, stale CI witness, CI source mismatch, CI artifact mismatch, malformed override with a trust-scope failure, valid CI-authority protected profile, and override-present protected profile.
+- [ ] T135 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 16 review disposition before PR closure.
+
+**Checkpoint**: Protected gate users get fail-closed verifier facts and
+deterministic CI-friendly exit behavior. `sdp-trace` still does not own the
+organization's merge, release, readiness, degradation, override approval, or
+risk-acceptance decision.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -317,6 +351,7 @@ and external witness work exist.
 - **Phase 9**: Depends on Block 08 discovery and executive Socratic review. It must land the recorder trust kernel before any new external demo-repo execution; the demo is a stress test, not the place to invent trust mechanics.
 - **Phase 10**: Depends on Block 13B capture-boundary and state taxonomy, and reuses Block 11/12 report, gate, and CI witness behavior. It must remain advisory until later signed checkpoint and external policy-consumer enforcement work exists.
 - **Phase 11**: Depends on Block 14 advisory gate output and Block 09/13B run-chain semantics. It supplies signed-checkpoint facts but must not implement protected enforcement or external witness trust.
+- **Phase 12**: Depends on Block 14 gate/explain/preview behavior and Block 15 signed-checkpoint replay resistance. It may make protected profile facts fail-closed and CI-friendly, but it must not make native policy decisions.
 
 ### Parallel Opportunities
 
@@ -349,6 +384,7 @@ and external witness work exist.
 10. Complete Block 09 flight-recorder trust kernel before starting a new Feature Flag / Entitlements external demo.
 11. Complete Block 14 advisory gate contract and explanation work before any protected enforcement or signed-checkpoint gate claim.
 12. Complete Block 15 signed-checkpoint replay verification before any protected gate profile claims that checkpoint evidence exists.
+13. Complete Block 16 protected gate profile only after explicit spec approval, keeping enforcement ownership with external CI or policy consumers.
 
 ### Evidence Discipline
 
