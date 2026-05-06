@@ -1,122 +1,309 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.sdp.dev/trace/gate-result.schema.json",
-  "title": "SDP Trace Advisory Gate Result",
-  "type": "object",
-  "required": [
-    "schema_version",
-    "generated_at",
-    "local_gate",
-    "ci_witness_gate",
-    "audit_grade_gate",
-    "gate_mode",
-    "trust_cap",
-    "required_runs",
-    "required_evidence",
-    "observed_evidence",
-    "witness_bindings",
-    "override_requests",
-    "gate_conditions",
-    "reasons",
-    "next_actions",
-    "missing_audit_evidence",
-    "runs"
+  "title": "SDP Trace Gate Result",
+  "oneOf": [
+    { "$ref": "#/$defs/block14GateResult" },
+    { "$ref": "#/$defs/block16GateResult" }
   ],
-  "properties": {
-    "schema_version": { "type": "string", "const": "block14-gate-result-v1" },
-    "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
-    "local_gate": { "$ref": "#/$defs/gateState" },
-    "ci_witness_gate": { "$ref": "#/$defs/gateState" },
-    "audit_grade_gate": { "$ref": "#/$defs/gateState" },
-    "gate_mode": {
+  "$defs": {
+    "block14GateResult": {
+      "title": "SDP Trace Block 14 Advisory Gate Result",
+      "type": "object",
+      "required": [
+        "schema_version",
+        "generated_at",
+        "local_gate",
+        "ci_witness_gate",
+        "audit_grade_gate",
+        "gate_mode",
+        "trust_cap",
+        "required_runs",
+        "required_evidence",
+        "observed_evidence",
+        "witness_bindings",
+        "override_requests",
+        "gate_conditions",
+        "reasons",
+        "next_actions",
+        "missing_audit_evidence",
+        "runs"
+      ],
+      "properties": {
+        "schema_version": { "type": "string", "const": "block14-gate-result-v1" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "local_gate": { "$ref": "#/$defs/gateState" },
+        "ci_witness_gate": { "$ref": "#/$defs/gateState" },
+        "audit_grade_gate": { "$ref": "#/$defs/gateState" },
+        "gate_mode": { "$ref": "#/$defs/block14GateMode" },
+        "trust_cap": { "$ref": "#/$defs/block14TrustCap" },
+        "required_runs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/block14RequiredRunResult" }
+        },
+        "required_evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "observed_evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "witness_bindings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stateReason" }
+        },
+        "override_requests": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/overrideRequest" }
+        },
+        "gate_conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stateReason" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "missing_audit_evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "witness": { "$ref": "#/$defs/witnessSummary" },
+        "runs": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "block16GateResult": {
+      "title": "SDP Trace Block 16 Protected Gate Result",
+      "type": "object",
+      "required": [
+        "schema_version",
+        "generated_at",
+        "local_gate",
+        "ci_witness_gate",
+        "audit_grade_gate",
+        "gate_mode",
+        "trust_cap",
+        "selected_profile",
+        "protected_gate",
+        "checkpoint_verification",
+        "protected_conditions",
+        "required_runs",
+        "required_evidence",
+        "observed_evidence",
+        "witness_bindings",
+        "override_requests",
+        "gate_conditions",
+        "reasons",
+        "next_actions",
+        "missing_audit_evidence",
+        "runs"
+      ],
+      "properties": {
+        "schema_version": { "type": "string", "const": "block16-gate-result-v1" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "local_gate": { "$ref": "#/$defs/gateState" },
+        "ci_witness_gate": { "$ref": "#/$defs/gateState" },
+        "audit_grade_gate": { "$ref": "#/$defs/gateState" },
+        "gate_mode": { "$ref": "#/$defs/block16GateMode" },
+        "trust_cap": { "$ref": "#/$defs/protectedTrustScope" },
+        "selected_profile": { "$ref": "#/$defs/selectedProfile" },
+        "protected_gate": { "$ref": "#/$defs/protectedGateState" },
+        "checkpoint_verification": { "$ref": "#/$defs/checkpointVerificationSummary" },
+        "protected_conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/protectedCondition" }
+        },
+        "required_runs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/block16RequiredRunResult" }
+        },
+        "required_evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "observed_evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "witness_bindings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stateReason" }
+        },
+        "override_requests": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/overrideRequest" }
+        },
+        "gate_conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stateReason" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "missing_audit_evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "witness": { "$ref": "#/$defs/witnessSummary" },
+        "runs": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "selectedProfile": {
+      "type": "string",
+      "enum": ["observation", "advisory_ci", "protected"]
+    },
+    "block14GateMode": {
       "type": "string",
       "enum": ["observation", "advisory_ci", "protected_future"]
     },
-    "trust_cap": {
+    "block16GateMode": {
+      "type": "string",
+      "enum": ["observation", "advisory_ci", "protected"]
+    },
+    "block14TrustCap": {
       "type": "string",
       "enum": ["local_observed", "ci_witnessed", "external_witnessed"]
     },
-    "required_runs": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/requiredRunResult" }
+    "protectedTrustScope": {
+      "type": "string",
+      "enum": [
+        "local_observed",
+        "local_signed",
+        "ci_witnessed",
+        "ci_signed",
+        "external_witnessed",
+        "untrusted_shape_only"
+      ]
     },
-    "required_evidence": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    },
-    "observed_evidence": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    },
-    "witness_bindings": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/stateReason" }
-    },
-    "override_requests": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["override_id", "state"],
-        "properties": {
-          "override_id": { "type": "string", "minLength": 1 },
-          "state": { "$ref": "#/$defs/gateState" },
-          "reason": { "type": "string" },
-          "created_at": { "$ref": "common.schema.json#/$defs/timestamp" }
-        },
-        "additionalProperties": false
-      }
-    },
-    "gate_conditions": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/stateReason" }
-    },
-    "reasons": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    },
-    "next_actions": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    },
-    "missing_audit_evidence": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    },
-    "witness": {
-      "type": "object",
-      "required": ["kind", "status", "trust_scope", "reason"],
-      "properties": {
-        "kind": { "type": "string", "minLength": 1 },
-        "status": { "$ref": "#/$defs/gateState" },
-        "trust_scope": { "type": "string", "minLength": 1 },
-        "reason": { "type": "string" },
-        "source": { "type": "object" },
-        "run_artifacts": { "type": "array" },
-        "report_artifacts": { "type": "array" }
-      },
-      "additionalProperties": true
-    },
-    "runs": {
-      "type": "array",
-      "items": { "type": "object" }
-    }
-  },
-  "additionalProperties": false,
-  "$defs": {
     "gateState": {
       "type": "string",
       "enum": ["pass", "fail", "cannot_verify", "not_assessed", "missing_telemetry"]
     },
-    "requiredRunResult": {
+    "protectedGateState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "protectedConditionState": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "cannot_verify",
+        "missing_telemetry",
+        "not_integrated",
+        "not_assessed"
+      ]
+    },
+    "checkpointVerificationState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed", "not_integrated"]
+    },
+    "checkpointVerificationSummary": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "result",
+        "trust_scope",
+        "payload_digest_state",
+        "signature_state",
+        "run_binding_state",
+        "chain_binding_state",
+        "source_binding_state",
+        "nonce_binding_state",
+        "sequence_state",
+        "signer_authority_state",
+        "replay_freshness_state",
+        "reasons"
+      ],
+      "properties": {
+        "schema_version": { "type": "string", "const": "block15-checkpoint-verification-v1" },
+        "checkpoint_id": { "type": "string", "minLength": 1 },
+        "run_id": { "type": "string", "minLength": 1 },
+        "result": { "$ref": "#/$defs/checkpointVerificationState" },
+        "trust_scope": { "$ref": "#/$defs/protectedTrustScope" },
+        "payload_digest_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "signature_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "run_binding_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "chain_binding_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "source_binding_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "nonce_binding_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "sequence_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "signer_authority_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "replay_freshness_state": { "$ref": "#/$defs/checkpointVerificationState" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "protectedCondition": {
+      "type": "object",
+      "required": ["id", "state", "reason_code", "reason"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "protected_profile_explicitly_selected",
+            "all_required_runs_present",
+            "all_required_evidence_observed",
+            "ci_witness_bound",
+            "witness_freshness_valid",
+            "checkpoint_signature_valid",
+            "checkpoint_run_binding_valid",
+            "checkpoint_signer_authorized",
+            "protected_trust_scope_satisfied",
+            "override_does_not_upgrade_profile"
+          ]
+        },
+        "state": { "$ref": "#/$defs/protectedConditionState" },
+        "reason_code": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "next_action": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "block14RequiredRunResult": {
       "type": "object",
       "required": ["id", "wrapper_name", "profile", "state", "reasons"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "wrapper_name": { "type": "string", "minLength": 1 },
-        "profile": {
-          "type": "string",
-          "enum": ["observation", "advisory_ci", "protected_future"]
-        },
+        "profile": { "$ref": "#/$defs/block14GateMode" },
+        "state": { "$ref": "#/$defs/gateState" },
+        "matched_run_id": { "type": "string" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "block16RequiredRunResult": {
+      "type": "object",
+      "required": ["id", "wrapper_name", "profile", "state", "reasons"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "wrapper_name": { "type": "string", "minLength": 1 },
+        "profile": { "$ref": "#/$defs/selectedProfile" },
         "state": { "$ref": "#/$defs/gateState" },
         "matched_run_id": { "type": "string" },
         "reasons": {
@@ -135,6 +322,39 @@
         "reason": { "type": "string" }
       },
       "additionalProperties": false
+    },
+    "overrideRequest": {
+      "type": "object",
+      "required": ["override_id", "state"],
+      "properties": {
+        "override_id": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/gateState" },
+        "reason": { "type": "string" },
+        "created_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "witnessSummary": {
+      "type": "object",
+      "required": ["kind", "status", "trust_scope", "reason"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/gateState" },
+        "trust_scope": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "source": { "type": "object" },
+        "ci_identity": {
+          "type": "object",
+          "properties": {
+            "run_id": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": true
+        },
+        "run_artifacts": { "type": "array" },
+        "report_artifacts": { "type": "array" }
+      },
+      "additionalProperties": true
     }
   }
 }

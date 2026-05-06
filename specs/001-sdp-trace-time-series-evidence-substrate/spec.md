@@ -205,7 +205,7 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-055**: Flight-recorder redaction MUST be verifier-visible and MUST distinguish safe redaction, sealed raw evidence, unresolved redaction, and unverifiable redaction; unresolved redaction MUST fail profiles that require forensic or accountability evidence.
 - **FR-056**: Flight-recorder query surfaces MUST expose run summary, provenance, late-attach gaps, requirement supersession timeline, command timeline, file mutations, test evidence, redaction issues, and witness state without producing policy verdicts.
 - **FR-057**: Advisory gate contracts MAY declare required runs separately from required evidence; missing required runs MUST produce `missing_telemetry` or `cannot_verify`, not `pass`.
-- **FR-058**: Gate output MUST distinguish observation, advisory CI, and future protected profiles, and MUST keep protected profiles `cannot_verify` until signed checkpoint evidence and an external policy consumer exist.
+- **FR-058**: Gate output MUST distinguish observation, advisory CI, and protected profiles, and MUST keep protected profiles non-pass unless signed checkpoint evidence, trusted signer authority, required evidence, required runs, CI witness binding, and external policy-consumer ownership are explicit.
 - **FR-059**: CI witness binding MUST compare available repository, ref, commit, run id, and artifact digest data against the current gate input; mismatches MUST produce deterministic `fail` or `cannot_verify` reasons.
 - **FR-060**: `policy_override_requested` trace events MUST be visible as override records and MUST NOT convert missing evidence to pass or upgrade audit-grade trust.
 - **FR-061**: Gate explain output MUST provide deterministic human-readable reasons and next actions for missing telemetry, cannot-verify witness, stale witness, source mismatch, and override-present states.
@@ -218,6 +218,14 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-068**: Signed checkpoint verification MUST expose monotonic checkpoint sequence checks and fail duplicate, missing, or descending sequence evidence.
 - **FR-069**: Signed checkpoint signer authority MUST be checked against an explicit trusted-checkpoint policy when supplied; missing policy MUST remain `not_assessed`, and policy mismatch MUST fail.
 - **FR-070**: Local development checkpoint signatures MUST NOT upgrade protected gate, audit-grade, release, readiness, degradation, override approval, or risk-acceptance state.
+- **FR-071**: Protected gate evaluation MUST be selected explicitly and MUST NOT be the default `sdp-trace gate` behavior.
+- **FR-072**: Protected gate evaluation MUST fail closed or return `cannot_verify` when required runs, required evidence, signed checkpoint evidence, trusted-checkpoint policy, signer authority, or CI witness binding is missing or invalid.
+- **FR-073**: Protected gate output MUST distinguish verifier-derived `protected_gate` facts from native merge, release, readiness, degradation, override approval, and risk-acceptance decisions.
+- **FR-074**: Local observed evidence, local signed checkpoints, and untrusted checkpoint shapes MUST NOT satisfy protected gate trust scope.
+- **FR-075**: CI signed protected gate trust MUST require signer authority evidence plus source, ref, commit, run id, and artifact digest binding to the selected run context.
+- **FR-076**: Protected profile exit behavior MUST be deterministic: protected pass exits `0`, protected fail exits `1`, protected `cannot_verify` exits `3`, and usage errors exit `2`.
+- **FR-077**: Protected gate, explain, and preview output MUST avoid raw command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, and other secret-like values.
+- **FR-078**: Protected profile output MUST use a new Block 16 gate-result schema version while preserving `gate explain` read compatibility for Block 14 gate-result artifacts.
 
 ### Key Entities
 
@@ -236,6 +244,7 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **Pilot Run-Card**: A repeatable harness/model/stack assessment recipe with prompt, expected artifacts, provenance capture, validation, and `not_assessed` rules.
 - **Signed Checkpoint**: Detached-signature artifact that binds a flight-recorder run chain head to run, source, task, contract, nonce, and sequence context for replay-resistant verification.
 - **Trusted Checkpoint Policy**: Portable policy that names allowed checkpoint signer identities and the authority boundary needed to treat a checkpoint as local signed, CI signed, or externally witnessed evidence.
+- **Protected Gate Enforcement Profile**: Explicit gate profile that evaluates protected-use prerequisites as fail-closed verifier facts and deterministic exit behavior for an external CI or policy owner to enforce.
 - **E2E Pilot Proof Package**: A sanitized artifact set produced from a real external tool run, containing evidence events, provenance records, observations, metric stream, trace snapshot, assessment input, redaction note, tested-on report, and explicit proof states.
 - **External Verdict Input**: A verdict, score, evidence-strength assertion, or decision produced outside `sdp-trace` and recorded as evidence with producer, policy reference, artifact reference, and origin.
 - **Flight Recorder Event**: An ordered event in a recorder run, with declared schema version, canonical payload digest, previous event hash, event hash, recorder identity, redaction state, and optional witness reference.
@@ -282,6 +291,9 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **SC-034**: Block 14 fixtures prove that absent required runs, unmatched runs, stale or mismatched CI witnesses, and protected-future requirements produce deterministic non-pass states.
 - **SC-035**: A reviewer can run `gate explain` and `gate preview` against committed Block 14 fixtures and see required-run gaps, witness binding state, override records, trust cap, and next actions without reading raw JSON manually.
 - **SC-036**: Safety-sensitive gate, explain, and preview tests prove that secret-like command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, and model responses are not printed or persisted.
+- **SC-037**: Block 16 fixtures prove that missing checkpoint evidence, local-development checkpoint evidence, missing signer policy, signer mismatch, missing CI witness binding, absent or stale CI witness freshness evidence, and CI witness mismatch cannot pass the protected profile.
+- **SC-038**: A reviewer can run protected gate, explain, and preview commands against committed Block 16 fixtures and see protected-profile input gaps, checkpoint state, signer authority state, witness binding state, override state, and deterministic next actions without reading raw JSON manually.
+- **SC-039**: Safety-sensitive protected gate tests prove that secret-like command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, and checkpoint key material are not printed or persisted.
 
 ## Assumptions
 

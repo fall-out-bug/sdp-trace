@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"github.com/fall_out_bug/sdp-trace/internal/verifier"
 )
@@ -23,11 +24,26 @@ const (
 	GateNotAssessed      = "not_assessed"
 	GateMissingTelemetry = "missing_telemetry"
 
-	GateModeObservation     = "observation"
-	GateModeAdvisoryCI      = "advisory_ci"
-	GateModeProtectedFuture = "protected_future"
-	GateSchemaVersion       = "block14-gate-result-v1"
+	GateModeObservation      = "observation"
+	GateModeAdvisoryCI       = "advisory_ci"
+	GateModeProtectedFuture  = "protected_future"
+	GateProfileProtected     = "protected"
+	GateSchemaVersion        = "block14-gate-result-v1"
+	GateSchemaVersionBlock16 = "block16-gate-result-v1"
 )
+
+var protectedConditionIDs = []string{
+	"protected_profile_explicitly_selected",
+	"all_required_runs_present",
+	"all_required_evidence_observed",
+	"ci_witness_bound",
+	"witness_freshness_valid",
+	"checkpoint_signature_valid",
+	"checkpoint_run_binding_valid",
+	"checkpoint_signer_authorized",
+	"protected_trust_scope_satisfied",
+	"override_does_not_upgrade_profile",
+}
 
 type RunRow struct {
 	Name             string                `json:"name"`
@@ -72,24 +88,28 @@ type MissingTelemetry struct {
 }
 
 type GateResult struct {
-	SchemaVersion        string              `json:"schema_version"`
-	GeneratedAt          string              `json:"generated_at"`
-	LocalGate            string              `json:"local_gate"`
-	CIWitnessGate        string              `json:"ci_witness_gate"`
-	AuditGradeGate       string              `json:"audit_grade_gate"`
-	GateMode             string              `json:"gate_mode"`
-	TrustCap             string              `json:"trust_cap"`
-	Reasons              []string            `json:"reasons"`
-	NextActions          []string            `json:"next_actions"`
-	RequiredRuns         []RequiredRunResult `json:"required_runs"`
-	RequiredEvidence     []string            `json:"required_evidence"`
-	ObservedEvidence     []string            `json:"observed_evidence"`
-	GateConditions       []GateCondition     `json:"gate_conditions"`
-	MissingAuditEvidence []string            `json:"missing_audit_evidence"`
-	Witness              *WitnessSummary     `json:"witness,omitempty"`
-	WitnessBindings      []WitnessBinding    `json:"witness_bindings"`
-	OverrideRequests     []OverrideRequest   `json:"override_requests"`
-	Runs                 []RunRow            `json:"runs"`
+	SchemaVersion          string                         `json:"schema_version"`
+	GeneratedAt            string                         `json:"generated_at"`
+	SelectedProfile        string                         `json:"selected_profile,omitempty"`
+	LocalGate              string                         `json:"local_gate"`
+	CIWitnessGate          string                         `json:"ci_witness_gate"`
+	AuditGradeGate         string                         `json:"audit_grade_gate"`
+	ProtectedGate          string                         `json:"protected_gate,omitempty"`
+	GateMode               string                         `json:"gate_mode"`
+	TrustCap               string                         `json:"trust_cap"`
+	Reasons                []string                       `json:"reasons"`
+	NextActions            []string                       `json:"next_actions"`
+	CheckpointVerification *checkpoint.VerificationResult `json:"checkpoint_verification,omitempty"`
+	ProtectedConditions    []ProtectedCondition           `json:"protected_conditions,omitempty"`
+	RequiredRuns           []RequiredRunResult            `json:"required_runs"`
+	RequiredEvidence       []string                       `json:"required_evidence"`
+	ObservedEvidence       []string                       `json:"observed_evidence"`
+	GateConditions         []GateCondition                `json:"gate_conditions"`
+	MissingAuditEvidence   []string                       `json:"missing_audit_evidence"`
+	Witness                *WitnessSummary                `json:"witness,omitempty"`
+	WitnessBindings        []WitnessBinding               `json:"witness_bindings"`
+	OverrideRequests       []OverrideRequest              `json:"override_requests"`
+	Runs                   []RunRow                       `json:"runs"`
 }
 
 type RequiredRunResult struct {
@@ -105,6 +125,14 @@ type GateCondition struct {
 	ID     string `json:"id"`
 	State  string `json:"state"`
 	Reason string `json:"reason"`
+}
+
+type ProtectedCondition struct {
+	ID         string `json:"id"`
+	State      string `json:"state"`
+	ReasonCode string `json:"reason_code"`
+	Reason     string `json:"reason"`
+	NextAction string `json:"next_action,omitempty"`
 }
 
 type WitnessBinding struct {
@@ -124,6 +152,7 @@ type WitnessExpectation struct {
 	Repository   string
 	Ref          string
 	CommitSHA    string
+	RunID        string
 	RunArtifacts []WitnessArtifactDigest
 }
 
@@ -132,9 +161,23 @@ type WitnessSummary struct {
 	Status          string                  `json:"status"`
 	TrustScope      string                  `json:"trust_scope"`
 	Reason          string                  `json:"reason"`
+	GeneratedAt     string                  `json:"generated_at,omitempty"`
 	Source          WitnessSourceIdentity   `json:"source"`
+	CIIdentity      WitnessCIIdentity       `json:"ci_identity,omitempty"`
 	RunArtifacts    []WitnessArtifactDigest `json:"run_artifacts,omitempty"`
 	ReportArtifacts []WitnessArtifactDigest `json:"report_artifacts,omitempty"`
+}
+
+type WitnessCIIdentity struct {
+	RunID string `json:"run_id,omitempty"`
+}
+
+type ProtectedGateInput struct {
+	Checkpoint         checkpoint.VerificationResult
+	PolicyProvided     bool
+	Witness            *WitnessSummary
+	WitnessExpectation WitnessExpectation
+	Now                time.Time
 }
 
 type WitnessSourceIdentity struct {
@@ -381,6 +424,379 @@ func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
 	sort.Strings(result.Reasons)
 	sort.Strings(result.NextActions)
 	return result
+}
+
+func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input ProtectedGateInput) GateResult {
+	result := EvaluateGate(rows, contract)
+	result.SchemaVersion = GateSchemaVersionBlock16
+	result.SelectedProfile = GateProfileProtected
+	result.ProtectedGate = GatePass
+	result.GateMode = GateProfileProtected
+	result.Witness = input.Witness
+	result.CIWitnessGate = protectedCIWitnessGate(input)
+	result.TrustCap = protectedTrustCap(input, result.CIWitnessGate)
+	result.GateConditions = gateConditions(result)
+	result.CheckpointVerification = &input.Checkpoint
+	result.ProtectedConditions = protectedConditions(result, input)
+	for _, condition := range result.ProtectedConditions {
+		if condition.ID == "override_does_not_upgrade_profile" {
+			continue
+		}
+		result.ProtectedGate = worseProtectedState(result.ProtectedGate, topLevelProtectedState(condition.State))
+	}
+	result.Reasons = append(result.Reasons, protectedReasons(result.ProtectedConditions)...)
+	result.NextActions = append(result.NextActions, protectedNextActions(result.ProtectedConditions)...)
+	return result
+}
+
+func protectedCIWitnessGate(input ProtectedGateInput) string {
+	if input.Witness == nil {
+		return GateCannotVerify
+	}
+	state, _ := witnessBindingState(*input.Witness, input.WitnessExpectation)
+	return state
+}
+
+func protectedTrustCap(input ProtectedGateInput, ciWitnessGate string) string {
+	if input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned {
+		return checkpoint.TrustScopeCISigned
+	}
+	if input.Checkpoint.TrustScope == checkpoint.TrustScopeLocalSigned {
+		return checkpoint.TrustScopeLocalSigned
+	}
+	if ciWitnessGate == GatePass {
+		return "ci_witnessed"
+	}
+	if input.Checkpoint.TrustScope != "" {
+		return input.Checkpoint.TrustScope
+	}
+	return string(trace.TrustScopeLocalObserved)
+}
+
+func protectedConditions(result GateResult, input ProtectedGateInput) []ProtectedCondition {
+	conditions := map[string]ProtectedCondition{
+		"protected_profile_explicitly_selected": {
+			ID:         "protected_profile_explicitly_selected",
+			State:      GatePass,
+			ReasonCode: "protected_profile_selected",
+			Reason:     "protected profile was explicitly selected",
+		},
+		"all_required_runs_present":         protectedConditionFromGateCondition(result.GateConditions, "all_required_runs_present"),
+		"all_required_evidence_observed":    protectedConditionFromGateCondition(result.GateConditions, "all_required_evidence_observed"),
+		"ci_witness_bound":                  protectedCIWitnessCondition(input),
+		"witness_freshness_valid":           protectedWitnessFreshnessCondition(input),
+		"checkpoint_signature_valid":        protectedCheckpointSignatureCondition(input.Checkpoint),
+		"checkpoint_run_binding_valid":      protectedCheckpointBindingCondition(input.Checkpoint),
+		"checkpoint_signer_authorized":      protectedSignerCondition(input),
+		"protected_trust_scope_satisfied":   protectedTrustScopeCondition(input),
+		"override_does_not_upgrade_profile": protectedOverrideCondition(result.OverrideRequests),
+	}
+	ordered := make([]ProtectedCondition, 0, len(protectedConditionIDs))
+	for _, id := range protectedConditionIDs {
+		ordered = append(ordered, conditions[id])
+	}
+	return ordered
+}
+
+func protectedConditionFromGateCondition(conditions []GateCondition, id string) ProtectedCondition {
+	for _, condition := range conditions {
+		if condition.ID == id {
+			code := "condition_pass"
+			next := ""
+			if condition.State != GatePass {
+				code = id + "_not_satisfied"
+				next = "Supply the required run and evidence before evaluating protected profile."
+			}
+			return ProtectedCondition{ID: id, State: condition.State, ReasonCode: code, Reason: condition.Reason, NextAction: next}
+		}
+	}
+	return ProtectedCondition{
+		ID:         id,
+		State:      GateCannotVerify,
+		ReasonCode: id + "_missing",
+		Reason:     "required gate condition is missing",
+		NextAction: "Regenerate the gate result with current sdp-trace.",
+	}
+}
+
+func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
+	if input.Witness == nil {
+		return ProtectedCondition{
+			ID:         "ci_witness_bound",
+			State:      GateCannotVerify,
+			ReasonCode: "missing_ci_witness",
+			Reason:     "CI witness evidence is required for protected profile",
+			NextAction: "Supply a CI witness bound to the selected run.",
+		}
+	}
+	state, reasons := witnessBindingState(*input.Witness, input.WitnessExpectation)
+	code := "ci_witness_bound"
+	next := ""
+	reason := "CI witness source and artifact bindings match protected profile input"
+	if state != GatePass {
+		reason = strings.Join(reasons, "; ")
+		if state == GateFail {
+			code = "ci_witness_mismatch"
+			next = "Fix the CI witness source or artifact binding mismatch."
+		} else {
+			code = "ci_witness_incomplete"
+			next = "Supply complete CI witness source and artifact bindings."
+		}
+	}
+	return ProtectedCondition{ID: "ci_witness_bound", State: state, ReasonCode: code, Reason: reason, NextAction: next}
+}
+
+func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondition {
+	if input.Witness == nil || strings.TrimSpace(input.Witness.GeneratedAt) == "" {
+		return ProtectedCondition{
+			ID:         "witness_freshness_valid",
+			State:      GateCannotVerify,
+			ReasonCode: "missing_witness_freshness",
+			Reason:     "CI witness generated_at is required for protected freshness evaluation",
+			NextAction: "Supply CI witness evidence with generated_at freshness data.",
+		}
+	}
+	generatedAt, err := time.Parse(time.RFC3339, input.Witness.GeneratedAt)
+	if err != nil {
+		return ProtectedCondition{
+			ID:         "witness_freshness_valid",
+			State:      GateCannotVerify,
+			ReasonCode: "invalid_witness_freshness",
+			Reason:     "CI witness generated_at cannot be parsed",
+			NextAction: "Regenerate CI witness evidence with an RFC3339 generated_at timestamp.",
+		}
+	}
+	now := input.Now
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	if generatedAt.After(now.Add(5 * time.Minute)) {
+		return ProtectedCondition{
+			ID:         "witness_freshness_valid",
+			State:      GateFail,
+			ReasonCode: "witness_from_future",
+			Reason:     "CI witness generated_at is after the verifier time window",
+			NextAction: "Regenerate CI witness evidence in the selected CI run.",
+		}
+	}
+	if now.Sub(generatedAt) > 24*time.Hour {
+		return ProtectedCondition{
+			ID:         "witness_freshness_valid",
+			State:      GateFail,
+			ReasonCode: "stale_witness",
+			Reason:     "CI witness generated_at is outside the protected freshness window",
+			NextAction: "Regenerate CI witness evidence for the selected run.",
+		}
+	}
+	return ProtectedCondition{
+		ID:         "witness_freshness_valid",
+		State:      GatePass,
+		ReasonCode: "witness_fresh",
+		Reason:     "CI witness freshness is within the protected profile window",
+	}
+}
+
+func protectedCheckpointSignatureCondition(result checkpoint.VerificationResult) ProtectedCondition {
+	if result.SignatureState == checkpoint.StatePass && result.PayloadDigestState != checkpoint.StateFail {
+		return ProtectedCondition{ID: "checkpoint_signature_valid", State: GatePass, ReasonCode: "checkpoint_signature_valid", Reason: "checkpoint signature verification passed"}
+	}
+	return ProtectedCondition{
+		ID:         "checkpoint_signature_valid",
+		State:      mapCheckpointState(result.SignatureState),
+		ReasonCode: "checkpoint_signature_invalid",
+		Reason:     "checkpoint signature verification did not pass",
+		NextAction: "Regenerate the signed checkpoint for the selected run.",
+	}
+}
+
+func protectedCheckpointBindingCondition(result checkpoint.VerificationResult) ProtectedCondition {
+	state := GatePass
+	for _, candidate := range []string{result.RunBindingState, result.ChainBindingState, result.SourceBindingState, result.NonceBindingState} {
+		state = worseProtectedState(state, mapCheckpointState(candidate))
+	}
+	if state == GatePass {
+		return ProtectedCondition{ID: "checkpoint_run_binding_valid", State: GatePass, ReasonCode: "checkpoint_binding_valid", Reason: "checkpoint binding matches the selected run context"}
+	}
+	return ProtectedCondition{
+		ID:         "checkpoint_run_binding_valid",
+		State:      state,
+		ReasonCode: "checkpoint_binding_invalid",
+		Reason:     "checkpoint binding does not satisfy the selected run context",
+		NextAction: "Regenerate checkpoint evidence from the selected run context.",
+	}
+}
+
+func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
+	if !input.PolicyProvided {
+		return ProtectedCondition{
+			ID:         "checkpoint_signer_authorized",
+			State:      GateCannotVerify,
+			ReasonCode: "missing_policy",
+			Reason:     "trusted-checkpoint policy is required for protected profile",
+			NextAction: "Supply a trusted-checkpoint policy for the protected signer.",
+		}
+	}
+	state := mapCheckpointState(input.Checkpoint.SignerAuthorityState)
+	if state == GatePass && input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned {
+		return ProtectedCondition{ID: "checkpoint_signer_authorized", State: GatePass, ReasonCode: "checkpoint_signer_authorized", Reason: "checkpoint signer is authorized for CI signed protected profile"}
+	}
+	if state == GatePass && input.Checkpoint.TrustScope == checkpoint.TrustScopeLocalSigned {
+		state = GateFail
+	}
+	return ProtectedCondition{
+		ID:         "checkpoint_signer_authorized",
+		State:      state,
+		ReasonCode: "checkpoint_signer_not_protected",
+		Reason:     "checkpoint signer authority does not satisfy protected profile",
+		NextAction: "Run checkpoint signing in an authorized CI signer context.",
+	}
+}
+
+func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
+	if !input.PolicyProvided {
+		return ProtectedCondition{
+			ID:         "protected_trust_scope_satisfied",
+			State:      GateCannotVerify,
+			ReasonCode: "missing_policy",
+			Reason:     "protected trust scope cannot be verified without trusted-checkpoint policy",
+			NextAction: "Supply a trusted-checkpoint policy for the protected signer.",
+		}
+	}
+	if input.Checkpoint.Result == checkpoint.StatePass &&
+		input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned &&
+		input.Checkpoint.SignerAuthorityState == checkpoint.StatePass &&
+		input.Witness != nil {
+		witnessState, _ := witnessBindingState(*input.Witness, input.WitnessExpectation)
+		freshness := protectedWitnessFreshnessCondition(input)
+		if witnessState == GatePass && freshness.State == GatePass {
+			return ProtectedCondition{ID: "protected_trust_scope_satisfied", State: GatePass, ReasonCode: "protected_trust_scope_satisfied", Reason: "CI signed checkpoint and CI witness binding satisfy protected profile"}
+		}
+		state := worseProtectedState(witnessState, freshness.State)
+		return ProtectedCondition{
+			ID:         "protected_trust_scope_satisfied",
+			State:      state,
+			ReasonCode: "protected_trust_scope_not_satisfied",
+			Reason:     "CI signed checkpoint does not have passing CI witness binding and freshness",
+			NextAction: "Provide fresh CI witness binding for the selected run.",
+		}
+	}
+	code := "protected_trust_scope_not_satisfied"
+	if input.Checkpoint.TrustScope == checkpoint.TrustScopeLocalSigned {
+		code = "local_signed_not_protected"
+	}
+	return ProtectedCondition{
+		ID:         "protected_trust_scope_satisfied",
+		State:      GateFail,
+		ReasonCode: code,
+		Reason:     "observed trust scope does not satisfy protected profile",
+		NextAction: "Provide CI signed checkpoint evidence with matching CI witness binding.",
+	}
+}
+
+func protectedOverrideCondition(overrides []OverrideRequest) ProtectedCondition {
+	if len(overrides) == 0 {
+		return ProtectedCondition{ID: "override_does_not_upgrade_profile", State: GatePass, ReasonCode: "no_override_present", Reason: "no override request is available to upgrade the profile"}
+	}
+	for _, override := range overrides {
+		if override.State != GatePass {
+			return ProtectedCondition{
+				ID:         "override_does_not_upgrade_profile",
+				State:      GateCannotVerify,
+				ReasonCode: "override_cannot_verify_non_upgrading",
+				Reason:     "override request cannot verify and remains non-upgrading",
+				NextAction: "Inspect override request evidence outside protected gate evaluation.",
+			}
+		}
+	}
+	return ProtectedCondition{ID: "override_does_not_upgrade_profile", State: GatePass, ReasonCode: "override_visible_non_upgrading", Reason: "override request is visible and non-upgrading"}
+}
+
+func mapCheckpointState(state string) string {
+	switch state {
+	case checkpoint.StatePass:
+		return GatePass
+	case checkpoint.StateFail:
+		return GateFail
+	case checkpoint.StateCannotVerify, checkpoint.StateNotIntegrated:
+		return GateCannotVerify
+	case checkpoint.StateNotAssessed, "":
+		return GateNotAssessed
+	default:
+		return GateCannotVerify
+	}
+}
+
+func worseProtectedState(current, next string) string {
+	if protectedSeverity(next) > protectedSeverity(current) {
+		return next
+	}
+	return current
+}
+
+func topLevelProtectedState(state string) string {
+	switch state {
+	case GateMissingTelemetry, "not_integrated":
+		return GateCannotVerify
+	default:
+		return state
+	}
+}
+
+func protectedSeverity(state string) int {
+	switch state {
+	case GateFail:
+		return 5
+	case GateCannotVerify, "not_integrated":
+		return 4
+	case GateMissingTelemetry:
+		return 3
+	case GateNotAssessed:
+		return 2
+	case GatePass:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func protectedReasons(conditions []ProtectedCondition) []string {
+	ordered := orderedProtectedConditionsBySeverity(conditions)
+	reasons := make([]string, 0, len(ordered))
+	for _, condition := range ordered {
+		if condition.ReasonCode == "" {
+			continue
+		}
+		reasons = append(reasons, fmt.Sprintf("%s: %s", condition.ReasonCode, condition.Reason))
+	}
+	return reasons
+}
+
+func protectedNextActions(conditions []ProtectedCondition) []string {
+	ordered := orderedProtectedConditionsBySeverity(conditions)
+	actions := make([]string, 0, len(ordered))
+	for _, condition := range ordered {
+		if strings.TrimSpace(condition.NextAction) != "" {
+			actions = append(actions, condition.NextAction)
+		}
+	}
+	return actions
+}
+
+func orderedProtectedConditionsBySeverity(conditions []ProtectedCondition) []ProtectedCondition {
+	ordered := append([]ProtectedCondition(nil), conditions...)
+	positions := map[string]int{}
+	for i, id := range protectedConditionIDs {
+		positions[id] = i
+	}
+	sort.SliceStable(ordered, func(i, j int) bool {
+		left := protectedSeverity(ordered[i].State)
+		right := protectedSeverity(ordered[j].State)
+		if left != right {
+			return left > right
+		}
+		return positions[ordered[i].ID] < positions[ordered[j].ID]
+	})
+	return ordered
 }
 
 func EvaluateGateWithWitness(rows []RunRow, contract trace.Contract, witnessPath string) GateResult {
@@ -660,6 +1076,12 @@ func witnessBindingState(record WitnessSummary, expected WitnessExpectation) (st
 	}
 	if expected.CommitSHA != "" && record.Source.CommitSHA != expected.CommitSHA {
 		return GateFail, []string{fmt.Sprintf("ci witness commit mismatch: expected %s got %s", expected.CommitSHA, record.Source.CommitSHA)}
+	}
+	if expected.RunID != "" && record.CIIdentity.RunID == "" {
+		return GateCannotVerify, []string{"ci witness run id binding is missing"}
+	}
+	if expected.RunID != "" && record.CIIdentity.RunID != expected.RunID {
+		return GateFail, []string{fmt.Sprintf("ci witness run id mismatch: expected %s got %s", expected.RunID, record.CIIdentity.RunID)}
 	}
 	expectedArtifacts := map[string]string{}
 	for _, artifact := range expected.RunArtifacts {

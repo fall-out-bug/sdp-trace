@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -234,6 +236,9 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	opts.setString("out", "")
 	opts.setString("contract", "")
 	opts.setString("witness", "")
+	opts.setString("profile", "")
+	opts.setString("checkpoint", "")
+	opts.setString("checkpoint-policy", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -248,8 +253,76 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "gate requires --out <file>")
 		return exitUsage
 	}
+	if opts.stringValue("profile") == demo.GateProfileProtected {
+		return runProtectedGate(targets[0], outPath, opts, stdout, stderr)
+	}
 	result, err := demo.WriteGate(targets[0], outPath, opts.stringValue("contract"), opts.stringValue("witness"))
 	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return gateExitCode(result)
+}
+
+func runProtectedGate(target, outPath string, opts *flagSet, stdout, stderr io.Writer) int {
+	required := map[string]string{
+		"--checkpoint":        opts.stringValue("checkpoint"),
+		"--checkpoint-policy": opts.stringValue("checkpoint-policy"),
+		"--witness":           opts.stringValue("witness"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "protected gate requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	var signed checkpoint.SignedCheckpoint
+	if err := readJSONFile(opts.stringValue("checkpoint"), &signed); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	var policy checkpoint.TrustedCheckpointPolicy
+	if err := readJSONFile(opts.stringValue("checkpoint-policy"), &policy); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	var witnessSummary demo.WitnessSummary
+	if err := readJSONFile(opts.stringValue("witness"), &witnessSummary); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	contract, err := trace.LoadContract(opts.stringValue("contract"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	rows, err := demo.VerifiedRows(target, contract)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	runDir, err := protectedRunDir(target)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	checkpointResult := checkpoint.Verify(runDir, signed, &policy)
+	expected, err := demoWitnessExpectation(target)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	checkpointResult = protectedCheckpointVerification(checkpointResult, signed, policy, witnessSummary, expected)
+	result := demo.EvaluateProtectedGate(rows, contract, demo.ProtectedGateInput{
+		Checkpoint:         checkpointResult,
+		PolicyProvided:     true,
+		Witness:            &witnessSummary,
+		WitnessExpectation: expected,
+		Now:                time.Now().UTC(),
+	})
+	if err := writeJSONFile(outPath, result); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
@@ -277,13 +350,33 @@ func runGateExplain(args []string, stdout, stderr io.Writer) int {
 	var result demo.GateResult
 	if err := readJSONFile(path, &result); err != nil {
 		fmt.Fprintln(stderr, err)
-		return 1
+		return exitCannotVerify
+	}
+	if result.SchemaVersion != demo.GateSchemaVersion && result.SchemaVersion != demo.GateSchemaVersionBlock16 {
+		fmt.Fprintf(stderr, "unsupported gate-result schema_version: %s\n", result.SchemaVersion)
+		return exitCannotVerify
+	}
+	if result.SchemaVersion == demo.GateSchemaVersion {
+		fmt.Fprintln(stdout, "Protected profile fields: absent")
 	}
 	fmt.Fprintf(stdout, "Gate mode: %s\n", result.GateMode)
 	fmt.Fprintf(stdout, "Trust cap: %s\n", result.TrustCap)
+	if result.SelectedProfile != "" {
+		fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
+	}
 	fmt.Fprintf(stdout, "Local gate: %s\n", result.LocalGate)
 	fmt.Fprintf(stdout, "CI witness gate: %s\n", result.CIWitnessGate)
 	fmt.Fprintf(stdout, "Audit-grade gate: %s\n", result.AuditGradeGate)
+	if result.ProtectedGate != "" {
+		fmt.Fprintf(stdout, "Protected gate: %s\n", result.ProtectedGate)
+	}
+	if result.CheckpointVerification != nil {
+		fmt.Fprintf(stdout, "Checkpoint result: %s\n", result.CheckpointVerification.Result)
+		fmt.Fprintf(stdout, "Checkpoint trust scope: %s\n", result.CheckpointVerification.TrustScope)
+	}
+	for _, condition := range result.ProtectedConditions {
+		fmt.Fprintf(stdout, "Protected condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+	}
 	for _, requiredRun := range result.RequiredRuns {
 		fmt.Fprintf(stdout, "Required run %s: %s\n", requiredRun.ID, requiredRun.State)
 	}
@@ -316,10 +409,22 @@ type gatePreviewReport struct {
 	Claim              string   `json:"claim"`
 }
 
+type protectedGatePreviewReport struct {
+	Command         string            `json:"command"`
+	SelectedProfile string            `json:"selected_profile"`
+	TrustCap        string            `json:"trust_cap"`
+	Inputs          map[string]string `json:"inputs"`
+	NextActions     []string          `json:"next_actions"`
+	Claim           string            `json:"claim"`
+}
+
 func runGatePreview(args []string, stdout, stderr io.Writer) int {
 	opts := &flagSet{name: "gate preview"}
 	opts.setString("contract", "")
 	opts.setString("witness", "")
+	opts.setString("profile", "")
+	opts.setString("checkpoint", "")
+	opts.setString("checkpoint-policy", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -328,6 +433,9 @@ func runGatePreview(args []string, stdout, stderr io.Writer) int {
 	if len(targets) != 1 {
 		fmt.Fprintln(stderr, "gate preview requires <runs-root-or-run-dir>")
 		return exitUsage
+	}
+	if opts.stringValue("profile") == demo.GateProfileProtected {
+		return runProtectedGatePreview(opts, stdout)
 	}
 	contract, err := trace.LoadContract(opts.stringValue("contract"))
 	if err != nil {
@@ -350,6 +458,167 @@ func runGatePreview(args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "%s\n", payload)
 	_ = targets[0]
 	return 0
+}
+
+func runProtectedGatePreview(opts *flagSet, stdout io.Writer) int {
+	inputs := map[string]string{
+		"checkpoint":        protectedInputStatus(opts.stringValue("checkpoint")),
+		"checkpoint_policy": protectedInputStatus(opts.stringValue("checkpoint-policy")),
+		"witness":           protectedInputStatus(opts.stringValue("witness")),
+	}
+	report := protectedGatePreviewReport{
+		Command:         "gate preview",
+		SelectedProfile: demo.GateProfileProtected,
+		TrustCap:        string(trace.TrustScopeLocalObserved),
+		Inputs:          inputs,
+		NextActions:     protectedPreviewActions(inputs),
+		Claim:           "preview is read-only and does not emit a protected verdict",
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	for _, state := range inputs {
+		if state == "present_unreadable" || state == "present_malformed" {
+			return exitCannotVerify
+		}
+	}
+	return 0
+}
+
+func protectedRunDir(target string) (string, error) {
+	runDirs, err := demo.DiscoverRunDirs(target)
+	if err != nil {
+		return "", err
+	}
+	if len(runDirs) != 1 {
+		return "", fmt.Errorf("protected gate requires one selected run, got %d", len(runDirs))
+	}
+	return runDirs[0], nil
+}
+
+func protectedCheckpointVerification(result checkpoint.VerificationResult, signed checkpoint.SignedCheckpoint, policy checkpoint.TrustedCheckpointPolicy, witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) checkpoint.VerificationResult {
+	if result.Result == checkpoint.StateFail {
+		return result
+	}
+	if signed.Signer.Authority != checkpoint.AuthorityCIIsolatedJob {
+		return result
+	}
+	if !policyAllowsSigner(policy, signed) {
+		return result
+	}
+	if !witnessMatchesProtectedInput(witnessSummary, expected) {
+		return result
+	}
+	result.SignerAuthorityState = checkpoint.StatePass
+	result.TrustScope = checkpoint.TrustScopeCISigned
+	result.Result = checkpoint.StatePass
+	return result
+}
+
+func policyAllowsSigner(policy checkpoint.TrustedCheckpointPolicy, signed checkpoint.SignedCheckpoint) bool {
+	for _, signer := range policy.AllowedSigners {
+		if signer.SignerID == signed.Signer.SignerID &&
+			signer.Authority == signed.Signer.Authority &&
+			signer.PublicKey == signed.Signature.PublicKey {
+			return true
+		}
+	}
+	return false
+}
+
+func witnessMatchesProtectedInput(witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) bool {
+	if witnessSummary.Kind != "github-actions" || witnessSummary.Status != demo.GatePass || witnessSummary.TrustScope != "ci_witnessed" {
+		return false
+	}
+	if expected.Repository != "" && witnessSummary.Source.Repository != expected.Repository {
+		return false
+	}
+	if expected.Ref != "" && witnessSummary.Source.Ref != expected.Ref {
+		return false
+	}
+	if expected.CommitSHA != "" && witnessSummary.Source.CommitSHA != expected.CommitSHA {
+		return false
+	}
+	if expected.RunID != "" && witnessSummary.CIIdentity.RunID != expected.RunID {
+		return false
+	}
+	expectedArtifacts := map[string]string{}
+	for _, artifact := range expected.RunArtifacts {
+		expectedArtifacts[artifact.Path] = artifact.SHA256
+	}
+	if len(expectedArtifacts) > 0 && len(witnessSummary.RunArtifacts) == 0 {
+		return false
+	}
+	for _, artifact := range witnessSummary.RunArtifacts {
+		if expectedArtifacts[artifact.Path] != artifact.SHA256 {
+			return false
+		}
+		delete(expectedArtifacts, artifact.Path)
+	}
+	return len(expectedArtifacts) == 0
+}
+
+func demoWitnessExpectation(target string) (demo.WitnessExpectation, error) {
+	runDirs, err := demo.DiscoverRunDirs(target)
+	if err != nil {
+		return demo.WitnessExpectation{}, err
+	}
+	artifacts := make([]demo.WitnessArtifactDigest, 0, len(runDirs))
+	runID := ""
+	for _, runDir := range runDirs {
+		artifact, err := trace.OpenRunArtifact(runDir)
+		if err != nil {
+			return demo.WitnessExpectation{}, err
+		}
+		if runID == "" {
+			runID = artifact.Manifest.RunID
+		}
+		digest, err := sha256File(runDir, "run.json")
+		if err != nil {
+			return demo.WitnessExpectation{}, err
+		}
+		artifacts = append(artifacts, demo.WitnessArtifactDigest{
+			Path:   filepath.ToSlash(filepath.Join(filepath.Base(runDir), "run.json")),
+			SHA256: digest,
+		})
+	}
+	return demo.WitnessExpectation{RunID: runID, RunArtifacts: artifacts}, nil
+}
+
+func sha256File(dir, name string) (string, error) {
+	data, err := os.ReadFile(filepath.Join(dir, name))
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func protectedInputStatus(path string) string {
+	if strings.TrimSpace(path) == "" {
+		return "absent"
+	}
+	var value any
+	if err := readJSONFile(path, &value); err != nil {
+		if os.IsNotExist(err) || errors.Is(err, os.ErrPermission) {
+			return "present_unreadable"
+		}
+		return "present_malformed"
+	}
+	return "present_readable"
+}
+
+func protectedPreviewActions(inputs map[string]string) []string {
+	names := []string{"checkpoint", "checkpoint_policy", "witness"}
+	actions := make([]string, 0)
+	for _, name := range names {
+		switch inputs[name] {
+		case "absent":
+			actions = append(actions, fmt.Sprintf("Supply %s input before running protected gate.", name))
+		case "present_unreadable", "present_malformed":
+			actions = append(actions, fmt.Sprintf("Replace %s input with readable JSON.", name))
+		}
+	}
+	return actions
 }
 
 func runOverride(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -463,6 +732,16 @@ func requiredEvidenceIDsForCLI(contract trace.Contract) []string {
 }
 
 func gateExitCode(result demo.GateResult) int {
+	if result.SelectedProfile == demo.GateProfileProtected {
+		switch result.ProtectedGate {
+		case demo.GatePass:
+			return 0
+		case demo.GateFail:
+			return 1
+		case demo.GateCannotVerify, demo.GateNotAssessed:
+			return exitCannotVerify
+		}
+	}
 	for _, requiredRun := range result.RequiredRuns {
 		if requiredRun.State == demo.GateFail || requiredRun.State == demo.GateMissingTelemetry {
 			return 1
