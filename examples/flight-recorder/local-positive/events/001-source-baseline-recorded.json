@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-local-positive-001",
+  "sequence": 1,
+  "event_type": "source_baseline_recorded",
+  "event_time": "2026-05-05T10:00:01Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "63156e47cd686fc9eb36c44219c41d79e847043b5c4945cdff9d6d6f32698692",
+  "prev_event_hash": "e424b33664720e96f778ef3f9a7f7b2a516f945e2b27d99760d14359bd631eca",
+  "event_hash": "a54afe3e9f9d560a98822b1ad582f1b4a7213e9c9d30c396a627759092f67801",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Recorded immutable source baseline for fixture run",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "source_baseline_hash": "ddb83366fc87a4714fd7bb0759301c92ad4d1003f2c7e564a6f58ac64fe0eabc",
+    "source_kind": "git_tree"
+  }
+}

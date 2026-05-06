@@ -12,7 +12,7 @@ The roadmap now treats self-proof as the first product proof, not as a later nic
 ## Technical Context
 
 **Language/Version**: JSON Schema Draft 2020-12, Markdown, shell validation commands
-**Primary Dependencies**: `jq`; pinned local JSON Schema validation via `ajv@8.20.0` and `scripts/validate-json-schema.mjs`; SHA-256 digest verification; target signing profile using in-toto Statement, DSSE, and Sigstore/Cosign keyless verification where available
+**Primary Dependencies**: Go; `jq` for JSON parse checks; SHA-256 digest verification; target signing profile using in-toto Statement, DSSE, and Sigstore/Cosign keyless verification where available
 **Storage**: Files committed to the repository; local ignored pilot outputs under `.sdp-trace-runs/`
 **Testing**: `jq empty schema/*.json`; Draft 2020-12 validation over committed examples with pinned local `ajv@8.20.0`
 **Target Platform**: Portable repository artifacts
@@ -193,10 +193,11 @@ Syntax verification:
 jq empty schema/*.json
 ```
 
-Draft 2020-12 validation strategy:
+Draft 2020-12 validation strategy (Block 10 compatible):
 
 ```bash
-node scripts/validate-json-schema.mjs schema/trace.schema.json examples/github-speckit/trace.json
+go test ./...
+go run ./cmd/sdp-trace validate-fixtures examples/github-speckit
 ```
 
 T036 will generalize this into a repository command that validates committed examples while excluding `.git/`, `.beads/`, `.sdp-trace-runs/`, and `benchmarks/repos/`.

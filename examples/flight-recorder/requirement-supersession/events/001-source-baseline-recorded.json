@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 1,
+  "event_type": "source_baseline_recorded",
+  "event_time": "2026-05-05T11:10:01Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "1d6d8ced6c7588dc423981585487538e794e3dcb5bfd5f25c4e494b48ea23d31",
+  "prev_event_hash": "b581f2f6f9f89167256fc77dce238da9a08e1191891eed902086d1fcee47b6fa",
+  "event_hash": "1b10bd223cb8c6072dbda0fdf0d13ef66c69d1a3116cee9f91e2be43a9b4c03c",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Recorded source baseline",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "source_baseline_hash": "d2cf4024089d3f2d50ea09ee68ec267d07fdb3875affb266ee81c3d525349d08",
+    "source_kind": "git_tree"
+  }
+}

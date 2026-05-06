@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-witnessed-positive-001",
+  "profile": "witnessed_run_recorder",
+  "trust_scope": "witnessed_run_recorder",
+  "artifact_role": "run_manifest",
+  "created_at": "2026-05-05T10:00:00Z",
+  "closed_at": "2026-05-05T10:00:03Z",
+  "event_refs": [
+    {
+      "sequence": 0,
+      "event_hash": "d7fbced6bea3700eadc42de49e77e3034a1511843c8d65bd5c9a77a045fb7cf8",
+      "uri": "events/000-run-started.json",
+      "event_type": "run_started"
+    },
+    {
+      "sequence": 1,
+      "event_hash": "2ed18c48cc3973486f28fc9d65346cd5fd0772d825cecf1248605bf89be4647c",
+      "uri": "events/001-source-baseline-recorded.json",
+      "event_type": "source_baseline_recorded"
+    },
+    {
+      "sequence": 2,
+      "event_hash": "c2427520448db57676f8799f19497e549eb4db80446ddf86d2a0e1aa2d0a7e7f",
+      "uri": "events/002-task-locked.json",
+      "event_type": "task_locked"
+    },
+    {
+      "sequence": 3,
+      "event_hash": "54c4c1b05b63a4c53825ff8c7b7349022513f1de8bc5147b6cb57c757465d5aa",
+      "uri": "events/003-run-closed.json",
+      "event_type": "run_closed"
+    }
+  ],
+  "event_chain_head": "54c4c1b05b63a4c53825ff8c7b7349022513f1de8bc5147b6cb57c757465d5aa",
+  "witness_ref": {
+    "witness_id": "fixture-local-witness",
+    "uri": "witness.json"
+  },
+  "source_summary": {
+    "source_kind": "git_tree",
+    "source_ref": "fixture:fr-witnessed-positive-001",
+    "source_baseline_hash": "822919d6a90f1b899048aa0a15ae140f9a84ace6e17077fd82d8093945919391",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "task_summary": {
+    "task_ref": "T097-witnessed-verifier-fixture",
+    "task_hash": "686687a3a5e66a4c13fea7356c6ba2b754d1f164089a887192931fd1a0b416bf",
+    "verification_state": {
+      "state": "pass"
+    }
+  },
+  "model_summary": {
+    "identity_ref": "not_assessed:model",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "No model identity event in T097 fixture."
+    }
+  },
+  "harness_summary": {
+    "identity_ref": "not_assessed:harness",
+    "verification_state": {
+      "state": "not_assessed",
+      "reason": "No harness identity event in T097 fixture."
+    }
+  },
+  "evidence_retention_summary": {
+    "retention_modes": [
+      "not_assessed"
+    ],
+    "critical_digest_only_count": 0,
+    "not_assessed_count": 2,
+    "notes": "T097 fixture covers chain and witness shape before command/test evidence slices."
+  },
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "event_chain_witnessed": {
+      "state": "pass"
+    },
+    "source_baseline_recorded": {
+      "state": "pass"
+    },
+    "task_locked": {
+      "state": "pass"
+    },
+    "late_attach_boundary_explicit": {
+      "state": "not_assessed",
+      "reason": "Full-run fixture has no late-attach boundary."
+    },
+    "model_identity_recorded": {
+      "state": "not_assessed",
+      "reason": "Slice T097 fixture does not include model identity events."
+    },
+    "command_events_bound": {
+      "state": "not_assessed",
+      "reason": "Slice T097 fixture does not include command events."
+    },
+    "file_mutations_bound": {
+      "state": "not_assessed",
+      "reason": "Slice T097 fixture does not include file mutation events."
+    },
+    "redaction_resolved": {
+      "state": "pass"
+    },
+    "run_closed": {
+      "state": "pass"
+    }
+  }
+}

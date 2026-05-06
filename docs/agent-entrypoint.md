@@ -18,12 +18,16 @@ Do not infer profile from role. Choose the profile directly from the claim you n
 
 ## Command Contract
 
-Only this command set is part of Block 08:
+Only this command set is part of the active entrypoint:
 
-- `npm run verify:baseline`
-- `npm run verify:source-bound`
-- `npm run verify:external-trust`
-- `scripts/verify.sh --profile baseline|source-bound|external-trust [--json] [--allow-dirty] [--version]`
+- `go test ./...`
+- `go run ./cmd/sdp-trace --help`
+- `go run ./cmd/sdp-trace validate-fixtures <fixture-dir>`
+- `go run ./cmd/sdp-trace wrap --name <name> -- <command...>`
+- `go run ./cmd/sdp-trace verify <run-dir>`
+- `go run ./cmd/sdp-trace explain <run-dir>`
+
+Use these as the canonical Block 10-compatible commands.
 
 Do not add aliases, new switches, or workflow-specific wrappers in this block.
 
@@ -37,23 +41,25 @@ Do not add aliases, new switches, or workflow-specific wrappers in this block.
 
 Text output is sufficient for a first-pass pass/fail look.
 
-Use `--json` when you need full verifier states, reasons, and `result` values (`pass`, `fail`, `not_assessed`, `cannot_verify`) for decisioning.
+Use verifier JSON output when you need full states, reasons, and `result`
+values (`observed`, `fail`, `not_assessed`, `cannot_verify`) for
+decisioning.
 
 ## Exit Code Contract
 
-- `0`: `pass`
+- `0`: `observed` or `not_assessed`
 - `1`: `fail`
 - `2`: usage error / invalid command invocation
 - `3`: `cannot_verify`
 
-- `pass`: verifier evidence met required checks for the selected profile.
+- `observed`: verifier evidence met required checks for the selected local profile.
 - `fail`: verifier evidence conflicted or was insufficient for one or more required checks in the selected profile.
 - `not_assessed`: state was not assessed in this run (scope omission or upstream profile blocker); it does not imply success or evidence.
 - `cannot_verify`: verifier could not execute a required check and the profile cannot be concluded from that run.
 
 A checked-in `proof-summary` JSON is an audit artifact, not authority.
 
-Authority is replayed only from live verifier output and the canonical command/state contract above.
+Authority is replayed only from live Go verifier output and the canonical command/state contract above.
 
 ## Forbidden Claims
 

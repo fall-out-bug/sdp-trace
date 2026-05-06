@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-late-attach-001",
+  "sequence": 0,
+  "event_type": "run_started",
+  "event_time": "2026-05-05T11:00:00Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "8bdc71950471ed9fbc413afac9c10ae499d15a878b51b158ec66a1efd730b341",
+  "prev_event_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "4d6029b63791f8e75dba0069b2a6a8a3ef58838d5bbd890dc2dfa6c32dd399b1",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Recorder attached after work was already in progress",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "profile": "local_development_recorder",
+    "attachment_mode": "mid_flight",
+    "operator": {
+      "id": "operator:fixture",
+      "actor_type": "human_user",
+      "display_name": "Fixture Operator"
+    },
+    "late_attach_boundary": {
+      "state": "not_assessed",
+      "boundary_time": "2026-05-05T11:00:00Z",
+      "reason": "Recorder was introduced after the run had already started.",
+      "unavailable_scope": [
+        "source_baseline_before_attach",
+        "task_state_before_attach",
+        "commands_before_attach",
+        "file_mutations_before_attach"
+      ]
+    }
+  }
+}

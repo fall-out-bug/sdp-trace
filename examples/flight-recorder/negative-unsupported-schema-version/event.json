@@ -1,0 +1,34 @@
+{
+  "schema_version": "9.9.9",
+  "run_id": "fr-negative-unsupported-schema-version",
+  "sequence": 0,
+  "event_type": "run_started",
+  "event_time": "2026-05-05T11:01:00Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "prev_event_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0",
+    "adapter": "portable-shape-fixture"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Negative schema fixture with unsupported schema_version.",
+    "trust_scope": "untrusted_shape_only",
+    "artifact_role": "negative_schema_fixture",
+    "profile": "local_development_recorder",
+    "attachment_mode": "full_run",
+    "operator": {
+      "id": "shape-fixture-operator",
+      "actor_type": "human_user"
+    }
+  }
+}

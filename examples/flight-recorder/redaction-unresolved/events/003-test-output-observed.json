@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-redaction-unresolved-001",
+  "sequence": 3,
+  "event_type": "test_output_observed",
+  "event_time": "2026-05-05T11:20:10Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "2e7553614039beab907b8ff13287df416a2fae9ff6ea4848f628aecb73e26bca",
+  "prev_event_hash": "31517dd85b7a4b353051858e78de1ad3329a0363af98de1a6295dcf597c7cf1f",
+  "event_hash": "931798f7246aa2a90f21156b536f65fb9db26a46b74ab39bfb59e97bbfe934c1",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "cannot_verify",
+    "reason": "Output may contain secret material and no redaction authority is recorded."
+  },
+  "event_payload": {
+    "summary": "Observed test output with unresolved redaction",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "test_command_id": "cmd-test",
+    "output_retention": {
+      "mode": "sanitized_excerpt",
+      "excerpt": "[withheld]",
+      "digest": "284d326cbf2ae958d5734f8b368e021815d9881486a2e2f2b513ba7edb3d6921"
+    },
+    "forensic_importance": "critical"
+  }
+}

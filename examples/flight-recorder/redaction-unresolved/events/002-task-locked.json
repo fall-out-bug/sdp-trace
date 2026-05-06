@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-redaction-unresolved-001",
+  "sequence": 2,
+  "event_type": "task_locked",
+  "event_time": "2026-05-05T11:20:02Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "773660ef431926435051a05ac53bf2650250419d8aa72da155bfcd6ab5deb601",
+  "prev_event_hash": "407fe2bb4d3fed173073e8eababdcac15d0cc82b735e81cebd8c3f378f925cf7",
+  "event_hash": "31517dd85b7a4b353051858e78de1ad3329a0363af98de1a6295dcf597c7cf1f",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Locked task",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "task_hash": "6e9d84ecdab536ce3d7ff6e71084118fb809d3fb550988451d111388dcdc14f4",
+    "task_ref": "T101-redaction-unresolved"
+  }
+}

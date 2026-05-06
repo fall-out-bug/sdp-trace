@@ -30,6 +30,18 @@ Every claim about a gate or verdict must be evidence-backed or marked `not_asses
 
 No opaque health scores.
 
+## Engineering Stack
+Target product code is Go.
+
+No Node.js, npm, JavaScript, TypeScript, or `.mjs` tooling is allowed in
+the active product path.
+
+Bash is allowed only as a thin command launcher when Go would add no
+product value. Any Bash kept in the active path needs an explicit reason.
+
+New implementation must follow Clean Architecture, Clean Code, TDD, and
+keep CRAP below 5 for changed Go code. Do not add TODO or FIXME markers.
+
 ## Decomposition Rule
 If `AGENTS.md` exceeds 100 lines or any module needs more than 10 skills, the module is too large, under-decomposed, or overengineered.
 
@@ -57,10 +69,16 @@ Every non-trivial implementation chunk needs:
 
 If a chunk cannot be traced or verified yet, mark the state `not_assessed` or `cannot_verify` with a concrete reason instead of closing it.
 
+## Block Intake Protocol
+When the user says "берем блок в работу", use `sdp-trace-trust-workflow`.
+First land current approved work through PR/review, then continue new block work in a fresh worktree.
+Prepare SpecKit deltas before implementation, split independent tasks to fast subagents with minimal context, and keep provenance, evidence, trace, pi review, fixes, and final PR review in the loop until no critical or major findings remain.
+
 ## pi Review Rules
 For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
 
-- Use MiniMax and ZAI/GLM for multi-file strict review.
+- Use MiniMax-M2.7 and ZAI/GLM for multi-file strict review.
+- Use MiniMax-M2.5 only for OpenCode demo development runs, not for repo review.
 - Use Kimi only for one-file micro-reviews with low/off thinking.
 - Stop and replace hung pi reviews.
 
@@ -70,11 +88,11 @@ Use `docs/claim-authoring.md` for authoritative claim syntax.
 Current Slice 1 validator intentionally accepts only narrow evidence forms. Do not introduce arbitrary `proof:*`, `state:*`, or `none` evidence unless cross-reference verification has been implemented.
 
 ## Commands
-No build is required yet.
+Block 10 active development commands must be Go-first:
 
-- Schema checks: `jq empty schema/*.json`
-- Baseline verifier: `npm run verify:baseline`
-- Dirty local structural verifier: `scripts/verify.sh --profile baseline --allow-dirty --json`
-- Source-bound verifier: `npm run verify:source-bound`
-- External-trust verifier: `npm run verify:external-trust`
-- Self-trace: `scripts/validate-self-trace.sh`
+- Go tests: `go test ./...`
+- Schema parse checks: `jq empty schema/*.json`
+- Formatting: `gofmt` for changed Go files
+
+Bash verification commands are not product architecture. Keep them only
+when they are thin launchers around Go commands or external tools.

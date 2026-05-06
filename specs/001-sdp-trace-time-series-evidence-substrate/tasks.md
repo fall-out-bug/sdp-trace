@@ -215,6 +215,29 @@
 
 **Checkpoint**: Agents and humans can independently discover how to use `sdp-trace`, and both paths converge on the same verifier-derived proof states.
 
+## Phase 9: Flight Recorder Trust Kernel (Before External Demo)
+
+**Goal**: Make `sdp-trace` a credible flight recorder for agentic development before using the Feature Flag / Entitlements Kotlin+Bazel demo to stress the mechanics.
+
+**Independent Test**: A repository observer can validate committed flight-recorder fixtures showing local chain validity, witnessed chain validity, tamper detection, late-attach gaps, requirement supersession, redaction states, and reviewer query output without relying on a demo repo.
+
+**Activation Gate**: Do not start a new external Feature Flag / Entitlements demo until Block 09 has a recorder kernel that distinguishes local consistency from witnessed accountability evidence.
+
+- [x] T093 [US4] Add Block 09 design artifact for the flight-recorder trust kernel, including threat model, local/witnessed/external profile split, event-chain requirements, redaction model, verifier semantics, and query surface
+- [x] T094 [US4] Add Block 09 Socratic review synthesis with executive-role findings and explicit dispositions for local-only chain, mid-flight attach, bypass, redaction, digest-only evidence, and query-surface risks
+- [x] T095 [US4] Add Block 09 implementation plan sliced for agent handoff before any demo-repo work starts
+- [x] T096 [US4] Add Block 09 review ledger and close or explicitly block every critical/major spec-gate finding before implementation begins
+- [x] T097 [US4] Add flight-recorder event, run, and witness schemas plus positive/negative fixtures
+- [x] T098 [US4] Implement local chain verifier with mutation, deletion, and reordering negative tests
+- [x] T099 [US4] Implement witnessed-run verifier with missing/mismatched witness negative tests
+- [x] T100 [US4] Implement late-attach and requirement-supersession fixtures and verifier behavior
+- [x] T101 [US4] Implement evidence-retention and redaction-state fixtures plus verifier behavior
+- [x] T102 [US4] Implement reviewer query surface for run summary, provenance, gaps, requirements, commands, file mutations, tests, redactions, and witness state
+- [x] T103 [US4] Wire committed Block 09 fixture validation into repository validation after verifier behavior exists
+- [x] T104 [US4] Run strict implementation review for Block 09 and record every valid finding before activating the external Feature Flag / Entitlements demo
+
+**Checkpoint**: `sdp-trace` can prove recorder-chain integrity and witness agreement for committed fixtures, while clearly marking local-only, late-attach, redaction, and unavailable evidence limits.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -228,6 +251,7 @@
 - **Phase 6A**: Depends on Phase 6 run-card design and must prove one real OpenCode + MiniMax + Kotlin+Bazel slice before any product packaging or pilot-readiness claim.
 - **Phase 7**: Depends on schema and pilot artifacts from Phases 3-6.
 - **Phase 8**: Depends on Block 07 live verifier outcome. It must not mask missing trust evidence with onboarding or documentation polish.
+- **Phase 9**: Depends on Block 08 discovery and executive Socratic review. It must land the recorder trust kernel before any new external demo-repo execution; the demo is a stress test, not the place to invent trust mechanics.
 
 ### Parallel Opportunities
 
@@ -255,6 +279,7 @@
 7. Complete Self-Attested Contract Release tasks T057-T061 or explicitly record external attestation as `not_assessed`.
 8. Complete Block 05 run-cards without claiming observed behavior.
 9. Complete Block 06 for OpenCode + MiniMax + Kotlin+Bazel before product packaging or pilot-readiness claims.
+10. Complete Block 09 flight-recorder trust kernel before starting a new Feature Flag / Entitlements external demo.
 
 ### Evidence Discipline
 

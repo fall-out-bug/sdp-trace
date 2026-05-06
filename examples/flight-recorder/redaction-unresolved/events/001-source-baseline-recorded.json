@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-redaction-unresolved-001",
+  "sequence": 1,
+  "event_type": "source_baseline_recorded",
+  "event_time": "2026-05-05T11:20:01Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "e9a6aad340ea18645393ee72e57508c00176cde2017408a1a44f41df28e32a74",
+  "prev_event_hash": "6ff09d6a664b4c894eb590af98743fc3cac7ad93aa197ebeb8de715e73f92e22",
+  "event_hash": "407fe2bb4d3fed173073e8eababdcac15d0cc82b735e81cebd8c3f378f925cf7",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Recorded source baseline",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "source_baseline_hash": "8646f82c4ccb0e860a866558a47ae85873427728b6eb4a4f15fa4e64ee365531",
+    "source_kind": "git_tree"
+  }
+}

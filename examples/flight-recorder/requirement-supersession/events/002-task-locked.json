@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 2,
+  "event_type": "task_locked",
+  "event_time": "2026-05-05T11:10:02Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "b41512d39dc1fb7ede0df0c90386872c78405bc7d2f0a6de11b155270cdcf2c3",
+  "prev_event_hash": "1b10bd223cb8c6072dbda0fdf0d13ef66c69d1a3116cee9f91e2be43a9b4c03c",
+  "event_hash": "5892439210f2b459c3db517883aa1de7604bbf55c3b8a61c88519d13bf42643b",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Locked original requirement before command evidence",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "task_hash": "c62373176025d15197fa5bbf2a723631ff3c7f904b1a1b51b9f3c25fec696587",
+    "task_ref": "T100-requirement-supersession-original"
+  }
+}

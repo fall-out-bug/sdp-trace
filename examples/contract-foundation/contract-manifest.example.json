@@ -36,6 +36,18 @@
       "schema_version": "0.1.0"
     },
     {
+      "schema_id": "https://schemas.sdp.dev/trace/flight-recorder-event.schema.json",
+      "schema_version": "1.0.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/flight-recorder-run.schema.json",
+      "schema_version": "1.0.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/flight-recorder-witness.schema.json",
+      "schema_version": "1.0.0"
+    },
+    {
       "schema_id": "https://schemas.sdp.dev/trace/metric-stream.schema.json",
       "schema_version": "0.1.0"
     },
@@ -87,6 +99,11 @@
       "sha256": "195c1db7e6509de7d79d5f4a0cf901e2b5c285c0f7d1c251ac764de72f7bd57a"
     },
     {
+      "path": "docs/flight-recorder.md",
+      "kind": "doc",
+      "sha256": "b4572c70ff3dee2c06469e5063caa5575c58e1e265024c65d6edb6d6170e2256"
+    },
+    {
       "path": "docs/harness-compatibility-matrix.md",
       "kind": "compatibility_note",
       "sha256": "a181ec960dac654ceee42eef02f96b975c2e53d677c3b2fc27faaa6295a2f212"
@@ -115,6 +132,11 @@
       "path": "docs/research/kotlin-bazel-fixture-plan.md",
       "kind": "doc",
       "sha256": "0ba0a00d7f6c9afb90cff54c436e7bd5a18f1f5f54496c7346c2ac224a2ad3c2"
+    },
+    {
+      "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
+      "kind": "doc",
+      "sha256": "13813af07a7d50334a076eb7f620a2331037bb1aa4e75b2ce9853b475d54553b"
     },
     {
       "path": "docs/research/opencode-model-run-card.md",
@@ -184,7 +206,7 @@
     {
       "path": "examples/contract-foundation/positive-assessment-input.json",
       "kind": "fixture",
-      "sha256": "c7fd277e256f6c66b9209c29943f2f90f68250abd77c2e9f911edcd9a1bc0197"
+      "sha256": "2acd15dc2fd75b47fc6afddb4af5e448734429133c8dbc3edd805f2111743ab1"
     },
     {
       "path": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
@@ -200,6 +222,236 @@
       "path": "examples/contract-foundation/trusted-identity-policy.example.json",
       "kind": "fixture",
       "sha256": "b5973baa6c343ba2e4d56e285b9dc0a96dc6babc0fd47fb0d51f36b8fc5ec007"
+    },
+    {
+      "path": "examples/flight-recorder/forensic-digest-only-negative/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "65274693edf45a76980026c030e8c8762b99d0d186ec769189e8f98b4dc3b3ab"
+    },
+    {
+      "path": "examples/flight-recorder/forensic-digest-only-negative/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "52aa0ec7b16c29ad8d1646789a9c48cd698331c39cdf4d82002012cb0c867959"
+    },
+    {
+      "path": "examples/flight-recorder/forensic-digest-only-negative/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "8eae90cbf820a205c560e616391bd5b36936d665d0edd40149175ab2ffb087fe"
+    },
+    {
+      "path": "examples/flight-recorder/forensic-digest-only-negative/events/003-test-output-observed.json",
+      "kind": "fixture",
+      "sha256": "fe2b84e6c691936a79237655ae619792024ee3c8b7494edd7c23f22ca14982da"
+    },
+    {
+      "path": "examples/flight-recorder/forensic-digest-only-negative/events/004-run-closed.json",
+      "kind": "fixture",
+      "sha256": "5b8779ad5e4f1b8362c2ab535828047a11eff9aee8bc2bfdac85fd822b4f577d"
+    },
+    {
+      "path": "examples/flight-recorder/forensic-digest-only-negative/run.json",
+      "kind": "fixture",
+      "sha256": "d5792e0484bfc6dd846236f61042efa9ae540539cf007884e67e8bb95ab5ee47"
+    },
+    {
+      "path": "examples/flight-recorder/late-attach/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "c6809826479065e6a2c94777495ab1cc7b05325da23a9198c2ad4ae9a63ed7cd"
+    },
+    {
+      "path": "examples/flight-recorder/late-attach/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "07ab9035c005acaab6a87a427ff9222cfcf21678056f755bef6925f270fa568a"
+    },
+    {
+      "path": "examples/flight-recorder/late-attach/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "08b50ec37b1391d68e4037ff77fa8e44d7ca10c34769fe693906236fbe7e6272"
+    },
+    {
+      "path": "examples/flight-recorder/late-attach/events/003-run-closed.json",
+      "kind": "fixture",
+      "sha256": "202c21cc62afe5ac862e7fab856cde2ec9f2229e4c8b701919042ce8645b816b"
+    },
+    {
+      "path": "examples/flight-recorder/late-attach/run.json",
+      "kind": "fixture",
+      "sha256": "314ffea1dfd963c165e297539d41dd44d9379c651f61c2af1e9ff2815d6cad05"
+    },
+    {
+      "path": "examples/flight-recorder/local-positive/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "8588201c48ac516a7cf3f0aa081794111ac293999e31b1629a3d004fae7378a2"
+    },
+    {
+      "path": "examples/flight-recorder/local-positive/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "e2f894101964b06e3f9d88348df0b976146549e1d0af6141f999e181b09d5fbf"
+    },
+    {
+      "path": "examples/flight-recorder/local-positive/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "5c3c4cfbd66060a1d8924e02c93de2a189955d909b4d57b3d25283e2bf63f35a"
+    },
+    {
+      "path": "examples/flight-recorder/local-positive/events/003-run-closed.json",
+      "kind": "fixture",
+      "sha256": "630579b3c6b5b0de2521a3ecd0335da4000bc63c4f236f5ed51db7c6c3a126df"
+    },
+    {
+      "path": "examples/flight-recorder/local-positive/run.json",
+      "kind": "fixture",
+      "sha256": "98a185491ca709455851cbbeec1acfe42aa52085f62fad974d21ee81f6245e61"
+    },
+    {
+      "path": "examples/flight-recorder/negative-mismatched-event-hash/event.json",
+      "kind": "fixture",
+      "sha256": "ae8b2773549218709c97cfc09cdfdffae7c49e3f3b332c63737efdd8ecc06ec3"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-prev-event-hash/event.json",
+      "kind": "fixture",
+      "sha256": "614acd246f488a6664feb3f8db6f62a5d8ee94db808896f0bbea443fbdcbd43b"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-witness-material/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "5b5373b575c53b1cd9950820d892ca7681b68efc2cd0e55b8a4725edc9659f09"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-witness-material/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "0e9712ca426322ca984fb3294091107f4e17f8e94d8075a5d68e284a522fad9b"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-witness-material/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "e7cafc4da0b56121046f0c4661255748029061b1b1450bb2c5aa2ed36b917258"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-witness-material/events/003-run-closed.json",
+      "kind": "fixture",
+      "sha256": "d7e9afea3ecc79b47509e2fef607a1f55fe0303b8d4b81c92d4501281e873c11"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-witness-material/run.json",
+      "kind": "fixture",
+      "sha256": "085d496b7afceebc948ba85f22faa6626487e74a80e49ce9a38f36458f58d930"
+    },
+    {
+      "path": "examples/flight-recorder/negative-missing-witness/run.json",
+      "kind": "fixture",
+      "sha256": "f09107a3941eb72d9df257a2aab3da59a1accde0f1850c7d515300ccd39ba237"
+    },
+    {
+      "path": "examples/flight-recorder/negative-unsupported-schema-version/event.json",
+      "kind": "fixture",
+      "sha256": "86be455eb751b5b739f3e5535e70d084da447a8c0e5e0c8733ee6f03febdd419"
+    },
+    {
+      "path": "examples/flight-recorder/negative-witness-chain-head-mismatch/witness.json",
+      "kind": "fixture",
+      "sha256": "1868fef04c4ebe75856df56f69fe9ebc4a8c21733e9e7b9ace3b8524488d9012"
+    },
+    {
+      "path": "examples/flight-recorder/redaction-unresolved/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "5996e8d80b80fb2f8c6d024453f72a88fbfe96fb74d09b9290e7c56b56bde847"
+    },
+    {
+      "path": "examples/flight-recorder/redaction-unresolved/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "51e9ebe80f09ff190c7de4833ffbbe8107040a306f83315a2f69289c7b882e1b"
+    },
+    {
+      "path": "examples/flight-recorder/redaction-unresolved/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "acf7729c96c3ed263f72ccb025ad0bf644d26b9e3ea349a8e75f16cc5033d4df"
+    },
+    {
+      "path": "examples/flight-recorder/redaction-unresolved/events/003-test-output-observed.json",
+      "kind": "fixture",
+      "sha256": "62da8082771bfd205cb17fe7971680775cde92169172f41ef34abbca9e8c3602"
+    },
+    {
+      "path": "examples/flight-recorder/redaction-unresolved/events/004-run-closed.json",
+      "kind": "fixture",
+      "sha256": "caf0d3795f7f7e99c638db34250945a1dbd15d364b1560a99a53981fea5e8dbb"
+    },
+    {
+      "path": "examples/flight-recorder/redaction-unresolved/run.json",
+      "kind": "fixture",
+      "sha256": "112c956193b2c651132d9f758e8f56963718048795f82ce88948c373763082f6"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "e518caed38f789222a1e3440065af1ab86ad0b0a05094995b057ffc52597326c"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "774b395bbdbac90baa007376258f59700ddb56781dbd3be1909b7483df0c05f4"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "75e102abeab21c898eaf3fe384780d360e6331aaa81bfd4ab4e18a2986acf4c0"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/003-command-started.json",
+      "kind": "fixture",
+      "sha256": "2d8ed062d9a14377c37ac500a54e00b73b9857e4bcb6b26b55304f8e3f3e5c5a"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/004-requirement-superseded.json",
+      "kind": "fixture",
+      "sha256": "a25ad0f1b66fe54c65149b7d36ccec5170cef6c60b6de8fd7924286e640382be"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/005-command-started.json",
+      "kind": "fixture",
+      "sha256": "29859dc603e6168856cb8e756033b0f9f2612430c6ba0bf5e77e0cfcc73704f0"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/events/006-run-closed.json",
+      "kind": "fixture",
+      "sha256": "961cf1f31707e4ad519ab5045713d616129d1fd653d58fc745d83f2ced59eb33"
+    },
+    {
+      "path": "examples/flight-recorder/requirement-supersession/run.json",
+      "kind": "fixture",
+      "sha256": "060a6b9cada7c6d538853ce2cbfaf7c685774504c2458608bc0994dd3db694df"
+    },
+    {
+      "path": "examples/flight-recorder/witnessed-positive/events/000-run-started.json",
+      "kind": "fixture",
+      "sha256": "5b5373b575c53b1cd9950820d892ca7681b68efc2cd0e55b8a4725edc9659f09"
+    },
+    {
+      "path": "examples/flight-recorder/witnessed-positive/events/001-source-baseline-recorded.json",
+      "kind": "fixture",
+      "sha256": "0e9712ca426322ca984fb3294091107f4e17f8e94d8075a5d68e284a522fad9b"
+    },
+    {
+      "path": "examples/flight-recorder/witnessed-positive/events/002-task-locked.json",
+      "kind": "fixture",
+      "sha256": "e7cafc4da0b56121046f0c4661255748029061b1b1450bb2c5aa2ed36b917258"
+    },
+    {
+      "path": "examples/flight-recorder/witnessed-positive/events/003-run-closed.json",
+      "kind": "fixture",
+      "sha256": "d7e9afea3ecc79b47509e2fef607a1f55fe0303b8d4b81c92d4501281e873c11"
+    },
+    {
+      "path": "examples/flight-recorder/witnessed-positive/run.json",
+      "kind": "fixture",
+      "sha256": "bdad7d8da07949b03728280dd88483aa1ca087fd70cb3a08d009464a394631d4"
+    },
+    {
+      "path": "examples/flight-recorder/witnessed-positive/witness.json",
+      "kind": "fixture",
+      "sha256": "5354858cef9fc3353af77b935541db02c36bd2fdbee3a704e16ee2524d59c655"
     },
     {
       "path": "examples/github-speckit/trace.json",
@@ -227,6 +479,71 @@
       "sha256": "e1120b5442b50f35f2e687684f4555cfc986d0a8378ac9ccaee1c51c81032273"
     },
     {
+      "path": "examples/pilot-fixtures/kotlin-bazel-service/MODULE.bazel",
+      "kind": "fixture",
+      "sha256": "b0d7c78060dc50d9aeba514e968bf84ff2ceb2362aff0eb6890ec8d48321c016"
+    },
+    {
+      "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/BUILD.bazel",
+      "kind": "fixture",
+      "sha256": "a1a3ea84601a5897ab6b382eac3e18bda6a0a797690130cbf30000d5af8190a8"
+    },
+    {
+      "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/Hello.kt",
+      "kind": "fixture",
+      "sha256": "9aff584dc92a33627445c05cbd7c92cd822292170090a2a81092213a6fb70670"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
+      "kind": "fixture",
+      "sha256": "b6eec483007e94194f7329049add0ff6ea05f8307bf88cc5c26d1a610a5db9b7"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/metric-stream.json",
+      "kind": "fixture",
+      "sha256": "cce153a34c9c0671ca52b9ed972d26fce7e97559e184b1edfb5dcd49de69feb6"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/observations.json",
+      "kind": "fixture",
+      "sha256": "6ed49eb6764d9ad214f8ef20906643ba92d6dc2ffadaaccf507949d04dea1f79"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/proof-states.json",
+      "kind": "fixture",
+      "sha256": "edd58fd24fed1428b60570e73b087e0807b9281e7502b67f10c1e91d1ef9823f"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/provenance-records.json",
+      "kind": "fixture",
+      "sha256": "4662f5075818156b16ccbab86933d3f244857efe447f14d5d40b866f73ef7bda"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/trace-snapshot.json",
+      "kind": "fixture",
+      "sha256": "5485b2c7600e20a4ad37ba012a0553179283ef398e40dba9d07502654e209b6e"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json",
+      "kind": "fixture",
+      "sha256": "e48cfdfacfeab3bae8c0d2c52efc3e1b39b3fb4564a5d007b6c6f670db0b40ad"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
+      "kind": "fixture",
+      "sha256": "9e540f7dc6dcf6ba350a90ee6514e0cfcd9cf3510d701915333b386ac04aabfa"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
+      "kind": "fixture",
+      "sha256": "4892b8a6dc320e2a80bffa5398e4e525972dd514155c2635d5655b5c9b620773"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/run-report.md",
+      "kind": "fixture",
+      "sha256": "af973e3efc4f9ea5c3d131b8d94ad3673702f59451cfd18a017de0a057db4d52"
+    },
+    {
       "path": "package-lock.json",
       "kind": "validation_script",
       "sha256": "98c5924aafbd83ca39b1699696e13f148a949352c1e881cc6f94e71b0964079f"
@@ -234,7 +551,7 @@
     {
       "path": "package.json",
       "kind": "validation_script",
-      "sha256": "1ed64eed9d53f956a0055891ad78f97827dfc23f54d72384ca257630468f2e56"
+      "sha256": "3b39053bd79adbf859099f44c3cfa50b67325fe69cc32e4f2a2f5e9c27566e30"
     },
     {
       "path": "README.md",
@@ -287,6 +604,21 @@
       "sha256": "062f89b7e6a7e02efc62e742642c3b9e43bdcf3afac661af94ac46ea3fbe9edd"
     },
     {
+      "path": "schema/flight-recorder-event.schema.json",
+      "kind": "schema",
+      "sha256": "6103345fd71ef6883f055db8bfbb8f870d593c496fc40788d4fbcca5f3d4b541"
+    },
+    {
+      "path": "schema/flight-recorder-run.schema.json",
+      "kind": "schema",
+      "sha256": "acfaa811d261506010b654ff3395c97293f8cd59112531bceb5a4b100cfbb3f5"
+    },
+    {
+      "path": "schema/flight-recorder-witness.schema.json",
+      "kind": "schema",
+      "sha256": "0260c2734f3e21d2d05ab3dae7911ca39aa6afda09dd0eccd9cd51b48e97853e"
+    },
+    {
       "path": "schema/gate-verdict.schema.json",
       "kind": "schema",
       "sha256": "226f261e7e4d4256ade2fdebd3f6b250fa956ca77992a17f7ef35a808b713a28"
@@ -309,7 +641,7 @@
     {
       "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "e03da1ae8cfc52f7ac03d91eeeb231e3f2ba6302df5ca237b3c79864bb52cda8"
+      "sha256": "86d13a7bd3debb51a837bab8910d8accd89035feafa454ae012e00393e765cd4"
     },
     {
       "path": "schema/risk-classification.schema.json",
@@ -347,9 +679,39 @@
       "sha256": "555333ab03828371c143bd60e99143ff3565d7962e9981d755fa7912ac66530a"
     },
     {
+      "path": "scripts/query-flight-recorder.mjs",
+      "kind": "validation_script",
+      "sha256": "b3ece859d34b475c4ab40ea471823979ea8ce1b8b4ef49cc3d8789d949ed17f6"
+    },
+    {
+      "path": "scripts/run-opencode-minimax-kotlin-bazel-proof.sh",
+      "kind": "validation_script",
+      "sha256": "454fed35176499d3ec4052b828d6dc18e2b66010aa0b7836c952f1776c056287"
+    },
+    {
+      "path": "scripts/test-e2e-pilot-package.sh",
+      "kind": "validation_script",
+      "sha256": "0ce39c9f0dedc9bbe776a0bbf651385d603f089c694959f254c3e8cec3e45ee3"
+    },
+    {
+      "path": "scripts/test-e2e-runner.sh",
+      "kind": "validation_script",
+      "sha256": "1cefe5a6f0bdced49a60d17fe99a922b0dff468e24ae3e918b4a9519339207cc"
+    },
+    {
+      "path": "scripts/test-flight-recorder.sh",
+      "kind": "validation_script",
+      "sha256": "d1aed1f65eb5d0c2898eab94b8a4181da4f382cf53701873876292bdb1a9b443"
+    },
+    {
       "path": "scripts/validate-contracts.sh",
       "kind": "validation_script",
-      "sha256": "d8b3db196eabf30d2296cbec0be8cd7169a950a848a2f0407e77e80bf5e253c2"
+      "sha256": "00e0a2e515feec5f0b8f3a87e942ea316b946e120d3628b77f4900623456cef0"
+    },
+    {
+      "path": "scripts/validate-e2e-pilot-package.sh",
+      "kind": "validation_script",
+      "sha256": "0344e21328e5d5729ce28cf0ad8010a693fecadb6dff3ef247f28d87495da796"
     },
     {
       "path": "scripts/validate-json-schema.mjs",
@@ -375,6 +737,11 @@
       "path": "scripts/verify-contract-manifest.sh",
       "kind": "validation_script",
       "sha256": "652f25b807bd5f99f75eb092f2f4edd5724928ceefd1866844eff533efb51fbe"
+    },
+    {
+      "path": "scripts/verify-flight-recorder.mjs",
+      "kind": "validation_script",
+      "sha256": "755f685584a97c887a6680b0b176eb8f257d3b41a2e8cf2305ba3e11de53330a"
     },
     {
       "path": "scripts/verify-release-signature.sh",
@@ -457,6 +824,46 @@
       "sha256": "f73260e768fe3555b387c1ad25c800fec78998cb7ec04260ff40bdb58697e110"
     },
     {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
+      "kind": "doc",
+      "sha256": "2a0f54ea9ba88b3d3790b09a17bb01750bb8d3f37b63875dbb8db3afeb6b904d"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-implementation-plan.md",
+      "kind": "doc",
+      "sha256": "4975437cfabd7042774d79f402bcd62f817d95a155f58bdbbd799a105e15967b"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
+      "kind": "doc",
+      "sha256": "f6f538e87226fcf403d0a51c2cb43960b96de0c98c1fa4d82e276bb8b0ca0cda"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
+      "kind": "doc",
+      "sha256": "89a5a5f45b9170b5339562fabc08fae2f47153033ee5280575145fa00c480a77"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-implementation-plan.md",
+      "kind": "doc",
+      "sha256": "4bb97fea16451c0cf833dfc00ad2d0aff9dacf5c175ece36581b482bf1324567"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-review-ledger.md",
+      "kind": "doc",
+      "sha256": "344a03a4a47bad51094dbd935c5b940b745adf081b4d8dfff77cd57b4c7c85d8"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-socratic.md",
+      "kind": "doc",
+      "sha256": "0a1d5a3883c4fe3df985b923d278eb8f180a2b87314d5a78a5e896c2a9e520a3"
+    },
+    {
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-trust-kernel.md",
+      "kind": "doc",
+      "sha256": "11fd6bf8b1cb1b45edd0c0511f4d1da97088f8216a11de7deaef139a35dbd572"
+    },
+    {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/blocks-01-03-final-review-fixes.json",
       "kind": "doc",
       "sha256": "2e081de7f28972e0bc8be529b683eef3534edf02472d2640e91f1ff1a44bb88e"
@@ -489,125 +896,15 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
       "kind": "doc",
-      "sha256": "2cf702cc18fe000259c5c6774ec2555589dcf3e42849c9b22109bdaa76cc7674"
+      "sha256": "b5b8b7bdfc2895a20512cd8335399d87dbef1b3cd68a041587211c034fc2a2a4"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "f6ff10f64e3ed6d6b8bbb09e002892a7007b3cb9708660da8ab5a6ca72407401"
-    },
-    {
-      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
-      "kind": "doc",
-      "sha256": "2a0f54ea9ba88b3d3790b09a17bb01750bb8d3f37b63875dbb8db3afeb6b904d"
-    },
-    {
-      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
-      "kind": "doc",
-      "sha256": "89a5a5f45b9170b5339562fabc08fae2f47153033ee5280575145fa00c480a77"
-    },
-    {
-      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-implementation-plan.md",
-      "kind": "doc",
-      "sha256": "4975437cfabd7042774d79f402bcd62f817d95a155f58bdbbd799a105e15967b"
-    },
-    {
-      "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
-      "kind": "doc",
-      "sha256": "f6f538e87226fcf403d0a51c2cb43960b96de0c98c1fa4d82e276bb8b0ca0cda"
-    },
-    {
-      "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
-      "kind": "doc",
-      "sha256": "13813af07a7d50334a076eb7f620a2331037bb1aa4e75b2ce9853b475d54553b"
-    },
-    {
-      "path": "scripts/run-opencode-minimax-kotlin-bazel-proof.sh",
-      "kind": "validation_script",
-      "sha256": "454fed35176499d3ec4052b828d6dc18e2b66010aa0b7836c952f1776c056287"
-    },
-    {
-      "path": "scripts/validate-e2e-pilot-package.sh",
-      "kind": "validation_script",
-      "sha256": "0344e21328e5d5729ce28cf0ad8010a693fecadb6dff3ef247f28d87495da796"
-    },
-    {
-      "path": "scripts/test-e2e-pilot-package.sh",
-      "kind": "validation_script",
-      "sha256": "0ce39c9f0dedc9bbe776a0bbf651385d603f089c694959f254c3e8cec3e45ee3"
-    },
-    {
-      "path": "scripts/test-e2e-runner.sh",
-      "kind": "validation_script",
-      "sha256": "1cefe5a6f0bdced49a60d17fe99a922b0dff468e24ae3e918b4a9519339207cc"
-    },
-    {
-      "path": "examples/pilot-fixtures/kotlin-bazel-service/MODULE.bazel",
-      "kind": "fixture",
-      "sha256": "b0d7c78060dc50d9aeba514e968bf84ff2ceb2362aff0eb6890ec8d48321c016"
-    },
-    {
-      "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/BUILD.bazel",
-      "kind": "fixture",
-      "sha256": "a1a3ea84601a5897ab6b382eac3e18bda6a0a797690130cbf30000d5af8190a8"
-    },
-    {
-      "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/Hello.kt",
-      "kind": "fixture",
-      "sha256": "9aff584dc92a33627445c05cbd7c92cd822292170090a2a81092213a6fb70670"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
-      "kind": "fixture",
-      "sha256": "9e540f7dc6dcf6ba350a90ee6514e0cfcd9cf3510d701915333b386ac04aabfa"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/run-report.md",
-      "kind": "fixture",
-      "sha256": "af973e3efc4f9ea5c3d131b8d94ad3673702f59451cfd18a017de0a057db4d52"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
-      "kind": "fixture",
-      "sha256": "4892b8a6dc320e2a80bffa5398e4e525972dd514155c2635d5655b5c9b620773"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/proof-states.json",
-      "kind": "fixture",
-      "sha256": "edd58fd24fed1428b60570e73b087e0807b9281e7502b67f10c1e91d1ef9823f"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
-      "kind": "fixture",
-      "sha256": "b6eec483007e94194f7329049add0ff6ea05f8307bf88cc5c26d1a610a5db9b7"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/provenance-records.json",
-      "kind": "fixture",
-      "sha256": "4662f5075818156b16ccbab86933d3f244857efe447f14d5d40b866f73ef7bda"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/observations.json",
-      "kind": "fixture",
-      "sha256": "6ed49eb6764d9ad214f8ef20906643ba92d6dc2ffadaaccf507949d04dea1f79"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/metric-stream.json",
-      "kind": "fixture",
-      "sha256": "cce153a34c9c0671ca52b9ed972d26fce7e97559e184b1edfb5dcd49de69feb6"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/trace-snapshot.json",
-      "kind": "fixture",
-      "sha256": "5485b2c7600e20a4ad37ba012a0553179283ef398e40dba9d07502654e209b6e"
-    },
-    {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json",
-      "kind": "fixture",
-      "sha256": "e48cfdfacfeab3bae8c0d2c52efc3e1b39b3fb4564a5d007b6c6f670db0b40ad"
+      "sha256": "5b65aa2cef2768c612ea453c912a75f585d715747b44f7df74c3f4d0bcb17c1c"
     }
   ],
-  "source_commit": "c44a887a2de1a912d9b0fb1057b5e539c71e7bc6",
+  "source_commit": "b000c116de39fbabdd4b2e195cc7913a0b97ab0e",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",

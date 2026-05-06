@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-witnessed-positive-001",
+  "source_baseline_hash": "822919d6a90f1b899048aa0a15ae140f9a84ace6e17077fd82d8093945919391",
+  "task_hash": "686687a3a5e66a4c13fea7356c6ba2b754d1f164089a887192931fd1a0b416bf",
+  "recorder_version": "0.9.0",
+  "chain_head": "82372ce33ac1ce8520d2b013b2cad6588dc645232796e2b1509a87d44afb31fb",
+  "witness_time": "2026-05-05T10:00:04Z",
+  "witness_scope": "local_file_witness",
+  "profile": "witnessed_run_recorder",
+  "digest_algorithm": "sha256",
+  "artifact_role": "negative_verifier_fixture",
+  "trust_scope": "witnessed_run_recorder",
+  "witness_identity": {
+    "witness_id": "fixture-local-witness",
+    "uri": "file://examples/flight-recorder/negative-witness-chain-head-mismatch/witness.json",
+    "controlled_by_recorded_agent": true
+  },
+  "notes": "Schema-valid verifier-negative witness with a chain head that does not match run.json."
+}

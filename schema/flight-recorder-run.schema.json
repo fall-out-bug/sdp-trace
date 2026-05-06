@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/flight-recorder-run.schema.json",
+  "title": "SDP Trace Flight Recorder Run Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "profile",
+    "trust_scope",
+    "artifact_role",
+    "created_at",
+    "source_summary",
+    "task_summary",
+    "model_summary",
+    "harness_summary",
+    "evidence_retention_summary",
+    "verifier_states"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "run_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "profile": { "$ref": "#/$defs/recorderProfile" },
+    "trust_scope": { "$ref": "#/$defs/trustScope" },
+    "artifact_role": { "$ref": "#/$defs/artifactRole" },
+    "created_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "closed_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "event_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/eventRef" }
+    },
+    "event_chain_head": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "witness_ref": { "$ref": "#/$defs/witnessRef" },
+    "source_summary": {
+      "type": "object",
+      "required": ["source_kind", "source_baseline_hash", "verification_state"],
+      "properties": {
+        "source_kind": { "enum": ["git_commit", "git_tree", "directory_snapshot", "not_assessed"] },
+        "source_ref": { "type": "string" },
+        "source_baseline_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "verification_state": { "$ref": "#/$defs/verifierState" }
+      },
+      "additionalProperties": false
+    },
+    "task_summary": {
+      "type": "object",
+      "required": ["task_ref", "task_hash", "verification_state"],
+      "properties": {
+        "task_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "task_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "verification_state": { "$ref": "#/$defs/verifierState" },
+        "expectation_hashes": {
+          "type": "array",
+          "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "model_summary": { "$ref": "#/$defs/identitySummary" },
+    "harness_summary": { "$ref": "#/$defs/identitySummary" },
+    "evidence_retention_summary": {
+      "type": "object",
+      "required": ["retention_modes", "critical_digest_only_count", "not_assessed_count"],
+      "properties": {
+        "retention_modes": {
+          "type": "array",
+          "items": {
+            "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+          },
+          "uniqueItems": true
+        },
+        "critical_digest_only_count": { "type": "integer", "minimum": 0 },
+        "not_assessed_count": { "type": "integer", "minimum": 0 },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "verifier_states": {
+      "type": "object",
+      "required": [
+        "event_chain_structurally_valid",
+        "event_chain_witnessed",
+        "source_baseline_recorded",
+        "task_locked",
+        "late_attach_boundary_explicit",
+        "model_identity_recorded",
+        "command_events_bound",
+        "file_mutations_bound",
+        "redaction_resolved",
+        "run_closed"
+      ],
+      "properties": {
+        "event_chain_structurally_valid": { "$ref": "#/$defs/verifierState" },
+        "event_chain_witnessed": { "$ref": "#/$defs/verifierState" },
+        "source_baseline_recorded": { "$ref": "#/$defs/verifierState" },
+        "task_locked": { "$ref": "#/$defs/verifierState" },
+        "late_attach_boundary_explicit": { "$ref": "#/$defs/verifierState" },
+        "model_identity_recorded": { "$ref": "#/$defs/verifierState" },
+        "command_events_bound": { "$ref": "#/$defs/verifierState" },
+        "file_mutations_bound": { "$ref": "#/$defs/verifierState" },
+        "redaction_resolved": { "$ref": "#/$defs/verifierState" },
+        "run_closed": { "$ref": "#/$defs/verifierState" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "anyOf": [
+    { "required": ["event_refs"] },
+    { "required": ["event_chain_head"] }
+  ],
+  "allOf": [
+    {
+      "if": { "properties": { "profile": { "const": "witnessed_run_recorder" } }, "required": ["profile"] },
+      "then": { "required": ["witness_ref", "event_chain_head"] }
+    },
+    {
+      "if": { "properties": { "profile": { "const": "externally_witnessed_run" } }, "required": ["profile"] },
+      "then": { "required": ["witness_ref", "event_chain_head"] }
+    }
+  ],
+  "$defs": {
+    "recorderProfile": {
+      "type": "string",
+      "enum": ["local_development_recorder", "witnessed_run_recorder", "externally_witnessed_run"]
+    },
+    "trustScope": {
+      "type": "string",
+      "enum": ["local_development_recorder", "witnessed_run_recorder", "externally_witnessed_run", "untrusted_shape_only"]
+    },
+    "artifactRole": {
+      "type": "string",
+      "enum": ["run_manifest", "untrusted_shape_example", "negative_schema_fixture", "negative_verifier_fixture"]
+    },
+    "eventRef": {
+      "type": "object",
+      "required": ["sequence", "event_hash", "uri"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 0 },
+        "event_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "uri": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "event_type": {
+          "$ref": "https://schemas.sdp.dev/trace/flight-recorder-event.schema.json#/$defs/eventType"
+        }
+      },
+      "additionalProperties": false
+    },
+    "witnessRef": {
+      "type": "object",
+      "required": ["witness_id", "uri"],
+      "properties": {
+        "witness_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "uri": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "identitySummary": {
+      "type": "object",
+      "required": ["identity_ref", "verification_state"],
+      "properties": {
+        "identity_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "observed_version": { "type": "string" },
+        "verification_state": { "$ref": "#/$defs/verifierState" }
+      },
+      "additionalProperties": false
+    },
+    "verifierState": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": { "enum": ["pass", "fail", "cannot_verify", "not_assessed"] },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

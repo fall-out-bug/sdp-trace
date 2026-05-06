@@ -1,0 +1,33 @@
+{
+  "schema_version": "block10-event-v1",
+  "run_id": "fa984b5dd284292c",
+  "event_id": "4e323e7360f575f3a150d7ba",
+  "sequence": 2,
+  "event_type": "command_started",
+  "timestamp": "2026-05-05T20:05:49.659812Z",
+  "prev_event_hash": "55e3518375d48d184d2e8a6a6f3e31caa3a674235c4ce67bda8a78f1d20985cd",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "payload_digest": "52ef3404684dab9093445e28004646ec7ca813b4dc257bbb189d15799105a494",
+  "event_payload": {
+    "cmd_pid": 0,
+    "command": "echo",
+    "command_id": "c07653a12ded",
+    "contract_digest": "56eebb4fe6eff246dd78ed7b96639425f351214937cf656a05df22862a84b640",
+    "cwd": "/Users/fall_out_bug/projects/vibe_coding/sdp-trace",
+    "wrapper_name": "fixture"
+  },
+  "payload": {
+    "cmd_pid": 0,
+    "command": "echo",
+    "command_id": "c07653a12ded",
+    "contract_digest": "56eebb4fe6eff246dd78ed7b96639425f351214937cf656a05df22862a84b640",
+    "cwd": "/Users/fall_out_bug/projects/vibe_coding/sdp-trace",
+    "wrapper_name": "fixture"
+  },
+  "event_hash": "24accdf420ef70b66ba6ab571c841e4b682770b8dd6a7f96b49e8980991dfdd3",
+  "observed_by": "local_recorder"
+}

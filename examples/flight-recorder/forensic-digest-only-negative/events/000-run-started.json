@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-forensic-digest-only-negative-001",
+  "sequence": 0,
+  "event_type": "run_started",
+  "event_time": "2026-05-05T11:30:00Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "ed26e2cfe3ea3388c22f2f20ee1f1c9dc7f6e63794292dbfe06b6ee0356e43ce",
+  "prev_event_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "75e5f90aee9b2c3f42bf489a2e0ad94289ff91de7272a16e63693d75edae5df7",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Started forensic digest-only negative fixture",
+    "trust_scope": "externally_witnessed_run",
+    "artifact_role": "recorded_event",
+    "profile": "externally_witnessed_run",
+    "attachment_mode": "full_run",
+    "operator": {
+      "id": "operator:fixture",
+      "actor_type": "human_user",
+      "display_name": "Fixture Operator"
+    }
+  }
+}

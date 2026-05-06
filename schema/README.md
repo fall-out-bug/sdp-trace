@@ -19,12 +19,16 @@ These schemas define the portable `sdp-trace` contract.
 | `metric-stream.schema.json` | Records process movement across windows without interpretation labels. |
 | `external-verdict-input.schema.json` | Records externally produced verdicts or quality assertions as external evidence. |
 | `assessment-input.schema.json` | Packages trace evidence for a policy consumer such as `sdp-gate`. |
+| `flight-recorder-event.schema.json` | Records one ordered Block 09 recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
+| `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
+| `flight-recorder-witness.schema.json` | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
+| `ci-witness.schema.json` | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
 | `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |
 | `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
 | `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |
-| `evidence-bundle.schema.json` | Legacy compatibility schema for reviewable proof bundles. |
-| `gate-verdict.schema.json` | Legacy compatibility schema for externally recorded gate results with explicit `origin: "external"`. |
-| `decision-record.schema.json` | Legacy compatibility schema for final human or external automated decisions. |
+| `evidence-bundle.schema.json` | Compatibility schema for reviewable proof bundles. |
+| `gate-verdict.schema.json` | Compatibility schema for externally recorded gate results with explicit `origin: "external"`. |
+| `decision-record.schema.json` | Compatibility schema for final human or external automated decisions. |
 
 ## Validation
 
@@ -40,62 +44,14 @@ Schema validation target:
 - stable `$id` per schema
 - semver schema versions for artifacts once full examples are validated
 
-Pinned validation command for current examples:
+Canonical validation commands for this path:
 
 ```bash
-npm ci
-npm run verify:baseline
+go test ./...
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
 ```
-
-`npm ci` may use network during setup. `npm run verify:baseline` uses the local pinned `ajv@8.20.0` dependency through `scripts/validate-json-schema.mjs` and must not fetch dependencies during validation.
-
-`npm run verify` and `npm run validate` are compatibility aliases for `npm run verify:baseline`. The canonical baseline command remains `npm run verify:baseline`.
-
-Dirty checkouts fail closed by default: `npm run verify:baseline` exits `3` with `result: "cannot_verify"`. `scripts/verify.sh --profile baseline --allow-dirty` is only for local structural development and emits `trust_scope: "local_dirty_structural_only"`. Checked-in proof-summary examples use `artifact_role: "untrusted_shape_example"` and `trust_scope: "untrusted_shape_only"` with fixture digests, not live proof digests.
-
-The historical full contract validation script remains available as:
-
-```bash
-npm run validate:contracts
-```
-
-It may fail while optional proof slices or stale release artifacts are intentionally incomplete. The baseline verifier is the default fresh-checkout structural proof command.
 
 Validation commands exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories.
-
-Artifact safety scan:
-
-```bash
-scripts/check-artifact-safety.sh
-```
-
-Verified hash recomputation:
-
-```bash
-scripts/verify-artifact-hashes.sh
-```
-
-Any JSON example that claims `integrity_status: "verified_hash"` for a local artifact must match the current SHA-256 digest. Provenance records whose `command` is a local file path and `digest_algorithm: "sha256"` are checked the same way.
-
-Contract manifest digest verification:
-
-```bash
-scripts/verify-contract-manifest.sh examples/contract-foundation/contract-manifest.example.json
-```
-
-Contract release verification evidence:
-
-```bash
-scripts/verify-release-signature.sh examples/contract-foundation/contract-release.dsse.json examples/contract-foundation/local-dev-signing-public.pem
-```
-
-Source-bound local release finalization guard:
-
-```bash
-scripts/finalize-source-bound-release.sh --manifest examples/contract-foundation/contract-manifest.example.json --source-ref HEAD
-```
-
-This command must refuse dirty working trees. It can assess local source-content proof only when the selected source reference contains every manifest artifact path with a matching SHA-256 digest.
 
 ## Compatibility
 
@@ -116,6 +72,8 @@ After v1.0:
 `sdp-trace` does not decide pass/fail, readiness, degradation, threshold sufficiency, or override outcomes. Those policy decisions belong to `sdp-gate` or another external policy consumer.
 
 External verdicts may be recorded only through `external-verdict-input.schema.json` with explicit `origin: "external"`.
+
+Flight-recorder schemas add Block 09 run evidence, not trust authority. A schema-valid local recorder chain can support local reconstruction only. Accountability, audit-grade, or external-trust claims require a verifier profile that checks witness evidence outside the mutable run artifact. Late-attach gaps remain `not_assessed`; requirement changes are represented by supersession events; unresolved redaction remains visible to verifier profiles and must not be hidden by summaries or query output.
 
 ## Accountability and Signing
 

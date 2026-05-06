@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 6,
+  "event_type": "run_closed",
+  "event_time": "2026-05-05T11:10:59Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "8f9cc4c4d3db74d07f6e2ed79cfb36ddd72182ccbf423e9a5661774c0971b54b",
+  "prev_event_hash": "10f8faff31607f4bb3175fa60b90eff696c11788bc150ee536b280901a0d2dc6",
+  "event_hash": "2cdb3ff74a5f57dc9ec9d39e87abfd6ea429cb1364789b793b33a493d017270c",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Closed fixture run",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "closed_at": "2026-05-05T11:10:59Z",
+    "chain_head": "10f8faff31607f4bb3175fa60b90eff696c11788bc150ee536b280901a0d2dc6",
+    "closure_state": "closed"
+  }
+}

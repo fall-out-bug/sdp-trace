@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-negative-missing-prev-event-hash",
+  "sequence": 1,
+  "event_type": "source_baseline_recorded",
+  "event_time": "2026-05-05T11:00:00Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "event_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0",
+    "adapter": "portable-shape-fixture"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Negative schema fixture missing prev_event_hash.",
+    "trust_scope": "untrusted_shape_only",
+    "artifact_role": "negative_schema_fixture",
+    "source_baseline_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "source_kind": "directory_snapshot"
+  }
+}

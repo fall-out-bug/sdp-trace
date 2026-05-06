@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-local-positive-001",
+  "sequence": 0,
+  "event_type": "run_started",
+  "event_time": "2026-05-05T10:00:00Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "0ef5c425bbbdb178bb5827f8c85b815524f819b5913ca5c73cbf3166117b0fdd",
+  "prev_event_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "e424b33664720e96f778ef3f9a7f7b2a516f945e2b27d99760d14359bd631eca",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Started local_development_recorder fixture run",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "profile": "local_development_recorder",
+    "attachment_mode": "full_run",
+    "operator": {
+      "id": "operator:fixture",
+      "actor_type": "human_user",
+      "display_name": "Fixture Operator"
+    }
+  }
+}

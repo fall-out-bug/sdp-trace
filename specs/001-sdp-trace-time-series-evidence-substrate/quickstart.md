@@ -56,10 +56,12 @@ This checks current schema JSON syntax.
 
 ## 6. Run Pinned Schema Validation When Schema/Example Pairs Exist
 
-New schemas target JSON Schema Draft 2020-12. The planned validator command is:
+New schemas target JSON Schema Draft 2020-12. The Block 10-compatible
+validator commands are:
 
 ```bash
-node scripts/validate-json-schema.mjs schema/trace.schema.json examples/github-speckit/trace.json
+go test ./...
+go run ./cmd/sdp-trace validate-fixtures examples/github-speckit
 ```
 
 The generalized command from T036 must exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories.

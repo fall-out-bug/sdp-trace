@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-forensic-digest-only-negative-001",
+  "sequence": 1,
+  "event_type": "source_baseline_recorded",
+  "event_time": "2026-05-05T11:30:01Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "c49e4d0ca8fa71bb3ad51424e65a92d5cb5fe394fee7ffbc813c0c62a6770d26",
+  "prev_event_hash": "75e5f90aee9b2c3f42bf489a2e0ad94289ff91de7272a16e63693d75edae5df7",
+  "event_hash": "5a891276adf78f9a830939a43bf164aa0a10474151931a157a5f9d7af66b5fee",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Recorded source baseline",
+    "trust_scope": "externally_witnessed_run",
+    "artifact_role": "recorded_event",
+    "source_baseline_hash": "5e692b4e0ce6cbf0ec55ff19aaa976bbd6145caa4d31b6082a560621e4e32db2",
+    "source_kind": "git_tree"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": "block10-event-v1",
+  "run_id": "fa984b5dd284292c",
+  "event_id": "2713b6faccac34e682eb440f",
+  "sequence": 3,
+  "event_type": "command_finished",
+  "timestamp": "2026-05-05T20:05:49.663774Z",
+  "prev_event_hash": "24accdf420ef70b66ba6ab571c841e4b682770b8dd6a7f96b49e8980991dfdd3",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "payload_digest": "0a9aa9ba4f5317551ca8521608791f2b6f193f901cd43e05b741fb8494791b74",
+  "event_payload": {
+    "command": "echo",
+    "command_id": "c07653a12ded",
+    "exit_code": 0,
+    "stderr_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_digest": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22"
+  },
+  "payload": {
+    "command": "echo",
+    "command_id": "c07653a12ded",
+    "exit_code": 0,
+    "stderr_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_digest": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22"
+  },
+  "event_hash": "deadbeef",
+  "observed_by": "local_recorder"
+}

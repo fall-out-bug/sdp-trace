@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fr-requirement-supersession-001",
+  "sequence": 3,
+  "event_type": "command_started",
+  "event_time": "2026-05-05T11:10:10Z",
+  "hash_algorithm": "sha256",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "event_payload_digest": "bad32a34ba40f60d26307fc437fd9ffb23bc4292e5289327f79de36d49de2221",
+  "prev_event_hash": "5892439210f2b459c3db517883aa1de7604bbf55c3b8a61c88519d13bf42643b",
+  "event_hash": "f6190485b795b551c26a66793fb25ee7dfc9330f96b3fb935f35da9f26ef9b80",
+  "recorder_identity": {
+    "recorder_id": "sdp-trace-flight-recorder",
+    "recorder_version": "0.9.0"
+  },
+  "redaction_state": {
+    "state": "not_required"
+  },
+  "event_payload": {
+    "summary": "Command ran against original requirement",
+    "trust_scope": "local_development_recorder",
+    "artifact_role": "recorded_event",
+    "command_id": "cmd-original",
+    "argv": [
+      "bazel",
+      "test",
+      "//..."
+    ],
+    "argv_digest": "240646e29ee00c3020e751d77518d7d5e4ca0fd592badfc494860e51ed2b77bb",
+    "working_directory": "/workspace/demo",
+    "started_at": "2026-05-05T11:10:10Z",
+    "task_hash": "c62373176025d15197fa5bbf2a723631ff3c7f904b1a1b51b9f3c25fec696587"
+  }
+}
