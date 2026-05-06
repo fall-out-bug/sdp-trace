@@ -1,0 +1,39 @@
+{
+  "schema_version": "block15-signed-checkpoint-v1",
+  "checkpoint_id": "checkpoint-001",
+  "run_id": "7af11a1de739f77b",
+  "sequence": 0,
+  "profile": "sdp-trace-checkpoint/ed25519-detached-v1",
+  "canonicalization": {
+    "algorithm": "json-canonicalization-scheme",
+    "version": "1.0.0"
+  },
+  "hash_algorithm": "sha256",
+  "payload": {
+    "run_id": "7af11a1de739f77b",
+    "run_nonce": "run-nonce-7af11a1de739f77b",
+    "event_chain_head": "ce5a9e1387ec378adfadf508b1c769a8b904ffcb3fb65ac43b06e3e2b7ea355c",
+    "event_count": 5,
+    "source_snapshot_digest": "3e1703ccbf95882b6b4268e2a00c8c554191808b0d393488fed968f4c63fbff1",
+    "source_snapshot_state": "git_tree_dirty",
+    "task_hash": "5a2f9f6bd82ea4e3e8d7d132bd3b285bf61515e1b7e217d7a00a3b5220daca54",
+    "contract_digest": "56eebb4fe6eff246dd78ed7b96639425f351214937cf656a05df22862a84b640",
+    "previous_checkpoint_digest": "",
+    "replay_context": {
+      "repository": "not_assessed",
+      "ref": "not_assessed",
+      "commit_sha": "not_assessed"
+    }
+  },
+  "payload_digest": "bb63b1bea99ffeaeefd7ad37dbf14858ebdff050cd99cecf2599b89d871aba96",
+  "signature": {
+    "algorithm": "ed25519",
+    "signature": "q2N5tB2eh10zpnzbBeoWjqcoWT45z+gUlWeXBLU9KL8oGebEDIda0RITZmdlz5x7xfTf0ovrjjL4Mm6MaJk6BA==",
+    "public_key": "UZAxrk6XxJYx2TRyQ5IsMXgQSNFqoictof1FCiQfAXc="
+  },
+  "signer_identity": {
+    "signer_id": "local-dev",
+    "authority": "local_development_key",
+    "key_isolation": "not_assessed"
+  }
+}

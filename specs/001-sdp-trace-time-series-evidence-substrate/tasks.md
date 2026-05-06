@@ -269,6 +269,38 @@ what was overridden, what remains unverified, and what to do next. Protected
 enforcement and audit-grade trust remain explicitly blocked until later signed
 checkpoint and external policy-consumer work.
 
+## Phase 11: Signed Checkpoint And Replay Resistance
+
+**Goal**: Make a run checkpoint independently replayable enough for a verifier
+to detect post-hoc mutation, source/run replay, stale checkpoint reuse, and
+signer-policy mismatch without claiming protected enforcement.
+
+**Independent Test**: A reviewer can run committed fixtures showing a valid
+local signed checkpoint, payload tampering, replay against another run,
+sequence gap/duplicate failure, signer-policy mismatch, and unchanged
+`audit_grade_gate: cannot_verify`.
+
+**Activation Gate**: Do not implement protected fail-closed behavior in this
+phase. Block 15 may emit signed-checkpoint verification facts; it must not make
+merge, release, readiness, degradation, override approval, or risk-acceptance
+decisions.
+
+- [x] T116 [US5] Add Block 15 spec and implementation plan for signed checkpoint artifacts, replay binding, monotonic sequence checks, signer authority policy, and no-overclaim gate posture
+- [x] T117 [US5] Add signed checkpoint and trusted checkpoint policy schemas with local development, CI isolated job, and external witness authority states
+- [x] T118 [US5] Add Go checkpoint payload derivation from run artifacts, including run id, run nonce, chain head, event count, source snapshot, task hash, contract digest, and previous checkpoint digest
+- [x] T119 [US5] Add detached Ed25519 checkpoint signing and verification for the local development profile with deterministic payload digest checks
+- [x] T120 [US5] Add replay-resistance verification for run id, nonce, source snapshot, task hash, contract digest, event count, and chain head mismatches
+- [x] T121 [US5] Add monotonic checkpoint-set verification for duplicate, missing, and descending sequence evidence
+- [x] T122 [US5] Add trusted-checkpoint policy verification that fails unauthorized signers and leaves missing policy `not_assessed`
+- [x] T123 [US4] Add `checkpoint create` and `checkpoint verify` CLI commands with safety-sensitive negative output tests
+- [x] T124 [US4] Add gate-level tests proving local signed checkpoint evidence does not convert `protected_future` or `audit_grade_gate` to pass
+- [x] T125 [US5] Add committed Block 15 fixtures and record Go-first verification, schema checks, strict review, pi review, and review disposition before PR closure
+
+**Checkpoint**: `sdp-trace` can verify that a signed checkpoint belongs to the
+selected run context and was not replayed from another run. Protected
+enforcement and audit-grade trust remain blocked until external policy-consumer
+and external witness work exist.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -284,6 +316,7 @@ checkpoint and external policy-consumer work.
 - **Phase 8**: Depends on Block 07 live verifier outcome. It must not mask missing trust evidence with onboarding or documentation polish.
 - **Phase 9**: Depends on Block 08 discovery and executive Socratic review. It must land the recorder trust kernel before any new external demo-repo execution; the demo is a stress test, not the place to invent trust mechanics.
 - **Phase 10**: Depends on Block 13B capture-boundary and state taxonomy, and reuses Block 11/12 report, gate, and CI witness behavior. It must remain advisory until later signed checkpoint and external policy-consumer enforcement work exists.
+- **Phase 11**: Depends on Block 14 advisory gate output and Block 09/13B run-chain semantics. It supplies signed-checkpoint facts but must not implement protected enforcement or external witness trust.
 
 ### Parallel Opportunities
 
@@ -315,6 +348,7 @@ checkpoint and external policy-consumer work.
 9. Complete Block 06 for OpenCode + MiniMax + Kotlin+Bazel before product packaging or pilot-readiness claims.
 10. Complete Block 09 flight-recorder trust kernel before starting a new Feature Flag / Entitlements external demo.
 11. Complete Block 14 advisory gate contract and explanation work before any protected enforcement or signed-checkpoint gate claim.
+12. Complete Block 15 signed-checkpoint replay verification before any protected gate profile claims that checkpoint evidence exists.
 
 ### Evidence Discipline
 

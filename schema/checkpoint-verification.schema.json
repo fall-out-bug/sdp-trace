@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/checkpoint-verification.schema.json",
+  "title": "SDP Trace Checkpoint Verification Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "checkpoint_id",
+    "run_id",
+    "result",
+    "trust_scope",
+    "payload_digest_state",
+    "signature_state",
+    "run_binding_state",
+    "chain_binding_state",
+    "source_binding_state",
+    "nonce_binding_state",
+    "sequence_state",
+    "signer_authority_state",
+    "replay_freshness_state",
+    "reasons"
+  ],
+  "properties": {
+    "schema_version": { "const": "block15-checkpoint-verification-v1" },
+    "checkpoint_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "result": { "$ref": "#/$defs/state" },
+    "trust_scope": {
+      "enum": ["local_signed", "ci_signed", "external_witnessed", "untrusted_shape_only"]
+    },
+    "payload_digest_state": { "$ref": "#/$defs/state" },
+    "signature_state": { "$ref": "#/$defs/state" },
+    "run_binding_state": { "$ref": "#/$defs/state" },
+    "chain_binding_state": { "$ref": "#/$defs/state" },
+    "source_binding_state": { "$ref": "#/$defs/state" },
+    "nonce_binding_state": { "$ref": "#/$defs/state" },
+    "sequence_state": { "$ref": "#/$defs/state" },
+    "signer_authority_state": { "$ref": "#/$defs/state" },
+    "replay_freshness_state": { "$ref": "#/$defs/state" },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "state": {
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed", "not_integrated"]
+    }
+  }
+}

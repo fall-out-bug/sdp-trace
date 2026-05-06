@@ -212,6 +212,12 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-062**: Gate preview output MUST be read-only, deterministic, and explicit about gate-relevant fields, selected mode, trust cap, required runs, evidence ids, and local witness inspectability.
 - **FR-063**: Gate, explain, and preview output MUST avoid raw command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, and other secret-like values.
 - **FR-064**: `sdp-trace` MUST NOT turn advisory gate facts into native merge, release, readiness, degradation, override approval, or risk-acceptance decisions.
+- **FR-065**: `sdp-trace` MUST support a signed checkpoint artifact that binds a run id, run nonce, event chain head, event count, source snapshot digest/state, task hash, contract digest, checkpoint sequence, signing profile, payload digest, detached signature, and signer identity.
+- **FR-066**: Signed checkpoint verification MUST recompute the canonical payload digest and detached signature before using any checkpoint binding as evidence.
+- **FR-067**: Signed checkpoint verification MUST fail when a checkpoint is replayed against a different run id, nonce, source snapshot, task hash, contract digest, event count, or event chain head.
+- **FR-068**: Signed checkpoint verification MUST expose monotonic checkpoint sequence checks and fail duplicate, missing, or descending sequence evidence.
+- **FR-069**: Signed checkpoint signer authority MUST be checked against an explicit trusted-checkpoint policy when supplied; missing policy MUST remain `not_assessed`, and policy mismatch MUST fail.
+- **FR-070**: Local development checkpoint signatures MUST NOT upgrade protected gate, audit-grade, release, readiness, degradation, override approval, or risk-acceptance state.
 
 ### Key Entities
 
@@ -228,6 +234,8 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **Trace Snapshot**: A point-in-time graph linking specs, plans, tasks, changes, evidence, observations, external verdict inputs, and decisions.
 - **Assessment Input**: A package of trace artifacts prepared for a policy engine such as `sdp-gate`.
 - **Pilot Run-Card**: A repeatable harness/model/stack assessment recipe with prompt, expected artifacts, provenance capture, validation, and `not_assessed` rules.
+- **Signed Checkpoint**: Detached-signature artifact that binds a flight-recorder run chain head to run, source, task, contract, nonce, and sequence context for replay-resistant verification.
+- **Trusted Checkpoint Policy**: Portable policy that names allowed checkpoint signer identities and the authority boundary needed to treat a checkpoint as local signed, CI signed, or externally witnessed evidence.
 - **E2E Pilot Proof Package**: A sanitized artifact set produced from a real external tool run, containing evidence events, provenance records, observations, metric stream, trace snapshot, assessment input, redaction note, tested-on report, and explicit proof states.
 - **External Verdict Input**: A verdict, score, evidence-strength assertion, or decision produced outside `sdp-trace` and recorded as evidence with producer, policy reference, artifact reference, and origin.
 - **Flight Recorder Event**: An ordered event in a recorder run, with declared schema version, canonical payload digest, previous event hash, event hash, recorder identity, redaction state, and optional witness reference.
