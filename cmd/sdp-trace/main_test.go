@@ -83,6 +83,187 @@ func TestDryRunOutputsSimulation(t *testing.T) {
 	if !strings.Contains(out.String(), "simulation") {
 		t.Fatalf("expected simulation output, got %s", out.String())
 	}
+	if !strings.Contains(out.String(), `"writes_artifacts": false`) {
+		t.Fatalf("expected no-write posture, got %s", out.String())
+	}
+	if !strings.Contains(out.String(), string(trace.RetentionModeDigestOnly)) {
+		t.Fatalf("expected safe retention modes, got %s", out.String())
+	}
+	if strings.Contains(out.String(), `"command":`) || strings.Contains(out.String(), `"hi"`) {
+		t.Fatalf("dry-run leaked raw command payload: %s", out.String())
+	}
+}
+
+func TestPreviewOutputsNoWritePlan(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	workDir := t.TempDir()
+	t.Chdir(workDir)
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"preview", "--", echo, "hi"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("preview exit: %d err=%s", exit, errOut.String())
+	}
+	var payload struct {
+		Mode                string                      `json:"mode"`
+		CommandDescriptor   trace.CommandDescriptor     `json:"command_descriptor"`
+		Boundaries          []previewBoundary           `json:"boundaries"`
+		OfflineImplications []previewOfflineImplication `json:"offline_implications"`
+		WritesArtifacts     bool                        `json:"writes_artifacts"`
+		SafeRetentionModes  []string                    `json:"safe_retention_modes"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &payload); err != nil {
+		t.Fatalf("preview payload: %v", err)
+	}
+	if payload.Mode != "preview" {
+		t.Fatalf("mode = %s", payload.Mode)
+	}
+	if payload.WritesArtifacts {
+		t.Fatalf("preview must not write artifacts")
+	}
+	if payload.CommandDescriptor.Argc != 2 {
+		t.Fatalf("preview command argc = %d", payload.CommandDescriptor.Argc)
+	}
+	if payload.CommandDescriptor.Retention.Mode != trace.RetentionModeDigestOnly {
+		t.Fatalf("preview command retention = %s", payload.CommandDescriptor.Retention.Mode)
+	}
+	if len(payload.SafeRetentionModes) == 0 {
+		t.Fatalf("missing safe retention modes")
+	}
+	if findPreviewBoundary(t, payload.Boundaries, string(trace.ObservationBoundaryAdapterSocket)).State != string(trace.ObservationStateNotIntegrated) {
+		t.Fatalf("adapter boundary state missing")
+	}
+	if findPreviewImplication(t, payload.OfflineImplications, "ci_witnessed").State != string(trace.ObservationStateOfflineDev) {
+		t.Fatalf("offline CI implication missing")
+	}
+	if strings.Contains(out.String(), `"hi"`) || strings.Contains(out.String(), echo) {
+		t.Fatalf("preview leaked raw argv: %s", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(workDir, ".sdp-trace-runs")); !os.IsNotExist(err) {
+		t.Fatalf("preview wrote run artifacts or stat failed: %v", err)
+	}
+}
+
+func TestDoctorReportsOfflineDevAndCannotVerifyCI(t *testing.T) {
+	clearCIWitnessEnv(t)
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"doctor"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("doctor exit: %d err=%s", exit, errOut.String())
+	}
+	var report doctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("doctor payload: %v", err)
+	}
+	if report.Result != "offline_dev" {
+		t.Fatalf("result = %s", report.Result)
+	}
+	check := findDoctorCheck(t, report.ControlPoints, "ci_witness_prerequisites")
+	if check.State != string(trace.VerdictCannotVerify) {
+		t.Fatalf("ci witness state = %s", check.State)
+	}
+	if len(check.Missing) == 0 {
+		t.Fatalf("expected missing CI witness fields")
+	}
+	if findDoctorCheck(t, report.Environment, "offline_development").State != "offline_dev" {
+		t.Fatalf("offline development state missing")
+	}
+	if findDoctorCheck(t, report.ControlPoints, "output_directory").State != "pass" {
+		t.Fatalf("output directory check missing")
+	}
+	if findDoctorCheck(t, report.ControlPoints, "report_directory").State != "pass" {
+		t.Fatalf("report directory check missing")
+	}
+	if findDoctorCheck(t, report.ControlPoints, "expected_evidence_references").State != "pass" {
+		t.Fatalf("expected evidence check missing")
+	}
+}
+
+func TestDoctorReportsContractLoadFailureCannotVerify(t *testing.T) {
+	clearCIWitnessEnv(t)
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	missingContract := filepath.Join(t.TempDir(), "missing-contract.json")
+	exit := run([]string{"doctor", "--contract", missingContract}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("doctor exit: %d err=%s", exit, errOut.String())
+	}
+	var report doctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("doctor payload: %v", err)
+	}
+	if report.Result != string(trace.VerdictCannotVerify) {
+		t.Fatalf("result = %s", report.Result)
+	}
+	check := findDoctorCheck(t, report.ControlPoints, "contract")
+	if check.State != string(trace.VerdictCannotVerify) {
+		t.Fatalf("contract state = %s", check.State)
+	}
+}
+
+func TestDoctorReportsUnwritableOutputDirectoryCannotVerify(t *testing.T) {
+	clearCIWitnessEnv(t)
+	filePath := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(filePath, []byte("not a directory"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"doctor", "--output-dir", filePath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("doctor exit: %d err=%s", exit, errOut.String())
+	}
+	var report doctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("doctor payload: %v", err)
+	}
+	check := findDoctorCheck(t, report.ControlPoints, "output_directory")
+	if check.State != string(trace.VerdictCannotVerify) {
+		t.Fatalf("output directory state = %s", check.State)
+	}
+}
+
+func TestDoctorReportsUnsupportedExpectedEvidenceCannotVerify(t *testing.T) {
+	clearCIWitnessEnv(t)
+	contractPath := filepath.Join(t.TempDir(), "contract.json")
+	if err := os.WriteFile(contractPath, []byte(`{
+	  "contract_id": "unsupported-contract",
+	  "version": "test",
+	  "required_events": ["recorder_attached", "model_call_observed"]
+	}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"doctor", "--contract", contractPath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("doctor exit: %d err=%s", exit, errOut.String())
+	}
+	var report doctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("doctor payload: %v", err)
+	}
+	check := findDoctorCheck(t, report.ControlPoints, "expected_evidence_references")
+	if check.State != string(trace.VerdictCannotVerify) {
+		t.Fatalf("expected evidence state = %s", check.State)
+	}
+	if len(check.Missing) == 0 {
+		t.Fatalf("expected missing unsupported event references")
+	}
+}
+
+func TestUsageMentionsDoctorAndPreview(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"help"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("help exit: %d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(out.String(), "sdp-trace preview") || !strings.Contains(out.String(), "sdp-trace doctor") {
+		t.Fatalf("usage missing new commands: %s", out.String())
+	}
 }
 
 func TestRunRequiresTaskAndRecordsRun(t *testing.T) {
@@ -413,6 +594,59 @@ func mustFindCommand(t *testing.T, name string) string {
 		t.Skipf("%s not available", name)
 	}
 	return path
+}
+
+func clearCIWitnessEnv(t *testing.T) {
+	t.Helper()
+	for _, key := range []string{
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN",
+		"ACTIONS_ID_TOKEN_REQUEST_URL",
+		"GITHUB_ACTIONS",
+		"GITHUB_ACTOR",
+		"GITHUB_JOB",
+		"GITHUB_REF",
+		"GITHUB_REPOSITORY",
+		"GITHUB_RUN_ATTEMPT",
+		"GITHUB_RUN_ID",
+		"GITHUB_SERVER_URL",
+		"GITHUB_SHA",
+		"GITHUB_WORKFLOW",
+	} {
+		t.Setenv(key, "")
+	}
+}
+
+func findDoctorCheck(t *testing.T, checks []doctorCheck, id string) doctorCheck {
+	t.Helper()
+	for _, check := range checks {
+		if check.ID == id {
+			return check
+		}
+	}
+	t.Fatalf("doctor check %s not found in %#v", id, checks)
+	return doctorCheck{}
+}
+
+func findPreviewBoundary(t *testing.T, boundaries []previewBoundary, id string) previewBoundary {
+	t.Helper()
+	for _, boundary := range boundaries {
+		if boundary.Boundary == id {
+			return boundary
+		}
+	}
+	t.Fatalf("preview boundary %s not found in %#v", id, boundaries)
+	return previewBoundary{}
+}
+
+func findPreviewImplication(t *testing.T, implications []previewOfflineImplication, requirement string) previewOfflineImplication {
+	t.Helper()
+	for _, implication := range implications {
+		if implication.Requirement == requirement {
+			return implication
+		}
+	}
+	t.Fatalf("preview implication %s not found in %#v", requirement, implications)
+	return previewOfflineImplication{}
 }
 
 func writeTestContract(t *testing.T, _ context.Context, dir string) string {
