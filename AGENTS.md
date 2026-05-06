@@ -80,9 +80,9 @@ Do not stop at implementation-only closure for block work unless the user explic
 For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
 
 - Use MiniMax-M2.7 and ZAI/GLM for multi-file strict review.
-- Use MiniMax-M2.5 only for OpenCode demo development runs, not for repo review.
-- Use Kimi only for one-file micro-reviews with low/off thinking.
-- Stop and replace hung pi reviews.
+- Run separate code, tracing/evidence, and requirements-vs-implementation review planes for trust blocks; repeat them at PR level.
+- Use Kimi K2P6 as a full bounded reviewer for requirements, fixture semantics, and focused re-review; prefer low/off reasoning for narrow prompts.
+- Use MiniMax-M2.5 only for OpenCode demo development, not repo review. Replace hung or empty pi reviews; do not count them as evidence. Record absent GitHub checks as CI `not_assessed`, not green.
 
 ## Claim Tags
 Use `docs/claim-authoring.md` for authoritative claim syntax.
