@@ -72,7 +72,9 @@ If a chunk cannot be traced or verified yet, mark the state `not_assessed` or `c
 ## Block Intake Protocol
 When the user says "берем блок в работу", use `sdp-trace-trust-workflow`.
 First land current approved work through PR/review, then continue new block work in a fresh worktree.
-Prepare SpecKit deltas before implementation, split independent tasks to fast subagents with minimal context, and keep provenance, evidence, trace, pi review, fixes, and final PR review in the loop until no critical or major findings remain.
+Prepare SpecKit deltas before implementation, then stop for explicit user approval of the spec direction before writing implementation code.
+After approval, split independent tasks to fast subagents with minimal context, and keep provenance, evidence, trace, pi review, fixes, and final PR review in the loop until no critical or major findings remain.
+Do not stop at implementation-only closure for block work unless the user explicitly asks to stop before PR or merge.
 
 ## pi Review Rules
 For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
