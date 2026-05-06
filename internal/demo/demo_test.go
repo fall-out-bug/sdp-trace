@@ -61,7 +61,7 @@ func TestReportAndGatePassForObservedDemoRuns(t *testing.T) {
 	if contains(gate.RequiredEvidence, "all_runs_observed") {
 		t.Fatalf("gate conditions leaked into required evidence: %v", gate.RequiredEvidence)
 	}
-	if !contains(gate.GateConditions, "all_runs_observed") {
+	if !containsGateCondition(gate.GateConditions, "all_required_runs_present") {
 		t.Fatalf("gate conditions missing: %v", gate.GateConditions)
 	}
 }
@@ -141,6 +141,63 @@ func TestGateFailsForNotAssessedRun(t *testing.T) {
 	}
 }
 
+func TestGateReportsMissingRequiredRun(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredRuns = []trace.RequiredRun{
+		{
+			ID:               "agent_session",
+			WrapperName:      "agent-session",
+			RequiredEvidence: []string{"agent_session_observed"},
+			Profile:          "observation",
+		},
+		{
+			ID:               "verification_run",
+			WrapperName:      "verification-run",
+			RequiredEvidence: []string{"verification_run_observed"},
+			Profile:          "observation",
+		},
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "agent-session", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+	}, contract)
+
+	if gate.LocalGate != GateFail {
+		t.Fatalf("expected missing required run to fail local gate, got %s", gate.LocalGate)
+	}
+	missing := findRequiredRun(t, gate.RequiredRuns, "verification_run")
+	if missing.State != "missing_telemetry" {
+		t.Fatalf("required run state = %s reasons=%v", missing.State, missing.Reasons)
+	}
+	if !contains(gate.NextActions, "Run required wrapper verification-run through sdp-trace before evaluating advisory gate.") {
+		t.Fatalf("missing next action for required run: %v", gate.NextActions)
+	}
+}
+
+func TestProtectedFutureRequiredRunCannotVerify(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredEvidence = nil
+	contract.RequiredRuns = []trace.RequiredRun{
+		{
+			ID:          "protected_release",
+			WrapperName: "verification-run",
+			Profile:     "protected_future",
+		},
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}, contract)
+
+	required := findRequiredRun(t, gate.RequiredRuns, "protected_release")
+	if required.State != GateCannotVerify {
+		t.Fatalf("protected future state = %s reasons=%v", required.State, required.Reasons)
+	}
+	if gate.LocalGate != GateCannotVerify {
+		t.Fatalf("local gate = %s reasons=%v", gate.LocalGate, gate.Reasons)
+	}
+}
+
 func TestGateUsesPassingCIWitness(t *testing.T) {
 	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
 	if err := os.WriteFile(witnessPath, []byte(`{
@@ -173,6 +230,40 @@ func TestGateUsesPassingCIWitness(t *testing.T) {
 	}
 	if gate.AuditGradeGate != GateCannotVerify {
 		t.Fatalf("audit grade gate = %s", gate.AuditGradeGate)
+	}
+}
+
+func TestGateFailsForMismatchedCIWitnessSource(t *testing.T) {
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	if err := os.WriteFile(witnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "generated_at": "2026-05-05T00:00:00Z",
+	  "source": {"repository": "org/other", "ref": "refs/heads/main", "commit_sha": "abc123"},
+	  "ci": {"provider": "github-actions", "server_url": "https://github.com", "workflow": "sdp-trace", "job": "test", "run_id": "42", "run_attempt": "1", "actor": "octocat"},
+	  "oidc": {"issuer": "https://token.actions.githubusercontent.com", "subject": "repo:org/other:ref:refs/heads/main", "audience": "sdp-trace", "repository": "org/other", "ref": "refs/heads/main", "sha": "abc123"},
+	  "run_artifacts": [],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	gate := EvaluateGateWithWitnessContext([]RunRow{
+		{Name: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+		{Name: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}, traceContractForTest(), witnessPath, WitnessExpectation{
+		Repository: "org/repo",
+		Ref:        "refs/heads/main",
+		CommitSHA:  "abc123",
+	})
+
+	if gate.CIWitnessGate != GateFail {
+		t.Fatalf("ci witness gate = %s reasons=%v", gate.CIWitnessGate, gate.Reasons)
+	}
+	if !contains(gate.Reasons, "ci witness repository mismatch: expected org/repo got org/other") {
+		t.Fatalf("missing source mismatch reason: %v", gate.Reasons)
 	}
 }
 
@@ -346,4 +437,24 @@ func contains(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func containsGateCondition(values []GateCondition, target string) bool {
+	for _, value := range values {
+		if value.ID == target {
+			return true
+		}
+	}
+	return false
+}
+
+func findRequiredRun(t *testing.T, runs []RequiredRunResult, id string) RequiredRunResult {
+	t.Helper()
+	for _, run := range runs {
+		if run.ID == id {
+			return run
+		}
+	}
+	t.Fatalf("required run %s not found in %+v", id, runs)
+	return RequiredRunResult{}
 }

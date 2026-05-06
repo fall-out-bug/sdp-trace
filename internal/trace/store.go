@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 )
 
 // EventWriterConfig contains the layout and run metadata for an append-only run artifact.
@@ -17,11 +18,11 @@ type EventWriterConfig struct {
 
 // RunLayout represents the stable on-disk arrangement for one run.
 type RunLayout struct {
-	RunFilePath       string
-	EventsDir         string
-	ArtifactsDir      string
-	VerifierDir       string
-	ExportDir         string
+	RunFilePath  string
+	EventsDir    string
+	ArtifactsDir string
+	VerifierDir  string
+	ExportDir    string
 }
 
 // NewRunLayout creates all child directories and returns paths.
@@ -108,6 +109,49 @@ func OpenRunArtifact(runDir string) (RunArtifact, error) {
 		Events:   events,
 		Layout:   layout,
 	}, nil
+}
+
+// AppendRunEvent appends one local event to an existing run artifact and updates the run manifest chain head.
+func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, observedBy string) (Event, error) {
+	artifact, err := OpenRunArtifact(runDir)
+	if err != nil {
+		return Event{}, err
+	}
+	prevHash := NullEventHash
+	if len(artifact.Events) > 0 {
+		prevHash = artifact.Events[len(artifact.Events)-1].EventHash
+	}
+	event := Event{
+		SchemaVersion: SchemaVersion,
+		RunID:         artifact.Manifest.RunID,
+		EventID:       SHA256Hex(fmt.Sprintf("%s:%s:%d:%s", artifact.Manifest.RunID, eventType, len(artifact.Events), time.Now().UTC().Format(time.RFC3339Nano))),
+		Sequence:      len(artifact.Events),
+		EventType:     eventType,
+		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
+		PrevEventHash: prevHash,
+		HashAlgorithm: HashAlgSHA256,
+		Canonicalization: Canonicalization{
+			Algorithm: CanonicalSchemaAlgo,
+			Version:   CanonicalAlgoVersion,
+		},
+		EventPayload: payload,
+		ObservedBy:   observedBy,
+	}
+	computed, err := event.WithComputedEventHash()
+	if err != nil {
+		return Event{}, err
+	}
+	event = computed
+	if err := artifact.Layout.WriteEvent(event); err != nil {
+		return Event{}, err
+	}
+	artifact.Manifest.EventCount = event.Sequence + 1
+	artifact.Manifest.EventChainHead = event.EventHash
+	artifact.Manifest.FinalChainHead = event.EventHash
+	if err := artifact.Layout.WriteRun(artifact.Manifest); err != nil {
+		return Event{}, err
+	}
+	return event, nil
 }
 
 // ValidateRunDirectory checks that run.json and event files are parseable.
@@ -217,4 +261,3 @@ func CopyArtifactFile(src, dst string) error {
 	}
 	return output.Sync()
 }
-

@@ -204,6 +204,14 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-054**: Flight-recorder evidence retention MUST distinguish `digest_only`, `sanitized_excerpt`, `encrypted_raw_ref`, `external_artifact_ref`, and `not_assessed`; profiles that require forensic reconstruction MUST reject insufficient retention for critical events.
 - **FR-055**: Flight-recorder redaction MUST be verifier-visible and MUST distinguish safe redaction, sealed raw evidence, unresolved redaction, and unverifiable redaction; unresolved redaction MUST fail profiles that require forensic or accountability evidence.
 - **FR-056**: Flight-recorder query surfaces MUST expose run summary, provenance, late-attach gaps, requirement supersession timeline, command timeline, file mutations, test evidence, redaction issues, and witness state without producing policy verdicts.
+- **FR-057**: Advisory gate contracts MAY declare required runs separately from required evidence; missing required runs MUST produce `missing_telemetry` or `cannot_verify`, not `pass`.
+- **FR-058**: Gate output MUST distinguish observation, advisory CI, and future protected profiles, and MUST keep protected profiles `cannot_verify` until signed checkpoint evidence and an external policy consumer exist.
+- **FR-059**: CI witness binding MUST compare available repository, ref, commit, run id, and artifact digest data against the current gate input; mismatches MUST produce deterministic `fail` or `cannot_verify` reasons.
+- **FR-060**: `policy_override_requested` trace events MUST be visible as override records and MUST NOT convert missing evidence to pass or upgrade audit-grade trust.
+- **FR-061**: Gate explain output MUST provide deterministic human-readable reasons and next actions for missing telemetry, cannot-verify witness, stale witness, source mismatch, and override-present states.
+- **FR-062**: Gate preview output MUST be read-only, deterministic, and explicit about gate-relevant fields, selected mode, trust cap, required runs, evidence ids, and local witness inspectability.
+- **FR-063**: Gate, explain, and preview output MUST avoid raw command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, and other secret-like values.
+- **FR-064**: `sdp-trace` MUST NOT turn advisory gate facts into native merge, release, readiness, degradation, override approval, or risk-acceptance decisions.
 
 ### Key Entities
 
@@ -263,6 +271,9 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **SC-031**: A Block 09 design, Socratic review synthesis, and implementation plan define the flight-recorder trust kernel before any new external demo repo work starts.
 - **SC-032**: Flight-recorder fixtures prove that event mutation, event deletion, event reordering, missing witness, witness mismatch, late attachment, task rewrite, and unresolved redaction are detected or explicitly reported by verifier states.
 - **SC-033**: A reviewer can run documented flight-recorder query commands against committed fixtures and identify source baseline, task, model/harness identity, command timeline, file mutations, test evidence, redaction state, witness state, and `not_assessed` gaps without reading raw JSONL manually.
+- **SC-034**: Block 14 fixtures prove that absent required runs, unmatched runs, stale or mismatched CI witnesses, and protected-future requirements produce deterministic non-pass states.
+- **SC-035**: A reviewer can run `gate explain` and `gate preview` against committed Block 14 fixtures and see required-run gaps, witness binding state, override records, trust cap, and next actions without reading raw JSON manually.
+- **SC-036**: Safety-sensitive gate, explain, and preview tests prove that secret-like command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, and model responses are not printed or persisted.
 
 ## Assumptions
 

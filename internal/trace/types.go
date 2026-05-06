@@ -40,11 +40,12 @@ type EventType string
 
 // EventType constants.
 const (
-	EventRecorderAttached EventType = "recorder_attached"
-	EventRunStarted       EventType = "run_started"
-	EventCommandStarted   EventType = "command_started"
-	EventCommandFinished  EventType = "command_finished"
-	EventRunClosed        EventType = "run_closed"
+	EventRecorderAttached        EventType = "recorder_attached"
+	EventRunStarted              EventType = "run_started"
+	EventCommandStarted          EventType = "command_started"
+	EventCommandFinished         EventType = "command_finished"
+	EventRunClosed               EventType = "run_closed"
+	EventPolicyOverrideRequested EventType = "policy_override_requested"
 )
 
 // EvidenceState maps direct missing-evidence states used by first-milestone verification.
@@ -337,7 +338,16 @@ type Contract struct {
 	Version            string                `json:"version"`
 	RequiredEvents     []string              `json:"required_events"`
 	RequiredEvidence   []EvidenceRequirement `json:"required_evidence,omitempty"`
+	RequiredRuns       []RequiredRun         `json:"required_runs,omitempty"`
 	LockRequiredBefore string                `json:"lock_required_before,omitempty"`
+}
+
+// RequiredRun names a contract-declared run that should be observed for an advisory gate.
+type RequiredRun struct {
+	ID               string   `json:"id"`
+	WrapperName      string   `json:"wrapper_name"`
+	RequiredEvidence []string `json:"required_evidence,omitempty"`
+	Profile          string   `json:"profile,omitempty"`
 }
 
 // EvidenceRequirement names a contract-declared observation that can be

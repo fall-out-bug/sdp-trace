@@ -238,6 +238,37 @@
 
 **Checkpoint**: `sdp-trace` can prove recorder-chain integrity and witness agreement for committed fixtures, while clearly marking local-only, late-attach, redaction, and unavailable evidence limits.
 
+## Phase 10: Gate Contract, Explain, And Native Override Event
+
+**Goal**: Make advisory gate output operationally useful without claiming
+protected enforcement or audit-grade trust.
+
+**Independent Test**: A reviewer can run committed fixtures showing missing
+required runs, mismatched CI witness binding, visible override request state,
+deterministic `gate explain`, deterministic read-only `gate preview`, and
+unchanged `audit_grade_gate: cannot_verify`.
+
+**Activation Gate**: Do not implement protected fail-closed behavior in this
+phase. Block 14 may emit facts for an external policy consumer; it must not
+make merge, release, readiness, degradation, or risk-acceptance decisions.
+
+- [x] T105 [US4] Add Block 14 spec and implementation plan for advisory gate contract, required runs, explain, preview, and override event scope
+- [x] T106 [US2] Extend the contract model with optional required runs and tests for absent, unmatched, and protected-future run requirements
+- [x] T107 [US2] Add or extend Draft 2020-12 gate-result schema covering schema version, gate mode, trust cap, required-run states, witness bindings, override requests, reasons, next actions, gate conditions, and run summaries
+- [x] T108 [US2] Extend gate-result output with schema version, gate mode, trust cap, required-run states, witness bindings, override requests, reasons, and next actions
+- [x] T109 [US5] Add CI witness binding checks for repository, ref, commit, run id, and artifact digest mismatches without upgrading audit-grade trust
+- [x] T110 [US5] Add `policy_override_requested` flight-recorder event support with producer/origin fields and CLI/external-reference path that records override requests without converting missing evidence to pass
+- [x] T111 [US4] Add deterministic `gate explain` output with next actions for missing telemetry, cannot-verify witness, stale witness, source mismatch, and override-present states
+- [x] T112 [US4] Add deterministic read-only `gate preview` output for gate-relevant fields, selected mode, trust cap, required runs, evidence ids, witness inspectability, and locally detectable witness mismatches
+- [x] T113 [US4] Add committed Block 14 fixtures for missing required run, unmatched run, stale witness, source mismatch, artifact mismatch, valid override, malformed override, and protected-future requirement
+- [x] T114 [US4] Add safety-sensitive negative tests proving gate, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, or model responses
+- [x] T115 [US4] Run Go-first verification, schema checks, strict review, pi review, and record Block 14 review disposition before PR closure
+
+**Checkpoint**: Advisory gate users can see what is missing, what is witnessed,
+what was overridden, what remains unverified, and what to do next. Protected
+enforcement and audit-grade trust remain explicitly blocked until later signed
+checkpoint and external policy-consumer work.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -252,6 +283,7 @@
 - **Phase 7**: Depends on schema and pilot artifacts from Phases 3-6.
 - **Phase 8**: Depends on Block 07 live verifier outcome. It must not mask missing trust evidence with onboarding or documentation polish.
 - **Phase 9**: Depends on Block 08 discovery and executive Socratic review. It must land the recorder trust kernel before any new external demo-repo execution; the demo is a stress test, not the place to invent trust mechanics.
+- **Phase 10**: Depends on Block 13B capture-boundary and state taxonomy, and reuses Block 11/12 report, gate, and CI witness behavior. It must remain advisory until later signed checkpoint and external policy-consumer enforcement work exists.
 
 ### Parallel Opportunities
 
@@ -265,6 +297,8 @@
 - T027 and T028 can run in parallel.
 - T032 and T033 can run in parallel after pilot evidence exists.
 - T081 and T082 can run in parallel after T080 closes, because the runner and validator have separate write scopes.
+- T106 and T109 can run in parallel after T105 because required-run semantics and witness binding have separate implementation surfaces.
+- T111 and T112 can run in parallel after T108 because explain and preview write separate command paths over the same output contract.
 
 ## Implementation Strategy
 
@@ -280,6 +314,7 @@
 8. Complete Block 05 run-cards without claiming observed behavior.
 9. Complete Block 06 for OpenCode + MiniMax + Kotlin+Bazel before product packaging or pilot-readiness claims.
 10. Complete Block 09 flight-recorder trust kernel before starting a new Feature Flag / Entitlements external demo.
+11. Complete Block 14 advisory gate contract and explanation work before any protected enforcement or signed-checkpoint gate claim.
 
 ### Evidence Discipline
 

@@ -1,0 +1,31 @@
+{
+  "kind": "github-actions",
+  "status": "pass",
+  "trust_scope": "ci_witnessed",
+  "reason": "ci_identity_present",
+  "generated_at": "2026-05-06T00:00:00Z",
+  "source": {
+    "repository": "org/other",
+    "ref": "refs/heads/main",
+    "commit_sha": "abc123"
+  },
+  "ci": {
+    "provider": "github-actions",
+    "server_url": "https://github.com",
+    "workflow": "sdp-trace",
+    "job": "test",
+    "run_id": "42",
+    "run_attempt": "1",
+    "actor": "octocat"
+  },
+  "oidc": {
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:org/other:ref:refs/heads/main",
+    "audience": "sdp-trace",
+    "repository": "org/other",
+    "ref": "refs/heads/main",
+    "sha": "abc123"
+  },
+  "run_artifacts": [],
+  "report_artifacts": []
+}

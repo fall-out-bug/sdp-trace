@@ -1,0 +1,18 @@
+{
+  "contract_id": "block14-protected-future",
+  "version": "block10-event-v1",
+  "required_events": [
+    "recorder_attached",
+    "run_started",
+    "command_started",
+    "command_finished",
+    "run_closed"
+  ],
+  "required_runs": [
+    {
+      "id": "protected_release",
+      "wrapper_name": "verification-run",
+      "profile": "protected_future"
+    }
+  ]
+}
