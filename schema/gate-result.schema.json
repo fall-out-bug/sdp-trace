@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/gate-result.schema.json",
+  "title": "SDP Trace Advisory Gate Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "local_gate",
+    "ci_witness_gate",
+    "audit_grade_gate",
+    "gate_mode",
+    "trust_cap",
+    "required_runs",
+    "required_evidence",
+    "observed_evidence",
+    "witness_bindings",
+    "override_requests",
+    "gate_conditions",
+    "reasons",
+    "next_actions",
+    "missing_audit_evidence",
+    "runs"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "block14-gate-result-v1" },
+    "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "local_gate": { "$ref": "#/$defs/gateState" },
+    "ci_witness_gate": { "$ref": "#/$defs/gateState" },
+    "audit_grade_gate": { "$ref": "#/$defs/gateState" },
+    "gate_mode": {
+      "type": "string",
+      "enum": ["observation", "advisory_ci", "protected_future"]
+    },
+    "trust_cap": {
+      "type": "string",
+      "enum": ["local_observed", "ci_witnessed", "external_witnessed"]
+    },
+    "required_runs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/requiredRunResult" }
+    },
+    "required_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "observed_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "witness_bindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stateReason" }
+    },
+    "override_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["override_id", "state"],
+        "properties": {
+          "override_id": { "type": "string", "minLength": 1 },
+          "state": { "$ref": "#/$defs/gateState" },
+          "reason": { "type": "string" },
+          "created_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "gate_conditions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stateReason" }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "missing_audit_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "witness": {
+      "type": "object",
+      "required": ["kind", "status", "trust_scope", "reason"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/gateState" },
+        "trust_scope": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string" },
+        "source": { "type": "object" },
+        "run_artifacts": { "type": "array" },
+        "report_artifacts": { "type": "array" }
+      },
+      "additionalProperties": true
+    },
+    "runs": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "gateState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed", "missing_telemetry"]
+    },
+    "requiredRunResult": {
+      "type": "object",
+      "required": ["id", "wrapper_name", "profile", "state", "reasons"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "wrapper_name": { "type": "string", "minLength": 1 },
+        "profile": {
+          "type": "string",
+          "enum": ["observation", "advisory_ci", "protected_future"]
+        },
+        "state": { "$ref": "#/$defs/gateState" },
+        "matched_run_id": { "type": "string" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "stateReason": {
+      "type": "object",
+      "required": ["id", "state", "reason"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/gateState" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

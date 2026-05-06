@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
@@ -57,6 +58,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runReport(ctx, cmdArgs, stdout, stderr)
 	case "gate":
 		return runGate(ctx, cmdArgs, stdout, stderr)
+	case "override":
+		return runOverride(ctx, cmdArgs, stdout, stderr)
 	case "witness":
 		return runWitness(ctx, cmdArgs, stdout, stderr)
 	case "validate-fixtures":
@@ -103,6 +106,14 @@ func runReport(_ context.Context, args []string, stdout, stderr io.Writer) int {
 }
 
 func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 {
+		switch args[0] {
+		case "explain":
+			return runGateExplain(args[1:], stdout, stderr)
+		case "preview":
+			return runGatePreview(args[1:], stdout, stderr)
+		}
+	}
 	opts := &flagSet{name: "gate"}
 	opts.setString("out", "")
 	opts.setString("contract", "")
@@ -128,8 +139,222 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	}
 	payload, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Fprintf(stdout, "%s\n", payload)
-	if result.LocalGate != demo.GatePass {
+	return gateExitCode(result)
+}
+
+func runGateExplain(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "gate explain"}
+	opts.setString("gate-result", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "gate explain accepts only flags")
+		return exitUsage
+	}
+	path := opts.stringValue("gate-result")
+	if path == "" {
+		fmt.Fprintln(stderr, "gate explain requires --gate-result <file>")
+		return exitUsage
+	}
+	var result demo.GateResult
+	if err := readJSONFile(path, &result); err != nil {
+		fmt.Fprintln(stderr, err)
 		return 1
+	}
+	fmt.Fprintf(stdout, "Gate mode: %s\n", result.GateMode)
+	fmt.Fprintf(stdout, "Trust cap: %s\n", result.TrustCap)
+	fmt.Fprintf(stdout, "Local gate: %s\n", result.LocalGate)
+	fmt.Fprintf(stdout, "CI witness gate: %s\n", result.CIWitnessGate)
+	fmt.Fprintf(stdout, "Audit-grade gate: %s\n", result.AuditGradeGate)
+	for _, requiredRun := range result.RequiredRuns {
+		fmt.Fprintf(stdout, "Required run %s: %s\n", requiredRun.ID, requiredRun.State)
+	}
+	for _, binding := range result.WitnessBindings {
+		fmt.Fprintf(stdout, "Witness binding %s: %s\n", binding.ID, binding.State)
+	}
+	for _, missing := range result.MissingAuditEvidence {
+		fmt.Fprintf(stdout, "Missing audit evidence: %s\n", missing)
+	}
+	for _, override := range result.OverrideRequests {
+		fmt.Fprintf(stdout, "Override %s: %s\n", override.OverrideID, override.State)
+	}
+	for _, reason := range result.Reasons {
+		fmt.Fprintf(stdout, "Reason: %s\n", reason)
+	}
+	for _, action := range result.NextActions {
+		fmt.Fprintf(stdout, "Next action: %s\n", action)
+	}
+	return 0
+}
+
+type gatePreviewReport struct {
+	Command            string   `json:"command"`
+	GateMode           string   `json:"gate_mode"`
+	TrustCap           string   `json:"trust_cap"`
+	RequiredRuns       []string `json:"required_runs"`
+	RequiredEvidence   []string `json:"required_evidence"`
+	WitnessInspectable bool     `json:"witness_inspectable"`
+	WitnessMismatches  []string `json:"witness_mismatches,omitempty"`
+	Claim              string   `json:"claim"`
+}
+
+func runGatePreview(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "gate preview"}
+	opts.setString("contract", "")
+	opts.setString("witness", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	targets := opts.rest()
+	if len(targets) != 1 {
+		fmt.Fprintln(stderr, "gate preview requires <runs-root-or-run-dir>")
+		return exitUsage
+	}
+	contract, err := trace.LoadContract(opts.stringValue("contract"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	report := gatePreviewReport{
+		Command:          "gate preview",
+		GateMode:         previewGateMode(contract),
+		TrustCap:         string(trace.TrustScopeLocalObserved),
+		RequiredRuns:     requiredRunIDs(contract),
+		RequiredEvidence: requiredEvidenceIDsForCLI(contract),
+		Claim:            "preview is read-only and does not claim the gate will pass",
+	}
+	witnessPath := opts.stringValue("witness")
+	if witnessPath != "" {
+		report.WitnessInspectable, report.WitnessMismatches = demo.PreviewWitnessBinding(witnessPath, targets[0])
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	_ = targets[0]
+	return 0
+}
+
+func runOverride(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 || args[0] != "request" {
+		fmt.Fprintln(stderr, "override requires request")
+		return exitUsage
+	}
+	opts := &flagSet{name: "override request"}
+	opts.setString("out", "")
+	opts.setString("id", "")
+	opts.setString("by", "")
+	opts.setString("reason", "")
+	opts.setString("source-ref", "")
+	opts.setString("scope", "")
+	opts.setString("external-reference", "")
+	if err := opts.parse(args[1:]); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "override request accepts only flags")
+		return exitUsage
+	}
+	runDir := opts.stringValue("out")
+	required := map[string]string{
+		"--out":        runDir,
+		"--id":         opts.stringValue("id"),
+		"--by":         opts.stringValue("by"),
+		"--reason":     opts.stringValue("reason"),
+		"--source-ref": opts.stringValue("source-ref"),
+		"--scope":      opts.stringValue("scope"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "override request requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	payload := map[string]any{
+		"override_id":  opts.stringValue("id"),
+		"producer":     "sdp-trace-cli",
+		"origin":       "native_cli",
+		"requested_by": opts.stringValue("by"),
+		"reason":       opts.stringValue("reason"),
+		"source_ref":   opts.stringValue("source-ref"),
+		"scope":        opts.stringValue("scope"),
+		"created_at":   time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	if external := opts.stringValue("external-reference"); external != "" {
+		payload["external_reference"] = external
+	}
+	event, err := trace.AppendRunEvent(runDir, trace.EventPolicyOverrideRequested, payload, "sdp-trace-cli")
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "override_event: %s\n", event.EventID)
+	return 0
+}
+
+func readJSONFile(path string, dst any) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, dst)
+}
+
+func previewGateMode(contract trace.Contract) string {
+	mode := demo.GateModeObservation
+	for _, required := range contract.RequiredRuns {
+		switch required.Profile {
+		case demo.GateModeProtectedFuture:
+			return demo.GateModeProtectedFuture
+		case demo.GateModeAdvisoryCI:
+			mode = demo.GateModeAdvisoryCI
+		}
+	}
+	return mode
+}
+
+func requiredRunIDs(contract trace.Contract) []string {
+	ids := make([]string, 0, len(contract.RequiredRuns))
+	for _, required := range contract.RequiredRuns {
+		if required.ID != "" {
+			ids = append(ids, required.ID)
+		}
+	}
+	return ids
+}
+
+func requiredEvidenceIDsForCLI(contract trace.Contract) []string {
+	ids := make([]string, 0, len(contract.RequiredEvidence))
+	for _, requirement := range contract.RequiredEvidence {
+		if requirement.ID != "" {
+			ids = append(ids, requirement.ID)
+		}
+	}
+	return ids
+}
+
+func gateExitCode(result demo.GateResult) int {
+	for _, requiredRun := range result.RequiredRuns {
+		if requiredRun.State == demo.GateFail || requiredRun.State == demo.GateMissingTelemetry {
+			return 1
+		}
+	}
+	for _, state := range []string{result.LocalGate, result.CIWitnessGate, result.AuditGradeGate} {
+		if state == demo.GateFail || state == demo.GateMissingTelemetry {
+			return 1
+		}
+	}
+	for _, requiredRun := range result.RequiredRuns {
+		if requiredRun.State == demo.GateCannotVerify {
+			return exitCannotVerify
+		}
+	}
+	for _, state := range []string{result.LocalGate, result.CIWitnessGate, result.AuditGradeGate} {
+		if state == demo.GateCannotVerify {
+			return exitCannotVerify
+		}
 	}
 	return 0
 }
@@ -670,7 +895,8 @@ func knownEventType(eventType string) bool {
 		trace.EventRunStarted,
 		trace.EventCommandStarted,
 		trace.EventCommandFinished,
-		trace.EventRunClosed:
+		trace.EventRunClosed,
+		trace.EventPolicyOverrideRequested:
 		return true
 	default:
 		return false

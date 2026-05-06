@@ -1,0 +1,27 @@
+{
+  "contract_id": "block14-missing-required-run",
+  "version": "block10-event-v1",
+  "required_events": [
+    "recorder_attached",
+    "run_started",
+    "command_started",
+    "command_finished",
+    "run_closed"
+  ],
+  "required_evidence": [
+    {
+      "id": "verification_run_observed",
+      "event_type": "command_started",
+      "payload_field": "wrapper_name",
+      "payload_equals": "verification-run"
+    }
+  ],
+  "required_runs": [
+    {
+      "id": "verification_run",
+      "wrapper_name": "verification-run",
+      "required_evidence": ["verification_run_observed"],
+      "profile": "observation"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "schema_version": "block14-gate-result-v1",
+  "generated_at": "2026-05-06T00:00:00Z",
+  "local_gate": "fail",
+  "ci_witness_gate": "cannot_verify",
+  "audit_grade_gate": "cannot_verify",
+  "gate_mode": "observation",
+  "trust_cap": "local_observed",
+  "required_runs": [
+    {
+      "id": "verification_run",
+      "wrapper_name": "verification-run",
+      "profile": "observation",
+      "state": "missing_telemetry",
+      "reasons": ["required run verification_run with wrapper verification-run is missing"]
+    }
+  ],
+  "required_evidence": ["verification_run_observed"],
+  "observed_evidence": [],
+  "witness_bindings": [],
+  "override_requests": [],
+  "gate_conditions": [
+    {
+      "id": "all_required_runs_present",
+      "state": "fail",
+      "reason": "required run observations are evaluated from contract declarations"
+    },
+    {
+      "id": "all_required_evidence_observed",
+      "state": "fail",
+      "reason": "contract evidence ids are matched against observed run events"
+    },
+    {
+      "id": "ci_witness_bound_when_required",
+      "state": "cannot_verify",
+      "reason": "CI witness binding is advisory in Block 14"
+    },
+    {
+      "id": "audit_grade_external_witness_present",
+      "state": "cannot_verify",
+      "reason": "external witness profile is not implemented in Block 14"
+    }
+  ],
+  "reasons": ["required run verification_run with wrapper verification-run is missing"],
+  "next_actions": ["Run required wrapper verification-run through sdp-trace before evaluating advisory gate."],
+  "missing_audit_evidence": ["ci_oidc_witness", "external_witness_checkpoint"],
+  "runs": []
+}

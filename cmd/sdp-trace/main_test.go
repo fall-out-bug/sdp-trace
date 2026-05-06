@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -11,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
@@ -352,7 +355,7 @@ func TestReportAndGateCommands(t *testing.T) {
 	errOut.Reset()
 	gatePath := filepath.Join(reportDir, "gate-result.json")
 	exit = run([]string{"gate", "--out", gatePath, "--contract", contractPath, root}, &out, &errOut)
-	if exit != 0 {
+	if exit != exitCannotVerify {
 		t.Fatalf("gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
 	}
 	if !strings.Contains(out.String(), `"audit_grade_gate": "cannot_verify"`) {
@@ -406,11 +409,245 @@ func TestGateCommandAcceptsWitness(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	exit := run([]string{"gate", "--out", filepath.Join(t.TempDir(), "gate-result.json"), "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
-	if exit != 0 {
+	if exit != exitCannotVerify {
 		t.Fatalf("gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
 	}
 	if !strings.Contains(out.String(), `"ci_witness_gate": "cannot_verify"`) {
 		t.Fatalf("gate output missing ci witness posture: %s", out.String())
+	}
+}
+
+func TestGateCommandFailsForWitnessArtifactMismatch(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "test")
+	contractPath := writeGateContract(t, t.TempDir())
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	if err := os.WriteFile(witnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "generated_at": "2026-05-05T00:00:00Z",
+	  "source": {"repository": "org/repo", "ref": "refs/heads/main", "commit_sha": "abc123"},
+	  "ci": {"provider": "github-actions", "server_url": "https://github.com", "workflow": "sdp-trace", "job": "test", "run_id": "42", "run_attempt": "1", "actor": "octocat"},
+	  "run_artifacts": [{"path": "001-agent-session/run.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"}],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "--out", filepath.Join(t.TempDir(), "gate-result.json"), "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"ci_witness_gate": "fail"`) {
+		t.Fatalf("gate output missing witness failure: %s", out.String())
+	}
+}
+
+func TestGateCommandCannotVerifyWhenWitnessOmitsRunArtifact(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "test")
+	contractPath := writeGateContract(t, t.TempDir())
+	digest := sha256FileForTest(t, filepath.Join(root, "001-agent-session", "run.json"))
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	if err := os.WriteFile(witnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "generated_at": "2026-05-05T00:00:00Z",
+	  "source": {"repository": "org/repo", "ref": "refs/heads/main", "commit_sha": "abc123"},
+	  "ci": {"provider": "github-actions", "server_url": "https://github.com", "workflow": "sdp-trace", "job": "test", "run_id": "42", "run_attempt": "1", "actor": "octocat"},
+	  "run_artifacts": [{"path": "001-agent-session/run.json", "sha256": "`+digest+`"}],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "--out", filepath.Join(t.TempDir(), "gate-result.json"), "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "ci witness artifact 002-verification-run/run.json is missing from witness") {
+		t.Fatalf("gate output missing omitted artifact reason: %s", out.String())
+	}
+}
+
+func TestGateExplainDoesNotPrintRawSecretLikeCommand(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	if err := os.WriteFile(gatePath, []byte(`{
+	  "schema_version": "block14-gate-result-v1",
+	  "local_gate": "fail",
+	  "ci_witness_gate": "cannot_verify",
+	  "audit_grade_gate": "cannot_verify",
+	  "gate_mode": "observation",
+	  "trust_cap": "local_observed",
+	  "required_runs": [{"id": "verification_run", "wrapper_name": "verification-run", "profile": "observation", "state": "missing_telemetry", "reasons": ["missing"]}],
+	  "reasons": ["missing required run"],
+	  "next_actions": ["Run required wrapper verification-run through sdp-trace before evaluating advisory gate."],
+	  "runs": [{"name": "run-a", "command": "deploy --token SECRET_TOKEN_BLOCK14"}]
+	}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate explain exit %d err=%s", exit, errOut.String())
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK14") {
+		t.Fatalf("explain leaked secret-like command: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "verification_run") || !strings.Contains(out.String(), "missing_telemetry") {
+		t.Fatalf("explain omitted required run state: %s", out.String())
+	}
+}
+
+func TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "SECRET_TOKEN_BLOCK14")
+	contractPath := writeGateContract(t, t.TempDir())
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--contract", contractPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK14") {
+		t.Fatalf("preview leaked secret-like value: %s", out.String())
+	}
+	if strings.Contains(out.String(), `"local_gate": "pass"`) {
+		t.Fatalf("preview claimed pass: %s", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, "gate-result.json")); !os.IsNotExist(err) {
+		t.Fatalf("preview wrote gate artifact")
+	}
+	if !strings.Contains(out.String(), `"command": "gate preview"`) {
+		t.Fatalf("preview output missing command marker: %s", out.String())
+	}
+	if !strings.Contains(out.String(), `"gate_mode": "observation"`) || !strings.Contains(out.String(), `"trust_cap": "local_observed"`) {
+		t.Fatalf("preview output missing mode/trust cap: %s", out.String())
+	}
+}
+
+func TestGatePreviewReportsWitnessArtifactMismatch(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	contractPath := writeGateContract(t, t.TempDir())
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	if err := os.WriteFile(witnessPath, []byte(`{
+	  "kind": "github-actions",
+	  "status": "pass",
+	  "trust_scope": "ci_witnessed",
+	  "reason": "ci_identity_present",
+	  "generated_at": "2026-05-05T00:00:00Z",
+	  "source": {"repository": "org/repo", "ref": "refs/heads/main", "commit_sha": "abc123"},
+	  "run_artifacts": [{"path": "001-agent-session/run.json", "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}],
+	  "report_artifacts": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "ci witness artifact digest mismatch") {
+		t.Fatalf("preview did not report witness mismatch: %s", out.String())
+	}
+}
+
+func TestGateExitCodeChecksRequiredRunStatesDirectly(t *testing.T) {
+	result := demo.GateResult{
+		LocalGate:      demo.GatePass,
+		CIWitnessGate:  demo.GatePass,
+		AuditGradeGate: demo.GatePass,
+		RequiredRuns: []demo.RequiredRunResult{
+			{ID: "verification_run", State: demo.GateMissingTelemetry},
+		},
+	}
+	if got := gateExitCode(result); got != 1 {
+		t.Fatalf("exit code = %d", got)
+	}
+}
+
+func TestOverrideRequestAppendsFlightRecorderEvent(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"override", "request",
+		"--out", runDir,
+		"--id", "override-1",
+		"--by", "release-captain",
+		"--reason", "emergency fix",
+		"--source-ref", "refs/heads/main",
+		"--scope", "verification_run",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("override request exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("open run: %v", err)
+	}
+	last := artifact.Events[len(artifact.Events)-1]
+	if last.EventType != trace.EventPolicyOverrideRequested {
+		t.Fatalf("last event type = %s", last.EventType)
+	}
+	if got := last.EventPayload["origin"]; got != "native_cli" {
+		t.Fatalf("origin = %v", got)
+	}
+}
+
+func TestGateOutputIncludesOverrideWithoutPassingMissingEvidence(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runDir := filepath.Join(root, "001-agent-session")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+	exit := run([]string{
+		"override", "request",
+		"--out", runDir,
+		"--id", "override-1",
+		"--by", "release-captain",
+		"--reason", "emergency fix",
+		"--source-ref", "refs/heads/main",
+		"--scope", "verification_run",
+	}, &bytes.Buffer{}, &bytes.Buffer{})
+	if exit != 0 {
+		t.Fatalf("override request exit = %d", exit)
+	}
+	contractPath := writeGateContract(t, t.TempDir())
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit = run([]string{"gate", "--out", filepath.Join(t.TempDir(), "gate-result.json"), "--contract", contractPath, root}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("gate exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"override_id": "override-1"`) {
+		t.Fatalf("gate output missing override request: %s", out.String())
+	}
+	if strings.Contains(out.String(), `"local_gate": "pass"`) {
+		t.Fatalf("override converted missing evidence to pass: %s", out.String())
 	}
 }
 
@@ -647,6 +884,16 @@ func findPreviewImplication(t *testing.T, implications []previewOfflineImplicati
 	}
 	t.Fatalf("preview implication %s not found in %#v", requirement, implications)
 	return previewOfflineImplication{}
+}
+
+func sha256FileForTest(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read file for digest: %v", err)
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 func writeTestContract(t *testing.T, _ context.Context, dir string) string {
