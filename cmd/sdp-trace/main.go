@@ -43,6 +43,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runWrappedCommand(ctx, cmdArgs, stdout, stderr)
 	case "dry-run":
 		return runDryRun(ctx, cmdArgs, stdout, stderr)
+	case "preview":
+		return runPreview(ctx, cmdArgs, stdout, stderr)
+	case "doctor":
+		return runDoctor(ctx, cmdArgs, stdout, stderr)
 	case "verify":
 		return runVerify(ctx, cmdArgs, stdout, stderr)
 	case "explain":
@@ -244,11 +248,19 @@ func runWrappedCommand(ctx context.Context, args []string, stdout, stderr io.Wri
 }
 
 func runDryRun(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runPreviewCommand("dry-run", "simulation", args, stdout, stderr)
+}
+
+func runPreview(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runPreviewCommand("preview", "preview", args, stdout, stderr)
+}
+
+func runPreviewCommand(commandName, mode string, args []string, stdout, stderr io.Writer) int {
 	if isHelp(args) {
 		printUsage(stdout)
 		return 0
 	}
-	opts := &flagSet{name: "dry-run"}
+	opts := &flagSet{name: commandName}
 	opts.setString("contract", "")
 	opts.setBool("use-default-contract", true)
 	opts.setString("name", "")
@@ -257,13 +269,13 @@ func runDryRun(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	}
 	command := opts.rest()
 	if len(command) == 0 {
-		fmt.Fprintln(stderr, "dry-run requires a command")
+		fmt.Fprintf(stderr, "%s requires a command\n", commandName)
 		return exitUsage
 	}
 	contractPath := opts.stringValue("contract")
 	useDefault := opts.boolValue("use-default-contract")
 	if contractPath == "" && !useDefault {
-		fmt.Fprintln(stderr, "dry-run requires --contract unless --use-default-contract is set")
+		fmt.Fprintf(stderr, "%s requires --contract unless --use-default-contract is set\n", commandName)
 		return exitUsage
 	}
 	contract := trace.DefaultContract
@@ -276,14 +288,50 @@ func runDryRun(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		contract = loaded
 	}
 	payload := map[string]any{
-		"mode":     "simulation",
-		"command":  command,
-		"contract": contract,
-		"warning":  "no run artifacts were written",
+		"mode":                 mode,
+		"command_descriptor":   trace.NewCommandDescriptor(command),
+		"contract":             contract,
+		"boundaries":           previewBoundaries(),
+		"offline_implications": previewOfflineImplications(),
+		"writes_artifacts":     false,
+		"safe_retention_modes": safeRetentionModes(),
+		"warning":              "no run artifacts were written",
 	}
 	data, _ := json.MarshalIndent(payload, "", "  ")
 	fmt.Fprintf(stdout, "%s\n", data)
 	return 0
+}
+
+func runDoctor(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if isHelp(args) {
+		printUsage(stdout)
+		return 0
+	}
+	opts := &flagSet{name: "doctor"}
+	opts.setString("contract", "")
+	opts.setString("output-dir", defaultRunRoot)
+	opts.setString("report-dir", defaultReportDir)
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "doctor does not accept positional arguments")
+		return exitUsage
+	}
+	report, exitCode := buildDoctorReport(doctorOptions{
+		ContractPath: opts.stringValue("contract"),
+		OutputDir:    opts.stringValue("output-dir"),
+		ReportDir:    opts.stringValue("report-dir"),
+		Env:          witness.EnvironmentFromOS(),
+	})
+	data, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "%s\n", data)
+	return exitCode
 }
 
 func runVerify(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -404,6 +452,335 @@ func runValidateFixtures(_ context.Context, args []string, stdout, stderr io.Wri
 	return 0
 }
 
+type doctorReport struct {
+	Command            string        `json:"command"`
+	Result             string        `json:"result"`
+	Environment        []doctorCheck `json:"environment"`
+	ControlPoints      []doctorCheck `json:"control_points"`
+	SafeRetentionModes []string      `json:"safe_retention_modes"`
+}
+
+type doctorCheck struct {
+	ID        string   `json:"id"`
+	State     string   `json:"state"`
+	Reason    string   `json:"reason"`
+	Contract  string   `json:"contract_id,omitempty"`
+	Missing   []string `json:"missing,omitempty"`
+	Reference string   `json:"reference,omitempty"`
+}
+
+type doctorOptions struct {
+	ContractPath string
+	OutputDir    string
+	ReportDir    string
+	Env          map[string]string
+}
+
+type previewBoundary struct {
+	Boundary string `json:"boundary"`
+	State    string `json:"state"`
+	Reason   string `json:"reason"`
+}
+
+type previewOfflineImplication struct {
+	Requirement string `json:"requirement"`
+	State       string `json:"state"`
+	Reason      string `json:"reason"`
+}
+
+const (
+	defaultRunRoot   = ".sdp-trace-runs"
+	defaultReportDir = ".sdp-trace-report"
+)
+
+func buildDoctorReport(options doctorOptions) (doctorReport, int) {
+	defaultContract := trace.DefaultContract
+	result := "offline_dev"
+	exitCode := 0
+	contract := defaultContract
+	contractCheck := doctorCheck{
+		ID:        "contract",
+		State:     "pass",
+		Reason:    "default contract is available",
+		Contract:  defaultContract.ContractID,
+		Reference: "local-default-v1",
+	}
+	if options.ContractPath != "" {
+		loaded, err := trace.LoadContract(options.ContractPath)
+		if err != nil {
+			result = string(trace.VerdictCannotVerify)
+			exitCode = exitCannotVerify
+			contractCheck = doctorCheck{
+				ID:        "contract",
+				State:     string(trace.VerdictCannotVerify),
+				Reason:    "contract cannot be loaded",
+				Reference: options.ContractPath,
+			}
+		} else {
+			contract = loaded
+			contractCheck = doctorCheck{
+				ID:        "contract",
+				State:     "pass",
+				Reason:    "contract can be loaded",
+				Contract:  contract.ContractID,
+				Reference: options.ContractPath,
+			}
+		}
+	}
+	ciCheck := ciWitnessPrerequisiteCheck(options.Env)
+	outputDirCheck := writablePathCheck("output_directory", options.OutputDir, "run artifact output directory is writable")
+	reportDirCheck := writablePathCheck("report_directory", options.ReportDir, "report artifact directory is writable")
+	expectedEvidenceCheck := expectedEvidenceReferenceCheck(contract)
+	for _, check := range []doctorCheck{outputDirCheck, reportDirCheck, expectedEvidenceCheck} {
+		if check.State == string(trace.VerdictCannotVerify) {
+			result = string(trace.VerdictCannotVerify)
+			exitCode = exitCannotVerify
+		}
+	}
+	report := doctorReport{
+		Command: "doctor",
+		Result:  result,
+		Environment: []doctorCheck{
+			{
+				ID:     "local_process",
+				State:  "pass",
+				Reason: "current process can inspect local environment",
+			},
+			{
+				ID:     "offline_development",
+				State:  "offline_dev",
+				Reason: "external CI identity is not required for local preview or wrapper readiness",
+			},
+		},
+		ControlPoints: []doctorCheck{
+			{
+				ID:     "local_wrapper",
+				State:  "pass",
+				Reason: "wrap and run commands are registered in this binary",
+			},
+			outputDirCheck,
+			reportDirCheck,
+			contractCheck,
+			expectedEvidenceCheck,
+			{
+				ID:        "default_contract",
+				State:     "pass",
+				Reason:    "built-in contract is available for local development",
+				Contract:  defaultContract.ContractID,
+				Reference: defaultContract.Version,
+			},
+			ciCheck,
+		},
+		SafeRetentionModes: safeRetentionModes(),
+	}
+	return report, exitCode
+}
+
+func writablePathCheck(id, path, okReason string) doctorCheck {
+	if strings.TrimSpace(path) == "" {
+		return doctorCheck{
+			ID:     id,
+			State:  string(trace.VerdictCannotVerify),
+			Reason: "path is empty",
+		}
+	}
+	target := path
+	info, err := os.Stat(target)
+	if err == nil && !info.IsDir() {
+		return doctorCheck{
+			ID:        id,
+			State:     string(trace.VerdictCannotVerify),
+			Reason:    "path exists but is not a directory",
+			Reference: path,
+		}
+	}
+	if os.IsNotExist(err) {
+		target = filepath.Dir(path)
+		if target == "" {
+			target = "."
+		}
+	}
+	probe, err := os.CreateTemp(target, ".sdp-trace-doctor-")
+	if err != nil {
+		return doctorCheck{
+			ID:        id,
+			State:     string(trace.VerdictCannotVerify),
+			Reason:    "directory is not writable",
+			Reference: path,
+		}
+	}
+	probeName := probe.Name()
+	_ = probe.Close()
+	_ = os.Remove(probeName)
+	return doctorCheck{
+		ID:        id,
+		State:     "pass",
+		Reason:    okReason,
+		Reference: path,
+	}
+}
+
+func expectedEvidenceReferenceCheck(contract trace.Contract) doctorCheck {
+	if len(contract.RequiredEvents) == 0 {
+		return doctorCheck{
+			ID:       "expected_evidence_references",
+			State:    string(trace.VerdictCannotVerify),
+			Reason:   "contract has no required_events",
+			Contract: contract.ContractID,
+		}
+	}
+	missing := make([]string, 0)
+	for _, eventType := range contract.RequiredEvents {
+		if !knownEventType(eventType) {
+			missing = append(missing, "required_events:"+eventType)
+		}
+	}
+	for _, evidence := range contract.RequiredEvidence {
+		if strings.TrimSpace(evidence.ID) == "" {
+			missing = append(missing, "required_evidence:<missing_id>")
+		}
+		if strings.TrimSpace(evidence.EventType) == "" {
+			missing = append(missing, "required_evidence:"+evidence.ID+":<missing_event_type>")
+			continue
+		}
+		if !knownEventType(evidence.EventType) {
+			missing = append(missing, "required_evidence:"+evidence.ID+":"+evidence.EventType)
+		}
+	}
+	if len(missing) > 0 {
+		return doctorCheck{
+			ID:       "expected_evidence_references",
+			State:    string(trace.VerdictCannotVerify),
+			Reason:   "contract references unsupported event types",
+			Contract: contract.ContractID,
+			Missing:  missing,
+		}
+	}
+	return doctorCheck{
+		ID:       "expected_evidence_references",
+		State:    "pass",
+		Reason:   "contract required events and evidence references are supported by the current local event model",
+		Contract: contract.ContractID,
+	}
+}
+
+func knownEventType(eventType string) bool {
+	switch trace.EventType(eventType) {
+	case trace.EventRecorderAttached,
+		trace.EventRunStarted,
+		trace.EventCommandStarted,
+		trace.EventCommandFinished,
+		trace.EventRunClosed:
+		return true
+	default:
+		return false
+	}
+}
+
+func ciWitnessPrerequisiteCheck(env map[string]string) doctorCheck {
+	missing := missingCIWitnessFields(env)
+	if len(missing) > 0 {
+		return doctorCheck{
+			ID:      "ci_witness_prerequisites",
+			State:   string(trace.VerdictCannotVerify),
+			Reason:  "GitHub Actions identity or OIDC prerequisite is unavailable in this environment",
+			Missing: missing,
+		}
+	}
+	return doctorCheck{
+		ID:     "ci_witness_prerequisites",
+		State:  "pass",
+		Reason: "GitHub Actions identity and OIDC prerequisites are present",
+	}
+}
+
+func missingCIWitnessFields(env map[string]string) []string {
+	required := []string{
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN",
+		"ACTIONS_ID_TOKEN_REQUEST_URL",
+		"GITHUB_ACTIONS",
+		"GITHUB_ACTOR",
+		"GITHUB_JOB",
+		"GITHUB_REF",
+		"GITHUB_REPOSITORY",
+		"GITHUB_RUN_ATTEMPT",
+		"GITHUB_RUN_ID",
+		"GITHUB_SERVER_URL",
+		"GITHUB_SHA",
+		"GITHUB_WORKFLOW",
+	}
+	missing := make([]string, 0)
+	for _, key := range required {
+		if strings.TrimSpace(env[key]) == "" {
+			missing = append(missing, key)
+		}
+	}
+	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
+		missing = append(missing, "GITHUB_ACTIONS=true")
+	}
+	return missing
+}
+
+func safeRetentionModes() []string {
+	return []string{
+		string(trace.RetentionModeDigestOnly),
+		string(trace.RetentionModeSanitizedExcerpt),
+		string(trace.RetentionModeEncryptedRawRef),
+		string(trace.RetentionModeExternalArtifactRef),
+		string(trace.RetentionModeNotAssessed),
+	}
+}
+
+func previewBoundaries() []previewBoundary {
+	return []previewBoundary{
+		{
+			Boundary: string(trace.ObservationBoundaryProcessWrapper),
+			State:    "pass",
+			Reason:   "preview covers local process-wrapper capture only",
+		},
+		{
+			Boundary: string(trace.ObservationBoundaryAdapterSocket),
+			State:    string(trace.ObservationStateNotIntegrated),
+			Reason:   "adapter socket/API capture is not configured in Block 13B",
+		},
+		{
+			Boundary: string(trace.ObservationBoundaryToolWrapper),
+			State:    string(trace.ObservationStateUnsupported),
+			Reason:   "tool-level wrapping is a future observation boundary",
+		},
+		{
+			Boundary: string(trace.ObservationBoundaryVCSPRObserver),
+			State:    string(trace.ObservationStateNotIntegrated),
+			Reason:   "VCS/PR observer is not configured in Block 13B",
+		},
+		{
+			Boundary: string(trace.ObservationBoundaryCIObserver),
+			State:    string(trace.ObservationStateOfflineDev),
+			Reason:   "CI witness cannot be produced by local preview",
+		},
+		{
+			Boundary: string(trace.ObservationBoundaryExternalWitness),
+			State:    string(trace.ObservationStateNotIntegrated),
+			Reason:   "external witness profile is not implemented in Block 13B",
+		},
+	}
+}
+
+func previewOfflineImplications() []previewOfflineImplication {
+	return []previewOfflineImplication{
+		{
+			Requirement: "ci_witnessed",
+			State:       string(trace.ObservationStateOfflineDev),
+			Reason:      "rerun in CI with OIDC before using CI witness evidence",
+		},
+		{
+			Requirement: "external_witnessed",
+			State:       string(trace.ObservationStateNotIntegrated),
+			Reason:      "external witness profile is not implemented in Block 13B",
+		},
+	}
+}
+
 func printUsage(w io.Writer) {
 	const usage = `sdp-trace local recorder and verifier commands.
 
@@ -411,6 +788,8 @@ Usage:
   sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>
   sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>
+  sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>
+  sdp-trace doctor [--contract <file>]
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>
   sdp-trace query --query missing-evidence <run-dir>

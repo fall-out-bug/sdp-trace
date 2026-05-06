@@ -2,11 +2,15 @@
 
 Status: revised after first Socratic review pass.
 
+Block 13B completion details now live in
+`specs/001-sdp-trace-time-series-evidence-substrate/blocks/13b-capture-boundary-state-dx-baseline.md`.
+
 Parent artifacts:
 
 - `docs/cto-adoption-guide.en.md`
 - `docs/team-lead-playbook.en.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/12-ci-witness-adoption.md`
+- `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13b-capture-boundary-state-dx-baseline.md`
 - `docs/research/block-12-documentation-review-convergence.md`
 
 ## Goal
@@ -796,11 +800,11 @@ contracts:
 1. current local observed demo evidence;
 2. Block 13B preview, doctor, deterministic explain, and overhead measurement;
 3. Block 14 advisory gate and visible override/missing-run behavior;
-3. Block 15 signed CI checkpoint;
-4. Block 16 protected gate profile with source/PR/merge binding;
-5. Block 17 managed-harness profile for a demo-managed wrapper path;
-6. Block 18 safe redaction and retention profile;
-7. Block 19 optional adapter events for OpenCode/GSD, kept in the demo repo or
+4. Block 15 signed CI checkpoint;
+5. Block 16 protected gate profile with source/PR/merge binding;
+6. Block 17 managed-harness profile for a demo-managed wrapper path;
+7. Block 18 safe redaction and retention profile;
+8. Block 19 optional adapter events for OpenCode/GSD, kept in the demo repo or
    as generic adapter examples.
 
 The demo must show real repo artifacts, not a slide show:
