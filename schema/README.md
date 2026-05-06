@@ -22,6 +22,9 @@ These schemas define the portable `sdp-trace` contract.
 | `flight-recorder-event.schema.json` | Records one ordered Block 09 recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
 | `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
 | `flight-recorder-witness.schema.json` | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
+| `signed-checkpoint.schema.json` | Records a detached-signature checkpoint binding run id, nonce, source snapshot, task hash, contract digest, event count, and chain head for replay-resistant verification. |
+| `trusted-checkpoint-policy.schema.json` | Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence. |
+| `checkpoint-verification.schema.json` | Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks. |
 | `ci-witness.schema.json` | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
 | `gate-result.schema.json` | Records Block 14 advisory gate facts, required-run state, CI witness binding state, override visibility, and next-action hints without native policy ownership. |
 | `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
@@ -60,6 +61,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runGate(ctx, cmdArgs, stdout, stderr)
 	case "override":
 		return runOverride(ctx, cmdArgs, stdout, stderr)
+	case "checkpoint":
+		return runCheckpoint(ctx, cmdArgs, stdout, stderr)
 	case "witness":
 		return runWitness(ctx, cmdArgs, stdout, stderr)
 	case "validate-fixtures":
@@ -67,6 +70,119 @@ func run(args []string, stdout, stderr io.Writer) int {
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
+		return 1
+	}
+}
+
+func runCheckpoint(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "checkpoint requires create or verify")
+		return exitUsage
+	}
+	switch args[0] {
+	case "create":
+		return runCheckpointCreate(args[1:], stdout, stderr)
+	case "verify":
+		return runCheckpointVerify(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintln(stderr, "checkpoint requires create or verify")
+		return exitUsage
+	}
+}
+
+func runCheckpointCreate(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "checkpoint create"}
+	opts.setString("run", "")
+	opts.setString("out", "")
+	opts.setString("private-key", "")
+	opts.setString("signer-id", "")
+	opts.setString("id", "checkpoint-001")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "checkpoint create accepts only flags")
+		return exitUsage
+	}
+	required := map[string]string{
+		"--run":         opts.stringValue("run"),
+		"--out":         opts.stringValue("out"),
+		"--private-key": opts.stringValue("private-key"),
+		"--signer-id":   opts.stringValue("signer-id"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "checkpoint create requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	var key checkpoint.KeyPair
+	if err := readJSONFile(opts.stringValue("private-key"), &key); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	created, err := checkpoint.Create(opts.stringValue("run"), checkpoint.CreateOptions{
+		CheckpointID: opts.stringValue("id"),
+		SignerID:     opts.stringValue("signer-id"),
+		Key:          key,
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if err := writeJSONFile(opts.stringValue("out"), created); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "checkpoint: %s\n", created.CheckpointID)
+	return 0
+}
+
+func runCheckpointVerify(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "checkpoint verify"}
+	opts.setString("run", "")
+	opts.setString("checkpoint", "")
+	opts.setString("policy", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "checkpoint verify accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("run")) == "" {
+		fmt.Fprintln(stderr, "checkpoint verify requires --run")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("checkpoint")) == "" {
+		fmt.Fprintln(stderr, "checkpoint verify requires --checkpoint")
+		return exitUsage
+	}
+	var signed checkpoint.SignedCheckpoint
+	if err := readJSONFile(opts.stringValue("checkpoint"), &signed); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	var policy *checkpoint.TrustedCheckpointPolicy
+	if opts.stringValue("policy") != "" {
+		var loaded checkpoint.TrustedCheckpointPolicy
+		if err := readJSONFile(opts.stringValue("policy"), &loaded); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		policy = &loaded
+	}
+	result := checkpoint.Verify(opts.stringValue("run"), signed, policy)
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	switch result.Result {
+	case checkpoint.StatePass:
+		return 0
+	case checkpoint.StateCannotVerify:
+		return exitCannotVerify
+	default:
 		return 1
 	}
 }
@@ -300,6 +416,17 @@ func readJSONFile(path string, dst any) error {
 		return err
 	}
 	return json.Unmarshal(data, dst)
+}
+
+func writeJSONFile(path string, value any) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(data, '\n'), 0o644)
 }
 
 func previewGateMode(contract trace.Contract) string {

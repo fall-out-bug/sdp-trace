@@ -1,0 +1,17 @@
+{
+  "schema_version": "block15-checkpoint-verification-v1",
+  "checkpoint_id": "checkpoint-001",
+  "run_id": "7af11a1de739f77b",
+  "result": "pass",
+  "trust_scope": "local_signed",
+  "payload_digest_state": "pass",
+  "signature_state": "pass",
+  "run_binding_state": "pass",
+  "chain_binding_state": "pass",
+  "source_binding_state": "pass",
+  "nonce_binding_state": "pass",
+  "sequence_state": "pass",
+  "signer_authority_state": "pass",
+  "replay_freshness_state": "not_assessed",
+  "reasons": []
+}

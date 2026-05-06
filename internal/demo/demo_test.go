@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -195,6 +196,32 @@ func TestProtectedFutureRequiredRunCannotVerify(t *testing.T) {
 	}
 	if gate.LocalGate != GateCannotVerify {
 		t.Fatalf("local gate = %s reasons=%v", gate.LocalGate, gate.Reasons)
+	}
+}
+
+func TestLocalSignedCheckpointDoesNotUpgradeProtectedFutureGate(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredEvidence = nil
+	contract.RequiredRuns = []trace.RequiredRun{
+		{ID: "protected_release", WrapperName: "verification-run", Profile: "protected_future"},
+	}
+	checkpointResult := checkpoint.VerificationResult{
+		Result:     checkpoint.StatePass,
+		TrustScope: checkpoint.TrustScopeLocalSigned,
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "verification-run", WrapperName: "verification-run", Kind: "verification_run_observed", Result: "observed", ClosureState: "completed"},
+	}, contract)
+
+	if checkpointResult.Result != checkpoint.StatePass {
+		t.Fatalf("test setup expected local signed checkpoint pass")
+	}
+	if gate.LocalGate != GateCannotVerify {
+		t.Fatalf("local signed checkpoint must not upgrade protected future gate, got %s", gate.LocalGate)
+	}
+	if gate.AuditGradeGate != GateCannotVerify {
+		t.Fatalf("local signed checkpoint must not upgrade audit gate, got %s", gate.AuditGradeGate)
 	}
 }
 

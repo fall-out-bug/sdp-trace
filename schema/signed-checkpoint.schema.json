@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/signed-checkpoint.schema.json",
+  "title": "SDP Trace Signed Checkpoint",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "checkpoint_id",
+    "run_id",
+    "sequence",
+    "profile",
+    "canonicalization",
+    "hash_algorithm",
+    "payload",
+    "payload_digest",
+    "signature",
+    "signer_identity"
+  ],
+  "properties": {
+    "schema_version": { "const": "block15-signed-checkpoint-v1" },
+    "checkpoint_id": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+    "run_id": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "profile": { "const": "sdp-trace-checkpoint/ed25519-detached-v1" },
+    "canonicalization": {
+      "type": "object",
+      "required": ["algorithm", "version"],
+      "properties": {
+        "algorithm": { "const": "json-canonicalization-scheme" },
+        "version": { "const": "1.0.0" }
+      },
+      "additionalProperties": false
+    },
+    "hash_algorithm": { "const": "sha256" },
+    "payload": { "$ref": "#/$defs/payload" },
+    "payload_digest": { "$ref": "common.schema.json#/$defs/sha256" },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "signature", "public_key"],
+      "properties": {
+        "algorithm": { "const": "ed25519" },
+        "signature": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+        "public_key": { "$ref": "common.schema.json#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "signer_identity": {
+      "type": "object",
+      "required": ["signer_id", "authority", "key_isolation"],
+      "properties": {
+        "signer_id": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+        "authority": {
+          "enum": ["local_development_key", "ci_isolated_job", "external_witness_service"]
+        },
+        "key_isolation": {
+          "enum": ["not_assessed", "ci_isolated_job", "external_service"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "payload": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "run_nonce",
+        "event_chain_head",
+        "event_count",
+        "source_snapshot_digest",
+        "source_snapshot_state",
+        "task_hash",
+        "contract_digest",
+        "previous_checkpoint_digest",
+        "replay_context"
+      ],
+      "properties": {
+        "run_id": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+        "run_nonce": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+        "event_chain_head": { "$ref": "common.schema.json#/$defs/sha256" },
+        "event_count": { "type": "integer", "minimum": 1 },
+        "source_snapshot_digest": { "$ref": "common.schema.json#/$defs/sha256" },
+        "source_snapshot_state": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+        "task_hash": { "$ref": "common.schema.json#/$defs/sha256" },
+        "contract_digest": { "$ref": "common.schema.json#/$defs/sha256" },
+        "previous_checkpoint_digest": {
+          "oneOf": [
+            { "const": "" },
+            { "$ref": "common.schema.json#/$defs/sha256" }
+          ]
+        },
+        "replay_context": {
+          "type": "object",
+          "required": ["repository", "ref", "commit_sha"],
+          "properties": {
+            "repository": { "type": "string" },
+            "ref": { "type": "string" },
+            "commit_sha": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

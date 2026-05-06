@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -269,6 +270,69 @@ func TestUsageMentionsDoctorAndPreview(t *testing.T) {
 	}
 }
 
+func TestCheckpointCreateAndVerifyCLI(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"run",
+		"--task", "task-1",
+		"--use-default-contract",
+		"--output-dir", runDir,
+		"--", echo, "SECRET_TOKEN_SHOULD_NOT_APPEAR",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("run exit: %d err=%s", exit, errOut.String())
+	}
+
+	key, err := checkpoint.GenerateKeyPair("local-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(t.TempDir(), "key.json")
+	writeJSONFileForTest(t, keyPath, key)
+	checkpointPath := filepath.Join(t.TempDir(), "checkpoint.json")
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"checkpoint", "create",
+		"--run", runDir,
+		"--out", checkpointPath,
+		"--private-key", keyPath,
+		"--signer-id", "local-dev",
+		"--id", "checkpoint-001",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("checkpoint create exit: %d err=%s", exit, errOut.String())
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_SHOULD_NOT_APPEAR") {
+		t.Fatalf("checkpoint create leaked sensitive output: %s", out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"checkpoint", "verify",
+		"--run", runDir,
+		"--checkpoint", checkpointPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("checkpoint verify exit: %d err=%s", exit, errOut.String())
+	}
+	var result checkpoint.VerificationResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("verify result: %v", err)
+	}
+	if result.Result != checkpoint.StatePass || result.TrustScope != checkpoint.TrustScopeLocalSigned {
+		t.Fatalf("unexpected verify result: %+v", result)
+	}
+	if strings.Contains(out.String(), "SECRET_TOKEN_SHOULD_NOT_APPEAR") {
+		t.Fatalf("checkpoint verify leaked sensitive output: %s", out.String())
+	}
+}
+
 func TestRunRequiresTaskAndRecordsRun(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	runDir := filepath.Join(t.TempDir(), "run")
@@ -286,6 +350,17 @@ func TestRunRequiresTaskAndRecordsRun(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(runDir, "run.json")); err != nil {
 		t.Fatalf("run manifest missing: %v", err)
+	}
+}
+
+func writeJSONFileForTest(t *testing.T, path string, value any) {
+	t.Helper()
+	raw, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 

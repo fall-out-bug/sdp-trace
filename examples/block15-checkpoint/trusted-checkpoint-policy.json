@@ -1,0 +1,11 @@
+{
+  "schema_version": "block15-trusted-checkpoint-policy-v1",
+  "policy_id": "block15-local-policy",
+  "allowed_signers": [
+    {
+      "signer_id": "local-dev",
+      "authority": "local_development_key",
+      "public_key": "UZAxrk6XxJYx2TRyQ5IsMXgQSNFqoictof1FCiQfAXc="
+    }
+  ]
+}

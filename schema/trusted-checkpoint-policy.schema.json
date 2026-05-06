@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/trusted-checkpoint-policy.schema.json",
+  "title": "SDP Trace Trusted Checkpoint Policy",
+  "type": "object",
+  "required": ["schema_version", "policy_id", "allowed_signers"],
+  "properties": {
+    "schema_version": { "const": "block15-trusted-checkpoint-policy-v1" },
+    "policy_id": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+    "allowed_signers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["signer_id", "authority", "public_key"],
+        "properties": {
+          "signer_id": { "$ref": "common.schema.json#/$defs/nonEmptyString" },
+          "authority": {
+            "enum": ["local_development_key", "ci_isolated_job", "external_witness_service"]
+          },
+          "public_key": { "$ref": "common.schema.json#/$defs/nonEmptyString" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

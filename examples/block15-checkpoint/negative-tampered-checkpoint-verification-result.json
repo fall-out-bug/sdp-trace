@@ -1,0 +1,21 @@
+{
+  "schema_version": "block15-checkpoint-verification-v1",
+  "checkpoint_id": "checkpoint-001",
+  "run_id": "7af11a1de739f77b",
+  "result": "fail",
+  "trust_scope": "local_signed",
+  "payload_digest_state": "fail",
+  "signature_state": "fail",
+  "run_binding_state": "pass",
+  "chain_binding_state": "fail",
+  "source_binding_state": "pass",
+  "nonce_binding_state": "pass",
+  "sequence_state": "pass",
+  "signer_authority_state": "pass",
+  "replay_freshness_state": "not_assessed",
+  "reasons": [
+    "checkpoint payload_digest does not match canonical payload",
+    "checkpoint signature is invalid",
+    "event chain binding does not match selected run"
+  ]
+}
