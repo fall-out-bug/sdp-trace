@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/ci-witness.schema.json",
+  "title": "SDP Trace CI Witness",
+  "type": "object",
+  "required": [
+    "kind",
+    "status",
+    "trust_scope",
+    "reason",
+    "generated_at",
+    "source",
+    "ci",
+    "run_artifacts",
+    "report_artifacts"
+  ],
+  "properties": {
+    "kind": { "type": "string", "enum": ["github-actions"] },
+    "status": { "type": "string", "enum": ["pass", "cannot_verify"] },
+    "trust_scope": { "type": "string", "enum": ["ci_witnessed", "local_observed"] },
+    "reason": { "type": "string" },
+    "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "missing_identity_fields": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "source": {
+      "type": "object",
+      "required": ["repository", "ref", "commit_sha"],
+      "properties": {
+        "repository": { "type": "string" },
+        "ref": { "type": "string" },
+        "commit_sha": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "ci": {
+      "type": "object",
+      "required": [
+        "provider",
+        "server_url",
+        "workflow",
+        "job",
+        "run_id",
+        "run_attempt",
+        "actor"
+      ],
+      "properties": {
+        "provider": { "type": "string", "enum": ["github-actions"] },
+        "server_url": { "type": "string" },
+        "workflow": { "type": "string" },
+        "job": { "type": "string" },
+        "run_id": { "type": "string" },
+        "run_attempt": { "type": "string" },
+        "actor": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "oidc": {
+      "type": "object",
+      "required": ["issuer", "subject", "audience", "repository", "ref", "sha"],
+      "properties": {
+        "issuer": { "type": "string", "const": "https://token.actions.githubusercontent.com" },
+        "subject": { "type": "string", "minLength": 1 },
+        "audience": { "type": "string", "minLength": 1 },
+        "repository": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "minLength": 1 },
+        "sha": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "run_artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifactDigest" }
+    },
+    "report_artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifactDigest" }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "pass" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["oidc"],
+        "properties": {
+          "trust_scope": { "const": "ci_witnessed" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "cannot_verify" },
+          "reason": { "enum": ["missing_ci_identity", "missing_ci_oidc"] }
+        },
+        "required": ["status", "reason"]
+      },
+      "then": {
+        "required": ["missing_identity_fields"],
+        "properties": {
+          "missing_identity_fields": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "artifactDigest": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "common.schema.json#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

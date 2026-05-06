@@ -6,24 +6,26 @@ Use this path for a first-time reviewer check in under five minutes.
 
 From a clean checkout, run:
 
-1. `npm run verify:baseline`
-2. `npm run verify:source-bound`
-3. `npm run verify:external-trust`  
-   Known blocker on clean checkout: this command exits with code `1` and reports `external_trust_profile_selected: fail` until external evidence is added. Treat this as an expected in-repo trust blocker, not a setup failure.
+1. `go test ./...`
+2. `go run ./cmd/sdp-trace --help`
+3. `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`
+4. Create or inspect a run with `go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok`.
+5. Verify that run with `go run ./cmd/sdp-trace verify <run-dir>`.
 
-If external trust is not in scope, stop at step 2.
+External trust is not part of the first Block 10 milestone.
 
 Exit code contract:
-- `0`: `pass`
+- `0`: `observed` or `not_assessed`
 - `1`: `fail`
 - `2`: usage error / invalid command invocation
 - `3`: `cannot_verify`
 
-Shared script-form command surface:
-- `scripts/verify.sh --profile baseline|source-bound|external-trust [--json] [--allow-dirty] [--version]`
-- `npm run verify:baseline` is equivalent to `scripts/verify.sh --profile baseline`
-- `npm run verify:source-bound` is equivalent to `scripts/verify.sh --profile source-bound`
-- `npm run verify:external-trust` is equivalent to `scripts/verify.sh --profile external-trust`
+Shared command surface:
+- `go test ./...`
+- `go run ./cmd/sdp-trace validate-fixtures <fixture-dir>`
+- `go run ./cmd/sdp-trace wrap --name <name> -- <command...>`
+- `go run ./cmd/sdp-trace verify <run-dir>`
+- `go run ./cmd/sdp-trace explain <run-dir>`
 
 If any command returns exit code `3`, clean the checkout first for source-bound/external conclusions.
 
@@ -59,7 +61,7 @@ When that state is `fail`, those states are blocked before independent assessmen
 
 ## What You May State from Output
 
-From `npm run verify:*` results, you may only state:
+From verifier results, you may only state:
 
 - Which profile command was run.
 - Which `result` values were produced for required states.
@@ -71,14 +73,7 @@ You may not state external production trust guarantees until `external_productio
 
 Use text output for quick status checks.
 
-Use one of these forms for JSON output:
-
-- `npm run verify:baseline -- --json`
-- `npm run verify:source-bound -- --json`
-- `npm run verify:external-trust -- --json`
-- `scripts/verify.sh --profile baseline --json`
-- `scripts/verify.sh --profile source-bound --json`
-- `scripts/verify.sh --profile external-trust --json`
+Use `go run ./cmd/sdp-trace verify <run-dir>` for JSON verifier output.
 
 Use JSON for:
 
@@ -90,8 +85,6 @@ Use JSON for:
 
 | Goal | Command | Profile ID | Typical state boundary |
 | --- | --- | --- | --- |
-| Structural profile | `npm run verify:baseline` | `repo_baseline_structural` | live `result: pass` supports structural assertions only |
-| Source-bound profile | `npm run verify:source-bound` | `source_bound_local_release` | live `result: pass` supports local source-bound assertions only |
-| External production trust profile | `npm run verify:external-trust` | `external_production_trust` | live `result: pass` supports external-trust assertions only |
+| Local trace verification | `go run ./cmd/sdp-trace verify <run-dir>` | `local_observed` | live `result: observed` supports local structural assertions only |
 
 This entrypoint is intentionally minimal and is intended to prevent over-claiming from reproducible verifier output.

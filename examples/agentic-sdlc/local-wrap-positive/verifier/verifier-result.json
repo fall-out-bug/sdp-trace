@@ -1,0 +1,9 @@
+{
+  "run_id": "fa984b5dd284292c",
+  "result": "observed",
+  "trust_scope": "local_observed",
+  "completeness": "complete",
+  "replayability": "partial",
+  "reason": "",
+  "run_dir": "examples/agentic-sdlc/local-wrap-positive"
+}
