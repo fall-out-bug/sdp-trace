@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/witness-profile-result.schema.json",
+  "title": "SDP Trace Witness Profile Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "profile_id",
+    "profile_version",
+    "provider_kind",
+    "status",
+    "trust_scope",
+    "established_trust_scope",
+    "reason",
+    "generated_at",
+    "source",
+    "ci",
+    "run_artifacts",
+    "report_artifacts",
+    "profile_states",
+    "output_safety"
+  ],
+  "properties": {
+    "schema_version": { "const": "sdp-trace-witness-profile-result/v1" },
+    "kind": { "enum": ["github-actions", "gitlab-ci", "buildkite", "customer-pki"] },
+    "profile_id": { "enum": ["github-actions-v1", "gitlab-ci-v1", "buildkite-v1", "customer-pki-v1"] },
+    "profile_version": { "const": "1.0" },
+    "provider_kind": { "enum": ["github-actions", "gitlab-ci", "buildkite", "customer-pki"] },
+    "status": { "$ref": "#/$defs/state" },
+    "trust_scope": { "$ref": "#/$defs/trustScope" },
+    "requested_trust_scope": { "$ref": "#/$defs/trustScope" },
+    "established_trust_scope": { "$ref": "#/$defs/trustScope" },
+    "reason": { "$ref": "#/$defs/reasonCode" },
+    "reason_codes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reasonCode" }
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "missing_identity_fields": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9_.|:-]+$" }
+    },
+    "source": { "$ref": "#/$defs/source" },
+    "ci": { "$ref": "#/$defs/ci" },
+    "run_artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "report_artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "profile_states": { "$ref": "#/$defs/profileStates" },
+    "output_safety": { "$ref": "#/$defs/outputSafety" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "state": {
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "trustScope": {
+      "enum": ["ci_witnessed", "local_observed", "external_witnessed", "cannot_verify", "not_assessed", "fail"]
+    },
+    "reasonCode": {
+      "enum": [
+        "ci_identity_present",
+        "witness_profile_verified",
+        "missing_ci_identity",
+        "missing_ci_oidc",
+        "invalid_ci_oidc",
+        "witness_identity_missing",
+        "witness_identity_mismatch",
+        "witness_signer_authority_missing",
+        "witness_signer_mismatch",
+        "witness_freshness_missing",
+        "witness_freshness_stale",
+        "witness_artifact_digest_missing",
+        "witness_artifact_digest_mismatch",
+        "witness_source_binding_missing",
+        "witness_source_mismatch",
+        "witness_run_binding_missing",
+        "witness_run_mismatch",
+        "witness_policy_binding_missing",
+        "witness_policy_mismatch",
+        "witness_environment_only_insufficient",
+        "witness_unsupported_profile",
+        "witness_malformed_input",
+        "witness_unsafe_output_candidate",
+        "witness_private_key_input_rejected",
+        "witness_revocation_not_assessed",
+        "witness_certificate_revoked",
+        "witness_key_custody_not_assessed"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string" },
+        "ref": { "type": "string" },
+        "commit_sha": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "ci": {
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string" },
+        "server_url": { "type": "string" },
+        "workflow": { "type": "string" },
+        "job": { "type": "string" },
+        "run_id": { "type": "string" },
+        "run_attempt": { "type": "string" },
+        "actor": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^[A-Za-z0-9._/-]+$" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "profileStates": {
+      "type": "object",
+      "required": [
+        "identity_state",
+        "signer_authority_state",
+        "freshness_state",
+        "artifact_binding_state",
+        "source_binding_state",
+        "run_binding_state",
+        "policy_binding_state",
+        "independence_state"
+      ],
+      "properties": {
+        "identity_state": { "$ref": "#/$defs/state" },
+        "signer_authority_state": { "$ref": "#/$defs/state" },
+        "freshness_state": { "$ref": "#/$defs/state" },
+        "artifact_binding_state": { "$ref": "#/$defs/state" },
+        "source_binding_state": { "$ref": "#/$defs/state" },
+        "run_binding_state": { "$ref": "#/$defs/state" },
+        "policy_binding_state": { "$ref": "#/$defs/state" },
+        "independence_state": {
+          "enum": ["external_independent", "ci_isolated_job", "ci_shared_pipeline", "ci_same_job", "local_only", "not_assessed", "cannot_verify"]
+        },
+        "key_custody_state": {
+          "enum": ["hsm", "kms", "software", "unknown", "not_assessed", "cannot_verify"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSafety": {
+      "type": "object",
+      "required": ["state", "verified_absent_classes"],
+      "properties": {
+        "state": { "$ref": "#/$defs/state" },
+        "verified_absent_classes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9_]+$" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -21,22 +21,58 @@ import (
 
 const (
 	KindGitHubActions       = "github-actions"
+	KindGitLabCI            = "gitlab-ci"
+	KindBuildkite           = "buildkite"
+	KindCustomerPKI         = "customer-pki"
 	StatusPass              = "pass"
+	StatusFail              = "fail"
 	StatusCannotVerify      = "cannot_verify"
+	StatusNotAssessed       = "not_assessed"
 	TrustScopeCIWitnessed   = "ci_witnessed"
 	TrustScopeLocalObserved = "local_observed"
+	TrustScopeExternal      = "external_witnessed"
 	ReasonCIIdentityPresent = "ci_identity_present"
+	ReasonProfileVerified   = "witness_profile_verified"
 	ReasonMissingCIIdentity = "missing_ci_identity"
 	ReasonMissingCIOIDC     = "missing_ci_oidc"
 	ReasonInvalidCIOIDC     = "invalid_ci_oidc"
+	ReasonEnvOnly           = "witness_environment_only_insufficient"
+	ReasonMissingIdentity   = "witness_identity_missing"
+	ReasonMissingSigner     = "witness_signer_authority_missing"
+	ReasonMissingFreshness  = "witness_freshness_missing"
+	ReasonStaleFreshness    = "witness_freshness_stale"
+	ReasonMissingArtifact   = "witness_artifact_digest_missing"
+	ReasonArtifactMismatch  = "witness_artifact_digest_mismatch"
+	ReasonIdentityMismatch  = "witness_identity_mismatch"
+	ReasonSourceMissing     = "witness_source_binding_missing"
+	ReasonSourceMismatch    = "witness_source_mismatch"
+	ReasonRunMissing        = "witness_run_binding_missing"
+	ReasonRunMismatch       = "witness_run_mismatch"
+	ReasonPolicyMissing     = "witness_policy_binding_missing"
+	ReasonPolicyMismatch    = "witness_policy_mismatch"
+	ReasonSignerMismatch    = "witness_signer_mismatch"
+	ReasonUnsupported       = "witness_unsupported_profile"
+	ReasonUnsafeOutput      = "witness_unsafe_output_candidate"
+	ReasonPrivateKeyInput   = "witness_private_key_input_rejected"
+	ReasonRevocationNA      = "witness_revocation_not_assessed"
+	ReasonCertRevoked       = "witness_certificate_revoked"
+	ReasonKeyCustodyNA      = "witness_key_custody_not_assessed"
+	ReasonMalformedInput    = "witness_malformed_input"
 	githubOIDCIssuer        = "https://token.actions.githubusercontent.com"
 )
 
 type Record struct {
+	SchemaVersion         string           `json:"schema_version,omitempty"`
 	Kind                  string           `json:"kind"`
+	ProfileID             string           `json:"profile_id,omitempty"`
+	ProfileVersion        string           `json:"profile_version,omitempty"`
+	ProviderKind          string           `json:"provider_kind,omitempty"`
 	Status                string           `json:"status"`
 	TrustScope            string           `json:"trust_scope"`
+	RequestedTrustScope   string           `json:"requested_trust_scope,omitempty"`
+	EstablishedTrustScope string           `json:"established_trust_scope,omitempty"`
 	Reason                string           `json:"reason"`
+	ReasonCodes           []string         `json:"reason_codes,omitempty"`
 	GeneratedAt           string           `json:"generated_at"`
 	MissingIdentityFields []string         `json:"missing_identity_fields,omitempty"`
 	Source                SourceIdentity   `json:"source"`
@@ -44,6 +80,8 @@ type Record struct {
 	OIDC                  *OIDCClaims      `json:"oidc,omitempty"`
 	RunArtifacts          []ArtifactDigest `json:"run_artifacts"`
 	ReportArtifacts       []ArtifactDigest `json:"report_artifacts"`
+	ProfileStates         *ProfileStates   `json:"profile_states,omitempty"`
+	OutputSafety          *OutputSafety    `json:"output_safety,omitempty"`
 }
 
 type SourceIdentity struct {
@@ -65,6 +103,23 @@ type CIIdentity struct {
 type ArtifactDigest struct {
 	Path   string `json:"path"`
 	SHA256 string `json:"sha256"`
+}
+
+type ProfileStates struct {
+	IdentityState        string `json:"identity_state"`
+	SignerAuthorityState string `json:"signer_authority_state"`
+	FreshnessState       string `json:"freshness_state"`
+	ArtifactBindingState string `json:"artifact_binding_state"`
+	SourceBindingState   string `json:"source_binding_state"`
+	RunBindingState      string `json:"run_binding_state"`
+	PolicyBindingState   string `json:"policy_binding_state"`
+	IndependenceState    string `json:"independence_state"`
+	KeyCustodyState      string `json:"key_custody_state,omitempty"`
+}
+
+type OutputSafety struct {
+	State                 string   `json:"state"`
+	VerifiedAbsentClasses []string `json:"verified_absent_classes"`
 }
 
 type OIDCClaims struct {
