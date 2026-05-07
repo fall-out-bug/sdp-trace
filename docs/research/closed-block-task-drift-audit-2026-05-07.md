@@ -37,8 +37,10 @@ Observed states:
 - JSON syntax checks: pass for schemas and Block 14-19, contract-foundation,
   and self-trace JSON examples.
 - Whitespace diff check: pass.
-- Source-bound local release proof: fail, exit code 1 as expected for a
-  verifier-derived fail state.
+- Initial source-bound local release proof: fail, exit code 1 as expected for
+  the pre-retirement verifier-derived fail state.
+- Current active-manifest source-bound local release proof after retirement:
+  pass, 148 artifacts checked, 0 missing, 0 mismatched.
 - The checked-in fail artifact is generated against the latest source commit
   assessed before the artifact-only update. Its `source_commit` is the assessed
   source tree for this diagnostic fail, not a claim that the PR head is a
@@ -132,7 +134,7 @@ evidence.
 | Block 01 contract foundation | Historical validation used Node/scripts and stale manifest proof. Current product proof remains bounded by self-trace/source-bound state. | Covered by T174 and T169. |
 | Block 02 self-trace | JSON artifacts parse, but historical script-based validation references are stale. | Covered by T174. |
 | Block 03 self-attestation | Stored result still references the old source-bound pass commit; current manifest proof fails. | Covered by T169 and T174. |
-| Block 04 release finalization | Already explicitly reopened as T070 stale closure. | Leave T070 open. |
+| Block 04 release finalization | Old `npm`/script closure commands are retired as historical-only evidence; current closure is bounded by Go-first checks and current release-proof output. | T070 closed for the current Go-first boundary; external production trust remains `not_assessed`. |
 | Block 05 customer pilot | Closure ledgers cite `npm run validate` and script validators that are absent. | Covered by T174. |
 | Block 06 first product proof | Closure ledgers cite absent script validators and old manifest refresh. | Covered by T174. |
 | Block 07 trust kernel | Correctly records Block 04 stale closure and source-bound boundaries, but implementation-plan command surfaces are stale. | Covered by T174. |
