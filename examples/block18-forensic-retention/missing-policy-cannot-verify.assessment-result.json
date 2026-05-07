@@ -1,0 +1,69 @@
+{
+  "schema_version": "block18-forensic-retention-assessment-v1",
+  "selected_profile": "forensic_retention",
+  "forensic_retention_assessment": "cannot_verify",
+  "trust_scope": "local_observed",
+  "forensic_conditions": [
+    {
+      "id": "redaction_policy_bound",
+      "state": "cannot_verify",
+      "reason_code": "missing_redaction_policy",
+      "reason": "redaction policy is required",
+      "next_action": "Supply a redaction policy with stable id, version, digest, and provenance."
+    },
+    {
+      "id": "redaction_prewrite_applied",
+      "state": "cannot_verify",
+      "reason_code": "redaction_policy_missing",
+      "reason": "redaction rule coverage cannot be checked without the selected policy",
+      "next_action": "Supply the selected redaction policy before assessing rule coverage."
+    },
+    {
+      "id": "redaction_unresolved_visible",
+      "state": "pass",
+      "reason_code": "redaction_resolved",
+      "reason": "redaction states are resolved or explicitly non-blocking"
+    },
+    {
+      "id": "retention_mode_declared",
+      "state": "pass",
+      "reason_code": "retention_mode_declared",
+      "reason": "events declare FR-054 retention modes"
+    },
+    {
+      "id": "critical_evidence_reconstructable",
+      "state": "pass",
+      "reason_code": "critical_evidence_reconstructable",
+      "reason": "critical event families have reconstructable retention"
+    },
+    {
+      "id": "raw_reference_bound",
+      "state": "pass",
+      "reason_code": "raw_reference_bound",
+      "reason": "raw references are digest-bound and access-verifiable"
+    },
+    {
+      "id": "forensic_profile_not_overclaimed",
+      "state": "pass",
+      "reason_code": "forensic_profile_not_overclaimed",
+      "reason": "forensic output does not exceed retained evidence"
+    },
+    {
+      "id": "profile_selection_accountable",
+      "state": "cannot_verify",
+      "reason_code": "profile_selection_unverifiable",
+      "reason": "forensic profile selection accountability cannot be verified",
+      "next_action": "Record accountable forensic profile selection evidence."
+    }
+  ],
+  "reasons": [
+    "missing_redaction_policy: redaction policy is required",
+    "profile_selection_unverifiable: forensic profile selection accountability cannot be verified",
+    "redaction_policy_missing: redaction rule coverage cannot be checked without the selected policy"
+  ],
+  "next_actions": [
+    "Record accountable forensic profile selection evidence.",
+    "Supply a redaction policy with stable id, version, digest, and provenance.",
+    "Supply the selected redaction policy before assessing rule coverage."
+  ]
+}

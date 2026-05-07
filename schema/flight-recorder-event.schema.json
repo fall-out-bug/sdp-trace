@@ -151,7 +151,7 @@
       "then": {
         "properties": {
           "event_payload": {
-            "required": ["command_id", "argv", "argv_digest", "working_directory", "started_at"],
+            "required": ["command_id", "argv_digest", "working_directory", "started_at"],
             "properties": {
               "command_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
               "argv": {
@@ -160,6 +160,7 @@
                 "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
               },
               "argv_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+              "argv_retention": { "$ref": "#/$defs/evidenceRetention" },
               "working_directory": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
               "started_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
             }
@@ -377,7 +378,17 @@
         },
         "reason": { "type": "string" },
         "redaction_authority": { "type": "string" },
-        "sealed_raw_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" }
+        "sealed_raw_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" },
+        "redaction_policy_ref": { "$ref": "#/$defs/redactionPolicyRef" },
+        "redaction_rule_refs": {
+          "type": "array",
+          "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+          "uniqueItems": true
+        },
+        "redaction_input_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "redacted_payload_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "redaction_authority_ref": { "$ref": "#/$defs/redactionAuthorityRef" },
+        "withholding": { "$ref": "#/$defs/withholdingAudit" }
       },
       "additionalProperties": false
     },
@@ -413,7 +424,73 @@
         "artifact_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/artifactRef" },
         "excerpt": { "type": "string" },
         "access_note": { "type": "string" },
-        "reason": { "type": "string" }
+        "reason": { "type": "string" },
+        "retention_lifecycle": { "$ref": "#/$defs/retentionLifecycle" },
+        "raw_reference": { "$ref": "#/$defs/rawReference" }
+      },
+      "additionalProperties": false
+    },
+    "redactionPolicyRef": {
+      "type": "object",
+      "required": ["policy_id", "policy_digest"],
+      "properties": {
+        "policy_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "policy_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "schema_version": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "redactionAuthorityRef": {
+      "type": "object",
+      "required": ["actor_id", "verification_state"],
+      "properties": {
+        "actor_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "verification_state": { "enum": ["verified", "self_claimed", "not_assessed"] },
+        "evidence_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "withholdingAudit": {
+      "type": "object",
+      "required": ["authority", "reason_code", "justification"],
+      "properties": {
+        "authority": { "$ref": "#/$defs/redactionAuthorityRef" },
+        "requestor": { "$ref": "#/$defs/redactionAuthorityRef" },
+        "reason_code": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "justification": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "retentionLifecycle": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": { "enum": ["active", "expired", "revoked", "deleted", "rotated", "not_assessed"] },
+        "policy_ref": { "type": "string" },
+        "expires_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "rawReference": {
+      "type": "object",
+      "required": ["reference_type", "reference_uri", "digest", "access_state", "key_custody_state", "retention_lifecycle"],
+      "properties": {
+        "reference_type": { "enum": ["encrypted_raw_ref", "external_artifact_ref"] },
+        "reference_uri": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "digest": {
+          "type": "object",
+          "required": ["algorithm", "value"],
+          "properties": {
+            "algorithm": { "const": "sha256" },
+            "value": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+          },
+          "additionalProperties": false
+        },
+        "access_state": { "enum": ["verified_available", "restricted", "unavailable", "revoked", "not_assessed"] },
+        "access_state_last_verified": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+        "key_custody_state": { "enum": ["not_applicable", "holder_known", "escrowed", "destroyed", "compromised", "unknown", "not_assessed"] },
+        "retention_lifecycle": { "$ref": "#/$defs/retentionLifecycle" },
+        "unavailable_reason": { "enum": ["missing_reference", "access_denied", "expired", "key_unavailable", "store_unreachable", "digest_unverifiable", "not_assessed"] }
       },
       "additionalProperties": false
     },

@@ -18,7 +18,27 @@
   },
   "redaction_state": {
     "state": "cannot_verify",
-    "reason": "Output may contain secret material and no redaction authority is recorded."
+    "reason": "Output may contain secret material and no redaction authority is recorded.",
+    "redaction_policy_ref": {
+      "policy_id": "missing-redaction-policy",
+      "policy_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "schema_version": "not_assessed"
+    },
+    "redaction_rule_refs": [],
+    "redaction_input_digest": "284d326cbf2ae958d5734f8b368e021815d9881486a2e2f2b513ba7edb3d6921",
+    "redacted_payload_digest": "284d326cbf2ae958d5734f8b368e021815d9881486a2e2f2b513ba7edb3d6921",
+    "redaction_authority_ref": {
+      "actor_id": "not_assessed:redaction-authority",
+      "verification_state": "not_assessed"
+    },
+    "withholding": {
+      "authority": {
+        "actor_id": "not_assessed:redaction-authority",
+        "verification_state": "not_assessed"
+      },
+      "reason_code": "authority_missing",
+      "justification": "Raw output is withheld because redaction authority and policy evidence are missing."
+    }
   },
   "event_payload": {
     "summary": "Observed test output with unresolved redaction",
@@ -28,7 +48,12 @@
     "output_retention": {
       "mode": "sanitized_excerpt",
       "excerpt": "[withheld]",
-      "digest": "284d326cbf2ae958d5734f8b368e021815d9881486a2e2f2b513ba7edb3d6921"
+      "digest": "284d326cbf2ae958d5734f8b368e021815d9881486a2e2f2b513ba7edb3d6921",
+      "retention_lifecycle": {
+        "state": "not_assessed",
+        "policy_ref": "not_assessed"
+      },
+      "reason": "redaction authority missing"
     },
     "forensic_importance": "critical"
   }

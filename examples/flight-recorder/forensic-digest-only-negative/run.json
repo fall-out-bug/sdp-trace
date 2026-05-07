@@ -70,11 +70,21 @@
   },
   "evidence_retention_summary": {
     "retention_modes": [
-      "not_assessed"
+      "digest_only"
     ],
-    "critical_digest_only_count": 0,
+    "critical_digest_only_count": 1,
     "not_assessed_count": 0
   },
+  "forensic_conditions": [
+    {
+      "id": "critical_evidence_reconstructable",
+      "state": "fail",
+      "reason_code": "critical_evidence_digest_only",
+      "reason": "Critical test output is retained only as digest and cannot support forensic reconstruction.",
+      "capped_to_retention_mode": "digest_only",
+      "next_action": "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families."
+    }
+  ],
   "verifier_states": {
     "event_chain_structurally_valid": {
       "state": "pass"

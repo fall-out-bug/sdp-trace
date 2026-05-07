@@ -103,6 +103,22 @@
         "run_closed": { "$ref": "#/$defs/verifierState" }
       },
       "additionalProperties": false
+    },
+    "forensic_conditions": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "allOf": [
+        { "contains": { "properties": { "id": { "const": "redaction_policy_bound" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "redaction_prewrite_applied" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "redaction_unresolved_visible" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "retention_mode_declared" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "critical_evidence_reconstructable" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "raw_reference_bound" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "forensic_profile_not_overclaimed" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "profile_selection_accountable" } }, "required": ["id"] } }
+      ],
+      "items": { "$ref": "#/$defs/forensicCondition" }
     }
   },
   "anyOf": [
@@ -170,6 +186,32 @@
       "properties": {
         "state": { "enum": ["pass", "fail", "cannot_verify", "not_assessed"] },
         "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "forensicCondition": {
+      "type": "object",
+      "required": ["id", "state", "reason_code", "reason"],
+      "properties": {
+        "id": {
+          "enum": [
+            "redaction_policy_bound",
+            "redaction_prewrite_applied",
+            "redaction_unresolved_visible",
+            "retention_mode_declared",
+            "critical_evidence_reconstructable",
+            "raw_reference_bound",
+            "forensic_profile_not_overclaimed",
+            "profile_selection_accountable"
+          ]
+        },
+        "state": { "enum": ["pass", "fail", "cannot_verify", "not_assessed"] },
+        "reason_code": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "reason": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+        "capped_to_retention_mode": {
+          "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+        },
+        "next_action": { "type": "string" }
       },
       "additionalProperties": false
     }

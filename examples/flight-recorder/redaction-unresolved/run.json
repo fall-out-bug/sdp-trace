@@ -70,11 +70,28 @@
   },
   "evidence_retention_summary": {
     "retention_modes": [
+      "sanitized_excerpt",
       "not_assessed"
     ],
     "critical_digest_only_count": 0,
-    "not_assessed_count": 0
+    "not_assessed_count": 1
   },
+  "forensic_conditions": [
+    {
+      "id": "redaction_policy_bound",
+      "state": "cannot_verify",
+      "reason_code": "missing_redaction_policy",
+      "reason": "Redaction policy and authority evidence are missing for critical retained output.",
+      "next_action": "Supply a redaction policy and authority reference before forensic retention assessment."
+    },
+    {
+      "id": "redaction_unresolved_visible",
+      "state": "fail",
+      "reason_code": "redaction_unresolved",
+      "reason": "Unresolved redaction blocks forensic retention.",
+      "next_action": "Resolve redaction or lower the forensic claim."
+    }
+  ],
   "verifier_states": {
     "event_chain_structurally_valid": {
       "state": "pass"

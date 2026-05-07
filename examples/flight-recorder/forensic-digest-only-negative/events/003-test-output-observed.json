@@ -17,7 +17,22 @@
     "recorder_version": "0.9.0"
   },
   "redaction_state": {
-    "state": "not_required"
+    "state": "not_required",
+    "redaction_policy_ref": {
+      "policy_id": "builtin-safe-default-v1",
+      "policy_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "schema_version": "1.0.0"
+    },
+    "redaction_rule_refs": [
+      "builtin-secret-patterns-v1"
+    ],
+    "redaction_input_digest": "c0554179a6cc149dd92daffa490860c12810f9cc9e33213ca0dd5858c85a8d18",
+    "redacted_payload_digest": "c0554179a6cc149dd92daffa490860c12810f9cc9e33213ca0dd5858c85a8d18",
+    "redaction_authority_ref": {
+      "actor_id": "builtin:sdp-trace",
+      "verification_state": "verified",
+      "evidence_digest": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
   },
   "event_payload": {
     "summary": "Critical test output retained only as digest",
@@ -26,7 +41,11 @@
     "test_command_id": "cmd-test",
     "output_retention": {
       "mode": "digest_only",
-      "digest": "c0554179a6cc149dd92daffa490860c12810f9cc9e33213ca0dd5858c85a8d18"
+      "digest": "c0554179a6cc149dd92daffa490860c12810f9cc9e33213ca0dd5858c85a8d18",
+      "retention_lifecycle": {
+        "state": "active",
+        "policy_ref": "builtin-safe-default-v1"
+      }
     },
     "forensic_importance": "critical"
   }

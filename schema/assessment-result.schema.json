@@ -2,45 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.sdp.dev/trace/assessment-result.schema.json",
   "title": "SDP Trace Assessment Result",
-  "type": "object",
-  "required": [
-    "schema_version",
-    "selected_profile",
-    "managed_harness_assessment",
-    "trust_scope",
-    "managed_conditions",
-    "reasons",
-    "next_actions"
+  "oneOf": [
+    { "$ref": "#/$defs/managedHarnessAssessment" },
+    { "$ref": "#/$defs/forensicRetentionAssessment" }
   ],
-  "properties": {
-    "schema_version": { "type": "string", "const": "block17-managed-assessment-v1" },
-    "selected_profile": { "type": "string", "const": "managed_harness" },
-    "managed_harness_assessment": { "$ref": "#/$defs/topLevelState" },
-    "trust_scope": {
-      "type": "string",
-      "enum": ["managed_harness_observed", "local_observed"]
-    },
-    "managed_conditions": {
-      "type": "array",
-      "minItems": 16,
-      "items": { "$ref": "#/$defs/condition" }
-    },
-    "reasons": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    },
-    "next_actions": {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 }
-    }
-  },
-  "additionalProperties": false,
   "$defs": {
     "topLevelState": {
       "type": "string",
       "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
     },
-    "conditionState": {
+    "managedConditionState": {
       "type": "string",
       "enum": [
         "pass",
@@ -53,15 +24,129 @@
         "not_assessed"
       ]
     },
-    "condition": {
+    "forensicConditionState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "managedCondition": {
       "type": "object",
       "required": ["id", "state", "reason_code", "reason"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
-        "state": { "$ref": "#/$defs/conditionState" },
+        "state": { "$ref": "#/$defs/managedConditionState" },
         "reason_code": { "type": "string", "minLength": 1 },
         "reason": { "type": "string", "minLength": 1 },
-        "next_action": { "type": "string", "minLength": 1 }
+        "next_action": { "type": "string", "minLength": 1 },
+        "capped_to_retention_mode": {
+          "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "forensicCondition": {
+      "type": "object",
+      "required": ["id", "state", "reason_code", "reason"],
+      "properties": {
+        "id": {
+          "enum": [
+            "redaction_policy_bound",
+            "redaction_prewrite_applied",
+            "redaction_unresolved_visible",
+            "retention_mode_declared",
+            "critical_evidence_reconstructable",
+            "raw_reference_bound",
+            "forensic_profile_not_overclaimed",
+            "profile_selection_accountable"
+          ]
+        },
+        "state": { "$ref": "#/$defs/forensicConditionState" },
+        "reason_code": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "next_action": { "type": "string", "minLength": 1 },
+        "capped_to_retention_mode": {
+          "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "managedHarnessAssessment": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "selected_profile",
+        "managed_harness_assessment",
+        "trust_scope",
+        "managed_conditions",
+        "reasons",
+        "next_actions"
+      ],
+      "properties": {
+        "schema_version": { "type": "string", "const": "block17-managed-assessment-v1" },
+        "selected_profile": { "type": "string", "const": "managed_harness" },
+        "managed_harness_assessment": { "$ref": "#/$defs/topLevelState" },
+        "trust_scope": {
+          "type": "string",
+          "enum": ["managed_harness_observed", "local_observed"]
+        },
+        "managed_conditions": {
+          "type": "array",
+          "minItems": 16,
+          "items": { "$ref": "#/$defs/managedCondition" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "forensicRetentionAssessment": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "selected_profile",
+        "forensic_retention_assessment",
+        "trust_scope",
+        "forensic_conditions",
+        "reasons",
+        "next_actions"
+      ],
+      "properties": {
+        "schema_version": { "type": "string", "const": "block18-forensic-retention-assessment-v1" },
+        "selected_profile": { "type": "string", "const": "forensic_retention" },
+        "forensic_retention_assessment": { "$ref": "#/$defs/topLevelState" },
+        "trust_scope": {
+          "type": "string",
+          "enum": ["forensic_retention_observed", "local_observed"]
+        },
+        "forensic_conditions": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "allOf": [
+            { "contains": { "properties": { "id": { "const": "redaction_policy_bound" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "redaction_prewrite_applied" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "redaction_unresolved_visible" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "retention_mode_declared" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "critical_evidence_reconstructable" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "raw_reference_bound" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "forensic_profile_not_overclaimed" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "profile_selection_accountable" } }, "required": ["id"] } }
+          ],
+          "items": { "$ref": "#/$defs/forensicCondition" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
       },
       "additionalProperties": false
     }
