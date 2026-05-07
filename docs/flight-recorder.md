@@ -70,6 +70,38 @@ incident, merge, release, readiness, degradation, or risk-acceptance outcomes.
 
 Unresolved redaction must not be converted into a pass. Profiles that require forensic or accountability evidence must fail unresolved redaction, or emit `cannot_verify` / `not_assessed` with a concrete reason when required evidence is unavailable.
 
+## Adapter Capture
+
+`adapter_capture` is a Block 19 assessment profile selected with
+`sdp-trace assess --profile adapter-capture`. It evaluates whether generic
+adapter events are present, bound to the selected run, safe to inspect, and
+honest about capture-depth limits.
+
+```bash
+go run ./cmd/sdp-trace assess --profile adapter-capture \
+  --run <run-dir> \
+  --out <assessment-result.json>
+
+go run ./cmd/sdp-trace query --query capture-depth <run-dir>
+```
+
+Adapter capture supports two binding modes:
+
+- `same_chain`: adapter events are in the recorder chain with hash linkage.
+- `adapter_bundle`: adapter events are in a separate digest-bound bundle
+  referenced by the run before closure.
+
+Adapter capture does not authorize an adapter, prove managed enrollment, or
+upgrade model identity to gateway-observed. It reports `missing_telemetry`,
+`unsupported`, `not_integrated`, `not_assessed`, `retention_limited`, and
+`cannot_verify` as explicit facts. Query output is a read-only summary and does
+not emit a top-level pass/fail policy verdict.
+
+Adapter event artifacts inherit Block 18 safety rules. Raw prompts, raw model
+responses, tool input/output bodies, raw command args, stdout/stderr bodies,
+adapter configuration, gateway evidence refs, provider tokens, and raw review
+bodies must not appear in committed artifacts or preview/query/explain output.
+
 ## Query Surface
 
 The current Go-first validation command for committed fixture packages is:
@@ -84,6 +116,7 @@ Node.js to the active product path.
 
 ```bash
 go run ./cmd/sdp-trace query --query missing-evidence <run-dir>
+go run ./cmd/sdp-trace query --query capture-depth <run-dir>
 ```
 
 Required query names:
@@ -99,5 +132,6 @@ Required query names:
 | `test-evidence` | Test command evidence and verifier state, without policy verdicts. |
 | `redactions` | Redaction and retention issues requiring reviewer attention. |
 | `witness-state` | Witness presence, witness agreement, and witness scope. |
+| `capture-depth` | Adapter event coverage, missing telemetry, unsupported observers, gateway `not_integrated`, and retention/capture caps. |
 
 Queries expose evidence and verifier states only. They must not emit opaque scores or policy verdicts.

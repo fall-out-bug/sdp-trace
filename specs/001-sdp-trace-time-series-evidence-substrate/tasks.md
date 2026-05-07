@@ -398,12 +398,58 @@ readiness, degradation, merge, release, override, or risk-acceptance decisions.
 - [x] T155 [US4] Add `assess --profile forensic-retention`, `assess preview --profile forensic-retention`, and `assess explain` support with assessment-result schema versioning, deterministic exit codes, condition rows, next actions, profile-selection trace evidence, and safe output.
 - [x] T156 [US4] Add committed Block 18 fixtures for safe default, digest-only critical negative, sanitized excerpt positive, encrypted raw reference positive, external raw reference positive, withhold-to-not-assessed, unresolved redaction, missing policy, missing access state, present-but-unverifiable access state, missing key custody state, weak digest, authority self-claim, and raw-reference digest mismatch.
 - [x] T157 [US4] Add safety-sensitive negative tests proving redaction, retention, forensic assess, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, adapter secrets, gateway tokens, model responses, or key material.
-- [ ] T158 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 18 review disposition in `blocks/18-redaction-retention-forensic-profiles-review-ledger.md` before PR closure.
+- [x] T158 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 18 review disposition in `blocks/18-redaction-retention-forensic-profiles-review-ledger.md` before PR closure.
 
 **Checkpoint**: Users get safe default recording plus explicit forensic
 assessment facts. Digest-only or unresolved critical evidence cannot be
 overclaimed as reconstructable, and raw evidence remains opt-in, referenced,
 and verifier-bound rather than committed by default.
+
+**Closure Evidence**: Block 18 was implemented and merged in PR #8. Evidence is
+recorded in `docs/research/block-18-implementation-evidence.md` and
+`blocks/18-redaction-retention-forensic-profiles-review-ledger.md`, including
+local Go-first verification, schema checks, strict implementation review,
+PR-level review disposition with no remaining critical or major findings, and
+GitHub CI state recorded as `not_assessed` because PR #8 had no checks.
+
+## Phase 15: Adapter Event Contract And Capture Depth
+
+**Goal**: Make adapter-supplied telemetry portable, schema-bound, safe by
+default, and explicit about capture-depth limits so harness integrations expose
+provenance that CI and git cannot reconstruct without overclaiming unsupported
+observers.
+
+**Independent Test**: A reviewer can validate committed generic adapter-event
+fixtures showing run lifecycle, task supersession, tool calls, command
+correlation, file mutation correlation, model identity provenance, test
+observation provenance, missing adapter events, unsupported observers, gateway
+`not_integrated`, and safe output without any demo-specific harness, Git host,
+or build-system names.
+
+**Activation Gate**: Do not implement Block 19 adapter event behavior until
+`blocks/19-adapter-event-contract-capture-depth.md` is explicitly approved.
+Adapter events may improve observation depth and managed-profile evidence, but
+they are not native merge, release, readiness, degradation, override approval,
+risk-acceptance, audit, or forensic-complete decisions. Prompt and raw
+model-response capture remains unavailable by default unless Block 18 retention
+and redaction policy explicitly permits it.
+
+- [x] T159 [US5] Add Block 19 spec and implementation plan for adapter event contracts, capture-depth taxonomy, gateway provenance, VCS/PR/review references, test provenance semantics, query output expectations, safety boundaries, review-ledger shape, and no-overclaim boundary.
+- [x] T160 [US2] Add portable adapter event schema covering `run_started`, `task_locked`, `task_superseded`, `tool_call`, `command_started`, `file_mutation`, `model_call_observed`, `test_observed`, and `run_closed` with producer identity, provenance scope, capture state, same-chain or adapter-bundle binding, correlation refs, redaction/retention metadata, and closed enums.
+- [x] T161 [US2] Extend flight-recorder event/run contracts or add a versioned adapter-event bundle so adapter events can be bound to run id, run nonce, event chain digest, source baseline, source commit or tree digest, and managed policy/registry references without requiring a specific harness runtime.
+- [x] T162 [US5] Add test observation provenance values and verifier semantics proving `ci_executed` and wrapper/tool-bound execution can satisfy executed-test evidence, while `harness_observed`, `agent_reported`, and `cannot_verify` cannot be silently upgraded.
+- [x] T163 [US5] Add generic VCS, PR/MR, review, and source-event reference shapes with provider-neutral fields for repository/source ref, commit or tree digest, change ref, review ref, artifact digest, producer, and `not_assessed` reason.
+- [x] T164 [US5] Add adapter capture-depth evaluation that emits deterministic facts for missing adapter events, unsupported observers, not-integrated gateways, unavailable prompt/model-response raw capture, and capture-depth caps without turning gaps into pass/fail policy decisions.
+- [x] T165 [US4] Add query-facing output for task drift, task supersession counts, unverified task expansion indicators, unverified claims, missing adapter events, unsupported observers, gateway `not_integrated`, and capture-depth limits while preserving Block 18 safe default redaction and retention behavior.
+- [x] T166 [US4] Add committed Block 19 fixtures for valid generic adapter events, missing required adapter event, unsupported observer, gateway `not_integrated`, agent-reported test claim, harness-observed test correlation without execution proof, file mutation/source correlation, task supersession actor attribution, and provider-neutral PR/review refs.
+- [x] T167 [US4] Add safety-sensitive negative tests proving adapter event assess/query/preview/explain output does not print raw command args, stdout/stderr bodies, prompts, source snippets, tool-call input/output bodies, adapter configuration, gateway evidence refs, credentials, OIDC request tokens, adapter secrets, gateway tokens, model request/response payloads, PR tokens, authenticated provider URLs, or raw review bodies.
+- [ ] T168 [US5] Run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 19 review disposition in `blocks/19-adapter-event-contract-capture-depth-review-ledger.md` before PR closure.
+
+**Checkpoint**: Harness and gateway integrations get a stable generic adapter
+contract and honest capture-depth facts. Query output may summarize available
+evidence, missing telemetry, and unsupported observers, but full reconstruction
+is claimed only for evidence actually captured and retained under the selected
+profile.
 
 ## Dependencies & Execution Order
 
@@ -424,6 +470,7 @@ and verifier-bound rather than committed by default.
 - **Phase 12**: Depends on Block 14 gate/explain/preview behavior and Block 15 signed-checkpoint replay resistance. It may make protected profile facts fail-closed and CI-friendly, but it must not make native policy decisions.
 - **Phase 13**: Depends on Block 13B capture-boundary taxonomy and Block 16 protected gate schema/CLI compatibility. It may make managed wrapper or adapter enforcement fail-closed only for explicitly selected managed profile runs, and it must preserve observation-mode value for unmanaged harnesses.
 - **Phase 14**: Depends on Block 09 flight-recorder retention/redaction semantics and Block 17 `assess` command surface. It may make forensic retention facts fail-closed only for explicitly selected forensic profiles, while preserving safe default recording for ordinary users.
+- **Phase 15**: Depends on Block 18 redaction/retention safety and Block 17 managed harness adapter policy semantics. It may expand capture depth through generic adapter events, but it must keep prompt/model-response raw capture unavailable by default and expose capture-depth gaps as `missing_telemetry`, `unsupported`, `not_integrated`, `not_assessed`, or `cannot_verify`.
 
 ### Parallel Opportunities
 
@@ -442,6 +489,9 @@ and verifier-bound rather than committed by default.
 - T138 can run in parallel with T137 after T136 because managed policy and adapter registry schemas are separate from gate-result versioning.
 - T140, T141, and T142 can run in parallel after T139 if their write scopes are split between boundary enrollment, event coverage, and suppression handling.
 - T144 and T145 can run in parallel after T137 and T139 because CLI exit behavior and explanation rendering have separate test surfaces.
+- T160 and T163 can run in parallel after T159 because adapter event shape and provider-neutral VCS/PR/review refs are separate schema surfaces.
+- T162 and T164 can run in parallel after T160 and T161 because test provenance semantics and capture-depth evaluation have separate verifier surfaces.
+- T165 and T167 can run in parallel after T164 because query rendering and safety-output assertions have separate command/test surfaces.
 
 ## Implementation Strategy
 
@@ -462,6 +512,7 @@ and verifier-bound rather than committed by default.
 13. Complete Block 16 protected gate profile only after explicit spec approval, keeping enforcement ownership with external CI or policy consumers.
 14. Complete Block 17 managed harness profile only after explicit spec approval, keeping managed enrollment opt-in and preserving unmanaged observation-mode value.
 15. Complete Block 18 redaction, retention, and forensic profiles only after explicit spec approval, keeping raw evidence opt-in and keeping forensic/legal/risk decisions outside `sdp-trace`.
+16. Complete Block 19 adapter event contract and capture-depth expansion only after explicit spec approval, keeping generic adapter events provider-neutral and making missing or unsupported telemetry visible instead of forensic-complete by implication.
 
 ### Evidence Discipline
 

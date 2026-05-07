@@ -1,7 +1,7 @@
 # Block 18 Implementation Evidence
 
-Status: implementation evidence recorded; strict review and PR-level review are
-still open under T158.
+Status: implementation, strict review, and PR-level review evidence recorded;
+merged in PR #8. GitHub CI remains `not_assessed` because PR #8 had no checks.
 
 ## Scope
 
@@ -75,9 +75,11 @@ Observed states:
 - Marker scan: no matches; command exited `1` because `rg` found no
   matches.
 
-## Remaining Open Work
+## Closure State
 
-- T158 strict implementation review and PR-level review are not complete.
-- GitHub CI is not assessed in this local workspace.
+- T158 strict implementation review and PR-level review are recorded in
+  `specs/001-sdp-trace-time-series-evidence-substrate/blocks/18-redaction-retention-forensic-profiles-review-ledger.md`.
+- PR #8 merged as `db07a37ea7455be25f833e6e5ce69e827bf9ea2f`.
+- GitHub CI is `not_assessed`: PR #8 reported no checks.
 - Source-bound release proof regeneration is not complete in this evidence
-  note.
+  note and must not be inferred from the PR merge.

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/adapter-event.schema.json",
+  "title": "SDP Trace Adapter Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "producer_identity",
+    "adapter_identity",
+    "identity_binding",
+    "provenance_scope",
+    "capture_state",
+    "run_id",
+    "run_nonce",
+    "binding_mode",
+    "event_payload_digest"
+  ],
+  "properties": {
+    "event_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "event_type": {
+      "enum": ["run_started", "task_locked", "task_superseded", "tool_call", "command_started", "file_mutation", "model_call_observed", "test_observed", "run_closed"]
+    },
+    "event_time": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "producer_identity": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "adapter_identity": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "identity_binding": { "enum": ["self_asserted", "bound"] },
+    "provenance_scope": {
+      "enum": ["ci_executed", "wrapper_executed", "gateway_observed", "harness_observed", "adapter_observed", "agent_reported", "local_observed", "not_integrated", "unsupported", "not_assessed", "cannot_verify"]
+    },
+    "capture_state": {
+      "enum": ["captured", "missing_telemetry", "not_integrated", "unsupported", "redacted", "retention_limited", "not_assessed", "cannot_verify"]
+    },
+    "run_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "run_nonce": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "source_baseline": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "binding_mode": { "enum": ["same_chain", "adapter_bundle"] },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "prev_event_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "event_hash": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "adapter_bundle_id": { "type": "string", "minLength": 1 },
+    "adapter_bundle_head_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "bundle_sequence": { "type": "integer", "minimum": 0 },
+    "correlation_ref": { "type": "string", "minLength": 1 },
+    "event_payload_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "redaction_policy_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "retention_mode": { "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"] },
+    "tool_family": { "enum": ["read", "write", "edit", "delete", "search", "execute", "review", "other", "not_assessed"] },
+    "adapter_local_tool_label": { "type": "string" },
+    "test_provenance": { "enum": ["ci_executed", "wrapper_executed", "harness_observed", "agent_reported", "cannot_verify"] },
+    "executed_evidence_claimed": { "type": "boolean" },
+    "model_identity_provenance": { "enum": ["gateway_observed", "harness_observed", "agent_reported", "cannot_verify"] },
+    "gateway_evidence_ref": { "type": "string" },
+    "provider_refs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "actor_attribution_state": { "enum": ["self_reported", "bound", "not_assessed", "cannot_verify"] },
+    "sensitive_metadata_persisted": { "type": "boolean" },
+    "reconstructable_claimed": { "type": "boolean" },
+    "cap_annotation": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "binding_mode": { "const": "same_chain" } }, "required": ["binding_mode"] },
+      "then": { "required": ["sequence", "prev_event_hash", "event_hash"] }
+    },
+    {
+      "if": { "properties": { "binding_mode": { "const": "adapter_bundle" } }, "required": ["binding_mode"] },
+      "then": { "required": ["adapter_bundle_id", "adapter_bundle_head_digest", "bundle_sequence"] }
+    }
+  ],
+  "additionalProperties": false
+}
