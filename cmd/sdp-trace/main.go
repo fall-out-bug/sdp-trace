@@ -61,6 +61,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runExplain(ctx, cmdArgs, stdout, stderr)
 	case "query":
 		return runQuery(ctx, cmdArgs, stdout, stderr)
+	case "query-pack":
+		return runQueryPack(ctx, cmdArgs, stdout, stderr)
 	case "report":
 		return runReport(ctx, cmdArgs, stdout, stderr)
 	case "gate":
@@ -1616,6 +1618,79 @@ func runQuery(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
+func runQueryPack(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "explain" {
+		return runQueryPackExplain(args[1:], stdout, stderr)
+	}
+	opts := &flagSet{name: "query-pack"}
+	opts.setString("pack", "")
+	opts.setString("run", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "query-pack accepts only flags")
+		return exitUsage
+	}
+	switch strings.TrimSpace(opts.stringValue("pack")) {
+	case "":
+		fmt.Fprintln(stderr, "error: ambiguous pack selection; --pack is required")
+		return exitUsage
+	case query.QueryPackForensicsBasic:
+	default:
+		fmt.Fprintf(stderr, "error: unknown pack %q\n", opts.stringValue("pack"))
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("run")) == "" {
+		fmt.Fprintln(stderr, "query-pack requires --run")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "query-pack requires --out")
+		return exitUsage
+	}
+	result, err := query.ForensicsBasicPack(opts.stringValue("run"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	return 0
+}
+
+func runQueryPackExplain(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "query-pack explain"}
+	opts.setString("result", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "query-pack explain accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("result")) == "" {
+		fmt.Fprintln(stderr, "query-pack explain requires --result")
+		return exitUsage
+	}
+	var result query.QueryPackResult
+	if err := readJSONFile(opts.stringValue("result"), &result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if result.SchemaVersion != query.QueryPackSchemaVersion || result.QueryPackID != query.QueryPackForensicsBasic {
+		fmt.Fprintln(stderr, "unsupported query-pack result")
+		return exitCannotVerify
+	}
+	fmt.Fprint(stdout, query.ExplainForensicsPack(result))
+	return 0
+}
+
 func runValidateFixtures(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	fixtureRoot := "."
 	if len(args) > 0 {
@@ -2004,6 +2079,8 @@ Usage:
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>
   sdp-trace query --query <missing-evidence|capture-depth> <run-dir>
+  sdp-trace query-pack --pack forensics-basic-v1 --run <run-dir> --out <file>
+  sdp-trace query-pack explain --result <file>
   sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>
   sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
   sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>

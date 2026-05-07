@@ -1,0 +1,18 @@
+{
+  "run_id": "block20-valid-mixed",
+  "run_nonce": "nonce-valid-mixed",
+  "source_baseline": "sha256:valid-mixed",
+  "event_refs": [
+    {
+      "sequence": 1,
+      "event_hash": "hash-valid-command",
+      "event_type": "command_started",
+      "uri": "events/redacted-command.json"
+    }
+  ],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

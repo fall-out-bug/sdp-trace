@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-unresolved-redaction",
+  "run_nonce": "nonce-unresolved-redaction",
+  "source_baseline": "sha256:unresolved-redaction",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

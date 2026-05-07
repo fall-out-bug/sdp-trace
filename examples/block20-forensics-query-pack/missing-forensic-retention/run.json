@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-missing-forensic",
+  "run_nonce": "nonce-missing-forensic",
+  "source_baseline": "sha256:missing-forensic",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

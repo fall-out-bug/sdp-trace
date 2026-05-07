@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-missing-adapter",
+  "run_nonce": "nonce-missing-adapter",
+  "source_baseline": "sha256:missing-adapter",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # Block 20 Review Ledger
 
-Status: Socratic spec review completed for approval handoff.
-Implementation is not approved.
+Status: Socratic spec review and implementation review completed.
+PR-level review is not assessed because no PR exists yet.
 
 ## Spec Review Findings
 
@@ -31,6 +31,17 @@ Implementation is not approved.
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
+| I20-CC-01 | major | code/correctness | Digest-only critical evidence used reason `critical_evidence_digest_only`, but the Block 20 derivation table requires query output reason `digest_only_not_reconstructable`. | Accepted and fixed. `rowFromCondition` now maps digest-only critical evidence to `retention_limited`, reason `digest_only_not_reconstructable`, `reconstructable: false`, and retention evidence gap. | ZAI/GLM-5.1 code/correctness review; focused code re-review returned `APPROVE`; `internal/query/querypack.go`; `internal/query/querypack_test.go`; fixture matrix |
+| I20-CC-02 | minor | code/correctness | Explain output omitted source refs and source condition fields required by the human-readable rendering contract. | Accepted and fixed. Explain now renders `source_ref`, `source_condition_id`, and `source_condition_state` from the JSON result only. | ZAI/GLM-5.1 code/correctness review; focused code re-review returned `APPROVE`; `internal/query/querypack.go`; CLI/query tests |
+| I20-CC-03 | minor | code/correctness | Defensive path could leave `reconstructable` unset when digest-only was signaled by reason code without a capped retention mode. | Accepted and fixed. The digest-only override now forces `reconstructable: false`. | ZAI/GLM-5.1 second focused code re-review; `internal/query/querypack.go` |
+| I20-TE-01 | minor | tracing/evidence | Fixture matrix did not assert `evidence_gap` or `source_condition_state`, leaving key row derivation fields unverified. | Accepted and fixed. Matrix rows now include source ref prefixes, source condition states where applicable, evidence gaps where applicable, and tests assert missing gaps for `cannot_verify` / `not_assessed` rows. | MiniMax-M2.7 tracing/evidence review; focused tracing re-review |
+| I20-TE-02 | major | tracing/evidence | Fixture matrix did not enforce every committed scenario and lacked explicit malformed forensic-retention, witness, file-mutation, and supersession-family coverage. | Accepted and fixed. Added committed scenarios and rows for malformed forensic retention, witness gap, file-mutation gap, and supersession source refs; tests now fail if a scenario directory has no matrix row or a matrix row references no directory. | MiniMax-M2.7 focused tracing/evidence re-review; second focused tracing re-review returned `APPROVE`; fixture matrix; `internal/query/querypack_test.go` |
+| I20-RI-01 | major | requirements-vs-implementation | Malformed readable `run.json` aborted without writing a query-pack result, although a hashable malformed required artifact can produce deterministic `cannot_verify` rows. | Accepted and fixed for malformed readable inputs. OS-level unreadable required inputs still exit non-zero because no digest-backed valid result artifact can be produced. | Kimi K2P6 requirements review; focused requirements re-review returned `APPROVE`; `internal/query/querypack.go`; `malformed-run` fixture |
+| I20-RI-02 | major | requirements-vs-implementation | Block 09 timeline source refs used raw event type instead of normalized closed-family source refs. | Accepted and fixed. Timeline refs now use `block_09.event.<evidence_family>.eNNNN`; supersession is prioritized before task in event-family derivation. | Kimi K2P6 requirements review; focused requirements and tracing re-reviews returned `APPROVE`; `internal/query/querypack.go`; `task-supersession` fixture |
+| I20-RI-03 | major | requirements-vs-implementation | Safety tests checked only fixture-specific unsafe strings, not the full Block 20 sensitive-class list against both serialized JSON and explain output. | Accepted and fixed. Added table-driven safety-class marker test for every listed sensitive class with digest-only failure messages. | Kimi K2P6 requirements review; focused requirements re-review returned `APPROVE`; `internal/query/querypack_test.go` |
+| I20-RI-04 | major | requirements-vs-implementation | `forensics-timeline` omitted `not_assessed` rows for missing optional Block 18/19 artifacts. | Accepted and fixed. Timeline rows now include missing optional forensic-retention and adapter-capture artifacts with evidence gaps, and matrix rows assert both cases. | Kimi K2P6 focused requirements re-review; second focused requirements re-review returned `APPROVE`; `internal/query/querypack.go`; fixture matrix |
+| I20-RI-05 | minor | requirements-vs-implementation | Optional artifact read/stat errors could have produced an empty input artifact in result assembly. | Accepted and fixed. Optional artifacts that cannot be read before hashing now return an error instead of producing schema-invalid output; malformed but readable optional artifacts remain represented as `cannot_verify` rows. | Kimi K2P6 second focused requirements re-review; `internal/query/querypack.go`; `internal/query/querypack_test.go` |
+| I20-RI-06 | minor | requirements-vs-implementation | Reviewer suggested replacing `"top_level_assessment": false` with a boolean value const. | Rejected as false positive. The boolean schema `false` intentionally forbids the property entirely, matching the no native policy verdict boundary. | Kimi K2P6 second focused requirements re-review; `schema/forensics-query-pack-result.schema.json` |
 
 ## PR-Level Review Findings
 
@@ -47,9 +58,17 @@ Implementation is not approved.
   findings from usable external reviews were accepted and fixed. OpenRouter Qwen
   focused tracing/evidence re-review returned `APPROVE`; minor clarifications
   were accepted and fixed.
-- Code/correctness review: `not_assessed`; implementation not started.
-- Tracing/evidence review: `not_assessed`; implementation not started.
-- Requirements-vs-implementation review: `not_assessed`; implementation not
-  started.
+- Code/correctness review: assessed with ZAI/GLM-5.1. Initial review returned
+  `REVISE`; valid findings were fixed. Focused re-reviews returned `APPROVE`
+  with no remaining critical or major findings.
+- Tracing/evidence review: assessed with MiniMax-M2.7. Initial and focused
+  reviews returned valid fixture/matrix findings; all accepted critical/major
+  and trust-relevant minor findings were fixed. Second focused re-review
+  returned `APPROVE`.
+- Requirements-vs-implementation review: assessed with Kimi K2P6. Initial and
+  focused reviews returned valid malformed-input, source-ref, safety, and
+  timeline optional-artifact findings; all critical/major findings were fixed.
+  Second focused re-review returned `APPROVE` with no remaining critical or
+  major findings.
 - PR-level review: `not_assessed`; no PR exists for Block 20.
 - GitHub CI: `not_assessed`; no PR exists for Block 20.

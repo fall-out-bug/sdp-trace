@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-unverified-claim",
+  "run_nonce": "nonce-unverified-claim",
+  "source_baseline": "sha256:unverified-claim",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

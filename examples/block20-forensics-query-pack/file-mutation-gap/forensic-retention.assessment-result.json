@@ -1,0 +1,12 @@
+{
+  "schema_version": "block18-forensic-retention-assessment-v1",
+  "forensic_retention_assessment": "pass",
+  "forensic_conditions": [
+    {
+      "id": "redaction_unresolved_visible",
+      "state": "pass",
+      "reason_code": "redaction_resolved",
+      "reason": "redaction is resolved"
+    }
+  ]
+}

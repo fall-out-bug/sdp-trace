@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-malformed-input",
+  "run_nonce": "nonce-malformed-input",
+  "source_baseline": "sha256:malformed-input",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

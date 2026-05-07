@@ -1,0 +1,13 @@
+{
+  "schema_version": "block18-forensic-retention-assessment-v1",
+  "forensic_retention_assessment": "fail",
+  "forensic_conditions": [
+    {
+      "id": "critical_evidence_reconstructable",
+      "state": "fail",
+      "reason_code": "critical_evidence_digest_only",
+      "reason": "critical evidence is retained as digest only",
+      "capped_to_retention_mode": "digest_only"
+    }
+  ]
+}

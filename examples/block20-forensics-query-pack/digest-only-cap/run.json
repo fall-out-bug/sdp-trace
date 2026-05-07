@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-digest-only-cap",
+  "run_nonce": "nonce-digest-only-cap",
+  "source_baseline": "sha256:digest-only-cap",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

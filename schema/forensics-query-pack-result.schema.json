@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/forensics-query-pack-result.schema.json",
+  "title": "SDP Trace Forensics Query Pack Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "query_pack_id",
+    "query_pack_version",
+    "input_artifacts",
+    "query_rows",
+    "output_safety"
+  ],
+  "properties": {
+    "schema_version": { "const": "block20-forensics-query-pack-result-v1" },
+    "query_pack_id": { "const": "forensics-basic-v1" },
+    "query_pack_version": { "const": "v1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "run_nonce": { "type": "string", "minLength": 1 },
+    "source_baseline": { "type": "string", "minLength": 1 },
+    "top_level_assessment": false,
+    "input_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/inputArtifact" }
+    },
+    "query_rows": {
+      "type": "object",
+      "required": [
+        "forensics-summary",
+        "forensics-timeline",
+        "forensics-gaps",
+        "forensics-redactions",
+        "forensics-capture-depth",
+        "forensics-unverified-claims"
+      ],
+      "properties": {
+        "forensics-summary": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queryRow" }
+        },
+        "forensics-timeline": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queryRow" }
+        },
+        "forensics-gaps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queryRow" }
+        },
+        "forensics-redactions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queryRow" }
+        },
+        "forensics-capture-depth": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queryRow" }
+        },
+        "forensics-unverified-claims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queryRow" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_safety": { "$ref": "#/$defs/outputSafety" }
+  },
+  "$defs": {
+    "inputArtifact": {
+      "type": "object",
+      "required": [
+        "role",
+        "sha256",
+        "path_redacted_id",
+        "artifact_required"
+      ],
+      "properties": {
+        "role": {
+          "enum": ["adapter_capture", "forensic_retention", "run"]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "path_redacted_id": {
+          "enum": ["adapter_capture", "forensic_retention", "run"]
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_required": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "queryRow": {
+      "type": "object",
+      "required": [
+        "id",
+        "query",
+        "evidence_state",
+        "evidence_family",
+        "source_ref"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z-]+\\.[0-9]{4}$"
+        },
+        "query": {
+          "enum": [
+            "forensics-summary",
+            "forensics-timeline",
+            "forensics-gaps",
+            "forensics-redactions",
+            "forensics-capture-depth",
+            "forensics-unverified-claims"
+          ]
+        },
+        "evidence_state": {
+          "enum": [
+            "present",
+            "issue_observed",
+            "not_assessed",
+            "cannot_verify",
+            "missing_telemetry",
+            "unsupported",
+            "not_integrated",
+            "retention_limited"
+          ]
+        },
+        "evidence_family": {
+          "enum": [
+            "run_chain",
+            "witness",
+            "retention",
+            "redaction",
+            "adapter_capture",
+            "task",
+            "command",
+            "file_mutations",
+            "test",
+            "supersession",
+            "claim",
+            "input_artifact"
+          ]
+        },
+        "reconstructable": {
+          "type": "boolean"
+        },
+        "source_ref": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "source_condition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_condition_state": {
+          "enum": [
+            "pass",
+            "fail",
+            "cannot_verify",
+            "not_assessed",
+            "missing_telemetry",
+            "unsupported",
+            "not_integrated",
+            "retention_limited"
+          ]
+        },
+        "reason_code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "evidence_gap": {
+          "enum": [
+            "run_chain",
+            "witness",
+            "retention",
+            "redaction",
+            "adapter_capture",
+            "task",
+            "command",
+            "file_mutations",
+            "test",
+            "supersession",
+            "claim",
+            "input_artifact"
+          ]
+        },
+        "related_rows": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z-]+\\.[0-9]{4}$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSafety": {
+      "type": "object",
+      "required": ["verified_absent_sensitive_classes"],
+      "properties": {
+        "verified_absent_sensitive_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "redaction_policy_digest": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
