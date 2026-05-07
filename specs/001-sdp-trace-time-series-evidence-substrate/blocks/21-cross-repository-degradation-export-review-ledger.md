@@ -10,6 +10,13 @@ of the reviewed spec direction and Block 20 dependency disposition.
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
+| I21-CC-01 | minor | code/correctness | Duration-style freshness boundaries such as `P7D` silently disabled freshness checks in v1. | Accepted and fixed. v1 now rejects duration freshness boundaries with a non-nil error and has regression coverage. | ZAI/GLM-5.1 code/correctness review; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
+| I21-RS-01 | major | requirements/safety | Selection manifest artifact paths were passed to file reads without rejecting absolute paths, traversal, or URL-like references. | Accepted and fixed. Query-pack, digest-manifest, and posture-signal paths are checked before read; unsafe paths create explicit refusal rows. | Kimi K2P6 requirements/safety review and focused re-review; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
+| I21-RS-02 | major | requirements/safety | `input_id` and `time_window` bypassed safe-label validation despite being emitted into schema-constrained and explain-rendered fields. | Accepted and fixed. Both fields now pass through safe-label validation before aggregation. | Kimi K2P6 requirements/safety review and focused re-review; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
+| I21-RS-03 | major | requirements/safety | Explain output safety did not reject `token` or `credential` substrings even though labels rejected them. | Accepted and fixed. Explain safety now blocks those substrings while allowing the closed safety-class enum value `credential_or_token`; regression safety tests cover unsafe labels and explain output. | Kimi K2P6 requirements/safety review and focused re-review; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
+| I21-RS-04 | minor | requirements/safety | Digest manifest path was checked for unsafe characters but not bound to the selected query-pack path. | Accepted and fixed. Digest manifest artifact path must match the selected query-pack basename before the digest can be trusted. | Kimi K2P6 requirements/safety review; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
+| I21-RS-05 | minor | requirements/safety | Selection, posture signal, and digest manifest schema versions were accepted without explicit version checks. | Accepted and fixed. v1 now checks all three schema versions and treats unsupported versions as non-trusted inputs or unsupported selection errors. | Kimi K2P6 requirements/safety review; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
+| I21-RS-06 | major | focused requirements/safety re-review | Unsupported digest manifest schema returned a nil error because of Go error shadowing, allowing unsupported digest manifests to be trusted. | Accepted and fixed. `verifyDigestManifest` now returns an explicit non-nil error, with regression test `TestBuildRejectsUnsupportedDigestManifestSchema`. | Kimi K2P6 focused re-review returned `APPROVE`; `internal/posture/posture.go`; `internal/posture/posture_test.go` |
 | S21-PB-01 | major | product-boundary | Explain mode lacked stable traversal, truncation, and large-output behavior, making output non-reproducible. | Accepted and fixed. Explain now has stable traversal order, no truncation/pagination/hidden filters for v1, and must re-run output-safety checks before printing. | MiniMax-M2.7 product-boundary review; `21-cross-repository-degradation-export.md` CLI Boundary |
 | S21-PB-02 | major | product-boundary | CLI error taxonomy was underspecified for usage, partial exports, unwritable output, and malformed inputs. | Accepted and fixed. Added developer-facing closed error taxonomy and stderr boundaries. | MiniMax-M2.7 product-boundary review; CLI Boundary |
 | S21-PB-03 | major | product-boundary | Digest manifest safety contract did not cover digest/path substitution and safe logging. | Accepted and fixed. Added path-redacted artifact id grammar, digest-set handling, raw digest-manifest path safety class, and unsafe path refusal. | MiniMax-M2.7 product-boundary review; Input Model, Aggregation Rules, Safety Requirements |
@@ -52,8 +59,13 @@ of the reviewed spec direction and Block 20 dependency disposition.
 - Block 20 dependency disposition: unresolved. Block 21 implementation remains
   blocked unless the user resolves the Block 20 approval/status contradiction
   or explicitly accepts it as historical drift for this dependency.
-- Code/correctness review: not_assessed; no implementation exists.
-- Tracing/evidence review: not_assessed; no implementation exists.
-- Requirements-vs-implementation review: not_assessed; no implementation exists.
+- Code/correctness review: assessed with ZAI/GLM-5.1. Initial review returned
+  `APPROVE` with minor findings; accepted freshness-boundary issue was fixed.
+- Tracing/evidence review: assessed with MiniMax-M2.7. Review returned
+  `APPROVE` with no critical or major findings.
+- Requirements-vs-implementation review: assessed with Kimi K2P6. Initial
+  review returned `REVISE` with major safety findings. Findings were accepted
+  and fixed; focused re-review found one digest-manifest schema-version bug.
+  That bug was fixed, and second focused re-review returned `APPROVE`.
 - PR-level review: not_assessed; no PR exists.
 - GitHub CI: not_assessed; no PR exists.

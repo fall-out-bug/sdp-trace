@@ -1,0 +1,10 @@
+{
+  "schema_version": "block21-artifact-digest-manifest-v1",
+  "artifacts": [
+    {
+      "role": "query_pack_result",
+      "path": "previous-query-pack.json",
+      "sha256": "00b1940d73d6f546755de69b94fb00144274edee71ba91d617bfb0c8e30732ee"
+    }
+  ]
+}

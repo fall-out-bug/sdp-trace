@@ -1,7 +1,6 @@
 # Block 21: Cross-Repository Degradation Export
 
-Status: spec delta and implementation plan drafted; Socratic spec review
-required before implementation approval handoff.
+Status: implementation in progress after approved reviewed spec direction.
 
 Parent artifacts:
 
@@ -241,6 +240,9 @@ Aggregation is deterministic and refusal-first:
 - Active grouping keys are fixed by the selected `grouping_set_id`; the
   denominator is the count of selected Block 20 query rows whose safe dimension
   values match that ordered grouping key and time window.
+- `time_window` may appear in the active grouping keys and metric row
+  dimensions, but `dimension_key` excludes `time_window` so current and previous
+  windows for the same repo/team/service/harness/change grouping can compare.
 - Inputs with digest mismatch are `untrusted_input` and cannot contribute to
   metric numerators or denominators unless the profile explicitly asks for a
   separate untrusted-input count.

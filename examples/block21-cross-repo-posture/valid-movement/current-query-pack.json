@@ -1,0 +1,40 @@
+{
+  "schema_version": "block20-forensics-query-pack-result-v1",
+  "query_pack_id": "forensics-basic-v1",
+  "query_pack_version": "v1",
+  "input_artifacts": [
+    {
+      "role": "run",
+      "path_redacted_id": "run",
+      "artifact_required": true
+    }
+  ],
+  "query_rows": {
+    "forensics-summary": [],
+    "forensics-timeline": [
+      {
+        "id": "timeline.0001",
+        "query": "forensics-timeline",
+        "evidence_state": "missing_telemetry",
+        "evidence_family": "command",
+        "source_ref": "block_09.event.command.e0001"
+      },
+      {
+        "id": "timeline.0002",
+        "query": "forensics-timeline",
+        "evidence_state": "not_assessed",
+        "evidence_family": "test",
+        "source_ref": "block_09.event.test.e0002"
+      }
+    ],
+    "forensics-gaps": [],
+    "forensics-redactions": [],
+    "forensics-capture-depth": [],
+    "forensics-unverified-claims": []
+  },
+  "output_safety": {
+    "verified_absent_sensitive_classes": [
+      "tokens"
+    ]
+  }
+}

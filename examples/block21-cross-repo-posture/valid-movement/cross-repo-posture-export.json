@@ -1,0 +1,834 @@
+{
+  "schema_version": "block21-cross-repo-posture-export-v1",
+  "export_profile_id": "cross-repo-evidence-posture-v1",
+  "export_profile_version": "v1",
+  "export_id": "export:6354dad4cfd619cf",
+  "producer": "sdp-trace",
+  "generated_at": "2026-05-07T18:43:20Z",
+  "grouping_set_id": "repo_window_v1",
+  "active_grouping_keys": [
+    "repo",
+    "time_window"
+  ],
+  "input_selection": [
+    {
+      "input_id": "current",
+      "repo": "repo-a",
+      "time_window": "2026-w02",
+      "path_redacted_id": "artifact:query_pack_result:e572fdfc446443c0",
+      "sha256": "e572fdfc446443c014e444d740cb76f390da57fb03a3e65e40a1c6da481823f5",
+      "input_trust_state": "trusted_input"
+    },
+    {
+      "input_id": "previous",
+      "repo": "repo-a",
+      "time_window": "2026-w01",
+      "path_redacted_id": "artifact:query_pack_result:00b1940d73d6f546",
+      "sha256": "00b1940d73d6f546755de69b94fb00144274edee71ba91d617bfb0c8e30732ee",
+      "input_trust_state": "trusted_input"
+    }
+  ],
+  "metric_rows": [
+    {
+      "id": "metric.0001",
+      "metric_id": "missing_telemetry_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0002",
+      "metric_id": "not_assessed_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0003",
+      "metric_id": "cannot_verify_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0004",
+      "metric_id": "unsupported_observer_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0005",
+      "metric_id": "not_integrated_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0006",
+      "metric_id": "retention_limited_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0007",
+      "metric_id": "local_only_evidence_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "not_assessed",
+      "not_assessed_count": 2,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0008",
+      "metric_id": "ci_witnessed_evidence_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "not_assessed",
+      "not_assessed_count": 2,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0009",
+      "metric_id": "external_witnessed_evidence_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "not_assessed",
+      "not_assessed_count": 2,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0010",
+      "metric_id": "issue_observed_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0011",
+      "metric_id": "override_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "not_assessed",
+      "not_assessed_count": 2,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0012",
+      "metric_id": "late_attach_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "not_assessed",
+      "not_assessed_count": 2,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0013",
+      "metric_id": "contract_change_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w01",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w01"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "previous"
+      ],
+      "source_artifact_digest_set_hash": "d21eaaa6f8de79bfdc881e13e946395b51763ebb421f35883683741e92b8a947",
+      "source_field_state": "not_assessed",
+      "not_assessed_count": 2,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0014",
+      "metric_id": "missing_telemetry_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0015",
+      "metric_id": "not_assessed_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0016",
+      "metric_id": "cannot_verify_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0017",
+      "metric_id": "unsupported_observer_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0018",
+      "metric_id": "not_integrated_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0019",
+      "metric_id": "retention_limited_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0020",
+      "metric_id": "local_only_evidence_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 0,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0021",
+      "metric_id": "ci_witnessed_evidence_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 0,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0022",
+      "metric_id": "external_witnessed_evidence_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 0,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0023",
+      "metric_id": "issue_observed_rows",
+      "metric_version": "v1",
+      "numerator": 0,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 1,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0024",
+      "metric_id": "override_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 0,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0025",
+      "metric_id": "late_attach_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 0,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    },
+    {
+      "id": "metric.0026",
+      "metric_id": "contract_change_rows",
+      "metric_version": "v1",
+      "numerator": 1,
+      "denominator": 2,
+      "unit": "rows",
+      "time_window": "2026-w02",
+      "dimensions": {
+        "repo": "repo-a",
+        "time_window": "2026-w02"
+      },
+      "dimension_key": "repo=repo-a",
+      "source_input_refs": [
+        "current"
+      ],
+      "source_artifact_digest_set_hash": "d85d133382191a8be7a3a669fc657c8325c17bb26751bfa06881d4a31b5c3d2d",
+      "source_field_state": "present",
+      "not_assessed_count": 0,
+      "input_trust_state_summary": {
+        "trusted_input": 1
+      }
+    }
+  ],
+  "movement_rows": [
+    {
+      "id": "movement.0001",
+      "metric_id": "cannot_verify_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0016",
+      "previous_metric_row_ref": "metric.0003",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0002",
+      "metric_id": "ci_witnessed_evidence_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0021",
+      "previous_metric_row_ref": "metric.0008",
+      "current_value": 1,
+      "previous_value": 0,
+      "delta": 1,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0003",
+      "metric_id": "contract_change_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0026",
+      "previous_metric_row_ref": "metric.0013",
+      "current_value": 1,
+      "previous_value": 0,
+      "delta": 1,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0004",
+      "metric_id": "external_witnessed_evidence_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0022",
+      "previous_metric_row_ref": "metric.0009",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0005",
+      "metric_id": "issue_observed_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0023",
+      "previous_metric_row_ref": "metric.0010",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0006",
+      "metric_id": "late_attach_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0025",
+      "previous_metric_row_ref": "metric.0012",
+      "current_value": 1,
+      "previous_value": 0,
+      "delta": 1,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0007",
+      "metric_id": "local_only_evidence_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0020",
+      "previous_metric_row_ref": "metric.0007",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0008",
+      "metric_id": "missing_telemetry_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0014",
+      "previous_metric_row_ref": "metric.0001",
+      "current_value": 1,
+      "previous_value": 0,
+      "delta": 1,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0009",
+      "metric_id": "not_assessed_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0015",
+      "previous_metric_row_ref": "metric.0002",
+      "current_value": 1,
+      "previous_value": 1,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0010",
+      "metric_id": "not_integrated_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0018",
+      "previous_metric_row_ref": "metric.0005",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0011",
+      "metric_id": "override_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0024",
+      "previous_metric_row_ref": "metric.0011",
+      "current_value": 1,
+      "previous_value": 0,
+      "delta": 1,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0012",
+      "metric_id": "retention_limited_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0019",
+      "previous_metric_row_ref": "metric.0006",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    },
+    {
+      "id": "movement.0013",
+      "metric_id": "unsupported_observer_rows",
+      "metric_version": "v1",
+      "dimension_key": "repo=repo-a",
+      "current_metric_row_ref": "metric.0017",
+      "previous_metric_row_ref": "metric.0004",
+      "current_value": 0,
+      "previous_value": 0,
+      "delta": 0,
+      "comparison_basis": "same_profile_metric_dimension_window",
+      "comparable": true
+    }
+  ],
+  "movement_summary": {
+    "comparable_count": 13,
+    "non_comparable_count": 0,
+    "non_comparable_reason_counts": {}
+  },
+  "refusal_rows": null,
+  "handoff": {
+    "consumer": "sdp-report"
+  },
+  "output_safety": {
+    "verified_absent_sensitive_classes": [
+      "raw_command_args",
+      "command_name_or_path",
+      "unsafe_test_identifier",
+      "stdout_stderr_body",
+      "prompt_body",
+      "source_snippet",
+      "tool_payload",
+      "adapter_configuration",
+      "gateway_evidence_ref",
+      "credential_or_token",
+      "authenticated_provider_url",
+      "model_request_response_payload",
+      "raw_review_body",
+      "unsafe_raw_reference_note",
+      "private_filesystem_path",
+      "unsafe_personal_identifier",
+      "unsafe_label",
+      "raw_digest_manifest_path",
+      "free_text_exception_or_refusal_reason"
+    ]
+  }
+}
