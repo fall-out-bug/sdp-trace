@@ -12,8 +12,8 @@
   "signature_status": "not_assessed",
   "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
   "identity_policy_status": "not_assessed",
-  "source_commit": "1b331602ab8ce406c13a0a384ec4c91314a26db1",
-  "source_commit_status": "mismatch",
+  "source_commit": "353824ce8a7cf31822d5606951eb5fe4f94810e0",
+  "source_commit_status": "matched",
   "source_commit_artifact_status": "missing",
   "source_commit_artifact_counts": {
     "checked": 166,
@@ -34,7 +34,7 @@
   },
   "transparency_log_status": "not_assessed",
   "freshness_status": "not_assessed",
-  "verified_at": "2026-05-07T13:26:16Z",
+  "verified_at": "2026-05-07T13:27:51Z",
   "trusted_contract_release": false,
   "private_equivalent_profile": "not_assessed",
   "accountability": {
@@ -59,7 +59,7 @@
     },
     "line_of_defense": "second"
   },
-  "source_commit_reason": "dirty checkout cannot support source-bound local release proof",
+  "source_commit_reason": "manifest artifact paths are missing from the current source checkout",
   "external_trust_reason": "external production trust is not assessed by the local source-bound profile",
   "artifact_issues": [
     {
