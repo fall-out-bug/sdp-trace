@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/adapter-capture-run.schema.json",
+  "title": "SDP Trace Adapter Capture Run",
+  "type": "object",
+  "required": [
+    "run_id",
+    "run_nonce",
+    "run_closed_sequence",
+    "required_event_types",
+    "adapter_events",
+    "task_drift_assessed"
+  ],
+  "properties": {
+    "run_id": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "run_nonce": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "source_baseline": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "run_closed_sequence": { "type": "integer", "minimum": 0 },
+    "required_event_types": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/adapter-event.schema.json#/properties/event_type" }
+    },
+    "unsupported_event_types": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.sdp.dev/trace/adapter-event.schema.json#/properties/event_type" }
+    },
+    "adapter_bundle": {
+      "type": "object",
+      "required": ["bundle_id", "head_digest", "referenced_sequence", "event_count"],
+      "properties": {
+        "bundle_id": { "type": "string", "minLength": 1 },
+        "head_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "referenced_sequence": { "type": "integer", "minimum": 0 },
+        "event_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "adapter_events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/adapter-event.schema.json" }
+    },
+    "provider_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/providerRef" }
+    },
+    "event_family_summaries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/eventFamilyState" }
+    },
+    "redaction_policy_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "gateway_integrated": { "type": "boolean" },
+    "gateway_evidence_bound": { "type": "boolean" },
+    "task_drift_assessed": { "type": "boolean" },
+    "task_supersession_count": { "type": "integer", "minimum": 0 },
+    "unverified_task_expanded": { "type": "boolean" }
+  },
+  "$defs": {
+    "providerRef": {
+      "type": "object",
+      "properties": {
+        "source_ref": { "type": "string" },
+        "source_commit": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "source_tree_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "change_ref": { "type": "string" },
+        "review_ref": { "type": "string" },
+        "review_state": { "type": "string" },
+        "producer": { "type": "string" },
+        "artifact_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+        "observed_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+        "not_assessed_reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "eventFamilyState": {
+      "type": "object",
+      "required": ["event_family", "state"],
+      "properties": {
+        "event_family": { "$ref": "https://schemas.sdp.dev/trace/adapter-event.schema.json#/properties/event_type" },
+        "state": { "enum": ["pass", "fail", "cannot_verify", "missing_telemetry", "not_integrated", "unsupported", "retention_limited", "not_assessed"] },
+        "retention_mode": { "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"] },
+        "cap_annotation": { "type": "string" },
+        "reconstructable": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

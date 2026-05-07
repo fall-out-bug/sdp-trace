@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/forensic"
@@ -107,14 +108,42 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		return exitUsage
 	}
 	switch opts.stringValue("profile") {
+	case "adapter-capture":
+		return runAdapterCaptureAssess(opts, stdout, stderr)
 	case "managed-harness":
 		return runManagedAssess(opts, stdout, stderr)
 	case "forensic-retention":
 		return runForensicAssess(opts, stdout, stderr)
 	default:
-		fmt.Fprintln(stderr, "assess requires --profile managed-harness or --profile forensic-retention")
+		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, or forensic-retention")
 		return exitUsage
 	}
+}
+
+func runAdapterCaptureAssess(opts *flagSet, stdout, stderr io.Writer) int {
+	required := map[string]string{
+		"--out": opts.stringValue("out"),
+		"--run": opts.stringValue("run"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "adapter capture assess requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	input, err := loadAdapterCaptureInput(opts)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	result := adaptercapture.Evaluate(input)
+	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return adapterCaptureExitCode(result)
 }
 
 func runManagedAssess(opts *flagSet, stdout, stderr io.Writer) int {
@@ -215,6 +244,14 @@ func loadForensicInput(opts *flagSet) (forensic.Input, error) {
 	return forensic.Input{Policy: policy, Run: runEvidence}, nil
 }
 
+func loadAdapterCaptureInput(opts *flagSet) (adaptercapture.Input, error) {
+	var runEvidence adaptercapture.RunEvidence
+	if err := readJSONFile(filepath.Join(opts.stringValue("run"), "run.json"), &runEvidence); err != nil {
+		return adaptercapture.Input{}, err
+	}
+	return adaptercapture.Input{Run: runEvidence}, nil
+}
+
 type managedPreviewReport struct {
 	Command         string            `json:"command"`
 	SelectedProfile string            `json:"selected_profile"`
@@ -241,14 +278,58 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 		return exitUsage
 	}
 	switch opts.stringValue("profile") {
+	case "adapter-capture":
+		return runAdapterCaptureAssessPreview(opts, stdout)
 	case "managed-harness":
 		return runManagedAssessPreview(opts, stdout)
 	case "forensic-retention":
 		return runForensicAssessPreview(opts, stdout)
 	default:
-		fmt.Fprintln(stderr, "assess preview requires --profile managed-harness or --profile forensic-retention")
+		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, or forensic-retention")
 		return exitUsage
 	}
+}
+
+type adapterCapturePreviewReport struct {
+	Command          string            `json:"command"`
+	SelectedProfile  string            `json:"selected_profile"`
+	Inputs           map[string]string `json:"inputs"`
+	ExpectedEvidence map[string]string `json:"expected_evidence"`
+	Safety           map[string]string `json:"safety"`
+	NextActions      []string          `json:"next_actions"`
+	Claim            string            `json:"claim"`
+}
+
+func runAdapterCaptureAssessPreview(opts *flagSet, stdout io.Writer) int {
+	inputs := map[string]string{
+		"run": managedInputStatus(opts.stringValue("run")),
+	}
+	report := adapterCapturePreviewReport{
+		Command:         "assess preview",
+		SelectedProfile: adaptercapture.ProfileAdapterCapture,
+		Inputs:          inputs,
+		ExpectedEvidence: map[string]string{
+			"binding_modes":        "same_chain,adapter_bundle",
+			"test_provenance":      "ci_executed,wrapper_executed,harness_observed,agent_reported,cannot_verify",
+			"capture_depth_states": "captured,missing_telemetry,not_integrated,unsupported,retention_limited,not_assessed,cannot_verify",
+		},
+		Safety: map[string]string{
+			"raw_payloads":    "not_rendered",
+			"adapter_secrets": "not_rendered",
+			"gateway_refs":    "token_free_refs_only",
+			"model_payloads":  "digest_or_block18_reference_only",
+		},
+		NextActions: adapterCapturePreviewActions(inputs),
+		Claim:       "preview is read-only and does not emit an adapter capture verdict",
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	for _, state := range inputs {
+		if state == "present_unreadable" || state == "present_malformed" {
+			return exitCannotVerify
+		}
+	}
+	return 0
 }
 
 func runManagedAssessPreview(opts *flagSet, stdout io.Writer) int {
@@ -337,6 +418,13 @@ func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 		return exitCannotVerify
 	}
 	switch envelope.SchemaVersion {
+	case adaptercapture.SchemaVersion:
+		var result adaptercapture.AssessmentResult
+		if err := readJSONFile(path, &result); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		return explainAdapterCaptureAssessment(result, stdout)
 	case managed.SchemaVersion:
 		var result managed.AssessmentResult
 		if err := readJSONFile(path, &result); err != nil {
@@ -355,6 +443,25 @@ func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", envelope.SchemaVersion)
 		return exitCannotVerify
 	}
+}
+
+func explainAdapterCaptureAssessment(result adaptercapture.AssessmentResult, stdout io.Writer) int {
+	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
+	fmt.Fprintf(stdout, "Adapter capture assessment: %s\n", result.AdapterCaptureAssessment)
+	fmt.Fprintf(stdout, "Trust scope: %s\n", result.TrustScope)
+	for _, condition := range result.AdapterCaptureConditions {
+		fmt.Fprintf(stdout, "Adapter condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+		if condition.CappedToRetentionMode != "" {
+			fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
+		}
+	}
+	for _, reason := range result.Reasons {
+		fmt.Fprintf(stdout, "Reason: %s\n", reason)
+	}
+	for _, action := range result.NextActions {
+		fmt.Fprintf(stdout, "Next action: %s\n", action)
+	}
+	return 0
 }
 
 func explainManagedAssessment(result managed.AssessmentResult, stdout io.Writer) int {
@@ -448,6 +555,28 @@ func forensicPreviewActions(inputs map[string]string) []string {
 		}
 	}
 	return actions
+}
+
+func adapterCapturePreviewActions(inputs map[string]string) []string {
+	switch inputs["run"] {
+	case "absent":
+		return []string{"Supply run before adapter capture assessment."}
+	case "present_unreadable", "present_malformed":
+		return []string{"Fix run so it is a readable JSON run directory."}
+	default:
+		return nil
+	}
+}
+
+func adapterCaptureExitCode(result adaptercapture.AssessmentResult) int {
+	switch result.AdapterCaptureAssessment {
+	case adaptercapture.StatePass:
+		return 0
+	case adaptercapture.StateFail:
+		return 1
+	default:
+		return exitCannotVerify
+	}
 }
 
 func managedExitCode(result managed.AssessmentResult) int {
@@ -1420,6 +1549,15 @@ func runQuery(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "query requires <run-dir>")
 		return exitUsage
 	}
+	if queryName == query.QueryCaptureDepth {
+		payload, err := query.CaptureDepth(runDirs[0])
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		fmt.Fprintf(stdout, "%s\n", payload)
+		return 0
+	}
 	if queryName != query.QueryMissingEvidence {
 		fmt.Fprintf(stderr, "unsupported query: %s\n", queryName)
 		return exitUsage
@@ -1820,10 +1958,11 @@ Usage:
   sdp-trace doctor [--contract <file>]
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>
-  sdp-trace query --query missing-evidence <run-dir>
+  sdp-trace query --query <missing-evidence|capture-depth> <run-dir>
+  sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>
   sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
   sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>
-  sdp-trace assess preview --profile <managed-harness|forensic-retention> [profile inputs]
+  sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]
   sdp-trace assess explain --assessment-result <file>
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>

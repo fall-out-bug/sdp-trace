@@ -1,0 +1,81 @@
+{
+  "schema_version": "block19-adapter-capture-assessment-v1",
+  "selected_profile": "adapter_capture",
+  "adapter_capture_assessment": "cannot_verify",
+  "trust_scope": "local_observed",
+  "adapter_capture_conditions": [
+    {
+      "id": "adapter_event_contract_valid",
+      "state": "pass",
+      "reason_code": "adapter_event_contract_valid",
+      "reason": "adapter events match required contract fields"
+    },
+    {
+      "id": "adapter_identity_visible",
+      "state": "pass",
+      "reason_code": "adapter_identity_visible",
+      "reason": "adapter and producer identity are visible with binding classification"
+    },
+    {
+      "id": "run_binding_established",
+      "state": "pass",
+      "reason_code": "run_binding_established",
+      "reason": "adapter events are bound to run id, nonce, and chain or bundle context"
+    },
+    {
+      "id": "task_drift_visible",
+      "state": "pass",
+      "reason_code": "no_supersessions_observed",
+      "reason": "task drift was assessed and no supersessions were observed"
+    },
+    {
+      "id": "tool_call_depth_visible",
+      "state": "pass",
+      "reason_code": "tool_call_depth_visible",
+      "reason": "required tool-call families are captured or not required"
+    },
+    {
+      "id": "file_mutation_correlated",
+      "state": "pass",
+      "reason_code": "file_mutation_correlated",
+      "reason": "file mutation evidence is correlated with source baseline and run id"
+    },
+    {
+      "id": "model_identity_not_overclaimed",
+      "state": "not_integrated",
+      "reason_code": "gateway_not_integrated",
+      "reason": "gateway provenance is not integrated",
+      "next_action": "Integrate gateway evidence before claiming gateway-observed model identity."
+    },
+    {
+      "id": "test_provenance_not_overclaimed",
+      "state": "pass",
+      "reason_code": "test_provenance_executed",
+      "reason": "test evidence is bound to CI or wrapper execution"
+    },
+    {
+      "id": "provider_refs_portable",
+      "state": "pass",
+      "reason_code": "provider_refs_portable",
+      "reason": "provider references are portable and token-free"
+    },
+    {
+      "id": "redaction_metadata_consistent",
+      "state": "pass",
+      "reason_code": "redaction_metadata_consistent",
+      "reason": "sensitive adapter fields carry safe redaction and retention metadata"
+    },
+    {
+      "id": "capture_depth_not_overclaimed",
+      "state": "pass",
+      "reason_code": "capture_depth_not_overclaimed",
+      "reason": "capture-depth output does not exceed available evidence"
+    }
+  ],
+  "reasons": [
+    "gateway_not_integrated: gateway provenance is not integrated"
+  ],
+  "next_actions": [
+    "Integrate gateway evidence before claiming gateway-observed model identity."
+  ]
+}

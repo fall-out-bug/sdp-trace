@@ -4,7 +4,8 @@
   "title": "SDP Trace Assessment Result",
   "oneOf": [
     { "$ref": "#/$defs/managedHarnessAssessment" },
-    { "$ref": "#/$defs/forensicRetentionAssessment" }
+    { "$ref": "#/$defs/forensicRetentionAssessment" },
+    { "$ref": "#/$defs/adapterCaptureAssessment" }
   ],
   "$defs": {
     "topLevelState": {
@@ -27,6 +28,10 @@
     "forensicConditionState": {
       "type": "string",
       "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "adapterConditionState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "missing_telemetry", "not_integrated", "unsupported", "retention_limited", "not_assessed"]
     },
     "managedCondition": {
       "type": "object",
@@ -60,6 +65,35 @@
           ]
         },
         "state": { "$ref": "#/$defs/forensicConditionState" },
+        "reason_code": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "next_action": { "type": "string", "minLength": 1 },
+        "capped_to_retention_mode": {
+          "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "adapterCaptureCondition": {
+      "type": "object",
+      "required": ["id", "state", "reason_code", "reason"],
+      "properties": {
+        "id": {
+          "enum": [
+            "adapter_event_contract_valid",
+            "adapter_identity_visible",
+            "run_binding_established",
+            "task_drift_visible",
+            "tool_call_depth_visible",
+            "file_mutation_correlated",
+            "model_identity_not_overclaimed",
+            "test_provenance_not_overclaimed",
+            "provider_refs_portable",
+            "redaction_metadata_consistent",
+            "capture_depth_not_overclaimed"
+          ]
+        },
+        "state": { "$ref": "#/$defs/adapterConditionState" },
         "reason_code": { "type": "string", "minLength": 1 },
         "reason": { "type": "string", "minLength": 1 },
         "next_action": { "type": "string", "minLength": 1 },
@@ -138,6 +172,55 @@
             { "contains": { "properties": { "id": { "const": "profile_selection_accountable" } }, "required": ["id"] } }
           ],
           "items": { "$ref": "#/$defs/forensicCondition" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "adapterCaptureAssessment": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "selected_profile",
+        "adapter_capture_assessment",
+        "trust_scope",
+        "adapter_capture_conditions",
+        "reasons",
+        "next_actions"
+      ],
+      "properties": {
+        "schema_version": { "type": "string", "const": "block19-adapter-capture-assessment-v1" },
+        "selected_profile": { "type": "string", "const": "adapter_capture" },
+        "adapter_capture_assessment": { "$ref": "#/$defs/topLevelState" },
+        "trust_scope": {
+          "type": "string",
+          "enum": ["adapter_capture_observed", "local_observed"]
+        },
+        "adapter_capture_conditions": {
+          "type": "array",
+          "minItems": 11,
+          "maxItems": 11,
+          "allOf": [
+            { "contains": { "properties": { "id": { "const": "adapter_event_contract_valid" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "adapter_identity_visible" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "run_binding_established" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "task_drift_visible" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "tool_call_depth_visible" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "file_mutation_correlated" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "model_identity_not_overclaimed" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "test_provenance_not_overclaimed" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "provider_refs_portable" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "redaction_metadata_consistent" } }, "required": ["id"] } },
+            { "contains": { "properties": { "id": { "const": "capture_depth_not_overclaimed" } }, "required": ["id"] } }
+          ],
+          "items": { "$ref": "#/$defs/adapterCaptureCondition" }
         },
         "reasons": {
           "type": "array",
