@@ -213,8 +213,15 @@ func Build(selectionPath string, now time.Time) (ExportResult, error) {
 	var refusals []RefusalRow
 	groups := map[string]*aggregateGroup{}
 	refusalCounter := 0
+	handoff := selection.Handoff
+	if handoff == nil {
+		handoff = map[string]string{}
+	}
+	if !safeHandoff(handoff) {
+		return ExportResult{}, fmt.Errorf("unsafe handoff")
+	}
 	for _, repo := range selection.Repositories {
-		if err := validateRepoLabels(repo, selection.DimensionExposurePolicy); err != nil {
+		if err := validateRepoLabels(repo); err != nil {
 			refusalCounter++
 			refusals = append(refusals, refusal(refusalCounter, repo, "unsafe_label", "cannot_verify_input"))
 			continue
@@ -290,7 +297,7 @@ func Build(selectionPath string, now time.Time) (ExportResult, error) {
 		MovementRows:         movementRows,
 		MovementSummary:      summary,
 		RefusalRows:          refusals,
-		Handoff:              selection.Handoff,
+		Handoff:              handoff,
 		OutputSafety: OutputSafety{
 			VerifiedAbsentSensitiveClasses: SensitiveClasses(),
 		},
@@ -367,6 +374,9 @@ func validateSelection(selection SelectionManifest) error {
 	}
 	if len(groupingKeys(selection.GroupingSetID)) == 0 {
 		return fmt.Errorf("unsupported grouping set")
+	}
+	if !groupingAllowedByExposure(selection.GroupingSetID, selection.DimensionExposurePolicy) {
+		return fmt.Errorf("dimension exposure policy excludes grouping key")
 	}
 	if len(selection.Repositories) == 0 {
 		return fmt.Errorf("empty selection")
@@ -640,6 +650,19 @@ func groupingKeys(groupingSet string) []string {
 	}
 }
 
+func groupingAllowedByExposure(groupingSet string, exposure []string) bool {
+	allowed := map[string]bool{"time_window": true}
+	for _, key := range exposure {
+		allowed[key] = true
+	}
+	for _, key := range groupingKeys(groupingSet) {
+		if !allowed[key] {
+			return false
+		}
+	}
+	return true
+}
+
 func dimensionKey(repo RepositoryWindow, keys []string) (string, map[string]string) {
 	values := map[string]string{
 		"repo":        repo.Repo,
@@ -661,13 +684,9 @@ func dimensionKey(repo RepositoryWindow, keys []string) (string, map[string]stri
 	return strings.Join(parts, "|"), dims
 }
 
-func validateRepoLabels(repo RepositoryWindow, exposure []string) error {
+func validateRepoLabels(repo RepositoryWindow) error {
 	if !safeLabel(repo.InputID) || !safeLabel(repo.TimeWindow) {
 		return fmt.Errorf("unsafe label")
-	}
-	allowed := map[string]bool{}
-	for _, key := range exposure {
-		allowed[key] = true
 	}
 	labels := map[string]string{
 		"repo":        repo.Repo,
@@ -676,10 +695,7 @@ func validateRepoLabels(repo RepositoryWindow, exposure []string) error {
 		"harness":     repo.Harness,
 		"change_type": repo.ChangeType,
 	}
-	for key, value := range labels {
-		if !allowed[key] {
-			continue
-		}
+	for _, value := range labels {
 		if !safeLabel(value) {
 			return fmt.Errorf("unsafe label")
 		}
@@ -732,10 +748,27 @@ func validateInputPaths(repo RepositoryWindow) error {
 func unsafeSelectionPath(value string) bool {
 	clean := strings.ReplaceAll(value, "\\", "/")
 	return strings.Contains(clean, "://") ||
+		hasWindowsVolume(clean) ||
 		strings.HasPrefix(clean, "/") ||
 		strings.HasPrefix(clean, "../") ||
 		strings.Contains(clean, "../") ||
 		strings.Contains(clean, "/..")
+}
+
+func hasWindowsVolume(value string) bool {
+	return len(value) >= 3 &&
+		((value[0] >= 'A' && value[0] <= 'Z') || (value[0] >= 'a' && value[0] <= 'z')) &&
+		value[1] == ':' &&
+		value[2] == '/'
+}
+
+func safeHandoff(values map[string]string) bool {
+	for key, value := range values {
+		if !safeLabel(key) || unsafeOutput(value) {
+			return false
+		}
+	}
+	return true
 }
 
 func filepathBase(path string) string {

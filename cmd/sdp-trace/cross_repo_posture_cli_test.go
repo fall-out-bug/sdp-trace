@@ -66,6 +66,23 @@ func TestCrossRepoPostureValidateOnlyAndRequiredFlags(t *testing.T) {
 	if !strings.Contains(errOut.String(), "requires --selection") {
 		t.Fatalf("missing selection error: %s", errOut.String())
 	}
+
+	root := t.TempDir()
+	t.Chdir(root)
+	current := writePostureCLIQueryPack(t, ".", "current", "present")
+	previous := writePostureCLIQueryPack(t, ".", "previous", "present")
+	selectionPath := writePostureCLISelection(t, ".", current, previous)
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"export", "cross-repo-posture",
+		"--profile", "cross-repo-evidence-posture-v1",
+		"--selection", selectionPath,
+		"--validate-only",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("validate-only exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
 }
 
 func writePostureCLISelection(t *testing.T, root, current, previous string) string {

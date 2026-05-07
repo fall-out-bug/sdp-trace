@@ -108,6 +108,90 @@ func TestBuildRefusesUnsafeLabels(t *testing.T) {
 	}
 }
 
+func TestBuildSupportsTeamServiceAndHarnessChangeGrouping(t *testing.T) {
+	for name, grouping := range map[string]string{
+		"team-service":   GroupingTeamServiceWindow,
+		"harness-change": GroupingHarnessChangeWindow,
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			t.Chdir(root)
+			current := writeQueryPack(t, ".", "current", "present")
+			previous := writeQueryPack(t, ".", "previous", "present")
+			selection := SelectionManifest{
+				SchemaVersion:           SelectionSchemaVersion,
+				ProfileID:               ProfileID,
+				GroupingSetID:           grouping,
+				FreshnessBoundary:       "2026-01-01T00:00:00Z",
+				DimensionExposurePolicy: []string{"repo", "team", "service", "harness", "change_type"},
+				CurrentWindow:           "2026-w02",
+				PreviousWindow:          "2026-w01",
+				Repositories: []RepositoryWindow{
+					selectionRepo("current", "2026-w02", current, writeDigest(t, current), ""),
+					selectionRepo("previous", "2026-w01", previous, writeDigest(t, previous), ""),
+				},
+			}
+			selectionPath := filepath.Join(root, "selection.json")
+			writeJSON(t, selectionPath, selection)
+			result, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC))
+			if err != nil {
+				t.Fatalf("build: %v", err)
+			}
+			if result.MovementSummary.ComparableCount == 0 {
+				t.Fatalf("missing comparable movement for %s", grouping)
+			}
+		})
+	}
+}
+
+func TestBuildRefusesStaleInput(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	qp := writeQueryPack(t, ".", "current", "present")
+	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
+	repo.InputObservedAt = "2025-12-31T00:00:00Z"
+	selection := SelectionManifest{
+		SchemaVersion:           SelectionSchemaVersion,
+		ProfileID:               ProfileID,
+		GroupingSetID:           GroupingRepoWindow,
+		FreshnessBoundary:       "2026-01-01T00:00:00Z",
+		DimensionExposurePolicy: []string{"repo", "team", "service", "harness", "change_type"},
+		CurrentWindow:           "2026-w02",
+		PreviousWindow:          "2026-w01",
+		Repositories:            []RepositoryWindow{repo},
+	}
+	selectionPath := filepath.Join(root, "selection.json")
+	writeJSON(t, selectionPath, selection)
+	result, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != "stale_input" {
+		t.Fatalf("refusals = %+v", result.RefusalRows)
+	}
+}
+
+func TestBuildRejectsGroupingOutsideExposurePolicy(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	qp := writeQueryPack(t, ".", "current", "present")
+	selection := SelectionManifest{
+		SchemaVersion:           SelectionSchemaVersion,
+		ProfileID:               ProfileID,
+		GroupingSetID:           GroupingTeamServiceWindow,
+		FreshnessBoundary:       "2026-01-01T00:00:00Z",
+		DimensionExposurePolicy: []string{"team"},
+		CurrentWindow:           "2026-w02",
+		PreviousWindow:          "2026-w01",
+		Repositories:            []RepositoryWindow{selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")},
+	}
+	selectionPath := filepath.Join(root, "selection.json")
+	writeJSON(t, selectionPath, selection)
+	if _, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC)); err == nil {
+		t.Fatalf("expected grouping outside exposure policy to be rejected")
+	}
+}
+
 func TestBuildRejectsDurationFreshnessBoundaryInV1(t *testing.T) {
 	root := t.TempDir()
 	t.Chdir(root)
@@ -231,6 +315,64 @@ func TestBuildRejectsUnsupportedDigestManifestSchema(t *testing.T) {
 	}
 	if len(result.InputSelection) != 1 || result.InputSelection[0].InputTrustState == "trusted_input" {
 		t.Fatalf("unsupported digest schema trusted input: %+v", result.InputSelection)
+	}
+}
+
+func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	qp := writeQueryPack(t, ".", "current", "present")
+	manifest := writeDigest(t, qp)
+	selection := SelectionManifest{
+		SchemaVersion:           SelectionSchemaVersion,
+		ProfileID:               ProfileID,
+		GroupingSetID:           GroupingRepoWindow,
+		FreshnessBoundary:       "2026-01-01T00:00:00Z",
+		DimensionExposurePolicy: []string{"repo", "team", "service", "harness", "change_type"},
+		CurrentWindow:           "2026-w02",
+		PreviousWindow:          "2026-w01",
+		Repositories:            []RepositoryWindow{selectionRepo("current", "2026-w02", qp, manifest, "")},
+	}
+	selectionPath := filepath.Join(root, "selection.json")
+	writeJSON(t, selectionPath, selection)
+	result, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if result.Handoff == nil || len(result.Handoff) != 0 {
+		t.Fatalf("handoff not normalized: %+v", result.Handoff)
+	}
+	selection.Handoff = map[string]string{"consumer": "https://provider.example/private"}
+	writeJSON(t, selectionPath, selection)
+	if _, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC)); err == nil {
+		t.Fatalf("expected unsafe handoff to be rejected")
+	}
+}
+
+func TestBuildRefusesWindowsAbsoluteInputPath(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	qp := writeQueryPack(t, ".", "current", "present")
+	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
+	repo.QueryPackResult = `C:\private\query-pack.json`
+	selection := SelectionManifest{
+		SchemaVersion:           SelectionSchemaVersion,
+		ProfileID:               ProfileID,
+		GroupingSetID:           GroupingRepoWindow,
+		FreshnessBoundary:       "2026-01-01T00:00:00Z",
+		DimensionExposurePolicy: []string{"repo", "team", "service", "harness", "change_type"},
+		CurrentWindow:           "2026-w02",
+		PreviousWindow:          "2026-w01",
+		Repositories:            []RepositoryWindow{repo},
+	}
+	selectionPath := filepath.Join(root, "selection.json")
+	writeJSON(t, selectionPath, selection)
+	result, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != "malformed_input" {
+		t.Fatalf("refusals = %+v", result.RefusalRows)
 	}
 }
 

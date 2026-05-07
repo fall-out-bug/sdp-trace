@@ -141,7 +141,7 @@
         "input_trust_state_summary"
       ],
       "properties": {
-        "id": { "type": "string", "pattern": "^metric\\.[0-9]{4}$" },
+        "id": { "type": "string", "pattern": "^metric\\.[0-9]{4,}$" },
         "metric_id": { "$ref": "#/$defs/metricID" },
         "metric_version": { "const": "v1" },
         "numerator": { "type": "integer", "minimum": 0 },
@@ -186,12 +186,15 @@
         "comparable"
       ],
       "properties": {
-        "id": { "type": "string", "pattern": "^movement\\.[0-9]{4}$" },
+        "id": { "type": "string", "pattern": "^movement\\.[0-9]{4,}$" },
         "metric_id": { "$ref": "#/$defs/metricID" },
         "metric_version": { "const": "v1" },
-        "dimension_key": { "type": "string", "minLength": 1 },
-        "current_metric_row_ref": { "type": "string", "pattern": "^metric\\.[0-9]{4}$" },
-        "previous_metric_row_ref": { "type": "string", "pattern": "^metric\\.[0-9]{4}$" },
+        "dimension_key": {
+          "type": "string",
+          "pattern": "^[a-z_]+=([a-z0-9._-]+)(\\|[a-z_]+=([a-z0-9._-]+))*$"
+        },
+        "current_metric_row_ref": { "type": "string", "pattern": "^metric\\.[0-9]{4,}$" },
+        "previous_metric_row_ref": { "type": "string", "pattern": "^metric\\.[0-9]{4,}$" },
         "current_value": { "type": "integer", "minimum": 0 },
         "previous_value": { "type": "integer", "minimum": 0 },
         "delta": { "type": "integer" },
@@ -226,7 +229,7 @@
       "type": "object",
       "required": ["id", "input_id", "refusal_reason", "input_trust_state"],
       "properties": {
-        "id": { "type": "string", "pattern": "^refusal\\.[0-9]{4}$" },
+        "id": { "type": "string", "pattern": "^refusal\\.[0-9]{4,}$" },
         "input_id": { "$ref": "#/$defs/safeLabel" },
         "time_window": { "$ref": "#/$defs/safeLabel" },
         "refusal_reason": { "$ref": "#/$defs/refusalReason" },

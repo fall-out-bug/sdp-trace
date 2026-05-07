@@ -1764,7 +1764,7 @@ func runCrossRepoPostureExplain(args []string, stdout, stderr io.Writer) int {
 	}
 	var result posture.ExportResult
 	if err := readJSONFile(opts.stringValue("result"), &result); err != nil {
-		fmt.Fprintln(stderr, "selection_unreadable")
+		fmt.Fprintln(stderr, "result_unreadable")
 		return exitCannotVerify
 	}
 	if result.SchemaVersion != posture.SchemaVersion || result.ExportProfileID != posture.ProfileID {
