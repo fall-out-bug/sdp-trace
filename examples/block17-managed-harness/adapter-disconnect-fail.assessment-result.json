@@ -1,0 +1,111 @@
+{
+  "schema_version": "block17-managed-assessment-v1",
+  "selected_profile": "managed_harness",
+  "managed_harness_assessment": "fail",
+  "trust_scope": "local_observed",
+  "managed_conditions": [
+    {
+      "id": "managed_profile_explicitly_selected",
+      "state": "pass",
+      "reason_code": "managed_profile_selected",
+      "reason": "managed harness profile was explicitly selected"
+    },
+    {
+      "id": "managed_policy_loaded",
+      "state": "pass",
+      "reason_code": "managed_policy_loaded",
+      "reason": "managed policy is readable and anchored before the run"
+    },
+    {
+      "id": "adapter_registry_loaded",
+      "state": "pass",
+      "reason_code": "adapter_registry_loaded",
+      "reason": "adapter registry is readable and anchored before the run"
+    },
+    {
+      "id": "managed_boundary_enrolled_before_run",
+      "state": "pass",
+      "reason_code": "managed_boundary_enrolled",
+      "reason": "managed boundary enrollment is in chain before child launch"
+    },
+    {
+      "id": "adapter_identity_authorized",
+      "state": "pass",
+      "reason_code": "adapter_identity_authorized",
+      "reason": "adapter identity is verified and authorized by policy"
+    },
+    {
+      "id": "adapter_capabilities_satisfy_contract",
+      "state": "pass",
+      "reason_code": "adapter_capabilities_satisfy_contract",
+      "reason": "adapter capabilities cover required event types"
+    },
+    {
+      "id": "adapter_activation_observed",
+      "state": "pass",
+      "reason_code": "adapter_activation_observed",
+      "reason": "adapter activation is bound to managed enrollment"
+    },
+    {
+      "id": "adapter_connection_continuous",
+      "state": "fail",
+      "reason_code": "adapter_disconnect_observed",
+      "reason": "adapter disconnected during required managed observation window",
+      "next_action": "Rerun with continuous managed adapter connection."
+    },
+    {
+      "id": "required_harness_events_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required harness events are observed"
+    },
+    {
+      "id": "required_tool_events_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required tool events are observed"
+    },
+    {
+      "id": "required_file_mutations_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required file events are observed"
+    },
+    {
+      "id": "test_provenance_not_agent_reported",
+      "state": "pass",
+      "reason_code": "test_provenance_not_agent_reported",
+      "reason": "test evidence is wrapper or CI observed"
+    },
+    {
+      "id": "suppression_policy_valid",
+      "state": "pass",
+      "reason_code": "suppression_policy_valid",
+      "reason": "suppression policy is valid or no suppression is present"
+    },
+    {
+      "id": "bypass_not_observed",
+      "state": "pass",
+      "reason_code": "bypass_not_observed",
+      "reason": "no managed boundary bypass is observed"
+    },
+    {
+      "id": "managed_witness_bound",
+      "state": "pass",
+      "reason_code": "managed_witness_bound",
+      "reason": "managed witness binds source, run, policy, registry, chain, and artifacts"
+    },
+    {
+      "id": "override_does_not_upgrade_managed_profile",
+      "state": "pass",
+      "reason_code": "override_absent_non_upgrading",
+      "reason": "no override request is available to upgrade managed profile"
+    }
+  ],
+  "reasons": [
+    "adapter_disconnect_observed: adapter disconnected during required managed observation window"
+  ],
+  "next_actions": [
+    "Rerun with continuous managed adapter connection."
+  ]
+}

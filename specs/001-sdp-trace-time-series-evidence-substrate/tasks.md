@@ -314,26 +314,62 @@ mismatch, missing CI witness binding, stale CI witness evidence, CI witness
 mismatch, override presence, and a valid CI-authority protected profile with
 deterministic protected gate states and exit codes.
 
-**Activation Gate**: Do not implement protected profile behavior until
-`blocks/16-protected-gate-enforcement-profile.md` is explicitly approved.
-Protected profile pass is verifier-derived evidence for an external CI or
-policy owner; it is not a native `sdp-trace` merge or release decision.
+**Closure Evidence**: Block 16 was implemented and merged in PR #6. Evidence
+is recorded in `docs/research/block-16-implementation-evidence.md`, including
+Go-first verification, schema checks, fixture coverage, implementation review,
+and PR-level review disposition with no remaining critical or major findings.
 
-- [ ] T126 [US5] Add Block 16 spec and implementation plan for protected gate profile selection, fail-closed evidence requirements, protected trust scope, exit semantics, explain/preview behavior, and no-overclaim boundary.
-- [ ] T127 [US2] Add a new Block 16 gate-result schema version with selected profile, protected gate state, checkpoint verification summary, protected condition rows, explicit protected trust-scope enum, and Block 14 read compatibility without introducing native policy decision fields.
-- [ ] T128 [US5] Add protected gate profile evaluation that requires explicit `--profile protected`, signed checkpoint input, trusted-checkpoint policy input, required runs, and required evidence before protected pass is possible.
-- [ ] T129 [US5] Map checkpoint verification facts into protected profile state, proving local-development signed checkpoints and untrusted checkpoint shapes cannot pass protected gate.
-- [ ] T130 [US5] Bind CI signer authority to CI witness repository, ref, commit, run id, artifact digest, and freshness checks; missing binding or absent/unbounded freshness data is `cannot_verify`, contradictory binding or stale data is `fail`.
-- [ ] T131 [US4] Add protected profile CLI flags, deterministic exit-code behavior, usage errors for omitted required gate inputs, and preview rendering for absent protected inputs.
-- [ ] T132 [US4] Extend `gate explain` and `gate preview` with protected-profile input requirements, checkpoint state, signer authority state, witness binding state, override state, stable reason codes, and next actions.
-- [ ] T133 [US4] Add safety-sensitive negative tests proving protected gate, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, or checkpoint key material.
-- [ ] T134 [US5] Add committed Block 16 fixtures for missing checkpoint, local-development checkpoint, local-development checkpoint with invalid run binding, missing signer policy, signer mismatch, missing CI witness, absent freshness, stale CI witness, CI source mismatch, CI artifact mismatch, malformed override with a trust-scope failure, valid CI-authority protected profile, and override-present protected profile.
-- [ ] T135 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 16 review disposition before PR closure.
+- [x] T126 [US5] Add Block 16 spec and implementation plan for protected gate profile selection, fail-closed evidence requirements, protected trust scope, exit semantics, explain/preview behavior, and no-overclaim boundary.
+- [x] T127 [US2] Add a new Block 16 gate-result schema version with selected profile, protected gate state, checkpoint verification summary, protected condition rows, explicit protected trust-scope enum, and Block 14 read compatibility without introducing native policy decision fields.
+- [x] T128 [US5] Add protected gate profile evaluation that requires explicit `--profile protected`, signed checkpoint input, trusted-checkpoint policy input, required runs, and required evidence before protected pass is possible.
+- [x] T129 [US5] Map checkpoint verification facts into protected profile state, proving local-development signed checkpoints and untrusted checkpoint shapes cannot pass protected gate.
+- [x] T130 [US5] Bind CI signer authority to CI witness repository, ref, commit, run id, artifact digest, and freshness checks; missing binding or absent/unbounded freshness data is `cannot_verify`, contradictory binding or stale data is `fail`.
+- [x] T131 [US4] Add protected profile CLI flags, deterministic exit-code behavior, usage errors for omitted required gate inputs, and preview rendering for absent protected inputs.
+- [x] T132 [US4] Extend `gate explain` and `gate preview` with protected-profile input requirements, checkpoint state, signer authority state, witness binding state, override state, stable reason codes, and next actions.
+- [x] T133 [US4] Add safety-sensitive negative tests proving protected gate, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, or checkpoint key material.
+- [x] T134 [US5] Add committed Block 16 fixtures for missing checkpoint, local-development checkpoint, local-development checkpoint with invalid run binding, missing signer policy, signer mismatch, missing CI witness, absent freshness, stale CI witness, CI source mismatch, CI artifact mismatch, malformed override with a trust-scope failure, valid CI-authority protected profile, and override-present protected profile.
+- [x] T135 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 16 review disposition before PR closure.
 
 **Checkpoint**: Protected gate users get fail-closed verifier facts and
 deterministic CI-friendly exit behavior. `sdp-trace` still does not own the
 organization's merge, release, readiness, degradation, override approval, or
 risk-acceptance decision.
+
+## Phase 13: Managed Harness Enforcement Profile
+
+**Goal**: Make managed harness evaluation explicit, opt-in, deterministic, and
+fail-closed for registered wrapper or adapter boundaries without making
+managed enrollment a prerequisite for observation-mode value.
+
+**Independent Test**: A reviewer can run committed fixtures showing unmanaged
+run bypass, late enrollment, unauthorized adapter identity, missing capability,
+missing harness/tool/file/test telemetry, agent-reported-only test evidence,
+unverified suppression, managed witness mismatch, override presence, and a
+valid managed profile with deterministic managed gate states and exit codes.
+
+**Activation Gate**: Do not implement managed harness profile behavior until
+`blocks/17-managed-harness-enforcement-profile.md` is explicitly approved.
+Managed harness pass is verifier-derived evidence for an external CI or policy
+owner; it is not a native `sdp-trace` merge, release, readiness, degradation,
+override approval, or risk-acceptance decision.
+
+- [x] T136 [US5] Add Block 17 spec and implementation plan for managed harness profile selection, opt-in adoption boundary, registered wrapper enrollment, adapter identity, capability requirements, fail-closed evidence requirements, exit semantics, explain/preview behavior, and no-overclaim boundary.
+- [x] T137 [US2] Add a new Block 17 assessment-result schema version with selected profile, managed harness assessment state, managed boundary summary, managed condition rows, explicit managed trust-scope enum, and Block 14/16 read compatibility without introducing native policy decision fields.
+- [x] T138 [US5] Add managed policy and adapter registry schemas covering approved wrapper identities, adapter identities, capabilities, allowed event types, deployment source, suppression policy, and witness binding requirements.
+- [x] T139 [US5] Add managed harness profile evaluation that requires explicit `--profile managed-harness`, managed policy input, adapter registry input, selected run input, CI or managed witness input, and pre-run registered wrapper or adapter enrollment before managed pass is possible.
+- [x] T140 [US5] Prove unmanaged runs, late enrollment, post-hoc adapter registration, post-hoc managed policy creation, self-claimed adapter identity, unauthorized adapter identity, and unregistered wrapper evidence cannot pass managed harness profile.
+- [x] T141 [US5] Verify adapter capability and required event coverage for harness lifecycle, tool events, file mutations, and test provenance; missing required coverage emits deterministic condition rows and agent-reported-only test evidence cannot satisfy executed-test requirements.
+- [x] T142 [US5] Verify suppression handling so suppressed evidence is visible, non-upgrading, and accepted only when policy-authorized for the selected managed profile.
+- [x] T143 [US5] Bind managed witness evidence to source commit, run id, run nonce, managed policy digest, adapter registry digest, enrollment event digest, launch event digest, chain head, adapter or wrapper identity digest, freshness, and output artifact digests; missing binding is `cannot_verify`, contradictory binding is `fail`.
+- [x] T144 [US4] Add primary `sdp-trace assess --profile managed-harness` CLI flags, deterministic exit-code behavior, usage errors for omitted required managed inputs, and preview rendering for absent managed inputs.
+- [x] T145 [US4] Add `assess explain` and `assess preview` with managed-profile input requirements, wrapper enrollment state, adapter identity state, capability state, event coverage, suppression state, witness binding state, override state, stable reason codes, and next actions while preserving Block 14/16 `gate explain` compatibility.
+- [x] T146 [US4] Add safety-sensitive negative tests proving managed assess, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, adapter secrets, gateway tokens, model responses, or checkpoint key material.
+- [x] T147 [US5] Add committed Block 17 fixtures for unmanaged run, late enrollment, unauthorized adapter, missing capability, missing harness event, missing tool event, missing file mutation event, agent-reported test evidence, policy-authorized suppression, suppression without policy, witness missing, witness mismatch, override present, and valid managed profile.
+- [x] T148 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 17 review disposition before PR closure.
+
+**Checkpoint**: Managed harness users get fail-closed verifier facts for an
+approved wrapper or adapter boundary. Unmanaged harness users still get honest
+observation-mode gaps instead of being forced into managed enrollment.
 
 ## Dependencies & Execution Order
 
@@ -352,6 +388,7 @@ risk-acceptance decision.
 - **Phase 10**: Depends on Block 13B capture-boundary and state taxonomy, and reuses Block 11/12 report, gate, and CI witness behavior. It must remain advisory until later signed checkpoint and external policy-consumer enforcement work exists.
 - **Phase 11**: Depends on Block 14 advisory gate output and Block 09/13B run-chain semantics. It supplies signed-checkpoint facts but must not implement protected enforcement or external witness trust.
 - **Phase 12**: Depends on Block 14 gate/explain/preview behavior and Block 15 signed-checkpoint replay resistance. It may make protected profile facts fail-closed and CI-friendly, but it must not make native policy decisions.
+- **Phase 13**: Depends on Block 13B capture-boundary taxonomy and Block 16 protected gate schema/CLI compatibility. It may make managed wrapper or adapter enforcement fail-closed only for explicitly selected managed profile runs, and it must preserve observation-mode value for unmanaged harnesses.
 
 ### Parallel Opportunities
 
@@ -367,6 +404,9 @@ risk-acceptance decision.
 - T081 and T082 can run in parallel after T080 closes, because the runner and validator have separate write scopes.
 - T106 and T109 can run in parallel after T105 because required-run semantics and witness binding have separate implementation surfaces.
 - T111 and T112 can run in parallel after T108 because explain and preview write separate command paths over the same output contract.
+- T138 can run in parallel with T137 after T136 because managed policy and adapter registry schemas are separate from gate-result versioning.
+- T140, T141, and T142 can run in parallel after T139 if their write scopes are split between boundary enrollment, event coverage, and suppression handling.
+- T144 and T145 can run in parallel after T137 and T139 because CLI exit behavior and explanation rendering have separate test surfaces.
 
 ## Implementation Strategy
 
@@ -385,6 +425,7 @@ risk-acceptance decision.
 11. Complete Block 14 advisory gate contract and explanation work before any protected enforcement or signed-checkpoint gate claim.
 12. Complete Block 15 signed-checkpoint replay verification before any protected gate profile claims that checkpoint evidence exists.
 13. Complete Block 16 protected gate profile only after explicit spec approval, keeping enforcement ownership with external CI or policy consumers.
+14. Complete Block 17 managed harness profile only after explicit spec approval, keeping managed enrollment opt-in and preserving unmanaged observation-mode value.
 
 ### Evidence Discipline
 
