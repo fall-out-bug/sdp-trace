@@ -514,6 +514,115 @@ func TestWitnessCommandMissingCIIdentityCannotVerify(t *testing.T) {
 	}
 }
 
+func TestWitnessCommandRejectsUnknownKind(t *testing.T) {
+	root := t.TempDir()
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"witness", "--kind", "jenkins", "--out", filepath.Join(t.TempDir(), "witness.json"), root}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("expected usage exit, got %d stdout=%s stderr=%s", exit, out.String(), errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "github-actions, gitlab-ci, buildkite, or customer-pki") {
+		t.Fatalf("stderr missing allowed kinds: %s", errOut.String())
+	}
+}
+
+func TestWitnessCommandBuildkiteRequiresExplicitEnvelope(t *testing.T) {
+	for _, key := range []string{"BUILDKITE", "BUILDKITE_BUILD_ID", "BUILDKITE_JOB_ID", "BUILDKITE_COMMIT", "GITLAB_CI", "CI_PIPELINE_ID", "CI_JOB_ID", "CI_COMMIT_SHA"} {
+		t.Setenv(key, "")
+	}
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+
+	outPath := filepath.Join(t.TempDir(), "buildkite-witness.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"witness", "--kind", "buildkite", "--out", outPath, root}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("expected cannot_verify exit, got %d stderr=%s out=%s", exit, errOut.String(), out.String())
+	}
+	raw, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read witness: %v", err)
+	}
+	if !strings.Contains(string(raw), `"reason": "witness_identity_missing"`) {
+		t.Fatalf("witness upgraded without envelope: %s", string(raw))
+	}
+}
+
+func TestWitnessCommandBuildkitePassesWithExplicitEnvelope(t *testing.T) {
+	root := t.TempDir()
+	runDir := filepath.Join(root, "001-agent-session")
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatalf("mkdir run: %v", err)
+	}
+	runJSON := []byte(`{"run_id":"pipeline-42"}`)
+	if err := os.WriteFile(filepath.Join(runDir, "run.json"), runJSON, 0o644); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+	sum := sha256.Sum256(runJSON)
+	dir := t.TempDir()
+	envelopePath := filepath.Join(dir, "buildkite-envelope.json")
+	writeJSONFileForTest(t, envelopePath, map[string]any{
+		"profile_id":            "buildkite-v1",
+		"profile_version":       "1.0",
+		"provider_kind":         "buildkite",
+		"requested_trust_scope": "ci_witnessed",
+		"source": map[string]string{
+			"repository": "org/repo",
+			"ref":        "refs/heads/main",
+			"commit_sha": "abc123",
+		},
+		"ci": map[string]string{
+			"provider": "buildkite",
+			"run_id":   "pipeline-42",
+			"job":      "verify",
+		},
+		"run_artifacts": []map[string]string{
+			{"path": "001-agent-session/run.json", "sha256": hex.EncodeToString(sum[:])},
+		},
+		"profile_states": map[string]string{
+			"identity_state":         "pass",
+			"signer_authority_state": "pass",
+			"freshness_state":        "pass",
+			"artifact_binding_state": "pass",
+			"source_binding_state":   "pass",
+			"run_binding_state":      "pass",
+			"policy_binding_state":   "pass",
+			"independence_state":     "ci_isolated_job",
+		},
+	})
+	outPath := filepath.Join(dir, "buildkite-witness.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"witness", "--kind", "buildkite", "--witness-envelope", envelopePath, "--out", outPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("expected pass exit, got %d stderr=%s out=%s", exit, errOut.String(), out.String())
+	}
+	raw, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read witness: %v", err)
+	}
+	if !strings.Contains(string(raw), `"status": "pass"`) ||
+		!strings.Contains(string(raw), `"established_trust_scope": "ci_witnessed"`) {
+		t.Fatalf("witness did not record buildkite pass: %s", string(raw))
+	}
+}
+
+func TestWitnessCommandCustomerPKIMissingFlagsUsage(t *testing.T) {
+	root := t.TempDir()
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"witness", "--kind", "customer-pki", "--out", filepath.Join(t.TempDir(), "customer-pki-witness.json"), root}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("expected usage exit, got %d stdout=%s stderr=%s", exit, out.String(), errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "--customer-pki-authority-policy") {
+		t.Fatalf("stderr missing required customer-pki flags: %s", errOut.String())
+	}
+}
+
 func TestGateCommandAcceptsWitness(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()

@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -1345,6 +1346,12 @@ func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int 
 	opts.setString("kind", "")
 	opts.setString("out", "")
 	opts.setString("report-dir", "")
+	opts.setString("witness-envelope", "")
+	opts.setString("customer-pki-authority-policy", "")
+	opts.setString("customer-pki-public-cert", "")
+	opts.setString("customer-pki-public-key", "")
+	opts.setString("customer-pki-payload-digest", "")
+	opts.setString("customer-pki-freshness-evidence", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -1354,8 +1361,9 @@ func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int 
 		fmt.Fprintln(stderr, "witness requires <runs-root-or-run-dir>")
 		return exitUsage
 	}
-	if opts.stringValue("kind") != witness.KindGitHubActions {
-		fmt.Fprintln(stderr, "witness requires --kind github-actions")
+	kind := opts.stringValue("kind")
+	if !allowedWitnessKind(kind) {
+		fmt.Fprintln(stderr, "witness requires --kind github-actions, gitlab-ci, buildkite, or customer-pki")
 		return exitUsage
 	}
 	outPath := opts.stringValue("out")
@@ -1363,7 +1371,28 @@ func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int 
 		fmt.Fprintln(stderr, "witness requires --out <file>")
 		return exitUsage
 	}
-	record, err := witness.WriteGitHubActions(outPath, targets[0], opts.stringValue("report-dir"), witness.EnvironmentFromOS())
+	var record witness.Record
+	var err error
+	switch kind {
+	case witness.KindGitHubActions:
+		record, err = witness.WriteGitHubActions(outPath, targets[0], opts.stringValue("report-dir"), witness.EnvironmentFromOS())
+	case witness.KindGitLabCI, witness.KindBuildkite:
+		record, err = witness.WriteProfile(kind, outPath, targets[0], opts.stringValue("report-dir"), witness.ProfileOptions{
+			EnvelopePath: opts.stringValue("witness-envelope"),
+		})
+	case witness.KindCustomerPKI:
+		if missing := missingCustomerPKIFlags(opts); len(missing) > 0 {
+			fmt.Fprintf(stderr, "customer-pki witness requires %s\n", strings.Join(missing, ", "))
+			return exitUsage
+		}
+		record, err = witness.WriteProfile(kind, outPath, targets[0], opts.stringValue("report-dir"), witness.ProfileOptions{
+			CustomerPKIAuthorityPolicy: opts.stringValue("customer-pki-authority-policy"),
+			CustomerPKIPublicCert:      opts.stringValue("customer-pki-public-cert"),
+			CustomerPKIPublicKey:       opts.stringValue("customer-pki-public-key"),
+			CustomerPKIPayloadDigest:   opts.stringValue("customer-pki-payload-digest"),
+			CustomerPKIFreshness:       opts.stringValue("customer-pki-freshness-evidence"),
+		})
+	}
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
@@ -1373,7 +1402,41 @@ func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int 
 	if record.Status == witness.StatusCannotVerify {
 		return exitCannotVerify
 	}
+	if record.Status == witness.StatusFail {
+		return 1
+	}
+	if record.Status == witness.StatusNotAssessed {
+		return exitCannotVerify
+	}
 	return 0
+}
+
+func missingCustomerPKIFlags(opts *flagSet) []string {
+	missing := []string{}
+	required := map[string]string{
+		"--customer-pki-authority-policy":   opts.stringValue("customer-pki-authority-policy"),
+		"--customer-pki-payload-digest":     opts.stringValue("customer-pki-payload-digest"),
+		"--customer-pki-freshness-evidence": opts.stringValue("customer-pki-freshness-evidence"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			missing = append(missing, flag)
+		}
+	}
+	if strings.TrimSpace(opts.stringValue("customer-pki-public-cert")) == "" && strings.TrimSpace(opts.stringValue("customer-pki-public-key")) == "" {
+		missing = append(missing, "--customer-pki-public-cert or --customer-pki-public-key")
+	}
+	sort.Strings(missing)
+	return missing
+}
+
+func allowedWitnessKind(kind string) bool {
+	switch kind {
+	case witness.KindGitHubActions, witness.KindGitLabCI, witness.KindBuildkite, witness.KindCustomerPKI:
+		return true
+	default:
+		return false
+	}
 }
 
 func runWrap(ctx context.Context, args []string, stdout, stderr io.Writer) int {
@@ -2179,7 +2242,7 @@ Usage:
   sdp-trace assess explain --assessment-result <file>
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>
-  sdp-trace witness --kind github-actions --out <file> [--report-dir <dir>] <runs-root-or-run-dir>
+  sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>
   sdp-trace release-proof --manifest <file> --out <file>
   sdp-trace validate-fixtures [root-dir]
 `

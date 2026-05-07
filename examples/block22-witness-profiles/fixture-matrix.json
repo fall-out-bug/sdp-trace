@@ -1,0 +1,167 @@
+{
+  "schema_version": "block22-witness-fixture-matrix-v1",
+  "profile_ids": ["gitlab-ci-v1", "buildkite-v1", "customer-pki-v1", "air-gapped-v1"],
+  "fixtures": [
+    {
+      "name": "gitlab-valid-ci-witness",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "pass",
+      "established_trust_scope": "ci_witnessed",
+      "reason_code": "witness_profile_verified"
+    },
+    {
+      "name": "gitlab-env-only-cannot-verify",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "cannot_verify",
+      "established_trust_scope": "cannot_verify",
+      "reason_code": "witness_environment_only_insufficient"
+    },
+    {
+      "name": "gitlab-missing-identity",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "cannot_verify",
+      "established_trust_scope": "cannot_verify",
+      "reason_code": "witness_identity_missing"
+    },
+    {
+      "name": "gitlab-source-mismatch",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_source_mismatch"
+    },
+    {
+      "name": "gitlab-stale-freshness",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_freshness_stale"
+    },
+    {
+      "name": "gitlab-artifact-digest-mismatch",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_artifact_digest_mismatch"
+    },
+    {
+      "name": "gitlab-same-job-topology-cap",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "cannot_verify",
+      "established_trust_scope": "cannot_verify",
+      "reason_code": "witness_environment_only_insufficient"
+    },
+    {
+      "name": "buildkite-valid-ci-witness",
+      "profile_id": "buildkite-v1",
+      "expected_status": "pass",
+      "established_trust_scope": "ci_witnessed",
+      "reason_code": "witness_profile_verified"
+    },
+    {
+      "name": "buildkite-same-job-cap",
+      "profile_id": "buildkite-v1",
+      "expected_status": "cannot_verify",
+      "established_trust_scope": "cannot_verify",
+      "reason_code": "witness_environment_only_insufficient"
+    },
+    {
+      "name": "buildkite-missing-independent-signer",
+      "profile_id": "buildkite-v1",
+      "expected_status": "cannot_verify",
+      "established_trust_scope": "cannot_verify",
+      "reason_code": "witness_signer_authority_missing"
+    },
+    {
+      "name": "buildkite-stale-freshness",
+      "profile_id": "buildkite-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_freshness_stale"
+    },
+    {
+      "name": "buildkite-artifact-digest-mismatch",
+      "profile_id": "buildkite-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_artifact_digest_mismatch"
+    },
+    {
+      "name": "ci-run-id-mismatch",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_run_mismatch"
+    },
+    {
+      "name": "customer-pki-valid-external-witness",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "pass",
+      "established_trust_scope": "external_witnessed",
+      "reason_code": "witness_profile_verified"
+    },
+    {
+      "name": "customer-pki-private-key-rejected",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_private_key_input_rejected"
+    },
+    {
+      "name": "customer-pki-signer-mismatch",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_signer_mismatch"
+    },
+    {
+      "name": "customer-pki-expired-freshness",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_freshness_stale"
+    },
+    {
+      "name": "customer-pki-revocation-not-assessed",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "not_assessed",
+      "established_trust_scope": "not_assessed",
+      "reason_code": "witness_revocation_not_assessed"
+    },
+    {
+      "name": "customer-pki-revoked-certificate",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_certificate_revoked"
+    },
+    {
+      "name": "customer-pki-weak-digest",
+      "profile_id": "customer-pki-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_artifact_digest_mismatch"
+    },
+    {
+      "name": "air-gapped-offline-not-assessed",
+      "profile_id": "air-gapped-v1",
+      "expected_status": "not_assessed",
+      "established_trust_scope": "not_assessed",
+      "reason_code": "witness_revocation_not_assessed"
+    },
+    {
+      "name": "unsupported-profile-version",
+      "profile_id": "gitlab-ci-v2",
+      "expected_status": "cannot_verify",
+      "established_trust_scope": "cannot_verify",
+      "reason_code": "witness_unsupported_profile"
+    },
+    {
+      "name": "unsafe-output-candidate",
+      "profile_id": "gitlab-ci-v1",
+      "expected_status": "fail",
+      "established_trust_scope": "fail",
+      "reason_code": "witness_unsafe_output_candidate"
+    }
+  ]
+}

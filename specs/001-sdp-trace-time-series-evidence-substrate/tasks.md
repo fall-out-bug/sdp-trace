@@ -532,6 +532,44 @@ readiness decisions, or cross-repository raw personal identifiers.
 repositories, but `sdp-trace` still emits evidence substrate exports only. Any
 degradation, readiness, alerting, or portfolio-risk decision remains downstream.
 
+## Phase 19: Additional CI And Enterprise Witness Profiles
+
+**Goal**: Add provider-neutral CI and enterprise witness profiles without
+treating GitHub Actions as the hidden witness model or letting environment
+variables alone upgrade trust.
+
+**Independent Test**: A reviewer can run documented witness profile commands or
+fixture validation against committed GitLab CI, Buildkite, customer PKI, and
+air-gapped examples, then inspect identity source, signing boundary, freshness
+boundary, artifact binding, independence state, requested trust scope,
+established trust scope, unsupported states, and `not_assessed` or
+`cannot_verify` gaps without reading raw provider logs or private customer
+material.
+
+**Activation Gate**: Do not implement Block 22 witness profile behavior until
+`blocks/22-additional-ci-enterprise-witness-profiles.md` is reviewed through
+separate Socratic planes and explicitly approved. Block 22 may normalize
+witness evidence and verifier states, but it must not create policy verdicts,
+CI enforcement ownership, enterprise support claims, or environment-only trust
+upgrades.
+
+- [x] T193 [US5] Add Block 22 spec and review ledger for provider-neutral witness profile semantics, GitLab CI, Buildkite, customer PKI, air-gapped guidance, fixture matrix, safety boundaries, and explicit no-overclaim rules.
+- [x] T194 [US2] Add a provider-neutral witness profile/result contract covering profile id/version, identity source, signing boundary, freshness boundary, artifact binding, source/run/policy binding, independence state, unsupported states, requested trust scope, established trust scope, closed reason codes, safe artifact refs, digests, and output-safety state.
+- [x] T195 [US2] Add GitLab CI witness profile behavior and fixtures for valid witness evidence, environment-only non-upgrade, source mismatch, missing identity, stale freshness, artifact digest mismatch, unsupported profile version, and malformed inputs.
+- [x] T196 [US2] Add Buildkite witness profile behavior and fixtures for valid witness evidence, organization/pipeline/build/job identity, same-job or agent-reported-only topology caps, missing independent signer, artifact digest mismatch, stale freshness, and malformed inputs.
+- [x] T197 [US2] Add customer PKI witness profile behavior and fixtures using public certificate or public key identity, authority policy, payload digest binding, and freshness evidence; reject signer mismatch, expired or unverifiable identity, weak digest, missing freshness, and any private-key input.
+- [x] T198 [US4] Add air-gapped witness profile documentation and fixtures that distinguish offline-verifiable public-key, timestamp, and artifact-digest evidence from external checks that remain `not_assessed` or `cannot_verify`.
+- [x] T199 [US4] Update witness CLI docs and command contracts for closed Block 22 `--kind` values, explicit customer-PKI input flags if needed, safe path handling, deterministic exit states, and explain output that renders only verifier facts.
+- [x] T200 [US4] Add safety-sensitive negative tests proving witness JSON and explain output do not print or persist CI tokens, OIDC tokens, JWT bodies, private key material, provider tokens, authenticated provider URLs, raw job logs, private filesystem paths, unsafe personal identifiers, free-text parser errors containing input content, or customer directory, LDAP, SAML, cloud, Vault, HSM, KMS, or PKI payloads.
+- [x] T201 [US5] Run Socratic spec review across product-boundary, tracing/evidence, and enterprise/security planes; record every valid finding in `blocks/22-additional-ci-enterprise-witness-profiles-review-ledger.md` and fix every critical or major finding before implementation approval handoff.
+- [x] T202 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 22 review disposition before PR closure.
+
+**Checkpoint**: CI and enterprise users get consistent witness profile
+semantics across GitHub Actions, GitLab CI, Buildkite, customer PKI, and
+air-gapped guidance, while `sdp-trace` still reports verifier facts only. Policy
+decisions, enterprise support declarations, and external audit conclusions
+remain downstream.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -564,6 +602,11 @@ degradation, readiness, alerting, or portfolio-risk decision remains downstream.
   into degradation, readiness, health-score, alert, rank, grade, or risk
   decisions, and it must refuse or explicitly mark stale, untrusted, missing,
   and non-comparable inputs.
+- **Phase 19**: Depends on Blocks 15 and 16 for signed-checkpoint and protected
+  witness semantics, Block 17 for managed witness binding, and Block 21 for
+  cross-repository witness posture consumption. It must not treat GitHub
+  Actions as the hidden witness model, claim broad enterprise CI support, or
+  upgrade trust from environment variables alone.
 
 ### Parallel Opportunities
 
@@ -598,6 +641,12 @@ degradation, readiness, alerting, or portfolio-risk decision remains downstream.
   wiring can keep disjoint write scopes if they share only the schema contract.
 - T187 and T190 can run in parallel after T186 because movement semantics and
   safety leak assertions exercise separate behavior paths.
+- T195 and T196 can run in parallel after T194 because GitLab CI and Buildkite
+  profile behavior can keep disjoint fixture and normalization scopes.
+- T197 and T198 can run in parallel after T194 because customer PKI validation
+  and air-gapped documentation exercise separate witness surfaces.
+- T199 and T200 can run in parallel after T195-T198 because command-contract
+  documentation and safety leak assertions have separate verification surfaces.
 
 ## Implementation Strategy
 
@@ -628,6 +677,9 @@ degradation, readiness, alerting, or portfolio-risk decision remains downstream.
     approval, preserving export output as movement facts with raw
     numerator/denominator evidence and keeping degradation interpretation
     outside `sdp-trace`.
+20. Complete Block 22 additional CI and enterprise witness profiles only after
+    explicit spec approval, preserving provider-neutral witness semantics and
+    preventing environment-variable-only trust upgrades.
 
 ### Evidence Discipline
 

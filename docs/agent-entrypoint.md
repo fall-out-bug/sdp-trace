@@ -39,7 +39,7 @@ before adding or reviewing command examples.
 - `go run ./cmd/sdp-trace assess explain --assessment-result <file>`
 - `go run ./cmd/sdp-trace report --out <dir> <runs-root-or-run-dir>`
 - `go run ./cmd/sdp-trace gate --out <file> <runs-root-or-run-dir>`
-- `go run ./cmd/sdp-trace witness --kind github-actions --out <file> [--report-dir <dir>] <runs-root-or-run-dir>`
+- `go run ./cmd/sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>`
 - `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>`
 - `go run ./cmd/sdp-trace validate-fixtures [root-dir]`
 
