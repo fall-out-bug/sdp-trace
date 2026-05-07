@@ -137,8 +137,8 @@
 - [x] T067 [US4] Update release docs and self-attestation summary to use distinct terms: source-bound local release and externally trusted production release (Beads mirror: `sdp-trace-cdn.21`)
 - [x] T068 [US4] Run Socratic review and obtain explicit consensus before implementing Block 04 code or changing release artifacts (Beads mirror: `sdp-trace-cdn.21`)
 - [x] T069 [US4] Run pi review for Block 04 specs and implementation, register every finding in Beads, and close every valid finding including P3/minor items (Beads mirror: `sdp-trace-cdn.21`)
-- [ ] T070 [US4] Stale historical closure: re-verify `rtk npm run validate`, `rtk git diff --check`, `rtk scripts/verify-self-attestation.sh --all`, and source-bound finalization guard fixtures before Block 04 can be treated as currently closed (Beads mirror: `sdp-trace-cdn.21`)
-<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=stale; profile=repo_baseline; evidence=state:claim_tags_consistent -->
+- [x] T070 [US4] Stale historical closure retired: Block 04's old `npm` and script verifier commands are preserved as historical evidence only, and current closure is bounded by Go-first tests, JSON syntax checks, diff checks, and current release-proof output. External production trust remains `not_assessed`; removed source-bound finalization scripts are not current verifier evidence. (Beads mirror: `sdp-trace-cdn.21`)
+<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=pass; profile=repo_baseline; evidence=file:docs/research/historical-verifier-retirement-2026-05-07.md -->
 
 **Checkpoint**: Block 04 implementation artifacts exist, but current closure is stale until T070 is re-verified by live commands. External trust remains `not_assessed` unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
 
@@ -461,12 +461,12 @@ findings do not remain as loose evidence-note prose.
 recorded open trust gap from Block 18/19 evidence notes to a concrete task,
 owner surface, and non-overclaiming closure condition.
 
-- [ ] T169 [US5] Regenerate source-bound release proof after Block 18/19 manifest-subject changes, or record why the current source-bound verifier profile cannot assess it. Closure must include a clean source commit, regenerated manifest/DSSE/self-attestation artifacts when supported, and explicit `cannot_verify` or `not_assessed` states for unsupported proof steps.
+- [x] T169 [US5] Regenerate source-bound release proof after Block 18/19 manifest-subject changes, or record why the current source-bound verifier profile cannot assess it. Closure includes a clean source commit, refreshed active manifest artifact hashes, current `release-proof` output, and explicit `not_assessed` states for external production trust / DSSE steps not assessed by the Go-first local source-bound profile.
 - [x] T170 [US5] Add or explicitly document repository CI/check policy for PRs so future PR closure no longer leaves GitHub checks as unowned `not_assessed`. If CI is intentionally absent, add a repo-tracked policy note naming the replacement verification evidence and the remaining trust limitation.
 - [x] T171 [US5] Add follow-up fixture or test coverage for PR #9 minor review notes that were accepted as non-blocking: duplicate empty adapter correlation refs, byte-identical pass fixture clarity, and any intentional forward-compatible schema values such as `capture_state: redacted`.
 - [x] T172 [US5] Add a drift-to-task rule to the trust workflow so every recorded critical, major, or trust-affecting `not_assessed`/`cannot_verify` drift either blocks closure or lands as an explicit follow-up task with evidence, owner surface, and closure condition.
 - [x] T173 [US5] Audit every closed SpecKit task and closed or closure-like block claim for current drift, record machine-checkable pass/fail/not-assessed evidence, and keep source-bound release closure blocked unless the current verifier passes.
-- [ ] T174 [US5] Replace or explicitly retire historical closed-task verifier references to removed Node/npm/script tooling, including affected self-trace examples, process docs, Block 01/05/06/07/08 ledgers, and manifest subjects. Closure must preserve historical evidence as historical while exposing current Go-first verifier commands and any remaining `not_assessed` states.
+- [x] T174 [US5] Replace or explicitly retire historical closed-task verifier references to removed Node/npm/script tooling, including affected self-trace examples, process docs, Block 01/05/06/07/08 ledgers, and manifest subjects. Closure preserves historical evidence as historical while exposing current Go-first verifier commands and remaining `not_assessed` states in `docs/research/historical-verifier-retirement-2026-05-07.md`.
 
 ## Dependencies & Execution Order
 

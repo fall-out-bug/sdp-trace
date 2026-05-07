@@ -101,7 +101,7 @@
     {
       "path": "docs/flight-recorder.md",
       "kind": "doc",
-      "sha256": "b4572c70ff3dee2c06469e5063caa5575c58e1e265024c65d6edb6d6170e2256"
+      "sha256": "3ffd6ca6d0bcb36bf6f0595593da784fa1a8bdae2039efe751f1ced34d27b82a"
     },
     {
       "path": "docs/harness-compatibility-matrix.md",
@@ -161,12 +161,12 @@
     {
       "path": "docs/team-lead-playbook.en.md",
       "kind": "doc",
-      "sha256": "232eb5e37064429655402ff5e4b0d46fba9f11e2ae212131765672504c24e712"
+      "sha256": "6da62fdc91e3e35c8aa602795abb419f9779dc992fbdeefa354b22aaf81aac09"
     },
     {
       "path": "docs/team-lead-playbook.ru.md",
       "kind": "doc",
-      "sha256": "f6d4f08c5413939e01eb15263e8303a1dfe8f86743957743a9b6d716da97b4b5"
+      "sha256": "4133f35493da60dac37030d96c4245e479486dd6d183c6220ef091b99f8efbae"
     },
     {
       "path": "examples/contract-foundation/local-dev-wrong-public.pem",
@@ -241,7 +241,7 @@
     {
       "path": "examples/flight-recorder/forensic-digest-only-negative/events/003-test-output-observed.json",
       "kind": "fixture",
-      "sha256": "fe2b84e6c691936a79237655ae619792024ee3c8b7494edd7c23f22ca14982da"
+      "sha256": "03f08cd0f22e72cf2a8831c623533991ec5367ee961c044a7c481d1eaf8ac461"
     },
     {
       "path": "examples/flight-recorder/forensic-digest-only-negative/events/004-run-closed.json",
@@ -251,7 +251,7 @@
     {
       "path": "examples/flight-recorder/forensic-digest-only-negative/run.json",
       "kind": "fixture",
-      "sha256": "d5792e0484bfc6dd846236f61042efa9ae540539cf007884e67e8bb95ab5ee47"
+      "sha256": "d7dc3303a89ebe1fc0e12f38b69788396f032e9d2f20284abf1e8209fcfeb92a"
     },
     {
       "path": "examples/flight-recorder/late-attach/events/000-run-started.json",
@@ -371,7 +371,7 @@
     {
       "path": "examples/flight-recorder/redaction-unresolved/events/003-test-output-observed.json",
       "kind": "fixture",
-      "sha256": "62da8082771bfd205cb17fe7971680775cde92169172f41ef34abbca9e8c3602"
+      "sha256": "62d0c21cd25b8d07e26ba72a0fe3b1929c254302ba551545ef0da788d8a6d4bd"
     },
     {
       "path": "examples/flight-recorder/redaction-unresolved/events/004-run-closed.json",
@@ -381,7 +381,7 @@
     {
       "path": "examples/flight-recorder/redaction-unresolved/run.json",
       "kind": "fixture",
-      "sha256": "112c956193b2c651132d9f758e8f56963718048795f82ce88948c373763082f6"
+      "sha256": "259229606fc84ab47d609e8a0dfc2ab5367f42f4c2a353821b6cf2b7d66873a7"
     },
     {
       "path": "examples/flight-recorder/requirement-supersession/events/000-run-started.json",
@@ -544,16 +544,6 @@
       "sha256": "af973e3efc4f9ea5c3d131b8d94ad3673702f59451cfd18a017de0a057db4d52"
     },
     {
-      "path": "package-lock.json",
-      "kind": "validation_script",
-      "sha256": "98c5924aafbd83ca39b1699696e13f148a949352c1e881cc6f94e71b0964079f"
-    },
-    {
-      "path": "package.json",
-      "kind": "validation_script",
-      "sha256": "3b39053bd79adbf859099f44c3cfa50b67325fe69cc32e4f2a2f5e9c27566e30"
-    },
-    {
       "path": "README.md",
       "kind": "doc",
       "sha256": "d1be265be5c6749ddf6a730cb9695a8ef0f692d7c4e99032f7df8ac4f0ec98bf"
@@ -586,7 +576,7 @@
     {
       "path": "schema/contract-release-verification.schema.json",
       "kind": "schema",
-      "sha256": "e36f3f6833bc244d32f54967d0f0e155990d891557a4785afdc47984ce129b77"
+      "sha256": "c3141c6c0496132a838022e585eb9a335e8fe080d7613fff96f1ed88f39ba8a8"
     },
     {
       "path": "schema/evidence-bundle.schema.json",
@@ -606,12 +596,12 @@
     {
       "path": "schema/flight-recorder-event.schema.json",
       "kind": "schema",
-      "sha256": "6103345fd71ef6883f055db8bfbb8f870d593c496fc40788d4fbcca5f3d4b541"
+      "sha256": "4f6a487b7c77b63049afa62befbf53cf67d2acd187a2a06e1ffc0b6c0feb2946"
     },
     {
       "path": "schema/flight-recorder-run.schema.json",
       "kind": "schema",
-      "sha256": "acfaa811d261506010b654ff3395c97293f8cd59112531bceb5a4b100cfbb3f5"
+      "sha256": "c0d4225e6151f6181bf3b11a4fe8814ce99014a621d8d264f0f21bf3232337ac"
     },
     {
       "path": "schema/flight-recorder-witness.schema.json",
@@ -641,7 +631,7 @@
     {
       "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "86d13a7bd3debb51a837bab8910d8accd89035feafa454ae012e00393e765cd4"
+      "sha256": "c320fd5400d3d71ab4238aef93bd36391452ac1d00d4e42219738e743751cb5d"
     },
     {
       "path": "schema/risk-classification.schema.json",
@@ -662,96 +652,6 @@
       "path": "schema/trusted-identity-policy.schema.json",
       "kind": "schema",
       "sha256": "370285a35b7fbea1c3ab311a7a78855c98f451266295180bb23e734d8c18955e"
-    },
-    {
-      "path": "scripts/check-artifact-safety.sh",
-      "kind": "validation_script",
-      "sha256": "69cd449f3563f3a891bcfc319e11d7e91c66cac974472b4e8f8b23d71d4469de"
-    },
-    {
-      "path": "scripts/finalize-source-bound-release.sh",
-      "kind": "validation_script",
-      "sha256": "6018eb27dbafe4d28701f275e1ff35c437e00a9bc71031e4525b42590fb22338"
-    },
-    {
-      "path": "scripts/generate-local-dev-dsse.sh",
-      "kind": "validation_script",
-      "sha256": "555333ab03828371c143bd60e99143ff3565d7962e9981d755fa7912ac66530a"
-    },
-    {
-      "path": "scripts/query-flight-recorder.mjs",
-      "kind": "validation_script",
-      "sha256": "b3ece859d34b475c4ab40ea471823979ea8ce1b8b4ef49cc3d8789d949ed17f6"
-    },
-    {
-      "path": "scripts/run-opencode-minimax-kotlin-bazel-proof.sh",
-      "kind": "validation_script",
-      "sha256": "454fed35176499d3ec4052b828d6dc18e2b66010aa0b7836c952f1776c056287"
-    },
-    {
-      "path": "scripts/test-e2e-pilot-package.sh",
-      "kind": "validation_script",
-      "sha256": "0ce39c9f0dedc9bbe776a0bbf651385d603f089c694959f254c3e8cec3e45ee3"
-    },
-    {
-      "path": "scripts/test-e2e-runner.sh",
-      "kind": "validation_script",
-      "sha256": "1cefe5a6f0bdced49a60d17fe99a922b0dff468e24ae3e918b4a9519339207cc"
-    },
-    {
-      "path": "scripts/test-flight-recorder.sh",
-      "kind": "validation_script",
-      "sha256": "d1aed1f65eb5d0c2898eab94b8a4181da4f382cf53701873876292bdb1a9b443"
-    },
-    {
-      "path": "scripts/validate-contracts.sh",
-      "kind": "validation_script",
-      "sha256": "00e0a2e515feec5f0b8f3a87e942ea316b946e120d3628b77f4900623456cef0"
-    },
-    {
-      "path": "scripts/validate-e2e-pilot-package.sh",
-      "kind": "validation_script",
-      "sha256": "0344e21328e5d5729ce28cf0ad8010a693fecadb6dff3ef247f28d87495da796"
-    },
-    {
-      "path": "scripts/validate-json-schema.mjs",
-      "kind": "validation_script",
-      "sha256": "8b1eacde5f5b2bf350efb9c9c22794ceaf38fe3b4b5633e912cfda9fe58322f4"
-    },
-    {
-      "path": "scripts/validate-pilot-matrices.mjs",
-      "kind": "validation_script",
-      "sha256": "1f8a503ae5fcce9bdd77ae1aa4e969b410822b5ec9f0128d9696906d371f9aef"
-    },
-    {
-      "path": "scripts/validate-self-trace.sh",
-      "kind": "validation_script",
-      "sha256": "b4928b86970ede20dee57039d45ec1bf03294a89c0bab2569f7345714bd6c3c1"
-    },
-    {
-      "path": "scripts/verify-artifact-hashes.sh",
-      "kind": "validation_script",
-      "sha256": "a64d88a62ee1d49e15360e1c631600d55e4fb2446d6453c20e285fd002763893"
-    },
-    {
-      "path": "scripts/verify-contract-manifest.sh",
-      "kind": "validation_script",
-      "sha256": "652f25b807bd5f99f75eb092f2f4edd5724928ceefd1866844eff533efb51fbe"
-    },
-    {
-      "path": "scripts/verify-flight-recorder.mjs",
-      "kind": "validation_script",
-      "sha256": "755f685584a97c887a6680b0b176eb8f257d3b41a2e8cf2305ba3e11de53330a"
-    },
-    {
-      "path": "scripts/verify-release-signature.sh",
-      "kind": "validation_script",
-      "sha256": "c38be9437f9cec0938d21c30fc2cc13a9995ecbdaed560cb5481d9bfcefc1cb9"
-    },
-    {
-      "path": "scripts/verify-self-attestation.sh",
-      "kind": "validation_script",
-      "sha256": "dc4865925b24f5d9b00bb5b75949aac7dc2262e93650b2e89fb9e691debcc241"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
@@ -881,12 +781,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/plan.md",
       "kind": "doc",
-      "sha256": "c788f0f4f84a72b50e835c90b1aa8b4e8f9a4e00362c4b032b87cd6e80da2dcd"
+      "sha256": "6aaccd154c8accccb15e72d57c806a762ddd650fdb01e754fb2f12cfa7b9f1bc"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/quickstart.md",
       "kind": "doc",
-      "sha256": "159c54e277a90344cb3f6073f1b9049ff0f25040df5369de8f200ead75fde368"
+      "sha256": "8e83820f88ae79987309c74b65f84410705cfd0c991e10df7b482d6f6d2e22bf"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/research.md",
@@ -896,12 +796,22 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
       "kind": "doc",
-      "sha256": "b5b8b7bdfc2895a20512cd8335399d87dbef1b3cd68a041587211c034fc2a2a4"
+      "sha256": "9c62680d62bd2a127f2cf5253823657901504fd5e95c09c4153d8ebde500ac47"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "5b65aa2cef2768c612ea453c912a75f585d715747b44f7df74c3f4d0bcb17c1c"
+      "sha256": "45e4bd6fe39f39fca086a0f8698a13d14e87214b8ac33d6b7a43dfc046e218cf"
+    },
+    {
+      "path": "docs/research/historical-verifier-retirement-2026-05-07.md",
+      "kind": "doc",
+      "sha256": "1939f740f0c807fe96e1297f55df1435f1a8be3fa02f989b24a68c803bc432ad"
+    },
+    {
+      "path": "docs/research/closed-block-task-drift-audit-2026-05-07.md",
+      "kind": "doc",
+      "sha256": "91100485f24c9d262a491224c4d269da0b6421a73b99de2c7d26dc08e9f4a1a4"
     }
   ],
   "source_commit": "b000c116de39fbabdd4b2e195cc7913a0b97ab0e",

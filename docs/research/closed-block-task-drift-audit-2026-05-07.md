@@ -14,11 +14,11 @@ Audited surfaces:
 - current source-bound manifest verification output
 - current Go and JSON syntax verification output
 
-Task ledger state:
+Task ledger state after retirement:
 
-- Closed tasks: 167.
-- Open tasks before this audit: T070, T169, T170, T171, T172.
-- New follow-up from this audit: T174.
+- Closed tasks: T070 and T169-T174 are closed for the current Go-first
+  repository boundary.
+- Remaining external production trust: `not_assessed`.
 
 ## Commands
 
@@ -55,7 +55,7 @@ reports `release_verification_state: fail`. The generated fail artifact records
 166 manifest artifacts checked, 20 missing artifacts, and 15 mismatched
 artifacts.
 
-The missing artifacts are the historical Node/script validation path:
+The missing artifacts were the historical Node/script validation path:
 
 - `package.json`
 - `package-lock.json`
@@ -81,8 +81,10 @@ The missing artifacts are the historical Node/script validation path:
 The mismatched artifacts include current docs, schemas, flight-recorder
 fixtures, and SpecKit files changed since the last manifest refresh.
 
-Disposition: accepted. T169 stays open. This PR adds machine-readable fail
-proof instead of pretending the source-bound release is current.
+Disposition: accepted and fixed for the active manifest subject set. Retired
+Node/npm/script paths are removed from the active manifest, current artifact
+hashes are refreshed, and the Go-first local release-proof output records
+source-bound artifact checks separately from external production trust.
 
 ### F2 - Historical Closed Tasks Reference Removed Tooling
 
@@ -97,8 +99,10 @@ Examples include T058, T077, T081, T082, T086, Block 01 validation notes,
 Block 05/06 review ledgers, Block 07 implementation-plan slices, and Block 08
 entrypoint/review-ledger commands.
 
-Disposition: accepted. T070 already tracks stale Block 04 command closure.
-T174 now tracks the broader historical verifier-reference cleanup.
+Disposition: accepted and fixed. `docs/research/historical-verifier-retirement-2026-05-07.md`
+is the current retirement record. Historical ledgers keep their original command
+text as historical evidence, but those commands are no longer accepted as
+current closure evidence.
 
 ### F3 - Block 18/19 PR Drift Follow-Ups
 
@@ -137,12 +141,12 @@ evidence.
 
 ## Closure Boundary
 
-This audit closes the review pass over closed blocks and tasks. It does not
-close source-bound release drift. The current honest state is:
+This audit closes the review pass over closed blocks and tasks for the current
+Go-first repository boundary. The current honest state is:
 
 - `repo_go_tests`: pass
 - `json_syntax`: pass
 - `diff_whitespace`: pass
-- `source_bound_local_release`: fail
+- `source_bound_local_release`: pass for active manifest artifact digest checks
 - `external_production_trust`: not_assessed
 - `trusted_contract_release`: false
