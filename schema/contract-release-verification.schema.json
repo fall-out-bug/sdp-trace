@@ -268,6 +268,20 @@
       "type": "array",
       "items": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/ref" }
     },
+    "artifact_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "issue"],
+        "properties": {
+          "path": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+          "issue": { "enum": ["missing", "mismatch"] },
+          "expected": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+          "actual": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" }
+        },
+        "additionalProperties": false
+      }
+    },
     "accountability": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/accountability" }
   },
   "$defs": {

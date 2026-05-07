@@ -20,6 +20,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
+	"github.com/fall_out_bug/sdp-trace/internal/releaseproof"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"github.com/fall_out_bug/sdp-trace/internal/verifier"
 	"github.com/fall_out_bug/sdp-trace/internal/witness"
@@ -74,10 +75,54 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runWitness(ctx, cmdArgs, stdout, stderr)
 	case "validate-fixtures":
 		return runValidateFixtures(ctx, cmdArgs, stdout, stderr)
+	case "release-proof":
+		return runReleaseProof(ctx, cmdArgs, stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
 		return 1
+	}
+}
+
+func runReleaseProof(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "release-proof"}
+	opts.setString("manifest", "examples/contract-foundation/contract-manifest.example.json")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "release-proof accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "release-proof requires --out")
+		return exitUsage
+	}
+	repoRoot, err := releaseproof.RepoRoot(".")
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	result, err := releaseproof.Evaluate(repoRoot, opts.stringValue("manifest"), time.Now())
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if err := releaseproof.Write(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	switch result.ReleaseVerificationState {
+	case releaseproof.StatePass:
+		return 0
+	case releaseproof.StateFail:
+		return 1
+	default:
+		return exitCannotVerify
 	}
 }
 
@@ -1967,6 +2012,7 @@ Usage:
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>
   sdp-trace witness --kind github-actions --out <file> [--report-dir <dir>] <runs-root-or-run-dir>
+  sdp-trace release-proof --manifest <file> --out <file>
   sdp-trace validate-fixtures [root-dir]
 `
 	fmt.Fprint(w, usage)

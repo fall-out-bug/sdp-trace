@@ -73,6 +73,48 @@ func TestWrapVerifyExplainMissingEvidenceFlow(t *testing.T) {
 	}
 }
 
+func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init")
+	writeFile(t, filepath.Join(repo, "manifest.json"), `{
+  "id": "test-manifest",
+  "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "trusted_identity_policy_ref": "policy.json",
+  "artifacts": [
+    {"path": "missing.txt", "kind": "doc", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}
+  ],
+  "accountability": {
+    "dri": {"identity_ref": "role:dri", "actor_type": "human_role"},
+    "approver": {"identity_ref": "role:approver", "actor_type": "human_role"},
+    "escalation": {"identity_ref": "role:cto", "actor_type": "human_role"},
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "approval",
+    "risk_owner": {"identity_ref": "role:risk", "actor_type": "human_role"},
+    "line_of_defense": "second"
+  }
+}`)
+	t.Chdir(repo)
+	outPath := filepath.Join(t.TempDir(), "release-proof.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"release-proof",
+		"--manifest", "manifest.json",
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("release-proof exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"release_verification_state": "fail"`) ||
+		!strings.Contains(out.String(), `"trusted_contract_release": false`) {
+		t.Fatalf("release-proof output missing fail boundary: %s", out.String())
+	}
+	if _, err := os.Stat(outPath); err != nil {
+		t.Fatalf("release proof artifact missing: %v", err)
+	}
+}
+
 func TestDryRunOutputsSimulation(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	contractPath := writeTestContract(t, context.Background(), t.TempDir())
@@ -1503,6 +1545,26 @@ func mustFindCommand(t *testing.T, name string) string {
 		t.Skipf("%s not available", name)
 	}
 	return path
+}
+
+func runGit(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	git := mustFindCommand(t, "git")
+	cmd := exec.Command(git, args...)
+	cmd.Dir = dir
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, string(output))
+	}
+}
+
+func writeFile(t *testing.T, path string, value string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(value), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
 }
 
 func clearCIWitnessEnv(t *testing.T) {

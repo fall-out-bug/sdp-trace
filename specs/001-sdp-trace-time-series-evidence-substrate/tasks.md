@@ -462,9 +462,11 @@ recorded open trust gap from Block 18/19 evidence notes to a concrete task,
 owner surface, and non-overclaiming closure condition.
 
 - [ ] T169 [US5] Regenerate source-bound release proof after Block 18/19 manifest-subject changes, or record why the current source-bound verifier profile cannot assess it. Closure must include a clean source commit, regenerated manifest/DSSE/self-attestation artifacts when supported, and explicit `cannot_verify` or `not_assessed` states for unsupported proof steps.
-- [ ] T170 [US5] Add or explicitly document repository CI/check policy for PRs so future PR closure no longer leaves GitHub checks as unowned `not_assessed`. If CI is intentionally absent, add a repo-tracked policy note naming the replacement verification evidence and the remaining trust limitation.
-- [ ] T171 [US5] Add follow-up fixture or test coverage for PR #9 minor review notes that were accepted as non-blocking: duplicate empty adapter correlation refs, byte-identical pass fixture clarity, and any intentional forward-compatible schema values such as `capture_state: redacted`.
-- [ ] T172 [US5] Add a drift-to-task rule to the trust workflow so every recorded critical, major, or trust-affecting `not_assessed`/`cannot_verify` drift either blocks closure or lands as an explicit follow-up task with evidence, owner surface, and closure condition.
+- [x] T170 [US5] Add or explicitly document repository CI/check policy for PRs so future PR closure no longer leaves GitHub checks as unowned `not_assessed`. If CI is intentionally absent, add a repo-tracked policy note naming the replacement verification evidence and the remaining trust limitation.
+- [x] T171 [US5] Add follow-up fixture or test coverage for PR #9 minor review notes that were accepted as non-blocking: duplicate empty adapter correlation refs, byte-identical pass fixture clarity, and any intentional forward-compatible schema values such as `capture_state: redacted`.
+- [x] T172 [US5] Add a drift-to-task rule to the trust workflow so every recorded critical, major, or trust-affecting `not_assessed`/`cannot_verify` drift either blocks closure or lands as an explicit follow-up task with evidence, owner surface, and closure condition.
+- [x] T173 [US5] Audit every closed SpecKit task and closed or closure-like block claim for current drift, record machine-checkable pass/fail/not-assessed evidence, and keep source-bound release closure blocked unless the current verifier passes.
+- [ ] T174 [US5] Replace or explicitly retire historical closed-task verifier references to removed Node/npm/script tooling, including affected self-trace examples, process docs, Block 01/05/06/07/08 ledgers, and manifest subjects. Closure must preserve historical evidence as historical while exposing current Go-first verifier commands and any remaining `not_assessed` states.
 
 ## Dependencies & Execution Order
 
