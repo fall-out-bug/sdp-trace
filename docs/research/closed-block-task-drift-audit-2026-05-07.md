@@ -39,6 +39,10 @@ Observed states:
 - Whitespace diff check: pass.
 - Source-bound local release proof: fail, exit code 1 as expected for a
   verifier-derived fail state.
+- The checked-in fail artifact is generated against the latest source commit
+  assessed before the artifact-only update. Its `source_commit` is the assessed
+  source tree for this diagnostic fail, not a claim that the PR head is a
+  trusted release.
 
 ## Findings
 
