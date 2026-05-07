@@ -18,18 +18,33 @@ Do not infer profile from role. Choose the profile directly from the claim you n
 
 ## Command Contract
 
-Only this command set is part of the active entrypoint:
+The active entrypoint is the Go CLI reported by `go run ./cmd/sdp-trace --help`.
+Use this document to interpret proof scope; use `--help` to confirm exact flags
+before adding or reviewing command examples.
 
 - `go test ./...`
 - `go run ./cmd/sdp-trace --help`
-- `go run ./cmd/sdp-trace validate-fixtures <fixture-dir>`
-- `go run ./cmd/sdp-trace wrap --name <name> -- <command...>`
+- `go run ./cmd/sdp-trace wrap --name <name> [--contract <file>] -- <command...>`
+- `go run ./cmd/sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>`
+- `go run ./cmd/sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>`
+- `go run ./cmd/sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>`
+- `go run ./cmd/sdp-trace doctor [--contract <file>]`
 - `go run ./cmd/sdp-trace verify <run-dir>`
 - `go run ./cmd/sdp-trace explain <run-dir>`
+- `go run ./cmd/sdp-trace query --query <missing-evidence|capture-depth> <run-dir>`
+- `go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 --run <run-dir> --out <file>`
+- `go run ./cmd/sdp-trace query-pack explain --result <file>`
+- `go run ./cmd/sdp-trace assess --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]`
+- `go run ./cmd/sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]`
+- `go run ./cmd/sdp-trace assess explain --assessment-result <file>`
+- `go run ./cmd/sdp-trace report --out <dir> <runs-root-or-run-dir>`
+- `go run ./cmd/sdp-trace gate --out <file> <runs-root-or-run-dir>`
+- `go run ./cmd/sdp-trace witness --kind github-actions --out <file> [--report-dir <dir>] <runs-root-or-run-dir>`
+- `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>`
+- `go run ./cmd/sdp-trace validate-fixtures [root-dir]`
 
-Use these as the canonical Block 10-compatible commands.
-
-Do not add aliases, new switches, or workflow-specific wrappers in this block.
+Do not add aliases, hidden switches, or workflow-specific wrappers as product
+entrypoints unless this document and `--help` are updated in the same change.
 
 ## Trust Scope Vocabulary
 

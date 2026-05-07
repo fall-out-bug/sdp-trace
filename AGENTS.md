@@ -37,8 +37,8 @@ No Node.js, npm, JavaScript, TypeScript, or `.mjs` tooling is allowed in the act
 
 Bash is allowed only as a thin command launcher when Go would add no product value. Any Bash kept in the active path needs an explicit reason.
 
-New implementation must follow Clean Architecture, Clean Code, TDD, and
-keep CRAP below 5 for changed Go code. Do not add TODO or FIXME markers.
+New Go code must be small, readable, testable, covered by focused tests, and free of TODO/FIXME markers.
+Put measurable complexity gates in CI or docs, not only in prose.
 
 ## Decomposition Rule
 If `AGENTS.md` exceeds 100 lines or any module needs more than 10 skills, the module is too large, under-decomposed, or overengineered.
@@ -76,13 +76,14 @@ After approval, split independent tasks to fast subagents with minimal context; 
 Do not stop at implementation-only closure for block work unless the user explicitly asks to stop before PR or merge.
 Prepare and review the PR with code, tracing/evidence, and requirements-vs-implementation planes before ready/merge.
 
-## pi Review Rules
+## Review Rules
 For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
 
-- Use MiniMax-M2.7 and ZAI/GLM for multi-file strict review.
-- Run separate code, tracing/evidence, and requirements-vs-implementation review planes for trust blocks; repeat them at PR level. Verify review findings against full files before accepting or rejecting them.
-- Use Kimi K2P6 as a full bounded reviewer for requirements, fixture semantics, and focused re-review; prefer low/off reasoning for narrow prompts.
-- Use MiniMax-M2.5 only for OpenCode demo development, not repo review. Replace hung or empty pi reviews; do not count them as evidence. Record absent GitHub checks as CI `not_assessed`, not green.
+- Run separate code, tracing/evidence, and requirements-vs-implementation review planes for trust blocks; repeat them at PR level.
+- Verify review findings against full files before accepting or rejecting them.
+- Replace hung, empty, or off-task reviews; do not count them as evidence.
+- Record absent GitHub checks as CI `not_assessed`, not green.
+- Keep model selection, retry, fallback, and timeout details in `sdp-trace-trust-workflow` and `pi-review`, not in this root router.
 
 ## Claim Tags
 Use `docs/claim-authoring.md` for authoritative claim syntax.
@@ -90,11 +91,9 @@ Use `docs/claim-authoring.md` for authoritative claim syntax.
 Current Slice 1 validator intentionally accepts only narrow evidence forms. Do not introduce arbitrary `proof:*`, `state:*`, or `none` evidence unless cross-reference verification has been implemented.
 
 ## Commands
-Block 10 active development commands must be Go-first:
+Use current command contracts in `docs/agent-entrypoint.md` and `docs/reviewer-entrypoint.md`.
 
-- Go tests: `go test ./...`
-- Schema parse checks: `jq empty schema/*.json`; for schema/contract changes, also check refs, fixture shape, and Go struct/schema alignment.
-- Formatting: `gofmt` for changed Go files
+- Defaults: `go test ./...`, `jq empty schema/*.json`, `gofmt` for changed Go files, and `git diff --check`.
+- For schema/contract changes, also check refs, changed examples, fixture shape, and Go struct/schema alignment.
 
-Bash verification commands are not product architecture. Keep them only
-when they are thin launchers around Go commands or external tools.
+Bash verification commands are not product architecture. Keep them only when they are thin launchers around Go commands or external tools.
