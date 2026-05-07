@@ -18,6 +18,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/forensic"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
+	"github.com/fall_out_bug/sdp-trace/internal/posture"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
 	"github.com/fall_out_bug/sdp-trace/internal/releaseproof"
@@ -63,6 +64,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runQuery(ctx, cmdArgs, stdout, stderr)
 	case "query-pack":
 		return runQueryPack(ctx, cmdArgs, stdout, stderr)
+	case "export":
+		return runExport(ctx, cmdArgs, stdout, stderr)
 	case "report":
 		return runReport(ctx, cmdArgs, stdout, stderr)
 	case "gate":
@@ -1691,6 +1694,92 @@ func runQueryPackExplain(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
+func runExport(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 1 && args[0] == "cross-repo-posture" && args[1] == "explain" {
+		return runCrossRepoPostureExplain(args[2:], stdout, stderr)
+	}
+	if len(args) > 0 && args[0] == "cross-repo-posture" {
+		return runCrossRepoPostureExport(args[1:], stdout, stderr)
+	}
+	fmt.Fprintln(stderr, "export requires cross-repo-posture")
+	return exitUsage
+}
+
+func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "export cross-repo-posture"}
+	opts.setString("profile", "")
+	opts.setString("selection", "")
+	opts.setString("out", "")
+	opts.setBool("validate-only", false)
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "export cross-repo-posture accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) != posture.ProfileID {
+		fmt.Fprintln(stderr, "export cross-repo-posture requires --profile cross-repo-evidence-posture-v1")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("selection")) == "" {
+		fmt.Fprintln(stderr, "export cross-repo-posture requires --selection")
+		return exitUsage
+	}
+	result, err := posture.Build(opts.stringValue("selection"), time.Now())
+	if err != nil {
+		fmt.Fprintln(stderr, "no_export_artifact")
+		return exitCannotVerify
+	}
+	if opts.boolValue("validate-only") {
+		return 0
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "export cross-repo-posture requires --out")
+		return exitUsage
+	}
+	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, "out_unwritable")
+		return 1
+	}
+	_ = stdout
+	return 0
+}
+
+func runCrossRepoPostureExplain(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "export cross-repo-posture-explain"}
+	opts.setString("result", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "export cross-repo-posture-explain accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("result")) == "" {
+		fmt.Fprintln(stderr, "export cross-repo-posture-explain requires --result")
+		return exitUsage
+	}
+	var result posture.ExportResult
+	if err := readJSONFile(opts.stringValue("result"), &result); err != nil {
+		fmt.Fprintln(stderr, "result_unreadable")
+		return exitCannotVerify
+	}
+	if result.SchemaVersion != posture.SchemaVersion || result.ExportProfileID != posture.ProfileID {
+		fmt.Fprintln(stderr, "unsupported cross-repo posture export")
+		return exitCannotVerify
+	}
+	rendered, err := posture.Explain(result)
+	if err != nil {
+		fmt.Fprintln(stderr, "output_safety_violation")
+		return exitCannotVerify
+	}
+	fmt.Fprint(stdout, rendered)
+	return 0
+}
+
 func runValidateFixtures(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	fixtureRoot := "."
 	if len(args) > 0 {
@@ -2081,6 +2170,8 @@ Usage:
   sdp-trace query --query <missing-evidence|capture-depth> <run-dir>
   sdp-trace query-pack --pack forensics-basic-v1 --run <run-dir> --out <file>
   sdp-trace query-pack explain --result <file>
+  sdp-trace export cross-repo-posture --profile cross-repo-evidence-posture-v1 --selection <file> --out <file>
+  sdp-trace export cross-repo-posture explain --result <file>
   sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>
   sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
   sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>

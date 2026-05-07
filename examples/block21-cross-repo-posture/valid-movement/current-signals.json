@@ -1,0 +1,15 @@
+{
+  "schema_version": "block21-posture-signal-manifest-v1",
+  "signals": [
+    {
+      "row_ref": "timeline.0001",
+      "witness_scope": "ci_witnessed",
+      "override_marker": "override_present",
+      "late_attach_marker": "late_attach_observed"
+    },
+    {
+      "row_ref": "timeline.0002",
+      "contract_change_marker": "contract_change_observed"
+    }
+  ]
+}

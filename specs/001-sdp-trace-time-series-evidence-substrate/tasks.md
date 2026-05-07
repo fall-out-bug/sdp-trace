@@ -500,6 +500,38 @@ release readiness, merge readiness, risk acceptance, or opaque scores.
 investigation questions, but `sdp-trace` still emits evidence views only. Any
 legal, incident, audit, release, or risk decision remains downstream.
 
+## Phase 18: Cross-Repository Degradation Export
+
+**Goal**: Provide deterministic cross-repository evidence posture exports for
+CTO-level movement analysis without issuing a native degradation verdict.
+
+**Independent Test**: A reviewer can run `export cross-repo-posture --profile
+cross-repo-evidence-posture-v1` against committed fixtures and inspect
+numerators, denominators, dimensions, time windows, source artifact digests,
+`not_assessed` counts, input trust states, movement deltas, and refusal rows
+without receiving a health score or yes/no degradation answer.
+
+**Activation Gate**: Do not implement Block 21 export behavior until
+`blocks/21-cross-repository-degradation-export.md` is reviewed through separate
+Socratic planes and explicitly approved. Cross-repository exports are evidence
+movement inputs for `sdp-report`, external BI, or policy consumers. They must
+not add policy thresholds, dashboards, opaque scores, degradation verdicts,
+readiness decisions, or cross-repository raw personal identifiers.
+
+- [x] T184 [US5] Add Block 21 spec and implementation plan for cross-repository posture export, input model, result contract, metric catalog, stale/untrusted input handling, safety boundaries, review-ledger shape, and no-overclaim boundary.
+- [x] T185 [US2] Add a portable cross-repository posture export schema covering profile id/version, selected repository/window inputs, input trust states, grouping set id, active grouping keys, metric rows, movement rows, movement summary, refusal rows, source input refs, source artifact digest set hash, closed metric ids, closed dimension names, closed refusal reasons, closed non-comparable reasons, closed output-safety sensitive classes, denominator requirements, metric-row `not_assessed` counts, handoff metadata, and verified output-safety metadata.
+- [x] T186 [US5] Add `cross-repo-evidence-posture-v1` aggregation over Block 20 query-pack result artifacts, repository selection manifests, artifact digest manifests, and posture signal manifests without creating a policy threshold, degradation verdict, dashboard score, or native readiness decision.
+- [x] T187 [US5] Add deterministic aggregation and movement semantics for missing telemetry, local-only evidence, CI-witnessed evidence, external-witnessed evidence, failed or issue-observed verifier states, overrides, late attach, unsupported observers, not-integrated observers, retention limits, contract changes, stale inputs, untrusted inputs, unsafe labels, missing required inputs, missing optional inputs, absent posture signal fields, and non-comparable windows.
+- [x] T188 [US4] Add `export cross-repo-posture --profile cross-repo-evidence-posture-v1` with required `--selection` and `--out`. Explain rendering, if added, must render only the JSON artifact and must not add conclusions absent from the result or encode hidden state through ordering, color, indentation, whitespace, or omitted sections.
+- [x] T189 [US4] Add committed Block 21 fixtures and a machine-checkable fixture matrix for valid multi-repo movement, stale input, digest mismatch, missing required input, missing optional input, non-comparable windows, unsupported observer rows, local-only versus CI-witnessed rows from posture signal manifests, external-witnessed rows from posture signal manifests, override rows, late-attach rows, contract-change rows, unsafe labels, unsafe digest-manifest paths, and unsafe external verdict payloads. The matrix must enumerate expected metric rows, numerator, denominator, active grouping keys, dimension key, input trust state, source input refs, source digest set hash, movement comparability, non-comparable reason, movement summary, and refusal rows.
+- [x] T190 [US4] Add safety-sensitive negative tests proving cross-repository export and explain output does not print raw command args, command names, executable paths, script paths, unsafe test identifiers, stdout/stderr bodies, prompts, source snippets, tool-call input/output bodies, adapter configuration, gateway evidence refs, credentials, OIDC request tokens, adapter secrets, gateway tokens, PR tokens, authenticated provider URLs, raw model request/response payloads, raw review bodies, unsafe raw-reference access notes, private filesystem paths, or unsafe personal identifiers. Test fixtures must use synthetic values and negative leak assertions must not echo candidate secrets in failure output.
+- [x] T191 [US5] Run Socratic spec review across product-boundary, tracing/evidence, and privacy/safety planes; record every valid finding in `blocks/21-cross-repository-degradation-export-review-ledger.md` and fix every critical or major finding before implementation approval handoff.
+- [ ] T192 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 21 review disposition before PR closure.
+
+**Checkpoint**: CTO-level consumers get comparable movement facts across
+repositories, but `sdp-trace` still emits evidence substrate exports only. Any
+degradation, readiness, alerting, or portfolio-risk decision remains downstream.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -527,6 +559,11 @@ legal, incident, audit, release, or risk decision remains downstream.
   rows from redaction/retention and adapter-capture facts. It must not expand
   raw capture, add a new policy decision, expose unsafe artifact refs, or hide
   missing/capped evidence rows.
+- **Phase 18**: Depends on Block 20 because it aggregates query-pack result
+  rows across repository/window selections. It must not collapse movement facts
+  into degradation, readiness, health-score, alert, rank, grade, or risk
+  decisions, and it must refuse or explicitly mark stale, untrusted, missing,
+  and non-comparable inputs.
 
 ### Parallel Opportunities
 
@@ -555,6 +592,12 @@ legal, incident, audit, release, or risk decision remains downstream.
   contract.
 - T178 and T181 can run in parallel after T177 because row semantics and safety
   leak assertions exercise separate behavior paths.
+- T185 and T189 can run in parallel after T184 because schema/result contract
+  and fixture-matrix design are separate surfaces.
+- T186 and T188 can run in parallel after T185 because aggregation and CLI
+  wiring can keep disjoint write scopes if they share only the schema contract.
+- T187 and T190 can run in parallel after T186 because movement semantics and
+  safety leak assertions exercise separate behavior paths.
 
 ## Implementation Strategy
 
@@ -581,6 +624,10 @@ legal, incident, audit, release, or risk decision remains downstream.
     preserving query-pack output as read-only evidence views over existing
     facts and keeping downstream forensic, legal, audit, release, and risk
     decisions outside `sdp-trace`.
+19. Complete Block 21 cross-repository posture export only after explicit spec
+    approval, preserving export output as movement facts with raw
+    numerator/denominator evidence and keeping degradation interpretation
+    outside `sdp-trace`.
 
 ### Evidence Discipline
 

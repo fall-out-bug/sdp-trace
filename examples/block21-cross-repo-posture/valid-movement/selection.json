@@ -1,0 +1,46 @@
+{
+  "schema_version": "block21-cross-repo-selection-v1",
+  "profile_id": "cross-repo-evidence-posture-v1",
+  "profile_version": "v1",
+  "grouping_set_id": "repo_window_v1",
+  "freshness_boundary": "2026-01-01T00:00:00Z",
+  "dimension_exposure_policy": [
+    "repo",
+    "team",
+    "service",
+    "harness",
+    "change_type"
+  ],
+  "current_window": "2026-w02",
+  "previous_window": "2026-w01",
+  "handoff": {
+    "consumer": "sdp-report"
+  },
+  "repositories": [
+    {
+      "input_id": "current",
+      "repo": "repo-a",
+      "team": "platform",
+      "service": "api",
+      "harness": "generic",
+      "change_type": "feature",
+      "time_window": "2026-w02",
+      "input_observed_at": "2026-01-05T00:00:00Z",
+      "query_pack_result": "examples/block21-cross-repo-posture/valid-movement/current-query-pack.json",
+      "artifact_digest_manifest": "examples/block21-cross-repo-posture/valid-movement/current-digests.json",
+      "posture_signal_manifest": "examples/block21-cross-repo-posture/valid-movement/current-signals.json"
+    },
+    {
+      "input_id": "previous",
+      "repo": "repo-a",
+      "team": "platform",
+      "service": "api",
+      "harness": "generic",
+      "change_type": "feature",
+      "time_window": "2026-w01",
+      "input_observed_at": "2026-01-05T00:00:00Z",
+      "query_pack_result": "examples/block21-cross-repo-posture/valid-movement/previous-query-pack.json",
+      "artifact_digest_manifest": "examples/block21-cross-repo-posture/valid-movement/previous-digests.json"
+    }
+  ]
+}
