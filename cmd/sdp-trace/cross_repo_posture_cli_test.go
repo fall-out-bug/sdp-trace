@@ -13,7 +13,7 @@ import (
 
 func TestCrossRepoPostureExportWritesSafeArtifactAndExplain(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withCLIChdir(t, root)
 	current := writePostureCLIQueryPack(t, ".", "current", "missing_telemetry")
 	previous := writePostureCLIQueryPack(t, ".", "previous", "present")
 	selectionPath := writePostureCLISelection(t, ".", current, previous)
@@ -68,7 +68,7 @@ func TestCrossRepoPostureValidateOnlyAndRequiredFlags(t *testing.T) {
 	}
 
 	root := t.TempDir()
-	t.Chdir(root)
+	withCLIChdir(t, root)
 	current := writePostureCLIQueryPack(t, ".", "current", "present")
 	previous := writePostureCLIQueryPack(t, ".", "previous", "present")
 	selectionPath := writePostureCLISelection(t, ".", current, previous)
@@ -196,4 +196,20 @@ func decodePostureCLIExport(t *testing.T, path string) map[string]any {
 		t.Fatal(err)
 	}
 	return out
+}
+
+func withCLIChdir(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 }

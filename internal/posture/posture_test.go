@@ -14,7 +14,7 @@ import (
 
 func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	current := writeQueryPack(t, ".", "current", "missing_telemetry")
 	previous := writeQueryPack(t, ".", "previous", "present")
 	bad := writeQueryPack(t, ".", "bad", "issue_observed")
@@ -64,7 +64,7 @@ func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 
 func TestBuildRefusesUnsafeLabels(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	manifest := writeDigest(t, qp)
 	selection := SelectionManifest{
@@ -115,7 +115,7 @@ func TestBuildSupportsTeamServiceAndHarnessChangeGrouping(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
-			t.Chdir(root)
+			withChdir(t, root)
 			current := writeQueryPack(t, ".", "current", "present")
 			previous := writeQueryPack(t, ".", "previous", "present")
 			selection := SelectionManifest{
@@ -146,7 +146,7 @@ func TestBuildSupportsTeamServiceAndHarnessChangeGrouping(t *testing.T) {
 
 func TestBuildRefusesStaleInput(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
 	repo.InputObservedAt = "2025-12-31T00:00:00Z"
@@ -173,7 +173,7 @@ func TestBuildRefusesStaleInput(t *testing.T) {
 
 func TestBuildRejectsGroupingOutsideExposurePolicy(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	selection := SelectionManifest{
 		SchemaVersion:           SelectionSchemaVersion,
@@ -194,7 +194,7 @@ func TestBuildRejectsGroupingOutsideExposurePolicy(t *testing.T) {
 
 func TestBuildRejectsDurationFreshnessBoundaryInV1(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	manifest := writeDigest(t, qp)
 	selection := SelectionManifest{
@@ -218,7 +218,7 @@ func TestBuildRejectsDurationFreshnessBoundaryInV1(t *testing.T) {
 
 func TestBuildRefusesUnsafeInputIDTimeWindowAndPaths(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	manifest := writeDigest(t, qp)
 	for name, mutate := range map[string]func(*RepositoryWindow){
@@ -254,7 +254,7 @@ func TestBuildRefusesUnsafeInputIDTimeWindowAndPaths(t *testing.T) {
 
 func TestBuildRejectsMismatchedDigestManifestPath(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	manifest := writeDigest(t, qp)
 	var digest DigestManifest
@@ -290,7 +290,7 @@ func TestBuildRejectsMismatchedDigestManifestPath(t *testing.T) {
 
 func TestBuildRejectsUnsupportedDigestManifestSchema(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	manifest := writeDigest(t, qp)
 	var digest DigestManifest
@@ -320,7 +320,7 @@ func TestBuildRejectsUnsupportedDigestManifestSchema(t *testing.T) {
 
 func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	manifest := writeDigest(t, qp)
 	selection := SelectionManifest{
@@ -351,7 +351,7 @@ func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 
 func TestBuildRefusesWindowsAbsoluteInputPath(t *testing.T) {
 	root := t.TempDir()
-	t.Chdir(root)
+	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
 	repo.QueryPackResult = `C:\private\query-pack.json`
@@ -531,6 +531,22 @@ func findMetric(result ExportResult, id, window string) MetricRow {
 
 func containsUnsafe(value string) bool {
 	return strings.Contains(value, "https://") || strings.Contains(value, "/private") || strings.Contains(value, "secret")
+}
+
+func withChdir(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 }
 
 func schemaObjectAt(t *testing.T, source map[string]any, key string) map[string]any {
