@@ -78,4 +78,5 @@ Block 20 dependency drift; implementation and PR-level review are in progress.
   Code/correctness and tracing/evidence returned `APPROVE` with minor
   observations. Requirements/safety returned `REVISE`; accepted critical/major
   findings were fixed. Focused re-reviews returned `APPROVE`.
-- GitHub CI: not_assessed until final PR head checks report.
+- GitHub CI: assessed on PR #14 final head. The `verify` check reported
+  success for commit `cb3026bbce00ac8881336b8855def0c06748b3b8`.
