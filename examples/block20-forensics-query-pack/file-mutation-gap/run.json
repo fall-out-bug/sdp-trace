@@ -1,0 +1,15 @@
+{
+  "run_id": "block20-file-mutation-gap",
+  "run_nonce": "nonce-file-mutation-gap",
+  "source_baseline": "sha256:file-mutation-gap",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "file_mutation_capture": {
+      "state": "not_integrated",
+      "reason": "file mutation capture is not integrated"
+    }
+  }
+}

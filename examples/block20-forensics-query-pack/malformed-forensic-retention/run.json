@@ -1,0 +1,11 @@
+{
+  "run_id": "block20-malformed-forensic-retention",
+  "run_nonce": "nonce-malformed-forensic-retention",
+  "source_baseline": "sha256:malformed-forensic-retention",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

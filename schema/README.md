@@ -27,6 +27,7 @@ These schemas define the portable `sdp-trace` contract.
 | `checkpoint-verification.schema.json` | Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks. |
 | `ci-witness.schema.json` | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
 | `gate-result.schema.json` | Records version-separated Block 14 advisory gate facts and Block 16 protected profile facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |
+| `forensics-query-pack-result.schema.json` | Records Block 20 read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict. |
 | `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |
 | `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
 | `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |

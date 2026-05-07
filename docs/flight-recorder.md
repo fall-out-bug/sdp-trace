@@ -117,6 +117,9 @@ Node.js to the active product path.
 ```bash
 go run ./cmd/sdp-trace query --query missing-evidence <run-dir>
 go run ./cmd/sdp-trace query --query capture-depth <run-dir>
+go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 \
+  --run <run-dir> \
+  --out <query-pack-result.json>
 ```
 
 Required query names:
@@ -133,5 +136,14 @@ Required query names:
 | `redactions` | Redaction and retention issues requiring reviewer attention. |
 | `witness-state` | Witness presence, witness agreement, and witness scope. |
 | `capture-depth` | Adapter event coverage, missing telemetry, unsupported observers, gateway `not_integrated`, and retention/capture caps. |
+| `forensics-basic-v1` query pack | Safe grouped rows for run summary, chain and witness state, redaction and retention issues, capture-depth gaps, timelines, task supersession, unverified claims, and evidence-gap descriptions. |
 
 Queries expose evidence and verifier states only. They must not emit opaque scores or policy verdicts.
+
+Forensics query packs are read-only bundles over existing facts. They must
+preserve `not_assessed`, `cannot_verify`, `retention_limited`, `unsupported`,
+and `not_integrated` rows rather than hiding them behind a summary. Digest-only
+evidence is existence evidence, not reconstructable evidence. Forensics query
+packs use opaque command/test identifiers and path-redacted artifact identifiers;
+raw command names, executable paths, script paths, test names, and artifact
+storage paths are not safe output.

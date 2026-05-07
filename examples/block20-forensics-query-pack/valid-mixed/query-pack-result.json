@@ -1,0 +1,125 @@
+{
+  "schema_version": "block20-forensics-query-pack-result-v1",
+  "query_pack_id": "forensics-basic-v1",
+  "query_pack_version": "v1",
+  "run_id": "block20-valid-mixed",
+  "run_nonce": "nonce-valid-mixed",
+  "source_baseline": "sha256:valid-mixed",
+  "input_artifacts": [
+    {
+      "role": "adapter_capture",
+      "sha256": "ee2629033ae7b65bb2b3eb7e646e15d1b2254e25f436ad282bafe74209b94eb6",
+      "path_redacted_id": "adapter_capture",
+      "schema_version": "block19-adapter-capture-assessment-v1",
+      "artifact_required": false
+    },
+    {
+      "role": "forensic_retention",
+      "sha256": "a1fec36bbc35540e14b535729e247c9e416ca991ef83a1d7383f602f1bfde18a",
+      "path_redacted_id": "forensic_retention",
+      "schema_version": "block18-forensic-retention-assessment-v1",
+      "artifact_required": false
+    },
+    {
+      "role": "run",
+      "sha256": "8295de2807bb30b34038c419fda93b17dce5a71add7b171addbd867bcaa392a6",
+      "path_redacted_id": "run",
+      "artifact_required": true
+    }
+  ],
+  "query_rows": {
+    "forensics-capture-depth": [
+      {
+        "id": "capture-depth.0001",
+        "query": "forensics-capture-depth",
+        "evidence_state": "present",
+        "evidence_family": "adapter_capture",
+        "source_ref": "block_19.condition.provider_refs_portable",
+        "source_condition_id": "provider_refs_portable",
+        "source_condition_state": "pass",
+        "reason_code": "provider_refs_portable"
+      }
+    ],
+    "forensics-gaps": [],
+    "forensics-redactions": [
+      {
+        "id": "redactions.0001",
+        "query": "forensics-redactions",
+        "evidence_state": "present",
+        "evidence_family": "redaction",
+        "source_ref": "block_18.condition.redaction_unresolved_visible",
+        "source_condition_id": "redaction_unresolved_visible",
+        "source_condition_state": "pass",
+        "reason_code": "redaction_resolved"
+      }
+    ],
+    "forensics-summary": [
+      {
+        "id": "summary.0001",
+        "query": "forensics-summary",
+        "evidence_state": "present",
+        "evidence_family": "claim",
+        "source_ref": "block_09.run.run_id",
+        "reason_code": "query_group_index",
+        "related_rows": [
+          "timeline.0001"
+        ]
+      },
+      {
+        "id": "summary.0002",
+        "query": "forensics-summary",
+        "evidence_state": "present",
+        "evidence_family": "claim",
+        "source_ref": "block_09.run.run_id",
+        "reason_code": "query_group_index",
+        "related_rows": [
+          "redactions.0001"
+        ]
+      },
+      {
+        "id": "summary.0003",
+        "query": "forensics-summary",
+        "evidence_state": "present",
+        "evidence_family": "claim",
+        "source_ref": "block_09.run.run_id",
+        "reason_code": "query_group_index",
+        "related_rows": [
+          "capture-depth.0001"
+        ]
+      }
+    ],
+    "forensics-timeline": [
+      {
+        "id": "timeline.0001",
+        "query": "forensics-timeline",
+        "evidence_state": "present",
+        "evidence_family": "command",
+        "source_ref": "block_09.event.command.e0001",
+        "reason_code": "timeline_event_present"
+      }
+    ],
+    "forensics-unverified-claims": []
+  },
+  "output_safety": {
+    "verified_absent_sensitive_classes": [
+      "raw_command_arguments",
+      "command_names",
+      "executable_paths",
+      "script_paths",
+      "unsafe_test_identifiers",
+      "stdout_stderr_bodies",
+      "prompts",
+      "source_snippets",
+      "tool_payloads",
+      "adapter_configuration",
+      "gateway_evidence_refs",
+      "credentials",
+      "tokens",
+      "authenticated_provider_urls",
+      "raw_model_payloads",
+      "raw_review_bodies",
+      "unsafe_raw_reference_access_notes",
+      "key_material"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "run_id": "block20-witness-gap",
+  "run_nonce": "nonce-witness-gap",
+  "source_baseline": "sha256:witness-gap",
+  "event_refs": [],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    },
+    "event_chain_witnessed": {
+      "state": "not_integrated",
+      "reason": "witness integration is absent"
+    }
+  }
+}

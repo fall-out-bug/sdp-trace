@@ -1,0 +1,12 @@
+{
+  "schema_version": "block19-adapter-capture-assessment-v1",
+  "adapter_capture_assessment": "pass",
+  "adapter_capture_conditions": [
+    {
+      "id": "task_drift_visible",
+      "state": "pass",
+      "reason_code": "task_supersessions_visible",
+      "reason": "task supersessions include visible attribution"
+    }
+  ]
+}

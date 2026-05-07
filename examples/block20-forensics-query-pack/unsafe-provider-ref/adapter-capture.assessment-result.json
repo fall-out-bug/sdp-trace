@@ -1,0 +1,12 @@
+{
+  "schema_version": "block19-adapter-capture-assessment-v1",
+  "adapter_capture_assessment": "fail",
+  "adapter_capture_conditions": [
+    {
+      "id": "provider_refs_portable",
+      "state": "fail",
+      "reason_code": "provider_ref_contains_secret",
+      "reason": "provider reference contains unsafe material"
+    }
+  ]
+}

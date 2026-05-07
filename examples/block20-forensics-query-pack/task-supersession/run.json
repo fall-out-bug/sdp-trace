@@ -1,0 +1,18 @@
+{
+  "run_id": "block20-task-supersession",
+  "run_nonce": "nonce-task-supersession",
+  "source_baseline": "sha256:task-supersession",
+  "event_refs": [
+    {
+      "sequence": 4,
+      "event_hash": "hash-task-superseded",
+      "event_type": "task_superseded",
+      "uri": "events/redacted-task-superseded.json"
+    }
+  ],
+  "verifier_states": {
+    "event_chain_structurally_valid": {
+      "state": "pass"
+    }
+  }
+}

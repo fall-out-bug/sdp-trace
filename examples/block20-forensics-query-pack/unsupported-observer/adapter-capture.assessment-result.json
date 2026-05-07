@@ -1,0 +1,12 @@
+{
+  "schema_version": "block19-adapter-capture-assessment-v1",
+  "adapter_capture_assessment": "cannot_verify",
+  "adapter_capture_conditions": [
+    {
+      "id": "tool_call_depth_visible",
+      "state": "unsupported",
+      "reason_code": "tool_event_unsupported",
+      "reason": "adapter declares no tool-call capability"
+    }
+  ]
+}

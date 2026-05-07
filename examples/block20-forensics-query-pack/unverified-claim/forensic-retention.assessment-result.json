@@ -1,0 +1,12 @@
+{
+  "schema_version": "block18-forensic-retention-assessment-v1",
+  "forensic_retention_assessment": "not_assessed",
+  "forensic_conditions": [
+    {
+      "id": "retention_mode_declared",
+      "state": "not_assessed",
+      "reason_code": "retention_not_assessed",
+      "reason": "retention mode is not assessed"
+    }
+  ]
+}
