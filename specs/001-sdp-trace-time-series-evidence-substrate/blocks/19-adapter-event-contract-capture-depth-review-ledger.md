@@ -1,13 +1,16 @@
 # Block 19 Review Ledger
 
-Status: implementation review completed; no remaining critical or major
-implementation findings. PR-level review and GitHub CI remain `not_assessed`
-until a PR exists.
+Status: implementation and PR-level review completed; no remaining critical or
+major findings. GitHub CI remains `not_assessed` because PR #9 reports no
+checks.
 
 ## Spec Review Findings
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
+| PR19-C-01 | minor | code/correctness | `contractCondition` correlation collision behavior for duplicate empty correlation refs is not covered by a dedicated fixture. | Accepted as non-blocking. Current schema treats `correlation_ref` as optional; duplicate non-empty correlation keys are covered and empty refs are not used as stable fixture correlation evidence. | `/tmp/block19-pr9-code-review.txt`; `internal/adaptercapture/adaptercapture_test.go` |
+| PR19-TE-01 | minor | tracing/evidence | Some pass fixtures are byte-identical because they target different condition IDs over the same valid input. | Accepted as non-blocking. Fixture validation binds each file to a target condition; identical pass artifacts document distinct acceptance rows without changing verifier behavior. | `/tmp/block19-pr9-tracing-review.txt`; `examples/block19-adapter-capture/README.md` |
+| PR19-R-01 | none | PR-level re-review | Code/correctness, tracing/evidence, and privacy/requirements PR-level review reported no critical or major findings. | Accepted as PR-level review convergence. Remaining findings are minor/non-blocking; GitHub CI is `not_assessed` because no checks are reported. | `/tmp/block19-pr9-code-review.txt`; `/tmp/block19-pr9-tracing-review.txt`; `/tmp/block19-pr9-privacy-review.txt`; `gh pr checks 9` |
 | I19-TE-01 | major | tracing/evidence | Query-facing output defined `unverified_task_expanded` but did not expose it or other FR-103 scan facts from `query capture-depth`. | Accepted and fixed. `CaptureDepthSummary` now emits task supersession count, unverified task expansion, missing adapter events, unsupported observers, and unverified claims without top-level pass/fail policy. | `internal/query/query.go`; `internal/query/query_test.go`; `cmd/sdp-trace/adapter_capture_cli_test.go` |
 | I19-TE-02 | major | tracing/evidence/privacy | Event-level provider references were not covered by the same credential-like scan and dedicated fixture evidence as run-level provider refs. | Accepted and fixed. Event-level refs are scanned in `provider_refs_portable` and redaction metadata checks; unit and committed fixture coverage added. | `internal/adaptercapture/adaptercapture.go`; `internal/adaptercapture/adaptercapture_test.go`; `examples/block19-adapter-capture/unsafe-event-provider-ref-fail.assessment-result.json` |
 | I19-TE-03 | major | tracing/evidence | SC-044 fixture breadth was narrower than the approved spec: adapter-bundle binding, unsupported observer, gateway `not_integrated`, harness-observed tests, task supersession attribution, and provider-neutral refs needed committed deterministic artifacts. | Accepted and fixed. Fixture matrix expanded to 15 generated assessment-result fixtures with README coverage notes. | `internal/adaptercapture/adaptercapture_test.go`; `examples/block19-adapter-capture/` |
@@ -59,5 +62,5 @@ until a PR exists.
 - Tracing/evidence review: assessed; final focused re-review reports no remaining critical or major findings.
 - Requirements-vs-implementation review: assessed through privacy/requirements plane; final focused re-review reports no remaining critical or major findings.
 - Privacy/security review: assessed; token/raw-marker and provider-ref findings fixed or rejected with schema evidence.
-- PR-level review: `not_assessed`; no PR exists yet.
-- GitHub CI: `not_assessed`; no PR exists yet.
+- PR-level review: assessed on PR #9; no remaining critical or major findings.
+- GitHub CI: `not_assessed`; PR #9 reports no checks.

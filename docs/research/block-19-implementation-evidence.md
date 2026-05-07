@@ -1,8 +1,8 @@
 # Block 19 Implementation Evidence
 
-Status: implementation evidence and strict implementation review recorded.
-PR-level review and source-bound release proof regeneration remain open under
-T168.
+Status: implementation evidence, strict implementation review, and PR-level
+review recorded. Source-bound release proof regeneration remains open outside
+Block 19 implementation closure.
 
 ## Scope
 
@@ -70,9 +70,12 @@ privacy/requirements planes. Initial major findings around FR-103 query facts,
 event-level provider-ref safety, and SC-044 fixture breadth were accepted and
 fixed. Final focused re-review reported no remaining critical or major findings.
 
+PR-level review ran on PR #9 across code/correctness, tracing/evidence, and
+privacy/requirements planes. Final PR-level review reported no critical or
+major findings. GitHub CI is `not_assessed`: PR #9 reports no checks.
+
 ## Remaining Open Work
 
-- PR-level review is not complete.
-- GitHub CI is `not_assessed`: no PR exists yet.
+- GitHub CI is `not_assessed`: PR #9 reports no checks.
 - Source-bound release proof regeneration is not complete in this evidence
   note.
