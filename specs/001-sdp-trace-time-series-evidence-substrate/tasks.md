@@ -562,7 +562,7 @@ upgrades.
 - [x] T199 [US4] Update witness CLI docs and command contracts for closed Block 22 `--kind` values, explicit customer-PKI input flags if needed, safe path handling, deterministic exit states, and explain output that renders only verifier facts.
 - [x] T200 [US4] Add safety-sensitive negative tests proving witness JSON and explain output do not print or persist CI tokens, OIDC tokens, JWT bodies, private key material, provider tokens, authenticated provider URLs, raw job logs, private filesystem paths, unsafe personal identifiers, free-text parser errors containing input content, or customer directory, LDAP, SAML, cloud, Vault, HSM, KMS, or PKI payloads.
 - [x] T201 [US5] Run Socratic spec review across product-boundary, tracing/evidence, and enterprise/security planes; record every valid finding in `blocks/22-additional-ci-enterprise-witness-profiles-review-ledger.md` and fix every critical or major finding before implementation approval handoff.
-- [ ] T202 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 22 review disposition before PR closure.
+- [x] T202 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 22 review disposition before PR closure.
 
 **Checkpoint**: CI and enterprise users get consistent witness profile
 semantics across GitHub Actions, GitLab CI, Buildkite, customer PKI, and

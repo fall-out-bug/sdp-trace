@@ -27,6 +27,7 @@ const (
 
 	independenceExternal = "external_independent"
 	independenceCIJob    = "ci_isolated_job"
+	independenceSameJob  = "ci_same_job"
 )
 
 var safetyClasses = []string{
@@ -153,7 +154,7 @@ func BuildCIEnvelopeProfile(kind, runsRoot, reportDir, envelopePath string) (Rec
 		record.EstablishedTrustScope = stateCannotVerify
 		record.Reason = reason
 		record.ReasonCodes = []string{reason}
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, "ci_same_job")
+		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceSameJob)
 		return record, nil
 	}
 	var envelope EnvelopeInput
@@ -410,9 +411,6 @@ func finalizeRecordForWrite(record Record) Record {
 		return record
 	}
 	safe := baseRecord(record.Kind)
-	safe.ProfileID = record.ProfileID
-	safe.ProfileVersion = record.ProfileVersion
-	safe.ProviderKind = record.ProviderKind
 	safe.ProfileStates = defaultProfileStates(stateFail, "cannot_verify")
 	safe.OutputSafety = &OutputSafety{State: stateFail, VerifiedAbsentClasses: safetyClasses}
 	applyProfileState(&safe, StatusFail, stateFail, ReasonUnsafeOutput)
@@ -755,7 +753,7 @@ func digestBytes(data []byte) string {
 }
 
 func strongDigest(value string) bool {
-	if len(value) != 64 {
+	if len(value) < 64 {
 		return false
 	}
 	_, err := hex.DecodeString(value)

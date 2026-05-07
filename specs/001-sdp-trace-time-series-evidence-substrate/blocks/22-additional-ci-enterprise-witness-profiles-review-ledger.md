@@ -6,8 +6,11 @@ Valid critical and major spec findings were accepted and fixed. Focused spec
 re-reviews returned `APPROVE` with no remaining critical or major findings.
 Implementation code/correctness, tracing/evidence, and security
 requirements-vs-implementation planes returned `APPROVE` with no remaining
-critical or major findings after accepted fixes. PR-level review and GitHub CI
-remain `not_assessed` until a Block 22 PR exists.
+critical or major findings after accepted fixes. PR-level code/correctness,
+tracing/evidence, and requirements-vs-implementation security planes were run
+for PR #15. Accepted PR-level security blockers were fixed and focused
+re-review returned `APPROVE`; GitHub Actions `verify` passed for the first PR
+head and must be re-checked after the final evidence commit.
 
 ## Spec Review Findings
 
@@ -45,7 +48,12 @@ remain `not_assessed` until a Block 22 PR exists.
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| _blocked_ | _blocked_ | _blocked_ | PR-level review has not started. | Blocked pending implementation and PR. | `not_assessed` |
+| S22-PR-01 | major | requirements-vs-implementation security | `strongDigest` accepted only 64-character SHA-256 digests, contradicting the reviewed `sha256-or-stronger` digest contract. | Accepted and fixed. `strongDigest` now accepts valid hex digests of at least 64 characters and tests cover 64-, 96-, and 128-character hex. Focused Kimi K2P6 PR re-review returned `APPROVE`. | Kimi K2P6 PR security review and focused re-review; `internal/witness/profiles.go`; `internal/witness/profiles_test.go` |
+| S22-PR-02 | major | requirements-vs-implementation security | `finalizeRecordForWrite` copied potentially tainted `profile_id`, `profile_version`, and `provider_kind` into the safe fallback record after detecting unsafe output. | Accepted and fixed. The safe fallback now derives these fields only from `baseRecord(record.Kind)`, and the JWT-shaped output test poisons `ProfileID` to prove the sentinel is not persisted. Focused Kimi K2P6 PR re-review returned `APPROVE`. | Kimi K2P6 PR security review and focused re-review; `internal/witness/profiles.go`; `internal/witness/profiles_test.go` |
+| S22-PR-03 | major | requirements-vs-implementation security | The existing GitHub Actions witness path did not populate the new schema-required normalized fields. | Accepted and fixed. `BuildGitHubActionsWithFetcher` now uses the normalized `baseRecord`, populates `profile_states`, `established_trust_scope`, `reason_codes`, and `output_safety`, and `WriteGitHubActions` finalizes output before writing. Focused Kimi K2P6 PR re-review returned `APPROVE`. | Kimi K2P6 PR security review and focused re-review; `internal/witness/witness.go`; `internal/witness/witness_test.go` |
+| S22-PR-04 | minor | code/correctness | PR code review found minor consistency and coverage gaps: `omitempty` conflicted with schema-required fields, `ci_same_job` was a bare string, and CLI envelope success was not tested end to end. | Accepted and fixed. Required normalized fields no longer use `omitempty`, `independenceSameJob` is a named constant, and the CLI has an explicit Buildkite `--witness-envelope` pass test. | Qwen PR code/correctness review; `internal/witness/witness.go`; `internal/witness/profiles.go`; `cmd/sdp-trace/main_test.go` |
+| S22-PR-05 | minor | tracing/evidence | PR tracing review requested dedicated Buildkite signer-authority and run-binding negative coverage. | Accepted and fixed. Added Buildkite-specific tests for `witness_signer_authority_missing` and `witness_run_mismatch`. | DeepSeek PR tracing/evidence review; `internal/witness/profiles_test.go` |
+| S22-PR-06 | not_assessed | tracing/evidence | Initial MiniMax PR tracing reviewer returned `404 page not found`. | Replaced, not counted as evidence. The plane was rerun with OpenRouter DeepSeek and returned `APPROVE` with no remaining critical or major findings. | MiniMax failed attempt not committed; DeepSeek PR tracing/evidence review |
 
 ## Review Evidence State
 
@@ -60,5 +68,11 @@ remain `not_assessed` until a Block 22 PR exists.
   full-patch review packets. Accepted critical/major security findings were
   fixed and focused Kimi K2P6 re-review returned `APPROVE`; no remaining
   critical or major implementation findings are recorded.
-- PR-level review: `not_assessed`; blocked until implementation PR exists.
-- CI: `not_assessed`; no Block 22 PR checks exist yet.
+- PR-level review: assessed for PR #15 with Qwen code/correctness, DeepSeek
+  tracing/evidence after replacing a failed MiniMax attempt, and Kimi K2P6
+  requirements-vs-implementation security. Initial Kimi security review returned
+  `BLOCK`; accepted major findings were fixed and focused Kimi re-review returned
+  `APPROVE`. No remaining critical or major PR-level findings are recorded.
+- CI: GitHub Actions `verify` passed during the PR-level review cycle; final
+  PR-head CI must be re-checked outside this ledger immediately before
+  ready/merge because committing ledger evidence creates a new head.

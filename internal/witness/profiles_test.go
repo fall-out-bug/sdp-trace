@@ -247,6 +247,83 @@ func TestCIEnvelopeNonPassReasonCodes(t *testing.T) {
 	}
 }
 
+func TestBuildkiteEnvelopeSignerAndRunBindingFailures(t *testing.T) {
+	root := writeRunRoot(t)
+	artifacts, err := hashRunArtifacts(root)
+	if err != nil {
+		t.Fatalf("hash artifacts: %v", err)
+	}
+	base := EnvelopeInput{
+		ProfileID:    "buildkite-v1",
+		ProviderKind: KindBuildkite,
+		Source:       SourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+		CI:           CIIdentity{Provider: KindBuildkite, RunID: "pipeline-42", Job: "verify"},
+		RunArtifacts: artifacts,
+		ProfileStates: ProfileStates{
+			IdentityState:        statePass,
+			SignerAuthorityState: statePass,
+			FreshnessState:       statePass,
+			ArtifactBindingState: statePass,
+			SourceBindingState:   statePass,
+			RunBindingState:      statePass,
+			PolicyBindingState:   statePass,
+			IndependenceState:    independenceCIJob,
+		},
+	}
+	tests := []struct {
+		name   string
+		mutate func(*EnvelopeInput)
+		status string
+		reason string
+	}{
+		{
+			name: "missing signer",
+			mutate: func(input *EnvelopeInput) {
+				input.ProfileStates.SignerAuthorityState = stateCannotVerify
+			},
+			status: StatusCannotVerify,
+			reason: ReasonMissingSigner,
+		},
+		{
+			name: "run mismatch",
+			mutate: func(input *EnvelopeInput) {
+				input.ProfileStates.RunBindingState = stateFail
+			},
+			status: StatusFail,
+			reason: ReasonRunMismatch,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := base
+			tt.mutate(&input)
+			envelopePath := writeJSON(t, t.TempDir(), "buildkite-envelope.json", input)
+			record, err := BuildCIEnvelopeProfile(KindBuildkite, root, "", envelopePath)
+			if err != nil {
+				t.Fatalf("BuildCIEnvelopeProfile: %v", err)
+			}
+			if record.Status != tt.status || record.Reason != tt.reason {
+				t.Fatalf("record = %s reason=%s", record.Status, record.Reason)
+			}
+		})
+	}
+}
+
+func TestStrongDigestAcceptsSHA256OrStrongerHex(t *testing.T) {
+	for _, digest := range []string{
+		strings.Repeat("a", 64),
+		strings.Repeat("b", 96),
+		strings.Repeat("c", 128),
+	} {
+		if !strongDigest(digest) {
+			t.Fatalf("digest should be accepted as sha256-or-stronger: len=%d", len(digest))
+		}
+	}
+	if strongDigest(strings.Repeat("d", 63)) {
+		t.Fatalf("short digest accepted")
+	}
+}
+
 func TestCustomerPKIPassesWithSignedFreshnessEvidence(t *testing.T) {
 	root := writeRunRootWithID(t, "run-1")
 	dir := t.TempDir()
@@ -558,6 +635,7 @@ func TestWriteProfileRejectsJWTShapedEnvelopeInput(t *testing.T) {
 func TestFinalizeRecordRejectsJWTShapedSerializedOutput(t *testing.T) {
 	sentinel := "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJibG9jazIyIn0.signaturesecret"
 	record := baseRecord(KindGitLabCI)
+	record.ProfileID = sentinel
 	record.CI = CIIdentity{Provider: KindGitLabCI, RunID: "pipeline-42", Actor: sentinel}
 
 	safe := finalizeRecordForWrite(record)

@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 )
@@ -80,8 +79,8 @@ type Record struct {
 	OIDC                  *OIDCClaims      `json:"oidc,omitempty"`
 	RunArtifacts          []ArtifactDigest `json:"run_artifacts"`
 	ReportArtifacts       []ArtifactDigest `json:"report_artifacts"`
-	ProfileStates         *ProfileStates   `json:"profile_states,omitempty"`
-	OutputSafety          *OutputSafety    `json:"output_safety,omitempty"`
+	ProfileStates         *ProfileStates   `json:"profile_states"`
+	OutputSafety          *OutputSafety    `json:"output_safety"`
 }
 
 type SourceIdentity struct {
@@ -138,25 +137,20 @@ func BuildGitHubActions(runsRoot, reportDir string, env map[string]string) (Reco
 }
 
 func BuildGitHubActionsWithFetcher(runsRoot, reportDir string, env map[string]string, fetcher TokenFetcher) (Record, error) {
-	record := Record{
-		Kind:            KindGitHubActions,
-		GeneratedAt:     time.Now().UTC().Format(time.RFC3339Nano),
-		RunArtifacts:    []ArtifactDigest{},
-		ReportArtifacts: []ArtifactDigest{},
-		Source: SourceIdentity{
-			Repository: env["GITHUB_REPOSITORY"],
-			Ref:        env["GITHUB_REF"],
-			CommitSHA:  env["GITHUB_SHA"],
-		},
-		CI: CIIdentity{
-			Provider:   KindGitHubActions,
-			ServerURL:  env["GITHUB_SERVER_URL"],
-			Workflow:   env["GITHUB_WORKFLOW"],
-			Job:        env["GITHUB_JOB"],
-			RunID:      env["GITHUB_RUN_ID"],
-			RunAttempt: env["GITHUB_RUN_ATTEMPT"],
-			Actor:      env["GITHUB_ACTOR"],
-		},
+	record := baseRecord(KindGitHubActions)
+	record.Source = SourceIdentity{
+		Repository: env["GITHUB_REPOSITORY"],
+		Ref:        env["GITHUB_REF"],
+		CommitSHA:  env["GITHUB_SHA"],
+	}
+	record.CI = CIIdentity{
+		Provider:   KindGitHubActions,
+		ServerURL:  env["GITHUB_SERVER_URL"],
+		Workflow:   env["GITHUB_WORKFLOW"],
+		Job:        env["GITHUB_JOB"],
+		RunID:      env["GITHUB_RUN_ID"],
+		RunAttempt: env["GITHUB_RUN_ATTEMPT"],
+		Actor:      env["GITHUB_ACTOR"],
 	}
 
 	runArtifacts, err := hashRunArtifacts(runsRoot)
@@ -174,38 +168,41 @@ func BuildGitHubActionsWithFetcher(runsRoot, reportDir string, env map[string]st
 
 	missing := missingGitHubIdentity(env)
 	if len(missing) > 0 {
-		record.Status = StatusCannotVerify
+		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingCIIdentity)
 		record.TrustScope = TrustScopeLocalObserved
-		record.Reason = ReasonMissingCIIdentity
+		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceSameJob)
 		record.MissingIdentityFields = missing
 		return record, nil
 	}
 	oidcMissing := missingGitHubOIDC(env)
 	if len(oidcMissing) > 0 {
-		record.Status = StatusCannotVerify
+		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingCIOIDC)
 		record.TrustScope = TrustScopeLocalObserved
-		record.Reason = ReasonMissingCIOIDC
+		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
 		record.MissingIdentityFields = oidcMissing
 		return record, nil
 	}
 	token, err := fetcher(env)
 	if err != nil {
-		record.Status = StatusCannotVerify
+		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonInvalidCIOIDC)
 		record.TrustScope = TrustScopeLocalObserved
-		record.Reason = ReasonInvalidCIOIDC
+		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
 		return record, nil
 	}
 	claims, err := parseOIDCClaims(token)
 	if err != nil || !claimsMatchEnvironment(claims, env) {
-		record.Status = StatusCannotVerify
+		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonInvalidCIOIDC)
 		record.TrustScope = TrustScopeLocalObserved
-		record.Reason = ReasonInvalidCIOIDC
+		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
 		return record, nil
 	}
 	record.OIDC = &claims
 	record.Status = StatusPass
 	record.TrustScope = TrustScopeCIWitnessed
+	record.EstablishedTrustScope = TrustScopeCIWitnessed
 	record.Reason = ReasonCIIdentityPresent
+	record.ReasonCodes = []string{ReasonCIIdentityPresent}
+	record.ProfileStates = defaultProfileStates(statePass, independenceCIJob)
 	return record, nil
 }
 
@@ -217,6 +214,7 @@ func WriteGitHubActions(outPath, runsRoot, reportDir string, env map[string]stri
 	if err != nil {
 		return Record{}, err
 	}
+	record = finalizeRecordForWrite(record)
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return Record{}, err
 	}

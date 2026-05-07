@@ -551,6 +551,65 @@ func TestWitnessCommandBuildkiteRequiresExplicitEnvelope(t *testing.T) {
 	}
 }
 
+func TestWitnessCommandBuildkitePassesWithExplicitEnvelope(t *testing.T) {
+	root := t.TempDir()
+	runDir := filepath.Join(root, "001-agent-session")
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatalf("mkdir run: %v", err)
+	}
+	runJSON := []byte(`{"run_id":"pipeline-42"}`)
+	if err := os.WriteFile(filepath.Join(runDir, "run.json"), runJSON, 0o644); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+	sum := sha256.Sum256(runJSON)
+	dir := t.TempDir()
+	envelopePath := filepath.Join(dir, "buildkite-envelope.json")
+	writeJSONFileForTest(t, envelopePath, map[string]any{
+		"profile_id":            "buildkite-v1",
+		"profile_version":       "1.0",
+		"provider_kind":         "buildkite",
+		"requested_trust_scope": "ci_witnessed",
+		"source": map[string]string{
+			"repository": "org/repo",
+			"ref":        "refs/heads/main",
+			"commit_sha": "abc123",
+		},
+		"ci": map[string]string{
+			"provider": "buildkite",
+			"run_id":   "pipeline-42",
+			"job":      "verify",
+		},
+		"run_artifacts": []map[string]string{
+			{"path": "001-agent-session/run.json", "sha256": hex.EncodeToString(sum[:])},
+		},
+		"profile_states": map[string]string{
+			"identity_state":         "pass",
+			"signer_authority_state": "pass",
+			"freshness_state":        "pass",
+			"artifact_binding_state": "pass",
+			"source_binding_state":   "pass",
+			"run_binding_state":      "pass",
+			"policy_binding_state":   "pass",
+			"independence_state":     "ci_isolated_job",
+		},
+	})
+	outPath := filepath.Join(dir, "buildkite-witness.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"witness", "--kind", "buildkite", "--witness-envelope", envelopePath, "--out", outPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("expected pass exit, got %d stderr=%s out=%s", exit, errOut.String(), out.String())
+	}
+	raw, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read witness: %v", err)
+	}
+	if !strings.Contains(string(raw), `"status": "pass"`) ||
+		!strings.Contains(string(raw), `"established_trust_scope": "ci_witnessed"`) {
+		t.Fatalf("witness did not record buildkite pass: %s", string(raw))
+	}
+}
+
 func TestWitnessCommandCustomerPKIMissingFlagsUsage(t *testing.T) {
 	root := t.TempDir()
 	var out bytes.Buffer
