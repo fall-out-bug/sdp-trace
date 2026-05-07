@@ -47,5 +47,16 @@ review remains open.
 - ZAI/GLM-5.1 tracing/evidence/schema re-review: two claimed majors were rejected as false positives after checking the full files (`evidenceRetention` exists and run-level `forensic_conditions` is wired); one accepted major about duplicate forensic condition ids was fixed and re-reviewed.
 - Kimi K2P6 requirements-vs-implementation re-review: no critical or major findings in the provided diff.
 - Strict implementation review fixes above are applied and locally verified.
-- PR-level review is not assessed.
-- GitHub CI is not assessed.
+
+## PR-Level Review Findings
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| B18-PR001 | major | tracing/evidence/schema | PR-level review found that `redaction-policy.schema.json` required policy fields that the Go `Policy` struct neither represented nor consumed, and that an empty policy could cascade into `redaction_rule_unknown` fail instead of remaining `cannot_verify`. | Accepted and fixed. The Go policy contract now models redaction actions, forbidden persistence classes, authority, profile mappings, and unresolved-redaction impact; incomplete policy contracts are `cannot_verify`; rule coverage is `cannot_verify` rather than `fail` when the selected policy is missing. | `internal/forensic/forensic.go`; `internal/forensic/forensic_test.go`; `examples/block18-forensic-retention/missing-policy-cannot-verify.assessment-result.json` |
+
+## PR Review Evidence State
+
+- MiniMax-M2.7 PR-level code/correctness review: no critical or major correctness regressions; minor observation about `argv` becoming optional for retained command metadata.
+- ZAI/GLM-5.1 PR-level tracing/evidence/schema review: one accepted major, B18-PR001, fixed locally after review.
+- Kimi K2P6 PR-level requirements-vs-implementation review: no critical or major findings.
+- GitHub CI is `not_assessed`: GitHub reported no checks on PR #8.

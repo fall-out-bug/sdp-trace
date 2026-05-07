@@ -80,9 +80,14 @@ type Policy struct {
 	PolicyDigest                  string                 `json:"policy_digest"`
 	PolicyProvenance              Provenance             `json:"policy_provenance"`
 	AllowedRetentionModes         []string               `json:"allowed_retention_modes"`
+	RedactionActions              []string               `json:"redaction_actions"`
+	ForbiddenPersistenceClasses   []string               `json:"forbidden_committed_persistence_classes"`
 	CriticalEventFamilies         []string               `json:"critical_event_families"`
 	NonCriticalEventFamilyReasons []CriticalityDowngrade `json:"non_critical_event_family_reasons,omitempty"`
 	WithholdingRequiresAuthority  bool                   `json:"withholding_requires_authority,omitempty"`
+	Authority                     AuthorityRef           `json:"authority"`
+	ProfileMappings               []ProfileMapping       `json:"profile_mappings"`
+	UnresolvedRedactionImpact     string                 `json:"unresolved_redaction_impact"`
 	Rules                         []Rule                 `json:"rules,omitempty"`
 }
 
@@ -103,6 +108,14 @@ type Rule struct {
 	RuleVersion    string `json:"rule_version"`
 	Action         string `json:"action"`
 	RetentionMode  string `json:"retention_mode,omitempty"`
+}
+
+type ProfileMapping struct {
+	EventFamily            string       `json:"event_family"`
+	RequiredRetentionModes []string     `json:"required_retention_modes"`
+	Critical               bool         `json:"critical,omitempty"`
+	DowngradeReason        string       `json:"downgrade_reason,omitempty"`
+	Authority              AuthorityRef `json:"authority,omitempty"`
 }
 
 type RunEvidence struct {
@@ -221,6 +234,12 @@ func policyCondition(input Input) Condition {
 	if input.Policy.PolicyID == "" || input.Policy.PolicyDigest == "" {
 		return cannotVerify("redaction_policy_bound", "missing_redaction_policy", "redaction policy is required", "Supply a redaction policy with stable id, version, digest, and provenance.")
 	}
+	if len(input.Policy.RedactionActions) == 0 || len(input.Policy.ForbiddenPersistenceClasses) == 0 || input.Policy.Authority.ActorID == "" || len(input.Policy.ProfileMappings) == 0 || input.Policy.UnresolvedRedactionImpact == "" {
+		return cannotVerify("redaction_policy_bound", "redaction_policy_contract_incomplete", "redaction policy contract is incomplete", "Supply redaction actions, forbidden persistence classes, authority, profile mappings, and unresolved-redaction impact.")
+	}
+	if input.Policy.Authority.VerificationState == AuthoritySelfClaimed {
+		return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction policy authority is self-claimed", "Use a provenance or accountability-bound redaction policy authority.")
+	}
 	if input.Run.RedactionPolicyDigest != input.Policy.PolicyDigest {
 		return fail("redaction_policy_bound", "redaction_policy_mismatch", "run evidence is not bound to the selected redaction policy", "Regenerate or select evidence bound to the redaction policy.")
 	}
@@ -236,6 +255,9 @@ func policyCondition(input Input) Condition {
 }
 
 func prewriteCondition(input Input) Condition {
+	if input.Policy.PolicyID == "" || input.Policy.PolicyDigest == "" {
+		return cannotVerify("redaction_prewrite_applied", "redaction_policy_missing", "redaction rule coverage cannot be checked without the selected policy", "Supply the selected redaction policy before assessing rule coverage.")
+	}
 	rules := policyRules(input.Policy)
 	for _, event := range input.Run.Events {
 		if event.SecretLikeValuePresent {
@@ -492,7 +514,36 @@ func validTestInput() Input {
 			PolicyDigest:          policyDigest,
 			PolicyProvenance:      Provenance{Source: "vcs", Digest: policyDigest},
 			AllowedRetentionModes: []string{RetentionModeDigestOnly, RetentionModeSanitizedExcerpt, RetentionModeEncryptedRawRef, RetentionModeExternalArtifactRef, RetentionModeNotAssessed},
+			RedactionActions:      []string{RedactionActionApplyRule, RedactionActionWithhold, RedactionActionMarkUnavailable},
+			ForbiddenPersistenceClasses: []string{
+				"credentials",
+				"tokens",
+				"raw_prompts",
+				"raw_model_responses",
+				"source_snippets",
+				"stdout_stderr_bodies",
+				"oidc_tokens",
+				"adapter_secrets",
+				"gateway_tokens",
+				"checkpoint_key_material",
+			},
 			CriticalEventFamilies: []string{"command_finished", "test_output_observed"},
+			Authority:             AuthorityRef{ActorID: "human:security-owner", VerificationState: AuthorityVerified},
+			ProfileMappings: []ProfileMapping{
+				{
+					EventFamily:            "command_finished",
+					RequiredRetentionModes: []string{RetentionModeSanitizedExcerpt, RetentionModeEncryptedRawRef, RetentionModeExternalArtifactRef},
+					Critical:               true,
+					Authority:              AuthorityRef{ActorID: "human:security-owner", VerificationState: AuthorityVerified},
+				},
+				{
+					EventFamily:            "test_output_observed",
+					RequiredRetentionModes: []string{RetentionModeSanitizedExcerpt, RetentionModeEncryptedRawRef, RetentionModeExternalArtifactRef},
+					Critical:               true,
+					Authority:              AuthorityRef{ActorID: "human:security-owner", VerificationState: AuthorityVerified},
+				},
+			},
+			UnresolvedRedactionImpact: "fail_forensic_retention",
 			Rules: []Rule{
 				{RuleID: "secret-token-v1", DetectorFamily: "secret", RuleVersion: "1.0.0", Action: RedactionActionApplyRule, RetentionMode: RetentionModeSanitizedExcerpt},
 				{RuleID: "withhold-privacy-v1", DetectorFamily: "privacy", RuleVersion: "1.0.0", Action: RedactionActionWithhold, RetentionMode: RetentionModeNotAssessed},

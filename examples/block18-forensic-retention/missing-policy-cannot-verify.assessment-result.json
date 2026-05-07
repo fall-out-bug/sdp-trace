@@ -1,7 +1,7 @@
 {
   "schema_version": "block18-forensic-retention-assessment-v1",
   "selected_profile": "forensic_retention",
-  "forensic_retention_assessment": "fail",
+  "forensic_retention_assessment": "cannot_verify",
   "trust_scope": "local_observed",
   "forensic_conditions": [
     {
@@ -13,10 +13,10 @@
     },
     {
       "id": "redaction_prewrite_applied",
-      "state": "fail",
-      "reason_code": "redaction_rule_unknown",
-      "reason": "event references a redaction rule that is absent from the selected policy",
-      "next_action": "Use event redaction_rule_refs from the selected redaction policy."
+      "state": "cannot_verify",
+      "reason_code": "redaction_policy_missing",
+      "reason": "redaction rule coverage cannot be checked without the selected policy",
+      "next_action": "Supply the selected redaction policy before assessing rule coverage."
     },
     {
       "id": "redaction_unresolved_visible",
@@ -59,11 +59,11 @@
   "reasons": [
     "missing_redaction_policy: redaction policy is required",
     "profile_selection_unverifiable: forensic profile selection accountability cannot be verified",
-    "redaction_rule_unknown: event references a redaction rule that is absent from the selected policy"
+    "redaction_policy_missing: redaction rule coverage cannot be checked without the selected policy"
   ],
   "next_actions": [
     "Record accountable forensic profile selection evidence.",
     "Supply a redaction policy with stable id, version, digest, and provenance.",
-    "Use event redaction_rule_refs from the selected redaction policy."
+    "Supply the selected redaction policy before assessing rule coverage."
   ]
 }
