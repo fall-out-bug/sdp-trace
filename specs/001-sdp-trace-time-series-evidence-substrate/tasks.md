@@ -365,7 +365,7 @@ override approval, or risk-acceptance decision.
 - [x] T145 [US4] Add `assess explain` and `assess preview` with managed-profile input requirements, wrapper enrollment state, adapter identity state, capability state, event coverage, suppression state, witness binding state, override state, stable reason codes, and next actions while preserving Block 14/16 `gate explain` compatibility.
 - [x] T146 [US4] Add safety-sensitive negative tests proving managed assess, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, adapter secrets, gateway tokens, model responses, or checkpoint key material.
 - [x] T147 [US5] Add committed Block 17 fixtures for unmanaged run, late enrollment, unauthorized adapter, missing capability, missing harness event, missing tool event, missing file mutation event, agent-reported test evidence, policy-authorized suppression, suppression without policy, witness missing, witness mismatch, override present, and valid managed profile.
-- [ ] T148 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 17 review disposition before PR closure.
+- [x] T148 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 17 review disposition before PR closure.
 
 **Checkpoint**: Managed harness users get fail-closed verifier facts for an
 approved wrapper or adapter boundary. Unmanaged harness users still get honest

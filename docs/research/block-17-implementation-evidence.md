@@ -4,6 +4,8 @@ Date: 2026-05-07
 
 Scope: Managed Harness Enforcement Profile implementation slice.
 
+Pull request: https://github.com/fall-out-bug/sdp-trace/pull/7
+
 ## Implemented Surface
 
 - `sdp-trace assess --profile managed-harness`
@@ -26,6 +28,7 @@ Scope: Managed Harness Enforcement Profile implementation slice.
 | Schema and fixture syntax | pass | `rtk jq empty schema/*.json examples/block17-managed-harness/*.json` passed. |
 | Diff whitespace | pass | `rtk git diff --check` passed. |
 | Deferred-work marker scan | pass | The changed Block 17 code, docs, schema, and fixtures contain no deferred-work markers. |
+| GitHub checks | not_assessed | `gh pr checks 7` reported no checks on `codex/block-17-managed-harness-enforcement-profile`; absent checks are recorded as `not_assessed`, not green. |
 
 ## Task Coverage Mapping
 
@@ -43,7 +46,7 @@ Scope: Managed Harness Enforcement Profile implementation slice.
 | T145 | implemented | CLI supports `assess explain` and `assess preview`; Block 14/16 `gate explain` compatibility remains untouched. |
 | T146 | implemented | CLI test asserts managed assessment output does not leak secret-like markers. |
 | T147 | implemented | Committed fixtures now cover unmanaged run, late enrollment, post-hoc policy/registry, unauthorized adapter, adapter disconnect, missing capability, missing harness/tool/file/test telemetry, agent-reported test evidence, policy-authorized suppression, suppression without policy, witness missing, stale witness, witness mismatch, override present, override upgrade attempt, and valid managed profile. `TestBlock17CommittedFixturesHaveManagedAssessmentShape` enforces the fixture matrix. |
-| T148 | partial | Implementation code review found two valid Block 17 issues; both fixed. Later trace/evidence review identified capability-reference validation as a useful gap; it was fixed with regression coverage. Qwen requirements-vs-implementation re-review returned `NO_REMAINING_CRITICAL_OR_MAJOR`. ZAI/GLM-5.1 and Kimi replacement review runs hung and were stopped; they are not counted as clean review evidence. PR-level review has not run. |
+| T148 | implemented | Implementation code review found two valid Block 17 issues; both fixed. Later trace/evidence review identified capability-reference validation as a useful gap; it was fixed with regression coverage. PR-level code, trace/evidence, and requirements-vs-implementation review returned no remaining critical or major findings. ZAI/GLM-5.1 and Kimi replacement review runs hung and were stopped; they are not counted as clean review evidence. GitHub checks are `not_assessed` because none were reported. |
 
 ## Implementation Review Disposition
 
@@ -55,6 +58,9 @@ Scope: Managed Harness Enforcement Profile implementation slice.
 | Replacement review | Kimi K2P6 low reasoning | not_assessed | Replacement Kimi runs hung and were stopped. |
 | Requirements-vs-implementation review | Qwen3 Coder Plus | fixed | Initial bounded review raised a valid capability-reference gap and several invalid or internally contradictory findings. Capability-reference validation was fixed with regression coverage. |
 | Requirements-vs-implementation re-review | Qwen3 Coder Plus | no_remaining_critical_or_major | Re-review after suppression, missing-test-telemetry, fixture-matrix, and capability-reference fixes returned `NO_REMAINING_CRITICAL_OR_MAJOR`; residual risks were minor diagnostics and future hardening. |
+| PR-level code review | MiniMax-M2.7 | no_remaining_critical_or_major | PR #7 code/correctness review found no critical or major findings. Minor notes were diagnostics and maintainability only; one empty-capability comment was internally inconsistent with the current code path. |
+| PR-level trace/evidence review | DeepSeek Chat | no_remaining_critical_or_major | PR #7 trace/evidence review returned `NO_REMAINING_CRITICAL_OR_MAJOR`; residual risks were documentation clarity only. |
+| PR-level requirements-vs-implementation review | Qwen3 Coder Plus | no_remaining_critical_or_major | PR #7 requirements review returned no findings and `NO_REMAINING_CRITICAL_OR_MAJOR`. |
 
 ## Trust Boundaries
 
@@ -69,7 +75,5 @@ Scope: Managed Harness Enforcement Profile implementation slice.
 
 ## Remaining Work Before Closure
 
-- Run a non-hung second implementation review plane for trace/evidence or
-  record why it remains `not_assessed`.
-- Run PR-level code, trace/evidence, and requirements-vs-implementation review
-  after PR creation.
+- Merge PR #7, verify the merge commit on `origin/main`, and run the post-merge
+  verifier pass before removing the feature branch.
