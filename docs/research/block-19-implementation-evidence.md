@@ -76,11 +76,14 @@ major findings. GitHub CI is `not_assessed`: PR #9 reports no checks.
 
 ## Remaining Open Work
 
-- GitHub CI is `not_assessed`: PR #9 reports no checks. Follow-up tracked as
-  T170.
+- GitHub CI for PR #9 remains historical `not_assessed`, but the repository now
+  has tracked CI/check policy follow-up closure under T170.
 - Source-bound release proof regeneration is not complete in this evidence
-  note. Follow-up tracked as T169.
+  note. Follow-up remains open as T169; the 2026-05-07 drift audit records the
+  current source-bound verifier state as `fail`.
 - PR-level minor review notes were accepted as non-blocking for Block 19 merge.
-  Follow-up coverage/clarity work is tracked as T171.
+  Follow-up coverage/clarity work is closed under T171.
 - The general process rule that recorded trust drift must become tracked work is
-  tracked as T172.
+  closed under T172.
+- Closed-task and block drift audit is recorded under T173. Historical
+  Node/npm/script verifier reference cleanup remains open under T174.

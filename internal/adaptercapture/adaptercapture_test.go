@@ -143,6 +143,33 @@ func TestEvaluateCannotVerifyConflictingCorrelationKeys(t *testing.T) {
 	}
 }
 
+func TestEvaluateAllowsDuplicateEmptyCorrelationRefs(t *testing.T) {
+	input := validInput()
+	input.Run.AdapterEvents[2].CorrelationRef = ""
+	conflict := input.Run.AdapterEvents[2]
+	conflict.EventID = "evt-tool-empty-correlation"
+	conflict.Sequence = 9
+	conflict.EventHash = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	input.Run.AdapterEvents = append(input.Run.AdapterEvents, conflict)
+	result := Evaluate(input)
+	condition := conditionByID(result.AdapterCaptureConditions, "adapter_event_contract_valid")
+	if condition.State != StatePass {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestEvaluateAllowsRedactedCapturedEventWithCap(t *testing.T) {
+	input := validInput()
+	input.Run.AdapterEvents[2].CaptureState = "redacted"
+	input.Run.AdapterEvents[2].ReconstructableClaimed = true
+	input.Run.AdapterEvents[2].CapAnnotation = "payload redacted under Block 18 retention"
+	result := Evaluate(input)
+	condition := conditionByID(result.AdapterCaptureConditions, "capture_depth_not_overclaimed")
+	if condition.State != StatePass {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
 func TestBlock19CommittedFixturesHaveAdapterCaptureShape(t *testing.T) {
 	fixtureDir := filepath.Join("..", "..", "examples", "block19-adapter-capture")
 	cases := block19FixtureCases()

@@ -1,0 +1,64 @@
+{
+  "id": "contract-release-verification-block-18-19-source-bound",
+  "schema_version": "0.1.0",
+  "artifact_role": "verifier_output",
+  "trust_scope": "source_bound_local_release",
+  "release_verification_state": "pass",
+  "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
+  "manifest_digest": "6617c9d2188296b952ef79ff54f11c93e61bba523a8a129def6a3543eec8ef6d",
+  "manifest_digest_status": "matched",
+  "artifact_digest_status": "matched",
+  "signature_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "signature_status": "not_assessed",
+  "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
+  "identity_policy_status": "not_assessed",
+  "source_commit": "eead30d48d663ab6b7912cc1be1e6efa4e32eef3",
+  "source_commit_status": "matched",
+  "source_commit_artifact_status": "matched",
+  "source_commit_artifact_counts": {
+    "checked": 148,
+    "missing": 0,
+    "mismatched": 0
+  },
+  "external_trust_profile": "not_assessed",
+  "external_attestation_ref": null,
+  "transparency_evidence_ref": null,
+  "source_uri_status": "not_assessed",
+  "protected_ref_status": "not_assessed",
+  "workflow_identity_status": "not_assessed",
+  "approval_status": "not_assessed",
+  "production_release_verified": {
+    "state": "not_assessed",
+    "value": null,
+    "reason": "Production release verification requires external attestation in addition to source-bound local checks."
+  },
+  "transparency_log_status": "not_assessed",
+  "freshness_status": "not_assessed",
+  "verified_at": "2026-05-07T14:34:57Z",
+  "trusted_contract_release": false,
+  "private_equivalent_profile": "not_assessed",
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:sdp-trace-release-captain",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:sdp-trace-cto",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
+    "risk_owner": {
+      "identity_ref": "role:sdp-trace-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "second"
+  },
+  "source_commit_reason": "source commit contains every manifest artifact path with matching digest",
+  "external_trust_reason": "external production trust is not assessed by the local source-bound profile"
+}

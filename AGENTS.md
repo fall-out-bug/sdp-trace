@@ -67,7 +67,7 @@ Every non-trivial implementation chunk needs:
 5. Strict review with recorded disposition.
 6. Fresh verification before completion claims.
 
-If a chunk cannot be traced or verified yet, mark the state `not_assessed` or `cannot_verify` with a concrete reason instead of closing it.
+If a chunk cannot be traced or verified yet, mark `not_assessed` or `cannot_verify` with a concrete reason and create a tracked follow-up before closing.
 
 ## Block Intake Protocol
 When the user says "берем блок в работу", use `sdp-trace-trust-workflow`.

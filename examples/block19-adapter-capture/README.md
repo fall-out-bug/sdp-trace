@@ -22,4 +22,10 @@ Covered states:
 - unsafe provider reference rejected before it can leak into output.
 - conflicting adapter events as `cannot_verify`;
 - capture-depth overclaim rejected as `fail`;
-- unsafe event-level provider reference rejected as `fail`.
+- unsafe event-level provider reference rejected as `fail`;
+- duplicate empty correlation refs do not create a false conflict;
+- redacted captured events can pass only when the retention cap is visible.
+
+Some pass fixtures are intentionally byte-identical because they exercise
+different condition IDs over the same valid generic adapter input. The fixture
+name and test binding, not payload uniqueness, identify the acceptance row.

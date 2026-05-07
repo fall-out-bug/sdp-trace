@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Go tests
+        run: go test ./...
+      - name: JSON syntax
+        run: jq empty schema/*.json examples/block19-adapter-capture/*.json
+      - name: Whitespace check
+        run: git diff --check
