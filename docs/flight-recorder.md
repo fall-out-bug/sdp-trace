@@ -2,14 +2,17 @@
 
 The flight recorder is a Block 09 evidence sidecar for agentic development runs. It records ordered events, verifier-visible gaps, and reviewer queries. It does not decide pass/fail, readiness, accountability, or production trust; downstream policy consumers own those decisions.
 
-## Modes
+## Recorder Profiles
 
-| Mode | What It Can Support | Limit |
+| Profile | What It Can Support | Limit |
 | --- | --- | --- |
-| `flight_recorder_local` | Local development reconstruction and event-chain consistency. | Local-only chains are mutable by the recorded environment and must not support accountability, audit-grade, or external-trust claims. Witness-related states may be `not_assessed`. |
-| `flight_recorder_witnessed` | Event-chain consistency plus agreement with a witness record outside the run artifact. | Block 09 witness records prove the witness contract, not production trust. Missing or mismatched witness evidence is `fail` or `cannot_verify`, depending on access. |
-| `flight_recorder_forensic` | Witnessed chain plus enough retained evidence for reviewer reconstruction. | Digest-only critical evidence is insufficient unless the selected profile explicitly accepts it. |
+| `local_development_recorder` | Local development reconstruction and event-chain consistency. | Local-only chains are mutable by the recorded environment and must not support accountability, audit-grade, or external-trust claims. Witness-related states may be `not_assessed`. |
+| `witnessed_run_recorder` | Event-chain consistency plus agreement with a witness record outside the run artifact. | Block 09 witness records prove the witness contract, not production trust. Missing or mismatched witness evidence is `fail` or `cannot_verify`, depending on access. |
 | `externally_witnessed_run` | Future production-capable accountability profile. | Not implemented by Block 09 unless a real external witness boundary is supplied and verified. |
+
+`forensic_retention` is an assessment profile selected with
+`sdp-trace assess --profile forensic-retention`, not a recorder profile and not
+a retention mode.
 
 ## Hash Model
 
@@ -38,28 +41,49 @@ Recorder artifacts must stay safe to commit. Evidence retention states are:
 - `external_artifact_ref`
 - `not_assessed`
 
+Block 18 keeps those FR-054 retention modes stable. Recording policy profiles
+such as `safe_default`, `reviewable_sanitized`,
+`encrypted_raw_reference`, and `external_forensic_reference` map event families
+to those modes; they are not additional modes.
+
 Redaction states are verifier-visible:
 
 - safe redaction applied before persistence
-- sealed raw evidence exists behind an access-controlled reference
+- encrypted raw evidence exists behind an access-controlled reference
 - unresolved redaction
 - unverifiable redaction
+
+Forensic retention assessment is explicit:
+
+```bash
+go run ./cmd/sdp-trace assess --profile forensic-retention \
+  --run <run-dir> \
+  --redaction-policy <policy.json> \
+  --out <assessment-result.json>
+
+go run ./cmd/sdp-trace assess explain \
+  --assessment-result <assessment-result.json>
+```
+
+The profile evaluates verifier facts only. It must not decide legal,
+incident, merge, release, readiness, degradation, or risk-acceptance outcomes.
 
 Unresolved redaction must not be converted into a pass. Profiles that require forensic or accountability evidence must fail unresolved redaction, or emit `cannot_verify` / `not_assessed` with a concrete reason when required evidence is unavailable.
 
 ## Query Surface
 
-The intended reviewer command is:
+The current Go-first validation command for committed fixture packages is:
 
 ```bash
-scripts/query-flight-recorder.mjs --query <name> examples/flight-recorder/<fixture>
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
 ```
 
-Verifier profiles accept both short CLI names and product-facing names:
+The Block 09 query names below describe the product surface expected from
+flight-recorder summaries. They are not Node.js command names and must not add
+Node.js to the active product path.
 
 ```bash
-scripts/verify-flight-recorder.mjs --profile flight_recorder_local examples/flight-recorder/local-positive
-scripts/verify-flight-recorder.mjs --profile flight_recorder_witnessed examples/flight-recorder/witnessed-positive
+go run ./cmd/sdp-trace query --query missing-evidence <run-dir>
 ```
 
 Required query names:

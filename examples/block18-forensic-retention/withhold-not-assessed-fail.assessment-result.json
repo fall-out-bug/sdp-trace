@@ -1,0 +1,67 @@
+{
+  "schema_version": "block18-forensic-retention-assessment-v1",
+  "selected_profile": "forensic_retention",
+  "forensic_retention_assessment": "fail",
+  "trust_scope": "local_observed",
+  "forensic_conditions": [
+    {
+      "id": "redaction_policy_bound",
+      "state": "pass",
+      "reason_code": "redaction_policy_bound",
+      "reason": "redaction policy digest and authority evidence are bound"
+    },
+    {
+      "id": "redaction_prewrite_applied",
+      "state": "pass",
+      "reason_code": "redaction_prewrite_applied",
+      "reason": "pre-write redaction metadata is verifier-readable"
+    },
+    {
+      "id": "redaction_unresolved_visible",
+      "state": "pass",
+      "reason_code": "redaction_resolved",
+      "reason": "redaction states are resolved or explicitly non-blocking"
+    },
+    {
+      "id": "retention_mode_declared",
+      "state": "pass",
+      "reason_code": "retention_mode_declared",
+      "reason": "events declare FR-054 retention modes"
+    },
+    {
+      "id": "critical_evidence_reconstructable",
+      "state": "fail",
+      "reason_code": "critical_evidence_not_assessed",
+      "reason": "critical evidence retention is not assessed",
+      "next_action": "Capture critical evidence or keep forensic retention open.",
+      "capped_to_retention_mode": "not_assessed"
+    },
+    {
+      "id": "raw_reference_bound",
+      "state": "pass",
+      "reason_code": "raw_reference_bound",
+      "reason": "raw references are digest-bound and access-verifiable"
+    },
+    {
+      "id": "forensic_profile_not_overclaimed",
+      "state": "fail",
+      "reason_code": "forensic_profile_capped",
+      "reason": "forensic retention output is capped by insufficient critical evidence",
+      "next_action": "Do not claim forensic reconstruction for digest-only or not-assessed critical evidence."
+    },
+    {
+      "id": "profile_selection_accountable",
+      "state": "pass",
+      "reason_code": "profile_selection_accountable",
+      "reason": "forensic profile selection is accountable"
+    }
+  ],
+  "reasons": [
+    "critical_evidence_not_assessed: critical evidence retention is not assessed",
+    "forensic_profile_capped: forensic retention output is capped by insufficient critical evidence"
+  ],
+  "next_actions": [
+    "Capture critical evidence or keep forensic retention open.",
+    "Do not claim forensic reconstruction for digest-only or not-assessed critical evidence."
+  ]
+}

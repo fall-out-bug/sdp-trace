@@ -15,6 +15,7 @@ import (
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
+	"github.com/fall_out_bug/sdp-trace/internal/forensic"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
@@ -96,6 +97,7 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	opts.setString("adapter-registry", "")
 	opts.setString("managed-policy", "")
 	opts.setString("managed-witness", "")
+	opts.setString("redaction-policy", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -104,10 +106,18 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "assess accepts only flags")
 		return exitUsage
 	}
-	if opts.stringValue("profile") != "managed-harness" {
-		fmt.Fprintln(stderr, "assess requires --profile managed-harness")
+	switch opts.stringValue("profile") {
+	case "managed-harness":
+		return runManagedAssess(opts, stdout, stderr)
+	case "forensic-retention":
+		return runForensicAssess(opts, stdout, stderr)
+	default:
+		fmt.Fprintln(stderr, "assess requires --profile managed-harness or --profile forensic-retention")
 		return exitUsage
 	}
+}
+
+func runManagedAssess(opts *flagSet, stdout, stderr io.Writer) int {
 	required := map[string]string{
 		"--out":              opts.stringValue("out"),
 		"--run":              opts.stringValue("run"),
@@ -134,6 +144,33 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	payload, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Fprintf(stdout, "%s\n", payload)
 	return managedExitCode(result)
+}
+
+func runForensicAssess(opts *flagSet, stdout, stderr io.Writer) int {
+	required := map[string]string{
+		"--out":              opts.stringValue("out"),
+		"--run":              opts.stringValue("run"),
+		"--redaction-policy": opts.stringValue("redaction-policy"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "forensic assess requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	input, err := loadForensicInput(opts)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	result := forensic.Evaluate(input)
+	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return forensicExitCode(result)
 }
 
 func loadManagedInput(opts *flagSet) (managed.Input, error) {
@@ -166,6 +203,18 @@ func loadManagedInput(opts *flagSet) (managed.Input, error) {
 	}, nil
 }
 
+func loadForensicInput(opts *flagSet) (forensic.Input, error) {
+	var policy forensic.Policy
+	if err := readJSONFile(opts.stringValue("redaction-policy"), &policy); err != nil {
+		return forensic.Input{}, err
+	}
+	var runEvidence forensic.RunEvidence
+	if err := readJSONFile(filepath.Join(opts.stringValue("run"), "run.json"), &runEvidence); err != nil {
+		return forensic.Input{}, err
+	}
+	return forensic.Input{Policy: policy, Run: runEvidence}, nil
+}
+
 type managedPreviewReport struct {
 	Command         string            `json:"command"`
 	SelectedProfile string            `json:"selected_profile"`
@@ -182,6 +231,7 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 	opts.setString("adapter-registry", "")
 	opts.setString("managed-policy", "")
 	opts.setString("managed-witness", "")
+	opts.setString("redaction-policy", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -190,10 +240,18 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "assess preview accepts only flags")
 		return exitUsage
 	}
-	if opts.stringValue("profile") != "managed-harness" {
-		fmt.Fprintln(stderr, "assess preview requires --profile managed-harness")
+	switch opts.stringValue("profile") {
+	case "managed-harness":
+		return runManagedAssessPreview(opts, stdout)
+	case "forensic-retention":
+		return runForensicAssessPreview(opts, stdout)
+	default:
+		fmt.Fprintln(stderr, "assess preview requires --profile managed-harness or --profile forensic-retention")
 		return exitUsage
 	}
+}
+
+func runManagedAssessPreview(opts *flagSet, stdout io.Writer) int {
 	inputs := map[string]string{
 		"run":              managedInputStatus(opts.stringValue("run")),
 		"adapter_registry": managedInputStatus(opts.stringValue("adapter-registry")),
@@ -206,6 +264,43 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 		Inputs:          inputs,
 		NextActions:     managedPreviewActions(inputs),
 		Claim:           "preview is read-only and does not emit a managed verdict",
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	for _, state := range inputs {
+		if state == "present_unreadable" || state == "present_malformed" {
+			return exitCannotVerify
+		}
+	}
+	return 0
+}
+
+type forensicPreviewReport struct {
+	Command         string            `json:"command"`
+	SelectedProfile string            `json:"selected_profile"`
+	Inputs          map[string]string `json:"inputs"`
+	PolicyEffects   map[string]string `json:"policy_effects"`
+	NextActions     []string          `json:"next_actions"`
+	Claim           string            `json:"claim"`
+}
+
+func runForensicAssessPreview(opts *flagSet, stdout io.Writer) int {
+	inputs := map[string]string{
+		"run":              managedInputStatus(opts.stringValue("run")),
+		"redaction_policy": managedInputStatus(opts.stringValue("redaction-policy")),
+	}
+	report := forensicPreviewReport{
+		Command:         "assess preview",
+		SelectedProfile: forensic.ProfileForensicRetention,
+		Inputs:          inputs,
+		PolicyEffects: map[string]string{
+			"redaction_engine": "not_executed_in_preview",
+			"matched_values":   "not_rendered",
+			"rule_refs":        "shown_when_present_in_policy_or_run_metadata",
+			"retention_modes":  "digest_only,sanitized_excerpt,encrypted_raw_ref,external_artifact_ref,not_assessed",
+		},
+		NextActions: forensicPreviewActions(inputs),
+		Claim:       "preview is read-only and does not emit a forensic verdict",
 	}
 	payload, _ := json.MarshalIndent(report, "", "  ")
 	fmt.Fprintf(stdout, "%s\n", payload)
@@ -233,20 +328,60 @@ func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "assess explain requires --assessment-result <file>")
 		return exitUsage
 	}
-	var result managed.AssessmentResult
-	if err := readJSONFile(path, &result); err != nil {
+	var envelope struct {
+		SchemaVersion   string `json:"schema_version"`
+		SelectedProfile string `json:"selected_profile"`
+	}
+	if err := readJSONFile(path, &envelope); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	if result.SchemaVersion != managed.SchemaVersion {
-		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", result.SchemaVersion)
+	switch envelope.SchemaVersion {
+	case managed.SchemaVersion:
+		var result managed.AssessmentResult
+		if err := readJSONFile(path, &result); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		return explainManagedAssessment(result, stdout)
+	case forensic.SchemaVersion:
+		var result forensic.AssessmentResult
+		if err := readJSONFile(path, &result); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		return explainForensicAssessment(result, stdout)
+	default:
+		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", envelope.SchemaVersion)
 		return exitCannotVerify
 	}
+}
+
+func explainManagedAssessment(result managed.AssessmentResult, stdout io.Writer) int {
 	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
 	fmt.Fprintf(stdout, "Managed harness assessment: %s\n", result.ManagedHarnessAssessment)
 	fmt.Fprintf(stdout, "Trust scope: %s\n", result.TrustScope)
 	for _, condition := range result.ManagedConditions {
 		fmt.Fprintf(stdout, "Managed condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+	}
+	for _, reason := range result.Reasons {
+		fmt.Fprintf(stdout, "Reason: %s\n", reason)
+	}
+	for _, action := range result.NextActions {
+		fmt.Fprintf(stdout, "Next action: %s\n", action)
+	}
+	return 0
+}
+
+func explainForensicAssessment(result forensic.AssessmentResult, stdout io.Writer) int {
+	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
+	fmt.Fprintf(stdout, "Forensic retention assessment: %s\n", result.ForensicRetentionAssessment)
+	fmt.Fprintf(stdout, "Trust scope: %s\n", result.TrustScope)
+	for _, condition := range result.ForensicConditions {
+		fmt.Fprintf(stdout, "Forensic condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+		if condition.CappedToRetentionMode != "" {
+			fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
+		}
 	}
 	for _, reason := range result.Reasons {
 		fmt.Fprintf(stdout, "Reason: %s\n", reason)
@@ -301,11 +436,36 @@ func managedPreviewActions(inputs map[string]string) []string {
 	return actions
 }
 
+func forensicPreviewActions(inputs map[string]string) []string {
+	order := []string{"run", "redaction_policy"}
+	var actions []string
+	for _, key := range order {
+		switch inputs[key] {
+		case "absent":
+			actions = append(actions, "Supply "+key+" before forensic retention assessment.")
+		case "present_unreadable", "present_malformed":
+			actions = append(actions, "Fix "+key+" so it is readable JSON or a run directory.")
+		}
+	}
+	return actions
+}
+
 func managedExitCode(result managed.AssessmentResult) int {
 	switch result.ManagedHarnessAssessment {
 	case managed.StatePass:
 		return 0
 	case managed.StateFail:
+		return 1
+	default:
+		return exitCannotVerify
+	}
+}
+
+func forensicExitCode(result forensic.AssessmentResult) int {
+	switch result.ForensicRetentionAssessment {
+	case forensic.StatePass:
+		return 0
+	case forensic.StateFail:
 		return 1
 	default:
 		return exitCannotVerify
@@ -1661,6 +1821,10 @@ Usage:
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>
   sdp-trace query --query missing-evidence <run-dir>
+  sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
+  sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>
+  sdp-trace assess preview --profile <managed-harness|forensic-retention> [profile inputs]
+  sdp-trace assess explain --assessment-result <file>
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>
   sdp-trace witness --kind github-actions --out <file> [--report-dir <dir>] <runs-root-or-run-dir>

@@ -371,6 +371,40 @@ override approval, or risk-acceptance decision.
 approved wrapper or adapter boundary. Unmanaged harness users still get honest
 observation-mode gaps instead of being forced into managed enrollment.
 
+## Phase 14: Redaction, Retention, And Forensic Profiles
+
+**Goal**: Make redaction and retention verifier-significant, keep default
+recording safe, and add explicit forensic assessment for deliberately retained
+sanitized, encrypted, or external evidence.
+
+**Independent Test**: A reviewer can run committed fixtures showing safe
+default redaction, digest-only critical evidence rejected by forensic profile,
+sanitized excerpt acceptance, encrypted raw reference binding, external artifact
+reference binding, unresolved redaction failure or cap, and deterministic
+safety-preserving preview/explain output.
+
+**Activation Gate**: Do not implement Block 18 profile behavior until
+`blocks/18-redaction-retention-forensic-profiles.md` is explicitly approved.
+Forensic retention facts are verifier-derived evidence for external privacy,
+incident, compliance, CI, or policy consumers; they are not native legal,
+readiness, degradation, merge, release, override, or risk-acceptance decisions.
+
+- [x] T149 [US5] Add Block 18 spec and implementation plan for redaction policies, FR-054 retention modes, raw reference binding, forensic assessment semantics, CLI preview/explain behavior, assessment-result versioning, review-ledger shape, and no-overclaim boundary.
+- [x] T150 [US2] Add a redaction policy schema covering rule ids, detector family, allowed FR-054 retention modes, redaction actions, forbidden committed-artifact persistence classes, verifiable authority, critical event family mappings, unresolved-redaction handling, withholding audit, and policy digest/provenance.
+- [x] T151 [US2] Extend flight-recorder event/run contracts with redaction policy refs, redaction rule refs, redaction authority, input/redacted payload digests, FR-054 retention mode, retention lifecycle, forensic importance, and raw-reference state with closed enums.
+- [x] T152 [US5] Add built-in safe default redaction and retention behavior with stable policy id/digest, pre-write redaction metadata, digest-first command/output retention, and safety-sensitive negative tests.
+- [x] T153 [US5] Add explicit forensic retention assessment that rejects digest-only critical evidence with explanatory `capped_to_retention_mode`, unresolved redaction, missing policy, and unavailable raw references according to selected policy.
+- [x] T154 [US5] Add encrypted raw reference and external artifact reference verification for SHA-256-or-stronger digest binding, access state, access verification time, key custody state, retention lifecycle, malformed reference failure, access-unverifiable `cannot_verify`, revocation/compromise supersession, and contradiction failure.
+- [x] T155 [US4] Add `assess --profile forensic-retention`, `assess preview --profile forensic-retention`, and `assess explain` support with assessment-result schema versioning, deterministic exit codes, condition rows, next actions, profile-selection trace evidence, and safe output.
+- [x] T156 [US4] Add committed Block 18 fixtures for safe default, digest-only critical negative, sanitized excerpt positive, encrypted raw reference positive, external raw reference positive, withhold-to-not-assessed, unresolved redaction, missing policy, missing access state, present-but-unverifiable access state, missing key custody state, weak digest, authority self-claim, and raw-reference digest mismatch.
+- [x] T157 [US4] Add safety-sensitive negative tests proving redaction, retention, forensic assess, explain, and preview output do not print raw command args, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, adapter secrets, gateway tokens, model responses, or key material.
+- [ ] T158 [US5] Run Go-first verification, schema checks, strict review, pi review, PR-level review, and record Block 18 review disposition in `blocks/18-redaction-retention-forensic-profiles-review-ledger.md` before PR closure.
+
+**Checkpoint**: Users get safe default recording plus explicit forensic
+assessment facts. Digest-only or unresolved critical evidence cannot be
+overclaimed as reconstructable, and raw evidence remains opt-in, referenced,
+and verifier-bound rather than committed by default.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -389,6 +423,7 @@ observation-mode gaps instead of being forced into managed enrollment.
 - **Phase 11**: Depends on Block 14 advisory gate output and Block 09/13B run-chain semantics. It supplies signed-checkpoint facts but must not implement protected enforcement or external witness trust.
 - **Phase 12**: Depends on Block 14 gate/explain/preview behavior and Block 15 signed-checkpoint replay resistance. It may make protected profile facts fail-closed and CI-friendly, but it must not make native policy decisions.
 - **Phase 13**: Depends on Block 13B capture-boundary taxonomy and Block 16 protected gate schema/CLI compatibility. It may make managed wrapper or adapter enforcement fail-closed only for explicitly selected managed profile runs, and it must preserve observation-mode value for unmanaged harnesses.
+- **Phase 14**: Depends on Block 09 flight-recorder retention/redaction semantics and Block 17 `assess` command surface. It may make forensic retention facts fail-closed only for explicitly selected forensic profiles, while preserving safe default recording for ordinary users.
 
 ### Parallel Opportunities
 
@@ -426,6 +461,7 @@ observation-mode gaps instead of being forced into managed enrollment.
 12. Complete Block 15 signed-checkpoint replay verification before any protected gate profile claims that checkpoint evidence exists.
 13. Complete Block 16 protected gate profile only after explicit spec approval, keeping enforcement ownership with external CI or policy consumers.
 14. Complete Block 17 managed harness profile only after explicit spec approval, keeping managed enrollment opt-in and preserving unmanaged observation-mode value.
+15. Complete Block 18 redaction, retention, and forensic profiles only after explicit spec approval, keeping raw evidence opt-in and keeping forensic/legal/risk decisions outside `sdp-trace`.
 
 ### Evidence Discipline
 
