@@ -76,6 +76,11 @@ major findings. GitHub CI is `not_assessed`: PR #9 reports no checks.
 
 ## Remaining Open Work
 
-- GitHub CI is `not_assessed`: PR #9 reports no checks.
+- GitHub CI is `not_assessed`: PR #9 reports no checks. Follow-up tracked as
+  T170.
 - Source-bound release proof regeneration is not complete in this evidence
-  note.
+  note. Follow-up tracked as T169.
+- PR-level minor review notes were accepted as non-blocking for Block 19 merge.
+  Follow-up coverage/clarity work is tracked as T171.
+- The general process rule that recorded trust drift must become tracked work is
+  tracked as T172.

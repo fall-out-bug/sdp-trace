@@ -451,6 +451,21 @@ evidence, missing telemetry, and unsupported observers, but full reconstruction
 is claimed only for evidence actually captured and retained under the selected
 profile.
 
+## Phase 16: Post-Block Trust Closure Drift Follow-Ups
+
+**Goal**: Convert recorded trust drift from Blocks 18 and 19 into explicit
+tracked work so `not_assessed`, source-bound proof gaps, and PR-review minor
+findings do not remain as loose evidence-note prose.
+
+**Independent Test**: A reviewer can inspect this task list and map every
+recorded open trust gap from Block 18/19 evidence notes to a concrete task,
+owner surface, and non-overclaiming closure condition.
+
+- [ ] T169 [US5] Regenerate source-bound release proof after Block 18/19 manifest-subject changes, or record why the current source-bound verifier profile cannot assess it. Closure must include a clean source commit, regenerated manifest/DSSE/self-attestation artifacts when supported, and explicit `cannot_verify` or `not_assessed` states for unsupported proof steps.
+- [ ] T170 [US5] Add or explicitly document repository CI/check policy for PRs so future PR closure no longer leaves GitHub checks as unowned `not_assessed`. If CI is intentionally absent, add a repo-tracked policy note naming the replacement verification evidence and the remaining trust limitation.
+- [ ] T171 [US5] Add follow-up fixture or test coverage for PR #9 minor review notes that were accepted as non-blocking: duplicate empty adapter correlation refs, byte-identical pass fixture clarity, and any intentional forward-compatible schema values such as `capture_state: redacted`.
+- [ ] T172 [US5] Add a drift-to-task rule to the trust workflow so every recorded critical, major, or trust-affecting `not_assessed`/`cannot_verify` drift either blocks closure or lands as an explicit follow-up task with evidence, owner surface, and closure condition.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -471,6 +486,9 @@ profile.
 - **Phase 13**: Depends on Block 13B capture-boundary taxonomy and Block 16 protected gate schema/CLI compatibility. It may make managed wrapper or adapter enforcement fail-closed only for explicitly selected managed profile runs, and it must preserve observation-mode value for unmanaged harnesses.
 - **Phase 14**: Depends on Block 09 flight-recorder retention/redaction semantics and Block 17 `assess` command surface. It may make forensic retention facts fail-closed only for explicitly selected forensic profiles, while preserving safe default recording for ordinary users.
 - **Phase 15**: Depends on Block 18 redaction/retention safety and Block 17 managed harness adapter policy semantics. It may expand capture depth through generic adapter events, but it must keep prompt/model-response raw capture unavailable by default and expose capture-depth gaps as `missing_telemetry`, `unsupported`, `not_integrated`, `not_assessed`, or `cannot_verify`.
+- **Phase 16**: Depends on Blocks 18 and 19 merge evidence. It must not claim
+  source-bound or CI-backed closure until the corresponding proof exists; it
+  exists to turn recorded drift into tracked work.
 
 ### Parallel Opportunities
 
@@ -513,6 +531,7 @@ profile.
 14. Complete Block 17 managed harness profile only after explicit spec approval, keeping managed enrollment opt-in and preserving unmanaged observation-mode value.
 15. Complete Block 18 redaction, retention, and forensic profiles only after explicit spec approval, keeping raw evidence opt-in and keeping forensic/legal/risk decisions outside `sdp-trace`.
 16. Complete Block 19 adapter event contract and capture-depth expansion only after explicit spec approval, keeping generic adapter events provider-neutral and making missing or unsupported telemetry visible instead of forensic-complete by implication.
+17. Complete Phase 16 trust-closure follow-ups before making any broader source-bound release or CI-backed trust claim that depends on Blocks 18/19.
 
 ### Evidence Discipline
 

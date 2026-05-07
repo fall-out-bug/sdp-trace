@@ -83,3 +83,5 @@ Observed states:
 - GitHub CI is `not_assessed`: PR #8 reported no checks.
 - Source-bound release proof regeneration is not complete in this evidence
   note and must not be inferred from the PR merge.
+- Follow-up work is tracked in Phase 16: T169 covers source-bound release proof
+  regeneration and T170 covers repository CI/check policy.
