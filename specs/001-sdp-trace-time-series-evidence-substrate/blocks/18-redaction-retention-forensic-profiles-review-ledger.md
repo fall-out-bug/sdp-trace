@@ -58,5 +58,6 @@ review remains open.
 
 - MiniMax-M2.7 PR-level code/correctness review: no critical or major correctness regressions; minor observation about `argv` becoming optional for retained command metadata.
 - ZAI/GLM-5.1 PR-level tracing/evidence/schema review: one accepted major, B18-PR001, fixed locally after review.
+- ZAI/GLM-5.1 focused PR-level re-review for B18-PR001: no critical or major findings after the policy-contract alignment fix.
 - Kimi K2P6 PR-level requirements-vs-implementation review: no critical or major findings.
 - GitHub CI is `not_assessed`: GitHub reported no checks on PR #8.
