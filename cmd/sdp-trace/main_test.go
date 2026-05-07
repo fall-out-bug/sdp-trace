@@ -94,7 +94,7 @@ func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {
     "line_of_defense": "second"
   }
 }`)
-	t.Chdir(repo)
+	chdir(t, repo)
 	outPath := filepath.Join(t.TempDir(), "release-proof.json")
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -145,7 +145,7 @@ func TestDryRunOutputsSimulation(t *testing.T) {
 func TestPreviewOutputsNoWritePlan(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	workDir := t.TempDir()
-	t.Chdir(workDir)
+	chdir(t, workDir)
 
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -1565,6 +1565,22 @@ func writeFile(t *testing.T, path string, value string) {
 	if err := os.WriteFile(path, []byte(value), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
+}
+
+func chdir(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir %s: %v", dir, err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Fatalf("restore cwd %s: %v", previous, err)
+		}
+	})
 }
 
 func clearCIWitnessEnv(t *testing.T) {
