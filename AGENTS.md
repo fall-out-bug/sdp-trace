@@ -82,7 +82,7 @@ For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and no
 - Run separate code, tracing/evidence, and requirements-vs-implementation review planes for trust blocks; repeat them at PR level.
 - Verify review findings against full files before accepting or rejecting them.
 - Replace hung, empty, or off-task reviews; do not count them as evidence.
-- Record absent or stale GitHub checks as CI `not_assessed`, not green.
+- Record absent GitHub checks as CI `not_assessed`, not green.
 - Keep model selection, retry, fallback, and timeout details in `sdp-trace-trust-workflow` and `pi-review`, not in this root router.
 
 ## Claim Tags
