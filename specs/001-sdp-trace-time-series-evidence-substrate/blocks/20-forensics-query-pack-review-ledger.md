@@ -1,7 +1,7 @@
 # Block 20 Review Ledger
 
-Status: Socratic spec review, implementation review, and PR-level review
-completed. Merge and post-merge verification are not assessed yet.
+Status: Socratic spec review, implementation review, PR-level review, and PR CI
+check completed. Merge and post-merge verification are not assessed yet.
 
 ## Spec Review Findings
 
@@ -81,5 +81,5 @@ completed. Merge and post-merge verification are not assessed yet.
   requirements-vs-implementation. Valid critical/major findings were fixed;
   final focused PR-level re-reviews returned `APPROVE` with no remaining
   critical or major findings.
-- GitHub CI: `not_assessed`; PR #11 checks have not been recorded in this
-  ledger yet.
+- GitHub CI: assessed on PR #11. The `verify` check passed before ready/merge;
+  if another commit lands before merge, re-read the latest PR check state.

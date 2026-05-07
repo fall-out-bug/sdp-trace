@@ -1,8 +1,8 @@
 # Block 20 Implementation Evidence
 
-Status: implementation verification, strict implementation review, and PR-level
-review recorded. GitHub checks, merge verification, and post-merge cleanup are
-not assessed yet.
+Status: implementation verification, strict implementation review, PR-level
+review, and PR CI recorded. Merge verification and post-merge cleanup are not
+assessed yet.
 
 ## Scope
 
@@ -102,5 +102,6 @@ PR-level review ran the same separate planes on PR #11.
 
 ## Remaining Open Work
 
-- GitHub CI is `not_assessed`; PR #11 check result is not recorded here yet.
+- GitHub CI is assessed on PR #11. The `verify` check passed before ready/merge;
+  if another commit lands before merge, re-read the latest PR check state.
 - Post-merge `origin/main` verification and cleanup are `not_assessed`.
