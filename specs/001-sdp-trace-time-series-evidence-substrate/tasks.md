@@ -468,6 +468,38 @@ owner surface, and non-overclaiming closure condition.
 - [x] T173 [US5] Audit every closed SpecKit task and closed or closure-like block claim for current drift, record machine-checkable pass/fail/not-assessed evidence, and keep source-bound release closure blocked unless the current verifier passes.
 - [x] T174 [US5] Replace or explicitly retire historical closed-task verifier references to removed Node/npm/script tooling, including affected self-trace examples, process docs, Block 01/05/06/07/08 ledgers, and manifest subjects. Closure preserves historical evidence as historical while exposing current Go-first verifier commands and remaining `not_assessed` states in `docs/research/historical-verifier-retirement-2026-05-07.md`.
 
+## Phase 17: Forensics Query Pack
+
+**Goal**: Make common forensic reviewer questions executable as safe,
+versioned, read-only query packs over existing run, verifier,
+forensic-retention, and adapter-capture facts.
+
+**Independent Test**: A reviewer can run `query-pack --pack
+forensics-basic-v1` against committed fixtures and see reconstructable evidence,
+digest-only caps, redaction issues, capture-depth gaps, task supersession,
+unverified claims, unsupported observers, and safe evidence-gap descriptions
+without reading raw JSONL manually or receiving a native policy verdict.
+
+**Activation Gate**: Do not implement Block 20 query-pack behavior until
+`blocks/20-forensics-query-pack.md` is reviewed through separate Socratic
+planes and explicitly approved. Query packs are read-only evidence views. They
+must not add raw capture, forensic-completeness badges, legal/audit decisions,
+release readiness, merge readiness, risk acceptance, or opaque scores.
+
+- [ ] T175 [US5] Add Block 20 spec and implementation plan for versioned forensics query packs, result contract, query list, safety boundaries, row-state preservation, review-ledger shape, and no-overclaim boundary.
+- [ ] T176 [US2] Add a portable forensics query-pack result schema covering pack id/version, selected run identity, required and optional input artifact SHA-256 digests or path-redacted provider-neutral identifiers, grouped query rows, source fact refs, source condition refs where available, deterministic query-scoped row ids, row states, closed-enum evidence families, reconstructability flags, safe evidence-gap descriptions, and verified output-safety metadata.
+- [ ] T177 [US5] Add `forensics-basic-v1` derivation over existing Block 09 run/verifier facts, Block 18 forensic-retention facts, and Block 19 adapter-capture facts without creating a new assessment profile or policy verdict.
+- [ ] T178 [US5] Add deterministic row semantics and a source-state propagation table for reconstructable evidence, digest-only existence evidence, missing required and optional upstream artifacts, missing telemetry, not-integrated gateways, unsupported observers, unresolved redaction, task supersession, unverified claims, unsafe provider refs, unmapped upstream states, and malformed inputs.
+- [ ] T179 [US4] Add `query-pack --pack forensics-basic-v1` with required `--out` and explain rendering over the JSON result artifact. Explain output must not add claims absent from the result or encode hidden state through ordering, color, indentation, whitespace, or omitted sections.
+- [ ] T180 [US4] Add committed Block 20 fixtures and a machine-checkable fixture matrix for mixed positive evidence, digest-only reconstruction cap, missing forensic-retention assessment, missing adapter-capture assessment, unsupported observer, unresolved redaction, task supersession, unverified claim, unsafe provider ref, and malformed input. The matrix must enumerate expected query group, row evidence state, evidence family, source ref shape, and reconstructability state where applicable.
+- [ ] T181 [US4] Add safety-sensitive negative tests proving forensics query-pack and explain output does not print raw command args, command names, executable paths, script paths, unsafe test identifiers, stdout/stderr bodies, prompts, source snippets, tool-call input/output bodies, adapter configuration, gateway evidence refs, credentials, OIDC request tokens, adapter secrets, gateway tokens, PR tokens, authenticated provider URLs, raw model request/response payloads, raw review bodies, unsafe raw-reference access notes, or key material. Test fixtures must use synthetic values and negative leak assertions must not echo candidate secrets in failure output.
+- [ ] T182 [US5] Run Socratic spec review across product-boundary, tracing/evidence, and privacy/safety planes; record every valid finding in `blocks/20-forensics-query-pack-review-ledger.md` and fix every critical or major finding before implementation approval handoff.
+- [ ] T183 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 20 review disposition before PR closure.
+
+**Checkpoint**: Forensic reviewers get a stable query-pack answer to common
+investigation questions, but `sdp-trace` still emits evidence views only. Any
+legal, incident, audit, release, or risk decision remains downstream.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -491,6 +523,10 @@ owner surface, and non-overclaiming closure condition.
 - **Phase 16**: Depends on Blocks 18 and 19 merge evidence. It must not claim
   source-bound or CI-backed closure until the corresponding proof exists; it
   exists to turn recorded drift into tracked work.
+- **Phase 17**: Depends on Blocks 18 and 19 because it derives forensic query
+  rows from redaction/retention and adapter-capture facts. It must not expand
+  raw capture, add a new policy decision, expose unsafe artifact refs, or hide
+  missing/capped evidence rows.
 
 ### Parallel Opportunities
 
@@ -512,6 +548,13 @@ owner surface, and non-overclaiming closure condition.
 - T160 and T163 can run in parallel after T159 because adapter event shape and provider-neutral VCS/PR/review refs are separate schema surfaces.
 - T162 and T164 can run in parallel after T160 and T161 because test provenance semantics and capture-depth evaluation have separate verifier surfaces.
 - T165 and T167 can run in parallel after T164 because query rendering and safety-output assertions have separate command/test surfaces.
+- T176 and T180 can run in parallel after T175 because schema/result contract
+  and fixture matrix are separate surfaces.
+- T177 and T179 can run in parallel after T176 because derivation and CLI
+  rendering can keep disjoint write scopes if they share only the schema
+  contract.
+- T178 and T181 can run in parallel after T177 because row semantics and safety
+  leak assertions exercise separate behavior paths.
 
 ## Implementation Strategy
 
@@ -534,6 +577,10 @@ owner surface, and non-overclaiming closure condition.
 15. Complete Block 18 redaction, retention, and forensic profiles only after explicit spec approval, keeping raw evidence opt-in and keeping forensic/legal/risk decisions outside `sdp-trace`.
 16. Complete Block 19 adapter event contract and capture-depth expansion only after explicit spec approval, keeping generic adapter events provider-neutral and making missing or unsupported telemetry visible instead of forensic-complete by implication.
 17. Complete Phase 16 trust-closure follow-ups before making any broader source-bound release or CI-backed trust claim that depends on Blocks 18/19.
+18. Complete Block 20 forensics query pack only after explicit spec approval,
+    preserving query-pack output as read-only evidence views over existing
+    facts and keeping downstream forensic, legal, audit, release, and risk
+    decisions outside `sdp-trace`.
 
 ### Evidence Discipline
 
