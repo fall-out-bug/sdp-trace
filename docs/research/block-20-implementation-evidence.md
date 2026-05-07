@@ -1,8 +1,9 @@
 # Block 20 Implementation Evidence
 
-Status: implementation verification, strict implementation review, PR-level
-review, and PR CI recorded. Merge verification and post-merge cleanup are not
-assessed yet.
+Status: closed. Implementation verification, strict implementation review,
+PR-level review, PR #11 CI, merge, post-merge verification, and cleanup are
+assessed complete. Block 20 closure does not assert external incident, legal,
+audit, release, or risk decisions.
 
 ## Scope
 
@@ -100,8 +101,16 @@ PR-level review ran the same separate planes on PR #11.
   gaps, and one false-positive ledger concern. Valid findings were fixed. Final
   focused requirements re-review returned `APPROVE`.
 
-## Remaining Open Work
+## Closure Evidence
 
-- GitHub CI is assessed on PR #11. The `verify` check passed before ready/merge;
-  if another commit lands before merge, re-read the latest PR check state.
-- Post-merge `origin/main` verification and cleanup are `not_assessed`.
+- GitHub CI was assessed on PR #11. The `verify` check passed on final PR head
+  `a15dc76b6f6bd19646930bfff6bb8f6fef6f26b1` before ready/merge.
+- PR #11 merged into `main` at merge commit
+  `278ee77e5b2c205e0f372a1cffe51185d60d9290`.
+- Post-merge verification passed on `main`: Go tests, schema syntax, Block 20
+  fixture syntax excluding intentionally malformed fixtures, fixture matrix
+  JSONL parse, and whitespace diff check.
+- The temporary Block 20 worktree and local/remote feature branches were
+  removed.
+- External production trust and downstream forensic/legal/audit/release/risk
+  decisions remain outside Block 20 and are not asserted by this closure.

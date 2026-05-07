@@ -1,7 +1,9 @@
 # Block 20: Forensics Query Pack
 
-Status: reviewed spec delta and implementation plan; awaiting explicit approval
-before implementation.
+Status: closed. Spec delta, implementation, strict implementation review,
+PR-level review, PR #11 CI, merge, post-merge verification, and cleanup are
+complete. Block 20 remains a read-only evidence-view feature; it does not close
+external incident, legal, audit, release, or risk decisions.
 
 Parent artifacts:
 
@@ -313,6 +315,21 @@ future aggregate query requires a new query-pack version and safety review.
   and explain output that reorders rows outside query-name and row-id order.
 - Implementation review repeats code/correctness, tracing/evidence, and
   requirements-vs-implementation planes. PR-level review repeats those planes.
+
+## Closure Evidence
+
+- Spec approval followed Socratic review across product-boundary,
+  tracing/evidence, and privacy/safety planes.
+- Implementation landed through PR #11 and merge commit
+  `278ee77e5b2c205e0f372a1cffe51185d60d9290`.
+- PR #11 GitHub CI `verify` passed on final head
+  `a15dc76b6f6bd19646930bfff6bb8f6fef6f26b1`.
+- Post-merge local verification passed on `main`: Go tests, schema syntax,
+  Block 20 fixture syntax excluding intentionally malformed fixtures, fixture
+  matrix JSONL parse, and whitespace diff check.
+- The Block 20 feature worktree and local/remote feature branches were removed.
+- External production trust and downstream forensic/legal/audit/release/risk
+  decisions remain outside Block 20 and are not asserted by this closure.
 
 ## Implementation Slices After Approval
 
