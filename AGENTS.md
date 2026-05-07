@@ -80,7 +80,7 @@ Do not stop at implementation-only closure for block work unless the user explic
 For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
 
 - Use MiniMax-M2.7 and ZAI/GLM for multi-file strict review.
-- Run separate code, tracing/evidence, and requirements-vs-implementation review planes for trust blocks; repeat them at PR level.
+- Run separate code, tracing/evidence, and requirements-vs-implementation review planes for trust blocks; repeat them at PR level. Verify review findings against full files before accepting or rejecting them.
 - Use Kimi K2P6 as a full bounded reviewer for requirements, fixture semantics, and focused re-review; prefer low/off reasoning for narrow prompts.
 - Use MiniMax-M2.5 only for OpenCode demo development, not repo review. Replace hung or empty pi reviews; do not count them as evidence. Record absent GitHub checks as CI `not_assessed`, not green.
 
@@ -93,7 +93,7 @@ Current Slice 1 validator intentionally accepts only narrow evidence forms. Do n
 Block 10 active development commands must be Go-first:
 
 - Go tests: `go test ./...`
-- Schema parse checks: `jq empty schema/*.json`
+- Schema parse checks: `jq empty schema/*.json`; for schema/contract changes, also check refs, fixture shape, and Go struct/schema alignment.
 - Formatting: `gofmt` for changed Go files
 
 Bash verification commands are not product architecture. Keep them only
