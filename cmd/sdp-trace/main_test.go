@@ -16,6 +16,7 @@ import (
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
+	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
@@ -579,6 +580,113 @@ func TestProtectedGateRequiresCheckpointPolicyAndWitnessFlags(t *testing.T) {
 	}
 	if _, err := os.Stat(gatePath); !os.IsNotExist(err) {
 		t.Fatalf("protected gate wrote artifact despite usage error")
+	}
+}
+
+func TestManagedAssessRequiresInputsWithoutWriting(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "assessment.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"assess", "--profile", "managed-harness", "--out", gatePath}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("managed assess missing inputs exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(gatePath); !os.IsNotExist(err) {
+		t.Fatalf("managed assess wrote artifact despite usage error")
+	}
+}
+
+func TestManagedAssessPassesAndExplains(t *testing.T) {
+	root := t.TempDir()
+	paths := writeManagedFixtureInputs(t, root)
+	outPath := filepath.Join(root, "assessment.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"assess",
+		"--profile", "managed-harness",
+		"--out", outPath,
+		"--contract", paths.contract,
+		"--run", paths.run,
+		"--adapter-registry", paths.registry,
+		"--managed-policy", paths.policy,
+		"--managed-witness", paths.witness,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("managed assess exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.Contains(out.String(), "secret-token") || strings.Contains(out.String(), "raw prompt") {
+		t.Fatalf("managed assess leaked sensitive marker: %s", out.String())
+	}
+	var result managed.AssessmentResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("assessment payload: %v", err)
+	}
+	if result.ManagedHarnessAssessment != managed.StatePass || result.SchemaVersion != managed.SchemaVersion {
+		t.Fatalf("assessment result = %+v", result)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"assess", "explain", "--assessment-result", outPath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("managed explain exit %d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(out.String(), "Managed harness assessment: pass") ||
+		!strings.Contains(out.String(), "Managed condition managed_witness_bound: pass") {
+		t.Fatalf("managed explain missing fields: %s", out.String())
+	}
+}
+
+func TestManagedAssessRejectsPostHocPolicyAndWitnessMismatch(t *testing.T) {
+	root := t.TempDir()
+	paths := writeManagedFixtureInputs(t, root)
+	var policy managed.Policy
+	readTestJSON(t, paths.policy, &policy)
+	policy.PolicyProvenance.Source = "run_local"
+	writeTestJSON(t, paths.policy, policy)
+	var witness managed.Witness
+	readTestJSON(t, paths.witness, &witness)
+	witness.RunNonce = "wrong-nonce"
+	writeTestJSON(t, paths.witness, witness)
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"assess",
+		"--profile", "managed-harness",
+		"--out", filepath.Join(root, "assessment.json"),
+		"--contract", paths.contract,
+		"--run", paths.run,
+		"--adapter-registry", paths.registry,
+		"--managed-policy", paths.policy,
+		"--managed-witness", paths.witness,
+	}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("managed assess exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"reason_code": "post_hoc_policy"`) ||
+		!strings.Contains(out.String(), `"reason_code": "managed_witness_mismatch"`) {
+		t.Fatalf("managed assess missing fail reasons: %s", out.String())
+	}
+}
+
+func TestManagedAssessPreviewDoesNotWriteOrVerify(t *testing.T) {
+	root := t.TempDir()
+	outPath := filepath.Join(root, "assessment.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"assess", "preview", "--profile", "managed-harness", "--out", outPath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("managed preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"selected_profile": "managed_harness"`) ||
+		!strings.Contains(out.String(), `"managed_policy": "absent"`) ||
+		!strings.Contains(out.String(), `"claim": "preview is read-only and does not emit a managed verdict"`) {
+		t.Fatalf("managed preview missing fields: %s", out.String())
+	}
+	if _, err := os.Stat(outPath); !os.IsNotExist(err) {
+		t.Fatalf("managed preview wrote artifact")
 	}
 }
 
@@ -1472,4 +1580,145 @@ func writeTestContract(t *testing.T, _ context.Context, dir string) string {
 		t.Fatalf("write contract: %v", err)
 	}
 	return contractPath
+}
+
+type managedFixturePaths struct {
+	contract string
+	run      string
+	policy   string
+	registry string
+	witness  string
+}
+
+func writeManagedFixtureInputs(t *testing.T, dir string) managedFixturePaths {
+	t.Helper()
+	runDir := filepath.Join(dir, "run")
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatalf("mkdir run: %v", err)
+	}
+	policy := managed.Policy{
+		PolicyID: "managed-policy-v1",
+		PolicyProvenance: managed.Provenance{
+			Source: "vcs",
+			Digest: "1111111111111111111111111111111111111111111111111111111111111111",
+		},
+		AuthorizedAdapters: []managed.AuthorizedAdapter{{
+			AdapterID:       "opencode-adapter",
+			HarnessID:       "opencode",
+			AuthorityRef:    "sig:adapter",
+			DeploymentRef:   "vcs:adapter",
+			CapabilityIDs:   []string{"harness-events", "tool-events", "file-events", "test-events"},
+			VersionRequired: "1.0.0",
+		}},
+		RequiredEventGroups: []managed.RequiredEventGroup{
+			{ID: "harness", EventTypes: []string{"harness_lifecycle_observed"}, AcceptableProvenanceScopes: []string{"harness_observed"}},
+			{ID: "tool", EventTypes: []string{"tool_call_observed"}, AcceptableProvenanceScopes: []string{"local_observed"}},
+			{ID: "file", EventTypes: []string{"file_mutation_observed"}, AcceptableProvenanceScopes: []string{"local_observed"}},
+			{ID: "test", EventTypes: []string{"test_observed"}, AcceptableProvenanceScopes: []string{"local_observed", "ci_witnessed"}},
+		},
+	}
+	registry := managed.Registry{
+		RegistryID: "adapter-registry-v1",
+		Provenance: managed.Provenance{
+			Source: "vcs",
+			Digest: "2222222222222222222222222222222222222222222222222222222222222222",
+		},
+		Adapters: []managed.Adapter{{
+			AdapterID:      "opencode-adapter",
+			HarnessID:      "opencode",
+			Version:        "1.0.0",
+			DeploymentRef:  "vcs:adapter",
+			IdentityState:  managed.IdentityVerified,
+			AuthorityRef:   "sig:adapter",
+			AllowedEvents:  []string{"harness_lifecycle_observed", "tool_call_observed", "file_mutation_observed", "test_observed"},
+			CapabilityRefs: []string{"harness-events", "tool-events", "file-events", "test-events"},
+			Capabilities: []managed.Capability{
+				{ID: "harness-events", EventTypes: []string{"harness_lifecycle_observed"}, ProvenanceScope: "harness_observed"},
+				{ID: "tool-events", EventTypes: []string{"tool_call_observed"}, ProvenanceScope: "local_observed"},
+				{ID: "file-events", EventTypes: []string{"file_mutation_observed"}, ProvenanceScope: "local_observed"},
+				{ID: "test-events", EventTypes: []string{"test_observed"}, ProvenanceScope: "local_observed"},
+			},
+		}},
+	}
+	runEvidence := managed.RunEvidence{
+		RunID:           "managed-run-1",
+		RunNonce:        "nonce-1",
+		SourceCommit:    "abc123",
+		ChainHead:       "chain-head",
+		EventCount:      8,
+		OutputArtifacts: []managed.ArtifactDigest{{Path: "run.json", SHA256: "run-digest"}},
+		ManagedBoundaryEnrolled: &managed.ManagedBoundaryEnrolled{
+			Sequence:              1,
+			ManagedPolicyDigest:   policy.PolicyProvenance.Digest,
+			AdapterRegistryDigest: registry.Provenance.Digest,
+			AdapterID:             "opencode-adapter",
+			EnrollmentSource:      "vcs",
+			ManagedProfileID:      "managed-harness",
+			ParentRunID:           "managed-run-1",
+			RunNonce:              "nonce-1",
+			EventDigest:           "enroll-digest",
+		},
+		ChildLaunch: managed.LaunchEvent{Sequence: 2, EventDigest: "launch-digest"},
+		ObservedEvents: []managed.EvidenceEvent{
+			{EventType: "harness_lifecycle_observed", ProvenanceScope: "harness_observed"},
+			{EventType: "tool_call_observed", ProvenanceScope: "local_observed"},
+			{EventType: "file_mutation_observed", ProvenanceScope: "local_observed"},
+			{EventType: "test_observed", ProvenanceScope: "local_observed"},
+		},
+		TestEvidence: []managed.EvidenceEvent{{EventType: "test_observed", ProvenanceScope: "local_observed"}},
+	}
+	witness := managed.Witness{
+		WitnessID:             "ci-witness-1",
+		Status:                managed.StatePass,
+		RunID:                 runEvidence.RunID,
+		RunNonce:              runEvidence.RunNonce,
+		SourceCommit:          runEvidence.SourceCommit,
+		ManagedPolicyDigest:   policy.PolicyProvenance.Digest,
+		AdapterRegistryDigest: registry.Provenance.Digest,
+		AdapterIdentityDigest: "opencode-adapter:sig:adapter",
+		EnrollmentEventDigest: "enroll-digest",
+		LaunchEventDigest:     "launch-digest",
+		ChainHead:             runEvidence.ChainHead,
+		EventCount:            runEvidence.EventCount,
+		FreshnessState:        managed.StatePass,
+		ArtifactDigests:       []managed.ArtifactDigest{{Path: "run.json", SHA256: "run-digest"}},
+	}
+	contractPath := filepath.Join(dir, "contract.json")
+	contract := trace.DefaultContract
+	contract.RequiredEvents = []string{"harness_lifecycle_observed", "tool_call_observed", "file_mutation_observed", "test_observed"}
+	writeTestJSON(t, contractPath, contract)
+	paths := managedFixturePaths{
+		contract: contractPath,
+		run:      runDir,
+		policy:   filepath.Join(dir, "managed-policy.json"),
+		registry: filepath.Join(dir, "adapter-registry.json"),
+		witness:  filepath.Join(dir, "managed-witness.json"),
+	}
+	writeTestJSON(t, filepath.Join(runDir, "run.json"), runEvidence)
+	writeTestJSON(t, paths.policy, policy)
+	writeTestJSON(t, paths.registry, registry)
+	writeTestJSON(t, paths.witness, witness)
+	return paths
+}
+
+func writeTestJSON(t *testing.T, path string, value any) {
+	t.Helper()
+	payload, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	if err := os.WriteFile(path, payload, 0o644); err != nil {
+		t.Fatalf("write json %s: %v", path, err)
+	}
+}
+
+func readTestJSON(t *testing.T, path string, value any) {
+	t.Helper()
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read json %s: %v", path, err)
+	}
+	if err := json.Unmarshal(payload, value); err != nil {
+		t.Fatalf("unmarshal json %s: %v", path, err)
+	}
 }

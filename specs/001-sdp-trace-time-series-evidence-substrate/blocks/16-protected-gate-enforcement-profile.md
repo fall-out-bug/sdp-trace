@@ -1,7 +1,7 @@
 # Block 16: Protected Gate Enforcement Profile
 
-Status: spec delta and implementation plan; awaiting explicit approval before
-implementation.
+Status: implemented and merged in PR #6; closure reflected in SpecKit tasks
+after post-merge status reconciliation.
 
 Parent artifacts:
 

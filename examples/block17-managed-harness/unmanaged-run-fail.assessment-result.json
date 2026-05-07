@@ -1,0 +1,123 @@
+{
+  "schema_version": "block17-managed-assessment-v1",
+  "selected_profile": "managed_harness",
+  "managed_harness_assessment": "fail",
+  "trust_scope": "local_observed",
+  "managed_conditions": [
+    {
+      "id": "managed_profile_explicitly_selected",
+      "state": "pass",
+      "reason_code": "managed_profile_selected",
+      "reason": "managed harness profile was explicitly selected"
+    },
+    {
+      "id": "managed_policy_loaded",
+      "state": "pass",
+      "reason_code": "managed_policy_loaded",
+      "reason": "managed policy is readable and anchored before the run"
+    },
+    {
+      "id": "adapter_registry_loaded",
+      "state": "pass",
+      "reason_code": "adapter_registry_loaded",
+      "reason": "adapter registry is readable and anchored before the run"
+    },
+    {
+      "id": "managed_boundary_enrolled_before_run",
+      "state": "fail",
+      "reason_code": "run_not_managed",
+      "reason": "selected run has no managed boundary enrollment event",
+      "next_action": "Run through the managed wrapper or lower the claim."
+    },
+    {
+      "id": "adapter_identity_authorized",
+      "state": "fail",
+      "reason_code": "adapter_identity_unauthorized",
+      "reason": "selected adapter is not present in the registry",
+      "next_action": "Register an authorized adapter before the run."
+    },
+    {
+      "id": "adapter_capabilities_satisfy_contract",
+      "state": "cannot_verify",
+      "reason_code": "adapter_capability_missing",
+      "reason": "selected adapter capabilities cannot be verified",
+      "next_action": "Supply an authorized adapter with declared capabilities."
+    },
+    {
+      "id": "adapter_activation_observed",
+      "state": "cannot_verify",
+      "reason_code": "adapter_activation_missing",
+      "reason": "adapter activation cannot be verified",
+      "next_action": "Record adapter activation before child launch."
+    },
+    {
+      "id": "adapter_connection_continuous",
+      "state": "pass",
+      "reason_code": "adapter_connection_continuous",
+      "reason": "adapter connection has no observed disconnect during required window"
+    },
+    {
+      "id": "required_harness_events_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required harness events are observed"
+    },
+    {
+      "id": "required_tool_events_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required tool events are observed"
+    },
+    {
+      "id": "required_file_mutations_observed",
+      "state": "pass",
+      "reason_code": "condition_pass",
+      "reason": "required file events are observed"
+    },
+    {
+      "id": "test_provenance_not_agent_reported",
+      "state": "pass",
+      "reason_code": "test_provenance_not_agent_reported",
+      "reason": "test evidence is wrapper or CI observed"
+    },
+    {
+      "id": "suppression_policy_valid",
+      "state": "pass",
+      "reason_code": "suppression_policy_valid",
+      "reason": "suppression policy is valid or no suppression is present"
+    },
+    {
+      "id": "bypass_not_observed",
+      "state": "pass",
+      "reason_code": "bypass_not_observed",
+      "reason": "no managed boundary bypass is observed"
+    },
+    {
+      "id": "managed_witness_bound",
+      "state": "fail",
+      "reason_code": "managed_witness_mismatch",
+      "reason": "managed witness does not bind the selected run, policy, registry, chain, or artifacts",
+      "next_action": "Regenerate managed witness evidence for the selected run."
+    },
+    {
+      "id": "override_does_not_upgrade_managed_profile",
+      "state": "pass",
+      "reason_code": "override_absent_non_upgrading",
+      "reason": "no override request is available to upgrade managed profile"
+    }
+  ],
+  "reasons": [
+    "run_not_managed: selected run has no managed boundary enrollment event",
+    "adapter_identity_unauthorized: selected adapter is not present in the registry",
+    "managed_witness_mismatch: managed witness does not bind the selected run, policy, registry, chain, or artifacts",
+    "adapter_capability_missing: selected adapter capabilities cannot be verified",
+    "adapter_activation_missing: adapter activation cannot be verified"
+  ],
+  "next_actions": [
+    "Run through the managed wrapper or lower the claim.",
+    "Register an authorized adapter before the run.",
+    "Regenerate managed witness evidence for the selected run.",
+    "Supply an authorized adapter with declared capabilities.",
+    "Record adapter activation before child launch."
+  ]
+}

@@ -122,6 +122,7 @@ Task breakdown lives in [tasks.md](tasks.md). Beads issues mirror these tasks fo
 | Design evidence event and provenance contract | `sdp-trace-cdn.4` |
 | Define process metric catalog | `sdp-trace-cdn.5` |
 | Create harness and model run-cards | `sdp-trace-cdn.6` |
+| Add managed harness enforcement profile | not assigned |
 | Add JVM/Kotlin/Bazel fixture plan | `sdp-trace-cdn.7` |
 | Add schema validation and fixture strategy | `sdp-trace-cdn.8` |
 | Add contract manifest and release verification strategy | `sdp-trace-cdn.8` |
@@ -137,6 +138,7 @@ Task breakdown lives in [tasks.md](tasks.md). Beads issues mirror these tasks fo
 |---|---|---|
 | Multiple schema artifacts | Separate evidence events, observations, metric streams, and assessment inputs have different consumers and validation needs. | One large schema would make `sdp-gate` inheritance less clear and would force unrelated fields into every artifact. |
 | Pilot matrix across harness/model/stack | Customer pilot explicitly asks for OpenCode, MiniMax/Kimi/GLM, Superpowers/GSD-style harnesses, and JVM/Kotlin/Bazel. | A single Codex or JVM baseline would not prove portability. |
+| Managed harness enforcement profile | Platform-owned teams need fail-closed evidence that a run used an approved wrapper or adapter boundary. | Making managed enrollment mandatory would break sidecar-first adoption and hide value for unmanaged harnesses. |
 
 ## Self-Trace Milestone
 

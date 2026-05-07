@@ -15,6 +15,7 @@ import (
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
+	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
@@ -61,6 +62,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runReport(ctx, cmdArgs, stdout, stderr)
 	case "gate":
 		return runGate(ctx, cmdArgs, stdout, stderr)
+	case "assess":
+		return runAssess(ctx, cmdArgs, stdout, stderr)
 	case "override":
 		return runOverride(ctx, cmdArgs, stdout, stderr)
 	case "checkpoint":
@@ -73,6 +76,239 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
 		return 1
+	}
+}
+
+func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 {
+		switch args[0] {
+		case "preview":
+			return runAssessPreview(args[1:], stdout, stderr)
+		case "explain":
+			return runAssessExplain(args[1:], stdout, stderr)
+		}
+	}
+	opts := &flagSet{name: "assess"}
+	opts.setString("profile", "")
+	opts.setString("out", "")
+	opts.setString("contract", "")
+	opts.setString("run", "")
+	opts.setString("adapter-registry", "")
+	opts.setString("managed-policy", "")
+	opts.setString("managed-witness", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "assess accepts only flags")
+		return exitUsage
+	}
+	if opts.stringValue("profile") != "managed-harness" {
+		fmt.Fprintln(stderr, "assess requires --profile managed-harness")
+		return exitUsage
+	}
+	required := map[string]string{
+		"--out":              opts.stringValue("out"),
+		"--run":              opts.stringValue("run"),
+		"--adapter-registry": opts.stringValue("adapter-registry"),
+		"--managed-policy":   opts.stringValue("managed-policy"),
+		"--managed-witness":  opts.stringValue("managed-witness"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "managed assess requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	input, err := loadManagedInput(opts)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	result := managed.Evaluate(input)
+	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return managedExitCode(result)
+}
+
+func loadManagedInput(opts *flagSet) (managed.Input, error) {
+	contract, err := trace.LoadContract(opts.stringValue("contract"))
+	if err != nil {
+		return managed.Input{}, err
+	}
+	var policy managed.Policy
+	if err := readJSONFile(opts.stringValue("managed-policy"), &policy); err != nil {
+		return managed.Input{}, err
+	}
+	var registry managed.Registry
+	if err := readJSONFile(opts.stringValue("adapter-registry"), &registry); err != nil {
+		return managed.Input{}, err
+	}
+	var runEvidence managed.RunEvidence
+	if err := readJSONFile(filepath.Join(opts.stringValue("run"), "run.json"), &runEvidence); err != nil {
+		return managed.Input{}, err
+	}
+	var witness managed.Witness
+	if err := readJSONFile(opts.stringValue("managed-witness"), &witness); err != nil {
+		return managed.Input{}, err
+	}
+	return managed.Input{
+		Contract: managed.Contract{RequiredEventTypes: append([]string(nil), contract.RequiredEvents...)},
+		Policy:   policy,
+		Registry: registry,
+		Run:      runEvidence,
+		Witness:  witness,
+	}, nil
+}
+
+type managedPreviewReport struct {
+	Command         string            `json:"command"`
+	SelectedProfile string            `json:"selected_profile"`
+	Inputs          map[string]string `json:"inputs"`
+	NextActions     []string          `json:"next_actions"`
+	Claim           string            `json:"claim"`
+}
+
+func runAssessPreview(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "assess preview"}
+	opts.setString("profile", "")
+	opts.setString("out", "")
+	opts.setString("run", "")
+	opts.setString("adapter-registry", "")
+	opts.setString("managed-policy", "")
+	opts.setString("managed-witness", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "assess preview accepts only flags")
+		return exitUsage
+	}
+	if opts.stringValue("profile") != "managed-harness" {
+		fmt.Fprintln(stderr, "assess preview requires --profile managed-harness")
+		return exitUsage
+	}
+	inputs := map[string]string{
+		"run":              managedInputStatus(opts.stringValue("run")),
+		"adapter_registry": managedInputStatus(opts.stringValue("adapter-registry")),
+		"managed_policy":   managedInputStatus(opts.stringValue("managed-policy")),
+		"managed_witness":  managedInputStatus(opts.stringValue("managed-witness")),
+	}
+	report := managedPreviewReport{
+		Command:         "assess preview",
+		SelectedProfile: managed.ProfileManagedHarness,
+		Inputs:          inputs,
+		NextActions:     managedPreviewActions(inputs),
+		Claim:           "preview is read-only and does not emit a managed verdict",
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	for _, state := range inputs {
+		if state == "present_unreadable" || state == "present_malformed" {
+			return exitCannotVerify
+		}
+	}
+	return 0
+}
+
+func runAssessExplain(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "assess explain"}
+	opts.setString("assessment-result", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "assess explain accepts only flags")
+		return exitUsage
+	}
+	path := opts.stringValue("assessment-result")
+	if path == "" {
+		fmt.Fprintln(stderr, "assess explain requires --assessment-result <file>")
+		return exitUsage
+	}
+	var result managed.AssessmentResult
+	if err := readJSONFile(path, &result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if result.SchemaVersion != managed.SchemaVersion {
+		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", result.SchemaVersion)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
+	fmt.Fprintf(stdout, "Managed harness assessment: %s\n", result.ManagedHarnessAssessment)
+	fmt.Fprintf(stdout, "Trust scope: %s\n", result.TrustScope)
+	for _, condition := range result.ManagedConditions {
+		fmt.Fprintf(stdout, "Managed condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+	}
+	for _, reason := range result.Reasons {
+		fmt.Fprintf(stdout, "Reason: %s\n", reason)
+	}
+	for _, action := range result.NextActions {
+		fmt.Fprintf(stdout, "Next action: %s\n", action)
+	}
+	return 0
+}
+
+func managedInputStatus(path string) string {
+	if strings.TrimSpace(path) == "" {
+		return "absent"
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return "present_unreadable"
+	}
+	if info.IsDir() {
+		data, err := os.ReadFile(filepath.Join(path, "run.json"))
+		if err != nil {
+			return "present_unreadable"
+		}
+		var raw any
+		if err := json.Unmarshal(data, &raw); err != nil {
+			return "present_malformed"
+		}
+		return "present_readable"
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "present_unreadable"
+	}
+	var raw any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return "present_malformed"
+	}
+	return "present_readable"
+}
+
+func managedPreviewActions(inputs map[string]string) []string {
+	order := []string{"run", "adapter_registry", "managed_policy", "managed_witness"}
+	var actions []string
+	for _, key := range order {
+		switch inputs[key] {
+		case "absent":
+			actions = append(actions, "Supply "+key+" before managed assessment.")
+		case "present_unreadable", "present_malformed":
+			actions = append(actions, "Fix "+key+" so it is readable JSON or a run directory.")
+		}
+	}
+	return actions
+}
+
+func managedExitCode(result managed.AssessmentResult) int {
+	switch result.ManagedHarnessAssessment {
+	case managed.StatePass:
+		return 0
+	case managed.StateFail:
+		return 1
+	default:
+		return exitCannotVerify
 	}
 }
 

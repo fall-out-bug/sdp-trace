@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/assessment-result.schema.json",
+  "title": "SDP Trace Assessment Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "selected_profile",
+    "managed_harness_assessment",
+    "trust_scope",
+    "managed_conditions",
+    "reasons",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "block17-managed-assessment-v1" },
+    "selected_profile": { "type": "string", "const": "managed_harness" },
+    "managed_harness_assessment": { "$ref": "#/$defs/topLevelState" },
+    "trust_scope": {
+      "type": "string",
+      "enum": ["managed_harness_observed", "local_observed"]
+    },
+    "managed_conditions": {
+      "type": "array",
+      "minItems": 16,
+      "items": { "$ref": "#/$defs/condition" }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "topLevelState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "conditionState": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "cannot_verify",
+        "missing_telemetry",
+        "not_integrated",
+        "unsupported",
+        "suppressed",
+        "not_assessed"
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "required": ["id", "state", "reason_code", "reason"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/conditionState" },
+        "reason_code": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "next_action": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -226,6 +226,14 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-076**: Protected profile exit behavior MUST be deterministic: protected pass exits `0`, protected fail exits `1`, protected `cannot_verify` exits `3`, and usage errors exit `2`.
 - **FR-077**: Protected gate, explain, and preview output MUST avoid raw command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, and other secret-like values.
 - **FR-078**: Protected profile output MUST use a new Block 16 gate-result schema version while preserving `gate explain` read compatibility for Block 14 gate-result artifacts.
+- **FR-079**: Managed harness evaluation MUST be selected explicitly and MUST NOT be required for observation-mode users or unmanaged harnesses.
+- **FR-080**: Managed harness evaluation MUST fail closed or return `cannot_verify` when required managed policy, adapter registry, registered wrapper enrollment, authorized adapter identity, adapter capability evidence, required harness/tool/file/test events, or managed witness binding is missing or invalid.
+- **FR-081**: Managed harness output MUST distinguish verifier-derived `managed_harness_assessment` facts from native merge, release, readiness, degradation, override approval, and risk-acceptance decisions.
+- **FR-082**: Agent-reported, local-observed, late-attached, self-claimed adapter, unauthorized adapter, and unregistered wrapper evidence MUST NOT satisfy managed harness profile trust scope.
+- **FR-083**: Managed harness trust MUST require a registered wrapper or authorized adapter boundary before child harness execution, policy-authorized adapter capabilities, required event coverage, non-agent-reported executed-test provenance, and witness binding to source, run, policy, adapter or wrapper identity, and artifacts.
+- **FR-084**: Managed harness profile exit behavior MUST be deterministic: managed pass exits `0`, managed fail exits `1`, managed `cannot_verify` exits `3`, and usage errors exit `2`.
+- **FR-085**: Managed harness assess, explain, and preview output MUST avoid raw command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, adapter secrets, gateway tokens, model responses, and checkpoint key material.
+- **FR-086**: Managed harness profile output MUST use a new Block 17 assessment-result schema version while preserving `gate explain` read compatibility for Block 14 and Block 16 gate-result artifacts.
 
 ### Key Entities
 
@@ -245,6 +253,9 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **Signed Checkpoint**: Detached-signature artifact that binds a flight-recorder run chain head to run, source, task, contract, nonce, and sequence context for replay-resistant verification.
 - **Trusted Checkpoint Policy**: Portable policy that names allowed checkpoint signer identities and the authority boundary needed to treat a checkpoint as local signed, CI signed, or externally witnessed evidence.
 - **Protected Gate Enforcement Profile**: Explicit gate profile that evaluates protected-use prerequisites as fail-closed verifier facts and deterministic exit behavior for an external CI or policy owner to enforce.
+- **Managed Harness Policy**: Portable policy that names approved wrapper identities, adapter identities, capabilities, required managed events, suppression rules, and witness binding requirements for opt-in managed harness enforcement.
+- **Adapter Registry**: Portable artifact declaring adapter id, harness id, version, identity state, signing or authority reference, allowed event types, capabilities, and deployment source.
+- **Managed Harness Enforcement Profile**: Explicit gate profile that evaluates whether a selected run used an approved managed wrapper or adapter boundary and required managed telemetry without making a native policy decision.
 - **E2E Pilot Proof Package**: A sanitized artifact set produced from a real external tool run, containing evidence events, provenance records, observations, metric stream, trace snapshot, assessment input, redaction note, tested-on report, and explicit proof states.
 - **External Verdict Input**: A verdict, score, evidence-strength assertion, or decision produced outside `sdp-trace` and recorded as evidence with producer, policy reference, artifact reference, and origin.
 - **Flight Recorder Event**: An ordered event in a recorder run, with declared schema version, canonical payload digest, previous event hash, event hash, recorder identity, redaction state, and optional witness reference.
@@ -294,6 +305,9 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **SC-037**: Block 16 fixtures prove that missing checkpoint evidence, local-development checkpoint evidence, missing signer policy, signer mismatch, missing CI witness binding, absent or stale CI witness freshness evidence, and CI witness mismatch cannot pass the protected profile.
 - **SC-038**: A reviewer can run protected gate, explain, and preview commands against committed Block 16 fixtures and see protected-profile input gaps, checkpoint state, signer authority state, witness binding state, override state, and deterministic next actions without reading raw JSON manually.
 - **SC-039**: Safety-sensitive protected gate tests prove that secret-like command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, model responses, and checkpoint key material are not printed or persisted.
+- **SC-040**: Block 17 fixtures prove that unmanaged runs, late enrollment, post-hoc policy or registry artifacts, unauthorized adapter identity, adapter disconnect, missing adapter capabilities, missing required harness/tool/file/test telemetry, agent-reported-only test evidence, unverified suppression, missing managed witness binding, stale managed witness evidence, and managed witness mismatch cannot pass the managed harness profile.
+- **SC-041**: A reviewer can run managed harness assess, explain, and preview commands against committed Block 17 fixtures and see managed-profile input gaps, wrapper enrollment state, adapter identity state, capability state, event coverage, suppression state, witness binding state, override state, and deterministic next actions without reading raw JSON manually.
+- **SC-042**: Safety-sensitive managed harness tests prove that raw command arguments, stdout/stderr bodies, prompts, source snippets, credentials, OIDC request tokens, adapter secrets, gateway tokens, model responses, and checkpoint key material are not printed or persisted.
 
 ## Assumptions
 
