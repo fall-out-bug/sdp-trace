@@ -69,7 +69,6 @@
       "type": "object",
       "required": [
         "role",
-        "sha256",
         "path_redacted_id",
         "artifact_required"
       ],

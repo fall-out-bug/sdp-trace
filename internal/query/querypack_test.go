@@ -80,7 +80,7 @@ func TestForensicsBasicPackPreservesMissingRequiredArtifact(t *testing.T) {
 	}
 }
 
-func TestForensicsBasicPackRejectsUnreadableOptionalArtifactWithoutInvalidResult(t *testing.T) {
+func TestForensicsBasicPackPreservesUnreadableOptionalArtifactAsCannotVerifyRows(t *testing.T) {
 	runDir := writeForensicsPackFixture(t)
 	adapterPath := filepath.Join(runDir, "adapter-capture.assessment-result.json")
 	if err := os.Remove(adapterPath); err != nil {
@@ -90,8 +90,56 @@ func TestForensicsBasicPackRejectsUnreadableOptionalArtifactWithoutInvalidResult
 		t.Fatalf("replace adapter result with directory: %v", err)
 	}
 
-	if _, err := ForensicsBasicPack(runDir); err == nil {
-		t.Fatalf("expected unreadable optional artifact error")
+	result, err := ForensicsBasicPack(runDir)
+	if err != nil {
+		t.Fatalf("forensics pack: %v", err)
+	}
+	row := findMatrixRow(t, result.QueryRows[QueryForensicsGaps], struct {
+		Scenario        string `json:"scenario"`
+		Query           string `json:"query"`
+		EvidenceState   string `json:"evidence_state"`
+		EvidenceFamily  string `json:"evidence_family"`
+		ReasonCode      string `json:"reason_code"`
+		SourceRefPrefix string `json:"source_ref_prefix"`
+		SourceState     string `json:"source_condition_state,omitempty"`
+		EvidenceGap     string `json:"evidence_gap,omitempty"`
+		Reconstructable *bool  `json:"reconstructable,omitempty"`
+	}{
+		ReasonCode: "unreadable_or_malformed_input_artifact",
+	})
+	if row.EvidenceState != RowStateCannotVerify || row.EvidenceFamily != EvidenceFamilyInputArtifact {
+		t.Fatalf("unreadable optional artifact row = %+v", row)
+	}
+	artifact := findInputArtifact(t, result.InputArtifacts, "adapter_capture")
+	if artifact.SHA256 != "" {
+		t.Fatalf("unreadable optional artifact unexpectedly has digest: %+v", artifact)
+	}
+}
+
+func TestForensicsBasicPackMapsEmptyUpstreamStateToCannotVerify(t *testing.T) {
+	runDir := writeForensicsPackFixture(t)
+	writeQueryPackJSON(t, filepath.Join(runDir, "forensic-retention.assessment-result.json"), map[string]any{
+		"schema_version":                "block18-forensic-retention-assessment-v1",
+		"selected_profile":              "forensic_retention",
+		"forensic_retention_assessment": "cannot_verify",
+		"trust_scope":                   "local_observed",
+		"forensic_conditions": []map[string]any{
+			{
+				"id":          "retention_mode_declared",
+				"state":       "",
+				"reason_code": "empty_state_fixture",
+				"reason":      "state is empty",
+			},
+		},
+	})
+
+	result, err := ForensicsBasicPack(runDir)
+	if err != nil {
+		t.Fatalf("forensics pack: %v", err)
+	}
+	row := findRow(t, result.QueryRows[QueryForensicsRedactions], "retention_mode_declared")
+	if row.EvidenceState != RowStateCannotVerify || row.EvidenceGap != EvidenceFamilyRetention {
+		t.Fatalf("empty state row = %+v", row)
 	}
 }
 
@@ -156,6 +204,9 @@ func TestCommittedBlock20FixtureMatrix(t *testing.T) {
 		}
 		if expected.SourceRefPrefix == "" || !strings.HasPrefix(row.SourceRef, expected.SourceRefPrefix) {
 			t.Fatalf("%s source_ref = %q expected prefix %q", expected.Scenario, row.SourceRef, expected.SourceRefPrefix)
+		}
+		if strings.HasPrefix(row.SourceRef, "block_09.") && (row.SourceConditionID != "" || row.SourceConditionState != "") {
+			t.Fatalf("%s Block 09 row %s must omit source condition fields", expected.Scenario, row.ID)
 		}
 		if expected.SourceState != "" && row.SourceConditionState != expected.SourceState {
 			t.Fatalf("%s source_condition_state = %q expected %q", expected.Scenario, row.SourceConditionState, expected.SourceState)
@@ -326,6 +377,17 @@ func writeQueryPackJSON(t *testing.T, path string, value any) {
 	if err := os.WriteFile(path, payload, 0o644); err != nil {
 		t.Fatalf("write fixture %s: %v", path, err)
 	}
+}
+
+func findInputArtifact(t *testing.T, artifacts []QueryPackInputArtifact, role string) QueryPackInputArtifact {
+	t.Helper()
+	for _, artifact := range artifacts {
+		if artifact.Role == role {
+			return artifact
+		}
+	}
+	t.Fatalf("input artifact role %s not found in %+v", role, artifacts)
+	return QueryPackInputArtifact{}
 }
 
 func committedScenarioDirs(t *testing.T, fixtureRoot string) map[string]bool {

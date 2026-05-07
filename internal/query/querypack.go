@@ -70,7 +70,7 @@ type QueryPackResult struct {
 
 type QueryPackInputArtifact struct {
 	Role             string `json:"role"`
-	SHA256           string `json:"sha256"`
+	SHA256           string `json:"sha256,omitempty"`
 	PathRedactedID   string `json:"path_redacted_id"`
 	SchemaVersion    string `json:"schema_version,omitempty"`
 	ArtifactRequired bool   `json:"artifact_required"`
@@ -227,24 +227,28 @@ func readOptionalPackArtifact(path, role, redactedID string, required bool, targ
 		if errors.Is(err, os.ErrNotExist) {
 			return QueryPackInputArtifact{}, false, nil
 		}
-		return QueryPackInputArtifact{}, true, err
+		return QueryPackInputArtifact{
+			Role:             role,
+			PathRedactedID:   redactedID,
+			ArtifactRequired: required,
+		}, true, err
 	}
 	artifact, err := readPackArtifact(path, role, redactedID, required, target)
 	return artifact, true, err
 }
 
 func readPackArtifact(path, role, redactedID string, required bool, target any) (QueryPackInputArtifact, error) {
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return QueryPackInputArtifact{}, err
-	}
-	sum := sha256.Sum256(payload)
 	artifact := QueryPackInputArtifact{
 		Role:             role,
-		SHA256:           hex.EncodeToString(sum[:]),
 		PathRedactedID:   redactedID,
 		ArtifactRequired: required,
 	}
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		return artifact, err
+	}
+	sum := sha256.Sum256(payload)
+	artifact.SHA256 = hex.EncodeToString(sum[:])
 	var envelope struct {
 		SchemaVersion string `json:"schema_version"`
 	}
@@ -308,9 +312,13 @@ func (b *packBuilder) addTimelineRows() {
 	}
 	if !b.inputs.forensicPresent {
 		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "", "", "missing_optional_block_18_forensic_retention_result", EvidenceFamilyRetention)
+	} else if b.inputs.forensicErr != nil {
+		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 	if !b.inputs.adapterPresent {
 		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_optional_block_19_adapter_capture_result", EvidenceFamilyAdapterCapture)
+	} else if b.inputs.adapterErr != nil {
+		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }
 
@@ -365,13 +373,17 @@ func (b *packBuilder) addGapRows() {
 			continue
 		}
 		family := familyForVerifierState(key)
-		b.addRow(QueryForensicsGaps, rowState, family, "block_09.run."+safeToken(key), "", state.State, safeToken(key), family)
+		b.addRow(QueryForensicsGaps, rowState, family, "block_09.run."+safeToken(key), "", "", safeToken(key), family)
 	}
 	if !b.inputs.forensicPresent {
 		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "", "", "missing_optional_block_18_forensic_retention_result", "retention")
+	} else if b.inputs.forensicErr != nil {
+		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 	if !b.inputs.adapterPresent {
 		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_optional_block_19_adapter_capture_result", "adapter_capture")
+	} else if b.inputs.adapterErr != nil {
+		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }
 
@@ -464,8 +476,10 @@ func queryShortName(queryName string) string {
 
 func mapSourceState(state string) string {
 	switch state {
-	case "", "pass":
+	case "pass":
 		return RowStatePresent
+	case "":
+		return RowStateCannotVerify
 	case "fail":
 		return RowStateIssueObserved
 	case RowStateCannotVerify:

@@ -1,8 +1,8 @@
 # Block 20 Implementation Evidence
 
-Status: implementation verification and strict implementation review recorded.
-PR-level review, GitHub checks, merge verification, and post-merge cleanup are
-not assessed yet because no PR exists yet.
+Status: implementation verification, strict implementation review, and PR-level
+review recorded. GitHub checks, merge verification, and post-merge cleanup are
+not assessed yet.
 
 ## Scope
 
@@ -36,9 +36,9 @@ Block 20 remains an evidence view:
 - output safety is asserted against serialized JSON and explain output, not
   against upstream raw material.
 
-Readable malformed required inputs that can be hashed produce deterministic
-`cannot_verify` query rows. OS-level unreadable inputs still exit non-zero
-because no digest-backed valid result artifact can be produced.
+Malformed, missing, or unreadable required inputs produce deterministic
+`cannot_verify` query rows with path-redacted input artifact identifiers.
+Readable inputs additionally carry SHA-256 digests.
 
 ## Local Verification
 
@@ -59,7 +59,7 @@ rtk rg -n <deferred-work-marker-pattern> <changed Block 20 files>
 
 Observed states:
 
-- Full Go tests: pass, 160 tests across 15 packages.
+- Full Go tests: pass, 161 tests across 15 packages.
 - Schema syntax checks: pass.
 - Block 20 fixture syntax checks: pass, excluding three intentionally malformed
   fixtures listed above.
@@ -86,8 +86,21 @@ requirements-vs-implementation planes.
   artifact rows. Valid findings were fixed. Second focused re-review returned
   `APPROVE` with no remaining critical or major findings.
 
+PR-level review ran the same separate planes on PR #11.
+
+- Code/correctness: ZAI/GLM-5.1 returned `APPROVE`; final focused re-review
+  after PR-fix changes also returned `APPROVE`.
+- Tracing/evidence: MiniMax-M2.7 and OpenRouter Qwen found a false positive
+  around `top_level_assessment` serialization and a valid missing/unreadable
+  artifact handling gap. The valid gap was fixed by allowing path-redacted input
+  artifact identifiers without SHA-256 when artifacts cannot be read. Final
+  focused tracing re-review returned `APPROVE`.
+- Requirements-vs-implementation: Kimi K2P6 found Block 09 source-condition
+  leakage, empty upstream state overclaim, malformed optional artifact visibility
+  gaps, and one false-positive ledger concern. Valid findings were fixed. Final
+  focused requirements re-review returned `APPROVE`.
+
 ## Remaining Open Work
 
-- PR-level review is `not_assessed`; no PR exists yet.
-- GitHub CI is `not_assessed`; no PR exists yet.
+- GitHub CI is `not_assessed`; PR #11 check result is not recorded here yet.
 - Post-merge `origin/main` verification and cleanup are `not_assessed`.

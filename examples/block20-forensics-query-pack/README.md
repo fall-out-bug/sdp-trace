@@ -16,6 +16,8 @@ go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 \
 `malformed-forensic-retention/forensic-retention.assessment-result.json`, and
 `malformed-run/run.json` are intentionally truncated to prove
 `unreadable_or_malformed_input_artifact` rows.
+`missing-run/` intentionally omits `run.json` to prove missing required
+Block 09 input uses the same safe row state without inventing raw path evidence.
 
 All identifiers are synthetic. Fixtures must not contain real provider URLs,
 tokens, command bodies, stdout/stderr bodies, prompts, source snippets, raw model
