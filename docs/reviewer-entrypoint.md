@@ -1,6 +1,8 @@
 # Reviewer Entrypoint
 
 Use this path for a first-time reviewer check in under five minutes.
+For the full current command surface, see `docs/agent-entrypoint.md` and
+`go run ./cmd/sdp-trace --help`.
 
 ## Verification Path
 
@@ -12,7 +14,8 @@ From a clean checkout, run:
 4. Create or inspect a run with `go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok`.
 5. Verify that run with `go run ./cmd/sdp-trace verify <run-dir>`.
 
-External trust is not part of the first Block 10 milestone.
+External trust is not part of this quick path. Use the documented
+`external_production_trust` profile path before making production trust claims.
 
 Exit code contract:
 - `0`: `observed` or `not_assessed`

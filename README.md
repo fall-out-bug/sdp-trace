@@ -6,7 +6,7 @@ Portable traceability, provenance, evidence, accountability, and contract-integr
 
 Can we prove what happened, where the evidence came from, what changed over time, who is accountable, and whether the contract used to assess it was trusted?
 
-Current proof status: Block 01 has contract scaffolding and validation fixtures. `sdp-trace` is not ready for customer pilot claims until the repository validates its own self-trace and self-attestation artifacts.
+Current proof authority comes from live Go verifier output under the current entrypoint contract. Checked-in block summaries and proof JSON are audit artifacts unless replayed or externally signed.
 
 ## Who It Is For
 
