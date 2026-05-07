@@ -1,7 +1,9 @@
 # Block 20 Review Ledger
 
-Status: Socratic spec review, implementation review, PR-level review, and PR CI
-check completed. Merge and post-merge verification are not assessed yet.
+Status: closed. Socratic spec review, implementation review, PR-level review,
+PR #11 CI, merge, post-merge verification, and cleanup are assessed complete.
+Block 20 closure does not assert external incident, legal, audit, release, or
+risk decisions.
 
 ## Spec Review Findings
 
@@ -81,5 +83,12 @@ check completed. Merge and post-merge verification are not assessed yet.
   requirements-vs-implementation. Valid critical/major findings were fixed;
   final focused PR-level re-reviews returned `APPROVE` with no remaining
   critical or major findings.
-- GitHub CI: assessed on PR #11. The `verify` check passed before ready/merge;
-  if another commit lands before merge, re-read the latest PR check state.
+- GitHub CI: assessed on PR #11. The `verify` check passed on final PR head
+  `a15dc76b6f6bd19646930bfff6bb8f6fef6f26b1` before ready/merge.
+- Merge: PR #11 merged into `main` at
+  `278ee77e5b2c205e0f372a1cffe51185d60d9290`.
+- Post-merge verification: assessed on `main` after merge with Go tests, schema
+  syntax, Block 20 fixture syntax excluding intentionally malformed fixtures,
+  fixture matrix JSONL parse, and whitespace diff check. All passed.
+- Cleanup: the temporary Block 20 worktree and local/remote feature branches
+  were removed.
