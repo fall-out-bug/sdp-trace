@@ -121,8 +121,10 @@ current PR adds:
 - README clarification for intentionally byte-identical pass fixtures;
 - a repository drift-to-task rule in `AGENTS.md`.
 
-Disposition: accepted and fixed for T170, T171, and T172. T169 remains open
-because the current source-bound proof is a real fail.
+Disposition: accepted and fixed for T170, T171, and T172. T169 is now closed
+for active-manifest source-bound artifact checks after retired verifier
+subjects were removed and release-proof was regenerated; external production
+trust remains `not_assessed`.
 
 ## Block Closure Drift Review
 
