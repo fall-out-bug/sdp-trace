@@ -33,11 +33,9 @@ No opaque health scores.
 ## Engineering Stack
 Target product code is Go.
 
-No Node.js, npm, JavaScript, TypeScript, or `.mjs` tooling is allowed in
-the active product path.
+No Node.js, npm, JavaScript, TypeScript, or `.mjs` tooling is allowed in the active product path.
 
-Bash is allowed only as a thin command launcher when Go would add no
-product value. Any Bash kept in the active path needs an explicit reason.
+Bash is allowed only as a thin command launcher when Go would add no product value. Any Bash kept in the active path needs an explicit reason.
 
 New implementation must follow Clean Architecture, Clean Code, TDD, and
 keep CRAP below 5 for changed Go code. Do not add TODO or FIXME markers.
@@ -61,11 +59,12 @@ The repository has already failed once by letting prose, task checkboxes, and ch
 Every non-trivial implementation chunk needs:
 
 1. SpecKit delta.
-2. Trace coverage when verifier behavior or trust claims change.
-3. Test-first behavior when behavior changes.
-4. Live verifier state: `pass`, `fail`, `cannot_verify`, or `not_assessed`.
-5. Strict review with recorded disposition.
-6. Fresh verification before completion claims.
+2. Socratic spec review before approval handoff.
+3. Trace coverage when verifier behavior or trust claims change.
+4. Test-first behavior when behavior changes.
+5. Drift checks: spec vs implementation and regression against previous blocks.
+6. Live verifier state: `pass`, `fail`, `cannot_verify`, or `not_assessed`.
+7. Strict review with recorded disposition, fresh verification, and scoped commit.
 
 If a chunk cannot be traced or verified yet, mark `not_assessed` or `cannot_verify` with a concrete reason and create a tracked follow-up before closing.
 
@@ -73,8 +72,9 @@ If a chunk cannot be traced or verified yet, mark `not_assessed` or `cannot_veri
 When the user says "берем блок в работу", use `sdp-trace-trust-workflow`.
 First land current approved work through PR/review, then continue new block work in a fresh worktree.
 Prepare SpecKit deltas, run Socratic spec review, fix/record findings, then stop for explicit user approval of the reviewed spec direction before writing implementation code.
-After approval, split independent tasks to fast subagents with minimal context, and keep provenance, evidence, trace, pi review, fixes, and final PR review in the loop until no critical or major findings remain.
+After approval, split independent tasks to fast subagents with minimal context; each slice needs scoped commit, review, drift/regression check, and integration audit.
 Do not stop at implementation-only closure for block work unless the user explicitly asks to stop before PR or merge.
+Prepare and review the PR with code, tracing/evidence, and requirements-vs-implementation planes before ready/merge.
 
 ## pi Review Rules
 For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
