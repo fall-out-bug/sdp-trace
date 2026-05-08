@@ -5,18 +5,18 @@
   "trust_scope": "source_bound_local_release",
   "release_verification_state": "pass",
   "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
-  "manifest_digest": "84c6084730876d8b92ff6f4466faaadd0ddaca339301a9053c4b071045a67c96",
+  "manifest_digest": "deaf19683156af849561259412a9b833ddc480b1a8d9d164ae304200e19ca233",
   "manifest_digest_status": "matched",
   "artifact_digest_status": "matched",
   "signature_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
   "signature_status": "not_assessed",
   "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
   "identity_policy_status": "not_assessed",
-  "source_commit": "de479da41456d3a865fda82057300d013eec0253",
+  "source_commit": "8c35c9d7ca739b8df6f1a77ea3396a433c787953",
   "source_commit_status": "matched",
   "source_commit_artifact_status": "matched",
   "source_commit_artifact_counts": {
-    "checked": 137,
+    "checked": 138,
     "missing": 0,
     "mismatched": 0
   },
@@ -34,7 +34,7 @@
   },
   "transparency_log_status": "not_assessed",
   "freshness_status": "not_assessed",
-  "verified_at": "2026-05-08T13:18:48Z",
+  "verified_at": "2026-05-08T13:33:07Z",
   "trusted_contract_release": false,
   "private_equivalent_profile": "not_assessed",
   "accountability": {
@@ -43,11 +43,11 @@
       "actor_type": "human_role"
     },
     "approver": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical-owner",
       "actor_type": "human_role"
     },
     "escalation": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical-owner",
       "actor_type": "human_role"
     },
     "authority_scope": "contract_release",
