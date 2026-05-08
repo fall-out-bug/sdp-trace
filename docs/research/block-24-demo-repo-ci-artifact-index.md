@@ -103,7 +103,8 @@ Selected no-OIDC digests:
 
 ## Dishonest Trace Cases
 
-| case | recorded state | reason codes | customer interpretation |
-| --- | --- | --- | --- |
-| `dishonest-source-run-mismatch` | `cannot_verify` | `source_run_binding_mismatch`, `ci_witness_not_upgraded` | The command may have run, but copied source/run binding is inconsistent. Treat as incomplete evidence, not trusted CI-witnessed trace. |
-| `dishonest-stale-digest-index` | `fail` | `artifact_digest_mismatch`, `stale_index` | The artifact index no longer matches referenced bytes. Treat the artifact as tampered or stale until rerun and reindexed. |
+| case | recorded state | reason codes | customer interpretation | evidence needed to raise |
+| --- | --- | --- | --- | --- |
+| `dishonest-source-run-mismatch` | `cannot_verify` | `source_run_binding_mismatch`, `ci_witness_not_upgraded` | The command may have run, but copied source/run binding is inconsistent. Treat as incomplete evidence, not trusted CI-witnessed trace. | Rerun from the intended source commit and produce a witness whose source, run, and report artifact digests all bind to the same workflow run. |
+| `dishonest-stale-digest-index` | `fail` | `artifact_digest_mismatch`, `stale_index` | The artifact index no longer matches referenced bytes. Treat the artifact as tampered or stale until rerun and reindexed. | Re-download or regenerate the artifact set, recompute digests from current bytes, and publish a fresh index tied to the workflow run. |
+| `ci-witness-no-oidc` | `cannot_verify` | `missing_ci_oidc` | CI ran the command, but the job lacked OIDC identity evidence, so it cannot establish `ci_witnessed`. | Grant the job `id-token: write`, verify OIDC request env vars are present, and rerun witness collection. |

@@ -75,7 +75,7 @@ and `reason=ci_identity_present`.
 | `clean-audit-scope` run directory | `captured` | `ci_witnessed` through `ci-witness.json`; run summary itself is `local_observed` | `demo_pilot_only` |
 | `verify.txt` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json` | `demo_pilot_only` |
 | `explain.txt` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json` | `demo_pilot_only` |
-| `summary.json` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json` | `demo_pilot_only` |
+| `summary.json` | `captured` | `local_observed` in the run summary; `ci_witnessed` only as a report artifact digest cross-referenced by `ci-witness.json` | `demo_pilot_only` |
 | `gate-result.json` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json`; gate facts still include CI/audit `cannot_verify` | `demo_pilot_only` |
 | `ci-witness.json` | `captured` | `ci_witnessed` | `demo_pilot_only` |
 | `ci-witness-no-oidc.json` | `captured` | `cannot_verify` | `demo_pilot_only` |
@@ -85,11 +85,11 @@ and `reason=ci_identity_present`.
 
 ## Dishonest And Incomplete Cases
 
-| case | state | meaning |
-| --- | --- | --- |
-| `dishonest-source-run-mismatch` | `cannot_verify` | A copied or edited trace/report artifact with inconsistent source/run binding must not be represented as a clean CI-witnessed run. |
-| `dishonest-stale-digest-index` | `fail` | A stale digest/index must be treated as tampered or stale until rerun and reindexed. |
-| `trace-without-oidc` | `cannot_verify` | The witness command ran in CI without OIDC permission; missing `ACTIONS_ID_TOKEN_REQUEST_TOKEN` and `ACTIONS_ID_TOKEN_REQUEST_URL` prevented `ci_witnessed` trust. |
+| case | state | meaning | evidence needed to raise |
+| --- | --- | --- | --- |
+| `dishonest-source-run-mismatch` | `cannot_verify` | A copied or edited trace/report artifact with inconsistent source/run binding must not be represented as a clean CI-witnessed run. | Rerun from the intended source commit and produce a witness whose source, run, and report artifact digests all bind to the same workflow run. |
+| `dishonest-stale-digest-index` | `fail` | A stale digest/index must be treated as tampered or stale until rerun and reindexed. | Re-download or regenerate the artifact set, recompute digests from current bytes, and publish a fresh index tied to the workflow run. |
+| `trace-without-oidc` | `cannot_verify` | The witness command ran in CI without OIDC permission; missing `ACTIONS_ID_TOKEN_REQUEST_TOKEN` and `ACTIONS_ID_TOKEN_REQUEST_URL` prevented `ci_witnessed` trust. | Grant the job `id-token: write`, verify OIDC request env vars are present, and rerun witness collection. |
 
 The no-OIDC witness exited `3`, wrote `ci-witness-no-oidc.json`, and recorded
 `unexpected_oidc_env=false`.
@@ -181,5 +181,5 @@ Artifact download was verified before this report was committed using
 | Same-owner private repo portability | `not_assessed` | The demo ran under `fall-out-bug`, not a customer owner. |
 | Public artifact inspectability | `not_assessed` | Repo and artifacts are private; access limitation is intentional for the first pilot. |
 | Release binary acquisition | `not_assessed` | CI built from source ref. |
-| Compiled Kotlin/JVM compatibility | `not_assessed` | Bazel tests inspect Kotlin source scope; they do not compile Kotlin. |
+| Compiled Kotlin/JVM compatibility | `not_assessed` | Bazel tests inspect Kotlin source scope; they do not compile Kotlin. To assess JVM compatibility, the demo needs a test that compiles Kotlin through `kt_jvm_*` rules or runs JVM bytecode. |
 | External production trust | `not_assessed` | No customer PKI, release approval, transparency, or production policy evidence was supplied. |

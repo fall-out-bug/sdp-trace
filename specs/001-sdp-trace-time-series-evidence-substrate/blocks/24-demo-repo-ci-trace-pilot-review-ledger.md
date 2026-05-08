@@ -93,6 +93,9 @@ Implementation review and PR-level review remain open.
 | I24-CC-03 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added exact `sdp-trace` source commit `f66aa1c4619f0f6a2d56f602da9e0135b00e4a84` to report and artifact index. |
 | I24-CC-04 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added independent SHA-256 digests for `ci-witness.json` and `ci-witness-no-oidc.json`. |
 | I24-CC-05 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added artifact download verification statement using `gh run download 25548285336`. |
+| PR17-CC-01 | minor | PR-level code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Reordered Socratic Q8 before Q9 and Q10. |
+| PR17-TE-01 | minor | PR-level trace/evidence | MiniMax-M2.7 | accepted_fixed | Clarified `summary.json` two-layer `local_observed` vs digest-level `ci_witnessed` state and added JVM-compatibility upgrade evidence. |
+| PR17-RI-01 | minor | PR-level requirements-vs-implementation | OpenRouter DeepSeek V4 Pro | accepted_fixed | Added evidence needed to raise each dishonest or no-OIDC state. |
 
 ## Focused Implementation Re-Review
 

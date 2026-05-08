@@ -88,6 +88,15 @@ review.
 fact output and not a native `sdp-trace` policy decision. Any downstream allow,
 block, risk, readiness, or production-trust decision remains outside this repo.
 
+### Q8: Is building `sdp-trace` from source in CI enough?
+
+**Critic**: Building from source proves developer workflow, not installable
+product UX.
+
+**Resolution**: It is enough for Block 24 if the source ref is explicit and the
+tested command surface is current. Installable binary/release distribution stays
+`not_assessed` unless an approved release artifact exists before implementation.
+
 ### Q9: How do we keep demo evidence from becoming source-bound proof?
 
 **Critic**: A `ci_witnessed` demo artifact can be misread as product release
@@ -105,15 +114,6 @@ separate and external production trust remains `not_assessed`.
 `docs/research/block-24-redaction-denylist.patterns`, record the pattern-file
 digest, scanned roots, exit state, and match count, and treat a missing scan as
 `cannot_verify`.
-
-### Q8: Is building `sdp-trace` from source in CI enough?
-
-**Critic**: Building from source proves developer workflow, not installable
-product UX.
-
-**Resolution**: It is enough for Block 24 if the source ref is explicit and the
-tested command surface is current. Installable binary/release distribution stays
-`not_assessed` unless an approved release artifact exists before implementation.
 
 ## Review Plan
 
