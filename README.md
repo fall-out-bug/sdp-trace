@@ -48,6 +48,8 @@ sdp-trace -> no SDP runtime
 - [CTO brief, Russian](docs/cto-brief.ru.md)
 - [Team lead playbook, English](docs/team-lead-playbook.en.md)
 - [Team lead playbook, Russian](docs/team-lead-playbook.ru.md)
+- [Customer questions, English](docs/customer-questions.en.md)
+- [Customer questions, Russian](docs/customer-questions.ru.md)
 - [Agent entrypoint (current verifier contract)](docs/agent-entrypoint.md)
 - [Reviewer entrypoint (current proof scope)](docs/reviewer-entrypoint.md)
 - [Adoption ladder](docs/adoption-ladder.md)

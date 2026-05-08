@@ -1,135 +1,142 @@
 # Руководство CTO по внедрению sdp-trace
 
-`sdp-trace` — это контрольный слой поверх существующей AI-assisted delivery. Он
-не заменяет ваш harness, prompts, agents, CI, review process или repo
-templates.
+`sdp-trace` - это sidecar trust substrate для существующей AI-assisted delivery.
+Он не заменяет harness, prompts, agents, CI, review process, repository
+templates, `sdp-gate` или release governance.
 
-В текущей реализации Block 12 "контрольный слой" означает capture evidence,
-явную missing telemetry и CI-witnessed reporting. Это еще не automatic merge
-blocking, не org-wide degradation dashboard, не внешнее нотариальное
-доказательство и не гарантированное обнаружение каждого agent run вне wrapper.
+Текущая MVP-поверхность означает trace capture, явную missing telemetry,
+assessment profiles, advisory/protected gate facts, CI/customer witness
+profiles, forensic query packs, cross-repository posture export и local
+source-bound release proof. Это не automatic merge blocking, не production
+release approval, не external audit proof и не гарантия обнаружения каждого
+unwrapped agent run.
 
 ## Что получает CTO
 
-По каждому репозиторию и коммиту организация видит:
+По каждому репозиторию и коммиту организация может проверить:
 
-- какой agent/human workflow был наблюдаем;
-- какой evidence contract ожидался;
-- какие команды и test/build шаги были наблюдаемы;
-- какие артефакты сохранены как digest;
-- какое evidence отсутствует;
-- trace только local, CI-witnessed или externally witnessed;
-- local contract gate прошел или нет, есть ли CI witness, и остается ли
-  audit-grade evidence в состоянии `cannot_verify`.
+- какой agent или human workflow был observed;
+- какой task, command, model, harness и source context записаны;
+- какой evidence contract или assessment profile ожидался;
+- какие artifacts retained, redacted или digest-only;
+- какое evidence missing, `not_assessed` или `cannot_verify`;
+- run только local, CI-witnessed, customer-PKI witnessed или пока только
+  documentation/fixture guidance;
+- прошел ли source-bound local release proof без claims про external production
+  trust.
 
-Opaque score нет. Missing telemetry остается видимым.
+Opaque score нет. Missing telemetry остается видимой.
+
+## Почему это лучше, чем CI logs, git diff и review comments
+
+CI logs показывают command output. Git diff показывает file changes. Review
+comments показывают human discussion. `sdp-trace` добавляет portable evidence
+contract поверх этих поверхностей:
+
+- provenance связывает, кто или что произвел evidence;
+- trace runs сохраняют command и task context;
+- assessment profiles объясняют, почему evidence достаточно, отсутствует,
+  устарело или unverifiable;
+- witness records связывают выбранное evidence с CI или customer authority,
+  когда профилю хватает данных;
+- release proof проверяет manifest subjects against source commit вместо
+  доверия к prose.
+
+Это все еще evidence, а не policy decision. `sdp-gate`, CI, release management
+или customer governance решает, что блокировать.
 
 ## Модель внедрения
 
 Путь внедрения sidecar-first:
 
 ```text
-существующий harness / agent / prompt flow
+existing harness / agent / prompt flow
         |
         v
-sdp-trace wrap
+sdp-trace wrap / adapter events
         |
         v
-local run artifacts
+.sdp-trace-runs/
         |
         v
-report + local gate
+report, query, assess, gate facts
         |
         v
-CI witness
+CI or customer witness where available
         |
         v
-evidence package для CTO/team по repo и commit
+CTO/team evidence package per repo and commit
 ```
 
-Минимальный integration contract:
-
-- положить expected-evidence contract в каждый repo;
-- завернуть существующую harness-команду;
-- генерировать report/gate artifacts в CI;
-- добавить CI witness record;
-- явно показывать local-only и missing telemetry states.
-
-Если агент или разработчик не запускается через `sdp-trace wrap` или adapter,
-`sdp-trace` не видит эту локальную работу напрямую. Первый обнаруживаемый
-сигнал появляется на expected evidence boundary: CI/report/gate покажет, что
-required run artifacts или contract evidence отсутствуют. Это полезный сигнал
-control posture, но не полный agent activity log.
-
-Минимальная CI-последовательность:
+Минимальная command sequence:
 
 ```text
-sdp-trace report --out .sdp-trace-report --contract <contract> .sdp-trace-runs
-sdp-trace gate --out .sdp-trace-report/gate-result.json --contract <contract> .sdp-trace-runs
-sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
-sdp-trace gate --out .sdp-trace-report/gate-result.json --contract <contract> --witness .sdp-trace-report/ci-witness.json .sdp-trace-runs
+go run ./cmd/sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
+go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs
+go run ./cmd/sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
+go run ./cmd/sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
 ```
 
-## Уровни доверия
+Если агент или разработчик не запускается через `sdp-trace wrap` или adapter,
+`sdp-trace` не видит эту локальную работу напрямую. Обнаруживаемый сигнал
+появляется на expected evidence boundary: required run artifacts, adapter
+events, witness bindings или profile inputs отсутствуют и должны оставаться
+`missing_telemetry`, `not_assessed` или `cannot_verify`.
 
-- `local_observed`: полезно для расследования, но не gate-grade.
-- `ci_witnessed`: CI связал evidence package с repo, commit, workflow, job и
-  run id.
-- `external_witnessed`: будущий профиль независимого timestamp/log witness.
+## Текущие профили и границы
 
-CI witness нужен покупателю, потому что локальная история перестает выглядеть
-как gate-grade trace. Но сам по себе CI witness не доказывает честность агента
-или качество релиза.
+| Surface | Что поддерживает сейчас | Caveat |
+| --- | --- | --- |
+| `adapter-capture` | Проверяет adapter event coverage и overclaim risk. | Missing adapter events не доказывают, что агент не использовался; они доказывают, что профилю не хватает evidence. |
+| `managed-harness` | Проверяет managed policy, adapter registry, run и witness evidence. | Выдает verifier facts; block/allow решает external CI или policy. |
+| `forensic-retention` | Проверяет, хватает ли retained/redacted evidence для reconstruction. | Digest-only или unresolved redaction могут блокировать forensic claims. |
+| `gate` | Выдает advisory/protected gate facts и reasons. | Это не native merge, release, readiness, degradation, override или risk decision. |
+| `witness` | Поддерживает GitHub Actions, GitLab CI, Buildkite и customer PKI witness profiles. | CI/customer witness не external production trust, пока внешний trust profile не прошел. |
+| `release-proof` | Проверяет source-bound local release manifests against source commit. | `source_bound_local_release` не равен `external_production_trust`. |
+| Air-gapped guidance | Использует customer policy/private-equivalent evidence patterns. | Нет `witness --kind air-gapped`; unsupported evidence остается `not_assessed` или `cannot_verify`. |
 
-Для GitHub Actions workflow должен разрешить OIDC (`id-token: write`). Без OIDC
-`sdp-trace witness` записывает `cannot_verify`, а не делает вид, что обычных
-environment variables достаточно.
+## Что CTO должен смотреть
 
-Block 12 CI witness — это не external trust. Это CI-generated JSON artifact,
-который связывает report/run digests с GitHub Actions OIDC claims, если он
-создан в protected workflow. Это не public transparency log, не DSSE envelope и
-не court-ready signed timeline. Нельзя считать witness-файл, закоммиченный
-агентом или разработчиком, authority; генерируйте его внутри CI и храните как
-protected CI artifact.
+- `.sdp-trace-report/summary.json`: run и report summary.
+- `.sdp-trace-report/evidence-table.json`: observed evidence rows.
+- `.sdp-trace-report/missing-telemetry.json`: required evidence not observed.
+- `.sdp-trace-report/gate-result.json`: advisory/protected gate facts и reasons.
+- `.sdp-trace-report/ci-witness.json` или другой witness artifact: CI/customer binding state.
+- `.sdp-trace-runs/<run-id>/`: raw run package с учетом retention/redaction policy.
+- `query-pack` output: incident или forensic reconstruction package.
+- `release-proof` output: source-bound local release state.
+- SpecKit docs: spec, plan, tasks, evidence, decisions и deferred gaps.
 
-Policy interpretation:
+## Как читать missing states
 
-| State | Что поддерживает | Чего не поддерживает |
-|---|---|---|
-| `local_observed` | Local reconstruction и feedback разработчику | Merge/release trust сам по себе |
-| `ci_witnessed` | CI-bound evidence package для repo/commit | Agent honesty, достаточность тестов, external audit proof |
-| `external_witnessed` | Будущий external timestamp/log profile | Не реализовано в Block 12 |
+- `not_assessed`: state был вне scope текущего run. Нужно решить, приемлем ли
+  этот scope, или потребовать follow-up profile.
+- `cannot_verify`: verifier пытался проверить state, но не хватило evidence,
+  environment или consistency. Для trust claims это fail-closed.
+- `fail`: evidence противоречит выбранному profile.
+- `observed` или `pass`: выбранная local/profile проверка завершилась, но
+  только внутри указанного trust scope.
 
-## Что пока не видно
+## Privacy и non-capture
 
-Block 12 пока не дает:
-
-- автоматического обнаружения, что агент использовался вне wrapper;
-- internal tool-call telemetry для harness без adapter;
-- raw prompt/model response capture;
-- file mutation или VCS event capture сверх текущих recorder events;
-- signed timeline или append-only transparency log;
-- automatic degradation analytics по всем репозиториям;
-- dashboard/query surface кроме generated artifacts и существующих local query
-  commands.
-
-Это явные gaps, а не скрытый pass.
+MVP не должен требовать committed raw customer source, private prompts,
+credentials, provider tokens или raw logs. Предпочитайте digests, sanitized
+excerpts, encrypted external refs и explicit redaction notes. Если команде нужен
+raw capture для incident, это отдельный retention/redaction profile с human
+owner.
 
 ## Что передать инженерному лиду
 
 Передайте лиду:
 
-- шаблон expected-evidence contract;
-- wrapper command;
-- CI witness command;
-- policy для report directory;
-- правило: `cannot_verify` не является pass.
-
-CTO должен смотреть `.sdp-trace-report/` по repo и commit, а не raw JSON на
-машинах разработчиков.
+- expected evidence contract или profile inputs;
+- wrapper или adapter integration command;
+- report и retention policy;
+- witness profile, если он нужен;
+- правило: `not_assessed` и `cannot_verify` не являются pass;
+- customer question map в `docs/customer-questions.ru.md`.
 
 Для rollout по нескольким репозиториям требуйте, чтобы команды публиковали
-CI-generated report directory как retained CI artifact. Начните с отслеживания
-доли `local_observed`, `ci_witnessed`, `cannot_verify` и missing evidence по
-репозиториям. Это первый честный degradation signal; более широкий
-`sdp-report` analytics layer — следующий продуктовый слой.
+report directory и witness artifacts как retained CI/customer-policy artifacts.
+Отслеживайте долю `observed`, `pass`, `fail`, `not_assessed` и `cannot_verify`
+по репозиториям. Dashboards и policy decisions должны жить вне `sdp-trace`.
