@@ -89,6 +89,15 @@ func TestEvaluateTopLevelNotAssessedAndMixedAggregates(t *testing.T) {
 	if result.ArtifactObservationState != StateNotAssessed {
 		t.Fatalf("state = %s", result.ArtifactObservationState)
 	}
+	payload, err := json.Marshal(result)
+	if err != nil {
+		t.Fatalf("marshal result: %v", err)
+	}
+	for _, field := range []string{`"required_families":[]`, `"artifact_families":[]`} {
+		if !strings.Contains(string(payload), field) {
+			t.Fatalf("empty array field %s missing from %s", field, string(payload))
+		}
+	}
 
 	manifest = validManifest()
 	manifest.ArtifactFamilies[0].ProducerScope = ProducerCheckedIn

@@ -226,7 +226,7 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 		observed[input.Family] = input
 	}
 	seen := map[string]bool{}
-	var out []FamilyObservation
+	out := make([]FamilyObservation, 0, len(reqs)+len(observed))
 	for _, family := range familyOrder {
 		if req, ok := reqs[family]; ok {
 			out = append(out, evaluateFamily(req, observed[family], true))
@@ -534,7 +534,7 @@ func aggregate(set map[string]bool, empty string) string {
 }
 
 func orderedRequirements(reqs map[string]FamilyRequirement) []FamilyRequirement {
-	var out []FamilyRequirement
+	out := make([]FamilyRequirement, 0, len(reqs))
 	for _, family := range familyOrder {
 		if req, ok := reqs[family]; ok {
 			out = append(out, req)

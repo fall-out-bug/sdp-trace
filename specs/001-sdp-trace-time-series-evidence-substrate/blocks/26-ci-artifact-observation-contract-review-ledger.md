@@ -126,3 +126,36 @@ Fresh local verification after focused re-review fixes:
   examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json`:
   pass.
 - `git diff --check HEAD`: pass.
+
+## PR-Level Review Findings
+
+PR-level review was run on PR #21 after the implementation and focused
+re-review fixes. GitHub Actions `verify` passed on the PR head before the final
+empty-array schema-conformance fix; a fresh CI run is required after that final
+commit.
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| P26-CC-01 | minor | code/correctness PR review | Empty `required_families` and `artifact_families` marshaled as `null` instead of `[]`, making otherwise valid `not_assessed` output fail strict array schema validation. | accepted_fixed | `evaluateFamilies` and `orderedRequirements` now return non-nil empty slices; `TestEvaluateTopLevelNotAssessedAndMixedAggregates` asserts JSON contains `required_families:[]` and `artifact_families:[]`. |
+| P26-RI-01 | not_assessed | requirements-vs-implementation PR review | Initial ZAI/GLM and Qwen requirements reviewers returned file-reading preambles and referenced non-existent files instead of reviewing the attached packet. | replaced | Those outputs were not counted as review evidence; the plane was replaced with a DeepSeek reviewer using explicit `read` access and exact file paths. |
+
+PR-level review dispositions:
+
+- code/correctness: OpenRouter Qwen, `APPROVE`; accepted/fixed P26-CC-01 as a
+  schema-conformance improvement even though the reviewer classified it minor;
+  focused micro re-review by OpenRouter DeepSeek and MiniMax-M2.7 returned
+  `APPROVE`.
+- tracing/evidence: MiniMax-M2.7, `APPROVE`; no critical or major findings.
+- requirements-vs-implementation: initial ZAI/GLM and Qwen attempts were
+  unusable and replaced; OpenRouter DeepSeek replacement returned `APPROVE`.
+- security/privacy: OpenRouter DeepSeek, `APPROVE`; no critical or major
+  findings.
+
+Fresh local PR-gate verification after P26-CC-01:
+
+- `go test ./...`: pass.
+- `jq empty schema/*.json
+  examples/block26-ci-artifact-observation/fixture-matrix.json
+  examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json`:
+  pass.
+- `git diff --check HEAD`: pass.
