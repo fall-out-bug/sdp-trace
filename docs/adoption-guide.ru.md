@@ -11,7 +11,7 @@ source-bound release proof. Это не automatic merge blocking, не productio
 release approval, не external audit proof и не гарантия обнаружения каждого
 unwrapped agent run.
 
-## Что получает владелец репозитория
+## Что дает sdp-trace
 
 По каждому репозиторию и коммиту организация может проверить:
 
@@ -27,7 +27,7 @@ unwrapped agent run.
 
 Opaque score нет. Missing telemetry остается видимой.
 
-## Почему это лучше, чем CI logs, git diff и review comments
+## Как это дополняет CI logs, git diff и review comments
 
 CI logs показывают command output. Git diff показывает file changes. Review
 comments показывают human discussion. `sdp-trace` добавляет portable evidence
@@ -91,7 +91,7 @@ events, witness bindings или profile inputs отсутствуют и дол�
 | `managed-harness` | Проверяет managed policy, adapter registry, run и witness evidence. | Выдает verifier facts; block/allow решает external CI или policy. |
 | `forensic-retention` | Проверяет, хватает ли retained/redacted evidence для reconstruction. | Digest-only или unresolved redaction могут блокировать forensic claims. |
 | `gate` | Выдает advisory/protected gate facts и reasons. | Это не native merge, release, readiness, degradation, override или risk decision. |
-| `witness` | Поддерживает GitHub Actions, GitLab CI, Buildkite и customer PKI witness profiles. | CI/customer witness не external production trust, пока внешний trust profile не прошел. |
+| `witness` | Создает witness artifacts для `github-actions`, `gitlab-ci`, `buildkite` и `customer-pki`. | CI/customer witness не external production trust, пока внешний trust profile не прошел. |
 | `release-proof` | Проверяет source-bound local release manifests against source commit. | `source_bound_local_release` не равен `external_production_trust`. |
 | Air-gapped guidance | Использует customer policy/private-equivalent evidence patterns. | Нет `witness --kind air-gapped`; unsupported evidence остается `not_assessed` или `cannot_verify`. |
 
@@ -127,9 +127,9 @@ excerpts, encrypted external refs и explicit redaction notes. Если кома
 raw capture для incident, это отдельный retention/redaction profile с human
 owner.
 
-## Что передать инженерному лиду
+## Rollout inputs
 
-Передайте лиду:
+Перед rollout зафиксируйте в репозитории:
 
 - expected evidence contract или profile inputs;
 - wrapper или adapter integration command;

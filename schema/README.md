@@ -67,6 +67,10 @@ Before `sdp-trace` v1.0, schema changes may be breaking only when examples and c
 fields; protected-profile artifacts require `selected_profile`,
 `protected_gate`, `checkpoint_verification`, and `protected_conditions` so
 readers can avoid inferring protected conclusions from older advisory output.
+Those block-numbered values are legacy compatibility tokens, not the naming
+pattern for future public contracts. New compatibility tokens should use
+semantic profile names; remove the block-numbered aliases before v1.0 unless a
+retained migration note says otherwise.
 
 After v1.0:
 

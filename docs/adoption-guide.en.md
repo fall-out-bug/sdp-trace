@@ -11,7 +11,7 @@ release proof. It does not mean automatic merge blocking, production release
 approval, external audit proof, or guaranteed detection of every unwrapped
 agent run.
 
-## What The Repository Owner Gets
+## What It Provides
 
 For every repository and commit, the organization can inspect:
 
@@ -27,7 +27,7 @@ For every repository and commit, the organization can inspect:
 
 There is no opaque score. Missing telemetry stays visible.
 
-## Why This Is Better Than CI Logs, Git Diff, And Review Comments Alone
+## How This Complements CI Logs, Git Diff, And Review Comments
 
 CI logs show command output. Git diff shows file changes. Review comments show
 human discussion. `sdp-trace` adds a portable evidence contract across those
@@ -91,11 +91,11 @@ bindings, or profile inputs are missing and must remain `missing_telemetry`,
 | `managed-harness` | Assesses managed policy, adapter registry, run, and witness evidence. | Emits verifier facts; external CI or policy decides block/allow. |
 | `forensic-retention` | Checks whether retained/redacted evidence supports reconstruction. | Digest-only or unresolved redaction can block forensic claims. |
 | `gate` | Emits advisory/protected gate facts and reasons. | Not a native merge, release, readiness, degradation, override, or risk decision. |
-| `witness` | Supports GitHub Actions, GitLab CI, Buildkite, and customer PKI witness profiles. | CI/customer witness is not external production trust unless the external trust profile passes. |
+| `witness` | Emits witness artifacts for `github-actions`, `gitlab-ci`, `buildkite`, and `customer-pki`. | CI/customer witness is not external production trust unless the external trust profile passes. |
 | `release-proof` | Verifies source-bound local release manifests against a source commit. | `source_bound_local_release` is not `external_production_trust`. |
 | Air-gapped guidance | Uses customer policy/private-equivalent evidence patterns. | There is no `witness --kind air-gapped`; unsupported evidence stays `not_assessed` or `cannot_verify`. |
 
-## What The technical executive Should Inspect
+## What To Inspect
 
 - `.sdp-trace-report/summary.json`: run and report summary.
 - `.sdp-trace-report/evidence-table.json`: observed evidence rows.
@@ -128,9 +128,9 @@ encrypted external references, and explicit redaction notes. If a team needs raw
 capture for an incident, it must be a separately approved retention/redaction
 profile with a human owner.
 
-## Handoff To Engineering
+## Rollout Inputs
 
-Give the team lead:
+Before rollout, make sure the following are explicit in the repository:
 
 - the expected evidence contract or profile inputs;
 - the wrapper or adapter integration command;

@@ -12,7 +12,8 @@ Capture scope, provenance, and evidence for one real change.
 
 ## Level 2: Existing Harness Gate
 
-Apply a gate to work produced by Claude Code, Codex, OpenCode, Cursor, Superpowers, or an internal harness.
+Apply a gate to work produced by an existing AI coding harness. Record the exact
+harness and run evidence at run level.
 
 ## Level 3: PR Readiness
 
