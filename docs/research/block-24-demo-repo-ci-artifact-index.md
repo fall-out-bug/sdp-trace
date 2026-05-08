@@ -55,6 +55,8 @@ Allowed extracted witness fields:
 - `source.commit_sha=e370d1c00df8a7e7859adc284480563a269e64ca`
 - `ci.run_id=25548285336`
 - `ci.run_attempt=1`
+- `generated_at=2026-05-08T09:34:55.812667994Z` for the clean witness
+- `generated_at=2026-05-08T09:34:37.852551549Z` for the no-OIDC witness
 - `oidc.subject=repo:fall-out-bug/sdp-trace-demo-ci-pilot:ref:refs/heads/main`
 - `profile_states.identity_state=pass` for the clean witness
 - `profile_states.identity_state=cannot_verify` for the no-OIDC witness
@@ -90,9 +92,10 @@ Selected no-OIDC digests:
 | --- | --- |
 | Pattern file | `docs/research/block-24-redaction-denylist.patterns` |
 | Pattern sha256 | `c5ba21129cbc0c969a2d02b46a15bed1cf8c3d48d51643b4eeb6f899150cbbb7` |
-| Command shape | `rg --pcre2 -n -f docs/research/block-24-redaction-denylist.patterns <artifact-root>` |
-| Clean artifact result | `pass` |
-| No-OIDC artifact result | `pass` |
+| Clean command | `rg --pcre2 -n -f .sdp-trace-src/docs/research/block-24-redaction-denylist.patterns .sdp-trace-report` |
+| No-OIDC command | `rg --pcre2 -n -f .sdp-trace-src/docs/research/block-24-redaction-denylist.patterns .sdp-trace-report` |
+| Clean artifact result | `pass`, exit `1` from `rg`, match count `0` |
+| No-OIDC artifact result | `pass`, exit `1` from `rg`, match count `0` |
 
 ## Dishonest Trace Cases
 
@@ -100,4 +103,3 @@ Selected no-OIDC digests:
 | --- | --- | --- | --- |
 | `dishonest-source-run-mismatch` | `cannot_verify` | `source_run_binding_mismatch`, `ci_witness_not_upgraded` | The command may have run, but copied source/run binding is inconsistent. Treat as incomplete evidence, not trusted CI-witnessed trace. |
 | `dishonest-stale-digest-index` | `fail` | `artifact_digest_mismatch`, `stale_index` | The artifact index no longer matches referenced bytes. Treat the artifact as tampered or stale until rerun and reindexed. |
-

@@ -66,6 +66,23 @@ evidence of compiled Kotlin/JVM compatibility.
 profile separately recorded `status=pass`, `established_trust_scope=ci_witnessed`,
 and `reason=ci_identity_present`.
 
+## Evidence Classification
+
+| artifact or case | capture state | attestation state | authority scope |
+| --- | --- | --- | --- |
+| `clean-feature-flag` run directory | `captured` | `ci_witnessed` through `ci-witness.json`; run summary itself is `local_observed` | `demo_pilot_only` |
+| `clean-entitlement-matrix` run directory | `captured` | `ci_witnessed` through `ci-witness.json`; run summary itself is `local_observed` | `demo_pilot_only` |
+| `clean-audit-scope` run directory | `captured` | `ci_witnessed` through `ci-witness.json`; run summary itself is `local_observed` | `demo_pilot_only` |
+| `verify.txt` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json` | `demo_pilot_only` |
+| `explain.txt` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json` | `demo_pilot_only` |
+| `summary.json` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json` | `demo_pilot_only` |
+| `gate-result.json` | `captured` | `ci_witnessed` as a report artifact digest in `ci-witness.json`; gate facts still include CI/audit `cannot_verify` | `demo_pilot_only` |
+| `ci-witness.json` | `captured` | `ci_witnessed` | `demo_pilot_only` |
+| `ci-witness-no-oidc.json` | `captured` | `cannot_verify` | `demo_pilot_only` |
+| `dishonest-source-run-mismatch` | `captured` | `cannot_verify` | `demo_pilot_only` |
+| `dishonest-stale-digest-index` | `captured` | `fail` | `demo_pilot_only` |
+| External production trust | `not_captured` | `not_assessed` | `external_production_trust_not_assessed` |
+
 ## Dishonest And Incomplete Cases
 
 | case | state | meaning |
@@ -103,6 +120,22 @@ facts that raw CI logs do not preserve as durable verifier artifacts:
   digests;
 - explicit no-OIDC `cannot_verify` state with missing identity fields.
 
+Sanitized excerpt (`authority_scope=demo_pilot_only`):
+
+```json
+{
+  "local_gate": "pass",
+  "ci_witness_gate": "cannot_verify",
+  "audit_grade_gate": "cannot_verify",
+  "gate_mode": "observation",
+  "trust_cap": "local_observed",
+  "missing_audit_evidence": [
+    "ci_oidc_witness",
+    "external_witness_checkpoint"
+  ]
+}
+```
+
 ## Redaction And Safety
 
 The CI workflow installed `ripgrep` and ran the denylist scan against both
@@ -110,6 +143,15 @@ artifact sets with
 `docs/research/block-24-redaction-denylist.patterns`
 (`sha256=c5ba21129cbc0c969a2d02b46a15bed1cf8c3d48d51643b4eeb6f899150cbbb7`).
 Both scans returned `redaction_scan=pass`.
+
+Exact CI command:
+
+```bash
+rg --pcre2 -n -f .sdp-trace-src/docs/research/block-24-redaction-denylist.patterns .sdp-trace-report
+```
+
+For both artifact sets, `rg` returned exit `1`, which means no matches. Match
+count was `0`.
 
 The committed `sdp-trace` repo receives this sanitized summary and artifact
 index only. Raw `.sdp-trace-runs/`, raw `.sdp-trace-report/`, and workflow logs
@@ -126,7 +168,7 @@ remain in the demo repo's GitHub Actions artifact store.
 | Does `report` aggregate multiple runs? | `direct_demo_evidence` | `summary.json` reported three observed runs. |
 | Does `gate` avoid overclaiming policy? | `direct_demo_evidence` | Gate stayed fact-only: local pass, CI/audit `cannot_verify`. |
 | Can GitHub Actions witness a run? | `direct_demo_evidence` | `ci-witness.json` passed with `ci_witnessed` for the exact demo topology. |
-| Are missing witness permissions visible? | `direct_demo_evidence` | No-OIDC job recorded `cannot_verify`, missing identity fields, and exit `3`. |
+| Are missing witness permissions and missing telemetry visible? | `direct_demo_evidence` | No-OIDC job recorded `cannot_verify`, missing identity fields, missing telemetry for CI OIDC, and exit `3`. |
 | Does this prove customer production trust? | `not_assessed` | External production trust, another owner, non-GitHub CI, release binary UX, and compiled Kotlin/JVM compatibility remain outside Block 24. |
 
 ## Residual States
@@ -138,4 +180,3 @@ remain in the demo repo's GitHub Actions artifact store.
 | Release binary acquisition | `not_assessed` | CI built from source ref. |
 | Compiled Kotlin/JVM compatibility | `not_assessed` | Bazel tests inspect Kotlin source scope; they do not compile Kotlin. |
 | External production trust | `not_assessed` | No customer PKI, release approval, transparency, or production policy evidence was supplied. |
-

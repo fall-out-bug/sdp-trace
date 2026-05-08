@@ -77,3 +77,18 @@ cases and two intentionally dishonest-trace cases.
 | Compiled Kotlin/JVM compatibility | `not_assessed` | Bazel tests inspect target-scoped Kotlin source; they do not compile Kotlin |
 
 Implementation review and PR-level review remain open.
+
+## Implementation Review Disposition
+
+| finding | severity | plane | source | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| I24-TE-01 | major | trace/evidence | OpenRouter DeepSeek V4 Pro | accepted_fixed | Added an Evidence Classification table covering clean runs, report artifacts, witness outputs, dishonest cases, and external production trust. |
+| I24-TE-02 | major | trace/evidence | OpenRouter DeepSeek V4 Pro | accepted_fixed | Added exact `rg --pcre2` command, exit semantics, match count `0`, and pass state to report and artifact index. |
+| I24-TE-03 | minor | trace/evidence | OpenRouter DeepSeek V4 Pro | accepted_fixed | Added explicit missing-telemetry wording to the no-OIDC customer-question row. |
+| I24-RI-01 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Added a sanitized `gate-result.json` excerpt showing local/CI/audit state split. |
+| I24-RI-02 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Added `generated_at` and profile-state extracts for clean and no-OIDC witnesses. |
+| I24-RI-03 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Exact scan command recorded with exit and match-count semantics. |
+| I24-CC-01 | not_assessed | code/correctness | ZAI GLM-5.1 | replaced_unusable | Reviewer returned stale/off-task content for a different Block 24 shape; not counted as review evidence. |
+
+Focused re-review is required for the fixed documentation before implementation
+review can be counted complete. PR-level review remains open.
