@@ -126,8 +126,8 @@ No fix needed in this pass, except keeping these docs as the source of tone and 
 | US1: CTO reviews process movement | Mostly aligned in README and customer questions. Metric catalog now points at current verifier evidence. | Low |
 | US2: `sdp-gate` inherits trace contracts | Public docs preserve boundary: `sdp-trace` records inputs, external consumers decide policy. | Low |
 | US5: CEO/CIO accountability and contract integrity | Conceptual promise remains present, and release-signing now points at current `release-proof`. External production trust remains intentionally not claimed. | Low |
-| US3 / US3A: pilot and first real slice | Current docs are appropriately cautious when using `not_assessed`; older run-card docs still contain historical Node validation commands. | Medium |
-| US4: repository observer finds SpecKit evidence | Improved in this branch: active SpecKit docs now route to Go-first validation and the passing fixture root. Residual risk remains in historical run-card/research docs that still mention retired scripts. | Medium |
+| US3 / US3A: pilot and first real slice | Current run-card and customer pilot outline docs now avoid retired Node/script validation and require `not_assessed` when no Go verifier profile exists. Historical block ledgers still record old command evidence as history. | Low |
+| US4: repository observer finds SpecKit evidence | Improved in this branch: active SpecKit docs now route to Go-first validation and the passing fixture root. Current run-card docs no longer route users to retired scripts. | Low |
 
 ## Recommended Fix Plan
 
@@ -137,7 +137,7 @@ No fix needed in this pass, except keeping these docs as the source of tone and 
    - `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`
    - `git diff --check`
 2. Completed in this branch: replace current-facing `scripts/*` references in `docs/process-metric-catalog.md` and `docs/contract-release-signing.md` with current Go verifier/release-proof commands.
-3. Next pass: classify remaining `docs/research/*` script references as either historical evidence or live run-card instructions, then patch only the live instruction docs.
+3. Completed in this branch: patch live run-card and customer pilot instruction docs to avoid retired Node/script validators and mark arbitrary package schema validation `not_assessed` when no current Go verifier exists.
 4. Leave block ledgers and historical research notes intact unless a current-facing page links to them as live instructions.
 5. Completed after patching:
    - `go test ./...`

@@ -44,9 +44,12 @@ customer-pilot/
     harness-run-card.md
     kotlin-bazel-fixture-plan.md
   evidence/
-    evidence-bundle.json
+    evidence-events.json
     provenance-records.json
     trace-snapshot.json
+    observations.json
+    metric-stream.json
+    proof-states.json
     export-limitations.md
   matrices/
     harness-compatibility-matrix.md
@@ -83,27 +86,25 @@ The directory shape is illustrative. Committed examples in this repository must 
 ## Validation Commands
 
 ```bash
-node scripts/validate-json-schema.mjs schema/evidence-bundle.schema.json customer-pilot/evidence/evidence-bundle.json
-node scripts/validate-json-schema.mjs schema/trace.schema.json customer-pilot/evidence/trace-snapshot.json
-jq -c '.[]' customer-pilot/evidence/provenance-records.json | while read -r record; do
-  printf '%s\n' "$record" > /tmp/sdp-trace-provenance-record.json
-  node scripts/validate-json-schema.mjs schema/provenance-record.schema.json /tmp/sdp-trace-provenance-record.json
-done
+jq empty customer-pilot/evidence/*.json
 if [ -f customer-pilot/handoff/assessment-input.json ]; then
-  node scripts/validate-json-schema.mjs schema/assessment-input.schema.json customer-pilot/handoff/assessment-input.json
+  jq empty customer-pilot/handoff/assessment-input.json
 fi
 if [ -f customer-pilot/handoff/external-verdict-input.json ]; then
-  node scripts/validate-json-schema.mjs schema/external-verdict-input.schema.json customer-pilot/handoff/external-verdict-input.json
+  jq empty customer-pilot/handoff/external-verdict-input.json
 fi
-node scripts/validate-pilot-matrices.mjs
-```
-
-Use repository-local validation for committed examples:
-
-```bash
-npm run validate
+go test ./...
+jq empty schema/*.json
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
 git diff --check
 ```
+
+The current Go command surface does not provide a general schema validator for
+arbitrary customer pilot package directories. If a pilot package is not
+represented by an implemented verifier profile or fixture validator, record
+package-level schema validation as `not_assessed` with reason
+`validator_not_implemented`; do not replace that gap with retired Node/script
+validation.
 
 ## Residual `not_assessed` Reporting
 

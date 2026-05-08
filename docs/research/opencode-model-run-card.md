@@ -91,14 +91,20 @@ External verdict words emitted by another tool may be recorded only as external 
 Run after a sanitized run artifact exists:
 
 ```bash
-node scripts/validate-json-schema.mjs schema/evidence-bundle.schema.json <run>/evidence-bundle.json
-node scripts/validate-json-schema.mjs schema/trace.schema.json <run>/trace-snapshot.json
-jq -c '.[]' <run>/provenance-records.json | while read -r record; do
-  printf '%s\n' "$record" > /tmp/sdp-trace-provenance-record.json
-  node scripts/validate-json-schema.mjs schema/provenance-record.schema.json /tmp/sdp-trace-provenance-record.json
-done
-node scripts/validate-pilot-matrices.mjs
-scripts/validate-e2e-pilot-package.sh examples/pilot-runs/opencode-minimax-kotlin-bazel
+jq empty <run>/evidence/*.json
+if [ -f <run>/handoff/assessment-input.json ]; then
+  jq empty <run>/handoff/assessment-input.json
+fi
+go test ./...
+jq empty schema/*.json
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
+git diff --check
 ```
+
+The current Go command surface does not provide a general schema validator for
+arbitrary pilot package directories. If the package is not represented by an
+implemented verifier profile or fixture validator, record package-level schema
+validation as `not_assessed` with reason `validator_not_implemented`; do not
+replace that gap with retired Node/script validation.
 
 Do not update `docs/model-compatibility.md` to `observed` unless the committed artifact reference points to the sanitized run evidence.

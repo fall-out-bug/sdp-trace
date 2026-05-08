@@ -60,13 +60,20 @@ Every artifact committed to the repository must be sanitized. Raw prompts, tool 
 ## Validation
 
 ```bash
-node scripts/validate-json-schema.mjs schema/evidence-bundle.schema.json <run>/evidence-bundle.json
-node scripts/validate-json-schema.mjs schema/trace.schema.json <run>/trace-snapshot.json
-jq -c '.[]' <run>/provenance-records.json | while read -r record; do
-  printf '%s\n' "$record" > /tmp/sdp-trace-provenance-record.json
-  node scripts/validate-json-schema.mjs schema/provenance-record.schema.json /tmp/sdp-trace-provenance-record.json
-done
-node scripts/validate-pilot-matrices.mjs
+jq empty <run>/evidence/*.json
+if [ -f <run>/handoff/assessment-input.json ]; then
+  jq empty <run>/handoff/assessment-input.json
+fi
+go test ./...
+jq empty schema/*.json
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
+git diff --check
 ```
+
+The current Go command surface does not provide a general schema validator for
+arbitrary harness package directories. If the package is not represented by an
+implemented verifier profile or fixture validator, record package-level schema
+validation as `not_assessed` with reason `validator_not_implemented`; do not
+replace that gap with retired Node/script validation.
 
 Update `docs/harness-compatibility-matrix.md` only with observed evidence state and artifact references. Planned rows remain `not_assessed`.
