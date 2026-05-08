@@ -5,7 +5,7 @@
   "trust_scope": "source_bound_local_release",
   "release_verification_state": "pass",
   "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
-  "manifest_digest": "1602c0832c08c6abf47f6726653d17ab35c801bf8db10785fbc91338d10fb050",
+  "manifest_digest": "48cbcba2e7ef9db136a2292277eb2625733c24f54be5b1744551184eb8f4a257",
   "manifest_digest_status": "matched",
   "artifact_digest_status": "matched",
   "signature_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
@@ -34,7 +34,7 @@
   },
   "transparency_log_status": "not_assessed",
   "freshness_status": "not_assessed",
-  "verified_at": "2026-05-08T06:14:51Z",
+  "verified_at": "2026-05-08T07:09:42Z",
   "trusted_contract_release": false,
   "private_equivalent_profile": "not_assessed",
   "accountability": {
