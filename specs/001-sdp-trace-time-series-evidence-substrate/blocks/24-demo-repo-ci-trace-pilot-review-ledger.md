@@ -59,3 +59,21 @@ cases and two intentionally dishonest-trace cases.
 | date | approver/source | decision | implementation constraint |
 | --- | --- | --- | --- |
 | 2026-05-08 | CTO/user | approved reviewed direction | Implement Feature Flag / Entitlements Kotlin+Bazel demo repo, GitHub Actions first, source-built `sdp-trace`, sanitized copy-back only, three clean cases, and two intentionally dishonest-trace cases. |
+
+## Implementation Evidence
+
+| item | state | evidence |
+| --- | --- | --- |
+| Demo repo selected | `pass` | `fall-out-bug/sdp-trace-demo-ci-pilot`, private repository, commit `e370d1c00df8a7e7859adc284480563a269e64ca` |
+| Demo CI run | `pass` | GitHub Actions run `25548285336` completed successfully on 2026-05-08 |
+| Clean cases | `pass` | `clean-feature-flag`, `clean-entitlement-matrix`, `clean-audit-scope` all recorded `observed` with exit `0` |
+| CI witness | `pass` | `ci-witness.json` recorded `status=pass`, `established_trust_scope=ci_witnessed`, `reason=ci_identity_present` |
+| No-OIDC witness gap | `cannot_verify` | `ci-witness-no-oidc.json` recorded `missing_ci_oidc`, missing identity fields, and exit `3` |
+| Dishonest source/run mismatch | `cannot_verify` | `dishonest-source-run-mismatch` recorded `source_run_binding_mismatch` and `ci_witness_not_upgraded` |
+| Dishonest stale digest index | `fail` | `dishonest-stale-digest-index` recorded `artifact_digest_mismatch` and `stale_index` |
+| Safety scan | `pass` | Denylist pattern sha256 `c5ba21129cbc0c969a2d02b46a15bed1cf8c3d48d51643b4eeb6f899150cbbb7`; CI scans returned `redaction_scan=pass` |
+| Raw artifact retention | `pass` | Artifacts `6876152707` and `6876147448`, expiration 2026-05-22 |
+| Public/customer owner portability | `not_assessed` | Demo repo is private and same-owner |
+| Compiled Kotlin/JVM compatibility | `not_assessed` | Bazel tests inspect target-scoped Kotlin source; they do not compile Kotlin |
+
+Implementation review and PR-level review remain open.
