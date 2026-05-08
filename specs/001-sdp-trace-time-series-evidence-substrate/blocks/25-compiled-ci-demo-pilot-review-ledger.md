@@ -47,7 +47,10 @@ Status: initialized for Socratic spec review.
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| _pending_ | _pending_ | _pending_ | PR not opened. | `not_assessed` | Block 25 activation gate |
+| PR25-CODE-01 | none | code/docs correctness | No stale references, broken wording, or accidental green claims detected from the PR evidence packet. | `pass` | Mimo PR-level review on PR #19 |
+| PR25-TRACE-01 | none | tracing/evidence | No evidence overclaim found; `cannot_verify`, `fail`, `pass`, and `not_assessed` states remain distinct. | `pass` | MiniMax-M2.7 PR-level tracing/evidence review on PR #19 |
+| PR25-REQ-01 | none | requirements-vs-implementation | No unmet Block 25 acceptance criteria or scope drift found from the PR evidence packet. | `pass` | Qwen PR-level requirements review on PR #19 |
+| PR25-SEC-01 | none | security/privacy | No leakage or misleading security claim found within Block 25 scope; explicit residual non-goals remain `not_assessed`. | `pass` | MiniMax-M2.7 PR-level security focused review on PR #19 |
 
 ## Current Review Evidence State
 
@@ -61,7 +64,11 @@ Status: initialized for Socratic spec review.
 - Implementation review: `pass`; CTO buyer, Head of Engineering, and Head of
   InfoSec role reviews have no remaining critical or major findings after
   fixes and focused re-review.
-- PR-level review: `not_assessed`.
+- PR-level review: `pass`; code/docs correctness, tracing/evidence,
+  requirements-vs-implementation, and security/privacy planes have no
+  remaining critical or major findings.
+- PR CI: GitHub Actions `verify` passed on PR #19 head
+  `d9e83620fd1bf221c0cca2ddb50be19ae65e5208` before this ledger update.
 - Demo repo CI: `pass` for run `25555299371` on
   `fall-out-bug/sdp-trace-demo-ci-pilot@8d99c13491121a99c5c4cd984ec708dcc1f5025c`.
 - Artifact index digest verification: `pass` for downloaded clean and no-OIDC
