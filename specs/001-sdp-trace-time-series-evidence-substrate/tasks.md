@@ -603,7 +603,7 @@ readiness, policy enforcement, or customer deployment readiness.
 - [x] T207 [US5] Add redaction and safety checks proving committed or linked
   demo artifacts do not expose tokens, private paths, raw logs, raw model
   payloads, customer data, or unsafe personal identifiers.
-- [ ] T208 [US5] Run implementation and PR-level reviews across
+- [x] T208 [US5] Run implementation and PR-level reviews across
   code/correctness, trace/evidence, and requirements-vs-implementation planes
   before claiming Block 24 closure.
 

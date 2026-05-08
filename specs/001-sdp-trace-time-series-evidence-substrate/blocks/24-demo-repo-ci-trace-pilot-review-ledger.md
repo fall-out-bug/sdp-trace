@@ -103,6 +103,7 @@ Implementation review and PR-level review remain open.
 | --- | --- | --- | --- |
 | trace/evidence fixed findings | MiniMax-M2.7 | `APPROVE` | none |
 | code/correctness fixed findings | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
+| PR-level minor-fix re-review | OpenRouter Xiaomi MiMo V2.5 Pro | `APPROVE` | none |
 
-Implementation review has no remaining critical or major findings. PR-level
-review remains open.
+Implementation and PR-level review have no remaining critical or major
+findings. GitHub CI must still be checked on the final PR head before merge.
