@@ -138,7 +138,7 @@ Files:
 
 - `specs/001-sdp-trace-time-series-evidence-substrate/tasks.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md`
-- `archive/research/opencode-minimax-kotlin-bazel-proof-report.md`
+- retired research artifact
 - `examples/contract-foundation/contract-release-verification.example.json`
 - `examples/self-trace/self-attestation-verification.json`
 
@@ -208,7 +208,7 @@ Files:
 - modify `scripts/validate-e2e-pilot-package.sh`
 - modify `scripts/test-e2e-pilot-package.sh`
 - update `examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md`
-- update `archive/research/opencode-minimax-kotlin-bazel-proof-report.md`
+- update retired research artifact
 
 Modes:
 

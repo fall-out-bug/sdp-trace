@@ -29,7 +29,7 @@ implementation approval.
 | S23-QD-04 | major | quality/docs | OpenRouter Qwen | Workstreams were not truly independent and lacked merge order. | accepted_fixed | WS6 now states expected implementation order and limits parallel worktrees to disjoint write scopes. |
 | S23-QD-05 | major | quality/docs | OpenRouter Qwen | Parked/dead code audit used speculative wording. | accepted_fixed | WS3 now requires `rg` import checks plus available Go dead-code tool and disposition. |
 | S23-QD-06 | major | quality/docs | OpenRouter Qwen | Verification plan used `rtk` without definition. | accepted_fixed | Verification plan now uses underlying commands directly. |
-| S23-QD-07 | major | quality/docs | OpenRouter Qwen | Customer answer map format was undefined. | accepted_fixed | WS5 now names `docs/customer-questions.en.md` and `.ru.md`. |
+| S23-QD-07 | major | quality/docs | OpenRouter Qwen | Customer answer map format was undefined. | accepted_fixed | WS5 now names retired customer-question map and `.ru.md`. |
 | S23-QD-R1 | critical | quality/docs | OpenRouter MiMo | Closure package and review artifact schema were undefined. | accepted_fixed | WS6 now names closure package files and required table fields. |
 | S23-QD-R2 | critical | quality/docs | OpenRouter MiMo | Package-level coverage scope was unbounded and could silently expand the block. | accepted_fixed | WS3 now gates changed production files/functions and reports package coverage for context. |
 | S23-QD-R3 | major | quality/docs | OpenRouter MiMo | CRAP coverage operand needed 0-1 normalization and per-function extraction strategy. | accepted_fixed | WS3 now defines normalized coverage and `go tool cover -func` extraction. |

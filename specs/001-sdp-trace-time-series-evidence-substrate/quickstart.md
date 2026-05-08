@@ -97,7 +97,7 @@ Do not inspect pilot evidence as a product proof until `examples/self-trace/asse
 Expected sanitized outputs after pilot execution:
 
 ```text
-archive/research/
+retired-research-artifacts/
 examples/opencode/
 examples/superpowers/
 examples/jvm-bazel/

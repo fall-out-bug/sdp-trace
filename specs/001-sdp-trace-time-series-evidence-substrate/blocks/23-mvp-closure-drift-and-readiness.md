@@ -8,7 +8,7 @@ Parent artifacts:
 
 - `specs/001-sdp-trace-time-series-evidence-substrate/spec.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/tasks.md`
-- `archive/research/closed-block-task-drift-audit-2026-05-07.md`
+- retired research artifact
 - `docs/agent-entrypoint.md`
 - `docs/reviewer-entrypoint.md`
 
@@ -148,7 +148,7 @@ Acceptance criteria:
   section. A grep for retired commands in current-closure sections must return
   no matches.
 - The retired-command scan starts with the retired verifier list in
-  `archive/research/closed-block-task-drift-audit-2026-05-07.md` and any additional
+  retired research artifact and any additional
   removed commands found by the implementation audit.
 - Block 22 status and review ledger agree on implementation and PR-review state.
 - No checked task claims a removed active command as current closure evidence.
@@ -184,7 +184,7 @@ Quality thresholds for this block:
 
 Quality artifact format:
 
-- `archive/research/block-23-quality-report.md` contains command outputs,
+- retired research artifact contains command outputs,
   complexity rows, changed-file/function coverage rows, CRAP rows, and exception
   rows.
 - Exception rows use:
@@ -271,8 +271,8 @@ Mandatory customer questions for MVP handoff:
 
 Deliverable format:
 
-- `docs/customer-questions.en.md`
-- `docs/customer-questions.ru.md` if Russian-language handoff remains in MVP
+- retired customer-question map
+- retired customer-question map if Russian-language handoff remains in MVP
   scope. If Russian is removed from MVP scope, the English file must explicitly
   record Russian customer questions as `not_assessed` follow-up.
 
@@ -296,10 +296,10 @@ Produce a closure package that can survive independent review.
 
 Closure package format:
 
-- `archive/research/block-23-mvp-closure-package.md`
-- `archive/research/block-23-quality-report.md`
-- `archive/research/block-23-not-assessed-registry.md`
-- `archive/research/block-23-review-disposition.md`
+- retired research artifact
+- retired research artifact
+- retired research artifact
+- retired research artifact
 
 `block-23-mvp-closure-package.md` contains:
 

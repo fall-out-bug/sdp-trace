@@ -22,8 +22,6 @@ working specs and historical research artifacts.
 - [Adoption Guide, Russian](cto-adoption-guide.ru.md)
 - [Repository Rollout Playbook, English](team-lead-playbook.en.md)
 - [Repository Rollout Playbook, Russian](team-lead-playbook.ru.md)
-- [Customer Questions, English](customer-questions.en.md)
-- [Customer Questions, Russian](customer-questions.ru.md)
 - [Accountability Model](accountability-model.md)
 - [Evidence Policy](evidence-policy.md)
 - [CI Check Policy](ci-check-policy.md)
@@ -38,22 +36,10 @@ working specs and historical research artifacts.
 - [SpecKit Compatibility](speckit-compatibility.md)
 - [JVM And Bazel Guide](jvm-bazel-guide.md)
 
-## Evidence Matrices
-
-These files are evidence-state registries. They are not broad compatibility
-claims.
-
-- [Harness Evidence Matrix](harness-compatibility-matrix.md)
-- [Model Evidence Matrix](model-compatibility.md)
-
-## Working And Historical Artifacts
+## Working Artifacts
 
 - `specs/`: active and historical SpecKit artifacts. Use these for development
   context, not as a first-time product guide.
-- `archive/research/`: research notes, review outputs, pilot reports, and
-  development evidence. These files can explain why decisions were made, but
-  they are not authoritative proof unless current verifier output or accepted
-  external signatures bind them.
 - `examples/`: sanitized fixtures and pilot evidence packages. Treat each
   example according to its README and recorded evidence state.
 

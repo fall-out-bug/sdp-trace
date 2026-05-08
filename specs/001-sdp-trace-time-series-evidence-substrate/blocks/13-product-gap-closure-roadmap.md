@@ -11,7 +11,7 @@ Parent artifacts:
 - `docs/team-lead-playbook.en.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/12-ci-witness-adoption.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13b-capture-boundary-state-dx-baseline.md`
-- `archive/research/block-12-documentation-review-convergence.md`
+- retired research artifact
 
 ## Goal
 

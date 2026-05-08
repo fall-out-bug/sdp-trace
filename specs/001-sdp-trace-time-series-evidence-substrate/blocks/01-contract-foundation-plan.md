@@ -158,9 +158,9 @@ Modify:
 
 Do not modify in this block:
 
-- `archive/research/opencode-model-run-card.md`
-- `archive/research/harness-run-card.md`
-- `archive/research/kotlin-bazel-fixture-plan.md`
+- retired research artifact
+- retired research artifact
+- retired research artifact
 - compatibility matrix rows for real pilots
 - `sdp_gate` repository files
 

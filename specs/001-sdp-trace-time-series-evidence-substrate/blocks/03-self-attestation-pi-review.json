@@ -22,7 +22,7 @@
       "contract-release-verification fixture has release_signer but production_release_verified reports not_assessed",
       "Verifier heredoc may produce invalid JSON if file path contains double quotes or backslashes",
       "contract-release.dsse.json uses nested payload structure unlike other fixtures",
-      "archive/research/self-attestation-summary.md does not mention not_assessed sentinel value or local-dev trust boundary",
+      "retired-research-artifact does not mention not_assessed sentinel value or local-dev trust boundary",
       "generate-local-dev-dsse.sh uses git rev-parse HEAD as fallback zero-commit"
     ]
   },

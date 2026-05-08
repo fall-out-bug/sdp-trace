@@ -135,7 +135,8 @@ Give the team lead:
 - the report and retention policy;
 - the witness profile to use, if any;
 - the rule that `not_assessed` and `cannot_verify` are not passes;
-- the customer question map in `docs/customer-questions.en.md`.
+- the repository's retained report, witness, and assessment artifacts for the
+  exact run under review.
 
 For a multi-repository rollout, require teams to publish the report directory
 and witness artifacts as retained CI/customer-policy artifacts. Track the ratio

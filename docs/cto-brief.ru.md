@@ -26,6 +26,5 @@ proof.
 Это не broad production trust, не universal harness compatibility и не
 автоматическое обнаружение каждого локального agent run вне wrapper или adapter.
 
-Начинайте с `docs/README.md`, `docs/cto-adoption-guide.ru.md` и
-`docs/customer-questions.ru.md`. Development specs и research notes полезны для
-audit history, но это не onboarding path для покупателя.
+Начинайте с `docs/README.md` и `docs/cto-adoption-guide.ru.md`. Development
+specs и research notes полезны для audit history, но это не onboarding path.

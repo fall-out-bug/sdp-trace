@@ -182,7 +182,7 @@ Block 04 implementation started after consensus was accepted for option 2: local
 - `scripts/finalize-source-bound-release.sh` verifies clean source-bound artifact proof and refuses dirty working trees.
 - `schema/contract-release-verification.schema.json` records source commit artifact status, external trust profile, transparency evidence, source URI, protected ref, workflow identity, approval, and production release verification states.
 - `examples/contract-foundation/negative-trusted-release-*.json` fixtures reject unsupported `trusted_contract_release: true` claims.
-- `docs/contract-release-signing.md` and `archive/research/self-attestation-summary.md` distinguish a source-bound local release from an externally trusted production release.
+- `docs/contract-release-signing.md` and retired research artifact distinguish a source-bound local release from an externally trusted production release.
 
 ## Delivery State
 

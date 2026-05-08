@@ -94,7 +94,7 @@
         },
         "authority_scope": "evidence",
         "accountability_claim": "recording_only",
-        "approval_ref": "archive/research/block-01-validation-summary.md",
+        "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
         "risk_owner": {
           "identity_ref": "role:sdp-trace-risk-owner",
           "actor_type": "human_role"

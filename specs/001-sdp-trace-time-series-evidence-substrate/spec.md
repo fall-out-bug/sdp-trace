@@ -160,7 +160,11 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-011**: Public docs MUST use SpecKit-aligned terms first: spec, plan, task, evidence, gate, decision, trace, provenance.
 - **FR-012**: Public docs MUST not imply dependency on `sdp_lab`, Beads, Operator Mode, agentloop, OpenCode, GitHub, Claude, Codex, or any specific harness runtime.
 - **FR-013**: Schema and example artifacts MUST be machine-checkable by documented commands.
-- **FR-014**: Compatibility matrices are legacy-named evidence matrices. They MUST record observed evidence state, artifact references, gap reasons, and next required evidence; they MUST NOT claim support, readiness, or compatibility as native `sdp-trace` outcomes.
+- **FR-014**: Static compatibility matrices are retired. Evidence for harnesses,
+  models, languages, and build tools MUST be recorded at the exact run or
+  package level with observed state, artifact reference, gap reason, and next
+  required evidence; broad support, readiness, or compatibility claims require
+  an external verdict input.
 - **FR-015**: Every schema artifact MUST declare JSON Schema Draft 2020-12 and a schema version; every committed example MUST declare or reference the schema version it follows once full validation is enabled.
 - **FR-016**: Evidence and provenance artifact references MUST be safe to commit: no secrets, credentials, raw customer data, or private prompt contents; sanitized artifacts MUST preserve hash, redaction, and access notes.
 - **FR-017**: `sdp-trace` MUST distinguish native observations from external verdict or evidence-strength assertions through explicit producer and origin fields.

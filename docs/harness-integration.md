@@ -44,19 +44,26 @@ responses, command args, stdout/stderr bodies, tool input/output bodies, adapter
 configuration, gateway secrets, provider tokens, authenticated URLs, or raw
 review bodies.
 
-## Evidence State Registry
+## Evidence State
 
-Do not turn planned harnesses or model families into support claims. The current
-evidence state lives in:
+Do not maintain static compatibility matrices for harnesses, models, languages,
+or build tools. They collapse different questions into one table and invite
+false support claims.
 
-- `docs/harness-compatibility-matrix.md`
-- `docs/model-compatibility.md`
+Record evidence at the run or package level instead:
 
-Rows with `not_assessed`, `discovery_required`, or `no_run_artifact` are gaps,
-not compatibility. A row may move to `observed` only when a committed sanitized
-run artifact or evidence summary exists and the scope is named narrowly.
+- [Agent Entrypoint](agent-entrypoint.md) defines the current command and state
+  contract.
+- [Reviewer Entrypoint](reviewer-entrypoint.md) defines how to inspect verifier
+  output without overclaiming it.
+- [OpenCode + MiniMax + Kotlin/Bazel proof package](../examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md)
+  is one exact observed slice, not general support for OpenCode, MiniMax,
+  Kotlin, or Bazel.
+- [JVM And Bazel Guide](jvm-bazel-guide.md) documents the current JVM/Bazel
+  fixture boundary.
 
 Validation must measure tool-use reliability, structured output discipline,
 context handling, retained evidence, redaction behavior, and evidence-grounded
-claims. Broad compatibility language requires an external verdict input or a
-separate downstream policy decision; it is not a native `sdp-trace` claim.
+claims for the exact observed run. Broader support, readiness, or compatibility
+language requires a separate downstream verdict; it is not a native
+`sdp-trace` claim.

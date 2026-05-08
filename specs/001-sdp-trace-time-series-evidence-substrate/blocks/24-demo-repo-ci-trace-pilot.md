@@ -8,9 +8,9 @@ Parent artifacts:
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/23-mvp-closure-drift-and-readiness.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/24-demo-repo-ci-trace-pilot-implementation-plan.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/24-demo-repo-ci-trace-pilot-socratic.md`
-- `archive/research/block-23-mvp-closure-package.md`
-- `docs/customer-questions.en.md`
-- `docs/customer-questions.ru.md`
+- retired research artifact
+- retired customer-question map
+- retired customer-question map
 - `docs/agent-entrypoint.md`
 - `docs/reviewer-entrypoint.md`
 
@@ -171,8 +171,8 @@ minimum artifact split:
 | demo repo CI | `.sdp-trace-runs/` | GitHub Actions artifact store, primary evidence during review | Observed demo run evidence; report records workflow run id, artifact name/id when available, retention days, and expiration or rerun requirement. |
 | demo repo CI | `.sdp-trace-report/` with report, gate result, witness result, verify/explain outputs, exit-code files, and safety scan output | GitHub Actions artifact store, primary evidence during review | Demo pilot evidence and gap state; if artifact expires before review, the state becomes `cannot_verify` until rerun. |
 | demo repo | sanitized report/index copies, if public-safe | git-committed sanitized evidence only | Durable demo summary, not raw authority for original CI artifact bytes. |
-| `sdp-trace` repo | `archive/research/block-24-demo-repo-ci-trace-pilot-report.md` | git-committed sanitized summary | Customer-readable summary, links, states, owner-independence gap, and Block 23 question mapping. |
-| `sdp-trace` repo | `archive/research/block-24-demo-repo-ci-artifact-index.md` | git-committed sanitized index | Sanitized artifact references and digests, not raw logs. |
+| `sdp-trace` repo | retired research artifact | git-committed sanitized summary | Customer-readable summary, links, states, owner-independence gap, and Block 23 question mapping. |
+| `sdp-trace` repo | retired research artifact | git-committed sanitized index | Sanitized artifact references and digests, not raw logs. |
 | `sdp-trace` repo | `specs/.../blocks/24-demo-repo-ci-trace-pilot-review-ledger.md` | git-committed ledger | Review findings, dispositions, re-review state, CI state, and residual gaps. |
 
 ## Evidence Classification
@@ -255,12 +255,12 @@ The nine question rows must use this quality bar:
 
 Block 24 implementation must use an executable denylist scan before any demo
 artifact is committed or linked as customer-inspectable evidence. The planned
-pattern file is `archive/research/block-24-redaction-denylist.patterns`.
+pattern file is retired research artifact.
 
 Minimum command shape:
 
 ```bash
-rg --pcre2 -n -f archive/research/block-24-redaction-denylist.patterns <artifact-root> <sanitized-copy-root>
+rg --pcre2 -n -f retired-research-artifact <artifact-root> <sanitized-copy-root>
 ```
 
 Expected result: no matches and exit code `1` from `rg`. Any match blocks

@@ -25,7 +25,6 @@ witness artifacts when evidence exists, and source-bound local release proof.
 It does not claim broad production trust, universal harness compatibility, or
 automatic detection of every unwrapped local agent run.
 
-Start with `docs/README.md`, then use `docs/cto-adoption-guide.en.md` and
-`docs/customer-questions.en.md` as supporting references. Development specs and
-research notes are useful for audit history, but they are not the onboarding
-path.
+Start with `docs/README.md`, then use `docs/cto-adoption-guide.en.md` as a
+supporting reference. Development specs and research notes are useful for audit
+history, but they are not the onboarding path.

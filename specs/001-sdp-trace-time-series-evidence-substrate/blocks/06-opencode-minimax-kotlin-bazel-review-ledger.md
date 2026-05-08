@@ -52,7 +52,7 @@ may cite these historical script results as active proof.
 - Runner tests: `scripts/test-e2e-runner.sh`
 - Package validator tests: `scripts/test-e2e-pilot-package.sh`
 - Committed proof package: `examples/pilot-runs/opencode-minimax-kotlin-bazel/`
-- Tested-on report: `archive/research/opencode-minimax-kotlin-bazel-proof-report.md`
+- Tested-on report: retired research artifact
 - Latest package validation: `scripts/validate-e2e-pilot-package.sh examples/pilot-runs/opencode-minimax-kotlin-bazel`
 
 Current status: these implementation evidence paths are historical. Current

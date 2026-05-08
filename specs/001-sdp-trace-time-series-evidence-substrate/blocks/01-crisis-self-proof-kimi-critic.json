@@ -24,7 +24,7 @@
   ],
   "major_findings": [
     {
-      "file": "archive/research/block-01-validation-summary.md",
+      "file": "retired-research-artifact",
       "issue": "npm audit reports high-severity findings in the pinned ajv-cli@5.0.0 dependency chain (fast-json-patch <3.1.1), and the project explicitly rejects fixing them to preserve validator pinning.",
       "why_it_matters_to_CTO": "The validation tooling used to establish contract trust has known vulnerable dependencies. If the validator cannot be trusted, the schema validation results it produces are suspect.",
       "acceptance_risk": "Validation environment itself carries integrity risk; downstream consumers may reject evidence produced by a toolchain with admitted security debt."
@@ -51,7 +51,7 @@
   "evidence_checked": [
     "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
-    "archive/research/block-01-validation-summary.md",
+    "retired-research-artifact",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
     "docs/cto-brief.en.md"
   ],

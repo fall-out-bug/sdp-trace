@@ -76,8 +76,8 @@ docs/
 ├── contract-release-signing.md
 ├── concepts.md
 ├── evidence-policy.md
-├── harness-compatibility-matrix.md
-├── model-compatibility.md
+├── retired static harness matrix
+├── retired static model matrix
 └── jvm-bazel-guide.md
 ```
 

@@ -134,7 +134,8 @@ owner.
 - report и retention policy;
 - witness profile, если он нужен;
 - правило: `not_assessed` и `cannot_verify` не являются pass;
-- customer question map в `docs/customer-questions.ru.md`.
+- retained report, witness и assessment artifacts для конкретного проверяемого
+  run.
 
 Для rollout по нескольким репозиториям требуйте, чтобы команды публиковали
 report directory и witness artifacts как retained CI/customer-policy artifacts.

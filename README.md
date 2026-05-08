@@ -71,8 +71,8 @@ themselves before understanding the repository.
 5. [Harness Integration](docs/harness-integration.md)
 6. [Schema Reference](schema/README.md)
 
-Governance, rollout, and customer-question documents are supporting references
-after the core path is clear.
+Governance and rollout documents are supporting references after the core path
+is clear.
 
 ## Repository Layout
 
@@ -81,9 +81,6 @@ after the core path is clear.
 - `docs/`: product, command, governance, reviewer, and integration documentation.
 - `examples/`: sanitized fixtures and pilot evidence packages.
 - `specs/`: SpecKit working artifacts and implementation block records.
-- `archive/research/`: historical review, research, and demo-run artifacts. These
-  are not the onboarding path and are not current proof unless a live verifier
-  run or accepted external signature says so.
 
 ## Minimal Flow
 

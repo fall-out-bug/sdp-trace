@@ -14,7 +14,7 @@ Consensus is accepted for spec review. The selected scope is an evidence-package
 
 1. Create executable run-cards for OpenCode model slices and harness slices.
 2. Define Kotlin+Bazel evidence requirements and keep the fixture `not_assessed` until a real run exists.
-3. Update legacy-named compatibility matrices with evidence state, reason codes, artifact references, and gaps only.
+3. Update retired static compatibility matrices with evidence state, reason codes, artifact references, and gaps only.
 4. Build a customer pilot evidence package outline that is safe to commit and does not contain raw customer data.
 
 Implementation is blocked until pi-review findings on the spec artifacts are recorded in the committed review ledger, mirrored in Beads, and closed.

@@ -35,7 +35,7 @@
         "priority": "P3",
         "severity": "minor",
         "title": "Pinned ajv-cli@5.0.0 dependency chain carries documented high-severity audit findings",
-        "file": "package-lock.json, archive/research/block-01-validation-summary.md",
+        "file": "package-lock.json, retired-research-artifact",
         "evidence": "npm audit reports two high severity vulnerabilities via fast-json-patch <3.1.1 in the ajv-cli@5.0.0 dependency chain. The project documents this as residual risk and warns against auto-fixing because the validator strategy is pinned.",
         "speckit_or_beads_ref": "T034, sdp-trace-bd2",
         "required_fix": "Replace ajv-cli with a local validator strategy that does not carry the fast-json-patch audit finding."

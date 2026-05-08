@@ -3,8 +3,8 @@
 Status: planning draft; implementation not started
 Date: 2026-05-05
 Inputs:
-- `archive/research/agentic-sdlc-evidence-substrate-v4-brief.md`
-- `archive/research/harness-telemetry-reviews/round8-final-convergence.md`
+- retired research artifact
+- retired research artifact
 - `09-flight-recorder-trust-kernel.md`
 
 This document is a design input for implementation. It is not

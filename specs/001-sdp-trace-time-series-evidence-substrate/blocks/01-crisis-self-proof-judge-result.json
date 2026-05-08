@@ -16,7 +16,7 @@
     {
       "finding": "Local signing proof used ephemeral RSA instead of target Sigstore keyless profile",
       "resolution": "Local DSSE/OpenSSL proof is now explicitly framed as engineering evidence for envelope mechanics only; target profile sdp-trace-signature/sigstore-dsse-keyless-v1 remains a future requirement; docs/contract-release-signing.md and resolution notes draw the explicit distinction",
-      "evidence": "blocks/01-contract-foundation.md: 'Block 01 is not product proof even when local release verification evidence exists'; archive/research/block-01-validation-summary.md: 'locally_attested is useful engineering evidence. It is not a substitute for externally_attested or production_release_verified'"
+      "evidence": "blocks/01-contract-foundation.md: 'Block 01 is not product proof even when local release verification evidence exists'; retired-research-artifact: 'locally_attested is useful engineering evidence. It is not a substitute for externally_attested or production_release_verified'"
     },
     {
       "finding": "source_commit placeholder 'working-tree-block-01' used in contract manifest",
@@ -55,7 +55,7 @@
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/03-self-attestation-proof.md: blocked by Block 02 with separate proof states",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md: accepted findings and spec changes documented",
     "docs/cto-brief.en.md: one-minute narrative with explicit self-proof blocker",
-    "archive/research/block-01-validation-summary.md: separate proof states and local-only evidence framing"
+    "retired-research-artifact: separate proof states and local-only evidence framing"
   ],
   "required_next_action": "Implement Phase 5 self-trace tasks T020-T026, T052-T056 and Phase 5A self-attestation tasks T057-T061. Complete T011 (process metric catalog) before Phase 6 pilot matrix work begins. Until then, sdp-trace correctly holds the product state as contract scaffolding with no customer trust claim.",
   "no_solution_policy_observed": true

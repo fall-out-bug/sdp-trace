@@ -435,8 +435,8 @@ Tasks:
 Files:
 
 - `examples/block16-protected-gate/`
-- `archive/research/block-16-implementation-evidence.md`
-- `archive/research/block-16-implementation-review-disposition.md`
+- retired research artifact
+- retired research artifact
 
 Tasks:
 
