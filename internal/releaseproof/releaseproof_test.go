@@ -151,6 +151,54 @@ func TestEvaluateReadsArtifactsFromManifestSourceCommit(t *testing.T) {
 	}
 }
 
+func TestWriteReadAndRepoRoot(t *testing.T) {
+	root := t.TempDir()
+	runGit(t, root, "init")
+	result := Verification{
+		ID:                       "verification",
+		SchemaVersion:            SchemaVersion,
+		TrustScope:               TrustScope,
+		ReleaseVerificationState: StatePass,
+		ManifestRef:              "manifest.json",
+		SourceCommit:             "1111111111111111111111111111111111111111",
+		Accountability: Accountability{
+			DRI:            Actor{IdentityRef: "role:dri", ActorType: "human_role"},
+			Approver:       Actor{IdentityRef: "role:approver", ActorType: "human_role"},
+			Escalation:     Actor{IdentityRef: "role:cto", ActorType: "human_role"},
+			RiskOwner:      Actor{IdentityRef: "role:risk", ActorType: "human_role"},
+			AuthorityScope: "contract_release",
+			LineOfDefense:  "second",
+		},
+	}
+	path := filepath.Join(root, "nested", "release-proof.json")
+	if err := Write(path, result); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	loaded, err := Read(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if loaded.ID != result.ID || loaded.SourceCommit != result.SourceCommit {
+		t.Fatalf("loaded = %+v", loaded)
+	}
+	nested := filepath.Join(root, "nested")
+	repoRoot, err := RepoRoot(nested)
+	if err != nil {
+		t.Fatalf("repo root: %v", err)
+	}
+	canonicalRepoRoot, err := filepath.EvalSymlinks(repoRoot)
+	if err != nil {
+		t.Fatalf("canonical repo root: %v", err)
+	}
+	canonicalRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatalf("canonical root: %v", err)
+	}
+	if canonicalRepoRoot != canonicalRoot {
+		t.Fatalf("repo root = %s want %s", repoRoot, root)
+	}
+}
+
 func writeFile(t *testing.T, path string, value string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

@@ -123,42 +123,15 @@ func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error
 		return Verification{}, err
 	}
 	manifestSourceCommit := strings.TrimSpace(manifest.SourceCommit)
-	commitStatus := StatusMatched
-	dirty := worktreeDirty(repoRoot)
-	counts := ArtifactCounts{Checked: len(manifest.Artifacts)}
-	var issues []ArtifactIssue
-	artifactStatus := StatusMatched
 	state := StatePass
-	reason := "source commit contains every manifest artifact path with matching digest"
-	if manifestSourceCommit == "" {
-		commitStatus = StatusMissing
+	commitStatus, reason := sourceCommitState(repoRoot, manifestSourceCommit)
+	if commitStatus == StatusMissing {
 		state = StateCannotVerify
-		reason = "manifest source_commit is missing"
-	} else if !sourceCommitExists(repoRoot, manifestSourceCommit) {
-		commitStatus = StatusMissing
-		state = StateCannotVerify
-		reason = "manifest source_commit could not be resolved from git"
-	} else {
-		counts, issues = artifactCounts(repoRoot, manifestSourceCommit, manifest.Artifacts)
 	}
-	if counts.Missing > 0 {
-		artifactStatus = StatusMissing
-		if state != StateCannotVerify {
-			state = StateFail
-			reason = "manifest artifact paths are missing from the current source checkout"
-		}
-	} else if counts.Mismatched > 0 {
-		artifactStatus = StatusMismatch
-		if state != StateCannotVerify {
-			state = StateFail
-			reason = "manifest artifact digests do not match the current source checkout"
-		}
-	}
-	if dirty && state != StateCannotVerify {
-		commitStatus = StatusMismatch
-		state = StateFail
-		reason = "dirty checkout cannot support source-bound local release proof"
-	}
+	counts, issues := artifactCountsForState(repoRoot, manifestSourceCommit, manifest.Artifacts, state)
+	artifactStatus, artifactReason := artifactState(counts)
+	state, reason = combineState(state, reason, artifactStatus, artifactReason)
+	state, commitStatus, reason = applyDirtyState(repoRoot, state, commitStatus, reason)
 	manifestDigest := sha256.Sum256(manifestBytes)
 	return Verification{
 		ID:                         "contract-release-verification-block-18-19-source-bound",
@@ -200,6 +173,47 @@ func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error
 		ExternalTrustReason:      "external production trust is not assessed by the local source-bound profile",
 		ArtifactIssues:           issues,
 	}, nil
+}
+
+func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
+	if sourceCommit == "" {
+		return StatusMissing, "manifest source_commit is missing"
+	}
+	if !sourceCommitExists(repoRoot, sourceCommit) {
+		return StatusMissing, "manifest source_commit could not be resolved from git"
+	}
+	return StatusMatched, "source commit contains every manifest artifact path with matching digest"
+}
+
+func artifactCountsForState(repoRoot, sourceCommit string, artifacts []ManifestArtifact, state string) (ArtifactCounts, []ArtifactIssue) {
+	if state == StateCannotVerify {
+		return ArtifactCounts{Checked: len(artifacts)}, nil
+	}
+	return artifactCounts(repoRoot, sourceCommit, artifacts)
+}
+
+func artifactState(counts ArtifactCounts) (string, string) {
+	if counts.Missing > 0 {
+		return StatusMissing, "manifest artifact paths are missing from the current source checkout"
+	}
+	if counts.Mismatched > 0 {
+		return StatusMismatch, "manifest artifact digests do not match the current source checkout"
+	}
+	return StatusMatched, ""
+}
+
+func combineState(state, reason, artifactStatus, artifactReason string) (string, string) {
+	if state == StateCannotVerify || artifactStatus == StatusMatched {
+		return state, reason
+	}
+	return StateFail, artifactReason
+}
+
+func applyDirtyState(repoRoot, state, commitStatus, reason string) (string, string, string) {
+	if state == StateCannotVerify || !worktreeDirty(repoRoot) {
+		return state, commitStatus, reason
+	}
+	return StateFail, StatusMismatch, "dirty checkout cannot support source-bound local release proof"
 }
 
 func artifactCounts(repoRoot, sourceCommit string, artifacts []ManifestArtifact) (ArtifactCounts, []ArtifactIssue) {
