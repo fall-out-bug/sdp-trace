@@ -74,6 +74,15 @@ type Options struct {
 	Now          time.Time
 }
 
+type Config struct {
+	SchemaVersion   string            `json:"schema_version"`
+	Profile         string            `json:"profile"`
+	RepositoryID    string            `json:"repository_id"`
+	TrustBoundary   string            `json:"trust_boundary"`
+	InstalledFiles  []string          `json:"installed_files"`
+	InstallMetadata map[string]string `json:"install_metadata"`
+}
+
 type Status struct {
 	SchemaVersion     string        `json:"schema_version"`
 	Profile           string        `json:"profile"`
@@ -133,6 +142,14 @@ func Doctor(opts Options) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
+	if opts.RepositoryID == "" {
+		config, err := LoadConfig(opts.RepoRoot)
+		if err == nil && config.RepositoryID != "" {
+			opts.RepositoryID = config.RepositoryID
+		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return Status{}, err
+		}
+	}
 	return buildStatus(opts, false)
 }
 
@@ -171,6 +188,24 @@ func WriteJSON(path string, status Status) error {
 		return err
 	}
 	return os.WriteFile(path, data, 0o644)
+}
+
+func LoadConfig(repoRoot string) (Config, error) {
+	data, err := os.ReadFile(filepath.Join(repoRoot, ".sdp-trace", "config.json"))
+	if err != nil {
+		return Config{}, err
+	}
+	var config Config
+	if err := json.Unmarshal(data, &config); err != nil {
+		return Config{}, fmt.Errorf("%s: .sdp-trace/config.json is malformed", ReasonUnsafeOutputRefused)
+	}
+	if config.Profile != "" && config.Profile != ProfileGithubActionsGitHooksV1 {
+		return Config{}, fmt.Errorf("%s: unsupported repo observer profile in .sdp-trace/config.json", ReasonUnsafeOutputRefused)
+	}
+	if config.RepositoryID != "" && !safeIDPattern.MatchString(config.RepositoryID) {
+		return Config{}, fmt.Errorf("%s: repository id in .sdp-trace/config.json must match [A-Za-z0-9_.-]+", ReasonUnsafeOutputRefused)
+	}
+	return config, nil
 }
 
 func HumanTable(status Status) string {

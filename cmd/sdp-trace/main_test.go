@@ -409,6 +409,9 @@ func TestInstallRepoObserverWriteAndDoctorProfile(t *testing.T) {
 	if status.InstallState != repoobserver.StatePass {
 		t.Fatalf("install state = %s", status.InstallState)
 	}
+	if status.RepositoryID != "demo_repo" {
+		t.Fatalf("doctor repository id = %s", status.RepositoryID)
+	}
 	if status.ProofState != repoobserver.StateNotAssessed {
 		t.Fatalf("proof state = %s", status.ProofState)
 	}
