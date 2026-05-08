@@ -3,7 +3,6 @@ package verifier
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -44,22 +43,4 @@ func ExplainRun(runDir string) (string, error) {
 		lines = append(lines, fmt.Sprintf("contract_path: %s", manifest.ContractPath))
 	}
 	return strings.Join(lines, "\n"), nil
-}
-
-func runVerifierArtifact(runDir string) (string, error) {
-	resultPath := filepath.Join(runDir, "verifier", "verifier-result.json")
-	_, err := os.Stat(resultPath)
-	if err != nil {
-		return "", err
-	}
-	data, err := os.ReadFile(resultPath)
-	if err != nil {
-		return "", err
-	}
-	var result trace.VerifierResult
-	if err := trace.ReadJSON(context.Background(), resultPath, &result); err != nil {
-		_ = data
-		return "", err
-	}
-	return string(data), nil
 }

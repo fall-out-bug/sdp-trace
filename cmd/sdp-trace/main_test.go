@@ -76,10 +76,17 @@ func TestWrapVerifyExplainMissingEvidenceFlow(t *testing.T) {
 func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {
 	repo := t.TempDir()
 	runGit(t, repo, "init")
+	runGit(t, repo, "config", "user.email", "test@example.invalid")
+	runGit(t, repo, "config", "user.name", "Test")
+	writeFile(t, filepath.Join(repo, "source.txt"), "source\n")
+	runGit(t, repo, "add", "source.txt")
+	runGit(t, repo, "commit", "-m", "source")
+	sourceCommit := strings.TrimSpace(gitOutput(t, repo, "rev-parse", "HEAD"))
 	writeFile(t, filepath.Join(repo, "manifest.json"), `{
   "id": "test-manifest",
   "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
   "trusted_identity_policy_ref": "policy.json",
+  "source_commit": "`+sourceCommit+`",
   "artifacts": [
     {"path": "missing.txt", "kind": "doc", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}
   ],
@@ -92,8 +99,10 @@ func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {
     "approval_ref": "approval",
     "risk_owner": {"identity_ref": "role:risk", "actor_type": "human_role"},
     "line_of_defense": "second"
-  }
-}`)
+	  }
+	}`)
+	runGit(t, repo, "add", "manifest.json")
+	runGit(t, repo, "commit", "-m", "manifest")
 	chdir(t, repo)
 	outPath := filepath.Join(t.TempDir(), "release-proof.json")
 	var out bytes.Buffer
@@ -1658,12 +1667,19 @@ func mustFindCommand(t *testing.T, name string) string {
 
 func runGit(t *testing.T, dir string, args ...string) {
 	t.Helper()
+	_ = gitOutput(t, dir, args...)
+}
+
+func gitOutput(t *testing.T, dir string, args ...string) string {
+	t.Helper()
 	git := mustFindCommand(t, "git")
 	cmd := exec.Command(git, args...)
 	cmd.Dir = dir
-	if output, err := cmd.CombinedOutput(); err != nil {
+	output, err := cmd.CombinedOutput()
+	if err != nil {
 		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, string(output))
 	}
+	return string(output)
 }
 
 func writeFile(t *testing.T, path string, value string) {

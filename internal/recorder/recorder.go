@@ -341,7 +341,7 @@ func runCommand(ctx context.Context, command []string, env []string, writer *run
 	if exitErr, ok := err.(*exec.ExitError); ok {
 		exitCode = exitErr.ExitCode()
 		if ps := exitErr.ProcessState; ps != nil {
-			if ps.Exited() == false {
+			if !ps.Exited() {
 				if status, ok := ps.Sys().(syscall.WaitStatus); ok {
 					signal = status.Signal().String()
 				}

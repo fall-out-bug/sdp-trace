@@ -28,6 +28,10 @@
       "schema_version": "0.1.0"
     },
     {
+      "schema_id": "https://schemas.sdp.dev/trace/evidence-bundle.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
       "schema_id": "https://schemas.sdp.dev/trace/evidence-event.schema.json",
       "schema_version": "0.1.0"
     },
@@ -48,6 +52,10 @@
       "schema_version": "1.0.0"
     },
     {
+      "schema_id": "https://schemas.sdp.dev/trace/gate-verdict.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
       "schema_id": "https://schemas.sdp.dev/trace/metric-stream.schema.json",
       "schema_version": "0.1.0"
     },
@@ -61,6 +69,10 @@
     },
     {
       "schema_id": "https://schemas.sdp.dev/trace/risk-classification.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/self-attestation-case.schema.json",
       "schema_version": "0.1.0"
     },
     {
@@ -101,7 +113,7 @@
     {
       "path": "docs/flight-recorder.md",
       "kind": "doc",
-      "sha256": "3ffd6ca6d0bcb36bf6f0595593da784fa1a8bdae2039efe751f1ced34d27b82a"
+      "sha256": "4aa4fdd7aa0b647e0ce0c545f9cc0c8cab942cd5e87476af2a3f0626ec3b011c"
     },
     {
       "path": "docs/harness-compatibility-matrix.md",
@@ -161,12 +173,12 @@
     {
       "path": "docs/team-lead-playbook.en.md",
       "kind": "doc",
-      "sha256": "6da62fdc91e3e35c8aa602795abb419f9779dc992fbdeefa354b22aaf81aac09"
+      "sha256": "549ba56415a4e0001279484c0cf8a4d6166d5558f29728c0b4ec7c67e365d133"
     },
     {
       "path": "docs/team-lead-playbook.ru.md",
       "kind": "doc",
-      "sha256": "4133f35493da60dac37030d96c4245e479486dd6d183c6220ef091b99f8efbae"
+      "sha256": "2e33223a2cc3abae45f7cc6a4d8b1bc52252d65ad85a22a7a137688e97d433be"
     },
     {
       "path": "examples/contract-foundation/local-dev-wrong-public.pem",
@@ -546,7 +558,7 @@
     {
       "path": "README.md",
       "kind": "doc",
-      "sha256": "d1be265be5c6749ddf6a730cb9695a8ef0f692d7c4e99032f7df8ac4f0ec98bf"
+      "sha256": "af99c04014c06c5866edad1f56d3ea7b08f9aba4404fd17994b497be85cb93c2"
     },
     {
       "path": "schema/accountability.schema.json",
@@ -631,7 +643,7 @@
     {
       "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "c320fd5400d3d71ab4238aef93bd36391452ac1d00d4e42219738e743751cb5d"
+      "sha256": "61b1b53b869896c07c40e8ea409de7d43ccf717fe52f88df7e49393202341a0b"
     },
     {
       "path": "schema/risk-classification.schema.json",
@@ -736,7 +748,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
       "kind": "doc",
-      "sha256": "f6f538e87226fcf403d0a51c2cb43960b96de0c98c1fa4d82e276bb8b0ca0cda"
+      "sha256": "6a7859f7c252dd3986d6d37ebbaa50cdc685f9c96c1927b825f5ae0514b3d375"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
@@ -796,12 +808,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
       "kind": "doc",
-      "sha256": "9c62680d62bd2a127f2cf5253823657901504fd5e95c09c4153d8ebde500ac47"
+      "sha256": "8d920bfb68780c63cbf2be97d56cf345219f90ab8f05c5a675f670bf76af63e6"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "45e4bd6fe39f39fca086a0f8698a13d14e87214b8ac33d6b7a43dfc046e218cf"
+      "sha256": "c59ae964f5e1927a965ed3657bd9006b68aabbbc0cfec6eb4b1dd7ab191ce08b"
     },
     {
       "path": "docs/research/historical-verifier-retirement-2026-05-07.md",
@@ -814,7 +826,7 @@
       "sha256": "18ebc649c25528e167c21fb9a9cf3beaafc5cfaec40066b0791507a32f989bd6"
     }
   ],
-  "source_commit": "b000c116de39fbabdd4b2e195cc7913a0b97ab0e",
+  "source_commit": "cb65899da1340240ee1df789f2ffd022edfd7998",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",

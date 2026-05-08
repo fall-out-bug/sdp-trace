@@ -18,6 +18,7 @@ const (
 
 	StatePass         = "pass"
 	StateFail         = "fail"
+	StateCannotVerify = "cannot_verify"
 	StatusMatched     = "matched"
 	StatusMismatch    = "mismatch"
 	StatusMissing     = "missing"
@@ -28,6 +29,7 @@ type Manifest struct {
 	ID                       string             `json:"id"`
 	SigningProfile           string             `json:"signing_profile"`
 	TrustedIdentityPolicyRef string             `json:"trusted_identity_policy_ref"`
+	SourceCommit             string             `json:"source_commit"`
 	Artifacts                []ManifestArtifact `json:"artifacts"`
 	Accountability           Accountability     `json:"accountability"`
 }
@@ -120,30 +122,15 @@ func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error
 	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
 		return Verification{}, err
 	}
-	sourceCommit, commitStatus := sourceCommit(repoRoot)
-	dirty := worktreeDirty(repoRoot)
-	counts, issues := artifactCounts(repoRoot, manifest.Artifacts)
-	artifactStatus := StatusMatched
+	manifestSourceCommit := strings.TrimSpace(manifest.SourceCommit)
 	state := StatePass
-	reason := "source commit contains every manifest artifact path with matching digest"
-	if counts.Missing > 0 {
-		artifactStatus = StatusMissing
-		state = StateFail
-		reason = "manifest artifact paths are missing from the current source checkout"
-	} else if counts.Mismatched > 0 {
-		artifactStatus = StatusMismatch
-		state = StateFail
-		reason = "manifest artifact digests do not match the current source checkout"
+	commitStatus, reason := sourceCommitState(repoRoot, manifestSourceCommit)
+	if commitStatus == StatusMissing {
+		state = StateCannotVerify
 	}
-	if commitStatus != StatusMatched {
-		state = StateFail
-		reason = "source commit could not be matched from git"
-	}
-	if dirty {
-		commitStatus = StatusMismatch
-		state = StateFail
-		reason = "dirty checkout cannot support source-bound local release proof"
-	}
+	counts, issues, artifactStatus, artifactReason := artifactVerificationState(repoRoot, manifestSourceCommit, manifest.Artifacts, state)
+	state, reason = combineState(state, reason, artifactStatus, artifactReason)
+	state, commitStatus, reason = applyDirtyState(repoRoot, state, commitStatus, reason)
 	manifestDigest := sha256.Sum256(manifestBytes)
 	return Verification{
 		ID:                         "contract-release-verification-block-18-19-source-bound",
@@ -159,7 +146,7 @@ func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error
 		SignatureStatus:            StatusNotAssessed,
 		IdentityPolicyRef:          manifest.TrustedIdentityPolicyRef,
 		IdentityPolicyStatus:       StatusNotAssessed,
-		SourceCommit:               sourceCommit,
+		SourceCommit:               manifestSourceCommit,
 		SourceCommitStatus:         commitStatus,
 		SourceCommitArtifactStatus: artifactStatus,
 		SourceCommitArtifactCounts: counts,
@@ -187,12 +174,55 @@ func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error
 	}, nil
 }
 
-func artifactCounts(repoRoot string, artifacts []ManifestArtifact) (ArtifactCounts, []ArtifactIssue) {
+func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
+	if sourceCommit == "" {
+		return StatusMissing, "manifest source_commit is missing"
+	}
+	if !sourceCommitExists(repoRoot, sourceCommit) {
+		return StatusMissing, "manifest source_commit could not be resolved from git"
+	}
+	return StatusMatched, "source commit contains every manifest artifact path with matching digest"
+}
+
+func artifactVerificationState(repoRoot, sourceCommit string, artifacts []ManifestArtifact, state string) (ArtifactCounts, []ArtifactIssue, string, string) {
+	if state == StateCannotVerify {
+		return ArtifactCounts{}, nil, StatusNotAssessed, "manifest artifacts were not checked because source_commit cannot be verified"
+	}
+	counts, issues := artifactCounts(repoRoot, sourceCommit, artifacts)
+	artifactStatus, artifactReason := artifactState(counts)
+	return counts, issues, artifactStatus, artifactReason
+}
+
+func artifactState(counts ArtifactCounts) (string, string) {
+	if counts.Missing > 0 {
+		return StatusMissing, "manifest artifact paths are missing from the current source checkout"
+	}
+	if counts.Mismatched > 0 {
+		return StatusMismatch, "manifest artifact digests do not match the current source checkout"
+	}
+	return StatusMatched, ""
+}
+
+func combineState(state, reason, artifactStatus, artifactReason string) (string, string) {
+	if state == StateCannotVerify || artifactStatus == StatusMatched {
+		return state, reason
+	}
+	return StateFail, artifactReason
+}
+
+func applyDirtyState(repoRoot, state, commitStatus, reason string) (string, string, string) {
+	if state == StateCannotVerify || !worktreeDirty(repoRoot) {
+		return state, commitStatus, reason
+	}
+	return StateFail, StatusMismatch, "dirty checkout cannot support source-bound local release proof"
+}
+
+func artifactCounts(repoRoot, sourceCommit string, artifacts []ManifestArtifact) (ArtifactCounts, []ArtifactIssue) {
 	counts := ArtifactCounts{Checked: len(artifacts)}
 	issues := []ArtifactIssue{}
 	for _, artifact := range artifacts {
 		path := filepath.Clean(artifact.Path)
-		data, err := os.ReadFile(filepath.Join(repoRoot, path))
+		data, err := artifactBytes(repoRoot, sourceCommit, path)
 		if err != nil {
 			counts.Missing++
 			issues = append(issues, ArtifactIssue{Path: artifact.Path, Issue: StatusMissing, Expected: artifact.SHA256})
@@ -208,18 +238,16 @@ func artifactCounts(repoRoot string, artifacts []ManifestArtifact) (ArtifactCoun
 	return counts, issues
 }
 
-func sourceCommit(repoRoot string) (string, string) {
-	cmd := exec.Command("git", "rev-parse", "HEAD")
+func sourceCommitExists(repoRoot, sourceCommit string) bool {
+	cmd := exec.Command("git", "cat-file", "-e", sourceCommit+"^{commit}")
 	cmd.Dir = repoRoot
-	out, err := cmd.Output()
-	if err != nil {
-		return "0000000000000000000000000000000000000000", StatusNotAssessed
-	}
-	commit := strings.TrimSpace(string(out))
-	if len(commit) != 40 {
-		return "0000000000000000000000000000000000000000", StatusNotAssessed
-	}
-	return commit, StatusMatched
+	return cmd.Run() == nil
+}
+
+func artifactBytes(repoRoot, sourceCommit, path string) ([]byte, error) {
+	cmd := exec.Command("git", "show", sourceCommit+":"+path)
+	cmd.Dir = repoRoot
+	return cmd.Output()
 }
 
 func worktreeDirty(repoRoot string) bool {

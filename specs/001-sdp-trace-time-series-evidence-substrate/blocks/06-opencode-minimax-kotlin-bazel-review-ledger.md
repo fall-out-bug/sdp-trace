@@ -2,7 +2,9 @@
 
 Block: `06-opencode-minimax-kotlin-bazel-e2e-proof`
 Beads mirror: `sdp-trace-drq`
-Status: spec review findings closed; implementation review findings closed
+Status: historical spec and implementation review ledger. Current MVP closure
+must not use the retired Node/npm/script commands below as active verifier
+evidence.
 
 ## Review Rules
 
@@ -34,6 +36,15 @@ Status: spec review findings closed; implementation review findings closed
 | F011 | `sdp-trace-drq.11` | major | Runner accepted shell-shaped `--bazel-command` values after only checking that the target string appeared. | Closed. | Runner now rejects non-`bazel`/`bazelisk` commands and shell metacharacters before execution; `scripts/test-e2e-runner.sh` covers rejection; `npm run test:e2e-pilot` passed. |
 | F012 | `sdp-trace-drq.12` | major | Package validator required proof-state `evidence_refs` but did not verify that they resolve to committed evidence event ids. | Closed. | `scripts/validate-e2e-pilot-package.sh` now resolves every proof-state evidence ref against `evidence/evidence-events.json`; `scripts/test-e2e-pilot-package.sh` covers dangling refs; `npm run test:e2e-pilot` passed. |
 
+Current MVP closure note: F011 and F012 are historical closure records only.
+The referenced `scripts/test-e2e-runner.sh`,
+`scripts/validate-e2e-pilot-package.sh`, `scripts/test-e2e-pilot-package.sh`,
+and `npm run test:e2e-pilot` paths are retired and absent from the active
+Go-first product path. The Beads mirrors `sdp-trace-drq.11` and
+`sdp-trace-drq.12` are closed for active MVP closure as retired-surface issues,
+not as newly reverified Go-first behavior. No current customer-facing MVP claim
+may cite these historical script results as active proof.
+
 ## Implementation Evidence Before Review
 
 - Reference runner: `scripts/run-opencode-minimax-kotlin-bazel-proof.sh`
@@ -43,3 +54,8 @@ Status: spec review findings closed; implementation review findings closed
 - Committed proof package: `examples/pilot-runs/opencode-minimax-kotlin-bazel/`
 - Tested-on report: `docs/research/opencode-minimax-kotlin-bazel-proof-report.md`
 - Latest package validation: `scripts/validate-e2e-pilot-package.sh examples/pilot-runs/opencode-minimax-kotlin-bazel`
+
+Current status: these implementation evidence paths are historical. Current
+closure evidence is limited to Go-first commands documented in
+`docs/agent-entrypoint.md`, the Block 23 closure package, and live verifier
+output.

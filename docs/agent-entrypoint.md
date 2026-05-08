@@ -1,6 +1,9 @@
 # Agent Entrypoint
 
-Use these commands and profile IDs to select what `sdp-trace` can prove without introducing harness assumptions.
+Use these commands and profile IDs to select what `sdp-trace` can prove without
+introducing harness assumptions. The active entrypoint is the Go CLI reported by
+`go run ./cmd/sdp-trace --help`; update this document only when the help surface
+changes in the same slice.
 
 ## Profile Selection
 
@@ -10,21 +13,23 @@ Each assertion is anchored to one of these profile IDs:
 - `source_bound_local_release`
 - `external_production_trust`
 
-Do not infer profile from role. Choose the profile directly from the claim you need:
+Do not infer profile from role. Choose the profile directly from the claim:
 
-- `repo_baseline_structural` for structural command/gate-set integrity checks.
-- `source_bound_local_release` for local DSSE/source-bound checks.
-- `external_production_trust` for external production trust checks.
+- `repo_baseline_structural`: structural command, fixture, and local trace integrity.
+- `source_bound_local_release`: local manifest, source commit, artifact digest, and DSSE/source-bound checks.
+- `external_production_trust`: external identity, protected source, transparency or customer audit evidence, approval, and production release verification.
+
+Dirty-checkout baseline output is only valid for `local_dirty_structural_only`.
+Do not use dirty-checkout output to close `source_bound_local_release` or
+`external_production_trust`.
 
 ## Command Contract
 
-The active entrypoint is the Go CLI reported by `go run ./cmd/sdp-trace --help`.
-Use this document to interpret proof scope; use `--help` to confirm exact flags
-before adding or reviewing command examples.
+Current command surface:
 
 - `go test ./...`
 - `go run ./cmd/sdp-trace --help`
-- `go run ./cmd/sdp-trace wrap --name <name> [--contract <file>] -- <command...>`
+- `go run ./cmd/sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>`
 - `go run ./cmd/sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>`
 - `go run ./cmd/sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>`
 - `go run ./cmd/sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>`
@@ -34,7 +39,11 @@ before adding or reviewing command examples.
 - `go run ./cmd/sdp-trace query --query <missing-evidence|capture-depth> <run-dir>`
 - `go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 --run <run-dir> --out <file>`
 - `go run ./cmd/sdp-trace query-pack explain --result <file>`
-- `go run ./cmd/sdp-trace assess --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]`
+- `go run ./cmd/sdp-trace export cross-repo-posture --profile cross-repo-evidence-posture-v1 --selection <file> --out <file>`
+- `go run ./cmd/sdp-trace export cross-repo-posture explain --result <file>`
+- `go run ./cmd/sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>`
+- `go run ./cmd/sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>`
+- `go run ./cmd/sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>`
 - `go run ./cmd/sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]`
 - `go run ./cmd/sdp-trace assess explain --assessment-result <file>`
 - `go run ./cmd/sdp-trace report --out <dir> <runs-root-or-run-dir>`
@@ -46,35 +55,89 @@ before adding or reviewing command examples.
 Do not add aliases, hidden switches, or workflow-specific wrappers as product
 entrypoints unless this document and `--help` are updated in the same change.
 
-## Trust Scope Vocabulary
+## English Command Reference
 
-- Dirty-checkout baseline output is only valid for `local_dirty_structural_only`.
-- Treat `local_dirty_structural_only` as `repo_baseline_structural` evidence with dirty checkout constraints.
-- Do not use dirty-checkout output to close `source_bound_local_release` or `external_production_trust`.
+| Command/profile | Purpose | Minimum invocation | Output and trust boundary |
+| --- | --- | --- | --- |
+| `wrap` | Observe one existing command as a trace run. | `go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok` | Writes run artifacts; local observation only unless later bound by report/witness/profile checks. |
+| `run` | Run a task-referenced command with an optional contract. | `go run ./cmd/sdp-trace run --task T1 -- /bin/echo ok` | Writes task-linked run artifacts; missing contract evidence remains visible. |
+| `dry-run` | Show what would run without writing run artifacts. | `go run ./cmd/sdp-trace dry-run -- /bin/echo ok` | Preview only; cannot support proof closure. |
+| `preview` | Preview command/contract implications before execution. | `go run ./cmd/sdp-trace preview -- /bin/echo ok` | Read-only preview; any unavailable profile remains `not_assessed`. |
+| `doctor` | Inspect local environment and contract prerequisites. | `go run ./cmd/sdp-trace doctor` | Emits structural readiness; offline or missing prerequisites can produce `cannot_verify`. |
+| `verify` | Verify one recorded run directory. | `go run ./cmd/sdp-trace verify .sdp-trace-runs/run-1` | Supports local structural assertions only; use JSON/state output for exact `observed`, `fail`, `not_assessed`, or `cannot_verify` interpretation. |
+| `explain` | Render human-readable explanation for one run. | `go run ./cmd/sdp-trace explain .sdp-trace-runs/run-1` | Explanation is derived from run artifacts; it does not upgrade trust scope. |
+| `query` | Query missing evidence or capture depth for a run. | `go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/run-1` | Highlights gaps; missing rows are not passes. |
+| `query-pack` | Build a forensic query package. | `go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 --run .sdp-trace-runs/run-1 --out query-pack.json` | Produces investigation package according to retained evidence; digest-only or redacted data limits reconstruction. |
+| `query-pack explain` | Explain a forensic query-pack result. | `go run ./cmd/sdp-trace query-pack explain --result query-pack.json` | Explanation only; no new evidence is created. |
+| `export cross-repo-posture` | Export cross-repository evidence posture for downstream analysis. | `go run ./cmd/sdp-trace export cross-repo-posture --profile cross-repo-evidence-posture-v1 --selection selection.json --out posture.json` | Aggregates selected inputs; degradation decisions remain outside `sdp-trace`. |
+| `export cross-repo-posture explain` | Explain a cross-repo posture export. | `go run ./cmd/sdp-trace export cross-repo-posture explain --result posture.json` | Human-readable explanation; no policy decision. |
+| `assess --profile adapter-capture` | Assess adapter-capture evidence and overclaim risk. | `go run ./cmd/sdp-trace assess --profile adapter-capture --out assessment.json --run .sdp-trace-runs/run-1` | Can fail or return `cannot_verify` when adapter events are absent, agent-reported, or insufficient. |
+| `assess --profile managed-harness` | Assess managed harness evidence against policy, registry, and witness inputs. | `go run ./cmd/sdp-trace assess --profile managed-harness --out assessment.json --contract contract.json --run .sdp-trace-runs/run-1 --adapter-registry registry.json --managed-policy policy.json --managed-witness witness.json` | Verifier facts plus exit behavior; external CI or policy owns block/allow decisions. Missing or stale witness usually produces `cannot_verify`. |
+| `assess --profile forensic-retention` | Assess whether retained evidence supports forensic reconstruction. | `go run ./cmd/sdp-trace assess --profile forensic-retention --out assessment.json --run .sdp-trace-runs/run-1 --redaction-policy redaction.json` | Digest-only, unresolved redaction, or missing retention may fail or remain `cannot_verify`. |
+| `assess preview` | Preview required inputs for an assessment profile. | `go run ./cmd/sdp-trace assess preview --profile managed-harness --run .sdp-trace-runs/run-1` | Read-only; does not evaluate authority or write proof. |
+| `assess explain` | Explain an assessment result. | `go run ./cmd/sdp-trace assess explain --assessment-result assessment.json` | Explanation only; unsupported schema versions can produce `cannot_verify`. |
+| `report` | Build `.sdp-trace-report/` from one run or run root. | `go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs` | Packages observed data and gaps; report presence is not proof of completeness. |
+| `gate` | Produce advisory/protected gate facts for a run root. | `go run ./cmd/sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs` | Caveat: `gate` emits verifier facts and states; it is not a native merge, release, risk, or production-trust decision. Missing evidence stays `fail` or `cannot_verify`. |
+| `witness --kind github-actions` | Bind report/run evidence to GitHub Actions identity when OIDC evidence is available. | `go run ./cmd/sdp-trace witness --kind github-actions --out ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs` | Caveat: CI witness is not external production trust by itself. Missing OIDC or binding data yields `cannot_verify`. |
+| `witness --kind gitlab-ci` | Record GitLab CI witness profile evidence. | `go run ./cmd/sdp-trace witness --kind gitlab-ci --out gitlab-witness.json --witness-envelope envelope.json .sdp-trace-runs` | Caveat: profile output depends on supplied envelope and policy evidence; unsupported or incomplete fields stay `cannot_verify`. |
+| `witness --kind buildkite` | Record Buildkite witness profile evidence. | `go run ./cmd/sdp-trace witness --kind buildkite --out buildkite-witness.json --witness-envelope envelope.json .sdp-trace-runs` | Caveat: CI-bound evidence is not a transparency log or release approval. |
+| `witness --kind customer-pki` | Record customer PKI/private-equivalent witness evidence. | `go run ./cmd/sdp-trace witness --kind customer-pki --out customer-pki-witness.json --customer-pki-authority-policy policy.json --customer-pki-public-cert cert.pem --customer-pki-payload-digest <sha256> --customer-pki-freshness-evidence freshness.json .sdp-trace-runs` | Caveat: customer PKI requires accepted customer policy, key/cert material, payload digest, and freshness evidence; missing pieces are not production trust. |
+| `release-proof` | Verify a source-bound local release manifest and proof artifact. | `go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json` | Caveat: `source_bound_local_release` is narrower than external production trust; dirty/stale source, manifest mismatch, or absent source commit fails or returns `cannot_verify`. |
+| `validate-fixtures` | Validate checked fixture directories. | `go run ./cmd/sdp-trace validate-fixtures examples` | Structural fixture validation only; does not prove customer production readiness. |
 
-## Evidence Emission Rules
+## Russian Command Reference
 
-Text output is sufficient for a first-pass pass/fail look.
+| Команда/профиль | Назначение | Минимальный запуск | Граница вывода и доверия |
+| --- | --- | --- | --- |
+| `wrap` | Наблюдает одну существующую команду как trace run. | `go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok` | Пишет run artifacts; это local observation, пока отчет, witness или профиль не добавят другую проверку. |
+| `run` | Запускает команду, связанную с task ref. | `go run ./cmd/sdp-trace run --task T1 -- /bin/echo ok` | Пишет task-linked run artifacts; missing contract evidence остается видимым. |
+| `dry-run` | Показывает запуск без записи run artifacts. | `go run ./cmd/sdp-trace dry-run -- /bin/echo ok` | Только preview; proof closure не поддерживает. |
+| `preview` | Показывает command/contract implications до выполнения. | `go run ./cmd/sdp-trace preview -- /bin/echo ok` | Read-only preview; недоступный профиль остается `not_assessed`. |
+| `doctor` | Проверяет локальную среду и prerequisites. | `go run ./cmd/sdp-trace doctor` | Structural readiness; offline или missing prerequisites могут дать `cannot_verify`. |
+| `verify` | Проверяет один recorded run directory. | `go run ./cmd/sdp-trace verify .sdp-trace-runs/run-1` | Поддерживает local structural assertions; для точных states используйте JSON/state output. |
+| `explain` | Объясняет один run. | `go run ./cmd/sdp-trace explain .sdp-trace-runs/run-1` | Объяснение не повышает trust scope. |
+| `query` | Ищет missing evidence или capture depth. | `go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/run-1` | Показывает gaps; missing rows не являются pass. |
+| `query-pack` | Собирает forensic query package. | `go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 --run .sdp-trace-runs/run-1 --out query-pack.json` | Расследование ограничено тем, какое evidence было retained, redacted или digest-only. |
+| `query-pack explain` | Объясняет query-pack result. | `go run ./cmd/sdp-trace query-pack explain --result query-pack.json` | Только explanation; новое evidence не создается. |
+| `export cross-repo-posture` | Экспортирует cross-repo evidence posture. | `go run ./cmd/sdp-trace export cross-repo-posture --profile cross-repo-evidence-posture-v1 --selection selection.json --out posture.json` | Агрегирует выбранные inputs; degradation decision остается вне `sdp-trace`. |
+| `export cross-repo-posture explain` | Объясняет cross-repo export. | `go run ./cmd/sdp-trace export cross-repo-posture explain --result posture.json` | Human-readable explanation, не policy decision. |
+| `assess --profile adapter-capture` | Проверяет adapter-capture evidence и overclaim risk. | `go run ./cmd/sdp-trace assess --profile adapter-capture --out assessment.json --run .sdp-trace-runs/run-1` | Может дать `fail` или `cannot_verify`, если adapter events absent, agent-reported или insufficient. |
+| `assess --profile managed-harness` | Проверяет managed harness evidence по policy, registry и witness. | `go run ./cmd/sdp-trace assess --profile managed-harness --out assessment.json --contract contract.json --run .sdp-trace-runs/run-1 --adapter-registry registry.json --managed-policy policy.json --managed-witness witness.json` | Это verifier facts и exit behavior; block/allow решает external CI или policy. |
+| `assess --profile forensic-retention` | Проверяет, хватает ли retained evidence для forensic reconstruction. | `go run ./cmd/sdp-trace assess --profile forensic-retention --out assessment.json --run .sdp-trace-runs/run-1 --redaction-policy redaction.json` | Digest-only, unresolved redaction или missing retention могут дать `fail` или `cannot_verify`. |
+| `assess preview` | Показывает required inputs для assessment profile. | `go run ./cmd/sdp-trace assess preview --profile managed-harness --run .sdp-trace-runs/run-1` | Read-only; authority не проверяет и proof не пишет. |
+| `assess explain` | Объясняет assessment result. | `go run ./cmd/sdp-trace assess explain --assessment-result assessment.json` | Только explanation; unsupported schema может дать `cannot_verify`. |
+| `report` | Собирает `.sdp-trace-report/` из run или run root. | `go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs` | Упаковывает observed data и gaps; сам отчет не доказывает полноту. |
+| `gate` | Пишет advisory/protected gate facts. | `go run ./cmd/sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs` | Caveat: `gate` не является native merge, release, risk или production-trust decision. |
+| `witness --kind github-actions` | Связывает evidence с GitHub Actions identity при наличии OIDC. | `go run ./cmd/sdp-trace witness --kind github-actions --out ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs` | Caveat: CI witness сам по себе не external production trust; missing OIDC дает `cannot_verify`. |
+| `witness --kind gitlab-ci` | Записывает GitLab CI witness profile evidence. | `go run ./cmd/sdp-trace witness --kind gitlab-ci --out gitlab-witness.json --witness-envelope envelope.json .sdp-trace-runs` | Incomplete envelope или policy evidence остаются `cannot_verify`. |
+| `witness --kind buildkite` | Записывает Buildkite witness profile evidence. | `go run ./cmd/sdp-trace witness --kind buildkite --out buildkite-witness.json --witness-envelope envelope.json .sdp-trace-runs` | CI-bound evidence не является transparency log или release approval. |
+| `witness --kind customer-pki` | Записывает customer PKI/private-equivalent witness evidence. | `go run ./cmd/sdp-trace witness --kind customer-pki --out customer-pki-witness.json --customer-pki-authority-policy policy.json --customer-pki-public-cert cert.pem --customer-pki-payload-digest <sha256> --customer-pki-freshness-evidence freshness.json .sdp-trace-runs` | Требует accepted customer policy, key/cert material, payload digest и freshness evidence. |
+| `release-proof` | Проверяет source-bound local release manifest. | `go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json` | Caveat: `source_bound_local_release` уже, чем external production trust; dirty/stale source или manifest mismatch не проходят. |
+| `validate-fixtures` | Валидирует fixture directories. | `go run ./cmd/sdp-trace validate-fixtures examples` | Только structural fixture validation; не доказывает customer production readiness. |
 
-Use verifier JSON output when you need full states, reasons, and `result`
-values (`observed`, `fail`, `not_assessed`, `cannot_verify`) for
-decisioning.
+## State And Exit Code Contract
 
-## Exit Code Contract
-
-- `0`: `observed` or `not_assessed`
+- `0`: `observed`, `pass`, or explicitly scoped `not_assessed`
 - `1`: `fail`
 - `2`: usage error / invalid command invocation
 - `3`: `cannot_verify`
 
 - `observed`: verifier evidence met required checks for the selected local profile.
-- `fail`: verifier evidence conflicted or was insufficient for one or more required checks in the selected profile.
-- `not_assessed`: state was not assessed in this run (scope omission or upstream profile blocker); it does not imply success or evidence.
-- `cannot_verify`: verifier could not execute a required check and the profile cannot be concluded from that run.
+- `pass`: selected profile concluded successfully where the command contract uses pass/fail states.
+- `fail`: verifier evidence conflicted or was insufficient for required checks.
+- `not_assessed`: state was outside the run scope; it does not imply success or evidence.
+- `cannot_verify`: verifier could not execute a required check or lacked required evidence.
 
-A checked-in `proof-summary` JSON is an audit artifact, not authority.
+A checked-in proof JSON is an audit artifact, not authority. Authority is replayed
+only from live Go verifier output and the canonical command/state contract above.
 
-Authority is replayed only from live Go verifier output and the canonical command/state contract above.
+## Air-Gapped Fixture Guidance
+
+Air-gapped evidence is a fixture and customer-policy pattern, not a native
+`witness --kind air-gapped` command. Use `customer-pki` or an accepted private
+equivalent with explicit authority policy, payload digest, freshness evidence,
+and retained audit references. If those are absent, record `not_assessed` or
+`cannot_verify`; do not claim external production trust.
 
 ## Forbidden Claims
 

@@ -291,12 +291,10 @@ func modelIdentityCondition(run RunEvidence) Condition {
 }
 
 func testProvenanceCondition(run RunEvidence) Condition {
-	observed := false
 	for _, event := range run.AdapterEvents {
 		if event.EventType != "test_observed" {
 			continue
 		}
-		observed = true
 		switch event.TestProvenance {
 		case "ci_executed", "wrapper_executed":
 			return pass("test_provenance_not_overclaimed", "test_provenance_executed", "test evidence is bound to CI or wrapper execution")
@@ -314,7 +312,7 @@ func testProvenanceCondition(run RunEvidence) Condition {
 			return cannotVerify("test_provenance_not_overclaimed", "test_provenance_missing", "test provenance is missing or unverifiable", "Record ci_executed or wrapper_executed test provenance.")
 		}
 	}
-	if hasRequired(run, "test_observed") && !observed {
+	if hasRequired(run, "test_observed") {
 		return Condition{ID: "test_provenance_not_overclaimed", State: StateMissingTelemetry, ReasonCode: "test_event_missing", Reason: "required test adapter event is missing", NextAction: "Capture test_observed adapter evidence."}
 	}
 	return pass("test_provenance_not_overclaimed", "test_provenance_not_required", "test provenance was not required")

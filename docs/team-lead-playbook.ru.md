@@ -1,58 +1,96 @@
 # Playbook для тимлида
 
-Используйте `sdp-trace`, когда у команды уже есть AI coding workflow и нужен общий quality contract.
+Используйте `sdp-trace`, когда у команды уже есть AI coding workflow и нужен
+общий evidence contract без замены текущего harness.
 
-Этот playbook описывает текущую поверхность Block 12: process wrapping,
-local report/gate artifacts и GitHub Actions OIDC witness. Он еще не обещает
-полные harness internals, automatic file mutation tracing, fail-closed managed
-harness enforcement или external signed timelines.
+Этот playbook описывает текущую MVP-поверхность: wrapping, task-linked runs,
+previews, local verification, reports, queries, query packs, assessment
+profiles, advisory/protected gate facts, CI/customer witness profiles,
+source-bound release proof и fixture validation. Он не обещает full harness
+internals, автоматическое обнаружение каждого bypass, external production trust
+или policy decisions.
 
 ## Ежедневный сценарий
 
-1. Зафиксировать scope.
-2. Записать provenance: человек, агент, модель, tools и команды.
-3. Приложить evidence: тесты, CI, review comments, файлы и diff.
-4. Записать accountability: human-held DRI, approver, risk owner и escalation.
-5. Собрать assessment input с evidence, observations, movement data и `not_assessed` gaps.
-6. Записать gate verdict только как external verdict input от `sdp-gate` или другого policy consumer.
+1. Зафиксировать spec, plan, task и expected evidence.
+2. Записать provenance: human, agent, model, tools, commands и source context.
+3. Запустить workflow через `wrap`, `run` или adapter, если workflow можно наблюдать.
+4. Приложить evidence: tests, CI, review comments, files, diffs и retained artifacts.
+5. Записать accountability: human-held DRI, approver, risk owner и escalation path.
+6. Собрать report, query, assessment, gate facts и witness artifacts, где они доступны.
+7. Оставить `not_assessed` и `cannot_verify` states видимыми.
 
 Текущая capture boundary:
 
 - `wrap` наблюдает lifecycle wrapped process и command-level events.
-- Он не видит automatically internal tool calls внутри harness, если harness не
-  отправляет adapter events.
-- Он не доказывает, что никто не запускал агента вне wrapper.
-- Missing expected evidence должно оставаться `missing_telemetry` или
-  `cannot_verify`, а не превращаться в pass.
+- Adapter profiles могут оценивать более богатые harness events, если harness
+  их emits.
+- `sdp-trace` не доказывает, что никто не запускал агента вне wrapper.
+- Missing expected evidence должно оставаться `missing_telemetry`,
+  `not_assessed` или `cannot_verify`, а не превращаться в pass.
 
 ## Team defaults
 
 Договоритесь:
 
-- какое evidence требуется для разных типов изменений
-- какая внешняя policy блокирует merge
-- кто может approve или override в policy layer
-- какие harness поддерживаются
-- что в вашей команде означает `not_assessed`
+- какое evidence требуется для разных типов изменений;
+- какие assessment profiles применяются к каким workflow;
+- какая внешняя policy блокирует merge или release;
+- кто может approve или override в policy layer;
+- какие harness и CI systems поддерживаются;
+- что в customer handoff означает `not_assessed`.
 
 ## Настройка репозитория
 
 Для каждого репозитория добавьте:
 
-- expected-evidence contract, которым владеет команда;
+- expected evidence contract, которым владеет команда;
 - `.sdp-trace-runs/` для wrapped local/CI runs;
-- `.sdp-trace-report/` для CI artifacts;
-- CI steps для `report`, `gate`, `witness` и `gate --witness`.
+- `.sdp-trace-report/` для report artifacts;
+- optional adapter registry, managed policy, redaction policy и witness policy files;
+- CI steps для `report`, `gate` и выбранного `witness` kind.
 
-Последовательность внедрения:
+Минимальная implementation sequence:
 
 ```text
-sdp-trace wrap --name <workflow-name> --contract <contract> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
-sdp-trace report --out .sdp-trace-report --contract <contract> .sdp-trace-runs
-sdp-trace gate --out .sdp-trace-report/gate-result.json --contract <contract> .sdp-trace-runs
-sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
-sdp-trace gate --out .sdp-trace-report/gate-result.json --contract <contract> --witness .sdp-trace-report/ci-witness.json .sdp-trace-runs
+go run ./cmd/sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
+go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs
+go run ./cmd/sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
+go run ./cmd/sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
 ```
+
+Полезные local checks:
+
+```text
+go run ./cmd/sdp-trace doctor
+go run ./cmd/sdp-trace verify .sdp-trace-runs/<run-id>
+go run ./cmd/sdp-trace explain .sdp-trace-runs/<run-id>
+go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/<run-id>
+go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 --run .sdp-trace-runs/<run-id> --out query-pack.json
+```
+
+## Какие профили использовать
+
+| Need | Command |
+| --- | --- |
+| Adapter coverage и overclaim review | `go run ./cmd/sdp-trace assess --profile adapter-capture --out assessment.json --run .sdp-trace-runs/<run-id>` |
+| Managed harness profile | `go run ./cmd/sdp-trace assess --profile managed-harness --out assessment.json --contract contract.json --run .sdp-trace-runs/<run-id> --adapter-registry registry.json --managed-policy policy.json --managed-witness witness.json` |
+| Forensic retention profile | `go run ./cmd/sdp-trace assess --profile forensic-retention --out assessment.json --run .sdp-trace-runs/<run-id> --redaction-policy redaction.json` |
+| Assessment explanation | `go run ./cmd/sdp-trace assess explain --assessment-result assessment.json` |
+| Source-bound release proof | `go run ./cmd/sdp-trace release-proof --manifest contract-manifest.json --out release-proof.json` |
+
+`managed-harness` выдает verifier facts и exit behavior. Он не решает
+merge/release readiness. Missing managed witness evidence обычно остается
+`cannot_verify`.
+
+## Witness profiles
+
+Поддерживаемые значения `witness --kind`:
+
+- `github-actions`
+- `gitlab-ci`
+- `buildkite`
+- `customer-pki`
 
 Для GitHub Actions включите OIDC:
 
@@ -62,103 +100,77 @@ permissions:
   contents: read
 ```
 
-Без OIDC `ci_witness_gate` остается `cannot_verify`.
+Без required identity или binding evidence witness output должен оставаться
+`cannot_verify`. Не коммитьте witness file с машины разработчика как trusted
+evidence. Генерируйте его в CI или в customer-approved PKI process и храните как
+protected artifact.
 
-Не коммитьте `.sdp-trace-report/ci-witness.json` с машины разработчика как
-trusted evidence. Генерируйте его в CI и храните как CI artifact.
+Air-gapped evidence не отдельный command kind. Считайте его customer
+policy/private-equivalent guidance: explicit authority policy, payload digest,
+freshness или timestamp evidence и retained audit references. Если какой-то
+обязательной части нет, записывайте `not_assessed` или `cannot_verify`.
+
+## Gate debugging
+
+`gate` output - это verifier-derived evidence, а не native policy decision.
+
+Debugging checklist:
+
+1. Проверьте `gate-result.json`: selected mode, required runs, required evidence и reason rows.
+2. Проверьте `.sdp-trace-report/missing-telemetry.json` на absent contract evidence.
+3. Проверьте witness output: source, run, freshness и identity binding state.
+4. Проверьте `assess explain` output для profile-specific conditions.
+5. Проверьте verifier output каждого run перед изменением contract.
 
 ## Privacy и redaction
 
-По умолчанию Block 12 report artifacts сохраняют command metadata и
-stdout/stderr digests, а не raw stdout/stderr bodies. OIDC request tokens
-используются только для запроса GitHub OIDC token и не должны записываться в
-`.sdp-trace-runs/` или `.sdp-trace-report/`.
-
-Перед rollout договоритесь:
-
-- можно ли вообще сохранять prompts, source snippets или tool payloads;
-- какие outputs должны оставаться digest-only;
-- кто может разрешить raw capture для узкого incident window;
-- как redaction decisions фиксируются для расследования.
-
-Если команде нужен raw prompt, source или model-response capture, это отдельный
-adapter/redaction profile. Не считайте это включенным этим playbook.
-Любой будущий raw-capture profile должен делать redaction до persistent write.
-Block 12 не дает raw-capture mode и поэтому не обещает безопасность post-hoc
-redaction.
+По умолчанию используйте safe-to-commit artifacts: metadata, digests, sanitized
+excerpts и external references. Не коммитьте raw customer source, private
+prompts, credentials, provider tokens, authenticated URLs, OIDC request tokens
+или raw logs. Если raw capture нужен для incident, сначала определите
+retention/redaction profile и human owner.
 
 ## Emergency changes
 
 Не прячьте emergency bypass. Если production urgency требует shipping с missing
-telemetry, запишите это как policy override во внешнем policy layer и оставьте
-`cannot_verify` или `missing_telemetry` видимым в report. Bypass допустим
-только если организация позже увидит, кто его approved, почему и какое evidence
-отсутствовало.
-
-В Block 12 еще нет native `policy_override_requested` trace event. Пока он не
-реализован, override record должен жить во внешней policy/change management
-системе и ссылаться на report artifacts.
-
-## Offline и failure modes
-
-- `wrap`, `report` и local contract gate могут работать без network access.
-- `witness --kind github-actions` требует GitHub Actions OIDC и поэтому не может
-  пройти offline.
-- Если `witness` завершился exit `3`, смотрите `ci-witness.json`: `reason` и
-  `missing_identity_fields`.
-- Если `gate` fail, смотрите `gate-result.json`, `missing-telemetry.json` и
-  per-run `verifier/` outputs.
-- Используйте `sdp-trace dry-run --contract <contract> -- <command...>`, чтобы
-  preview command и contract без записи run artifacts.
-
-Gate debugging checklist:
-
-1. Проверьте `gate-result.json`: `local_gate`, `ci_witness_gate`,
-   `audit_grade_gate`.
-2. Сравните `required_evidence` и `observed_evidence`.
-3. Проверьте `missing-telemetry.json` на absent contract evidence.
-4. Проверьте `ci-witness.json`: `reason`, `missing_identity_fields`, OIDC state.
-5. Проверьте `verifier/` output каждого run перед изменением contract.
-
-## Как читать external verdict
-
-External verdict может использовать `pass`, `warn`, `fail` или `not_assessed`, но это не native decision `sdp-trace`.
-
-`not_assessed` — не pass. Missing evidence должно оставаться видимым в assessment input.
+telemetry, запишите override во внешней policy/change management system и
+оставьте `cannot_verify` или `missing_telemetry` видимым в report. `sdp-trace`
+записывает evidence; он не approve risk.
 
 ## Что проверять
 
-Проверяйте эти артефакты по repo и commit:
+Проверяйте эти artifacts по repo и commit:
 
 - `.sdp-trace-report/summary.json`
 - `.sdp-trace-report/evidence-table.json`
 - `.sdp-trace-report/missing-telemetry.json`
 - `.sdp-trace-report/gate-result.json`
-- `.sdp-trace-report/ci-witness.json`
+- selected witness artifact, например `.sdp-trace-report/ci-witness.json`
+- assessment result files для `adapter-capture`, `managed-harness` или `forensic-retention`
+- query-pack output для incident или forensic review
+- release-proof output для source-bound local release claims
 
 Главные вопросы:
 
 - Expected evidence contract соответствует работе?
 - Все required evidence ids observed?
-- Trace только `local_observed` или уже `ci_witnessed`?
+- Trace только local или уже bound to CI/customer evidence?
 - Missing telemetry не спрятано?
-- `audit_grade_gate` все еще `cannot_verify`, потому что external witness еще не
-  реализован?
+- Какие states `not_assessed` или `cannot_verify`, и кто owns follow-up?
+- Нет ли абзаца, который превращает local gate, witness или release proof в external production trust?
 
 ## Retention
 
-Для расследований храните `.sdp-trace-report/` и соответствующий
-`.sdp-trace-runs/` не меньше, чем CI logs и review records. Если у организации
-есть incident/audit retention requirements, сохраняйте report directory в
-immutable artifact store. Block 12 сам retention не реализует.
+Для расследований храните `.sdp-trace-report/`, selected witness artifacts и
+соответствующий `.sdp-trace-runs/` не меньше, чем CI logs и review records. Если
+есть incident/audit retention requirements, храните report directory в immutable
+artifact store.
 
 ## Текущие продуктовые gaps
 
-- fail-closed managed harness enforcement;
-- signed timeline / DSSE / external transparency witness;
-- cross-repository dashboard и degradation analytics;
-- richer query surface для monthly или incident-wide investigation;
-- redaction audit trail сверх digest-only defaults;
-- support для non-GitHub CI witness profiles.
-- native `policy_override_requested` trace event;
+- native dashboards и policy decisions;
+- guaranteed detection of every unwrapped agent run;
+- external production trust без selected passing external profile;
+- universal air-gapped witness command;
+- raw prompt/source/model-response capture без отдельного redaction profile;
 - measured wrapper overhead и latency budgets.

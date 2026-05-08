@@ -108,4 +108,3 @@ func canonicalDigest(data []byte) string {
 	sum := sha256.Sum256(data)
 	return strings.ToLower(hex.EncodeToString(sum[:]))
 }
-

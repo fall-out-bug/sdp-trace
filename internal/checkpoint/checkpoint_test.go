@@ -3,7 +3,6 @@ package checkpoint
 import (
 	"context"
 	"encoding/json"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -307,17 +306,6 @@ func removeRunNonce(t *testing.T, runDir string) {
 	artifact.Manifest.EventChainHead = prev
 	artifact.Manifest.FinalChainHead = prev
 	if err := artifact.Layout.WriteRun(artifact.Manifest); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func writeJSONForTest(t *testing.T, path string, value any) {
-	t.Helper()
-	raw, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(path, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
 }

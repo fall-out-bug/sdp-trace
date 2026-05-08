@@ -1,8 +1,9 @@
 # Block 22: Additional CI And Enterprise Witness Profiles
 
-Status: SpecKit delta reviewed. Socratic re-review returned no remaining
-critical or major findings. Implementation is blocked until the reviewed spec
-direction is explicitly approved.
+Status: implemented and PR-reviewed in PR #15. The reviewed implementation was
+merged after code/correctness, tracing/evidence, and requirements-vs-
+implementation review planes. External production trust remains outside Block
+22.
 
 Parent artifacts:
 

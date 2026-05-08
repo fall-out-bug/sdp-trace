@@ -570,6 +570,47 @@ air-gapped guidance, while `sdp-trace` still reports verifier facts only. Policy
 decisions, enterprise support declarations, and external audit conclusions
 remain downstream.
 
+## Phase 20: Demo Repository CI And Trace Pilot
+
+**Goal**: Replace the retired Block 06 toy pilot method with a real
+demo-repository pilot that runs `sdp-trace` through CI and produces inspectable
+trace, evidence, report, gate, and witness artifacts.
+
+**Independent Test**: A repository observer can follow the Block 24 spec and
+pilot report, inspect the demo repository CI run, and verify which artifacts are
+observed, local-only, CI-witnessed, `not_assessed`, or `cannot_verify` without
+relying on the retired Block 06 `scripts/*` or `npm` validation path.
+
+**Activation Gate**: Do not implement demo-repository work until
+`blocks/24-demo-repo-ci-trace-pilot.md` is reviewed through separate Socratic
+planes and explicitly approved. Block 24 may prove demo execution and trace
+inspectability, but it must not claim external production trust, production
+readiness, policy enforcement, or customer deployment readiness.
+
+- [ ] T203 [US5] Run Socratic spec review for Block 24 across product/demo
+  credibility, trace/evidence, CI/witness, and privacy/safety planes; record and
+  fix every critical or major finding before implementation approval.
+- [ ] T204 [US4] Create or select a demo repository and document ownership,
+  CI provider, app scope, command surface, artifact retention, and privacy
+  boundary without adding a runtime dependency from `sdp-trace` to the demo.
+- [ ] T205 [US4] Add a CI-backed `sdp-trace` demo run that captures at least
+  one wrapped command, `verify`, `explain`, `report`, `gate`, and `witness`
+  output, with explicit `not_assessed` or `cannot_verify` states for missing
+  external trust.
+- [ ] T206 [US4] Add a demo pilot report mapping trace/report/gate/witness
+  artifacts to the nine Block 23 customer questions and separating observed
+  movement from missing telemetry.
+- [ ] T207 [US5] Add redaction and safety checks proving committed or linked
+  demo artifacts do not expose tokens, private paths, raw logs, raw model
+  payloads, customer data, or unsafe personal identifiers.
+- [ ] T208 [US5] Run implementation and PR-level reviews across
+  code/correctness, trace/evidence, and requirements-vs-implementation planes
+  before claiming Block 24 closure.
+
+**Checkpoint**: Block 24 is the first real demo-repository proof path. Until it
+closes, `sdp-trace` may claim Block 23 MVP command/readiness documentation and
+source-bound local release proof, but not demo-repository pilot closure.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -607,6 +648,10 @@ remain downstream.
   cross-repository witness posture consumption. It must not treat GitHub
   Actions as the hidden witness model, claim broad enterprise CI support, or
   upgrade trust from environment variables alone.
+- **Phase 20**: Depends on Block 23 closure and reopens the real pilot gap left
+  by the retired Block 06 method. It must use current `sdp-trace` command
+  surfaces, CI evidence, and trace artifacts instead of retired `scripts/*` or
+  `npm` validation.
 
 ### Parallel Opportunities
 
@@ -647,6 +692,10 @@ remain downstream.
   and air-gapped documentation exercise separate witness surfaces.
 - T199 and T200 can run in parallel after T195-T198 because command-contract
   documentation and safety leak assertions have separate verification surfaces.
+- T204 and T206 can run in parallel after T203 because demo-repository setup and
+  report template work have separate write scopes.
+- T205 and T207 can run in parallel after T204 because CI trace capture and
+  redaction/safety checks have separate verification surfaces.
 
 ## Implementation Strategy
 
@@ -680,6 +729,10 @@ remain downstream.
 20. Complete Block 22 additional CI and enterprise witness profiles only after
     explicit spec approval, preserving provider-neutral witness semantics and
     preventing environment-variable-only trust upgrades.
+21. Complete Block 23 MVP closure before treating the retired Block 06 pilot
+    method as demoted from MVP closure.
+22. Complete Block 24 demo-repository CI and trace pilot before claiming a real
+    demo-repo pilot is closed.
 
 ### Evidence Discipline
 

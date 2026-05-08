@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -183,19 +182,6 @@ func writePostureCLIDigest(t *testing.T, artifact string) string {
 		}},
 	})
 	return path
-}
-
-func decodePostureCLIExport(t *testing.T, path string) map[string]any {
-	t.Helper()
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var out map[string]any
-	if err := json.Unmarshal(payload, &out); err != nil {
-		t.Fatal(err)
-	}
-	return out
 }
 
 func withCLIChdir(t *testing.T, dir string) {
