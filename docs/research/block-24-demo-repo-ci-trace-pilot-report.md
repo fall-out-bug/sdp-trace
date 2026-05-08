@@ -160,19 +160,26 @@ remain in the demo repo's GitHub Actions artifact store.
 Artifact download was verified before this report was committed using
 `gh run download 25548285336`.
 
-## Block 23 Customer Questions
+## Block 23 Evidence Coverage
 
-| question | answer class | Block 24 answer |
-| --- | --- | --- |
-| Can a team attach `sdp-trace` to an existing repo command? | `direct_demo_evidence` | Three Bazel commands were wrapped in a separate repo CI workflow. |
-| Can captured runs be inspected after CI? | `direct_demo_evidence` | Run/report artifacts were uploaded with digests and 14-day retention. |
-| Does `verify` produce machine-readable state? | `direct_demo_evidence` | `verify.txt` was produced and indexed. |
-| Does `explain` give reviewer-readable context? | `direct_demo_evidence` | `explain.txt` was produced and indexed. |
-| Does `report` aggregate multiple runs? | `direct_demo_evidence` | `summary.json` reported three observed runs. |
-| Does `gate` avoid overclaiming policy? | `direct_demo_evidence` | Gate stayed fact-only: local pass, CI/audit `cannot_verify`. |
-| Can GitHub Actions witness a run? | `direct_demo_evidence` | `ci-witness.json` passed with `ci_witnessed` for the exact demo topology. |
-| Are missing witness permissions and missing telemetry visible? | `direct_demo_evidence` | No-OIDC job recorded `cannot_verify`, missing identity fields, missing telemetry for CI OIDC, and exit `3`. |
-| Does this prove customer production trust? | `not_assessed` | External production trust, another owner, non-GitHub CI, release binary UX, and compiled Kotlin/JVM compatibility remain outside Block 24. |
+Block 24 gives direct demo evidence for attaching `sdp-trace` to an existing
+repository command: three Bazel commands were wrapped in a separate repository
+CI workflow, and the resulting run/report artifacts were uploaded with digests
+and 14-day retention.
+
+The run produced both machine-readable and reviewer-readable inspection
+surfaces. `verify.txt` was produced and indexed, `explain.txt` was produced and
+indexed, and `summary.json` reported three observed runs. `gate-result.json`
+stayed fact-only: local pass, CI/audit `cannot_verify`.
+
+The GitHub Actions witness path was exercised for the exact demo topology.
+`ci-witness.json` passed with `ci_witnessed`; the no-OIDC path recorded
+`cannot_verify`, missing identity fields, missing telemetry for CI OIDC, and
+exit `3`.
+
+External production trust, another owner, non-GitHub CI, release binary UX, and
+compiled Kotlin/JVM compatibility remain outside Block 24 and are recorded as
+`not_assessed`.
 
 ## Residual States
 

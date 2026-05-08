@@ -61,10 +61,10 @@ validator commands are:
 
 ```bash
 go test ./...
-go run ./cmd/sdp-trace validate-fixtures examples/github-speckit
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
 ```
 
-The generalized command from T036 must exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories.
+`examples/github-speckit` remains schema/example material, not a current `validate-fixtures` run package. The generalized command from T036 must exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories.
 
 ## 7. Verify Contract Manifest When It Exists
 

@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `/specs/001-sdp-trace-time-series-evidence-substrate/`
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/sdp-trace-sdp-gate-boundary.md`
-**Tests**: Include schema syntax checks now; schemas target JSON Schema Draft 2020-12 and committed examples validate with pinned local `ajv@8.20.0` through `scripts/validate-json-schema.mjs` once schema/example pairs exist.
+**Tests**: Include schema syntax checks now; schemas target JSON Schema Draft 2020-12. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`. Earlier AJV/script validation records are historical evidence, not the current command contract.
 
 **Organization**: Tasks are grouped by user story to preserve independent value and reviewability.
 
@@ -31,7 +31,7 @@
 - [x] T006 [US2] Audit `README.md`, `docs/cto-brief.en.md`, `docs/cto-brief.ru.md`, `docs/team-lead-playbook.en.md`, and `docs/team-lead-playbook.ru.md` for language implying `sdp-trace` owns policy decisions (Beads mirror: `sdp-trace-cdn.11`)
 - [x] T007 [US2] Replace or narrow gate/decision wording so external verdicts are recorded inputs, not `sdp-trace` decisions (Beads mirror: `sdp-trace-cdn.11`)
 - [x] T051 [US4] Rewrite `docs/cto-brief.en.md` and `docs/cto-brief.ru.md` as one-minute CTO decision narratives mapped to SpecKit evidence, with no marketing claims or native `sdp-trace` policy verdicts (Beads mirror: `sdp-trace-cdn.11`)
-- [x] T034 [US4] Document JSON Schema Draft 2020-12, pinned local `ajv@8.20.0`, schema IDs, and schema versioning in `schema/README.md` before new schema authoring starts (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T034 [US4] Document JSON Schema Draft 2020-12, current Go-first validation commands, schema IDs, and schema versioning in `schema/README.md` before new schema authoring starts (Beads mirror: `sdp-trace-cdn.8`)
 - [x] T040 [US2] Document committed artifact safety rules: sanitization, SHA-256 digests, redaction notes, `integrity_status`, and no secrets or raw customer data in committed examples
 - [x] T044 [US5] Design `schema/accountability.schema.json` for human-held DRI, approver, escalation, risk owner, authority scope, approval reference, and line of defense (Beads mirror: `sdp-trace-cdn.2`)
 - [x] T045 [US5] Design `schema/risk-classification.schema.json` for observed autonomy, observed impact, classification source, and external oversight assertions without internal pass/fail or oversight derivation (Beads mirror: `sdp-trace-cdn.2`)
@@ -114,7 +114,7 @@
 **Beads mirror**: `sdp-trace-cdn.13`
 
 - [x] T057 [US5] Replace local manifest `source_commit` placeholders with an immutable git commit or signed source reference before trusted-release claims (Beads mirror: `sdp-trace-cdn.13`)
-- [x] T058 [US5] Add `scripts/verify-self-attestation.sh` or equivalent release verifier that reports separate proof states instead of one overloaded trusted flag (Beads mirror: `sdp-trace-cdn.13`)
+- [x] T058 [US5] Add release verifier behavior that reports separate proof states instead of one overloaded trusted flag (current surface: Go `release-proof`; Beads mirror: `sdp-trace-cdn.13`)
 - [x] T059 [US5] Add a self-attestation evidence record under `examples/self-trace/` covering manifest digest, DSSE envelope binding, signer identity, freshness, and rollback status (Beads mirror: `sdp-trace-cdn.13`)
 - [x] T060 [US5] Add negative self-attestation fixtures for wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, and modified verification artifact (Beads mirror: `sdp-trace-cdn.13`)
 - [x] T061 [US4] Record a self-attestation summary under `docs/research/self-attestation-summary.md` with exact commands and residual `not_assessed` items (Beads mirror: `sdp-trace-cdn.13`)
@@ -161,7 +161,7 @@
 - [x] T074 [US3] Run pi review for Block 05 implementation and register every valid finding in Beads, including minor/P3 findings (Beads mirror: `sdp-trace-cdn.22`)
 - [x] T075 [US4] Verify Block 05 validation commands and close `sdp-trace-cdn.22` only after implementation review findings are closed (Beads mirror: `sdp-trace-cdn.22`)
 - [x] T076 [US4] Add committed Block 05 pi-review ledger with findings, severity, disposition, evidence, and optional Beads mirror IDs (Beads mirror: `sdp-trace-cdn.22`)
-- [x] T077 [US4] Add deterministic pilot matrix validation and wire it into `scripts/validate-contracts.sh` (Beads mirror: `sdp-trace-cdn.22`)
+- [x] T077 [US4] Add deterministic pilot matrix validation and record the current verifier surface or historical validation evidence explicitly (Beads mirror: `sdp-trace-cdn.22`)
 
 **Checkpoint**: Pilot scope is executable without unsupported compatibility claims.
 
@@ -181,7 +181,7 @@
 - [x] T083 [US3] Produce a committed sanitized OpenCode + MiniMax + Kotlin+Bazel proof package from a real run, or keep Block 06 incomplete with explicit `not_assessed` reason (Beads mirror: `sdp-trace-drq`)
 - [x] T084 [US3] Update OpenCode/Kotlin+Bazel docs and exact matrix rows only from the committed Block 06 proof package (Beads mirror: `sdp-trace-drq`)
 - [x] T085 [US4] Run pi review for Block 06 implementation, record every valid finding in `blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md`, and mirror every valid finding in Beads including minor/P3 findings (Beads mirror: `sdp-trace-drq`)
-- [x] T086 [US4] Verify `npm run validate`, `jq empty schema/*.json`, `git diff --check`, and Block 06 package validation before closing the review ledger and mirroring closure to `sdp-trace-drq` (Beads mirror: `sdp-trace-drq`)
+- [x] T086 [US4] Verify the then-current validation surface, `jq empty schema/*.json`, `git diff --check`, and Block 06 package validation before closing the review ledger and mirroring closure to `sdp-trace-drq`; current active validation is Go-first (Beads mirror: `sdp-trace-drq`)
 - [x] T091 [US4] Regenerate source-bound local release artifacts for the current committed source subject, verify `source_bound_local_release`, and keep `external_production_trust` open unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
 - [x] T092 [US4] Add Block 07 Slice 7 review-ledger schema, machine-checkable closure ledger, validator wiring, and final verifier-derived closure statement that keeps external production trust explicitly blocked without blocking Block 08 discovery.
 
@@ -194,7 +194,7 @@
 **Independent Test**: A reviewer can follow `quickstart.md`, validate schemas, and identify what remains `not_assessed`.
 
 - [x] T035 [US4] Add pass and `not_assessed` fixtures for new schemas under `examples/`
-- [x] T036 [US4] Add validation command that uses pinned local `ajv@8.20.0` and excludes `.git`, `.beads`, `.sdp-trace-runs`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories (Beads mirror: `sdp-trace-cdn.8`)
+- [x] T036 [US4] Add active Go-first validation commands and document exclusions for `.git`, `.beads`, `.sdp-trace-runs`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories (Beads mirror: `sdp-trace-cdn.8`)
 - [x] T037 [US4] Build customer pilot evidence package outline in `docs/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
 - [x] T038 [US4] Verify `jq empty schema/*.json`
 - [x] T039 [US4] Verify all committed examples are parseable JSON where applicable

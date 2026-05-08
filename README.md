@@ -2,9 +2,11 @@
 
 Portable traceability, provenance, evidence, accountability, and contract-integrity substrate for AI-assisted delivery.
 
-## What It Answers
+## Purpose
 
-Can we prove what happened, where the evidence came from, what changed over time, who is accountable, and whether the contract used to assess it was trusted?
+`sdp-trace` records what happened, where the evidence came from, what changed
+over time, who is accountable, and which contract was used to assess the
+evidence.
 
 Current proof authority comes from live Go verifier output under the current entrypoint contract. Checked-in block summaries and proof JSON are audit artifacts unless replayed or externally signed.
 
@@ -20,7 +22,8 @@ Current proof authority comes from live Go verifier output under the current ent
 - CTO and team lead docs in English and Russian.
 - SpecKit terminology mapping.
 - Harness integration examples.
-- Stack examples for Go and JVM/Bazel.
+- Stack examples for Go and JVM/Bazel, with JVM/Bazel coverage currently scoped
+  to design fixtures and pilot evidence.
 
 ## What It Does Not Do
 
@@ -48,10 +51,9 @@ sdp-trace -> no SDP runtime
 - [CTO brief, Russian](docs/cto-brief.ru.md)
 - [Team lead playbook, English](docs/team-lead-playbook.en.md)
 - [Team lead playbook, Russian](docs/team-lead-playbook.ru.md)
-- [Customer questions, English](docs/customer-questions.en.md)
-- [Customer questions, Russian](docs/customer-questions.ru.md)
 - [Agent entrypoint (current verifier contract)](docs/agent-entrypoint.md)
 - [Reviewer entrypoint (current proof scope)](docs/reviewer-entrypoint.md)
+- [Block 24 demo repository CI evidence guide](docs/research/block-24-demo-repo-ci-evidence-guide.md)
 - [Adoption ladder](docs/adoption-ladder.md)
 - [Core concepts](docs/concepts.md)
 - [Process metric catalog](docs/process-metric-catalog.md)
