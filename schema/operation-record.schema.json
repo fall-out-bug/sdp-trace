@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/operation-record.schema.json",
+  "title": "SDP Trace Operation Record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "operation_id",
+    "task_id",
+    "operation_state",
+    "started_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "operation_id": { "$ref": "#/$defs/safeId" },
+    "task_id": { "$ref": "#/$defs/safeId" },
+    "run_refs": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^recorder:[A-Za-z0-9_.:-]+$" }
+    },
+    "stage_id": { "$ref": "#/$defs/safeId" },
+    "phase_id": { "$ref": "#/$defs/safeId" },
+    "harness_id": { "$ref": "#/$defs/safeId" },
+    "harness_version": { "type": "string" },
+    "actor_type": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/actorType" },
+    "actor_id": { "$ref": "#/$defs/safeId" },
+    "started_by": { "$ref": "#/$defs/safeId" },
+    "started_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "ended_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "operation_state": { "enum": ["observed", "referenced", "not_assessed", "cannot_verify"] },
+    "input_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" }
+    },
+    "output_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^(evidence:[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+|recorder:[A-Za-z0-9_.:-]+(/event:[0-9]+)?)$"
+    }
+  }
+}

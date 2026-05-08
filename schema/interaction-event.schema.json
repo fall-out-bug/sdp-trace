@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/interaction-event.schema.json",
+  "title": "SDP Trace Interaction Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "interaction_id",
+    "task_id",
+    "source_id",
+    "source_sequence",
+    "event_type",
+    "friction_class",
+    "actor",
+    "source",
+    "content_digest",
+    "digest_algorithm",
+    "retention",
+    "state",
+    "observed_before_delivery",
+    "channel_exclusivity_state",
+    "completeness_state",
+    "redaction",
+    "observed_at",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "interaction_id": { "$ref": "#/$defs/safeId" },
+    "task_id": { "$ref": "#/$defs/safeId" },
+    "operation_id": { "$ref": "#/$defs/safeId" },
+    "stage_id": { "$ref": "#/$defs/safeId" },
+    "source_id": { "$ref": "#/$defs/safeId" },
+    "source_sequence": { "type": "integer", "minimum": 0 },
+    "event_type": {
+      "enum": [
+        "task_assignment",
+        "clarification_request",
+        "clarification_answer",
+        "plan_proposed",
+        "plan_approved",
+        "plan_rejected",
+        "corrective_feedback",
+        "boundary_violation",
+        "evidence_correction",
+        "tool_or_model_drift",
+        "pause_requested",
+        "resume_approved"
+      ]
+    },
+    "friction_class": {
+      "enum": ["none", "clarification", "planning", "correction", "evidence", "drift", "coordination"]
+    },
+    "actor": {
+      "type": "object",
+      "required": ["id", "actor_type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "actor_type": {
+          "enum": ["human_user", "human_role", "human_group", "ai_agent", "model", "system", "tool", "organization", "other"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "target": { "$ref": "#/$defs/safeId" },
+    "source": {
+      "type": "object",
+      "required": ["source_type", "source_id"],
+      "properties": {
+        "source_type": {
+          "enum": ["observed-control-channel", "preclassified-transcript-import"]
+        },
+        "source_id": { "$ref": "#/$defs/safeId" },
+        "source_version": { "type": "string" },
+        "source_ref": { "$ref": "#/$defs/safeId" }
+      },
+      "additionalProperties": false
+    },
+    "content_ref": { "$ref": "#/$defs/contentRef" },
+    "content_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
+    "digest_algorithm": { "const": "sha256" },
+    "retention": {
+      "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+    },
+    "state": {
+      "enum": ["observed", "referenced", "unreferenced", "not_assessed", "cannot_verify", "redacted"]
+    },
+    "reference_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" }
+    },
+    "llm_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["linkage_state"],
+        "properties": {
+          "gateway_trace_id": { "$ref": "#/$defs/safeId" },
+          "llm_request_id": { "$ref": "#/$defs/safeId" },
+          "provider_request_id": { "$ref": "#/$defs/safeId" },
+          "model_family": { "$ref": "#/$defs/safeId" },
+          "model_version": { "$ref": "#/$defs/safeId" },
+          "llm_gateway_id": { "$ref": "#/$defs/safeId" },
+          "linkage_state": { "enum": ["referenced", "not_assessed", "cannot_verify"] },
+          "retention_state": {
+            "enum": ["digest_only", "sanitized_excerpt", "encrypted_raw_ref", "external_artifact_ref", "not_assessed"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "observed_before_delivery": { "type": "boolean" },
+    "channel_exclusivity_state": { "enum": ["not_assessed", "referenced", "cannot_verify"] },
+    "completeness_state": { "enum": ["complete", "partial", "not_assessed", "cannot_verify"] },
+    "not_retained_reason": { "type": "string" },
+    "redaction": {
+      "type": "object",
+      "required": ["policy_ref", "finding_count"],
+      "properties": {
+        "policy_ref": { "$ref": "#/$defs/safeId" },
+        "finding_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "observed_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "created_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^(evidence:[A-Za-z0-9_./:-]+|sdp://interaction/[A-Za-z0-9_.:-]+/[A-Za-z0-9_.:-]+|external:[A-Za-z0-9_.:-]+|recorder:[A-Za-z0-9_.:-]+(/event:[0-9]+)?)$"
+    },
+    "contentRef": {
+      "type": "string",
+      "pattern": "^(evidence:[A-Za-z0-9_./:-]+|sdp://interaction/[A-Za-z0-9_.:-]+/[A-Za-z0-9_.:-]+|external:[A-Za-z0-9_.:-]+|recorder:[A-Za-z0-9_.:-]+/event:[0-9]+)$"
+    }
+  }
+}
