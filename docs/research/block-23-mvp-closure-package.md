@@ -29,7 +29,7 @@ anchor; they are not the source-subject commit named by the manifest.
 
 | id | state | reason |
 | --- | --- | --- |
-| MVP-02 Block 06 open retired-script mirrors | MVP-blocking follow-up, source-bound proof `not_assessed` | `.beads/issues.jsonl` closes `sdp-trace-drq.11` and `sdp-trace-drq.12`, and `bd ready` reports no ready work; this is backlog/process evidence, not manifest-subject product proof. Keep MVP-02 blocking unless the CTO explicitly accepts demotion from MVP closure scope. |
+| MVP-02 Block 06 open retired-script mirrors | accepted demotion from Block 23 closure; carried to Block 24 | CTO decision on 2026-05-08: the Block 06 method was a toy pilot surface and must not block Block 23 MVP closure. The real gap remains open as Block 24: test `sdp-trace` on a demo repository with CI and trace artifacts. `.beads/issues.jsonl` and `bd ready` remain process evidence only, not source-bound product proof. |
 | MVP-03 repository-wide quality | partial | changed releaseproof functions pass Block 23 thresholds; legacy complexity, staged packages, and repo-wide CRAP remain exceptions |
 | MVP-08 remote closure | `not_assessed` | branch has not gone through PR, PR-level review, merge, and `origin/main` verification |
 | external production trust | `not_assessed` | local source-bound proof is narrower than external production trust |
@@ -134,9 +134,9 @@ The branch updates command/profile documentation and customer-question maps in:
 
 | gate | current state | evidence |
 | --- | --- | --- |
-| closure package committed | `pass` | `8bc7f9e` plus follow-up review-fix commit |
+| closure package committed | `pass` | `8bc7f9e` plus follow-up review-fix commits |
 | implementation review | `pass` for local branch review, PR-level `not_assessed` | MiniMax-M2.7, ZAI GLM-5.1, and Qwen 3.6 Plus reviews were run and valid findings were fixed or dispositioned |
-| PR opened | `not_assessed` | no PR exists for current branch head |
-| PR-level review | `not_assessed` | cannot run until PR exists |
-| GitHub checks | `not_assessed` | no PR/check run exists for current branch head |
+| PR opened | `pass` | PR #16 |
+| PR-level review | `pass` | code/correctness, trace/evidence, and requirements-vs-implementation planes ran; valid findings fixed and focused re-review approved |
+| GitHub checks | `pass` | GitHub Actions `verify` passed on PR head `30737309d13421c94f3efbbb8650410c1d4da9fa` |
 | post-merge `origin/main` verification | `not_assessed` | branch is not merged |
