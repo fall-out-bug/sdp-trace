@@ -49,7 +49,7 @@ See `docs/research/block-23-not-assessed-registry.md` for the full registry.
 | `git diff --check HEAD` | pass |
 | `go run ./cmd/sdp-trace --help` | pass |
 | `go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out /tmp/sdp-trace-block23-release-proof.json` | pass |
-| selected-state diff between committed `examples/contract-foundation/contract-release-verification.example.json` and fresh `/tmp` release-proof output | pass; committed example state matches fresh local output for selected trust fields |
+| selected-state diff between committed `examples/contract-foundation/contract-release-verification.example.json` and fresh `/tmp` release-proof output | pass; compared `release_verification_state`, `trust_scope`, `source_commit_status`, `source_commit_artifact_status`, `source_commit_artifact_counts`, `trusted_contract_release`, `external_trust_profile`, and `source_commit` |
 | `git diff --name-only $(jq -r '.source_commit' examples/contract-foundation/contract-manifest.example.json) -- $(jq -r '.artifacts[].path' examples/contract-foundation/contract-manifest.example.json)` | pass, no output |
 | command-doc parity scan for all shipped command IDs across English/Russian customer docs | pass |
 | profile/state parity scan for `adapter-capture`, `managed-harness`, `forensic-retention`, CI profiles, `not_assessed`, and `cannot_verify` | pass |
@@ -126,9 +126,9 @@ The branch updates command/profile documentation and customer-question maps in:
 
 ## Supporting Artifacts
 
-- `docs/research/block-23-quality-report.md`
-- `docs/research/block-23-not-assessed-registry.md`
-- `docs/research/block-23-review-disposition.md`
+- `docs/research/block-23-quality-report.md` (branch evidence, not a manifest subject; not covered by source-bound proof)
+- `docs/research/block-23-not-assessed-registry.md` (branch evidence, not a manifest subject; not covered by source-bound proof)
+- `docs/research/block-23-review-disposition.md` (branch evidence, not a manifest subject; not covered by source-bound proof)
 
 ## Remaining Gate Before Ship
 
