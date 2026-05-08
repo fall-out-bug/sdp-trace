@@ -160,13 +160,20 @@ type Summary struct {
 	EventCount             int            `json:"event_count,omitempty"`
 	FrictionCounts         map[string]int `json:"friction_counts,omitempty"`
 	CorrectionAfterTask    int            `json:"correction_after_assignment_count,omitempty"`
+	PlanRejectionCount     int            `json:"plan_rejection_count,omitempty"`
+	ClarificationTurnCount int            `json:"clarification_turn_count,omitempty"`
 	UnreferencedEventCount int            `json:"unreferenced_event_count,omitempty"`
 	RunRefCount            int            `json:"run_ref_count,omitempty"`
+	SourceRefCount         int            `json:"source_ref_count,omitempty"`
+	TaskRefCount           int            `json:"task_ref_count,omitempty"`
 	PromiseRefCount        int            `json:"promise_ref_count,omitempty"`
+	InteractionRefCount    int            `json:"interaction_ref_count,omitempty"`
 	OperationRefCount      int            `json:"operation_ref_count,omitempty"`
 	LLMRefCount            int            `json:"llm_ref_count,omitempty"`
+	ToolRefCount           int            `json:"tool_ref_count,omitempty"`
 	MutationRefCount       int            `json:"mutation_ref_count,omitempty"`
 	StageRefCount          int            `json:"stage_ref_count,omitempty"`
+	FrictionRefCount       int            `json:"friction_ref_count,omitempty"`
 	NotAssessed            []string       `json:"not_assessed,omitempty"`
 	CannotVerify           []string       `json:"cannot_verify,omitempty"`
 }
@@ -221,6 +228,9 @@ func ImportTranscript(opts ImportOptions) (Trace, error) {
 	opts = normalizeImport(opts)
 	if opts.Source != SourcePreclassifiedTranscript {
 		return Trace{}, errors.New("interaction import-transcript requires --source preclassified-transcript-import")
+	}
+	if err := validateSafeID("task_id", opts.TaskID); err != nil {
+		return Trace{}, err
 	}
 	if strings.TrimSpace(opts.EventsJSONL) == "" {
 		return Trace{}, errors.New("interaction import-transcript requires --events-jsonl")
@@ -387,7 +397,7 @@ func ValidateEvent(event Event) error {
 	if err := validateSafeID("actor.id", event.Actor.ID); err != nil {
 		return err
 	}
-	if !validSourceType(event.Source.SourceType) || event.Source.SourceType == SourceAgentReported {
+	if !validSourceType(event.Source.SourceType) {
 		return fmt.Errorf("unsupported source_type %q", event.Source.SourceType)
 	}
 	if err := validateSafeID("source_id", event.SourceID); err != nil {
@@ -493,7 +503,7 @@ func ValidateTrace(trace Trace) error {
 	if err := validateSafeID("task_id", trace.TaskID); err != nil {
 		return err
 	}
-	if !validSourceType(trace.SourceType) || trace.SourceType == SourceAgentReported {
+	if !validSourceType(trace.SourceType) {
 		return fmt.Errorf("unsupported source_type %q", trace.SourceType)
 	}
 	if len(trace.Events) == 0 {
@@ -513,10 +523,18 @@ func ValidateTrace(trace Trace) error {
 func SummarizeTrace(trace Trace) Summary {
 	counts := map[string]int{}
 	corrections := 0
+	planRejections := 0
+	clarifications := 0
 	assignmentObserved := false
 	unreferenced := 0
 	for _, event := range trace.Events {
 		counts[event.FrictionClass]++
+		switch event.EventType {
+		case "plan_rejected":
+			planRejections++
+		case "clarification_request", "clarification_answer":
+			clarifications++
+		}
 		if event.EventType == "task_assignment" {
 			assignmentObserved = true
 			continue
@@ -540,6 +558,8 @@ func SummarizeTrace(trace Trace) Summary {
 		EventCount:             len(trace.Events),
 		FrictionCounts:         counts,
 		CorrectionAfterTask:    corrections,
+		PlanRejectionCount:     planRejections,
+		ClarificationTurnCount: clarifications,
 		UnreferencedEventCount: unreferenced,
 		NotAssessed:            notAssessed,
 		CannotVerify:           trace.CannotVerify,
@@ -588,18 +608,23 @@ func ValidateEnvelope(envelope Envelope) error {
 
 func SummarizeEnvelope(envelope Envelope) Summary {
 	return Summary{
-		SchemaVersion:     SchemaVersion,
-		TaskID:            envelope.TaskID,
-		EnvelopeID:        envelope.EnvelopeID,
-		AssessmentState:   envelope.AssessmentState,
-		RunRefCount:       len(envelope.RunRefs),
-		PromiseRefCount:   len(envelope.PromiseRefs),
-		OperationRefCount: len(envelope.OperationRefs),
-		LLMRefCount:       len(envelope.LLMRefs),
-		MutationRefCount:  len(envelope.MutationRefs),
-		StageRefCount:     len(envelope.StageRefs),
-		NotAssessed:       envelope.NotAssessed,
-		CannotVerify:      envelope.CannotVerify,
+		SchemaVersion:       SchemaVersion,
+		TaskID:              envelope.TaskID,
+		EnvelopeID:          envelope.EnvelopeID,
+		AssessmentState:     envelope.AssessmentState,
+		RunRefCount:         len(envelope.RunRefs),
+		SourceRefCount:      len(envelope.SourceRefs),
+		TaskRefCount:        len(envelope.TaskRefs),
+		PromiseRefCount:     len(envelope.PromiseRefs),
+		InteractionRefCount: len(envelope.InteractionRefs),
+		OperationRefCount:   len(envelope.OperationRefs),
+		LLMRefCount:         len(envelope.LLMRefs),
+		ToolRefCount:        len(envelope.ToolRefs),
+		MutationRefCount:    len(envelope.MutationRefs),
+		StageRefCount:       len(envelope.StageRefs),
+		FrictionRefCount:    len(envelope.FrictionRefs),
+		NotAssessed:         envelope.NotAssessed,
+		CannotVerify:        envelope.CannotVerify,
 	}
 }
 
@@ -751,7 +776,7 @@ func validActorType(value string) bool {
 
 func validSourceType(value string) bool {
 	switch value {
-	case SourceObservedControlChannel, SourcePreclassifiedTranscript, SourceAgentReported:
+	case SourceObservedControlChannel, SourcePreclassifiedTranscript:
 		return true
 	default:
 		return false

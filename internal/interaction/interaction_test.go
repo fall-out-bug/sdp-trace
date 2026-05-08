@@ -122,17 +122,52 @@ func TestImportTranscriptRejectsAgentReportedAndNonMonotonicOrdering(t *testing.
 	}
 }
 
+func TestImportTranscriptSuccessSummarizesCatalogMetrics(t *testing.T) {
+	dir := t.TempDir()
+	eventsPath := filepath.Join(dir, "events.jsonl")
+	assignment := validImportedEvent("ix-0", 0)
+	assignment.EventType = "task_assignment"
+	assignment.FrictionClass = "none"
+	clarification := validImportedEvent("ix-1", 1)
+	clarification.EventType = "clarification_request"
+	clarification.FrictionClass = "clarification"
+	rejection := validImportedEvent("ix-2", 2)
+	rejection.EventType = "plan_rejected"
+	rejection.FrictionClass = "correction"
+	writeJSONL(t, eventsPath, assignment, clarification, rejection)
+
+	trace, err := ImportTranscript(ImportOptions{
+		TaskID:      "task-1",
+		Source:      SourcePreclassifiedTranscript,
+		SourceRef:   "export-1",
+		EventsJSONL: eventsPath,
+		Out:         filepath.Join(dir, "trace.json"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	summary := SummarizeTrace(trace)
+	if summary.PlanRejectionCount != 1 || summary.ClarificationTurnCount != 1 || summary.CorrectionAfterTask != 0 {
+		t.Fatalf("summary = %+v", summary)
+	}
+}
+
 func TestEnvelopeSummaryCountsRefsAndRejectsUnsafeRunRef(t *testing.T) {
 	envelope := Envelope{
 		SchemaVersion:   SchemaVersion,
 		TaskID:          "task-1",
 		EnvelopeID:      "env-1",
 		RunRefs:         []string{"recorder:run-1"},
+		SourceRefs:      []string{"evidence:source-1"},
+		TaskRefs:        []string{"evidence:task-1"},
 		PromiseRefs:     []string{"evidence:promise-1"},
+		InteractionRefs: []string{"sdp://interaction/task-1/ix-1"},
 		OperationRefs:   []string{"recorder:run-1/event:1"},
 		LLMRefs:         []string{"recorder:run-1/event:2"},
+		ToolRefs:        []string{"recorder:run-1/event:3"},
 		MutationRefs:    []string{"evidence:mutation-1"},
 		StageRefs:       []string{"evidence:stage-1"},
+		FrictionRefs:    []string{"sdp://interaction/task-1/ix-1"},
 		AssessmentState: "partial",
 		NotAssessed:     []string{"gateway linkage absent"},
 		CreatedAt:       "2026-05-09T10:00:00Z",
@@ -142,7 +177,9 @@ func TestEnvelopeSummaryCountsRefsAndRejectsUnsafeRunRef(t *testing.T) {
 		t.Fatal(err)
 	}
 	summary := SummarizeEnvelope(envelope)
-	if summary.RunRefCount != 1 || summary.OperationRefCount != 1 || summary.LLMRefCount != 1 || summary.MutationRefCount != 1 {
+	if summary.RunRefCount != 1 || summary.SourceRefCount != 1 || summary.TaskRefCount != 1 || summary.PromiseRefCount != 1 ||
+		summary.InteractionRefCount != 1 || summary.OperationRefCount != 1 || summary.LLMRefCount != 1 || summary.ToolRefCount != 1 ||
+		summary.MutationRefCount != 1 || summary.StageRefCount != 1 || summary.FrictionRefCount != 1 {
 		t.Fatalf("summary = %+v", summary)
 	}
 	envelope.RunRefs = []string{"/tmp/run"}

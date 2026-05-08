@@ -175,13 +175,13 @@ func TestInteractionSummarizeAndEnvelopeSummarize(t *testing.T) {
 		TaskID:          "task-1",
 		EnvelopeID:      "env-1",
 		RunRefs:         []string{"recorder:run-1"},
-		SourceRefs:      []string{},
-		TaskRefs:        []string{},
+		SourceRefs:      []string{"evidence:source-1"},
+		TaskRefs:        []string{"evidence:task-1"},
 		PromiseRefs:     []string{"evidence:promise-1"},
 		InteractionRefs: []string{"sdp://interaction/task-1/ix-1"},
 		OperationRefs:   []string{"recorder:run-1/event:1"},
 		LLMRefs:         []string{"recorder:run-1/event:2"},
-		ToolRefs:        []string{},
+		ToolRefs:        []string{"recorder:run-1/event:3"},
 		MutationRefs:    []string{"evidence:mutation-1"},
 		StageRefs:       []string{"evidence:stage-1"},
 		FrictionRefs:    []string{"sdp://interaction/task-1/ix-1"},
@@ -197,8 +197,24 @@ func TestInteractionSummarizeAndEnvelopeSummarize(t *testing.T) {
 	if exit != 0 {
 		t.Fatalf("envelope summarize exit=%d err=%s", exit, errOut.String())
 	}
-	if !strings.Contains(out.String(), `"llm_ref_count": 1`) || !strings.Contains(out.String(), `"run_ref_count": 1`) {
+	if !strings.Contains(out.String(), `"llm_ref_count": 1`) ||
+		!strings.Contains(out.String(), `"run_ref_count": 1`) ||
+		!strings.Contains(out.String(), `"tool_ref_count": 1`) ||
+		!strings.Contains(out.String(), `"friction_ref_count": 1`) ||
+		!strings.Contains(out.String(), `"interaction_ref_count": 1`) {
 		t.Fatalf("envelope summary = %s", out.String())
+	}
+}
+
+func TestInteractionImportTranscriptRequiresTaskID(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"interaction", "import-transcript", "--source", interaction.SourcePreclassifiedTranscript}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("import-transcript exit=%d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "requires --task-id") {
+		t.Fatalf("missing usage error: %s", errOut.String())
 	}
 }
 

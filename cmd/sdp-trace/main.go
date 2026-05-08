@@ -221,6 +221,18 @@ func runInteractionImportTranscript(args []string, stdout, stderr io.Writer) int
 		fmt.Fprintln(stderr, "interaction import-transcript accepts only flags")
 		return exitUsage
 	}
+	if strings.TrimSpace(opts.stringValue("task-id")) == "" {
+		fmt.Fprintln(stderr, "interaction import-transcript requires --task-id")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("events-jsonl")) == "" {
+		fmt.Fprintln(stderr, "interaction import-transcript requires --events-jsonl")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "interaction import-transcript requires --out")
+		return exitUsage
+	}
 	trace, err := interaction.ImportTranscript(interaction.ImportOptions{
 		TaskID:      opts.stringValue("task-id"),
 		Source:      opts.stringValue("source"),
