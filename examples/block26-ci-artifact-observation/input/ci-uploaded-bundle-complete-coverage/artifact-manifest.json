@@ -1,0 +1,51 @@
+{
+  "schema_version": "block26-ci-artifact-observation-input-v1",
+  "selected_profile": "ci_artifact_observation",
+  "authority_scope": "ci_artifact_observation",
+  "selected_source": {
+    "repository": "example/repo",
+    "ref": "refs/heads/main",
+    "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "selected_run": {
+    "provider": "generic-ci",
+    "run_id": "run-1",
+    "run_attempt": "1",
+    "workflow_id": "verify",
+    "job_id": "job-1"
+  },
+  "required_families": [
+    {"family": "run", "required_producer_scope": "ci_uploaded"},
+    {"family": "report", "required_producer_scope": "ci_uploaded"},
+    {"family": "witness", "required_producer_scope": "ci_uploaded"},
+    {"family": "provenance", "required_producer_scope": "ci_uploaded"},
+    {"family": "evidence", "required_producer_scope": "ci_uploaded"},
+    {"family": "trace", "required_producer_scope": "ci_uploaded"},
+    {"family": "artifact_index", "required_producer_scope": "ci_uploaded"},
+    {"family": "redaction_scan", "required_producer_scope": "ci_uploaded"},
+    {"family": "review", "required_producer_scope": "ci_uploaded"},
+    {"family": "change_ci", "required_producer_scope": "ci_uploaded"}
+  ],
+  "artifact_families": [
+    {"family": "run", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "report", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "witness", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "provenance", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "evidence", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "trace", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "artifact_index", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "redaction_scan", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "review", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"},
+    {"family": "change_ci", "producer_scope": "ci_uploaded", "artifact_access_state": "present", "binding_state": "matched"}
+  ],
+  "artifact_index": {
+    "state": "valid"
+  },
+  "output_safety": {
+    "state": "pass"
+  },
+  "safety_ruleset": {
+    "id": "block26-default-output-safety-v1",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  }
+}

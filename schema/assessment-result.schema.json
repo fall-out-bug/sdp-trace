@@ -5,7 +5,8 @@
   "oneOf": [
     { "$ref": "#/$defs/managedHarnessAssessment" },
     { "$ref": "#/$defs/forensicRetentionAssessment" },
-    { "$ref": "#/$defs/adapterCaptureAssessment" }
+    { "$ref": "#/$defs/adapterCaptureAssessment" },
+    { "$ref": "ci-artifact-observation.schema.json" }
   ],
   "$defs": {
     "topLevelState": {

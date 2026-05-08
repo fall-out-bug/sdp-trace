@@ -1,0 +1,67 @@
+{
+  "schema_version": "block26-fixture-matrix-v1",
+  "profile": "ci_artifact_observation",
+  "authority_scope": "ci_artifact_observation",
+  "scenarios": [
+    {
+      "name": "ci-uploaded-bundle-complete-coverage",
+      "expected_state": "pass",
+      "reason_code": "family_observed"
+    },
+    {
+      "name": "checked-in-only-claim",
+      "expected_state": "cannot_verify",
+      "reason_code": "checked_in_claim_contradicts_ci_artifacts"
+    },
+    {
+      "name": "ci-bundle-absent",
+      "expected_state": "cannot_verify",
+      "reason_code": "family_absent_in_ci_bundle"
+    },
+    {
+      "name": "ci-bundle-partial",
+      "expected_state": "cannot_verify",
+      "reason_code": "family_partial_in_ci_bundle"
+    },
+    {
+      "name": "artifact-index-self-reference",
+      "expected_state": "fail",
+      "reason_code": "artifact_index_self_reference"
+    },
+    {
+      "name": "artifact-digest-mismatch",
+      "expected_state": "fail",
+      "reason_code": "artifact_digest_mismatch"
+    },
+    {
+      "name": "source-run-binding-missing",
+      "expected_state": "cannot_verify",
+      "reason_code": "source_run_binding_missing"
+    },
+    {
+      "name": "source-run-binding-mismatch",
+      "expected_state": "fail",
+      "reason_code": "source_run_binding_mismatch"
+    },
+    {
+      "name": "agent-reported-happy-path",
+      "expected_state": "cannot_verify",
+      "reason_code": "agent_reported_claim_without_observed_family"
+    },
+    {
+      "name": "unsafe-artifact-output",
+      "expected_state": "fail",
+      "reason_code": "unsafe_artifact_output"
+    },
+    {
+      "name": "artifact-expired",
+      "expected_state": "cannot_verify",
+      "reason_code": "artifact_expired_before_inspection"
+    },
+    {
+      "name": "external-artifact-ref-unverifiable",
+      "expected_state": "cannot_verify",
+      "reason_code": "external_artifact_ref_unverifiable"
+    }
+  ]
+}
