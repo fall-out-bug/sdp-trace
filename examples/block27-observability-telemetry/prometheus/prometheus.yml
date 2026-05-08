@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: sdp-trace-posture-textfile
+    static_configs:
+      - targets:
+          - localhost:9100
+        labels:
+          source: sdp-trace
+          telemetry_profile: prometheus-text-v1

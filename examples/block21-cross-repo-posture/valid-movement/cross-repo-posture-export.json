@@ -4,7 +4,7 @@
   "export_profile_version": "v1",
   "export_id": "export:6354dad4cfd619cf",
   "producer": "sdp-trace",
-  "generated_at": "2026-05-07T18:43:20Z",
+  "generated_at": "2026-05-08T17:08:14Z",
   "grouping_set_id": "repo_window_v1",
   "active_grouping_keys": [
     "repo",
@@ -804,7 +804,7 @@
     "non_comparable_count": 0,
     "non_comparable_reason_counts": {}
   },
-  "refusal_rows": null,
+  "refusal_rows": [],
   "handoff": {
     "consumer": "sdp-report"
   },

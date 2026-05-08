@@ -209,8 +209,8 @@ func Build(selectionPath string, now time.Time) (ExportResult, error) {
 		return ExportResult{}, err
 	}
 
-	var inputs []InputSelection
-	var refusals []RefusalRow
+	inputs := []InputSelection{}
+	refusals := []RefusalRow{}
 	groups := map[string]*aggregateGroup{}
 	refusalCounter := 0
 	handoff := selection.Handoff
@@ -329,6 +329,80 @@ func Explain(result ExportResult) (string, error) {
 	return rendered, nil
 }
 
+func ValidateExportResult(result ExportResult) error {
+	if result.SchemaVersion != SchemaVersion ||
+		result.ExportProfileID != ProfileID ||
+		result.ExportProfileVersion != ProfileVer {
+		return fmt.Errorf("unsupported posture export")
+	}
+	if result.ExportID == "" || result.Producer != "sdp-trace" || result.GeneratedAt == "" {
+		return fmt.Errorf("malformed posture export")
+	}
+	if _, err := time.Parse(time.RFC3339, result.GeneratedAt); err != nil {
+		return fmt.Errorf("malformed posture export generated_at")
+	}
+	if len(groupingKeys(result.GroupingSetID)) == 0 || len(result.ActiveGroupingKeys) < 2 {
+		return fmt.Errorf("malformed posture export grouping")
+	}
+	if result.InputSelection == nil || result.MetricRows == nil || result.MovementRows == nil ||
+		result.RefusalRows == nil || result.Handoff == nil || result.MovementSummary.NonComparableReason == nil {
+		return fmt.Errorf("malformed posture export missing required collection")
+	}
+	if len(result.OutputSafety.VerifiedAbsentSensitiveClasses) == 0 {
+		return fmt.Errorf("malformed posture export output_safety")
+	}
+	for _, item := range result.InputSelection {
+		if !safeLabel(item.InputID) || !safeLabel(item.Repository) || !safeLabel(item.TimeWindow) ||
+			item.PathRedactedID == "" || !validInputTrustState(item.InputTrustState) {
+			return fmt.Errorf("malformed posture export input_selection")
+		}
+	}
+	for _, row := range result.MetricRows {
+		if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
+			row.Numerator < 0 || row.Denominator < 0 || row.Unit != "rows" ||
+			!safeLabel(row.TimeWindow) || row.Dimensions == nil || row.DimensionKey == "" ||
+			row.SourceInputRefs == nil || row.SourceArtifactDigestSet == "" ||
+			!validSourceFieldState(row.SourceFieldState) || row.NotAssessedCount < 0 ||
+			row.InputTrustStateSummary == nil {
+			return fmt.Errorf("malformed posture export metric_row")
+		}
+		for key, value := range row.Dimensions {
+			if !validDimensionName(key) || !safeLabel(value) {
+				return fmt.Errorf("malformed posture export metric_row dimensions")
+			}
+		}
+		for state, count := range row.InputTrustStateSummary {
+			if !validInputTrustState(state) || count < 0 {
+				return fmt.Errorf("malformed posture export input_trust_state_summary")
+			}
+		}
+	}
+	for _, row := range result.MovementRows {
+		if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
+			row.DimensionKey == "" || row.CurrentValue < 0 || row.PreviousValue < 0 ||
+			!validComparisonBasis(row.ComparisonBasis) ||
+			(!row.Comparable && row.NonComparableReason != "non_comparable_missing_window") {
+			return fmt.Errorf("malformed posture export movement_row")
+		}
+	}
+	if result.MovementSummary.ComparableCount < 0 || result.MovementSummary.NonComparableCount < 0 {
+		return fmt.Errorf("malformed posture export movement_summary")
+	}
+	for reason, count := range result.MovementSummary.NonComparableReason {
+		if reason != "non_comparable_missing_window" || count < 0 {
+			return fmt.Errorf("malformed posture export movement_summary")
+		}
+	}
+	for _, row := range result.RefusalRows {
+		if row.ID == "" || !safeLabel(row.InputID) || !validRefusalReason(row.RefusalReason) ||
+			!validInputTrustState(row.InputTrustState) ||
+			(row.TimeWindow != "" && !safeLabel(row.TimeWindow)) {
+			return fmt.Errorf("malformed posture export refusal_row")
+		}
+	}
+	return nil
+}
+
 func SensitiveClasses() []string {
 	return []string{
 		"raw_command_args",
@@ -350,6 +424,64 @@ func SensitiveClasses() []string {
 		"unsafe_label",
 		"raw_digest_manifest_path",
 		"free_text_exception_or_refusal_reason",
+	}
+}
+
+func validMetricID(value string) bool {
+	for _, item := range metricCatalog {
+		if item.id == value {
+			return true
+		}
+	}
+	return false
+}
+
+func validDimensionName(value string) bool {
+	switch value {
+	case "repo", "team", "service", "harness", "change_type", "time_window":
+		return true
+	default:
+		return false
+	}
+}
+
+func validInputTrustState(value string) bool {
+	switch value {
+	case "trusted_input", "stale_input", "untrusted_input", "cannot_verify_input", "not_assessed_input":
+		return true
+	default:
+		return false
+	}
+}
+
+func validSourceFieldState(value string) bool {
+	switch value {
+	case "present", "not_assessed", "cannot_verify", "unsupported":
+		return true
+	default:
+		return false
+	}
+}
+
+func validComparisonBasis(value string) bool {
+	switch value {
+	case "same_profile_metric_dimension_window", "non_comparable_missing_window":
+		return true
+	default:
+		return false
+	}
+}
+
+func validRefusalReason(value string) bool {
+	switch value {
+	case "stale_input", "malformed_input", "untrusted_input_digest_mismatch", "unsafe_label",
+		"unsupported_input", "missing_required_input", "missing_optional_input",
+		"non_comparable_metric_version", "non_comparable_dimension_key",
+		"non_comparable_denominator_basis", "non_comparable_input_trust_rule",
+		"non_comparable_missing_window", "output_safety_violation":
+		return true
+	default:
+		return false
 	}
 }
 
