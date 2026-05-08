@@ -10,6 +10,11 @@ Current source-bound manifest anchor:
 - `source_commit`: `d57ceeb3eaa3252f6290b36f524d3838f46e5e5d`
 - artifact count: 148
 
+The manifest `source_commit` is the source-subject anchor for release-proof
+verification. Later closure-package and review-fix commits, including `8bc7f9e`
+and the follow-up review-fix commit, are branch evidence commits on top of that
+anchor; they are not the source-subject commit named by the manifest.
+
 ## Fixed Blockers
 
 | id | status | evidence |
@@ -18,7 +23,7 @@ Current source-bound manifest anchor:
 | MVP-04 bilingual command/profile docs | fixed locally | English/Russian entrypoint, CTO, team lead, and customer-question docs updated in branch; command/profile parity scans pass |
 | MVP-05 stale CTO/team docs | fixed locally | `docs/cto-adoption-guide.en.md`, `docs/cto-adoption-guide.ru.md`, `docs/team-lead-playbook.en.md`, `docs/team-lead-playbook.ru.md` |
 | MVP-06 customer pressure questions | fixed locally | `docs/customer-questions.en.md` and `docs/customer-questions.ru.md`; both files contain all 9 mandatory question rows |
-| MVP-07 Block 22 spec drift | fixed locally | Block 22 spec status now records implementation and PR review instead of implementation-blocked state |
+| MVP-07 Block 22 spec drift | fixed locally | Before: Block 22 status said implementation was blocked until explicit approval. After: Block 22 status records implementation and PR review in PR #15. Fixed in review-fix commit. |
 
 ## Open Or Deferred
 
