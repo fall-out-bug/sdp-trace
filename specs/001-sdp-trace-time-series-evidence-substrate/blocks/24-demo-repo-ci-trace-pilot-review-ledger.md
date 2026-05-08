@@ -89,6 +89,10 @@ Implementation review and PR-level review remain open.
 | I24-RI-02 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Added `generated_at` and profile-state extracts for clean and no-OIDC witnesses. |
 | I24-RI-03 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Exact scan command recorded with exit and match-count semantics. |
 | I24-CC-01 | not_assessed | code/correctness | ZAI GLM-5.1 | replaced_unusable | Reviewer returned stale/off-task content for a different Block 24 shape; not counted as review evidence. |
+| I24-CC-02 | major | code/correctness | OpenRouter Qwen 3.6 Plus | false_positive | Reviewer judged the denylist pattern file missing because it reviewed only the implementation diff. The file exists at `docs/research/block-24-redaction-denylist.patterns` from commit `5ced37b`; current blob `a6225493d2f935503a684394ad656659fc8715fe`. |
+| I24-CC-03 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added exact `sdp-trace` source commit `f66aa1c4619f0f6a2d56f602da9e0135b00e4a84` to report and artifact index. |
+| I24-CC-04 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added independent SHA-256 digests for `ci-witness.json` and `ci-witness-no-oidc.json`. |
+| I24-CC-05 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added artifact download verification statement using `gh run download 25548285336`. |
 
 Focused re-review is required for the fixed documentation before implementation
 review can be counted complete. PR-level review remains open.

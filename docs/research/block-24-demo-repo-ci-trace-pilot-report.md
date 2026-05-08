@@ -29,7 +29,7 @@ portability.
 | Negative artifact | `sdp-trace-demo-no-oidc-report` / `6876147448` |
 | Artifact expiration | 2026-05-22 |
 | `sdp-trace` source ref | `codex/block-24-demo-ci-trace-pilot` |
-| `sdp-trace` branch commit at run time | `f66aa1c` or later branch head; exact source bytes are in the private checkout used by CI |
+| `sdp-trace` source commit at run time | `f66aa1c4619f0f6a2d56f602da9e0135b00e4a84` |
 
 Owner-independence remains `not_assessed`: another owner would still need
 access to the `sdp-trace` source or a release artifact, permission to edit CI,
@@ -156,6 +156,9 @@ count was `0`.
 The committed `sdp-trace` repo receives this sanitized summary and artifact
 index only. Raw `.sdp-trace-runs/`, raw `.sdp-trace-report/`, and workflow logs
 remain in the demo repo's GitHub Actions artifact store.
+
+Artifact download was verified before this report was committed using
+`gh run download 25548285336`.
 
 ## Block 23 Customer Questions
 

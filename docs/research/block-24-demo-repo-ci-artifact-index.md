@@ -15,6 +15,7 @@ store. This file records sanitized references and selected digests only.
 | Workflow run | `25548285336` |
 | Run URL | `https://github.com/fall-out-bug/sdp-trace-demo-ci-pilot/actions/runs/25548285336` |
 | `sdp-trace` source ref | `codex/block-24-demo-ci-trace-pilot` |
+| `sdp-trace` source commit | `f66aa1c4619f0f6a2d56f602da9e0135b00e4a84` |
 | Artifact retention | 14 days |
 
 ## GitHub Actions Artifacts
@@ -71,6 +72,7 @@ Selected clean-report digests from `ci-witness.json`:
 
 | artifact | sha256 |
 | --- | --- |
+| `ci-witness.json` | `165f12f41bca998066178b40c90911818faa14d9aab87cff07f962e14400c553` |
 | `clean-feature-flag/run.json` | `2ae1db9059b636834ff2433007342e6a3f3114c9e8488533531711eb48d99e02` |
 | `clean-entitlement-matrix/run.json` | `d1d0d39aad8674b76261134fb767a9aee3fc97e6451b1500aa60157a4aa20ee6` |
 | `clean-audit-scope/run.json` | `e87338d2c7f1d4fe8dd760356e2e1d62e24db42621e043cf8f1b1326563b7031` |
@@ -83,6 +85,7 @@ Selected no-OIDC digests:
 
 | artifact | sha256 |
 | --- | --- |
+| `ci-witness-no-oidc.json` | `c54766476f383dd805799c7c38b38acd3f95156c534ca6b476ddc08b7e83b8b3` |
 | `no-oidc-feature-flag/run.json` | `074c29e8be3f566806b5e984ce9a20265be6008f2e837152f65cb0f23380bd11` |
 | `no-oidc-env-check.txt` | `c5161741271f8eee4fb85cfe461ac58c1b93549827ec2af4db9ef85e20147ae2` |
 
@@ -96,6 +99,7 @@ Selected no-OIDC digests:
 | No-OIDC command | `rg --pcre2 -n -f .sdp-trace-src/docs/research/block-24-redaction-denylist.patterns .sdp-trace-report` |
 | Clean artifact result | `pass`, exit `1` from `rg`, match count `0` |
 | No-OIDC artifact result | `pass`, exit `1` from `rg`, match count `0` |
+| Download verification | `pass`; both artifacts were downloaded with `gh run download 25548285336` before this index was committed |
 
 ## Dishonest Trace Cases
 
