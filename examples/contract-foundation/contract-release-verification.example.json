@@ -1,24 +1,22 @@
 {
-  "id": "contract-release-verification-block-09-source-bound-local",
+  "id": "contract-release-verification-block-18-19-source-bound",
   "schema_version": "0.1.0",
   "artifact_role": "verifier_output",
   "trust_scope": "source_bound_local_release",
   "release_verification_state": "pass",
   "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
-  "manifest_digest": "ce3175a546292c140488bc1ca6fa3fe3d9c2af455751dad4de83cd85fb97579d",
+  "manifest_digest": "1602c0832c08c6abf47f6726653d17ab35c801bf8db10785fbc91338d10fb050",
   "manifest_digest_status": "matched",
   "artifact_digest_status": "matched",
   "signature_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
-  "signature_status": "valid",
-  "signer_identity": "local-dev-dsse-openssl-v1:543552c326315fdefce53127c4d5681d24c9bcb93e64794d960871c95c56d799",
-  "oidc_issuer": "local-dev-private-equivalent",
+  "signature_status": "not_assessed",
   "identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
-  "identity_policy_status": "matched",
-  "source_commit": "b000c116de39fbabdd4b2e195cc7913a0b97ab0e",
+  "identity_policy_status": "not_assessed",
+  "source_commit": "d57ceeb3eaa3252f6290b36f524d3838f46e5e5d",
   "source_commit_status": "matched",
   "source_commit_artifact_status": "matched",
   "source_commit_artifact_counts": {
-    "checked": 166,
+    "checked": 148,
     "missing": 0,
     "mismatched": 0
   },
@@ -32,16 +30,13 @@
   "production_release_verified": {
     "state": "not_assessed",
     "value": null,
-    "reason": "Production release verification requires external attestation in addition to local digest and DSSE checks."
+    "reason": "Production release verification requires external attestation in addition to source-bound local checks."
   },
   "transparency_log_status": "not_assessed",
-  "freshness_status": "current",
-  "verified_at": "2026-05-05T12:36:48Z",
+  "freshness_status": "not_assessed",
+  "verified_at": "2026-05-08T06:14:51Z",
   "trusted_contract_release": false,
-  "private_equivalent_profile": "local-dev-dsse-openssl-v1",
-  "provenance_refs": [
-    "provenance-codex-block-07-slice-7-start"
-  ],
+  "private_equivalent_profile": "not_assessed",
   "accountability": {
     "dri": {
       "identity_ref": "role:sdp-trace-release-captain",
@@ -64,6 +59,6 @@
     },
     "line_of_defense": "second"
   },
-  "source_commit_reason": "source_commit contains every manifest artifact path with matching digest",
-  "external_trust_reason": "source-bound local finalization does not include Sigstore/Rekor or accepted customer PKI evidence"
+  "source_commit_reason": "source commit contains every manifest artifact path with matching digest",
+  "external_trust_reason": "external production trust is not assessed by the local source-bound profile"
 }
