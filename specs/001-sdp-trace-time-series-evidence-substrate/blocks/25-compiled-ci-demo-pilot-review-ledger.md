@@ -36,7 +36,7 @@ Status: initialized for Socratic spec review.
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| _pending_ | _pending_ | _pending_ | Implementation not started. | `not_assessed` | Block 25 activation gate |
+| _pending_ | _pending_ | _pending_ | Independent implementation role review not yet run. | `not_assessed` | Demo implementation evidence exists; role review pending |
 
 ## PR-Level Review Findings
 
@@ -53,8 +53,19 @@ Status: initialized for Socratic spec review.
   observations about JVM pinning, unique artifact-index paths, recursive
   enumeration, CI log secrecy, and redaction-scan output were accepted and
   folded into the spec/plan.
-- Implementation review: `not_assessed`.
+- Implementation review: `not_assessed`; demo implementation evidence is
+  captured, but CTO buyer, Head of Engineering, and Head of InfoSec review
+  planes have not yet run.
 - PR-level review: `not_assessed`.
-- Demo repo CI: `not_assessed` for Block 25.
-- Artifact index digest verification: `not_assessed` for Block 25.
+- Demo repo CI: `pass` for run `25554876944` on
+  `fall-out-bug/sdp-trace-demo-ci-pilot@e7af52aca71af76635118392919d7a01fddf6c3e`.
+- Artifact index digest verification: `pass` for downloaded clean and no-OIDC
+  artifact roots from run `25554876944`.
+- Redaction scan: `pass` for downloaded clean and no-OIDC artifact roots from
+  run `25554876944`.
+- Negative evidence states: no-OIDC witness gap `cannot_verify` with
+  `missing_ci_oidc`; stale digest fixture `fail` with
+  `artifact_digest_mismatch`; source/run mismatch fixture `fail`.
+- Gate output: `fail`; `gate.exit` was `3`, so gate output is not green closure
+  evidence.
 - External production trust: `not_assessed`.
