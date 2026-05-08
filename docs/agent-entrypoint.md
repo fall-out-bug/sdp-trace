@@ -5,6 +5,11 @@ introducing harness assumptions. The active entrypoint is the Go CLI reported by
 `go run ./cmd/sdp-trace --help`; update this document only when the help surface
 changes in the same slice.
 
+For the sidecar-first CI pilot path, start with
+`docs/research/block-24-demo-repo-ci-evidence-guide.md`. It shows how the demo
+repository uses the current command surface without replacing an existing
+harness.
+
 ## Profile Selection
 
 Each assertion is anchored to one of these profile IDs:
@@ -19,9 +24,47 @@ Do not infer profile from role. Choose the profile directly from the claim:
 - `source_bound_local_release`: local manifest, source commit, artifact digest, and DSSE/source-bound checks.
 - `external_production_trust`: external identity, protected source, transparency or customer audit evidence, approval, and production release verification.
 
-Dirty-checkout baseline output is only valid for `local_dirty_structural_only`.
-Do not use dirty-checkout output to close `source_bound_local_release` or
+Dirty-checkout baseline output is only valid under the
+`local_dirty_structural_only` authority scope. It is not a profile ID and must
+not be used to close `source_bound_local_release` or
 `external_production_trust`.
+
+## Result, Trust Scope, And Authority Scope
+
+Keep these vocabularies separate:
+
+- Result state: the verifier outcome for a selected command or profile, such as
+  `observed`, `pass`, `fail`, `not_assessed`, or `cannot_verify`.
+- Trust scope: the evidence boundary recorded by a run, witness, or assessment,
+  such as `local_observed` or `ci_witnessed`.
+- Authority scope: the reporting boundary for a committed package, such as
+  `demo_pilot_only`.
+
+Known trust scopes used by the current pilot docs:
+
+- `local_observed`: local run/report evidence was captured and checked, but it
+  is not CI-witnessed or external production trust.
+- `ci_witnessed`: available CI identity and artifact binding evidence supported
+  the witness profile for the exact CI topology under assessment.
+- `external_witnessed`: external witness evidence was supplied and accepted by
+  the selected profile.
+
+Known authority scopes used by current docs:
+
+- `demo_pilot_only`: sanitized demo-repository evidence. It can support pilot
+  mechanics and state interpretation only; it does not establish customer
+  production trust, owner independence, non-GitHub portability, or release
+  binary acquisition.
+- `local_dirty_structural_only`: dirty-checkout structural output. It can
+  support local shape/debug inspection only; it cannot support source-bound or
+  external trust closure.
+
+`not_assessed` can return exit `0` only when the selected command completed and
+the unassessed state is explicitly outside the selected profile or run scope.
+Pipeline authors must inspect emitted JSON/state fields instead of treating exit
+`0` as proof that every possible trust state passed. If a required check for the
+selected profile cannot run or lacks required evidence, the command must use
+`cannot_verify` and exit `3`.
 
 ## Command Contract
 

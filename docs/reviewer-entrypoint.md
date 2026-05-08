@@ -4,6 +4,10 @@ Use this path for a first-time reviewer check in under five minutes. For the
 full bilingual command/profile surface, see `docs/agent-entrypoint.md` and
 `go run ./cmd/sdp-trace --help`.
 
+For the demo-repository pilot evidence path, read
+`docs/research/block-24-demo-repo-ci-evidence-guide.md` before inspecting the
+Block 24 report and artifact index.
+
 ## Verification Path
 
 From a clean checkout, run:
@@ -19,6 +23,9 @@ External production trust is not part of this quick path. Use a live
 `external_production_trust` profile path before making production trust claims.
 
 ## Exit Code Contract
+
+Use `docs/agent-entrypoint.md` as the canonical state, trust-scope, authority
+scope, and exit-code contract. The short exit summary is:
 
 - `0`: `observed`, `pass`, or explicitly scoped `not_assessed`
 - `1`: `fail`
@@ -59,7 +66,8 @@ guidance and fixtures, not as a separate `witness --kind` value.
 
 - Clean checkout: verifier trust scope is the stated profile (`repo_baseline_structural`, `source_bound_local_release`, or `external_production_trust`).
 - Dirty checkout without a command-supported dirty allowance: required clean-source checks may return `cannot_verify`.
-- Dirty structural output may support only `local_dirty_structural_only`.
+- Dirty structural output may support only the `local_dirty_structural_only`
+  authority scope.
 - Do not use dirty output to conclude `source_bound_local_release` or `external_production_trust`.
 
 ## Not-Assessed Interpretation
