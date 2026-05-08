@@ -644,6 +644,9 @@ func explainCIArtifactObservation(result ciartifact.ObservationResult, stdout io
 	fmt.Fprintf(stdout, "Artifact access state: %s\n", result.ArtifactAccessState)
 	for _, family := range result.ArtifactFamilies {
 		fmt.Fprintf(stdout, "Artifact family %s: %s (%s)\n", family.Family, family.FamilyState, family.ReasonCode)
+		fmt.Fprintf(stdout, "  Producer scope: %s\n", family.ProducerScope)
+		fmt.Fprintf(stdout, "  Artifact access: %s\n", family.ArtifactAccessState)
+		fmt.Fprintf(stdout, "  Binding: %s\n", family.BindingState)
 	}
 	fmt.Fprintf(stdout, "Artifact index: %s (%s)\n", result.ArtifactIndex.Result, result.ArtifactIndex.ReasonCode)
 	fmt.Fprintf(stdout, "Output safety: %s (%s)\n", result.OutputSafety.State, result.OutputSafety.ReasonCode)

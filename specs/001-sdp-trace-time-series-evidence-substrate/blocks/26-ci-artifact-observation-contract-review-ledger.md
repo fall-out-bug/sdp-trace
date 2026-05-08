@@ -88,3 +88,19 @@ Current implementation evidence before external implementation review:
 
 External implementation review pending across code/correctness,
 tracing/evidence, requirements-vs-implementation, and security/privacy planes.
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| I26-CC-01 | major | code/correctness | Producer proof-level mismatch overwrote per-family source/run `binding_state` with `mismatch`, falsely implying source/run contradiction. | accepted_fixed | `evaluateFamily` now keeps source/run binding unchanged for lower-authority producer scope; `bindingSummary` reports producer binding separately. |
+| I26-CC-02 | major | code/correctness | `bindingSummary` included optional families and had no explicit binding-state precedence. | accepted_fixed | `bindingSummary` now considers required families only and uses explicit precedence: mismatch, absent, unverifiable, matched, not_assessed. |
+| I26-CC-03 | minor | code/correctness | Tests did not cover top-level `not_assessed`, `mixed` aggregates, unknown states, or fixture-matrix replayability. | accepted_fixed | Added `TestEvaluateTopLevelNotAssessedAndMixedAggregates`, `TestEvaluateUnknownStatesBecomeCannotVerify`, and `TestFixtureMatrixScenarios`. |
+| I26-TE-01 | blocker | tracing/evidence | Unknown artifact-index and output-safety states silently became `not_assessed`. | accepted_fixed | `evaluateIndex` and `evaluateSafety` now map unrecognized states to `cannot_verify` with safe reason codes. |
+| I26-TE-02 | blocker | tracing/evidence | Active safety ruleset digest defaulted to an all-zero placeholder. | accepted_fixed | Default safety ruleset digest is now computed from the embedded default ruleset content. |
+| I26-TE-03 | blocker | tracing/evidence | Output-safety acceptance criteria lacked test coverage for raw logs, tokens, OIDC material, prompts, model output, private paths, and unsafe parser input. | accepted_fixed | Added `TestOutputSafetyDoesNotEchoForbiddenMarkers` and identity/enum sanitization tests. |
+| I26-RI-01 | major | requirements-vs-implementation | Committed fixture matrix was not tied to evaluator behavior. | accepted_fixed | `TestFixtureMatrixScenarios` reads `examples/block26-ci-artifact-observation/fixture-matrix.json` and checks expected state/reason codes. |
+| I26-RI-02 | major | requirements-vs-implementation | Downstream gate consumption guidance was missing. | accepted_fixed | Added `docs/ci-artifact-observation-downstream.md`. |
+| I26-RI-03 | minor | requirements-vs-implementation | Explain output did not show per-family binding and producer/access states. | accepted_fixed | `assess explain` now prints producer scope, artifact access, and binding for each artifact family. |
+| I26-RI-04 | minor | requirements-vs-implementation | Block 25 did not yet point future demo iterations to Block 26 observation results for artifact truth. | accepted_fixed | Block 25 spec now references Block 26 as the artifact truth contract for future multi-feature demo claims. |
+| I26-SEC-01 | major | security/privacy | `selected_source`, `selected_run`, and enum-like fields could echo unsafe input into result JSON outside safe-message constraints. | accepted_fixed | Added source/run identity sanitization, family enum validation, producer/access/binding enum validation, and tests that unsafe markers are not copied. |
+
+Focused implementation re-review is pending after the fixes above.

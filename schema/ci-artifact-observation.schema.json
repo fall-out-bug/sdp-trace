@@ -130,20 +130,23 @@
     "sourceIdentity": {
       "type": "object",
       "properties": {
-        "repository": { "type": "string" },
-        "ref": { "type": "string" },
-        "commit_sha": { "type": "string" }
+        "repository": { "$ref": "#/$defs/safeIdentity" },
+        "ref": { "$ref": "#/$defs/safeIdentity" },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{40}$|^[A-Fa-f0-9]{64}$"
+        }
       },
       "additionalProperties": false
     },
     "runIdentity": {
       "type": "object",
       "properties": {
-        "provider": { "type": "string" },
-        "run_id": { "type": "string" },
-        "run_attempt": { "type": "string" },
-        "workflow_id": { "type": "string" },
-        "job_id": { "type": "string" }
+        "provider": { "$ref": "#/$defs/safeIdentity" },
+        "run_id": { "$ref": "#/$defs/safeIdentity" },
+        "run_attempt": { "$ref": "#/$defs/safeIdentity" },
+        "workflow_id": { "$ref": "#/$defs/safeIdentity" },
+        "job_id": { "$ref": "#/$defs/safeIdentity" }
       },
       "additionalProperties": false
     },
@@ -189,6 +192,10 @@
     "safeToken": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "safeIdentity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_./:-]{1,256}$"
     },
     "safeMessage": {
       "type": "string",
