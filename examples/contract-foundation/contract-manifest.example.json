@@ -86,29 +86,39 @@
   ],
   "artifacts": [
     {
+      "path": "README.md",
+      "kind": "doc",
+      "sha256": "c6f807fbfcb65640b3fdec53ac8e4a7efbe40bd2532d8b312d7fe700eefb8af9"
+    },
+    {
       "path": "docs/accountability-model.md",
       "kind": "doc",
-      "sha256": "214e53273c4d4dc3533f9a1551cdb671253f3b14b598020d5c6d122b9a43e599"
+      "sha256": "a4177cb976f2f1a63320efdf4ac3f913fe6c7b6cceb4b55942406cf564ea855c"
+    },
+    {
+      "path": "docs/adoption-guide.en.md",
+      "kind": "doc",
+      "sha256": "9e8fa82b8fba5cb9e53d9c506ac82d344955e1e6c8202b031de5e6c8b78fb781"
+    },
+    {
+      "path": "docs/adoption-guide.ru.md",
+      "kind": "doc",
+      "sha256": "4e33e787a7fcad029df8c3538674fac5cf718a7f07ca52a0ec9dc1bd9d8d591d"
+    },
+    {
+      "path": "docs/agent-onboarding.md",
+      "kind": "doc",
+      "sha256": "3d942b4a24648099e3c23c9742894379fe142033ea5badcf42bd2349f83819e8"
     },
     {
       "path": "docs/concepts.md",
       "kind": "doc",
-      "sha256": "f1462307a9463f4df0289656ba5ce7a5d6dd8ceee40e36eaa06ee6646d80733e"
+      "sha256": "904ab9984e898326968c60cc95e83c18968682990ef369f87098183f17b898f7"
     },
     {
       "path": "docs/contract-release-signing.md",
       "kind": "doc",
       "sha256": "7f3dfc39794d381531582293b0d47526fda4af7ef0e1cf279ba8f65b14aa47d5"
-    },
-    {
-      "path": "docs/cto-brief.en.md",
-      "kind": "doc",
-      "sha256": "a89b93636279d62c448e49d56582e0e5684479361543e677352fcaabb2cbe525"
-    },
-    {
-      "path": "docs/cto-brief.ru.md",
-      "kind": "doc",
-      "sha256": "ffc2b7f1c262b8bf951292524a7f20b71119968814bce22e3b3d77c503a77f36"
     },
     {
       "path": "docs/flight-recorder.md",
@@ -121,19 +131,24 @@
       "sha256": "eddc853223d353a271a10e416b7a7cc07d25f2d87c6ca088dcac96540553bec8"
     },
     {
+      "path": "docs/repository-rollout-playbook.en.md",
+      "kind": "doc",
+      "sha256": "a34630be6696e1ecf5b952af4c29697c2266c4a690360d641325cbd46d63c606"
+    },
+    {
+      "path": "docs/repository-rollout-playbook.ru.md",
+      "kind": "doc",
+      "sha256": "25c59cebf7f6f93b13ecf0b3295afe5c10fb6940c802fe6f1d5b9defdda7aa32"
+    },
+    {
       "path": "docs/speckit-compatibility.md",
       "kind": "compatibility_note",
-      "sha256": "d1503f280289c63a5a35c42efba9392a0e7a7b5f6cb3b31dedcb1e560610006a"
+      "sha256": "5b946bcc8804c880b87be185077ef40bdc0ad51b130924bd4101dac55beac928"
     },
     {
-      "path": "docs/team-lead-playbook.en.md",
-      "kind": "doc",
-      "sha256": "0d138844043bad256ca2bf04599b21c1a14ed0b5d030cdb6ceb974178a79f637"
-    },
-    {
-      "path": "docs/team-lead-playbook.ru.md",
-      "kind": "doc",
-      "sha256": "8b5916c10a83a9d2829c02b109df5f7b5d59542f6690d73d5471c303e3d47301"
+      "path": "examples/contract-foundation/external-policy-consumer-declaration.example.json",
+      "kind": "fixture",
+      "sha256": "94dbc1bbddac9039b171db151cb7cd30a64674e0a6e1c7c9d81b016957ef77b4"
     },
     {
       "path": "examples/contract-foundation/local-dev-wrong-public.pem",
@@ -153,12 +168,12 @@
     {
       "path": "examples/contract-foundation/negative-modified-contract-manifest.json",
       "kind": "fixture",
-      "sha256": "dbec89f9b1d498f6b3fd8ceb66f04435206a94f67baae288d9cb262fe730c352"
+      "sha256": "a7d5334231540f9f7237ecf6d3a478f12d0bf2c2354e67c4aee6252d2df8da52"
     },
     {
       "path": "examples/contract-foundation/negative-native-policy-field.json",
       "kind": "fixture",
-      "sha256": "f1372a30df6185cc7094581e98c12fbcba215e9bdc676aee7e8a51ebc2455c3a"
+      "sha256": "dda3fb4e7cb45be3c2c386276a05290467f43e0e6797ee8949277af6b79e349e"
     },
     {
       "path": "examples/contract-foundation/negative-native-policy-trace.json",
@@ -168,27 +183,22 @@
     {
       "path": "examples/contract-foundation/not-assessed-assessment-input.json",
       "kind": "fixture",
-      "sha256": "53fcaa0d3f1700d705d4538fc0d0b016b9dfdb2e28ebbc42cb65b86e4f50c085"
+      "sha256": "244440a8f573f06f3ecd16bc1d24b31086584a7fe71d0d61f2c2e967ad12e020"
     },
     {
       "path": "examples/contract-foundation/positive-assessment-input.json",
       "kind": "fixture",
-      "sha256": "2acd15dc2fd75b47fc6afddb4af5e448734429133c8dbc3edd805f2111743ab1"
-    },
-    {
-      "path": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
-      "kind": "fixture",
-      "sha256": "a51d5a81a47e9bf4cfbd57a1b28ef40ea1e99cd2030e962c5a7bb3ee7e041665"
+      "sha256": "d3726afbb19f62ea1737e62fe5604a2a4aa6a1d2cd3b0d0234b7a654453ed153"
     },
     {
       "path": "examples/contract-foundation/trusted-identity-policy-wrong-profile.example.json",
       "kind": "fixture",
-      "sha256": "1a5c42efdcc65c6fc290433d35dcd689fc4b103fb755e8e7a8934de30b3ffcdd"
+      "sha256": "c1248a7e1efbc803b3c32975f49f12424aa2abd36d105abb082bb253a1e08366"
     },
     {
       "path": "examples/contract-foundation/trusted-identity-policy.example.json",
       "kind": "fixture",
-      "sha256": "b5973baa6c343ba2e4d56e285b9dc0a96dc6babc0fd47fb0d51f36b8fc5ec007"
+      "sha256": "ec7cc7cb23b39a7f21a055c90dad669e7c710cb79748cc197632fcbf6213f427"
     },
     {
       "path": "examples/flight-recorder/forensic-digest-only-negative/events/000-run-started.json",
@@ -436,14 +446,14 @@
       "sha256": "4043936f06c05441fc6124f8d198baac6ed3071ace3977d3e4c2d5f1f2133d28"
     },
     {
-      "path": "examples/jvm-bazel/evidence-bundle.json",
-      "kind": "fixture",
-      "sha256": "ca8aa3ee30dc7fc2121b7f017a73820c409a29c7bfd0b5c56eeb7fea2bacdec6"
-    },
-    {
       "path": "examples/jvm-bazel/README.md",
       "kind": "doc",
       "sha256": "e1120b5442b50f35f2e687684f4555cfc986d0a8378ac9ccaee1c51c81032273"
+    },
+    {
+      "path": "examples/jvm-bazel/evidence-bundle.json",
+      "kind": "fixture",
+      "sha256": "ca8aa3ee30dc7fc2121b7f017a73820c409a29c7bfd0b5c56eeb7fea2bacdec6"
     },
     {
       "path": "examples/pilot-fixtures/kotlin-bazel-service/MODULE.bazel",
@@ -459,6 +469,11 @@
       "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/Hello.kt",
       "kind": "fixture",
       "sha256": "9aff584dc92a33627445c05cbd7c92cd822292170090a2a81092213a6fb70670"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
+      "kind": "fixture",
+      "sha256": "772b66d98a104ef5a4fc2c49ec96433a90ea5a24ea9d38f83357050ca957425d"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
@@ -496,11 +511,6 @@
       "sha256": "e48cfdfacfeab3bae8c0d2c52efc3e1b39b3fb4564a5d007b6c6f670db0b40ad"
     },
     {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
-      "kind": "fixture",
-      "sha256": "772b66d98a104ef5a4fc2c49ec96433a90ea5a24ea9d38f83357050ca957425d"
-    },
-    {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
       "kind": "fixture",
       "sha256": "4892b8a6dc320e2a80bffa5398e4e525972dd514155c2635d5655b5c9b620773"
@@ -511,9 +521,9 @@
       "sha256": "af973e3efc4f9ea5c3d131b8d94ad3673702f59451cfd18a017de0a057db4d52"
     },
     {
-      "path": "README.md",
+      "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "c882eb10eff8c4d1387fecf0fa8b42f2d7bf9cf3068befa2db85e61aea9b56d2"
+      "sha256": "88143ee07f24d051f9740c54436f03711e94bf1f0fdc672e6bda69ca90d7dcfe"
     },
     {
       "path": "schema/accountability.schema.json",
@@ -596,11 +606,6 @@
       "sha256": "c7a5c80490640b34078fda861eab2cd2401dbd779960b4277bb41d94d3daafda"
     },
     {
-      "path": "schema/README.md",
-      "kind": "doc",
-      "sha256": "937b8e461e03455483a091f2362fe882ad0511e2f18406d1d891aaee23828dce"
-    },
-    {
       "path": "schema/risk-classification.schema.json",
       "kind": "schema",
       "sha256": "a4c23ac836e44b16dbdf442c69e97a9672baaf3f5f70e606b096e2cc424e0919"
@@ -623,42 +628,42 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
       "kind": "doc",
-      "sha256": "758a31e519266eea0e1241c1b9b5a76009571d3f65387ab90f31bae0fbf32a5d"
+      "sha256": "ea3e3fcbc536a81d668ce221fbae3d7868ed9e5c3f971c4a0e318c20ea0a6265"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
       "kind": "doc",
-      "sha256": "7aa4534bb5e50403bcf032ac99fefb90b62a9709d501b1c9c5897326d613bc21"
+      "sha256": "98031dbf9c6aff7903cf0a124b57596d1dc07e9fe10431ee140ddea8c5861969"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
       "kind": "fixture",
-      "sha256": "c2615481caf99b789aa365497a189e469722cf689064ea61adab75fe8577c4da"
+      "sha256": "812ec6093a130acac76a3867f86f98ccf3a07603f7c9c440d9903cbd565c7163"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
       "kind": "fixture",
-      "sha256": "061fdf5498825a9ae5982011aa99b734fa60a6a7f9c6f3b84e971c3e63c88b35"
+      "sha256": "9aacfe90c79711b643c7b3c1f13ae2c171e54a7002806455928b161bfd26002a"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
       "kind": "doc",
-      "sha256": "5a85260a43b25b47e33ee243e17ed4bfe54b8a4378c17a068881848f6aea87e7"
+      "sha256": "84eb6b49e2eb2fb99e4af36a4e3f50fb235379f1a7aa47fe939bfc8a5dbb7035"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
       "kind": "doc",
-      "sha256": "60e1bad30255be69a19ec1ac4379569f837bf5af99d626159b762bcd96a2dd0b"
+      "sha256": "b7b990f582558da3c0ee95dd38864db80c04ab1b34174fc025929f935f148a8c"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/03-self-attestation-proof.md",
       "kind": "doc",
-      "sha256": "c6279869427fadc51b1f5f0c24b393ec26732b2e0ffc8809dd46608bdb98789f"
+      "sha256": "98cef7c1eb9e5b48a8afb56e537a3ff8f1e6f5524db1c80c606f3fe70adfc4fa"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md",
       "kind": "doc",
-      "sha256": "06d03793bb75af77b1f7c765bf8792538e842550f7efeb4d0fea1250a39bf490"
+      "sha256": "682946557f9ad50f64ab01c9c2d996a3730287c7ec08f88795fbfe3a210c4c38"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-implementation-plan.md",
@@ -673,12 +678,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-evidence-package.md",
       "kind": "doc",
-      "sha256": "deaee7c995f96753f8ff57791f95c3da7cc7dd4a7102ec84a559f5326e5579ae"
+      "sha256": "fd8da714634a8127a267a01a45568b9189da4903f6aead5396de4406d3a9b6fb"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-implementation-plan.md",
       "kind": "doc",
-      "sha256": "6216e1d35f8c60b3deeab12a0749665b708f95faf9a55f369a8f581fc3650c2d"
+      "sha256": "7654b4760da4f25c9b4720fc4556459913d968e37063b95cf61e9ccf2408fe10"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-review-ledger.md",
@@ -693,7 +698,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
       "kind": "doc",
-      "sha256": "2a0f54ea9ba88b3d3790b09a17bb01750bb8d3f37b63875dbb8db3afeb6b904d"
+      "sha256": "52deb4f1b05dbb8d451b9326c47e39b1bfea94a12e8e230e195ac9e76c3a70a5"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-implementation-plan.md",
@@ -708,27 +713,27 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
       "kind": "doc",
-      "sha256": "89a5a5f45b9170b5339562fabc08fae2f47153033ee5280575145fa00c480a77"
+      "sha256": "ff4a16b2cc3d1b959f5591af58af03574e39493e6190ced62207be9c8cb4e300"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-implementation-plan.md",
       "kind": "doc",
-      "sha256": "4bb97fea16451c0cf833dfc00ad2d0aff9dacf5c175ece36581b482bf1324567"
+      "sha256": "f7f56c8809dccd3e1f097297e9d06472aa3b168f2ed1e2a8fee18d2f2ec65148"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-review-ledger.md",
       "kind": "doc",
-      "sha256": "344a03a4a47bad51094dbd935c5b940b745adf081b4d8dfff77cd57b4c7c85d8"
+      "sha256": "3e2d80fbdbe7b158e687ef598c782e8223ede20a6cef7edab769707c367df188"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-socratic.md",
       "kind": "doc",
-      "sha256": "0a1d5a3883c4fe3df985b923d278eb8f180a2b87314d5a78a5e896c2a9e520a3"
+      "sha256": "9a62cec8ae623c4c31abcc614f376e1cd434f0755879d4005de7d42cb24c26b1"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-trust-kernel.md",
       "kind": "doc",
-      "sha256": "11fd6bf8b1cb1b45edd0c0511f4d1da97088f8216a11de7deaef139a35dbd572"
+      "sha256": "039409b23c3d90b787ed47f1f0db315195ec3cf9aad814da433aa86a2ccdc8f1"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/blocks-01-03-final-review-fixes.json",
@@ -736,42 +741,42 @@
       "sha256": "2e081de7f28972e0bc8be529b683eef3534edf02472d2640e91f1ff1a44bb88e"
     },
     {
-      "path": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md",
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md",
       "kind": "doc",
-      "sha256": "5294fb67ee26ba52e949edfe5fb953040a178b2e7a0a7cd32d66bc1d50013918"
+      "sha256": "60368029a4ff758d06f46bae9b1dad4d8fdf0030f8690c1cadc1cb9adda07b86"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/data-model.md",
       "kind": "doc",
-      "sha256": "34d5d74c37cc2b1a7a1194e935eaf05832401ace66117769cef22934266c15e5"
+      "sha256": "6df71c3a728d52093a93277753c2f38864247d23b5b5dec195f186c2c1d3c448"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/plan.md",
       "kind": "doc",
-      "sha256": "d57e95e00a6b4f664bcbdddba036504a3b900f4a4cdee29f8c479806579ea8b2"
+      "sha256": "c940064c61cffd87e620bf41febf9b9156bdfdfbe501c2e2fa539befadbb4fee"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/quickstart.md",
       "kind": "doc",
-      "sha256": "0bd81158b8814f5eba838746d6266fa18005c7e4f3346dcef9b007c6777ac4c2"
+      "sha256": "a006058d59b108e56fd0da3eac258fee87d897d5fa5b18a7b63c95e4b869c04e"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/research.md",
       "kind": "doc",
-      "sha256": "925a44f22b2fe41b47a551d48ef7c8aa2b4ed9380c19b7d9a94225ff827a4657"
+      "sha256": "47d4b4004990676609023e7b275bc67a010744d566bce1ec1cab50965c14def7"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
       "kind": "doc",
-      "sha256": "0b2c001f22a4cb3ca88c7474483c84e26a61be8c90a925713164a2c80720f059"
+      "sha256": "7b934d1fc2cf2099c0bf1da63e932b6facce03144ef686b4cbf648eb2ac32a07"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "22a341fa9208565ddc4886d1b370accd6c3a04b86d76d8b9cecc3e41a3e123fb"
+      "sha256": "95c7b2a662130050090e695ee5afc51ec9472a7e1807bf9ba1afa232b4f19c1d"
     }
   ],
-  "source_commit": "de479da41456d3a865fda82057300d013eec0253",
+  "source_commit": "8c35c9d7ca739b8df6f1a77ea3396a433c787953",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
@@ -780,7 +785,7 @@
   ],
   "compatibility_notes": [
     "Block 01 contract foundation is pre-v1 and may change with migration notes.",
-    "sdp-gate consumes declarations, not runtime dependencies."
+    "External policy consumers declare supported schema versions; no policy runtime is a product dependency."
   ],
   "accountability": {
     "dri": {
@@ -788,11 +793,11 @@
       "actor_type": "human_role"
     },
     "approver": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical-owner",
       "actor_type": "human_role"
     },
     "escalation": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical-owner",
       "actor_type": "human_role"
     },
     "authority_scope": "contract_release",
