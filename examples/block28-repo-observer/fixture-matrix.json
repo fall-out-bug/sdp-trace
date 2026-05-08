@@ -1,0 +1,19 @@
+{
+  "schema_version": "block28-repo-observer-fixture-matrix-v1",
+  "fixtures": [
+    {
+      "id": "valid-installed-local",
+      "path": "valid-installed-local/repo-observer-status.json",
+      "expected_install_state": "pass",
+      "expected_proof_state": "not_assessed",
+      "trust_boundary": "local structural setup exists; CI-uploaded artifact proof is still not_assessed"
+    },
+    {
+      "id": "missing-ci-workflow",
+      "path": "missing-ci-workflow/repo-observer-status.json",
+      "expected_install_state": "fail",
+      "expected_proof_state": "not_assessed",
+      "trust_boundary": "local hooks alone do not satisfy CI-uploaded evidence"
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/repo-observer-status.schema.json",
+  "title": "SDP Trace Repository Observer Status",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile",
+    "repository_id",
+    "repository_root_ref",
+    "git_head",
+    "git_branch",
+    "install_state",
+    "proof_state",
+    "surfaces",
+    "gaps",
+    "next_actions",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "block28-repo-observer-status-v1" },
+    "profile": { "type": "string", "const": "github-actions-git-hooks-v1" },
+    "repository_id": { "$ref": "#/$defs/safeToken" },
+    "repository_root_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "git_head": {
+      "type": "string",
+      "pattern": "^$|^[0-9a-f]{40}$"
+    },
+    "git_branch": { "$ref": "#/$defs/safeRef" },
+    "install_state": { "$ref": "#/$defs/state" },
+    "proof_state": { "$ref": "#/$defs/state" },
+    "surfaces": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/surface" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/gap" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nextAction" }
+    },
+    "force_diff_summary": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diffSummary" }
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["pass", "fail", "not_assessed", "cannot_verify"]
+    },
+    "trustScope": {
+      "type": "string",
+      "enum": ["local_structural", "ci_uploaded", "external_witnessed", "agent_reported", "not_applicable"]
+    },
+    "safeToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "safeRef": {
+      "type": "string",
+      "maxLength": 200,
+      "not": {
+        "pattern": "^/"
+      }
+    },
+    "reasonCode": {
+      "type": "string",
+      "enum": [
+        "hooks_path_absent",
+        "hooks_path_set",
+        "hooks_path_mismatch",
+        "hook_script_absent",
+        "hook_script_present",
+        "hook_output_not_observed",
+        "local_hooks_bypassable",
+        "already_installed",
+        "ci_workflow_absent",
+        "ci_workflow_present",
+        "ci_artifact_upload_absent",
+        "ci_artifact_upload_present",
+        "ci_artifact_bundle_not_observed",
+        "ci_artifact_bundle_observed",
+        "agent_reported_not_proof",
+        "outside_profile_scope",
+        "unsafe_output_refused",
+        "manual_step_required"
+      ]
+    },
+    "surface": {
+      "type": "object",
+      "required": [
+        "surface_id",
+        "install_state",
+        "proof_state",
+        "trust_scope",
+        "evidence_source",
+        "reason_code"
+      ],
+      "properties": {
+        "surface_id": { "$ref": "#/$defs/safeToken" },
+        "install_state": { "$ref": "#/$defs/state" },
+        "proof_state": { "$ref": "#/$defs/state" },
+        "trust_scope": { "$ref": "#/$defs/trustScope" },
+        "evidence_source": { "$ref": "#/$defs/safeRef" },
+        "observed_ref": { "$ref": "#/$defs/safeRef" },
+        "reason_code": { "$ref": "#/$defs/reasonCode" },
+        "next_action": {
+          "type": "string",
+          "maxLength": 240
+        }
+      },
+      "additionalProperties": false
+    },
+    "gap": {
+      "type": "object",
+      "required": ["surface_id", "reason_code", "detail"],
+      "properties": {
+        "surface_id": { "$ref": "#/$defs/safeToken" },
+        "reason_code": { "$ref": "#/$defs/reasonCode" },
+        "detail": {
+          "type": "string",
+          "maxLength": 240
+        }
+      },
+      "additionalProperties": false
+    },
+    "nextAction": {
+      "type": "object",
+      "required": ["surface_id", "action_text", "blocking"],
+      "properties": {
+        "surface_id": { "$ref": "#/$defs/safeToken" },
+        "action_text": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "blocking": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "diffSummary": {
+      "type": "object",
+      "required": ["path", "action", "summary"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safeRef" },
+        "action": { "$ref": "#/$defs/safeToken" },
+        "before": {
+          "type": "string",
+          "pattern": "^$|^sha256:[0-9a-f]{16} bytes:[0-9]+ lines:[0-9]+$|^[A-Za-z0-9_.:-]+$"
+        },
+        "after": {
+          "type": "string",
+          "pattern": "^$|^sha256:[0-9a-f]{16} bytes:[0-9]+ lines:[0-9]+$|^[A-Za-z0-9_.:-]+$"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "backup": { "$ref": "#/$defs/safeRef" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

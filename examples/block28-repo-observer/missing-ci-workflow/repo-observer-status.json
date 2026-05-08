@@ -1,0 +1,249 @@
+{
+  "schema_version": "block28-repo-observer-status-v1",
+  "profile": "github-actions-git-hooks-v1",
+  "repository_id": "repo_04f8d04b8e7dda76",
+  "repository_root_ref": "current_repository",
+  "git_head": "",
+  "git_branch": "main",
+  "install_state": "fail",
+  "proof_state": "not_assessed",
+  "surfaces": [
+    {
+      "surface_id": "repository_identity",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "sanitized_origin_hash",
+      "reason_code": "manual_step_required"
+    },
+    {
+      "surface_id": "git_hooks_path",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "git_config:core.hooksPath",
+      "observed_ref": "core.hooksPath=.githooks",
+      "reason_code": "hooks_path_set"
+    },
+    {
+      "surface_id": "git_hook_pre_commit",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.githooks/pre-commit",
+      "observed_ref": ".githooks/pre-commit",
+      "reason_code": "hook_script_present",
+      "next_action": "run a git operation to observe hook output"
+    },
+    {
+      "surface_id": "git_hook_post_commit",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.githooks/post-commit",
+      "observed_ref": ".githooks/post-commit",
+      "reason_code": "hook_script_present",
+      "next_action": "run a git operation to observe hook output"
+    },
+    {
+      "surface_id": "git_hook_pre_push",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.githooks/pre-push",
+      "observed_ref": ".githooks/pre-push",
+      "reason_code": "hook_script_present",
+      "next_action": "run a git operation to observe hook output"
+    },
+    {
+      "surface_id": "sdp_trace_config",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.sdp-trace/config.json",
+      "observed_ref": ".sdp-trace/config.json",
+      "reason_code": "already_installed"
+    },
+    {
+      "surface_id": "sdp_trace_gitignore",
+      "install_state": "pass",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.gitignore",
+      "observed_ref": ".gitignore",
+      "reason_code": "already_installed"
+    },
+    {
+      "surface_id": "github_actions_workflow",
+      "install_state": "fail",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.github/workflows/sdp-trace-observe.yml",
+      "observed_ref": ".github/workflows/sdp-trace-observe.yml",
+      "reason_code": "ci_workflow_absent",
+      "next_action": "install GitHub Actions observer workflow"
+    },
+    {
+      "surface_id": "github_actions_artifact_upload",
+      "install_state": "fail",
+      "proof_state": "not_assessed",
+      "trust_scope": "ci_uploaded",
+      "evidence_source": "workflow_declaration:.github/workflows/sdp-trace-observe.yml",
+      "observed_ref": ".github/workflows/sdp-trace-observe.yml",
+      "reason_code": "ci_artifact_upload_absent",
+      "next_action": "declare CI artifact upload in observer workflow"
+    },
+    {
+      "surface_id": "github_actions_artifact_bundle",
+      "install_state": "not_assessed",
+      "proof_state": "not_assessed",
+      "trust_scope": "ci_uploaded",
+      "evidence_source": "filesystem:.sdp-trace/ci",
+      "observed_ref": ".sdp-trace/ci",
+      "reason_code": "ci_artifact_bundle_not_observed",
+      "next_action": "run CI and inspect uploaded artifact bundle"
+    },
+    {
+      "surface_id": "pr_check_binding",
+      "install_state": "not_assessed",
+      "proof_state": "not_assessed",
+      "trust_scope": "not_applicable",
+      "evidence_source": "github_pr_checks:not_inspected",
+      "reason_code": "outside_profile_scope",
+      "next_action": "outside selected profile; no action required"
+    },
+    {
+      "surface_id": "local_wrapped_commands",
+      "install_state": "not_assessed",
+      "proof_state": "not_assessed",
+      "trust_scope": "not_applicable",
+      "evidence_source": "sdp_trace_runs:not_inspected",
+      "reason_code": "outside_profile_scope",
+      "next_action": "outside selected profile; no action required"
+    },
+    {
+      "surface_id": "agent_prompt",
+      "install_state": "not_assessed",
+      "proof_state": "not_assessed",
+      "trust_scope": "agent_reported",
+      "evidence_source": "agent_prompt:not_inspected",
+      "reason_code": "agent_reported_not_proof",
+      "next_action": "do not rely on prompt instructions as setup proof"
+    }
+  ],
+  "gaps": [
+    {
+      "surface_id": "repository_identity",
+      "reason_code": "manual_step_required",
+      "detail": "manual_step_required"
+    },
+    {
+      "surface_id": "git_hooks_path",
+      "reason_code": "hooks_path_set",
+      "detail": "hooks_path_set"
+    },
+    {
+      "surface_id": "git_hook_pre_commit",
+      "reason_code": "hook_script_present",
+      "detail": "run a git operation to observe hook output"
+    },
+    {
+      "surface_id": "git_hook_post_commit",
+      "reason_code": "hook_script_present",
+      "detail": "run a git operation to observe hook output"
+    },
+    {
+      "surface_id": "git_hook_pre_push",
+      "reason_code": "hook_script_present",
+      "detail": "run a git operation to observe hook output"
+    },
+    {
+      "surface_id": "sdp_trace_config",
+      "reason_code": "already_installed",
+      "detail": "already_installed"
+    },
+    {
+      "surface_id": "sdp_trace_gitignore",
+      "reason_code": "already_installed",
+      "detail": "already_installed"
+    },
+    {
+      "surface_id": "github_actions_workflow",
+      "reason_code": "ci_workflow_absent",
+      "detail": "install GitHub Actions observer workflow"
+    },
+    {
+      "surface_id": "github_actions_artifact_upload",
+      "reason_code": "ci_artifact_upload_absent",
+      "detail": "declare CI artifact upload in observer workflow"
+    },
+    {
+      "surface_id": "github_actions_artifact_bundle",
+      "reason_code": "ci_artifact_bundle_not_observed",
+      "detail": "run CI and inspect uploaded artifact bundle"
+    },
+    {
+      "surface_id": "pr_check_binding",
+      "reason_code": "outside_profile_scope",
+      "detail": "outside selected profile; no action required"
+    },
+    {
+      "surface_id": "local_wrapped_commands",
+      "reason_code": "outside_profile_scope",
+      "detail": "outside selected profile; no action required"
+    },
+    {
+      "surface_id": "agent_prompt",
+      "reason_code": "agent_reported_not_proof",
+      "detail": "agent prompt cooperation is not repository setup proof"
+    }
+  ],
+  "next_actions": [
+    {
+      "surface_id": "agent_prompt",
+      "action_text": "do not rely on prompt instructions as setup proof",
+      "blocking": false
+    },
+    {
+      "surface_id": "git_hook_post_commit",
+      "action_text": "run a git operation to observe hook output",
+      "blocking": false
+    },
+    {
+      "surface_id": "git_hook_pre_commit",
+      "action_text": "run a git operation to observe hook output",
+      "blocking": false
+    },
+    {
+      "surface_id": "git_hook_pre_push",
+      "action_text": "run a git operation to observe hook output",
+      "blocking": false
+    },
+    {
+      "surface_id": "github_actions_artifact_bundle",
+      "action_text": "run CI and inspect uploaded artifact bundle",
+      "blocking": false
+    },
+    {
+      "surface_id": "github_actions_artifact_upload",
+      "action_text": "declare CI artifact upload in observer workflow",
+      "blocking": true
+    },
+    {
+      "surface_id": "github_actions_workflow",
+      "action_text": "install GitHub Actions observer workflow",
+      "blocking": true
+    },
+    {
+      "surface_id": "local_wrapped_commands",
+      "action_text": "outside selected profile; no action required",
+      "blocking": false
+    },
+    {
+      "surface_id": "pr_check_binding",
+      "action_text": "outside selected profile; no action required",
+      "blocking": false
+    }
+  ],
+  "generated_at": "2026-05-08T19:31:58Z"
+}

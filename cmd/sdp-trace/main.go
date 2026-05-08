@@ -24,6 +24,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
 	"github.com/fall_out_bug/sdp-trace/internal/releaseproof"
+	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/telemetry"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"github.com/fall_out_bug/sdp-trace/internal/verifier"
@@ -59,6 +60,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runPreview(ctx, cmdArgs, stdout, stderr)
 	case "doctor":
 		return runDoctor(ctx, cmdArgs, stdout, stderr)
+	case "install":
+		return runInstall(ctx, cmdArgs, stdout, stderr)
 	case "verify":
 		return runVerify(ctx, cmdArgs, stdout, stderr)
 	case "explain":
@@ -1736,6 +1739,8 @@ func runDoctor(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	opts.setString("contract", "")
 	opts.setString("output-dir", defaultRunRoot)
 	opts.setString("report-dir", defaultReportDir)
+	opts.setString("profile", "")
+	opts.setString("out", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -1743,6 +1748,23 @@ func runDoctor(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "doctor does not accept positional arguments")
 		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) != "" {
+		if opts.stringValue("profile") != repoobserver.ProfileGithubActionsGitHooksV1 {
+			fmt.Fprintf(stderr, "doctor --profile requires %s\n", repoobserver.ProfileGithubActionsGitHooksV1)
+			return exitUsage
+		}
+		status, err := repoobserver.Doctor(repoobserver.Options{Profile: opts.stringValue("profile")})
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		if err := repoobserver.WriteJSON(opts.stringValue("out"), status); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		fmt.Fprint(stdout, repoobserver.HumanTable(status))
+		return repoObserverExitCode(status)
 	}
 	report, exitCode := buildDoctorReport(doctorOptions{
 		ContractPath: opts.stringValue("contract"),
@@ -1757,6 +1779,63 @@ func runDoctor(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "%s\n", data)
 	return exitCode
+}
+
+func runInstall(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if isHelp(args) {
+		printUsage(stdout)
+		return 0
+	}
+	if len(args) == 0 || args[0] != "repo-observer" {
+		fmt.Fprintln(stderr, "install requires repo-observer")
+		return exitUsage
+	}
+	opts := &flagSet{name: "install repo-observer"}
+	opts.setString("profile", repoobserver.ProfileGithubActionsGitHooksV1)
+	opts.setString("repository-id", "")
+	opts.setString("out", "")
+	opts.setBool("write", false)
+	opts.setBool("force", false)
+	if err := opts.parse(args[1:]); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "install repo-observer accepts only flags")
+		return exitUsage
+	}
+	status, err := repoobserver.Install(repoobserver.Options{
+		Profile:      opts.stringValue("profile"),
+		RepositoryID: opts.stringValue("repository-id"),
+		Write:        opts.boolValue("write"),
+		Force:        opts.boolValue("force"),
+	})
+	if writeErr := repoobserver.WriteJSON(opts.stringValue("out"), status); writeErr != nil {
+		fmt.Fprintln(stderr, writeErr)
+		return 1
+	}
+	if err != nil {
+		if status.SchemaVersion != "" {
+			fmt.Fprint(stdout, repoobserver.HumanTable(status))
+		}
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	fmt.Fprint(stdout, repoobserver.HumanTable(status))
+	if !opts.boolValue("write") {
+		return 0
+	}
+	return repoObserverExitCode(status)
+}
+
+func repoObserverExitCode(status repoobserver.Status) int {
+	if status.InstallState == repoobserver.StateCannotVerify || status.ProofState == repoobserver.StateCannotVerify {
+		return exitCannotVerify
+	}
+	if status.InstallState == repoobserver.StateFail {
+		return 1
+	}
+	return 0
 }
 
 func runVerify(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -2433,6 +2512,8 @@ Usage:
   sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace doctor [--contract <file>]
+  sdp-trace doctor --profile github-actions-git-hooks-v1 [--out <file>]
+  sdp-trace install repo-observer --profile github-actions-git-hooks-v1 [--repository-id <safe-id>] [--write] [--force] [--out <file>]
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>
   sdp-trace query --query <missing-evidence|capture-depth> <run-dir>
