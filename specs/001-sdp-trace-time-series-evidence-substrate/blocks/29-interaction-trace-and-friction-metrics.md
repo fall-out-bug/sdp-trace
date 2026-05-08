@@ -12,21 +12,29 @@ Parent artifacts:
 
 ## Goal
 
-Make task interaction itself an observable trace surface.
+Make task delivery itself an observable trace envelope.
 
 If a human gives a task to an agent, then later corrects scope, plan, evidence,
 tooling, or delivery behavior, `sdp-trace` should be able to retain that
 correction as part of the task trace. The product value is not "store a note."
-The value is to preserve the interaction history that explains why the work
-changed and how much friction the task required.
+The value is to preserve the delivery envelope that explains what work was
+requested, what was promised, which operations were performed, where friction
+occurred, which LLM and harness were involved, what code changed, and who
+started or approved each stage.
 
-This block introduces a portable interaction trace contract for:
+This block introduces a portable delivery trace envelope for:
 
 - initial task assignment;
+- promises, claims, assumptions, and expected evidence;
 - clarifying questions and answers;
 - corrective feedback after task assignment;
 - plan approval or rejection;
+- agent, harness, and LLM operations;
+- gateway-observed LLM request ids when available;
+- tool calls and command stages;
+- code and artifact mutation references;
 - implementation pause or resume decisions;
+- stage launch/approval actors;
 - agent/model/tool drift notes;
 - friction metrics derived from those events.
 
@@ -35,6 +43,12 @@ This block introduces a portable interaction trace contract for:
 "When an agent worked on this task, what interaction events changed the work,
 and how much corrective friction was required before the task reached its
 current state?"
+
+The broader envelope question is:
+
+"For this task, what was asked, what was promised, which operations and LLM calls
+attempted the work, what changed in the repository, who initiated each phase,
+and where did friction alter the path?"
 
 This question matters because friction is a product signal:
 
@@ -86,7 +100,14 @@ source, completeness, and limitations are represented in machine-readable state.
 `sdp-trace` may say:
 
 - "this task has an observed assignment event";
+- "this task has three recorded promises or claims, two of which are linked to
+  evidence refs and one of which is `not_assessed`";
 - "this task has three corrective feedback events after assignment";
+- "this correction occurred during operation `op-123` and references LLM gateway
+  trace `gw-456`, when that gateway ref is available";
+- "this code mutation ref was produced after operation `op-123`";
+- "stage `plan` was started by actor `human` and stage `execute` was started by
+  actor `agent`";
 - "this correction was observed through source type
   `observed-control-channel`";
 - "this transcript import is partial and therefore `not_assessed` for
@@ -103,6 +124,215 @@ source, completeness, and limitations are represented in machine-readable state.
 - "the spec is bad";
 - "the work is approved";
 - "the task is done."
+- "gateway linkage is complete when the gateway evidence is absent."
+
+## Delivery Trace Envelope
+
+An interaction event is one event family inside a larger delivery trace
+envelope. The envelope is the object a reviewer should inspect when asking
+"what happened on this task?"
+
+The envelope is a higher-order evidence layer over Flight Recorder runs. It must
+not create a parallel evidence system with separate retention guarantees.
+Whenever low-level run evidence exists, the envelope links to it instead of
+re-recording commands, file mutations, model calls, or tool output.
+
+Minimum envelope families:
+
+| Family | Purpose | Example refs |
+| --- | --- | --- |
+| `task` | What task was being solved and under which scope. | `task_id`, `spec_id`, `phase_id` |
+| `promise` | What the agent/workflow said it would do or claimed it had done. | claim refs, evidence expectations, plan refs |
+| `interaction` | Human/agent messages that changed or clarified the task. | assignment, correction, approval, rejection |
+| `operation` | Agent or harness operation performed under the task. | `operation_id`, stage, harness, actor |
+| `llm` | LLM calls observed by a gateway or harness. | `llm_request_id`, `gateway_trace_id`, model identity |
+| `tool` | Tool, command, or external action invoked during an operation. | command refs, tool call ids |
+| `mutation` | Code, artifact, plan, evidence, or config changes. | git commit, diff, artifact digest, evidence refs |
+| `stage` | Who started, approved, paused, resumed, or completed a phase. | actor refs, stage ids, timestamps |
+| `friction` | Corrections, boundary violations, evidence disputes, drift, rework. | friction event refs and metrics |
+
+The envelope is not a verdict. It is a cross-reference map over observed facts.
+
+## Flight Recorder Integration
+
+Block 29 inherits the Flight Recorder safety and retention model in
+`docs/flight-recorder.md`.
+
+Envelope artifacts may add task, promise, interaction, and stage context around
+recorder runs, but command timelines, file mutations, provenance records, tool
+events, adapter events, and gateway-observed LLM calls remain recorder or
+adapter/gateway facts.
+
+Minimum integration rules:
+
+- `delivery-trace-envelope.json` lists one or more `run_refs` when recorder runs
+  are available.
+- A `run_ref` uses a closed scheme such as `recorder:<run_id>` and may point to a
+  run manifest, closure event, or event-chain head, depending on the current
+  recorder profile.
+- Envelope `operation_refs`, `tool_refs`, `mutation_refs`, and `llm_refs` may
+  point to Flight Recorder events with a closed scheme such as
+  `recorder:<run_id>/event:<sequence>` or to adapter/gateway bundle refs already
+  referenced by the recorder run.
+- If no recorder run exists for an operation, the operation record must mark
+  low-level run evidence `not_assessed`.
+- If a recorder run exists but does not bind to the declared `task_id`, the
+  envelope is `cannot_verify`.
+- Future recorder run manifests or closure events should carry optional
+  `task_id` so reviewers can join task-level and run-level evidence without
+  guessing from prose.
+
+This keeps the envelope lightweight: it provides task and interaction context;
+it does not duplicate the recorder's low-level evidence chain.
+
+## Retention Mapping
+
+Block 29 does not introduce independent retention modes. Interaction retention
+maps to the Flight Recorder retention states:
+
+| Interaction retention intent | Flight Recorder retention state | Meaning |
+| --- | --- | --- |
+| `digest_only` | `digest_only` | Content is not retained; digest and safe metadata remain. |
+| `sanitized_excerpt` | `sanitized_excerpt` | Redacted/sanitized content is retained and safe to inspect. |
+| `encrypted_raw_ref` | `encrypted_raw_ref` | Raw content exists behind an access-controlled encrypted reference. |
+| `external_artifact_ref` | `external_artifact_ref` | Content remains in an external system; envelope stores a safe ref and digest when available. |
+| `not_assessed` | `not_assessed` | Retention could not be assessed. |
+
+Earlier shorthand terms such as "full", "redacted", or "not retained" are
+human descriptions only. Schema values must use the Flight Recorder retention
+states above.
+
+Interaction artifacts stored in or linked from a run directory must pass the
+same `forensic-retention` assessment as other recorder artifacts. The envelope
+must explicitly forbid raw prompts, raw model responses, raw command args,
+stdout/stderr bodies, adapter configuration, gateway evidence refs containing
+secrets, provider tokens, private filesystem paths, authenticated URLs, and raw
+review bodies in committed or preview/query output.
+
+If interaction content cannot be safely retained under one of the Flight
+Recorder retention states, the content is not retained and the event records
+`not_assessed` or `cannot_verify` with a safe reason.
+
+## Operation And LLM Linkage
+
+Friction is most useful when it can be located inside an operation.
+
+Required operation fields when available:
+
+- `operation_id`
+- `task_id`
+- `run_refs`
+- `stage_id`
+- `phase_id`
+- `harness_id`
+- `harness_version`
+- `actor_type`
+- `actor_id`
+- `started_by`
+- `started_at`
+- `ended_at`
+- `operation_state`
+- `input_refs`
+- `output_refs`
+
+LLM linkage fields are optional but first-class:
+
+- `gateway_trace_id`
+- `llm_request_id`
+- `provider_request_id`
+- `model_family`
+- `model_version`
+- `model_alias`
+- `llm_gateway_id`
+- `request_phase`: `planning`, `implementation`, `review`, `debug`,
+  `verification`, or `other`
+- `retry_of`
+- `fallback_from`
+- `capture_depth`
+- `retention_state`
+
+`sdp-trace` stores and validates these ids. It does not become the LLM gateway.
+The gateway owns request capture, prompt/response retention policy, token counts,
+latency, provider ids, retry/fallback envelopes, and model identity evidence.
+
+If gateway refs are absent, the LLM linkage state is `not_assessed`. If gateway
+refs are present but malformed, contradictory, or unverifiable, the LLM linkage
+state is `cannot_verify`.
+
+If gateway refs are present inside a recorder adapter bundle, `llm_refs` should
+point through the recorder or adapter bundle ref rather than copying gateway
+payloads into the envelope.
+
+No raw prompt or response body is required for LLM linkage. Digest-only,
+redacted, encrypted, or external gateway evidence refs are acceptable when the
+retention state is explicit.
+
+## Promises And Claims
+
+Promises are observable commitments or claims made during delivery.
+
+Examples:
+
+- "I will use GSD plan before code."
+- "I will not edit the plan without approval."
+- "Tests passed."
+- "CI uploaded trace artifacts."
+- "This feature is implemented."
+
+Promise records need:
+
+- `promise_id`
+- `task_id`
+- `operation_id` when known
+- `actor_type`
+- `actor_id`
+- `promise_type`: `plan_commitment`, `scope_commitment`,
+  `evidence_commitment`, `completion_claim`, `verification_claim`,
+  `handoff_claim`, or `other`
+- `claim_ref` or retained/redacted content ref
+- `expected_evidence_refs`
+- `actual_evidence_refs`
+- `assessment_state`: `observed`, `referenced`, `not_assessed`, or
+  `cannot_verify`
+
+A promise record says a promise or claim was made. It does not say the promise
+was satisfied unless evidence refs support that separate assessment.
+
+## Stage Actors
+
+The envelope should record who started or approved each stage when available.
+
+Stage actor events include:
+
+- `stage_started`
+- `stage_approved`
+- `stage_rejected`
+- `stage_paused`
+- `stage_resumed`
+- `stage_completed`
+
+Each stage actor event records `actor_type`, `actor_id`, `stage_id`,
+`operation_id` when known, and source class. Human approval remains a recorded
+event, not proof that downstream implementation matched the approval.
+
+## Mutation Linkage
+
+Code and artifact changes are linked by reference, not by raw patch bodies in
+the interaction trace.
+
+Mutation refs may include:
+
+- git commit id;
+- branch name or PR id when safe;
+- diff summary digest;
+- changed file digest set;
+- generated artifact refs;
+- evidence bundle refs;
+- CI artifact observation refs.
+
+If a friction event occurs before a mutation, `sdp-trace` can say the mutation
+is after the friction event in the same task or operation. It must not claim the
+friction caused the mutation unless a future impact-assessment profile exists.
 
 ## Task Identity
 
@@ -323,9 +553,16 @@ Required dimensions when available:
 - `task_id`
 - `spec_id`
 - `phase_id`
+- `operation_id`
+- `stage_id`
 - `agent_runtime`
+- `harness_id`
+- `harness_version`
 - `model_family`
 - `model_version`
+- `llm_gateway_id`
+- `llm_request_id`
+- `gateway_trace_id`
 - `source_type`
 - `source_version`
 - `event_type`
@@ -348,7 +585,10 @@ dimensions differ or are missing, comparisons are `not_assessed`.
 
 Implementation should add JSON schema artifacts for:
 
+- `delivery-trace-envelope.schema.json`
 - `interaction-event.schema.json`
+- `operation-record.schema.json`
+- `promise-record.schema.json`
 - `interaction-trace.schema.json`
 - optional `interaction-metric-stream.schema.json` only if existing
   `metric-stream.schema.json` cannot represent the needed facts.
@@ -371,6 +611,9 @@ Minimum interaction event fields:
 - `retention`
 - `state`
 - `reference_refs`
+- `operation_id`
+- `stage_id`
+- `llm_refs`
 - `observed_before_delivery`
 - `channel_exclusivity_state`
 - `completeness_state`
@@ -381,6 +624,28 @@ Minimum interaction event fields:
 
 `digest_algorithm` is `sha256`.
 
+Minimum envelope-level fields:
+
+- `schema_version`
+- `task_id`
+- `envelope_id`
+- `run_refs`
+- `source_refs`
+- `task_refs`
+- `promise_refs`
+- `interaction_refs`
+- `operation_refs`
+- `llm_refs`
+- `tool_refs`
+- `mutation_refs`
+- `stage_refs`
+- `friction_refs`
+- `assessment_state`
+- `not_assessed`
+- `cannot_verify`
+- `created_at`
+- `updated_at`
+
 `content_ref` must use a closed reference scheme:
 
 - `evidence:<ref>` for retained content already represented as an evidence ref;
@@ -388,6 +653,8 @@ Minimum interaction event fields:
   content-addressed blob owned by this trace package;
 - `external:<safe-ref>` for external transcript material that is not copied into
   the package.
+- `recorder:<run_id>/event:<sequence>` for content or metadata already retained
+  in a Flight Recorder event.
 
 Unknown schemes are `cannot_verify`. If content is not retained, `content_ref`
 is absent and `not_retained_reason` is required.
@@ -401,7 +668,9 @@ MVP retention policy:
 
 - Redaction happens before retained content is written.
 - Retained content digest covers the retained post-redaction content.
-- The event records whether content was `full`, `redacted`, or `not_retained`.
+- The event records one of the Flight Recorder retention states:
+  `digest_only`, `sanitized_excerpt`, `encrypted_raw_ref`,
+  `external_artifact_ref`, or `not_assessed`.
 - `redaction.policy_ref` identifies the policy used.
 - `redaction.finding_count` records how many redactions occurred without
   echoing sensitive values.
@@ -438,6 +707,10 @@ sdp-trace interaction import-transcript \
 sdp-trace interaction summarize \
   --trace <trace.json> \
   --out <summary.json>
+
+sdp-trace envelope summarize \
+  --envelope <delivery-trace-envelope.json> \
+  --out <summary.json>
 ```
 
 `relay` reads message content from stdin, validates and records the event, then
@@ -452,10 +725,28 @@ fixtures and explicit `not_assessed` behavior for ambiguous lines.
 Both commands are trace-package writers. They do not claim the agent complied
 with the message.
 
+`envelope summarize` is read-only over existing refs, including recorder run
+refs when present. It answers "what is linked and what remains `not_assessed`?"
+It must not produce a readiness, quality, or employee/model score.
+
 ## Acceptance Criteria
 
 - Spec defines the difference between observed control channel and transcript
   import, and explicitly rejects agent-reported interaction as event evidence.
+- Spec defines the delivery trace envelope: task, promises, interactions,
+  operations, LLM refs, harness refs, tool refs, mutations, stage actors, and
+  friction refs.
+- Promise records are observed claims, not proof of satisfaction.
+- LLM/gateway linkage is explicit; absent gateway refs are `not_assessed`, not
+  inferred.
+- The envelope is a higher-order layer over Flight Recorder runs, not a
+  duplicate low-level recorder.
+- Run-to-task linkage is explicit through `run_refs`; absent run evidence keeps
+  operation/tool/mutation details `not_assessed`.
+- Interaction retention maps to Flight Recorder retention states and inherits
+  forensic-retention safety rules.
+- Mutation refs can be ordered after friction but are not treated as causally
+  caused by friction.
 - Spec states that prompt cooperation and manual self-reporting are not
   sufficient.
 - MVP includes a minimal relay that records before forwarding.
@@ -489,12 +780,18 @@ Socratic review must answer:
 6. Does the MVP have a narrow implementation path that does not depend on a
    specific agent runtime?
 7. What remains `not_assessed` after MVP?
+8. Does the envelope answer what task was solved, what was promised, which LLM
+   and harness operations ran, what code changed, and who started each stage?
+9. Does LLM gateway linkage improve traceability without making `sdp-trace` a
+   gateway or requiring raw prompts/responses?
 
 ## Socratic Review Ledger
 
 Initial review verdict: `REVISE`.
 Focused re-review verdict after fixes: `APPROVE`; no remaining critical or major
 findings.
+Envelope delta re-review verdict after Flight Recorder integration fixes:
+`APPROVE`; no remaining critical or major findings.
 
 | id | severity | plane | finding | disposition |
 | --- | --- | --- | --- | --- |
@@ -508,6 +805,15 @@ findings.
 | S29-SOURCE-01 | major | source model | Agent-reported interaction was not explicitly rejected. | accepted_fixed: added third source class rejected for event creation. |
 | S29-ORDER-01 | major | ordering | Multi-source ordering was undefined. | accepted_fixed: added `source_sequence`, `observed_at`, and partial-state rule. |
 | S29-CLASS-01 | major | classification | Transcript classifier authority and overlapping event types were ambiguous. | accepted_fixed: MVP accepts pre-classified JSONL only and defines event priority order. |
+
+Post-approval product delta:
+
+| id | severity | plane | finding | disposition |
+| --- | --- | --- | --- | --- |
+| S29-ENV-01 | major | product envelope | Interaction/friction alone does not answer what task was solved, what was promised, which operations/LLM calls ran, what changed, and who launched stages. | accepted_fixed: expanded Block 29 to a delivery trace envelope with task, promise, operation, LLM, tool, mutation, stage, and friction families. |
+| S29-LLM-01 | major | LLM gateway boundary | LLM operation ids and gateway trace ids were not first-class, limiting traceability in gateway-backed environments. | accepted_fixed: added optional LLM/gateway refs and explicit `not_assessed`/`cannot_verify` linkage states while keeping gateway capture outside `sdp-trace`. |
+| S29-FR-01 | major | flight recorder integration | Delivery envelope risked becoming a parallel evidence system with a separate retention model. | accepted_fixed: envelope is now a higher-order layer over Flight Recorder `run_refs` and inherits forensic-retention rules. |
+| S29-FR-02 | major | run/task linkage | Task-level envelope did not define how to join task/friction context to recorder runs, commands, mutations, and provenance. | accepted_fixed: added `run_refs`, recorder event ref schemes, and `not_assessed` handling when run evidence is absent. |
 
 ## Approval Boundary
 
