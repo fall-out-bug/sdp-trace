@@ -28,6 +28,10 @@
       "schema_version": "0.1.0"
     },
     {
+      "schema_id": "https://schemas.sdp.dev/trace/evidence-bundle.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
       "schema_id": "https://schemas.sdp.dev/trace/evidence-event.schema.json",
       "schema_version": "0.1.0"
     },
@@ -48,6 +52,10 @@
       "schema_version": "1.0.0"
     },
     {
+      "schema_id": "https://schemas.sdp.dev/trace/gate-verdict.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
       "schema_id": "https://schemas.sdp.dev/trace/metric-stream.schema.json",
       "schema_version": "0.1.0"
     },
@@ -61,6 +69,10 @@
     },
     {
       "schema_id": "https://schemas.sdp.dev/trace/risk-classification.schema.json",
+      "schema_version": "0.1.0"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/self-attestation-case.schema.json",
       "schema_version": "0.1.0"
     },
     {
