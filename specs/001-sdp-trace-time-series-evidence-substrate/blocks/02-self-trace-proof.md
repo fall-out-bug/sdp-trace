@@ -29,7 +29,7 @@ This is not a gate verdict. It is a replayable evidence package showing what was
 - `examples/self-trace/assessment-input.json`
 - negative self-trace fixture proving native policy fields fail validation
 - self-trace validation command
-- sanitized summary in `docs/research/self-trace-v0-summary.md`
+- sanitized summary in `archive/research/self-trace-v0-summary.md`
 
 ## Required Evidence
 

@@ -5,10 +5,10 @@ introducing harness assumptions. The active entrypoint is the Go CLI reported by
 `go run ./cmd/sdp-trace --help`; update this document only when the help surface
 changes in the same slice.
 
-For the sidecar-first CI pilot path, start with
-`docs/research/block-24-demo-repo-ci-evidence-guide.md`. It shows how the demo
-repository uses the current command surface without replacing an existing
-harness.
+For the sidecar-first CI pilot evidence package, start with
+`examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md`. It shows the
+exact observed slice and its current verifier limitations without turning the
+run into broad harness or model support.
 
 ## Profile Selection
 

@@ -14,11 +14,11 @@ Consensus is recorded for an evidence-package-first pilot design. Implementation
 
 ## File Responsibilities
 
-- `docs/research/opencode-model-run-card.md`: operator run-card for OpenCode + MiniMax/Kimi/GLM slices.
-- `docs/research/harness-run-card.md`: operator run-card for Superpowers-style, `gsd`, `gsd2`, and Oh My OpenAgent slices.
-- `docs/research/kotlin-bazel-fixture-plan.md`: Kotlin+Bazel evidence requirements and fixture/run boundary.
-- `docs/research/customer-pilot-evidence-package.md`: customer-safe pilot package outline.
-- `docs/research/run-card-template.md`: generic template updated to avoid native `sdp-trace` pass/fail wording.
+- `archive/research/opencode-model-run-card.md`: operator run-card for OpenCode + MiniMax/Kimi/GLM slices.
+- `archive/research/harness-run-card.md`: operator run-card for Superpowers-style, `gsd`, `gsd2`, and Oh My OpenAgent slices.
+- `archive/research/kotlin-bazel-fixture-plan.md`: Kotlin+Bazel evidence requirements and fixture/run boundary.
+- `archive/research/customer-pilot-evidence-package.md`: customer-safe pilot package outline.
+- `archive/research/run-card-template.md`: generic template updated to avoid native `sdp-trace` pass/fail wording.
 - `docs/jvm-bazel-guide.md`: Kotlin+Bazel-specific evidence and anti-heuristics.
 - `examples/jvm-bazel/README.md`: fixture status and run instructions.
 - `examples/jvm-bazel/evidence-bundle.json`: placeholder or evidence bundle that explicitly keeps real Kotlin+Bazel run behavior `not_assessed`.
@@ -54,7 +54,7 @@ Expected result: schema syntax and whitespace checks pass; active Block 05 spec 
 
 ## Task 2: OpenCode Model Run-Card
 
-- Create `docs/research/opencode-model-run-card.md`.
+- Create `archive/research/opencode-model-run-card.md`.
 - Include separate rows for OpenCode + MiniMax, OpenCode + Kimi, and OpenCode + GLM.
 - Each row starts as `not_assessed` unless a committed sanitized run artifact exists.
 - Include prompt template, required artifacts, provenance fields, `unbacked_claim` capture, validation steps, and matrix update rules.
@@ -63,14 +63,14 @@ Expected result: schema syntax and whitespace checks pass; active Block 05 spec 
 Verification:
 
 ```bash
-rg -n "MiniMax|Kimi|GLM|not_assessed|unbacked_claim|artifact" docs/research/opencode-model-run-card.md
+rg -n "MiniMax|Kimi|GLM|not_assessed|unbacked_claim|artifact" archive/research/opencode-model-run-card.md
 ```
 
 Expected result: all required slices and claim boundaries are present.
 
 ## Task 3: Harness Run-Card
 
-- Create `docs/research/harness-run-card.md`.
+- Create `archive/research/harness-run-card.md`.
 - Include Superpowers-style harnesses, `gsd`, `gsd2`, and Oh My OpenAgent.
 - Separate harness evidence from model behavior.
 - Include evidence expectations for rules/prompt location, tool log access, hooks, evidence export, manual fallback, and known limitations.
@@ -79,14 +79,14 @@ Expected result: all required slices and claim boundaries are present.
 Verification:
 
 ```bash
-rg -n "Superpowers-style|gsd|gsd2|Oh My OpenAgent|tool log|hook|evidence export|not_assessed" docs/research/harness-run-card.md
+rg -n "Superpowers-style|gsd|gsd2|Oh My OpenAgent|tool log|hook|evidence export|not_assessed" archive/research/harness-run-card.md
 ```
 
 Expected result: all requested harness slices and evidence gaps are present.
 
 ## Task 4: Kotlin+Bazel Fixture Plan and Guide
 
-- Create `docs/research/kotlin-bazel-fixture-plan.md`.
+- Create `archive/research/kotlin-bazel-fixture-plan.md`.
 - Update `docs/jvm-bazel-guide.md` with Kotlin+Bazel-specific evidence requirements:
   - scope-specific Bazel ownership files
   - Kotlin source/rule detection
@@ -100,28 +100,28 @@ Verification:
 
 ```bash
 node -e "JSON.parse(require('fs').readFileSync('examples/jvm-bazel/evidence-bundle.json','utf8')); console.log('ok')"
-rg -n "Kotlin|Bazel|not_assessed|BUILD.bazel|MODULE.bazel|Gradle|Maven|design_fixture_only" docs/jvm-bazel-guide.md docs/research/kotlin-bazel-fixture-plan.md examples/jvm-bazel/README.md examples/jvm-bazel/evidence-bundle.json
+rg -n "Kotlin|Bazel|not_assessed|BUILD.bazel|MODULE.bazel|Gradle|Maven|design_fixture_only" docs/jvm-bazel-guide.md archive/research/kotlin-bazel-fixture-plan.md examples/jvm-bazel/README.md examples/jvm-bazel/evidence-bundle.json
 ```
 
 Expected result: JSON parses and docs preserve the Kotlin+Bazel gap boundary.
 
 ## Task 5: Customer Pilot Evidence Package Outline
 
-- Create `docs/research/customer-pilot-evidence-package.md`.
+- Create `archive/research/customer-pilot-evidence-package.md`.
 - Include pilot objective, scope, customer inputs, `sdp-trace` outputs, package directory shape, redaction rules, validation commands, matrix update rules, review checkpoints, residual `not_assessed` reporting, and downstream policy handoff.
 - State that the outline is not a completed pilot result.
 
 Verification:
 
 ```bash
-rg -n "private customer input|redaction|not_assessed|matrix|sdp-gate|raw customer data|validation|access-neutral" docs/research/customer-pilot-evidence-package.md
+rg -n "private customer input|redaction|not_assessed|matrix|sdp-gate|raw customer data|validation|access-neutral" archive/research/customer-pilot-evidence-package.md
 ```
 
 Expected result: package outline is executable and safe to commit.
 
 ## Task 6: Template and Matrix Updates
 
-- Update `docs/research/run-card-template.md` to replace native `pass/warn/fail` wording with `observed`/`not_assessed` evidence states, reason codes, and explicit external verdict handling.
+- Update `archive/research/run-card-template.md` to replace native `pass/warn/fail` wording with `observed`/`not_assessed` evidence states, reason codes, and explicit external verdict handling.
 - Update `docs/harness-compatibility-matrix.md` with evidence state, reason code, artifact reference, external verdict reference, gap reason, and next required evidence columns.
 - Update `docs/model-compatibility.md` with evidence state, reason code, artifact reference, external verdict reference, gap reason, and next required evidence columns.
 - Keep planned rows `not_assessed` unless committed evidence exists.
@@ -134,7 +134,7 @@ Expected result: package outline is executable and safe to commit.
 Verification:
 
 ```bash
-rg -n "pass|fail|warn|blocked|readiness|ready|support|supported|compatible|compatibility|\"status\": \"pass\"|\"status\": \"warn\"|\"status\": \"fail\"" docs/research/run-card-template.md docs/harness-compatibility-matrix.md docs/model-compatibility.md docs/jvm-bazel-guide.md examples/jvm-bazel/evidence-bundle.json
+rg -n "pass|fail|warn|blocked|readiness|ready|support|supported|compatible|compatibility|\"status\": \"pass\"|\"status\": \"warn\"|\"status\": \"fail\"" archive/research/run-card-template.md docs/harness-compatibility-matrix.md docs/model-compatibility.md docs/jvm-bazel-guide.md examples/jvm-bazel/evidence-bundle.json
 ```
 
 Expected result: no native `sdp-trace` support/readiness/compatibility verdicts remain. Any occurrence is explicitly scoped to external origin, legacy file naming, or prohibited wording.

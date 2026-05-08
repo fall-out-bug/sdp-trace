@@ -1,6 +1,6 @@
 # Customer Questions
 
-This map answers the mandatory MVP handoff questions without treating local
+This map answers the mandatory pilot handoff questions without treating local
 evidence as external production trust. Every answer names the artifact or command
 that a customer should inspect and the residual state when evidence is missing.
 

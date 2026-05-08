@@ -12,12 +12,20 @@ AI-assisted delivery ускоряет работу, но ломает управ
 
 Для CEO это означает: "ответственный" не ИИ. У каждого значимого артефакта есть human-held DRI, approver, risk owner и escalation.
 
-Для CIO это означает: контракт нельзя тихо упростить. Schemas, docs, validation scripts и fixtures входят в contract manifest с digest-проверкой и release verification profile.
+Для CIO это означает: контракт нельзя тихо упростить. Schemas, docs,
+validation commands, fixtures и release-proof artifacts можно проверять через
+явные contract manifests и authority scopes.
 
 `sdp-trace` сознательно не принимает policy decisions: pass/fail, readiness, degradation, thresholds и overrides принадлежат `sdp-gate` или другому внешнему policy consumer.
 
-Block 01 строит contract scaffold: evidence contracts, accountability, manifest verification, signing profile, negative fixtures и proof that missing data stays `not_assessed`.
+Текущая поверхность продукта годится для контролируемых пилотов: local trace
+capture, report packages, явные missing telemetry states, assessment profiles,
+CI/customer witness artifacts при наличии evidence и source-bound local release
+proof.
 
-Продукт не имеет права просить доверия у заказчика, пока не отследит сам себя. Следующее доказательство должно показать собственные spec, plan, tasks, changes, evidence, provenance, accountability, reviews, metrics и missing data этого репозитория по тем же контрактам.
+Это не broad production trust, не universal harness compatibility и не
+автоматическое обнаружение каждого локального agent run вне wrapper или adapter.
 
-Репозиторные доказательства начинаются в `specs/001-sdp-trace-time-series-evidence-substrate/`, `schema/README.md`, `examples/contract-foundation/` и `docs/research/block-01-validation-summary.md`.
+Начинайте с `docs/README.md`, `docs/cto-adoption-guide.ru.md` и
+`docs/customer-questions.ru.md`. Development specs и research notes полезны для
+audit history, но это не onboarding path для покупателя.

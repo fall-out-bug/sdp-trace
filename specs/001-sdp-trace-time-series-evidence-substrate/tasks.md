@@ -60,7 +60,7 @@
 ### Verification Tasks
 
 - [x] T013 [US1] Run `jq empty schema/*.json`
-- [x] T014 [US1] Record validation output in a sanitized evidence note under `docs/research/`
+- [x] T014 [US1] Record validation output in a sanitized evidence note under `archive/research/`
 
 **Checkpoint**: CTO-facing process movement exists as data, not as a policy verdict.
 
@@ -96,7 +96,7 @@
 - [x] T023 [US1] Add `examples/self-trace/metric-stream.json` with at least evidence completeness, `not_assessed` count, schema validity, and SpecKit task completion samples
 - [x] T024 [US2] Add `examples/self-trace/trace-snapshot.json` linking spec, plan, tasks, changes, evidence, observations, metric samples, and any external verdict inputs as external
 - [x] T025 [US2] Add `examples/self-trace/assessment-input.json` as the first policy-engine handoff package, without pass/fail/degradation decision
-- [x] T026 [US4] Record self-trace validation notes in `docs/research/self-trace-v0-summary.md`
+- [x] T026 [US4] Record self-trace validation notes in `archive/research/self-trace-v0-summary.md`
 - [x] T052 [US4] Add a self-trace validation command that validates `examples/self-trace/assessment-input.json` and every referenced self-trace artifact from a fresh checkout (Beads mirror: `sdp-trace-cdn.12`)
 - [x] T053 [US4] Record the crisis Socratic review artifacts as external review evidence in the self-trace package (Beads mirror: `sdp-trace-cdn.12`)
 - [x] T054 [US5] Ensure self-trace accountability names human-held DRI, approver, risk owner, and escalation for the repository proof itself (Beads mirror: `sdp-trace-cdn.12`)
@@ -117,7 +117,7 @@
 - [x] T058 [US5] Add release verifier behavior that reports separate proof states instead of one overloaded trusted flag (current surface: Go `release-proof`; Beads mirror: `sdp-trace-cdn.13`)
 - [x] T059 [US5] Add a self-attestation evidence record under `examples/self-trace/` covering manifest digest, DSSE envelope binding, signer identity, freshness, and rollback status (Beads mirror: `sdp-trace-cdn.13`)
 - [x] T060 [US5] Add negative self-attestation fixtures for wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, and modified verification artifact (Beads mirror: `sdp-trace-cdn.13`)
-- [x] T061 [US4] Record a self-attestation summary under `docs/research/self-attestation-summary.md` with exact commands and residual `not_assessed` items (Beads mirror: `sdp-trace-cdn.13`)
+- [x] T061 [US4] Record a self-attestation summary under `archive/research/self-attestation-summary.md` with exact commands and residual `not_assessed` items (Beads mirror: `sdp-trace-cdn.13`)
 
 **Checkpoint**: Local development proof may remain useful, but product trust claims remain blocked until self-attestation records the actual proof state without hiding missing external trust anchors.
 
@@ -138,7 +138,7 @@
 - [x] T068 [US4] Run Socratic review and obtain explicit consensus before implementing Block 04 code or changing release artifacts (Beads mirror: `sdp-trace-cdn.21`)
 - [x] T069 [US4] Run pi review for Block 04 specs and implementation, register every finding in Beads, and close every valid finding including P3/minor items (Beads mirror: `sdp-trace-cdn.21`)
 - [x] T070 [US4] Stale historical closure retired: Block 04's old `npm` and script verifier commands are preserved as historical evidence only, and current closure is bounded by Go-first tests, JSON syntax checks, diff checks, and current release-proof output. External production trust remains `not_assessed`; removed source-bound finalization scripts are not current verifier evidence. (Beads mirror: `sdp-trace-cdn.21`)
-<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=pass; profile=repo_baseline; evidence=file:docs/research/historical-verifier-retirement-2026-05-07.md -->
+<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=pass; profile=repo_baseline; evidence=file:archive/research/historical-verifier-retirement-2026-05-07.md -->
 
 **Checkpoint**: Block 04 implementation artifacts exist, but current closure is stale until T070 is re-verified by live commands. External trust remains `not_assessed` unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
 
@@ -148,9 +148,9 @@
 
 **Independent Test**: Each run-card lists prompt, expected artifacts, provenance fields, `unbacked_claim` capture, validation, and `not_assessed` behavior.
 
-- [x] T027 [P] [US3] Add OpenCode run-card covering MiniMax, Kimi, and GLM in `docs/research/opencode-model-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
-- [x] T028 [P] [US3] Add harness run-card for the Superpowers-style harness pattern, `gsd`, `gsd2`, and Oh My OpenAgent in `docs/research/harness-run-card.md` without introducing a Superpowers dependency (Beads mirror: `sdp-trace-cdn.6`)
-- [x] T029 [US3] Add Kotlin+Bazel pilot fixture plan in `docs/research/kotlin-bazel-fixture-plan.md` (Beads mirror: `sdp-trace-cdn.7`)
+- [x] T027 [P] [US3] Add OpenCode run-card covering MiniMax, Kimi, and GLM in `archive/research/opencode-model-run-card.md` (Beads mirror: `sdp-trace-cdn.6`)
+- [x] T028 [P] [US3] Add harness run-card for the Superpowers-style harness pattern, `gsd`, `gsd2`, and Oh My OpenAgent in `archive/research/harness-run-card.md` without introducing a Superpowers dependency (Beads mirror: `sdp-trace-cdn.6`)
+- [x] T029 [US3] Add Kotlin+Bazel pilot fixture plan in `archive/research/kotlin-bazel-fixture-plan.md` (Beads mirror: `sdp-trace-cdn.7`)
 - [x] T030 [US3] Update `docs/jvm-bazel-guide.md` with Kotlin+Bazel-specific evidence requirements
 - [x] T031 [US3] Add or update `examples/jvm-bazel/` with a Kotlin+Bazel evidence bundle or fixture placeholder that is explicitly `not_assessed` until run; do not call the Kotlin+Bazel gap closed until a committed run artifact exists
 - [x] T032 [US3] Update `docs/harness-compatibility-matrix.md` as a legacy-named evidence matrix with evidence state, reason code, artifact reference, gap reason, and next required evidence only (Beads mirror: `sdp-trace-cdn.10`)
@@ -195,7 +195,7 @@
 
 - [x] T035 [US4] Add pass and `not_assessed` fixtures for new schemas under `examples/`
 - [x] T036 [US4] Add active Go-first validation commands and document exclusions for `.git`, `.beads`, `.sdp-trace-runs`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories (Beads mirror: `sdp-trace-cdn.8`)
-- [x] T037 [US4] Build customer pilot evidence package outline in `docs/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
+- [x] T037 [US4] Build customer pilot evidence package outline in `archive/research/customer-pilot-evidence-package.md` (Beads mirror: `sdp-trace-cdn.9`)
 - [x] T038 [US4] Verify `jq empty schema/*.json`
 - [x] T039 [US4] Verify all committed examples are parseable JSON where applicable
 - [x] T043 [US4] Verify schema-version fields and compatibility notes for all committed examples that claim a schema contract
@@ -315,7 +315,7 @@ mismatch, override presence, and a valid CI-authority protected profile with
 deterministic protected gate states and exit codes.
 
 **Closure Evidence**: Block 16 was implemented and merged in PR #6. Evidence
-is recorded in `docs/research/block-16-implementation-evidence.md`, including
+is recorded in `archive/research/block-16-implementation-evidence.md`, including
 Go-first verification, schema checks, fixture coverage, implementation review,
 and PR-level review disposition with no remaining critical or major findings.
 
@@ -406,7 +406,7 @@ overclaimed as reconstructable, and raw evidence remains opt-in, referenced,
 and verifier-bound rather than committed by default.
 
 **Closure Evidence**: Block 18 was implemented and merged in PR #8. Evidence is
-recorded in `docs/research/block-18-implementation-evidence.md` and
+recorded in `archive/research/block-18-implementation-evidence.md` and
 `blocks/18-redaction-retention-forensic-profiles-review-ledger.md`, including
 local Go-first verification, schema checks, strict implementation review,
 PR-level review disposition with no remaining critical or major findings, and
@@ -466,7 +466,7 @@ owner surface, and non-overclaiming closure condition.
 - [x] T171 [US5] Add follow-up fixture or test coverage for PR #9 minor review notes that were accepted as non-blocking: duplicate empty adapter correlation refs, byte-identical pass fixture clarity, and any intentional forward-compatible schema values such as `capture_state: redacted`.
 - [x] T172 [US5] Add a drift-to-task rule to the trust workflow so every recorded critical, major, or trust-affecting `not_assessed`/`cannot_verify` drift either blocks closure or lands as an explicit follow-up task with evidence, owner surface, and closure condition.
 - [x] T173 [US5] Audit every closed SpecKit task and closed or closure-like block claim for current drift, record machine-checkable pass/fail/not-assessed evidence, and keep source-bound release closure blocked unless the current verifier passes.
-- [x] T174 [US5] Replace or explicitly retire historical closed-task verifier references to removed Node/npm/script tooling, including affected self-trace examples, process docs, Block 01/05/06/07/08 ledgers, and manifest subjects. Closure preserves historical evidence as historical while exposing current Go-first verifier commands and remaining `not_assessed` states in `docs/research/historical-verifier-retirement-2026-05-07.md`.
+- [x] T174 [US5] Replace or explicitly retire historical closed-task verifier references to removed Node/npm/script tooling, including affected self-trace examples, process docs, Block 01/05/06/07/08 ledgers, and manifest subjects. Closure preserves historical evidence as historical while exposing current Go-first verifier commands and remaining `not_assessed` states in `archive/research/historical-verifier-retirement-2026-05-07.md`.
 
 ## Phase 17: Forensics Query Pack
 

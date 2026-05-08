@@ -3,7 +3,7 @@
 Используйте `sdp-trace`, когда у команды уже есть AI coding workflow и нужен
 общий evidence contract без замены текущего harness.
 
-Этот playbook описывает текущую MVP-поверхность: wrapping, task-linked runs,
+Этот playbook описывает текущую pilot-поверхность: wrapping, task-linked runs,
 previews, local verification, reports, queries, query packs, assessment
 profiles, advisory/protected gate facts, CI/customer witness profiles,
 source-bound release proof и fixture validation. Он не обещает full harness

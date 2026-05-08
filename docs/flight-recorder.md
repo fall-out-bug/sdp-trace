@@ -1,14 +1,17 @@
 # Flight Recorder
 
-The flight recorder is a Block 09 evidence sidecar for agentic development runs. It records ordered events, verifier-visible gaps, and reviewer queries. It does not decide pass/fail, readiness, accountability, or production trust; downstream policy consumers own those decisions.
+The flight recorder is an evidence sidecar for agentic development runs. It
+records ordered events, verifier-visible gaps, and reviewer queries. It does
+not decide pass/fail, readiness, accountability, or production trust; downstream
+policy consumers own those decisions.
 
 ## Recorder Profiles
 
 | Profile | What It Can Support | Limit |
 | --- | --- | --- |
 | `local_development_recorder` | Local development reconstruction and event-chain consistency. | Local-only chains are mutable by the recorded environment and must not support accountability, audit-grade, or external-trust claims. Witness-related states may be `not_assessed`. |
-| `witnessed_run_recorder` | Event-chain consistency plus agreement with a witness record outside the run artifact. | Block 09 witness records prove the witness contract, not production trust. Missing or mismatched witness evidence is `fail` or `cannot_verify`, depending on access. |
-| `externally_witnessed_run` | Future production-capable accountability profile. | Not implemented by Block 09 unless a real external witness boundary is supplied and verified. |
+| `witnessed_run_recorder` | Event-chain consistency plus agreement with a witness record outside the run artifact. | Witness records prove the witness contract, not production trust. Missing or mismatched witness evidence is `fail` or `cannot_verify`, depending on access. |
+| `externally_witnessed_run` | Future production-capable accountability profile. | Not implemented unless a real external witness boundary is supplied and verified. |
 
 `forensic_retention` is an assessment profile selected with
 `sdp-trace assess --profile forensic-retention`, not a recorder profile and not
@@ -41,8 +44,8 @@ Recorder artifacts must stay safe to commit. Evidence retention states are:
 - `external_artifact_ref`
 - `not_assessed`
 
-Block 18 keeps those FR-054 retention modes stable. Recording policy profiles
-such as `safe_default`, `reviewable_sanitized`,
+The current forensic-retention contract keeps those retention modes stable.
+Recording policy profiles such as `safe_default`, `reviewable_sanitized`,
 `encrypted_raw_reference`, and `external_forensic_reference` map event families
 to those modes; they are not additional modes.
 
@@ -72,7 +75,7 @@ Unresolved redaction must not be converted into a pass. Profiles that require fo
 
 ## Adapter Capture
 
-`adapter_capture` is a Block 19 assessment profile selected with
+`adapter_capture` is an assessment profile selected with
 `sdp-trace assess --profile adapter-capture`. It evaluates whether generic
 adapter events are present, bound to the selected run, safe to inspect, and
 honest about capture-depth limits.
@@ -97,7 +100,8 @@ upgrade model identity to gateway-observed. It reports `missing_telemetry`,
 `cannot_verify` as explicit facts. Query output is a read-only summary and does
 not emit a top-level pass/fail policy verdict.
 
-Adapter event artifacts inherit Block 18 safety rules. Raw prompts, raw model
+Adapter event artifacts inherit the forensic-retention safety rules. Raw
+prompts, raw model
 responses, tool input/output bodies, raw command args, stdout/stderr bodies,
 adapter configuration, gateway evidence refs, provider tokens, and raw review
 bodies must not appear in committed artifacts or preview/query/explain output.
@@ -110,9 +114,9 @@ The current Go-first validation command for committed fixture packages is:
 go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
 ```
 
-The Block 09 query names below describe the product surface expected from
-flight-recorder summaries. They are not Node.js command names and must not add
-Node.js to the active product path.
+The query names below describe the product surface expected from flight-recorder
+summaries. They are not Node.js command names and must not add Node.js to the
+active product path.
 
 ```bash
 go run ./cmd/sdp-trace query --query missing-evidence <run-dir>

@@ -1,4 +1,4 @@
-# Block 16 Protected Gate Fixtures
+# Protected Gate Fixtures
 
 These fixtures are committed examples for the protected gate output shape.
 

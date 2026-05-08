@@ -1,4 +1,4 @@
-# Block 20 Forensics Query Pack Fixtures
+# Forensics Query Pack Fixtures
 
 These fixtures exercise `forensics-basic-v1` query-pack derivation without
 adding raw capture or policy decisions. `fixture-matrix.jsonl` is the
@@ -17,7 +17,8 @@ go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 \
 `malformed-run/run.json` are intentionally truncated to prove
 `unreadable_or_malformed_input_artifact` rows.
 `missing-run/` intentionally omits `run.json` to prove missing required
-Block 09 input uses the same safe row state without inventing raw path evidence.
+Missing recorder input uses the same safe row state without inventing raw path
+evidence.
 
 All identifiers are synthetic. Fixtures must not contain real provider URLs,
 tokens, command bodies, stdout/stderr bodies, prompts, source snippets, raw model

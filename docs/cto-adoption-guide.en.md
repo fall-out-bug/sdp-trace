@@ -4,7 +4,7 @@
 does not replace your harness, prompts, agents, CI, review process, repository
 templates, `sdp-gate`, or release governance.
 
-The current MVP surface means trace capture, explicit missing telemetry,
+The current pilot surface means trace capture, explicit missing telemetry,
 assessment profiles, advisory/protected gate facts, CI/customer witness profiles,
 forensic query packs, cross-repository posture export, and local source-bound
 release proof. It does not mean automatic merge blocking, production release
@@ -120,7 +120,7 @@ bindings, or profile inputs are missing and must remain `missing_telemetry`,
 
 ## Privacy And Non-Capture
 
-The MVP should not require committed raw customer source, private prompts,
+The current pilot surface should not require committed raw customer source, private prompts,
 credentials, provider tokens, or raw logs. Prefer digests, sanitized excerpts,
 encrypted external references, and explicit redaction notes. If a team needs raw
 capture for an incident, it must be a separately approved retention/redaction

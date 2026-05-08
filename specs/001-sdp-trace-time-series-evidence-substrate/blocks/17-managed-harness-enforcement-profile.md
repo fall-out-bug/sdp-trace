@@ -8,8 +8,8 @@ Parent artifacts:
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13-product-gap-closure-roadmap.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13b-capture-boundary-state-dx-baseline.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/16-protected-gate-enforcement-profile.md`
-- `docs/research/harness-telemetry-trust-brief.md`
-- `docs/research/agentic-sdlc-evidence-substrate-v3-brief.md`
+- `archive/research/harness-telemetry-trust-brief.md`
+- `archive/research/agentic-sdlc-evidence-substrate-v3-brief.md`
 
 ## Goal
 
@@ -629,8 +629,8 @@ Tasks:
 Files:
 
 - `examples/block17-managed-harness/`
-- `docs/research/block-17-implementation-evidence.md`
-- `docs/research/block-17-implementation-review-disposition.md`
+- `archive/research/block-17-implementation-evidence.md`
+- `archive/research/block-17-implementation-review-disposition.md`
 
 Tasks:
 

@@ -106,7 +106,7 @@ Expected verification:
 Owner surface:
 
 - demo repo `README.md`;
-- `sdp-trace` `docs/research/block-25-*`;
+- `sdp-trace` `archive/research/block-25-*`;
 - `sdp-trace` Block 25 review ledger.
 
 Tasks:

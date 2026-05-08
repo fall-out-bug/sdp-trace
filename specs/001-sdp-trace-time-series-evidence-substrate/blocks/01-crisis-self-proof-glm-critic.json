@@ -50,7 +50,7 @@
     "docs/concepts.md — definitions of evidence, provenance, accountability",
     "docs/accountability-model.md — human accountability rules",
     "docs/contract-release-signing.md — target profile and private equivalent rules",
-    "docs/research/block-01-validation-summary.md — validation commands run and results",
+    "archive/research/block-01-validation-summary.md — validation commands run and results",
     "schema/README.md — ownership boundary, validation commands, compatibility rules",
     "specs/001-sdp-trace-time-series-evidence-substrate/spec.md — user stories, requirements, edge cases",
     "specs/001-sdp-trace-time-series-evidence-substrate/plan.md — implementation plan with self-trace milestone",

@@ -6,8 +6,8 @@ Parent artifacts:
 
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/23-mvp-closure-drift-and-readiness.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/24-demo-repo-ci-trace-pilot.md`
-- `docs/research/block-24-demo-repo-ci-evidence-guide.md`
-- `docs/research/block-24-pilot-evidence-guide-role-review.md`
+- `archive/research/block-24-demo-repo-ci-evidence-guide.md`
+- `archive/research/block-24-pilot-evidence-guide-role-review.md`
 
 ## Goal
 
@@ -225,7 +225,7 @@ The demo repository README must state:
 
 The `sdp-trace` repository may add a sanitized Block 25 report only after the
 demo CI run exists and downloaded artifacts have been verified. That report must
-be Markdown under `docs/research/`; it must not be a schema-validated fixture
+be Markdown under `archive/research/`; it must not be a schema-validated fixture
 under `examples/`, and it must not contain a buyer questionnaire or sales
 narrative.
 

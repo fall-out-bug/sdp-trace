@@ -1,6 +1,6 @@
 # Вопросы заказчика
 
-Эта карта отвечает на обязательные MVP-вопросы для handoff и не превращает
+Эта карта отвечает на обязательные pilot-вопросы для handoff и не превращает
 local evidence в external production trust. Каждый ответ называет artifact или
 command, который заказчик должен проверить, и residual state, если evidence
 недоступно.

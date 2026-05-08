@@ -1,4 +1,4 @@
-# Block 15 Checkpoint Fixtures
+# Checkpoint Fixtures
 
 These files are schema and UX fixtures for the local Ed25519 checkpoint profile.
 They are not source-bound release proof and do not establish protected or

@@ -158,9 +158,9 @@ Modify:
 
 Do not modify in this block:
 
-- `docs/research/opencode-model-run-card.md`
-- `docs/research/harness-run-card.md`
-- `docs/research/kotlin-bazel-fixture-plan.md`
+- `archive/research/opencode-model-run-card.md`
+- `archive/research/harness-run-card.md`
+- `archive/research/kotlin-bazel-fixture-plan.md`
 - compatibility matrix rows for real pilots
 - `sdp_gate` repository files
 

@@ -22,7 +22,7 @@ ones in the demo.
 | WS2 demo app and CI | external demo repo only | Feature Flag / Entitlements Kotlin+Bazel service, deterministic Bazel test, GitHub Actions workflow | CI runs the selected Bazel test command |
 | WS3 trace/report/gate/witness capture | external demo repo and CI artifacts | `.sdp-trace-runs/`, `.sdp-trace-report/`, gate result, witness result, verify/explain outputs | current CI run emits artifacts with exact states |
 | WS4 negative and safety path | external demo repo workflow plus sanitized safety summary | two intentionally dishonest-trace cases, no-OIDC or incomplete witness output, redaction scan, public/private decision record | missing witness/OIDC, stale digest, source/run mismatch, or overclaim states are `cannot_verify`/`fail`/`not_assessed`, not hidden |
-| WS5 sdp-trace summary artifacts | `docs/research/block-24-*`, Block 24 review ledger | customer-readable report, artifact index, review disposition | report maps all nine Block 23 questions |
+| WS5 sdp-trace summary artifacts | `archive/research/block-24-*`, Block 24 review ledger | customer-readable report, artifact index, review disposition | report maps all nine Block 23 questions |
 | WS6 implementation and PR review | changed files only | code/correctness, trace/evidence, requirements-vs-implementation review evidence | review findings fixed or dispositioned; PR-level review repeated |
 
 WS1 through WS4 may happen in the external demo repository after WS0 approval.
@@ -158,8 +158,8 @@ the artifact.
 
 Expected files after implementation:
 
-- `docs/research/block-24-demo-repo-ci-trace-pilot-report.md`
-- `docs/research/block-24-demo-repo-ci-artifact-index.md`
+- `archive/research/block-24-demo-repo-ci-trace-pilot-report.md`
+- `archive/research/block-24-demo-repo-ci-artifact-index.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/24-demo-repo-ci-trace-pilot-review-ledger.md`
 
 These files may link to demo repo commits, workflow runs, and CI artifacts. If
@@ -187,7 +187,7 @@ Negative assertions must avoid echoing real secrets in failure output.
 Required command shape:
 
 ```bash
-rg --pcre2 -n -f docs/research/block-24-redaction-denylist.patterns <artifact-root> <sanitized-copy-root>
+rg --pcre2 -n -f archive/research/block-24-redaction-denylist.patterns <artifact-root> <sanitized-copy-root>
 ```
 
 Expected result is no matches and `rg` exit code `1`. If the command cannot run,

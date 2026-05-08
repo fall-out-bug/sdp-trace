@@ -111,7 +111,7 @@ separate and external production trust remains `not_assessed`.
 **Critic**: "Redaction scan" as prose is not evidence.
 
 **Resolution**: The implementation must run a concrete denylist scan using
-`docs/research/block-24-redaction-denylist.patterns`, record the pattern-file
+`archive/research/block-24-redaction-denylist.patterns`, record the pattern-file
 digest, scanned roots, exit state, and match count, and treat a missing scan as
 `cannot_verify`.
 

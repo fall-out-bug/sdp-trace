@@ -31,7 +31,7 @@ Missing proof remains `not_assessed`; it must not be collapsed into trusted.
 - self-attestation verification command
 - self-attestation evidence record under `examples/self-trace/`
 - negative fixtures for wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, and modified verification artifact
-- summary in `docs/research/self-attestation-summary.md`
+- summary in `archive/research/self-attestation-summary.md`
 
 ## Out of Scope
 

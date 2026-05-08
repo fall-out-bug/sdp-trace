@@ -9,7 +9,7 @@
 **Alternatives Rejected**:
 
 - Beads-only planning: rejected because it hides the plan from plain repository review.
-- Loose docs under `docs/research/`: rejected because it does not preserve the SpecKit `spec -> plan -> tasks` flow.
+- Loose docs under `archive/research/`: rejected because it does not preserve the SpecKit `spec -> plan -> tasks` flow.
 
 ## Decision 2: Import Evidence Concepts, Not Gate Policy, From sdp_lab
 
@@ -70,8 +70,8 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 **Evidence from current repo**:
 
 - `docs/jvm-bazel-guide.md` states that Bazel markers must prevent Maven/Gradle inference.
-- `docs/research/phase-a-bazel-codex-summary.md` records a Java-heavy Bazel baseline, not Kotlin+Bazel.
-- `docs/research/bootstrap-smoke-summary.md` records Kotlin as Gradle and Bazel as Java/Starlark/Python.
+- `archive/research/phase-a-bazel-codex-summary.md` records a Java-heavy Bazel baseline, not Kotlin+Bazel.
+- `archive/research/bootstrap-smoke-summary.md` records Kotlin as Gradle and Bazel as Java/Starlark/Python.
 
 ## Decision 5: Compatibility Claims Require Committed Evidence
 

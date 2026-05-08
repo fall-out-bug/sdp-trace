@@ -1,9 +1,9 @@
-# Block 18 Forensic Retention Fixtures
+# Forensic Retention Fixtures
 
 These fixtures are generated from `internal/forensic.Evaluate` and checked by
 `TestBlock18CommittedFixturesHaveForensicAssessmentShape`.
 
-They cover the Block 18 assessment-result shape for explicit
+They cover the assessment-result shape for explicit
 `assess --profile forensic-retention` use. They are verifier facts only:
 they do not decide legal, incident, readiness, merge, release, or risk
 acceptance outcomes.

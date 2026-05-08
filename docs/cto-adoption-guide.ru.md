@@ -4,7 +4,7 @@
 Он не заменяет harness, prompts, agents, CI, review process, repository
 templates, `sdp-gate` или release governance.
 
-Текущая MVP-поверхность означает trace capture, явную missing telemetry,
+Текущая pilot-поверхность означает trace capture, явную missing telemetry,
 assessment profiles, advisory/protected gate facts, CI/customer witness
 profiles, forensic query packs, cross-repository posture export и local
 source-bound release proof. Это не automatic merge blocking, не production
@@ -119,7 +119,7 @@ events, witness bindings или profile inputs отсутствуют и дол�
 
 ## Privacy и non-capture
 
-MVP не должен требовать committed raw customer source, private prompts,
+Текущая pilot-поверхность не должна требовать committed raw customer source, private prompts,
 credentials, provider tokens или raw logs. Предпочитайте digests, sanitized
 excerpts, encrypted external refs и explicit redaction notes. Если команде нужен
 raw capture для incident, это отдельный retention/redaction profile с human

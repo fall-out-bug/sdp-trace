@@ -1,4 +1,4 @@
-# Block 19 Adapter Capture Fixtures
+# Adapter Capture Fixtures
 
 These fixtures are generated from `internal/adaptercapture` cases and show
 adapter capture-depth assessment results.

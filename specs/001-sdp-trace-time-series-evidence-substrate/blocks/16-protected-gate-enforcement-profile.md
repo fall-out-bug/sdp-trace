@@ -435,8 +435,8 @@ Tasks:
 Files:
 
 - `examples/block16-protected-gate/`
-- `docs/research/block-16-implementation-evidence.md`
-- `docs/research/block-16-implementation-review-disposition.md`
+- `archive/research/block-16-implementation-evidence.md`
+- `archive/research/block-16-implementation-review-disposition.md`
 
 Tasks:
 

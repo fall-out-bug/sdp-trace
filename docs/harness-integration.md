@@ -15,8 +15,8 @@ A harness integration should provide:
 - assessment input output location
 - optional external verdict input location when a policy consumer runs
 
-Block 19 adapter capture adds a portable adapter-event path. Harness adapters
-should emit generic event families rather than product-specific concepts:
+The adapter-capture path uses portable adapter events. Harness adapters should
+emit generic event families rather than product-specific concepts:
 
 - `run_started`
 - `task_locked`
@@ -44,24 +44,19 @@ responses, command args, stdout/stderr bodies, tool input/output bodies, adapter
 configuration, gateway secrets, provider tokens, authenticated URLs, or raw
 review bodies.
 
-## Harness Families To Validate
+## Evidence State Registry
 
-- Superpowers
-- Hyperpowers
-- gsd / gsd2
-- Oh My OpenAgent
-- Paperclip
-- Codex
-- Claude Code
-- OpenCode
-- Kilo
-- Pi
+Do not turn planned harnesses or model families into support claims. The current
+evidence state lives in:
 
-## Model Families To Validate
+- `docs/harness-compatibility-matrix.md`
+- `docs/model-compatibility.md`
 
-- GLM
-- MiniMax
-- Kimi
-- MiMo
+Rows with `not_assessed`, `discovery_required`, or `no_run_artifact` are gaps,
+not compatibility. A row may move to `observed` only when a committed sanitized
+run artifact or evidence summary exists and the scope is named narrowly.
 
-Validation must measure tool-use reliability, structured output discipline, context handling, and evidence-grounded claims.
+Validation must measure tool-use reliability, structured output discipline,
+context handling, retained evidence, redaction behavior, and evidence-grounded
+claims. Broad compatibility language requires an external verdict input or a
+separate downstream policy decision; it is not a native `sdp-trace` claim.

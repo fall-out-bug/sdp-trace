@@ -3,7 +3,7 @@
 Use `sdp-trace` when your team already has an AI coding workflow and needs a
 shared evidence contract without replacing the current harness.
 
-This playbook covers the current MVP product surface: wrapping, task-linked
+This playbook covers the current pilot product surface: wrapping, task-linked
 runs, previews, local verification, reports, queries, query packs, assessment
 profiles, advisory/protected gate facts, CI/customer witness profiles,
 source-bound release proof, and fixture validation. It does not promise full

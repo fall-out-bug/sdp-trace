@@ -25,7 +25,7 @@ Consensus is reached on the "local plus external trust design" scope. The user s
 - `examples/contract-foundation/negative-trusted-release-*.json`: negative fixtures proving that production trust cannot be claimed when external proof states are missing or contradictory.
 - `scripts/validate-contracts.sh`: validation entrypoint for schema examples and negative fixtures.
 - `docs/contract-release-signing.md`: user-facing release signing and finalization guidance.
-- `docs/research/self-attestation-summary.md`: evidence note for residual `not_assessed` states.
+- `archive/research/self-attestation-summary.md`: evidence note for residual `not_assessed` states.
 - `specs/001-sdp-trace-time-series-evidence-substrate/tasks.md`: SpecKit task status sync.
 
 ## Task 1: Source-Bound Finalization Guard

@@ -340,8 +340,8 @@ Tasks:
 Files:
 
 - `examples/block15-checkpoint/`
-- `docs/research/block-15-implementation-evidence.md`
-- `docs/research/block-15-implementation-review-disposition.md`
+- `archive/research/block-15-implementation-evidence.md`
+- `archive/research/block-15-implementation-review-disposition.md`
 
 Tasks:
 
