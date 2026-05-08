@@ -229,6 +229,13 @@ be Markdown under retired research artifacts; it must not be a schema-validated 
 under `examples/`, and it must not contain a customer questionnaire or sales
 narrative.
 
+Future demo iterations that claim multiple feature branches, PRs, CI runs,
+provenance, evidence, or trace must use Block 26 CI artifact observation results
+as the artifact truth contract. Checked-in JSON, README prose, local debug
+outputs, or agent-reported summaries are not enough to satisfy uploaded CI
+artifact proof unless the selected Block 26 profile records them as
+`ci_uploaded`.
+
 ## Acceptance Criteria
 
 Block 25 is not complete until all of these are true:

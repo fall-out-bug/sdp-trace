@@ -1,0 +1,161 @@
+# Block 26 Review Ledger
+
+Status: initialized for Socratic spec review.
+
+## Spec Review Findings
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| S26-LOCAL-01 | major | tracing/evidence self-review | Block 25 had CI artifact requirements but no first-class product observation contract that distinguishes uploaded CI artifacts from checked-in JSON and prose. | accepted_fixed | Block 26 spec introduces producer scope, access state, required artifact families, and checked-in-only failure mode. |
+| S26-LOCAL-02 | major | product/customer credibility self-review | A demo can look credible while proving only local or committed artifacts. | accepted_fixed | Block 26 requires demo forward checks with per-feature PR, CI run, artifact bundle, and observation result. |
+| S26-LOCAL-03 | major | product-boundary self-review | Turning this into a gate would violate `sdp-trace`'s flight-recorder boundary. | accepted_fixed | Non-goals and goal state that outputs are facts for downstream consumers, not native policy decisions. |
+| S26-LOCAL-04 | major | security/privacy self-review | Artifact inspection could leak provider tokens, raw logs, prompts, private URLs, or private paths. | accepted_fixed | Safety non-goals, failure modes, acceptance criteria, and implementation plan require output-safety tests. |
+| S26-PC-01 | major | product/customer credibility | The five-feature forward checks described developer workflow more than CTO buyer meaning. | accepted_fixed | Added Customer Implications section with what Block 26 does not claim and state implications. |
+| S26-PC-02 | minor | product/customer credibility | Artifact families were not tied to customer-visible trust gaps. | accepted_fixed | Required Artifact Families table now explains the trust gap each family closes. |
+| S26-PC-03 | minor | product/customer credibility | Unsafe output was not linked to customer risk. | accepted_fixed | Customer Implications now explains credential, prompt, private path, and data-egress risk without claiming prevention. |
+| S26-PC-04 | minor | product/customer credibility | Non-goals did not say how repositories without CI artifacts should be interpreted. | accepted_fixed | Non-goals now distinguish profile `not_assessed` from required-CI `cannot_verify`. |
+| S26-PC-05 | minor | product/customer credibility | Customers had to infer meaning of `fail`, `cannot_verify`, and `not_assessed`. | accepted_fixed | Added customer-readable state implication table. |
+| S26-PC-06 | minor | product/customer credibility | "valid bundle" fixture naming could imply compliance rather than selected-profile coverage. | accepted_fixed | Implementation plan renames the valid scenario to `ci-uploaded-bundle-complete-coverage`. |
+| S26-TE-01 | critical | tracing/evidence | The spec lacked an aggregate state derivation rule. | accepted_fixed | Added State Derivation table for `fail`, `cannot_verify`, `not_assessed`, and `pass`. |
+| S26-TE-02 | major | tracing/evidence | `agent_reported_happy_path` allowed either `cannot_verify` or `not_assessed` without a deterministic criterion. | accepted_fixed | Failure mode now uses `cannot_verify` when selected by profile and `not_assessed` only outside profile scope. |
+| S26-TE-03 | major | tracing/evidence | Checked-in-only evidence disqualification was not mapped into profile-required `ci_uploaded` behavior. | accepted_fixed | Observation Model now maps lower-authority producer scopes to proof-level mismatch and `cannot_verify`. |
+| S26-TE-04 | major | tracing/evidence | Binding and artifact-index states were referenced but not enumerated. | accepted_fixed | Added field vocabulary table with binding and index states. |
+| S26-TE-05 | minor | tracing/evidence | `partial` access-state propagation was undefined. | accepted_fixed | State Derivation defines `partial` as per-family and contributing `cannot_verify`. |
+| S26-TE-07 | minor | tracing/evidence | `external_artifact_ref` had no failure-mode fixture. | accepted_fixed | Added `external_artifact_ref_unverifiable` failure mode and fixture scenario. |
+| S26-TE-08 | minor | tracing/evidence | `pr_ci` risked provider-specific and circular semantics. | accepted_fixed | Renamed canonical family to `change_ci` and clarified that it records artifact-backed change/branch CI evidence, not provider policy. |
+| S26-TE-09 | minor | tracing/evidence | Multiple `cannot_verify` reasons could be lost. | accepted_fixed | State Derivation now says reasons accumulate. |
+| S26-TE-10 | minor | tracing/evidence | `redaction_scan` and evaluator `output_safety` could be confused. | accepted_fixed | Required Artifact Families now separates artifact-bundle scan evidence from evaluator output-safety. |
+| S26-TE-11 | minor | tracing/evidence | Incomplete and dishonest demos both collapsed into `cannot_verify` without distinct reasons. | accepted_fixed | Failure Modes now require distinct reason codes for absent-family and checked-in contradiction. |
+| S26-DX-01 | major | DX/replayability | Required Artifact Families looked mandatory for every invocation. | accepted_fixed | Required Artifact Families now states the table is product capability; selected profile controls required families. |
+| S26-DX-02 | major | DX/replayability | `harness_observed` producer scope was ambiguous. | accepted_fixed | Added producer-scope glossary. |
+| S26-DX-03 | minor | DX/replayability | CLI placement had no selection criterion. | accepted_fixed | Product Surface now states a CLI selection principle. |
+| S26-DX-04 | minor | DX/replayability | Fixture filenames encoded expected verdicts and weakened replayability. | accepted_fixed | Implementation plan now requires `input/` and `expected/` split with scenario names. |
+| S26-DX-05 | minor | DX/replayability | State vocabularies were not mapped to fields. | accepted_fixed | Added field vocabulary table. |
+| S26-DX-06 | minor | DX/replayability | `pr_ci` was provider-centric. | accepted_fixed | Canonical family is now `change_ci`; `pr_ci` may be an alias. |
+| S26-DX-07 | info | DX/replayability | Output-safety false positives need diagnosable safe rule ids. | accepted_fixed | Acceptance criteria and implementation plan require ruleset id/digest and safe rule-id failures. |
+| S26-SEC-01 | major | security/privacy | Free-text `reasons` and `next_actions` could leak raw artifact content. | accepted_fixed | Observation Model and implementation plan require closed-code safe templating. |
+| S26-SEC-02 | major | security/privacy | Redaction/output-safety ruleset was not specified or auditable. | accepted_fixed | Implementation plan requires documented digest-bound default safety ruleset. |
+| S26-SEC-03 | minor | security/privacy | Repository/ref/run identifiers may leak private metadata when shared. | accepted_fixed | Non-goals now state observation results are same-boundary unless a future redaction profile is selected. |
+| S26-SEC-04 | minor | security/privacy | Malformed fixture handling could echo unsafe input in CI output. | accepted_fixed | Implementation plan requires safe malformed fixture output. |
+| S26-SEC-05 | minor | security/privacy | Future network artifact resolution could introduce unsafe URL/token behavior. | accepted_fixed | Non-goals constrain future network resolution and reject implicit network fetching in Block 26. |
+| S26-SEC-06 | minor | security/privacy | Unsafe pattern list omitted common CI secret shapes. | accepted_fixed | Implementation plan expands default safety ruleset requirements to JWTs, private keys, cloud credentials, provider tokens, private URLs, and high-entropy values. |
+
+## External Socratic Review
+
+Initial external Socratic review was run through `pi`:
+
+- product/customer credibility: MiniMax-M2.7, `CHANGES_REQUESTED`, fixed above;
+- tracing/evidence: OpenRouter Qwen, `CHANGES_REQUESTED`, fixed above;
+- DX/replayability: ZAI/GLM-5.1, `CHANGES_REQUESTED`, fixed above;
+- security/privacy: OpenRouter DeepSeek, `CHANGES_REQUESTED`, fixed above.
+
+Focused re-review was run after fixes:
+
+- product/customer credibility: MiniMax-M2.7, `APPROVE`; no remaining critical
+  or major findings;
+- tracing/evidence: OpenRouter Qwen, `APPROVE`; no remaining critical or major
+  findings;
+- DX/replayability: ZAI/GLM-5.1, `APPROVE`; no remaining critical or major
+  findings;
+- security/privacy: OpenRouter DeepSeek, `APPROVE`; no remaining critical or
+  major findings.
+
+Block 26 remains a reviewed SpecKit direction. Implementation code still needs
+explicit approval before WS1-WS5 begin.
+
+## Implementation Review Findings
+
+Implementation is in progress after explicit approval.
+
+Current implementation evidence before external implementation review:
+
+- Product surface: `assess --profile ci-artifact-observation
+  --artifact-manifest <file> --out <file>` plus `assess preview` and
+  `assess explain`.
+- Go evaluator: `internal/ciartifact`.
+- Schema: `schema/ci-artifact-observation.schema.json`, wired into
+  `schema/assessment-result.schema.json`.
+- Fixtures: `examples/block26-ci-artifact-observation/fixture-matrix.json` and
+  valid uploaded-bundle manifest input.
+- Docs: `docs/agent-entrypoint.md`.
+- Local verification before implementation review:
+  - `go test ./...`: pass.
+  - `jq empty schema/*.json
+    examples/block26-ci-artifact-observation/fixture-matrix.json
+    examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json`:
+    pass.
+  - `git diff --check HEAD`: pass.
+
+External implementation review pending across code/correctness,
+tracing/evidence, requirements-vs-implementation, and security/privacy planes.
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| I26-CC-01 | major | code/correctness | Producer proof-level mismatch overwrote per-family source/run `binding_state` with `mismatch`, falsely implying source/run contradiction. | accepted_fixed | `evaluateFamily` now keeps source/run binding unchanged for lower-authority producer scope; `bindingSummary` reports producer binding separately. |
+| I26-CC-02 | major | code/correctness | `bindingSummary` included optional families and had no explicit binding-state precedence. | accepted_fixed | `bindingSummary` now considers required families only and uses explicit precedence: mismatch, absent, unverifiable, matched, not_assessed. |
+| I26-CC-03 | minor | code/correctness | Tests did not cover top-level `not_assessed`, `mixed` aggregates, unknown states, or fixture-matrix replayability. | accepted_fixed | Added `TestEvaluateTopLevelNotAssessedAndMixedAggregates`, `TestEvaluateUnknownStatesBecomeCannotVerify`, and `TestFixtureMatrixScenarios`. |
+| I26-TE-01 | blocker | tracing/evidence | Unknown artifact-index and output-safety states silently became `not_assessed`. | accepted_fixed | `evaluateIndex` and `evaluateSafety` now map unrecognized states to `cannot_verify` with safe reason codes. |
+| I26-TE-02 | blocker | tracing/evidence | Active safety ruleset digest defaulted to an all-zero placeholder. | accepted_fixed | Default safety ruleset digest is now computed from the embedded default ruleset content. |
+| I26-TE-03 | blocker | tracing/evidence | Output-safety acceptance criteria lacked test coverage for raw logs, tokens, OIDC material, prompts, model output, private paths, and unsafe parser input. | accepted_fixed | Added `TestOutputSafetyDoesNotEchoForbiddenMarkers` and identity/enum sanitization tests. |
+| I26-RI-01 | major | requirements-vs-implementation | Committed fixture matrix was not tied to evaluator behavior. | accepted_fixed | `TestFixtureMatrixScenarios` reads `examples/block26-ci-artifact-observation/fixture-matrix.json` and checks expected state/reason codes. |
+| I26-RI-02 | major | requirements-vs-implementation | Downstream gate consumption guidance was missing. | accepted_fixed | Added `docs/ci-artifact-observation-downstream.md`. |
+| I26-RI-03 | minor | requirements-vs-implementation | Explain output did not show per-family binding and producer/access states. | accepted_fixed | `assess explain` now prints producer scope, artifact access, and binding for each artifact family. |
+| I26-RI-04 | minor | requirements-vs-implementation | Block 25 did not yet point future demo iterations to Block 26 observation results for artifact truth. | accepted_fixed | Block 25 spec now references Block 26 as the artifact truth contract for future multi-feature demo claims. |
+| I26-SEC-01 | major | security/privacy | `selected_source`, `selected_run`, and enum-like fields could echo unsafe input into result JSON outside safe-message constraints. | accepted_fixed | Added source/run identity sanitization, family enum validation, producer/access/binding enum validation, and tests that unsafe markers are not copied. |
+| I26-CC-04 | major | code/correctness focused re-review | Empty artifact-index and output-safety states defaulted to `not_assessed` but fell through the switch default and became `cannot_verify`. | accepted_fixed | `evaluateIndex` and `evaluateSafety` now handle `IndexNotAssessed` and `StateNotAssessed` explicitly; `TestEvaluateDefaultsIndexAndSafetyToNotAssessed` covers the default path. |
+| I26-CC-05 | critical | code/correctness focused re-review | Reviewer claimed `selected_profile` referenced `topLevelState` and made every result schema-invalid. | rejected_false_positive | Full schema review shows `selected_profile` is `const: "ci_artifact_observation"`; focused re-review later approved the current schema. |
+| I26-SEC-02 | major | security/privacy focused re-review | `authority_scope`, `safety_ruleset.id`, and required `required_producer_scope` could echo unsafe manifest input. | accepted_fixed | Added `safeAuthorityScope`, `safeRequiredProducerScope`, and safety-ruleset ID sanitization; `TestEvaluateSanitizesUnsafeIdentityAndEnums` asserts those fields do not echo unsafe markers. |
+| I26-SEC-03 | major | security/privacy focused re-review | `authority_scope` and `safety_ruleset.id` could be syntactically safe but longer than the schema `safeToken` max length. | accepted_fixed | Added `safeToken` with a 1-128 length guard and `TestEvaluateSafeTokenLengthMatchesSchema` for 129-character and empty-token cases. |
+
+Focused implementation re-review after the fixes above:
+
+- code/correctness: OpenRouter Qwen, `APPROVE` after rejecting I26-CC-05 as a
+  false positive and accepting/fixing I26-CC-04;
+- tracing/evidence: MiniMax-M2.7, `APPROVE`; no remaining critical or major
+  findings;
+- requirements-vs-implementation: ZAI/GLM-5.1, `APPROVE`; no remaining critical
+  or major findings;
+- security/privacy: OpenRouter DeepSeek plus MiniMax-M2.7 focused security
+  replacement, `APPROVE` after accepting/fixing I26-SEC-02 and I26-SEC-03.
+
+Fresh local verification after focused re-review fixes:
+
+- `go test ./...`: pass.
+- `jq empty schema/*.json
+  examples/block26-ci-artifact-observation/fixture-matrix.json
+  examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json`:
+  pass.
+- `git diff --check HEAD`: pass.
+
+## PR-Level Review Findings
+
+PR-level review was run on PR #21 after the implementation and focused
+re-review fixes. GitHub Actions `verify` passed on the PR head before the final
+empty-array schema-conformance fix; a fresh CI run is required after that final
+commit.
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| P26-CC-01 | minor | code/correctness PR review | Empty `required_families` and `artifact_families` marshaled as `null` instead of `[]`, making otherwise valid `not_assessed` output fail strict array schema validation. | accepted_fixed | `evaluateFamilies` and `orderedRequirements` now return non-nil empty slices; `TestEvaluateTopLevelNotAssessedAndMixedAggregates` asserts JSON contains `required_families:[]` and `artifact_families:[]`. |
+| P26-RI-01 | not_assessed | requirements-vs-implementation PR review | Initial ZAI/GLM and Qwen requirements reviewers returned file-reading preambles and referenced non-existent files instead of reviewing the attached packet. | replaced | Those outputs were not counted as review evidence; the plane was replaced with a DeepSeek reviewer using explicit `read` access and exact file paths. |
+
+PR-level review dispositions:
+
+- code/correctness: OpenRouter Qwen, `APPROVE`; accepted/fixed P26-CC-01 as a
+  schema-conformance improvement even though the reviewer classified it minor;
+  focused micro re-review by OpenRouter DeepSeek and MiniMax-M2.7 returned
+  `APPROVE`.
+- tracing/evidence: MiniMax-M2.7, `APPROVE`; no critical or major findings.
+- requirements-vs-implementation: initial ZAI/GLM and Qwen attempts were
+  unusable and replaced; OpenRouter DeepSeek replacement returned `APPROVE`.
+- security/privacy: OpenRouter DeepSeek, `APPROVE`; no critical or major
+  findings.
+
+Fresh local PR-gate verification after P26-CC-01:
+
+- `go test ./...`: pass.
+- `jq empty schema/*.json
+  examples/block26-ci-artifact-observation/fixture-matrix.json
+  examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json`:
+  pass.
+- `git diff --check HEAD`: pass.

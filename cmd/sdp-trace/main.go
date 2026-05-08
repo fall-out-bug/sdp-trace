@@ -16,6 +16,7 @@ import (
 
 	"github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
+	"github.com/fall_out_bug/sdp-trace/internal/ciartifact"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/forensic"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
@@ -150,6 +151,7 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	opts.setString("managed-policy", "")
 	opts.setString("managed-witness", "")
 	opts.setString("redaction-policy", "")
+	opts.setString("artifact-manifest", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -165,8 +167,10 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		return runManagedAssess(opts, stdout, stderr)
 	case "forensic-retention":
 		return runForensicAssess(opts, stdout, stderr)
+	case "ci-artifact-observation":
+		return runCIArtifactAssess(opts, stdout, stderr)
 	default:
-		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, or forensic-retention")
+		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, forensic-retention, or ci-artifact-observation")
 		return exitUsage
 	}
 }
@@ -253,6 +257,32 @@ func runForensicAssess(opts *flagSet, stdout, stderr io.Writer) int {
 	return forensicExitCode(result)
 }
 
+func runCIArtifactAssess(opts *flagSet, stdout, stderr io.Writer) int {
+	required := map[string]string{
+		"--out":               opts.stringValue("out"),
+		"--artifact-manifest": opts.stringValue("artifact-manifest"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "ci artifact observation assess requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	var manifest ciartifact.Manifest
+	if err := readJSONFile(opts.stringValue("artifact-manifest"), &manifest); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	result := ciartifact.Evaluate(manifest)
+	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return ciArtifactExitCode(result)
+}
+
 func loadManagedInput(opts *flagSet) (managed.Input, error) {
 	contract, err := trace.LoadContract(opts.stringValue("contract"))
 	if err != nil {
@@ -320,6 +350,7 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 	opts.setString("managed-policy", "")
 	opts.setString("managed-witness", "")
 	opts.setString("redaction-policy", "")
+	opts.setString("artifact-manifest", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -335,8 +366,10 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 		return runManagedAssessPreview(opts, stdout)
 	case "forensic-retention":
 		return runForensicAssessPreview(opts, stdout)
+	case "ci-artifact-observation":
+		return runCIArtifactAssessPreview(opts, stdout)
 	default:
-		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, or forensic-retention")
+		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, or ci-artifact-observation")
 		return exitUsage
 	}
 }
@@ -444,6 +477,52 @@ func runForensicAssessPreview(opts *flagSet, stdout io.Writer) int {
 	return 0
 }
 
+type ciArtifactPreviewReport struct {
+	Command          string            `json:"command"`
+	SelectedProfile  string            `json:"selected_profile"`
+	Inputs           map[string]string `json:"inputs"`
+	ObservedFamilies []string          `json:"observed_families"`
+	StateModel       map[string]string `json:"state_model"`
+	Safety           map[string]string `json:"safety"`
+	NextActions      []string          `json:"next_actions"`
+	Claim            string            `json:"claim"`
+}
+
+func runCIArtifactAssessPreview(opts *flagSet, stdout io.Writer) int {
+	inputs := map[string]string{
+		"artifact_manifest": managedInputStatus(opts.stringValue("artifact-manifest")),
+	}
+	report := ciArtifactPreviewReport{
+		Command:         "assess preview",
+		SelectedProfile: ciartifact.ProfileCIArtifactObservation,
+		Inputs:          inputs,
+		ObservedFamilies: []string{
+			"run", "report", "witness", "provenance", "evidence",
+			"trace", "artifact_index", "redaction_scan", "review", "change_ci",
+		},
+		StateModel: map[string]string{
+			"top_level": "pass,fail,cannot_verify,not_assessed",
+			"producer":  "ci_uploaded,checked_in,local_generated,agent_reported,harness_observed,external_artifact_ref,not_assessed",
+			"access":    "present,absent,partial,expired,inaccessible,malformed,unsafe,not_assessed,cannot_verify",
+		},
+		Safety: map[string]string{
+			"raw_artifact_content": "not_rendered",
+			"reason_payloads":      "safe_reason_codes_only",
+			"network_fetch":        "not_performed",
+		},
+		NextActions: ciArtifactPreviewActions(inputs),
+		Claim:       "preview is read-only and does not emit a CI artifact observation verdict",
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	for _, state := range inputs {
+		if state == "present_unreadable" || state == "present_malformed" {
+			return exitCannotVerify
+		}
+	}
+	return 0
+}
+
 func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 	opts := &flagSet{name: "assess explain"}
 	opts.setString("assessment-result", "")
@@ -490,6 +569,13 @@ func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 			return exitCannotVerify
 		}
 		return explainForensicAssessment(result, stdout)
+	case ciartifact.SchemaVersion:
+		var result ciartifact.ObservationResult
+		if err := readJSONFile(path, &result); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		return explainCIArtifactObservation(result, stdout)
 	default:
 		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", envelope.SchemaVersion)
 		return exitCannotVerify
@@ -541,6 +627,29 @@ func explainForensicAssessment(result forensic.AssessmentResult, stdout io.Write
 			fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
 		}
 	}
+	for _, reason := range result.Reasons {
+		fmt.Fprintf(stdout, "Reason: %s\n", reason)
+	}
+	for _, action := range result.NextActions {
+		fmt.Fprintf(stdout, "Next action: %s\n", action)
+	}
+	return 0
+}
+
+func explainCIArtifactObservation(result ciartifact.ObservationResult, stdout io.Writer) int {
+	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
+	fmt.Fprintf(stdout, "CI artifact observation: %s\n", result.ArtifactObservationState)
+	fmt.Fprintf(stdout, "Authority scope: %s\n", result.AuthorityScope)
+	fmt.Fprintf(stdout, "Producer scope: %s\n", result.ProducerScope)
+	fmt.Fprintf(stdout, "Artifact access state: %s\n", result.ArtifactAccessState)
+	for _, family := range result.ArtifactFamilies {
+		fmt.Fprintf(stdout, "Artifact family %s: %s (%s)\n", family.Family, family.FamilyState, family.ReasonCode)
+		fmt.Fprintf(stdout, "  Producer scope: %s\n", family.ProducerScope)
+		fmt.Fprintf(stdout, "  Artifact access: %s\n", family.ArtifactAccessState)
+		fmt.Fprintf(stdout, "  Binding: %s\n", family.BindingState)
+	}
+	fmt.Fprintf(stdout, "Artifact index: %s (%s)\n", result.ArtifactIndex.Result, result.ArtifactIndex.ReasonCode)
+	fmt.Fprintf(stdout, "Output safety: %s (%s)\n", result.OutputSafety.State, result.OutputSafety.ReasonCode)
 	for _, reason := range result.Reasons {
 		fmt.Fprintf(stdout, "Reason: %s\n", reason)
 	}
@@ -619,6 +728,17 @@ func adapterCapturePreviewActions(inputs map[string]string) []string {
 	}
 }
 
+func ciArtifactPreviewActions(inputs map[string]string) []string {
+	switch inputs["artifact_manifest"] {
+	case "absent":
+		return []string{"Supply artifact manifest before CI artifact observation assessment."}
+	case "present_unreadable", "present_malformed":
+		return []string{"Fix artifact manifest so it is readable JSON."}
+	default:
+		return nil
+	}
+}
+
 func adapterCaptureExitCode(result adaptercapture.AssessmentResult) int {
 	switch result.AdapterCaptureAssessment {
 	case adaptercapture.StatePass:
@@ -646,6 +766,17 @@ func forensicExitCode(result forensic.AssessmentResult) int {
 	case forensic.StatePass:
 		return 0
 	case forensic.StateFail:
+		return 1
+	default:
+		return exitCannotVerify
+	}
+}
+
+func ciArtifactExitCode(result ciartifact.ObservationResult) int {
+	switch result.ArtifactObservationState {
+	case ciartifact.StatePass:
+		return 0
+	case ciartifact.StateFail:
 		return 1
 	default:
 		return exitCannotVerify
@@ -2238,7 +2369,8 @@ Usage:
   sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>
   sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
   sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>
-  sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]
+  sdp-trace assess --profile ci-artifact-observation --out <file> --artifact-manifest <file>
+  sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention|ci-artifact-observation> [profile inputs]
   sdp-trace assess explain --assessment-result <file>
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>

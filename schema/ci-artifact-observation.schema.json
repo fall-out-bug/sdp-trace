@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/ci-artifact-observation.schema.json",
+  "title": "SDP Trace CI Artifact Observation Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "selected_profile",
+    "authority_scope",
+    "artifact_observation_state",
+    "selected_source",
+    "selected_run",
+    "producer_scope",
+    "artifact_access_state",
+    "required_families",
+    "artifact_families",
+    "bindings",
+    "artifact_index",
+    "output_safety",
+    "safety_ruleset",
+    "reasons",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "block26-ci-artifact-observation-v1" },
+    "selected_profile": { "type": "string", "const": "ci_artifact_observation" },
+    "authority_scope": { "$ref": "#/$defs/safeToken" },
+    "artifact_observation_state": { "$ref": "#/$defs/topLevelState" },
+    "selected_source": { "$ref": "#/$defs/sourceIdentity" },
+    "selected_run": { "$ref": "#/$defs/runIdentity" },
+    "producer_scope": {
+      "oneOf": [
+        { "$ref": "#/$defs/producerScope" },
+        { "type": "string", "const": "mixed" }
+      ]
+    },
+    "artifact_access_state": {
+      "oneOf": [
+        { "$ref": "#/$defs/artifactAccessState" },
+        { "type": "string", "const": "mixed" }
+      ]
+    },
+    "required_families": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/familyRequirement" }
+    },
+    "artifact_families": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/familyObservation" }
+    },
+    "bindings": {
+      "type": "object",
+      "required": ["source_binding_state", "run_binding_state", "producer_binding_state"],
+      "properties": {
+        "source_binding_state": { "$ref": "#/$defs/bindingState" },
+        "run_binding_state": { "$ref": "#/$defs/bindingState" },
+        "producer_binding_state": { "$ref": "#/$defs/bindingState" }
+      },
+      "additionalProperties": false
+    },
+    "artifact_index": {
+      "type": "object",
+      "required": ["state", "result", "reason_code", "reason"],
+      "properties": {
+        "state": { "$ref": "#/$defs/artifactIndexState" },
+        "result": { "$ref": "#/$defs/topLevelState" },
+        "reason_code": { "$ref": "#/$defs/reasonCode" },
+        "reason": { "$ref": "#/$defs/safeMessage" }
+      },
+      "additionalProperties": false
+    },
+    "output_safety": {
+      "type": "object",
+      "required": ["state", "reason_code", "reason"],
+      "properties": {
+        "state": { "$ref": "#/$defs/topLevelState" },
+        "unsafe_classes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/safeToken" }
+        },
+        "reason_code": { "$ref": "#/$defs/reasonCode" },
+        "reason": { "$ref": "#/$defs/safeMessage" }
+      },
+      "additionalProperties": false
+    },
+    "safety_ruleset": {
+      "type": "object",
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeToken" },
+        "sha256": { "$ref": "common.schema.json#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/safeMessage" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/safeMessage" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "topLevelState": {
+      "type": "string",
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    },
+    "producerScope": {
+      "type": "string",
+      "enum": ["ci_uploaded", "checked_in", "local_generated", "agent_reported", "harness_observed", "external_artifact_ref", "not_assessed"]
+    },
+    "artifactAccessState": {
+      "type": "string",
+      "enum": ["present", "absent", "partial", "expired", "inaccessible", "malformed", "unsafe", "not_assessed", "cannot_verify"]
+    },
+    "bindingState": {
+      "type": "string",
+      "enum": ["matched", "mismatch", "absent", "unverifiable", "not_assessed"]
+    },
+    "artifactIndexState": {
+      "type": "string",
+      "enum": ["valid", "self_reference", "digest_mismatch", "missing", "unverifiable", "not_assessed"]
+    },
+    "artifactFamily": {
+      "type": "string",
+      "enum": ["run", "report", "witness", "provenance", "evidence", "trace", "artifact_index", "redaction_scan", "review", "change_ci"]
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "properties": {
+        "repository": { "$ref": "#/$defs/safeIdentity" },
+        "ref": { "$ref": "#/$defs/safeIdentity" },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{40}$|^[A-Fa-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "runIdentity": {
+      "type": "object",
+      "properties": {
+        "provider": { "$ref": "#/$defs/safeIdentity" },
+        "run_id": { "$ref": "#/$defs/safeIdentity" },
+        "run_attempt": { "$ref": "#/$defs/safeIdentity" },
+        "workflow_id": { "$ref": "#/$defs/safeIdentity" },
+        "job_id": { "$ref": "#/$defs/safeIdentity" }
+      },
+      "additionalProperties": false
+    },
+    "familyRequirement": {
+      "type": "object",
+      "required": ["family", "required_producer_scope"],
+      "properties": {
+        "family": { "$ref": "#/$defs/artifactFamily" },
+        "required_producer_scope": { "$ref": "#/$defs/producerScope" }
+      },
+      "additionalProperties": false
+    },
+    "familyObservation": {
+      "type": "object",
+      "required": [
+        "family",
+        "required",
+        "producer_scope",
+        "artifact_access_state",
+        "binding_state",
+        "family_state",
+        "reason_code",
+        "reason"
+      ],
+      "properties": {
+        "family": { "$ref": "#/$defs/artifactFamily" },
+        "required": { "type": "boolean" },
+        "required_producer_scope": { "$ref": "#/$defs/producerScope" },
+        "producer_scope": { "$ref": "#/$defs/producerScope" },
+        "artifact_access_state": { "$ref": "#/$defs/artifactAccessState" },
+        "binding_state": { "$ref": "#/$defs/bindingState" },
+        "family_state": { "$ref": "#/$defs/topLevelState" },
+        "reason_code": { "$ref": "#/$defs/reasonCode" },
+        "reason": { "$ref": "#/$defs/safeMessage" },
+        "next_action": { "$ref": "#/$defs/safeMessage" }
+      },
+      "additionalProperties": false
+    },
+    "reasonCode": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,80}$"
+    },
+    "safeToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "safeIdentity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_./:-]{1,256}$"
+    },
+    "safeMessage": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "not": {
+        "pattern": "(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)"
+      }
+    }
+  }
+}
