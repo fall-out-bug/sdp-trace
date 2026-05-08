@@ -17,19 +17,20 @@ compatibility, or monorepo coverage. Those states remain `not_assessed`.
 | --- | --- |
 | Demo repository | `fall-out-bug/sdp-trace-demo-ci-pilot` |
 | Demo branch | `codex/block-25-compiled-ci-demo` |
-| Demo source commit | `e7af52aca71af76635118392919d7a01fddf6c3e` |
+| Demo source commit | `8d99c13491121a99c5c4cd984ec708dcc1f5025c` |
 | `sdp-trace` source ref | `codex/block-25-compiled-ci-demo` |
 | `sdp-trace` source commit recorded by CI | `c28e683f8438580a89911038add11a4c976620f2` |
 | Workflow | `sdp-trace demo pilot` |
-| GitHub Actions run | `25554876944` |
-| Run URL | `https://github.com/fall-out-bug/sdp-trace-demo-ci-pilot/actions/runs/25554876944` |
+| GitHub Actions run | `25555299371` |
+| Run URL | `https://github.com/fall-out-bug/sdp-trace-demo-ci-pilot/actions/runs/25555299371` |
 | Run event | `workflow_dispatch` |
 | Run state | `success` |
-| Created at | `2026-05-08T12:12:15Z` |
-| Updated at | `2026-05-08T12:13:55Z` |
+| Created at | `2026-05-08T12:22:30Z` |
+| Updated at | `2026-05-08T12:24:22Z` |
 
-The workflow ran wrapped commands from `/tmp/sdp-trace-demo` so uploaded run
-events did not persist the GitHub-hosted runner checkout path.
+The workflow ran wrapped commands from an exclusive `mktemp` directory under
+`/tmp/sdp-trace-demo.*` so uploaded run events did not persist the GitHub-hosted
+runner checkout path.
 
 ## Compiled Target Evidence
 
@@ -58,19 +59,19 @@ metadata checks.
 
 ## Downloaded Artifact Verification
 
-Artifacts were downloaded locally from run `25554876944` into
-`/tmp/sdp-trace-demo-run-25554876944` and verified from the downloaded bytes.
+Artifacts were downloaded locally from run `25555299371` into
+`/tmp/sdp-trace-demo-run-25555299371` and verified from the downloaded bytes.
 
 | Artifact | Artifact id | Expires at | Downloaded index entries | Local recompute state |
 | --- | ---: | --- | ---: | --- |
-| `sdp-trace-demo-clean-report` | `6878833487` | `2026-05-22T12:13:51Z` | 65 | `pass` |
-| `sdp-trace-demo-no-oidc-report` | `6878830704` | `2026-05-22T12:13:41Z` | 13 | `pass` |
+| `sdp-trace-demo-clean-report` | `6879005382` | `2026-05-22T12:24:18Z` | 66 | `pass` |
+| `sdp-trace-demo-no-oidc-report` | `6879000743` | `2026-05-22T12:24:02Z` | 14 | `pass` |
 
 Verification commands:
 
 ```text
-scripts/verify-artifact-index.sh /tmp/sdp-trace-demo-run-25554876944/sdp-trace-demo-clean-report /tmp/sdp-trace-demo-run-25554876944/sdp-trace-demo-clean-report/artifact-index.json
-scripts/verify-artifact-index.sh /tmp/sdp-trace-demo-run-25554876944/sdp-trace-demo-no-oidc-report /tmp/sdp-trace-demo-run-25554876944/sdp-trace-demo-no-oidc-report/artifact-index.json
+scripts/verify-artifact-index.sh /tmp/sdp-trace-demo-run-25555299371/sdp-trace-demo-clean-report /tmp/sdp-trace-demo-run-25555299371/sdp-trace-demo-clean-report/artifact-index.json
+scripts/verify-artifact-index.sh /tmp/sdp-trace-demo-run-25555299371/sdp-trace-demo-no-oidc-report /tmp/sdp-trace-demo-run-25555299371/sdp-trace-demo-no-oidc-report/artifact-index.json
 ```
 
 Both commands returned:
@@ -82,6 +83,11 @@ artifact_index_verify=pass
 The artifact index is root-level JSON with `schema_version:
 demo-artifact-index-v1`, `authority_scope: demo_pilot_only`, sorted relative
 paths, SHA-256 digests, file sizes, and no self-index entry.
+
+Each artifact root includes `report/artifact-manifest.json`. The clean artifact
+is larger because it includes four wrapped runs and dishonest fixture files.
+The no-OIDC artifact is smaller because it includes one wrapped run and the
+intentional witness `cannot_verify` case.
 
 ## Redaction Scan
 
@@ -114,7 +120,7 @@ payload digest mismatch.
 
 | Surface | State | Evidence |
 | --- | --- | --- |
-| Demo CI run | `pass` | GitHub Actions run `25554876944` |
+| Demo CI run | `pass` | GitHub Actions run `25555299371` |
 | Compiled selected target | `pass` | `//app:feature_flags_behavior_test` in local and CI wrapped runs |
 | Clean CI witness | `pass` | `ci-witness.json`, established scope `ci_witnessed` |
 | Artifact index verification | `pass` | Downloaded clean and no-OIDC artifacts recomputed locally |
@@ -126,7 +132,7 @@ payload digest mismatch.
 | Broad JVM/Bazel compatibility | `not_assessed` | one selected target only |
 | Non-GitHub portability | `not_assessed` | GitHub Actions-only demo |
 | Released binary acquisition UX | `not_assessed` | CI built `sdp-trace` from source |
-| Role review | `not_assessed` | pending CTO buyer, Head of Engineering, and Head of InfoSec review |
+| Role review | `pass` | CTO buyer, Head of Engineering, and Head of InfoSec reviews have no remaining critical or major findings after focused re-review |
 | PR-level review | `not_assessed` | PR not opened |
 
 ## Current Interpretation

@@ -36,7 +36,12 @@ Status: initialized for Socratic spec review.
 
 | ID | Severity | Review plane | Finding | Disposition | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| _pending_ | _pending_ | _pending_ | Independent implementation role review not yet run. | `not_assessed` | Demo implementation evidence exists; role review pending |
+| I25-CTO-01 | minor | CTO buyer | Stale digest failure could read like an unresolved defect rather than expected dishonest-case evidence. | Accepted and fixed. The report now says stale digest is expected fail evidence and explains the payload mutation. Focused re-review returned `APPROVE` with no findings. | MiniMax-M2.7 review; Mimo focused re-review; `docs/research/block-25-compiled-ci-demo-pilot-report.md` Negative Evidence Cases |
+| I25-CTO-02 | minor | CTO buyer | Clean artifact and no-OIDC artifact entry-count asymmetry was not self-documenting. | Accepted and fixed. Demo artifacts now include `artifact-manifest.json`, and the report explains clean versus no-OIDC artifact shape. Focused re-review returned `APPROVE` with no findings. | MiniMax-M2.7 review; Mimo focused re-review; demo run `25555299371` |
+| I25-ENG-01 | minor | Head of Engineering | Fixed `/tmp/sdp-trace-demo` workspace was conventionally safe on hosted runners but not exclusive. | Accepted and fixed. Workflow now uses `mktemp -d /tmp/sdp-trace-demo.XXXXXX` and passes the resulting `DEMO_WORKDIR` to later steps. Focused re-review returned `APPROVE`. | ZAI/GLM-5.1 review and focused re-review; demo commit `8d99c13491121a99c5c4cd984ec708dcc1f5025c` |
+| I25-ENG-02 | minor | Head of Engineering | Artifact-index temp file could cross filesystems if staged from default temp dir. | Accepted and fixed. `write-artifact-index.sh` now stages the temp file in the artifact root's parent directory, outside the indexed root and on the same filesystem. Focused re-review returned `APPROVE`. | ZAI/GLM-5.1 review and focused re-review |
+| I25-ENG-03 | minor | Head of Engineering | Artifact entry-count asymmetry needed an artifact-local explanation for future audits. | Accepted and fixed with `artifact-manifest.json` in both artifact roots. Focused re-review returned `APPROVE`. | ZAI/GLM-5.1 review and focused re-review; downloaded artifacts from run `25555299371` |
+| I25-SEC-01 | major | Head of InfoSec | Source-fetch token policy and artifact download authentication were `not_assessed`; reviewer requested they be fully assessed before approval. | Rejected as a Block 25 closure blocker, accepted as residual scope. The Block 25 spec/report explicitly keep source-fetch token policy, artifact download auth, owner independence, production trust, and released-binary UX as `not_assessed`; Block 25 does not claim those surfaces. Focused InfoSec re-review accepted the scope and returned `APPROVE` with no critical/major findings. | DeepSeek review and focused re-review; `docs/research/block-25-compiled-ci-demo-pilot-report.md` Trust State |
 
 ## PR-Level Review Findings
 
@@ -53,16 +58,16 @@ Status: initialized for Socratic spec review.
   observations about JVM pinning, unique artifact-index paths, recursive
   enumeration, CI log secrecy, and redaction-scan output were accepted and
   folded into the spec/plan.
-- Implementation review: `not_assessed`; demo implementation evidence is
-  captured, but CTO buyer, Head of Engineering, and Head of InfoSec review
-  planes have not yet run.
+- Implementation review: `pass`; CTO buyer, Head of Engineering, and Head of
+  InfoSec role reviews have no remaining critical or major findings after
+  fixes and focused re-review.
 - PR-level review: `not_assessed`.
-- Demo repo CI: `pass` for run `25554876944` on
-  `fall-out-bug/sdp-trace-demo-ci-pilot@e7af52aca71af76635118392919d7a01fddf6c3e`.
+- Demo repo CI: `pass` for run `25555299371` on
+  `fall-out-bug/sdp-trace-demo-ci-pilot@8d99c13491121a99c5c4cd984ec708dcc1f5025c`.
 - Artifact index digest verification: `pass` for downloaded clean and no-OIDC
-  artifact roots from run `25554876944`.
+  artifact roots from run `25555299371`.
 - Redaction scan: `pass` for downloaded clean and no-OIDC artifact roots from
-  run `25554876944`.
+  run `25555299371`.
 - Negative evidence states: no-OIDC witness gap `cannot_verify` with
   `missing_ci_oidc`; stale digest fixture `fail` with
   `artifact_digest_mismatch`; source/run mismatch fixture `fail`.
