@@ -98,12 +98,12 @@
     {
       "path": "docs/adoption-guide.en.md",
       "kind": "doc",
-      "sha256": "9e8fa82b8fba5cb9e53d9c506ac82d344955e1e6c8202b031de5e6c8b78fb781"
+      "sha256": "84817adc3e2f45bd821ea288f4851a1d5e16f7197df37fc9429a5dde15c54c41"
     },
     {
       "path": "docs/adoption-guide.ru.md",
       "kind": "doc",
-      "sha256": "4e33e787a7fcad029df8c3538674fac5cf718a7f07ca52a0ec9dc1bd9d8d591d"
+      "sha256": "a15b87613b4bc58e261f8a6830f689c80197da30bb6fd6468a899356ddf0a7dd"
     },
     {
       "path": "docs/agent-onboarding.md",
@@ -523,7 +523,7 @@
     {
       "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "88143ee07f24d051f9740c54436f03711e94bf1f0fdc672e6bda69ca90d7dcfe"
+      "sha256": "cb8e71db1a1d872c65458dac87f8e3fd23df8071e218fca975cbeace8f888ed4"
     },
     {
       "path": "schema/accountability.schema.json",
@@ -776,7 +776,7 @@
       "sha256": "95c7b2a662130050090e695ee5afc51ec9472a7e1807bf9ba1afa232b4f19c1d"
     }
   ],
-  "source_commit": "8c35c9d7ca739b8df6f1a77ea3396a433c787953",
+  "source_commit": "2c53535b5ad65f4205eea5bb047e85757b6d33b4",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
