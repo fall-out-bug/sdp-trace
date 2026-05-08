@@ -98,27 +98,27 @@
     {
       "path": "docs/contract-release-signing.md",
       "kind": "doc",
-      "sha256": "343b30cad6bec7482b98222f9f051348f0265b1bdf8d9e5bed987b5df9fe16dc"
+      "sha256": "7f3dfc39794d381531582293b0d47526fda4af7ef0e1cf279ba8f65b14aa47d5"
     },
     {
       "path": "docs/cto-brief.en.md",
       "kind": "doc",
-      "sha256": "ea47adb962eea9d718e79b88c67df4f364234d7e8c1d41f529ab3fe569879eb1"
+      "sha256": "839d34e7be8d1222870cf395827d35f72016fdb045e01827f1ca4afb7f0974af"
     },
     {
       "path": "docs/cto-brief.ru.md",
       "kind": "doc",
-      "sha256": "195c1db7e6509de7d79d5f4a0cf901e2b5c285c0f7d1c251ac764de72f7bd57a"
+      "sha256": "37f3929c914d15190ce02165fc6fced01f37042e10a92a0617a8b7254c100b84"
     },
     {
       "path": "docs/flight-recorder.md",
       "kind": "doc",
-      "sha256": "4aa4fdd7aa0b647e0ce0c545f9cc0c8cab942cd5e87476af2a3f0626ec3b011c"
+      "sha256": "3901f7928a9f5b6aa6986d988121e85815c09270fb4a22a2878c0ed8672dae9e"
     },
     {
       "path": "docs/harness-compatibility-matrix.md",
       "kind": "compatibility_note",
-      "sha256": "a181ec960dac654ceee42eef02f96b975c2e53d677c3b2fc27faaa6295a2f212"
+      "sha256": "d4e627d6bb8351f14d1d3448b945deadfd936815d2acdfff01f0ca9874707218"
     },
     {
       "path": "docs/jvm-bazel-guide.md",
@@ -128,40 +128,40 @@
     {
       "path": "docs/model-compatibility.md",
       "kind": "compatibility_note",
-      "sha256": "d38e9b001b507bc5c66b395f07f0d2df95bfbfaba039b1775cb6ef281803e0ca"
+      "sha256": "8bb37f50d35dd90a610cf5c0127b68dc6c8163ae77ad0096368e0920f200789a"
     },
     {
-      "path": "docs/research/customer-pilot-evidence-package.md",
+      "path": "archive/research/customer-pilot-evidence-package.md",
       "kind": "doc",
-      "sha256": "2bdb7277728182e7c75300c79b2f2cc44d6430d83a1ac611515d35f9c44e7cb0"
+      "sha256": "2a40dc7f413bc72b0addd1102ed3da3ae857e457da7f3433626331aa1b19c600"
     },
     {
-      "path": "docs/research/harness-run-card.md",
+      "path": "archive/research/harness-run-card.md",
       "kind": "doc",
-      "sha256": "44fdd1255bdb3d8bf6741818b06f09d441c1bb551b364947aa6de25318133cfc"
+      "sha256": "e43951a1560c4ec3a949c72d5158b14b5b6d9c66c8b7fa89d9631def280bebaa"
     },
     {
-      "path": "docs/research/kotlin-bazel-fixture-plan.md",
+      "path": "archive/research/kotlin-bazel-fixture-plan.md",
       "kind": "doc",
-      "sha256": "0ba0a00d7f6c9afb90cff54c436e7bd5a18f1f5f54496c7346c2ac224a2ad3c2"
+      "sha256": "13fcf024af8c70c9806e3aa2c6aecc613819931f2ac93c21a96447cd1e88ab8f"
     },
     {
-      "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
+      "path": "archive/research/opencode-minimax-kotlin-bazel-proof-report.md",
       "kind": "doc",
       "sha256": "13813af07a7d50334a076eb7f620a2331037bb1aa4e75b2ce9853b475d54553b"
     },
     {
-      "path": "docs/research/opencode-model-run-card.md",
+      "path": "archive/research/opencode-model-run-card.md",
       "kind": "doc",
-      "sha256": "d972e0698ec68f619111c1b9475a1391e7c0adbca08c01b18620c4597544fa4c"
+      "sha256": "fde84eb581e4e7133c71201742759ac32c1600300b543edef48316e991dca9b8"
     },
     {
-      "path": "docs/research/run-card-template.md",
+      "path": "archive/research/run-card-template.md",
       "kind": "doc",
       "sha256": "ebf285497630528ec57b3cdd13e3f81b737a3951d4d7c32c20b78e20ae7382bc"
     },
     {
-      "path": "docs/research/self-attestation-summary.md",
+      "path": "archive/research/self-attestation-summary.md",
       "kind": "doc",
       "sha256": "11877861bd5e31d13ba8d0af2d0039b93c2861e196dbebe172236dd0ea616463"
     },
@@ -173,12 +173,12 @@
     {
       "path": "docs/team-lead-playbook.en.md",
       "kind": "doc",
-      "sha256": "549ba56415a4e0001279484c0cf8a4d6166d5558f29728c0b4ec7c67e365d133"
+      "sha256": "0d138844043bad256ca2bf04599b21c1a14ed0b5d030cdb6ceb974178a79f637"
     },
     {
       "path": "docs/team-lead-playbook.ru.md",
       "kind": "doc",
-      "sha256": "2e33223a2cc3abae45f7cc6a4d8b1bc52252d65ad85a22a7a137688e97d433be"
+      "sha256": "8b5916c10a83a9d2829c02b109df5f7b5d59542f6690d73d5471c303e3d47301"
     },
     {
       "path": "examples/contract-foundation/local-dev-wrong-public.pem",
@@ -543,7 +543,7 @@
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
       "kind": "fixture",
-      "sha256": "9e540f7dc6dcf6ba350a90ee6514e0cfcd9cf3510d701915333b386ac04aabfa"
+      "sha256": "772b66d98a104ef5a4fc2c49ec96433a90ea5a24ea9d38f83357050ca957425d"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
@@ -558,7 +558,7 @@
     {
       "path": "README.md",
       "kind": "doc",
-      "sha256": "af99c04014c06c5866edad1f56d3ea7b08f9aba4404fd17994b497be85cb93c2"
+      "sha256": "1c3650069af28f15316ca69854f3a7174f27d303ceef2df145fa5f4c979b9e67"
     },
     {
       "path": "schema/accountability.schema.json",
@@ -643,7 +643,7 @@
     {
       "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "61b1b53b869896c07c40e8ea409de7d43ccf717fe52f88df7e49393202341a0b"
+      "sha256": "937b8e461e03455483a091f2362fe882ad0511e2f18406d1d891aaee23828dce"
     },
     {
       "path": "schema/risk-classification.schema.json",
@@ -668,7 +668,7 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
       "kind": "doc",
-      "sha256": "5bc48cf6df17d656de1a760961dcbd634509eb49af32e606bb439d3c78b431e0"
+      "sha256": "8c96519108cad778f04b28c00160f73f769b522ce339efba01ab4a79be30d382"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
@@ -678,12 +678,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
       "kind": "fixture",
-      "sha256": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e"
+      "sha256": "d9b582a1134c6772860e65c7a955679917125c6ffed04b0035f79c68ed314c14"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
       "kind": "fixture",
-      "sha256": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498"
+      "sha256": "2c91cad85b1020c88858f5324e440123269146b65b52ad5cfe6f3abac85ae596"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
@@ -693,22 +693,22 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
       "kind": "doc",
-      "sha256": "b08f1fee0f2ee26ce39eaf5409a212f2d5c299d535e6ae80a745644a6a914abd"
+      "sha256": "c8fbf6568b70cf75fb7c537496ff7efc0a433254c9b2ce9472b26283750e32e7"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/03-self-attestation-proof.md",
       "kind": "doc",
-      "sha256": "06498fdea426ae7b8500543682de03c5b1b123cd5ac8914b0dd346c20e669c7a"
+      "sha256": "97f906b49204ece56dbce252bb64cc7b3de360b9705c4f8ff09ab2c107cfd3a9"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md",
       "kind": "doc",
-      "sha256": "846863e1e9e3a3e29f474d7e1c6f4a0819a84fdaad920e557b6b20335f5a5201"
+      "sha256": "567629830b1ad64e6cc98f8466bdb3adabfa3103e773dc765ef7f11b9cbabd29"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-implementation-plan.md",
       "kind": "doc",
-      "sha256": "efd730f25ed7dd8fec214cb37f655d61b97849c9a74576dcbc05a7adf438a96f"
+      "sha256": "761df851eae33ce12f3f5d71682af9a7748c8f1cd9f4588ad184bd3506dc7cbb"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-socratic.md",
@@ -723,12 +723,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-implementation-plan.md",
       "kind": "doc",
-      "sha256": "af49975f245227f97dfa4bc24ae807f25b145b6342b542c1b3361ab513435ac1"
+      "sha256": "83a28286ffbe9fc90f5e91aa13fab6e2b65b78aff5f23cf949af0611358b70fb"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-review-ledger.md",
       "kind": "doc",
-      "sha256": "b99eff5246762a9c4f9735605abe929f5233abdac5ea6ac1cd98ba71999e6bd9"
+      "sha256": "9a3a079a206bd81146fee87022840a236dc0c515848c9d24106e9fa9d60855e6"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-socratic.md",
@@ -743,12 +743,12 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-implementation-plan.md",
       "kind": "doc",
-      "sha256": "4975437cfabd7042774d79f402bcd62f817d95a155f58bdbbd799a105e15967b"
+      "sha256": "4fc4c6df93f04707383677b9f372998b3a30c4df1191ba2f24be775f6f77fa87"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
       "kind": "doc",
-      "sha256": "6a7859f7c252dd3986d6d37ebbaa50cdc685f9c96c1927b825f5ae0514b3d375"
+      "sha256": "96705eaee4c23f540b05cd2568810c0f7fc1c897f61f4168c7a381e578c12e04"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
@@ -793,17 +793,17 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/plan.md",
       "kind": "doc",
-      "sha256": "6aaccd154c8accccb15e72d57c806a762ddd650fdb01e754fb2f12cfa7b9f1bc"
+      "sha256": "edeaa6efa46fd81a96c5a3a9c7d1345eb956b7c8083df65eb3a996853793dcb3"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/quickstart.md",
       "kind": "doc",
-      "sha256": "8e83820f88ae79987309c74b65f84410705cfd0c991e10df7b482d6f6d2e22bf"
+      "sha256": "43ba1fb57c611ef13e9203d6f1442201f625b57180e27524d1db5257ea3ee931"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/research.md",
       "kind": "doc",
-      "sha256": "305af1399e490a2042990f0536999b6d4cf20ee7b23059589c2279a64b8dd697"
+      "sha256": "6623937fd60bc74b529e8b5a59be91b0ed90d0d7c179d4f0d74abee806c43b9b"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
@@ -813,20 +813,20 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "c59ae964f5e1927a965ed3657bd9006b68aabbbc0cfec6eb4b1dd7ab191ce08b"
+      "sha256": "7a242b71c235d58b106400a665d99026abad4f7bd907d2ef7fc16fc218874c38"
     },
     {
-      "path": "docs/research/historical-verifier-retirement-2026-05-07.md",
+      "path": "archive/research/historical-verifier-retirement-2026-05-07.md",
       "kind": "doc",
       "sha256": "1939f740f0c807fe96e1297f55df1435f1a8be3fa02f989b24a68c803bc432ad"
     },
     {
-      "path": "docs/research/closed-block-task-drift-audit-2026-05-07.md",
+      "path": "archive/research/closed-block-task-drift-audit-2026-05-07.md",
       "kind": "doc",
-      "sha256": "18ebc649c25528e167c21fb9a9cf3beaafc5cfaec40066b0791507a32f989bd6"
+      "sha256": "f410db856e3fcd20befbfbb82a068fc086f5c706c08e0bdb065693d1c7dc4795"
     }
   ],
-  "source_commit": "cb65899da1340240ee1df789f2ffd022edfd7998",
+  "source_commit": "7119bf94562d45a548421dd819a1a704eafe3922",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
