@@ -27,6 +27,12 @@ go test -coverprofile=/tmp/sdp-trace-block23-cover.out ./...
 go tool cover -func=/tmp/sdp-trace-block23-cover.out
 ```
 
+Changed non-test production Go files in the Block 23 diff:
+
+| file | trust-adjacent? | coverage evidence |
+| --- | --- | --- |
+| `internal/releaseproof/releaseproof.go` | yes, release-proof verifier behavior | file aggregate 87.4% |
+
 Relevant changed-file rows:
 
 | file/function | coverage |

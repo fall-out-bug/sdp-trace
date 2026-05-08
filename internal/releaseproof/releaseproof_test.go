@@ -157,6 +157,57 @@ func TestEvaluateReadsArtifactsFromManifestSourceCommit(t *testing.T) {
 	}
 }
 
+func TestEvaluateFailsWhenWorktreeIsDirty(t *testing.T) {
+	root := t.TempDir()
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.invalid")
+	runGit(t, root, "config", "user.name", "Test")
+	writeFile(t, filepath.Join(root, "present.txt"), "present\n")
+	runGit(t, root, "add", "present.txt")
+	runGit(t, root, "commit", "-m", "source")
+	sourceCommit := strings.TrimSpace(runGit(t, root, "rev-parse", "HEAD"))
+	manifest := `{
+  "id": "test-manifest",
+  "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "trusted_identity_policy_ref": "policy.json",
+  "source_commit": "` + sourceCommit + `",
+  "artifacts": [
+    {"path": "present.txt", "kind": "doc", "sha256": "` + sha256String("present\n") + `"}
+  ],
+  "accountability": {
+    "dri": {"identity_ref": "role:dri", "actor_type": "human_role"},
+    "approver": {"identity_ref": "role:approver", "actor_type": "human_role"},
+    "escalation": {"identity_ref": "role:cto", "actor_type": "human_role"},
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "approval",
+    "risk_owner": {"identity_ref": "role:risk", "actor_type": "human_role"},
+    "line_of_defense": "second"
+  }
+	}`
+	writeFile(t, filepath.Join(root, "manifest.json"), manifest)
+	runGit(t, root, "add", "manifest.json")
+	runGit(t, root, "commit", "-m", "manifest")
+	writeFile(t, filepath.Join(root, "uncommitted.txt"), "dirty\n")
+
+	result, err := Evaluate(root, "manifest.json", time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+	if result.ReleaseVerificationState != StateFail {
+		t.Fatalf("state = %s", result.ReleaseVerificationState)
+	}
+	if result.SourceCommitStatus != StatusMismatch {
+		t.Fatalf("source commit status = %s", result.SourceCommitStatus)
+	}
+	if result.SourceCommitArtifactStatus != StatusMatched {
+		t.Fatalf("source commit artifact status = %s", result.SourceCommitArtifactStatus)
+	}
+	if result.SourceCommitReason != "dirty checkout cannot support source-bound local release proof" {
+		t.Fatalf("source commit reason = %s", result.SourceCommitReason)
+	}
+}
+
 func TestWriteReadAndRepoRoot(t *testing.T) {
 	root := t.TempDir()
 	runGit(t, root, "init")

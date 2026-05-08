@@ -20,7 +20,7 @@ anchor; they are not the source-subject commit named by the manifest.
 | id | status | evidence |
 | --- | --- | --- |
 | MVP-01 source-bound proof drift | fixed locally | `release-proof` exits 0 on a clean checkout and reports `release_verification_state: "pass"`, `source_commit_status: "matched"`, `source_commit_artifact_status: "matched"` |
-| MVP-04 bilingual command/profile docs | fixed locally | English/Russian entrypoint, CTO, team lead, and customer-question docs updated in branch; command/profile parity scans pass |
+| MVP-04 bilingual command/profile docs | fixed locally | Russian-language handoff remains in MVP scope for Block 23; English/Russian entrypoint, CTO, team lead, and customer-question docs updated in branch; command/profile parity scans pass |
 | MVP-05 stale CTO/team docs | fixed locally | `docs/cto-adoption-guide.en.md`, `docs/cto-adoption-guide.ru.md`, `docs/team-lead-playbook.en.md`, `docs/team-lead-playbook.ru.md` |
 | MVP-06 customer pressure questions | fixed locally | `docs/customer-questions.en.md` and `docs/customer-questions.ru.md`; both files contain all 9 mandatory question rows |
 | MVP-07 Block 22 spec drift | fixed locally | Before: Block 22 status said implementation was blocked until explicit approval. After: Block 22 status records implementation and PR review in PR #15. Fixed in review-fix commit. |
@@ -29,7 +29,7 @@ anchor; they are not the source-subject commit named by the manifest.
 
 | id | state | reason |
 | --- | --- | --- |
-| MVP-02 Block 06 open retired-script mirrors | process reclassified, source-bound proof `not_assessed` | `.beads/issues.jsonl` closes `sdp-trace-drq.11` and `sdp-trace-drq.12`, and `bd ready` reports no ready work; this is backlog/process evidence, not manifest-subject product proof |
+| MVP-02 Block 06 open retired-script mirrors | MVP-blocking follow-up, source-bound proof `not_assessed` | `.beads/issues.jsonl` closes `sdp-trace-drq.11` and `sdp-trace-drq.12`, and `bd ready` reports no ready work; this is backlog/process evidence, not manifest-subject product proof. Keep MVP-02 blocking unless the CTO explicitly accepts demotion from MVP closure scope. |
 | MVP-03 repository-wide quality | partial | changed releaseproof functions pass Block 23 thresholds; legacy complexity, staged packages, and repo-wide CRAP remain exceptions |
 | MVP-08 remote closure | `not_assessed` | branch has not gone through PR, PR-level review, merge, and `origin/main` verification |
 | external production trust | `not_assessed` | local source-bound proof is narrower than external production trust |
@@ -57,6 +57,27 @@ See `docs/research/block-23-not-assessed-registry.md` for the full registry.
 | retired-command current-closure scan excluding explicitly historical spec context | pass; no hits in current closure docs |
 | stale Block 12 scan across customer-facing docs | pass; no hits |
 | `bd ready` | pass, no ready work found |
+
+## Command And Profile Coverage Matrix
+
+All rows are covered in English and Russian customer-facing docs with purpose,
+minimum invocation, output/trust boundary, and exit-state caveats where relevant.
+
+| surface | covered IDs |
+| --- | --- |
+| commands | `wrap`, `run`, `dry-run`, `preview`, `doctor`, `verify`, `explain`, `query`, `query-pack`, `export cross-repo-posture`, `assess`, `report`, `gate`, `witness`, `release-proof`, `validate-fixtures` |
+| profiles/states | `adapter-capture`, `managed-harness`, `forensic-retention`, `github-actions`, `gitlab-ci`, `buildkite`, `customer-pki`, `air-gapped`, `not_assessed`, `cannot_verify` |
+| customer questions | questions 1-9 in `docs/customer-questions.en.md` and `docs/customer-questions.ru.md` |
+
+## Slice Evidence
+
+| slice | expected write scope | actual scope summary | scope match | verification |
+| --- | --- | --- | --- | --- |
+| WS1 source-bound proof | `internal/releaseproof`, contract foundation examples, source-bound manifest/proof artifacts | releaseproof code/tests plus manifest/proof refresh | yes | release-proof pass, manifest subject drift empty |
+| WS2 backlog/block drift | Block 06 ledger, Beads mirror, Block 22 status | Block 06 ledger/Beads reclassification and Block 22 status update | yes | `bd ready`, review disposition, not-assessed registry |
+| WS3 quality gate | releaseproof tests and quality report | focused tests, coverage, complexity, CRAP, deadcode exceptions | yes | Go/vet/staticcheck/lint/coverage/gocyclo |
+| WS4/WS5 docs/customer questions | entrypoint, reviewer, CTO/team, customer docs | bilingual command/profile docs and customer question maps | yes | command/profile parity and customer-question count scans |
+| WS6 closure package | `docs/research/block-23-*` | closure package, quality report, registry, review disposition | yes | review planes and focused re-review |
 
 ## Original Manifest Drift Classification
 
