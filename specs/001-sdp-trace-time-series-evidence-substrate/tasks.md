@@ -587,23 +587,23 @@ planes and explicitly approved. Block 24 may prove demo execution and trace
 inspectability, but it must not claim external production trust, production
 readiness, policy enforcement, or customer deployment readiness.
 
-- [ ] T203 [US5] Run Socratic spec review for Block 24 across product/demo
+- [x] T203 [US5] Run Socratic spec review for Block 24 across product/demo
   credibility, trace/evidence, CI/witness, and privacy/safety planes; record and
   fix every critical or major finding before implementation approval.
-- [ ] T204 [US4] Create or select a demo repository and document ownership,
+- [x] T204 [US4] Create or select a demo repository and document ownership,
   CI provider, app scope, command surface, artifact retention, and privacy
   boundary without adding a runtime dependency from `sdp-trace` to the demo.
-- [ ] T205 [US4] Add a CI-backed `sdp-trace` demo run that captures at least
+- [x] T205 [US4] Add a CI-backed `sdp-trace` demo run that captures at least
   one wrapped command, `verify`, `explain`, `report`, `gate`, and `witness`
   output, with explicit `not_assessed` or `cannot_verify` states for missing
   external trust.
-- [ ] T206 [US4] Add a demo pilot report mapping trace/report/gate/witness
+- [x] T206 [US4] Add a demo pilot report mapping trace/report/gate/witness
   artifacts to the nine Block 23 customer questions and separating observed
   movement from missing telemetry.
-- [ ] T207 [US5] Add redaction and safety checks proving committed or linked
+- [x] T207 [US5] Add redaction and safety checks proving committed or linked
   demo artifacts do not expose tokens, private paths, raw logs, raw model
   payloads, customer data, or unsafe personal identifiers.
-- [ ] T208 [US5] Run implementation and PR-level reviews across
+- [x] T208 [US5] Run implementation and PR-level reviews across
   code/correctness, trace/evidence, and requirements-vs-implementation planes
   before claiming Block 24 closure.
 
