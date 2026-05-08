@@ -1,7 +1,7 @@
 # Block 24: Demo Repository CI And Trace Pilot
 
-Status: Socratic-reviewed SpecKit delta pending CTO approval. Implementation is
-blocked until the CTO explicitly approves the reviewed direction.
+Status: Socratic-reviewed SpecKit delta approved for implementation on
+2026-05-08.
 
 Parent artifacts:
 
@@ -55,8 +55,11 @@ Minimum pilot surface:
 - `verify`, `explain`, `report`, `gate`, and `witness` outputs over the captured
   run root;
 - at least one trace path showing an observed successful command;
-- at least one negative or incomplete path showing `not_assessed`,
-  `cannot_verify`, missing telemetry, or witness gaps;
+- three clean trace paths showing observed successful commands with distinct
+  customer-readable scopes;
+- two intentionally dishonest-trace paths showing `not_assessed`,
+  `cannot_verify`, missing telemetry, source/run mismatch, missing witness, or
+  overclaim gaps without fabricating app failure;
 - a redaction boundary for logs, command output, paths, tokens, and personal
   data;
 - a customer-readable pilot report mapping artifacts to the Block 23 customer
@@ -71,7 +74,7 @@ Minimum pilot surface:
 | Demo app | Feature Flag / Entitlements Kotlin+Bazel service with a deterministic Bazel test | Matches the repo's existing external demo target and customer-requested JVM/Kotlin/Bazel path. It is still narrow enough to keep Block 24 focused on CI trace, not application complexity. | OpenCode/GSD/model-agent execution remains `not_assessed` unless explicitly added in a later block. |
 | Tool acquisition | Build `sdp-trace` from a pinned source ref in CI | Makes the tested product version explicit and replayable before release binaries exist. | Binary distribution UX remains `not_assessed` unless a release artifact is used. |
 | Artifact split | Raw run/report/witness artifacts live in the demo repo or CI artifact store; this repo records sanitized report, digest index, links, and review disposition only | Prevents this repo from becoming a raw-log archive and keeps source-bound release proof separate from demo evidence. | Demo evidence is pilot evidence, not source-bound product proof. |
-| Negative path | A no-OIDC or intentionally incomplete witness job records `cannot_verify`, and a local-only run records missing witness as `not_assessed` or `cannot_verify` | Shows honest gap behavior without fabricating test failures or unsafe secrets. | The exact negative job shape is finalized after review. |
+| Negative path | Two intentionally dishonest-trace cases record `cannot_verify` or `fail`, and a local-only or incomplete witness path records missing witness as `not_assessed` or `cannot_verify` | Shows honest gap behavior without fabricating test failures or unsafe secrets. | The exact dishonest cases must be documented in the report with customer interpretation. |
 
 ## Owner Independence Gap
 
@@ -123,11 +126,11 @@ owner-independence gap section naming what a different owner must supply:
    gate, readiness indicator, risk acceptance, or production-trust claim.
 7. `sdp-trace witness --kind github-actions` is run in CI with its exact status,
    trust scope, reason codes, and missing identity fields recorded.
-8. A negative or incomplete witness path records `not_assessed` or
-   `cannot_verify` with a concrete reason such as missing CI OIDC, missing
-   source binding, missing run binding, or local-only evidence. The report must
-   explain what a customer should conclude from that state and what evidence
-   would be needed to raise the claim.
+8. Two intentionally dishonest-trace paths record `cannot_verify` or `fail`
+   with concrete reasons such as missing CI OIDC, missing source binding,
+   missing run binding, stale artifact digest, source/run mismatch, or
+   local-only evidence. The report must explain what a customer should conclude
+   from each state and what evidence would be needed to raise the claim.
 9. The pilot report maps the artifacts to the nine Block 23 customer questions
    and classifies each answer as `direct_demo_evidence`,
    `partial_demo_evidence`, or `not_assessed`.

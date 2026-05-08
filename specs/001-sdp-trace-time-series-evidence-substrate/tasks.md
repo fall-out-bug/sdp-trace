@@ -587,7 +587,7 @@ planes and explicitly approved. Block 24 may prove demo execution and trace
 inspectability, but it must not claim external production trust, production
 readiness, policy enforcement, or customer deployment readiness.
 
-- [ ] T203 [US5] Run Socratic spec review for Block 24 across product/demo
+- [x] T203 [US5] Run Socratic spec review for Block 24 across product/demo
   credibility, trace/evidence, CI/witness, and privacy/safety planes; record and
   fix every critical or major finding before implementation approval.
 - [ ] T204 [US4] Create or select a demo repository and document ownership,

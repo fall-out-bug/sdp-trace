@@ -3,8 +3,9 @@
 Status: Socratic spec review returned `REVISE` across product/demo
 credibility, trace/evidence, CI/witness, and privacy/safety planes. Valid
 critical and major findings were accepted into the revised SpecKit delta.
-Focused re-review returned `APPROVE` across all four planes. Implementation is
-blocked until the CTO explicitly approves the reviewed direction.
+Focused re-review returned `APPROVE` across all four planes. The CTO approved
+implementation on 2026-05-08 with the clarified case shape: three clean trace
+cases and two intentionally dishonest-trace cases.
 
 ## Socratic Review Findings
 
@@ -53,5 +54,8 @@ blocked until the CTO explicitly approves the reviewed direction.
 | CTO correction: Kotlin/Bazel evidence feasibility | OpenRouter Qwen 3.6 Plus | `not_assessed` | unusable response attempted to inspect a demo repo instead of reviewing the supplied SpecKit packet |
 | CTO correction: Kotlin/Bazel evidence feasibility replacement | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
 
-Implementation remains blocked until explicit CTO approval of the reviewed
-direction.
+## Implementation Approval
+
+| date | approver/source | decision | implementation constraint |
+| --- | --- | --- | --- |
+| 2026-05-08 | CTO/user | approved reviewed direction | Implement Feature Flag / Entitlements Kotlin+Bazel demo repo, GitHub Actions first, source-built `sdp-trace`, sanitized copy-back only, three clean cases, and two intentionally dishonest-trace cases. |

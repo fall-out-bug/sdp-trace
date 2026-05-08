@@ -1,7 +1,6 @@
 # Block 24 Implementation Plan: Demo Repository CI And Trace Pilot
 
-Status: Socratic-reviewed plan pending CTO approval. Implementation is blocked
-until the CTO explicitly approves the reviewed direction.
+Status: Socratic-reviewed plan approved for implementation on 2026-05-08.
 
 ## Product Thesis
 
@@ -22,7 +21,7 @@ ones in the demo.
 | WS1 demo repo selection | external demo repo docs/workflow, sanitized pointer in this repo | repository URL, ownership, visibility decision, CI provider, source refs, privacy boundary | repo can be cloned or inspected from documented refs or access limits are recorded |
 | WS2 demo app and CI | external demo repo only | Feature Flag / Entitlements Kotlin+Bazel service, deterministic Bazel test, GitHub Actions workflow | CI runs the selected Bazel test command |
 | WS3 trace/report/gate/witness capture | external demo repo and CI artifacts | `.sdp-trace-runs/`, `.sdp-trace-report/`, gate result, witness result, verify/explain outputs | current CI run emits artifacts with exact states |
-| WS4 negative and safety path | external demo repo workflow plus sanitized safety summary | no-OIDC or incomplete witness output, redaction scan, public/private decision record | missing witness/OIDC is `cannot_verify` or `not_assessed`, not hidden |
+| WS4 negative and safety path | external demo repo workflow plus sanitized safety summary | two intentionally dishonest-trace cases, no-OIDC or incomplete witness output, redaction scan, public/private decision record | missing witness/OIDC, stale digest, source/run mismatch, or overclaim states are `cannot_verify`/`fail`/`not_assessed`, not hidden |
 | WS5 sdp-trace summary artifacts | `docs/research/block-24-*`, Block 24 review ledger | customer-readable report, artifact index, review disposition | report maps all nine Block 23 questions |
 | WS6 implementation and PR review | changed files only | code/correctness, trace/evidence, requirements-vs-implementation review evidence | review findings fixed or dispositioned; PR-level review repeated |
 
@@ -119,16 +118,25 @@ better than `wrap` for the customer story.
 
 ## Negative Path
 
-The implementation must include at least one gap path:
+The implementation must include two intentionally dishonest-trace cases plus
+one explicit witness gap path:
 
-- preferred: a separate GitHub Actions job without OIDC permission writes
+- clean baseline: three honest cases capture successful wrapped commands with
+  distinct names and scopes;
+- dishonest case 1: a copied or edited trace/report artifact intentionally
+  mismatches the observed run/source binding and must not be represented as a
+  clean CI-witnessed run;
+- dishonest case 2: a stale or tampered digest/index entry intentionally fails
+  the artifact-integrity or source/run-binding story;
+- witness gap: a separate GitHub Actions job without OIDC permission writes
   `ci-witness-no-oidc.json` with `status: "cannot_verify"` and reason
   `missing_ci_oidc`;
 - fallback: a local-only run or incomplete witness envelope records
   `not_assessed` or `cannot_verify` with exact missing fields.
 
-The negative path must not fabricate product failure, leak a token, or make the
-overall pilot look broken. It exists to prove honest gap rendering.
+The negative paths must not fabricate app failure, leak a token, or make the
+overall pilot look broken. They exist to prove dishonest or incomplete trace
+rendering is explicit and does not get upgraded into trust.
 
 Negative job YAML must keep OIDC unavailable at job scope:
 
@@ -240,15 +248,17 @@ Block 24 implementation must check drift against:
 - source-bound proof boundary: demo evidence must not be called
   `source_bound_local_release` proof.
 
-## Approval Handoff
+## Approval Record
 
-After Socratic review and fixes, ask the CTO to approve or revise:
+The CTO approved implementation on 2026-05-08 after Socratic review and fixes,
+with the clarified case shape:
 
 1. separate same-owner demo repo;
 2. GitHub Actions first;
 3. Feature Flag / Entitlements Kotlin+Bazel demo service;
 4. source-built `sdp-trace` tool in CI;
 5. sanitized report and artifact-index copy-back only;
-6. no-OIDC or incomplete witness negative path.
-
-No implementation starts until that approval is explicit.
+6. three clean trace cases;
+7. two intentionally dishonest-trace cases;
+8. no-OIDC or incomplete witness negative path where needed for witness gap
+   semantics.
