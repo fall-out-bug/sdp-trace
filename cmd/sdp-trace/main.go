@@ -19,6 +19,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/ciartifact"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/forensic"
+	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
@@ -35,6 +36,8 @@ const (
 	exitUsage        = 2
 	exitCannotVerify = 3
 )
+
+var cliStdin io.Reader = os.Stdin
 
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
@@ -62,6 +65,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runDoctor(ctx, cmdArgs, stdout, stderr)
 	case "install":
 		return runInstall(ctx, cmdArgs, stdout, stderr)
+	case "interaction":
+		return runInteraction(ctx, cmdArgs, stdout, stderr)
+	case "envelope":
+		return runEnvelope(ctx, cmdArgs, stdout, stderr)
 	case "verify":
 		return runVerify(ctx, cmdArgs, stdout, stderr)
 	case "explain":
@@ -135,6 +142,169 @@ func runReleaseProof(_ context.Context, args []string, stdout, stderr io.Writer)
 	default:
 		return exitCannotVerify
 	}
+}
+
+func runInteraction(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "interaction requires relay, import-transcript, or summarize")
+		return exitUsage
+	}
+	switch args[0] {
+	case "relay":
+		return runInteractionRelay(ctx, args[1:], stdout, stderr)
+	case "import-transcript":
+		return runInteractionImportTranscript(args[1:], stdout, stderr)
+	case "summarize":
+		return runInteractionSummarize(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintf(stderr, "unknown interaction command: %s\n", args[0])
+		return exitUsage
+	}
+}
+
+func runInteractionRelay(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "interaction relay"}
+	opts.setString("task-id", "")
+	opts.setString("actor-type", "human_user")
+	opts.setString("actor-id", "")
+	opts.setString("target", "agent")
+	opts.setString("event-type", "corrective_feedback")
+	opts.setString("operation-id", "")
+	opts.setString("stage-id", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("task-id")) == "" {
+		fmt.Fprintln(stderr, "interaction relay requires --task-id")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "interaction relay requires --out")
+		return exitUsage
+	}
+	if len(opts.rest()) == 0 {
+		fmt.Fprintln(stderr, "interaction relay requires forward command after --")
+		return exitUsage
+	}
+	_, exitCode, err := interaction.Relay(ctx, interaction.RelayOptions{
+		TaskID:      opts.stringValue("task-id"),
+		ActorType:   opts.stringValue("actor-type"),
+		ActorID:     opts.stringValue("actor-id"),
+		Target:      opts.stringValue("target"),
+		EventType:   opts.stringValue("event-type"),
+		OperationID: opts.stringValue("operation-id"),
+		StageID:     opts.stringValue("stage-id"),
+		Out:         opts.stringValue("out"),
+		Command:     opts.rest(),
+	}, cliStdin, stdout, stderr)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	return exitCode
+}
+
+func runInteractionImportTranscript(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "interaction import-transcript"}
+	opts.setString("source", "")
+	opts.setString("source-ref", "")
+	opts.setString("task-id", "")
+	opts.setString("events-jsonl", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "interaction import-transcript accepts only flags")
+		return exitUsage
+	}
+	trace, err := interaction.ImportTranscript(interaction.ImportOptions{
+		TaskID:      opts.stringValue("task-id"),
+		Source:      opts.stringValue("source"),
+		SourceRef:   opts.stringValue("source-ref"),
+		EventsJSONL: opts.stringValue("events-jsonl"),
+		Out:         opts.stringValue("out"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, _ := json.MarshalIndent(trace, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runInteractionSummarize(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "interaction summarize"}
+	opts.setString("trace", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "interaction summarize accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("trace")) == "" {
+		fmt.Fprintln(stderr, "interaction summarize requires --trace")
+		return exitUsage
+	}
+	trace, err := interaction.ReadTrace(opts.stringValue("trace"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	summary := interaction.SummarizeTrace(trace)
+	if strings.TrimSpace(opts.stringValue("out")) != "" {
+		if err := writeJSONFile(opts.stringValue("out"), summary); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+	}
+	payload, _ := json.MarshalIndent(summary, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runEnvelope(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 || args[0] != "summarize" {
+		fmt.Fprintln(stderr, "envelope requires summarize")
+		return exitUsage
+	}
+	opts := &flagSet{name: "envelope summarize"}
+	opts.setString("envelope", "")
+	opts.setString("out", "")
+	if err := opts.parse(args[1:]); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "envelope summarize accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("envelope")) == "" {
+		fmt.Fprintln(stderr, "envelope summarize requires --envelope")
+		return exitUsage
+	}
+	envelope, err := interaction.ReadEnvelope(opts.stringValue("envelope"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	summary := interaction.SummarizeEnvelope(envelope)
+	if strings.TrimSpace(opts.stringValue("out")) != "" {
+		if err := writeJSONFile(opts.stringValue("out"), summary); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+	}
+	payload, _ := json.MarshalIndent(summary, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
 }
 
 func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -2514,6 +2684,10 @@ Usage:
   sdp-trace doctor [--contract <file>]
   sdp-trace doctor --profile github-actions-git-hooks-v1 [--out <file>]
   sdp-trace install repo-observer --profile github-actions-git-hooks-v1 [--repository-id <safe-id>] [--write] [--force] [--out <file>]
+  sdp-trace interaction relay --task-id <safe-id> --event-type <type> --out <file> -- <forward-command...>
+  sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id <safe-id> --events-jsonl <file> --out <file>
+  sdp-trace interaction summarize --trace <file> [--out <file>]
+  sdp-trace envelope summarize --envelope <file> [--out <file>]
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>
   sdp-trace query --query <missing-evidence|capture-depth> <run-dir>

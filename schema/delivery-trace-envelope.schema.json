@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/delivery-trace-envelope.schema.json",
+  "title": "SDP Trace Delivery Trace Envelope",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "envelope_id",
+    "run_refs",
+    "source_refs",
+    "task_refs",
+    "promise_refs",
+    "interaction_refs",
+    "operation_refs",
+    "llm_refs",
+    "tool_refs",
+    "mutation_refs",
+    "stage_refs",
+    "friction_refs",
+    "assessment_state",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "task_id": { "$ref": "#/$defs/safeId" },
+    "envelope_id": { "$ref": "#/$defs/safeId" },
+    "run_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/runRef" }
+    },
+    "source_refs": { "$ref": "#/$defs/refs" },
+    "task_refs": { "$ref": "#/$defs/refs" },
+    "promise_refs": { "$ref": "#/$defs/refs" },
+    "interaction_refs": { "$ref": "#/$defs/refs" },
+    "operation_refs": { "$ref": "#/$defs/refs" },
+    "llm_refs": { "$ref": "#/$defs/refs" },
+    "tool_refs": { "$ref": "#/$defs/refs" },
+    "mutation_refs": { "$ref": "#/$defs/refs" },
+    "stage_refs": { "$ref": "#/$defs/refs" },
+    "friction_refs": { "$ref": "#/$defs/refs" },
+    "assessment_state": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/assessmentState" },
+    "not_assessed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cannot_verify": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "created_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "updated_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "runRef": {
+      "type": "string",
+      "pattern": "^recorder:[A-Za-z0-9_.:-]+$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^(evidence:[A-Za-z0-9_./:-]+|sdp://interaction/[A-Za-z0-9_.:-]+/[A-Za-z0-9_.:-]+|external:[A-Za-z0-9_.:-]+|recorder:[A-Za-z0-9_.:-]+(/event:[0-9]+)?)$"
+    },
+    "refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" }
+    }
+  }
+}

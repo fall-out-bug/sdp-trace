@@ -16,6 +16,7 @@ import (
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
+	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
@@ -72,6 +73,165 @@ func TestWrapVerifyExplainMissingEvidenceFlow(t *testing.T) {
 	if !strings.Contains(out.String(), "run_id:") {
 		t.Fatalf("missing explain content: %s", out.String())
 	}
+}
+
+func TestInteractionRelayWritesTraceBeforeForwarding(t *testing.T) {
+	dir := t.TempDir()
+	tracePath := filepath.Join(dir, "trace.json")
+	forwardPath := filepath.Join(dir, "forwarded.txt")
+	oldStdin := cliStdin
+	cliStdin = strings.NewReader("Correct the plan boundary.\n")
+	t.Cleanup(func() { cliStdin = oldStdin })
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"interaction",
+		"relay",
+		"--task-id", "task-1",
+		"--actor-id", "human",
+		"--target", "gsd",
+		"--event-type", "corrective_feedback",
+		"--operation-id", "op-1",
+		"--stage-id", "plan",
+		"--out", tracePath,
+		"--", "sh", "-c", "cat > " + shellQuoteForTest(forwardPath),
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("relay exit=%d err=%s", exit, errOut.String())
+	}
+	if out.String() != "" {
+		t.Fatalf("relay should reserve stdout for forward command, got %q", out.String())
+	}
+	trace, err := interaction.ReadTrace(tracePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(trace.Events) != 1 || !trace.Events[0].ObservedBeforeDelivery || trace.Events[0].OperationID != "op-1" {
+		t.Fatalf("trace event = %+v", trace.Events)
+	}
+	forwarded, err := os.ReadFile(forwardPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(forwarded), "Correct the plan") {
+		t.Fatalf("forwarded = %q", string(forwarded))
+	}
+}
+
+func TestInteractionRelayRejectsUnsafeContentWithoutForwarding(t *testing.T) {
+	dir := t.TempDir()
+	tracePath := filepath.Join(dir, "trace.json")
+	forwardPath := filepath.Join(dir, "forwarded.txt")
+	oldStdin := cliStdin
+	cliStdin = strings.NewReader("token=SECRET_TOKEN_SHOULD_NOT_APPEAR\n")
+	t.Cleanup(func() { cliStdin = oldStdin })
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"interaction",
+		"relay",
+		"--task-id", "task-1",
+		"--actor-id", "human",
+		"--out", tracePath,
+		"--", "sh", "-c", "cat > " + shellQuoteForTest(forwardPath),
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("relay exit=%d err=%s", exit, errOut.String())
+	}
+	if strings.Contains(errOut.String(), "SECRET_TOKEN_SHOULD_NOT_APPEAR") {
+		t.Fatalf("unsafe marker leaked: %s", errOut.String())
+	}
+	if _, err := os.Stat(tracePath); !os.IsNotExist(err) {
+		t.Fatalf("trace should not exist: %v", err)
+	}
+	if _, err := os.Stat(forwardPath); !os.IsNotExist(err) {
+		t.Fatalf("forward should not run: %v", err)
+	}
+}
+
+func TestInteractionSummarizeAndEnvelopeSummarize(t *testing.T) {
+	dir := t.TempDir()
+	tracePath := filepath.Join(dir, "trace.json")
+	assignment := interactionEventForCLITest("ix-0", 0)
+	assignment.EventType = "task_assignment"
+	assignment.FrictionClass = "none"
+	event := interactionEventForCLITest("ix-1", 1)
+	trace := interaction.NewTrace("task-1", interaction.SourcePreclassifiedTranscript, []interaction.Event{assignment, event}, time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC))
+	if err := interaction.WriteTrace(tracePath, trace); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"interaction", "summarize", "--trace", tracePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("summarize exit=%d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(out.String(), `"correction_after_assignment_count": 1`) {
+		t.Fatalf("summary = %s", out.String())
+	}
+	envelopePath := filepath.Join(dir, "envelope.json")
+	envelope := interaction.Envelope{
+		SchemaVersion:   interaction.SchemaVersion,
+		TaskID:          "task-1",
+		EnvelopeID:      "env-1",
+		RunRefs:         []string{"recorder:run-1"},
+		SourceRefs:      []string{},
+		TaskRefs:        []string{},
+		PromiseRefs:     []string{"evidence:promise-1"},
+		InteractionRefs: []string{"sdp://interaction/task-1/ix-1"},
+		OperationRefs:   []string{"recorder:run-1/event:1"},
+		LLMRefs:         []string{"recorder:run-1/event:2"},
+		ToolRefs:        []string{},
+		MutationRefs:    []string{"evidence:mutation-1"},
+		StageRefs:       []string{"evidence:stage-1"},
+		FrictionRefs:    []string{"sdp://interaction/task-1/ix-1"},
+		AssessmentState: "partial",
+		NotAssessed:     []string{"gateway linkage absent"},
+		CreatedAt:       "2026-05-09T10:00:00Z",
+		UpdatedAt:       "2026-05-09T10:00:00Z",
+	}
+	writeJSONFileForTest(t, envelopePath, envelope)
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"envelope", "summarize", "--envelope", envelopePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("envelope summarize exit=%d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(out.String(), `"llm_ref_count": 1`) || !strings.Contains(out.String(), `"run_ref_count": 1`) {
+		t.Fatalf("envelope summary = %s", out.String())
+	}
+}
+
+func interactionEventForCLITest(id string, sequence int) interaction.Event {
+	body := []byte("Please fix stale evidence.\n")
+	sum := sha256.Sum256(body)
+	return interaction.Event{
+		SchemaVersion:          interaction.SchemaVersion,
+		InteractionID:          id,
+		TaskID:                 "task-1",
+		SourceID:               "transcript-1",
+		SourceSequence:         sequence,
+		EventType:              "evidence_correction",
+		FrictionClass:          "evidence",
+		Actor:                  interaction.Actor{ID: "human", ActorType: "human_user"},
+		Target:                 "agent",
+		Source:                 interaction.Source{SourceType: interaction.SourcePreclassifiedTranscript, SourceID: "transcript-1", SourceRef: "export-1"},
+		ContentRef:             "external:export-1",
+		ContentDigest:          hex.EncodeToString(sum[:]),
+		DigestAlgorithm:        interaction.DigestAlgorithmSHA256,
+		Retention:              interaction.RetentionExternalArtifactRef,
+		State:                  interaction.StateUnreferenced,
+		ObservedBeforeDelivery: false,
+		ChannelExclusivity:     interaction.StateNotAssessed,
+		CompletenessState:      interaction.CompletenessPartial,
+		Redaction:              interaction.Redaction{PolicyRef: interaction.DefaultRedactionPolicyRef},
+		ObservedAt:             "2026-05-09T10:00:00Z",
+		CreatedAt:              "2026-05-09T10:00:00Z",
+	}
+}
+
+func shellQuoteForTest(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }
 
 func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {

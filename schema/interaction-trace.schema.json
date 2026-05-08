@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/interaction-trace.schema.json",
+  "title": "SDP Trace Interaction Trace",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "trace_id",
+    "task_id",
+    "source_type",
+    "completeness_state",
+    "events",
+    "assessment_state",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "trace_id": { "$ref": "#/$defs/safeId" },
+    "task_id": { "$ref": "#/$defs/safeId" },
+    "source_type": { "enum": ["observed-control-channel", "preclassified-transcript-import"] },
+    "completeness_state": { "enum": ["complete", "partial", "not_assessed", "cannot_verify"] },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://schemas.sdp.dev/trace/interaction-event.schema.json" }
+    },
+    "assessment_state": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/assessmentState" },
+    "not_assessed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cannot_verify": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "created_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
+    "updated_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/promise-record.schema.json",
+  "title": "SDP Trace Promise Record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "promise_id",
+    "task_id",
+    "actor_type",
+    "actor_id",
+    "promise_type",
+    "assessment_state",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "promise_id": { "$ref": "#/$defs/safeId" },
+    "task_id": { "$ref": "#/$defs/safeId" },
+    "operation_id": { "$ref": "#/$defs/safeId" },
+    "actor_type": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/actorType" },
+    "actor_id": { "$ref": "#/$defs/safeId" },
+    "promise_type": {
+      "enum": [
+        "plan_commitment",
+        "scope_commitment",
+        "evidence_commitment",
+        "completion_claim",
+        "verification_claim",
+        "handoff_claim",
+        "other"
+      ]
+    },
+    "claim_ref": { "$ref": "#/$defs/ref" },
+    "expected_evidence_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" }
+    },
+    "actual_evidence_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" }
+    },
+    "assessment_state": { "enum": ["observed", "referenced", "not_assessed", "cannot_verify"] },
+    "created_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^(evidence:[A-Za-z0-9_./:-]+|sdp://interaction/[A-Za-z0-9_.:-]+/[A-Za-z0-9_.:-]+|external:[A-Za-z0-9_.:-]+|recorder:[A-Za-z0-9_.:-]+(/event:[0-9]+)?)$"
+    }
+  }
+}
