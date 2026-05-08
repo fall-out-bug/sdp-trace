@@ -94,5 +94,12 @@ Implementation review and PR-level review remain open.
 | I24-CC-04 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added independent SHA-256 digests for `ci-witness.json` and `ci-witness-no-oidc.json`. |
 | I24-CC-05 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added artifact download verification statement using `gh run download 25548285336`. |
 
-Focused re-review is required for the fixed documentation before implementation
-review can be counted complete. PR-level review remains open.
+## Focused Implementation Re-Review
+
+| plane | reviewer/source | result | remaining critical/major findings |
+| --- | --- | --- | --- |
+| trace/evidence fixed findings | MiniMax-M2.7 | `APPROVE` | none |
+| code/correctness fixed findings | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
+
+Implementation review has no remaining critical or major findings. PR-level
+review remains open.
