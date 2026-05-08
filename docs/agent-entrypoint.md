@@ -77,6 +77,8 @@ Current command surface:
 - `go run ./cmd/sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>`
 - `go run ./cmd/sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>`
 - `go run ./cmd/sdp-trace doctor [--contract <file>]`
+- `go run ./cmd/sdp-trace doctor --profile github-actions-git-hooks-v1 [--out <file>]`
+- `go run ./cmd/sdp-trace install repo-observer --profile github-actions-git-hooks-v1 [--repository-id <safe-id>] [--write] [--force] [--out <file>]`
 - `go run ./cmd/sdp-trace verify <run-dir>`
 - `go run ./cmd/sdp-trace explain <run-dir>`
 - `go run ./cmd/sdp-trace query --query <missing-evidence|capture-depth> <run-dir>`
@@ -108,6 +110,8 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `dry-run` | Show what would run without writing run artifacts. | `go run ./cmd/sdp-trace dry-run -- /bin/echo ok` | Preview only; cannot support proof closure. |
 | `preview` | Preview command/contract implications before execution. | `go run ./cmd/sdp-trace preview -- /bin/echo ok` | Read-only preview; any unavailable profile remains `not_assessed`. |
 | `doctor` | Inspect local environment and contract prerequisites. | `go run ./cmd/sdp-trace doctor` | Emits structural readiness; offline or missing prerequisites can produce `cannot_verify`. |
+| `doctor --profile github-actions-git-hooks-v1` | Inspect repository observer installation and proof state without relying on agent prompts. | `go run ./cmd/sdp-trace doctor --profile github-actions-git-hooks-v1 --out repo-observer-status.json` | Emits machine JSON plus a human table. Local hooks/config are `local_structural`; CI artifact proof remains `not_assessed` until uploaded artifacts are observed. |
+| `install repo-observer` | Install portable repo observer files for local git hooks and GitHub Actions artifact upload. | `go run ./cmd/sdp-trace install repo-observer --profile github-actions-git-hooks-v1 --write --out repo-observer-status.json` | Dry-run by default. With `--write`, writes only the documented allowlist and refuses existing hooks-path conflicts unless `--force` is used after review. |
 | `verify` | Verify one recorded run directory. | `go run ./cmd/sdp-trace verify .sdp-trace-runs/run-1` | Supports local structural assertions only; use JSON/state output for exact `observed`, `fail`, `not_assessed`, or `cannot_verify` interpretation. |
 | `explain` | Render human-readable explanation for one run. | `go run ./cmd/sdp-trace explain .sdp-trace-runs/run-1` | Explanation is derived from run artifacts; it does not upgrade trust scope. |
 | `query` | Query missing evidence or capture depth for a run. | `go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/run-1` | Highlights gaps; missing rows are not passes. |
@@ -140,6 +144,8 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `dry-run` | Показывает запуск без записи run artifacts. | `go run ./cmd/sdp-trace dry-run -- /bin/echo ok` | Только preview; proof closure не поддерживает. |
 | `preview` | Показывает command/contract implications до выполнения. | `go run ./cmd/sdp-trace preview -- /bin/echo ok` | Read-only preview; недоступный профиль остается `not_assessed`. |
 | `doctor` | Проверяет локальную среду и prerequisites. | `go run ./cmd/sdp-trace doctor` | Structural readiness; offline или missing prerequisites могут дать `cannot_verify`. |
+| `doctor --profile github-actions-git-hooks-v1` | Проверяет установку repo observer и proof state без опоры на промпты агентов. | `go run ./cmd/sdp-trace doctor --profile github-actions-git-hooks-v1 --out repo-observer-status.json` | Пишет machine JSON и human table. Local hooks/config остаются `local_structural`; CI artifact proof остается `not_assessed`, пока uploaded artifacts не наблюдены. |
+| `install repo-observer` | Устанавливает portable repo observer files для git hooks и GitHub Actions artifact upload. | `go run ./cmd/sdp-trace install repo-observer --profile github-actions-git-hooks-v1 --write --out repo-observer-status.json` | По умолчанию dry-run. С `--write` пишет только documented allowlist и отказывается от hooks-path conflicts без reviewed `--force`. |
 | `verify` | Проверяет один recorded run directory. | `go run ./cmd/sdp-trace verify .sdp-trace-runs/run-1` | Поддерживает local structural assertions; для точных states используйте JSON/state output. |
 | `explain` | Объясняет один run. | `go run ./cmd/sdp-trace explain .sdp-trace-runs/run-1` | Объяснение не повышает trust scope. |
 | `query` | Ищет missing evidence или capture depth. | `go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/run-1` | Показывает gaps; missing rows не являются pass. |

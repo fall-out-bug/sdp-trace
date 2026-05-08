@@ -17,6 +17,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
+	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
@@ -311,14 +312,121 @@ func TestDoctorReportsUnsupportedExpectedEvidenceCannotVerify(t *testing.T) {
 	}
 }
 
-func TestUsageMentionsDoctorAndPreview(t *testing.T) {
+func TestInstallRepoObserverDryRunDoesNotRequirePromptCooperation(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init")
+	chdir(t, repo)
+
+	outPath := filepath.Join(t.TempDir(), "repo-observer-status.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"install", "repo-observer",
+		"--profile", repoobserver.ProfileGithubActionsGitHooksV1,
+		"--repository-id", "demo_repo",
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("install dry-run exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "agent_prompt") || !strings.Contains(out.String(), "agent_reported") {
+		t.Fatalf("human table must expose agent prompt as non-proof surface: %s", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(repo, ".githooks", "pre-commit")); !os.IsNotExist(err) {
+		t.Fatalf("dry-run wrote hook file or stat failed: %v", err)
+	}
+	var status repoobserver.Status
+	if err := readJSONFile(outPath, &status); err != nil {
+		t.Fatalf("status json: %v", err)
+	}
+	if status.SchemaVersion != repoobserver.SchemaVersion {
+		t.Fatalf("schema version = %s", status.SchemaVersion)
+	}
+	if status.RepositoryID != "demo_repo" {
+		t.Fatalf("repository id = %s", status.RepositoryID)
+	}
+	if status.RepositoryRootRef != "current_repository" {
+		t.Fatalf("repository root ref leaked path: %s", status.RepositoryRootRef)
+	}
+	if surfaceByID(t, status, repoobserver.SurfaceAgentPrompt).ReasonCode != repoobserver.ReasonAgentReportedNotProof {
+		t.Fatalf("agent prompt surface did not mark prompt cooperation as non-proof")
+	}
+}
+
+func TestInstallRepoObserverWriteAndDoctorProfile(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init")
+	chdir(t, repo)
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"install", "repo-observer",
+		"--profile", repoobserver.ProfileGithubActionsGitHooksV1,
+		"--repository-id", "demo_repo",
+		"--write",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("install write exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if got := strings.TrimSpace(gitOutput(t, repo, "config", "--get", "core.hooksPath")); got != ".githooks" {
+		t.Fatalf("core.hooksPath = %s", got)
+	}
+	for _, rel := range []string{
+		".sdp-trace/config.json",
+		".githooks/pre-commit",
+		".githooks/post-commit",
+		".githooks/pre-push",
+		".github/workflows/sdp-trace-observe.yml",
+	} {
+		if _, err := os.Stat(filepath.Join(repo, rel)); err != nil {
+			t.Fatalf("missing installed file %s: %v", rel, err)
+		}
+	}
+	hookData, err := os.ReadFile(filepath.Join(repo, ".githooks", "pre-commit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(hookData), "printenv") || strings.Contains(string(hookData), "env >") {
+		t.Fatalf("hook must not persist raw environment: %s", string(hookData))
+	}
+
+	out.Reset()
+	errOut.Reset()
+	outPath := filepath.Join(t.TempDir(), "doctor.json")
+	exit = run([]string{
+		"doctor",
+		"--profile", repoobserver.ProfileGithubActionsGitHooksV1,
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("doctor profile exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	var status repoobserver.Status
+	if err := readJSONFile(outPath, &status); err != nil {
+		t.Fatalf("doctor json: %v", err)
+	}
+	if status.InstallState != repoobserver.StatePass {
+		t.Fatalf("install state = %s", status.InstallState)
+	}
+	if status.ProofState != repoobserver.StateNotAssessed {
+		t.Fatalf("proof state = %s", status.ProofState)
+	}
+	if surfaceByID(t, status, repoobserver.SurfaceCIArtifactUpload).TrustScope != repoobserver.ScopeCIUploaded {
+		t.Fatalf("ci artifact upload scope not represented")
+	}
+}
+
+func TestUsageMentionsDoctorPreviewAndRepoObserverInstall(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	exit := run([]string{"help"}, &out, &errOut)
 	if exit != 0 {
 		t.Fatalf("help exit: %d err=%s", exit, errOut.String())
 	}
-	if !strings.Contains(out.String(), "sdp-trace preview") || !strings.Contains(out.String(), "sdp-trace doctor") {
+	if !strings.Contains(out.String(), "sdp-trace preview") ||
+		!strings.Contains(out.String(), "sdp-trace doctor --profile github-actions-git-hooks-v1") ||
+		!strings.Contains(out.String(), "sdp-trace install repo-observer") {
 		t.Fatalf("usage missing new commands: %s", out.String())
 	}
 }
@@ -1690,6 +1798,17 @@ func writeFile(t *testing.T, path string, value string) {
 	if err := os.WriteFile(path, []byte(value), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
+}
+
+func surfaceByID(t *testing.T, status repoobserver.Status, id string) repoobserver.Surface {
+	t.Helper()
+	for _, surface := range status.Surfaces {
+		if surface.SurfaceID == id {
+			return surface
+		}
+	}
+	t.Fatalf("surface %s not found in %+v", id, status.Surfaces)
+	return repoobserver.Surface{}
 }
 
 func chdir(t *testing.T, dir string) {
