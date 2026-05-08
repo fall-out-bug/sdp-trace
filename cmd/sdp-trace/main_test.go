@@ -16,6 +16,7 @@ import (
 
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
+	"github.com/fall_out_bug/sdp-trace/internal/feedback"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
@@ -351,6 +352,9 @@ func TestInstallRepoObserverDryRunDoesNotRequirePromptCooperation(t *testing.T) 
 	if surfaceByID(t, status, repoobserver.SurfaceAgentPrompt).ReasonCode != repoobserver.ReasonAgentReportedNotProof {
 		t.Fatalf("agent prompt surface did not mark prompt cooperation as non-proof")
 	}
+	if surfaceByID(t, status, repoobserver.SurfaceFeedbackEvents).ReasonCode != repoobserver.ReasonFeedbackEventsNotObserved {
+		t.Fatalf("feedback surface did not mark absent feedback as not observed")
+	}
 }
 
 func TestInstallRepoObserverWriteAndDoctorProfile(t *testing.T) {
@@ -429,8 +433,63 @@ func TestUsageMentionsDoctorPreviewAndRepoObserverInstall(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "sdp-trace preview") ||
 		!strings.Contains(out.String(), "sdp-trace doctor --profile github-actions-git-hooks-v1") ||
-		!strings.Contains(out.String(), "sdp-trace install repo-observer") {
+		!strings.Contains(out.String(), "sdp-trace install repo-observer") ||
+		!strings.Contains(out.String(), "sdp-trace observe feedback") {
 		t.Fatalf("usage missing new commands: %s", out.String())
+	}
+}
+
+func TestObserveFeedbackWritesEventAndDoctorSeesSurface(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init")
+	chdir(t, repo)
+	messagePath := filepath.Join(repo, "feedback.md")
+	writeFile(t, messagePath, "Do not edit the GSD plan; record feedback separately.\n")
+	outPath := filepath.Join(repo, ".sdp-trace", "feedback", "event.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"observe",
+		"feedback",
+		"--from", "human",
+		"--to", "gsd",
+		"--source-ref", "codex-thread",
+		"--summary", "Boundary correction for GSD plan observation.",
+		"--message-file", messagePath,
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("observe feedback exit: %d err=%s", exit, errOut.String())
+	}
+	var event struct {
+		SchemaVersion string `json:"schema_version"`
+		Kind          string `json:"kind"`
+		ProofState    string `json:"proof_state"`
+		Message       struct {
+			Retained bool   `json:"retained"`
+			Body     string `json:"body"`
+		} `json:"message"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &event); err != nil {
+		t.Fatalf("event json: %v", err)
+	}
+	if event.SchemaVersion != feedback.SchemaVersion || event.Kind != "corrective_feedback" || event.ProofState != repoobserver.StateNotAssessed {
+		t.Fatalf("unexpected event: %+v", event)
+	}
+	if !event.Message.Retained || !strings.Contains(event.Message.Body, "record feedback separately") {
+		t.Fatalf("message not retained: %+v", event.Message)
+	}
+	status, err := repoobserver.Doctor(repoobserver.Options{
+		RepoRoot:     repo,
+		Profile:      repoobserver.ProfileGithubActionsGitHooksV1,
+		RepositoryID: "demo_repo",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	surface := surfaceByID(t, status, repoobserver.SurfaceFeedbackEvents)
+	if surface.InstallState != repoobserver.StateNotAssessed || surface.ProofState != repoobserver.StateNotAssessed || surface.ReasonCode != repoobserver.ReasonFeedbackEventsObserved {
+		t.Fatalf("feedback surface = %+v", surface)
 	}
 }
 

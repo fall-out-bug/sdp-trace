@@ -13,6 +13,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/fall_out_bug/sdp-trace/internal/feedback"
 )
 
 const (
@@ -44,6 +46,8 @@ const (
 	ReasonCIArtifactUploadPresent      = "ci_artifact_upload_present"
 	ReasonCIArtifactBundleNotObserved  = "ci_artifact_bundle_not_observed"
 	ReasonCIArtifactBundleObserved     = "ci_artifact_bundle_observed"
+	ReasonFeedbackEventsObserved       = "feedback_events_observed"
+	ReasonFeedbackEventsNotObserved    = "feedback_events_not_observed"
 	ReasonAgentReportedNotProof        = "agent_reported_not_proof"
 	ReasonOutsideProfileScope          = "outside_profile_scope"
 	ReasonUnsafeOutputRefused          = "unsafe_output_refused"
@@ -57,6 +61,7 @@ const (
 	SurfaceCIArtifactBundleObservation = "github_actions_artifact_bundle"
 	SurfacePRCheckBinding              = "pr_check_binding"
 	SurfaceLocalWrappedCommands        = "local_wrapped_commands"
+	SurfaceFeedbackEvents              = "feedback_events"
 	SurfaceAgentPrompt                 = "agent_prompt"
 	SurfaceRepositoryIdentity          = "repository_identity"
 	SurfaceConfig                      = "sdp_trace_config"
@@ -293,6 +298,7 @@ func buildStatus(opts Options, installPreview bool) (Status, error) {
 		ciArtifactBundleSurface(opts),
 		prCheckBindingSurface(),
 		localWrappedCommandsSurface(),
+		feedbackEventsSurface(opts),
 		agentPromptSurface(),
 	}
 	if installPreview {
@@ -427,6 +433,37 @@ func prCheckBindingSurface() Surface {
 
 func localWrappedCommandsSurface() Surface {
 	return surface(SurfaceLocalWrappedCommands, StateNotAssessed, StateNotAssessed, ScopeNotApplicable, "sdp_trace_runs:not_inspected", ReasonOutsideProfileScope, "", "outside selected profile; no action required")
+}
+
+func feedbackEventsSurface(opts Options) Surface {
+	rel := filepath.Join(".sdp-trace", "feedback")
+	root := filepath.Join(opts.RepoRoot, rel)
+	entries, err := os.ReadDir(root)
+	if err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+				continue
+			}
+			eventRel := filepath.Join(rel, entry.Name())
+			data, readErr := os.ReadFile(filepath.Join(root, entry.Name()))
+			if readErr != nil {
+				return surface(SurfaceFeedbackEvents, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+eventRel, ReasonUnsafeOutputRefused, eventRel, "fix unreadable feedback event file")
+			}
+			var event feedback.Event
+			if err := json.Unmarshal(data, &event); err != nil {
+				return surface(SurfaceFeedbackEvents, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+eventRel, ReasonUnsafeOutputRefused, eventRel, "fix malformed feedback event JSON")
+			}
+			if err := feedback.ValidateEvent(event); err != nil {
+				return surface(SurfaceFeedbackEvents, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+eventRel, ReasonUnsafeOutputRefused, eventRel, "fix invalid feedback event shape")
+			}
+			return surface(SurfaceFeedbackEvents, StateNotAssessed, StateNotAssessed, ScopeLocalStructural, "filesystem:"+eventRel, ReasonFeedbackEventsObserved, eventRel, "bind feedback event to CI/PR evidence before treating it as external proof")
+		}
+		return surface(SurfaceFeedbackEvents, StateNotAssessed, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonFeedbackEventsNotObserved, rel, "record corrective feedback with sdp-trace observe feedback")
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return surface(SurfaceFeedbackEvents, StateNotAssessed, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonFeedbackEventsNotObserved, rel, "record corrective feedback with sdp-trace observe feedback")
+	}
+	return surface(SurfaceFeedbackEvents, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+rel, ReasonUnsafeOutputRefused, rel, "fix unreadable feedback event path")
 }
 
 func surface(id, install, proof, scope, source, reason, ref, action string) Surface {

@@ -122,6 +122,16 @@
       "next_action": "outside selected profile; no action required"
     },
     {
+      "surface_id": "feedback_events",
+      "install_state": "not_assessed",
+      "proof_state": "not_assessed",
+      "trust_scope": "local_structural",
+      "evidence_source": "filesystem:.sdp-trace/feedback",
+      "observed_ref": ".sdp-trace/feedback",
+      "reason_code": "feedback_events_not_observed",
+      "next_action": "record corrective feedback with sdp-trace observe feedback"
+    },
+    {
       "surface_id": "agent_prompt",
       "install_state": "not_assessed",
       "proof_state": "not_assessed",
@@ -193,6 +203,11 @@
       "detail": "outside selected profile; no action required"
     },
     {
+      "surface_id": "feedback_events",
+      "reason_code": "feedback_events_not_observed",
+      "detail": "record corrective feedback with sdp-trace observe feedback"
+    },
+    {
       "surface_id": "agent_prompt",
       "reason_code": "agent_reported_not_proof",
       "detail": "agent prompt cooperation is not repository setup proof"
@@ -202,6 +217,11 @@
     {
       "surface_id": "agent_prompt",
       "action_text": "do not rely on prompt instructions as setup proof",
+      "blocking": false
+    },
+    {
+      "surface_id": "feedback_events",
+      "action_text": "record corrective feedback with sdp-trace observe feedback",
       "blocking": false
     },
     {

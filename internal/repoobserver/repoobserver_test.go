@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fall_out_bug/sdp-trace/internal/feedback"
 )
 
 func TestDoctorSeparatesInstallStateFromProofState(t *testing.T) {
@@ -159,6 +161,59 @@ func TestInvalidRepositoryIDRejected(t *testing.T) {
 	}
 }
 
+func TestDoctorObservesOnlyValidFeedbackEvents(t *testing.T) {
+	repo := initRepo(t)
+	messagePath := filepath.Join(repo, "feedback.md")
+	writeFileForTest(t, messagePath, "Do not edit the GSD plan; record feedback separately.\n")
+	event, err := feedback.Record(feedback.Options{
+		Kind:        "corrective_feedback",
+		From:        "human",
+		To:          "gsd",
+		SourceRef:   "codex-thread",
+		Summary:     "Boundary correction for GSD plan observation.",
+		MessageFile: messagePath,
+		Now:         time.Date(2026, 5, 8, 20, 30, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := feedback.WriteJSON(filepath.Join(repo, ".sdp-trace", "feedback", "event.json"), event); err != nil {
+		t.Fatal(err)
+	}
+	status, err := Doctor(Options{
+		RepoRoot:     repo,
+		Profile:      ProfileGithubActionsGitHooksV1,
+		RepositoryID: "demo_repo",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	surface := surfaceByID(t, status, SurfaceFeedbackEvents)
+	if surface.InstallState != StateNotAssessed || surface.ProofState != StateNotAssessed || surface.ReasonCode != ReasonFeedbackEventsObserved {
+		t.Fatalf("feedback surface = %+v", surface)
+	}
+	if surface.ObservedRef != ".sdp-trace/feedback/event.json" {
+		t.Fatalf("feedback observed ref = %s", surface.ObservedRef)
+	}
+}
+
+func TestDoctorRejectsMalformedFeedbackEventSurface(t *testing.T) {
+	repo := initRepo(t)
+	writeFileForTest(t, filepath.Join(repo, ".sdp-trace", "feedback", "event.json"), "{}\n")
+	status, err := Doctor(Options{
+		RepoRoot:     repo,
+		Profile:      ProfileGithubActionsGitHooksV1,
+		RepositoryID: "demo_repo",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	surface := surfaceByID(t, status, SurfaceFeedbackEvents)
+	if surface.InstallState != StateCannotVerify || surface.ProofState != StateCannotVerify || surface.ReasonCode != ReasonUnsafeOutputRefused {
+		t.Fatalf("malformed feedback surface = %+v", surface)
+	}
+}
+
 func TestBlock28ExampleStatusesUseClosedReasonCodes(t *testing.T) {
 	allowed := map[string]bool{
 		ReasonHooksPathAbsent:             true,
@@ -175,6 +230,8 @@ func TestBlock28ExampleStatusesUseClosedReasonCodes(t *testing.T) {
 		ReasonCIArtifactUploadPresent:     true,
 		ReasonCIArtifactBundleNotObserved: true,
 		ReasonCIArtifactBundleObserved:    true,
+		ReasonFeedbackEventsObserved:      true,
+		ReasonFeedbackEventsNotObserved:   true,
 		ReasonAgentReportedNotProof:       true,
 		ReasonOutsideProfileScope:         true,
 		ReasonUnsafeOutputRefused:         true,
@@ -189,7 +246,7 @@ func TestBlock28ExampleStatusesUseClosedReasonCodes(t *testing.T) {
 		if status.SchemaVersion != SchemaVersion {
 			t.Fatalf("%s schema_version = %s", rel, status.SchemaVersion)
 		}
-		if len(status.Surfaces) != 13 {
+		if len(status.Surfaces) != 14 {
 			t.Fatalf("%s surfaces = %d", rel, len(status.Surfaces))
 		}
 		for _, surface := range status.Surfaces {
