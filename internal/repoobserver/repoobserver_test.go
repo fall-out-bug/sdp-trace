@@ -85,6 +85,30 @@ func TestInstallWritesIdempotentObserverFiles(t *testing.T) {
 	}
 }
 
+func TestDoctorUsesInstalledConfigRepositoryID(t *testing.T) {
+	repo := initRepo(t)
+	if _, err := Install(Options{
+		RepoRoot:     repo,
+		Profile:      ProfileGithubActionsGitHooksV1,
+		RepositoryID: "demo_repo",
+		Write:        true,
+		Now:          time.Date(2026, 5, 8, 12, 0, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	status, err := Doctor(Options{
+		RepoRoot: repo,
+		Profile:  ProfileGithubActionsGitHooksV1,
+		Now:      time.Date(2026, 5, 8, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.RepositoryID != "demo_repo" {
+		t.Fatalf("repository id = %s", status.RepositoryID)
+	}
+}
+
 func TestInstallForceProducesSafeDiffSummary(t *testing.T) {
 	repo := initRepo(t)
 	writeFileForTest(t, filepath.Join(repo, ".githooks", "pre-commit"), "#!/usr/bin/env bash\nprintf old\n")
