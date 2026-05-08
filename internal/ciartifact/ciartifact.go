@@ -181,7 +181,7 @@ func Evaluate(manifest Manifest) ObservationResult {
 	result := ObservationResult{
 		SchemaVersion:            SchemaVersion,
 		SelectedProfile:          ProfileCIArtifactObservation,
-		AuthorityScope:           defaultString(manifest.AuthorityScope, AuthorityScopeObservation),
+		AuthorityScope:           safeAuthorityScope(manifest.AuthorityScope),
 		ArtifactObservationState: state,
 		SelectedSource:           source,
 		SelectedRun:              run,
@@ -207,9 +207,7 @@ func requirements(input []FamilyRequirement) map[string]FamilyRequirement {
 			continue
 		}
 		req.Family = family
-		if strings.TrimSpace(req.RequiredProducerScope) == "" {
-			req.RequiredProducerScope = ProducerCIUploaded
-		}
+		req.RequiredProducerScope = safeRequiredProducerScope(req.RequiredProducerScope)
 		reqs[family] = req
 	}
 	return reqs
@@ -371,6 +369,7 @@ func evaluateIndex(input ArtifactIndexInput) ArtifactIndexResult {
 		result.Result = StateCannotVerify
 		result.ReasonCode = "artifact_index_unverifiable"
 		result.Reason = "artifact index could not be verified"
+	case IndexNotAssessed:
 	default:
 		result.State = IndexUnverifiable
 		result.Result = StateCannotVerify
@@ -393,6 +392,7 @@ func evaluateSafety(input OutputSafetyInput) OutputSafetyResult {
 	case StateCannotVerify:
 		out.ReasonCode = "output_safety_cannot_verify"
 		out.Reason = "observation output safety could not be verified"
+	case StateNotAssessed:
 	default:
 		out.State = StateCannotVerify
 		out.ReasonCode = "output_safety_cannot_verify"
@@ -582,6 +582,28 @@ func safeProducerScope(value string) string {
 	}
 }
 
+func safeRequiredProducerScope(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return ProducerCIUploaded
+	}
+	scope := safeProducerScope(value)
+	if scope == ProducerNotAssessed && value != ProducerNotAssessed {
+		return ProducerCIUploaded
+	}
+	return scope
+}
+
+func safeAuthorityScope(value string) string {
+	if safeToken(value) {
+		return defaultString(value, AuthorityScopeObservation)
+	}
+	return AuthorityScopeObservation
+}
+
+func safeToken(value string) bool {
+	return len(value) > 0 && len(value) <= 128 && safeIdentityToken(value, "_.:-")
+}
+
 func safeAccessState(value string) string {
 	switch value {
 	case AccessPresent, AccessAbsent, AccessPartial, AccessExpired, AccessInaccessible, AccessMalformed, AccessUnsafe, AccessNotAssessed, AccessCannotVerify:
@@ -735,10 +757,10 @@ func safeClasses(input []string) []string {
 }
 
 func defaultSafetyRuleset(input SafetyRuleset) SafetyRuleset {
-	if input.ID == "" {
+	if !safeToken(input.ID) {
 		input.ID = SafetyRulesetDefault
 	}
-	if input.SHA256 == "" {
+	if !safeHex(input.SHA256, 64) {
 		sum := sha256.Sum256([]byte(defaultSafetyRulesetContent()))
 		input.SHA256 = hex.EncodeToString(sum[:])
 	}

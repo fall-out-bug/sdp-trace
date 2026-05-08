@@ -111,6 +111,103 @@ func TestEvaluateUnknownStatesBecomeCannotVerify(t *testing.T) {
 	}
 }
 
+func TestEvaluateManifestMutationRegressions(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate        func(*Manifest)
+		wantState     string
+		wantReason    string
+		wantSourceRun string
+		wantProducer  string
+	}{
+		"checked-in-producer-does-not-poison-source-run-binding": {
+			mutate: func(m *Manifest) {
+				m.RequiredFamilies = []FamilyRequirement{{Family: "provenance", RequiredProducerScope: ProducerCIUploaded}}
+				m.ArtifactFamilies = []FamilyInput{{Family: "provenance", ProducerScope: ProducerCheckedIn, ArtifactAccessState: AccessPresent, BindingState: BindingMatched}}
+			},
+			wantState:     StateCannotVerify,
+			wantReason:    "checked_in_claim_contradicts_ci_artifacts",
+			wantSourceRun: BindingMatched,
+			wantProducer:  BindingMismatch,
+		},
+		"unknown-access-state-is-cannot-verify-not-pass": {
+			mutate: func(m *Manifest) {
+				m.ArtifactFamilies[0].ArtifactAccessState = "new-access-state"
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "artifact_access_cannot_verify",
+		},
+		"unsafe-required-producer-is-normalized-before-output": {
+			mutate: func(m *Manifest) {
+				m.RequiredFamilies[0].RequiredProducerScope = "Bearer raw-secret-value"
+			},
+			wantState:     StatePass,
+			wantSourceRun: BindingMatched,
+			wantProducer:  BindingMatched,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			manifest := validManifest()
+			tc.mutate(&manifest)
+			result := Evaluate(manifest)
+			if result.ArtifactObservationState != tc.wantState {
+				t.Fatalf("state = %s want %s reasons=%v", result.ArtifactObservationState, tc.wantState, result.Reasons)
+			}
+			if tc.wantReason != "" && !hasReasonCode(result, tc.wantReason) {
+				t.Fatalf("missing reason code %s in %+v", tc.wantReason, result)
+			}
+			if tc.wantSourceRun != "" && result.Bindings.SourceBindingState != tc.wantSourceRun {
+				t.Fatalf("source binding = %s want %s", result.Bindings.SourceBindingState, tc.wantSourceRun)
+			}
+			if tc.wantProducer != "" && result.Bindings.ProducerBindingState != tc.wantProducer {
+				t.Fatalf("producer binding = %s want %s", result.Bindings.ProducerBindingState, tc.wantProducer)
+			}
+			assertNoRawMarker(t, result)
+		})
+	}
+}
+
+func TestEvaluateDefaultsIndexAndSafetyToNotAssessed(t *testing.T) {
+	manifest := validManifest()
+	manifest.ArtifactIndex = ArtifactIndexInput{}
+	manifest.OutputSafety = OutputSafetyInput{}
+	result := Evaluate(manifest)
+	if result.ArtifactObservationState != StatePass {
+		t.Fatalf("state = %s reasons=%v", result.ArtifactObservationState, result.Reasons)
+	}
+	if result.ArtifactIndex.State != IndexNotAssessed || result.ArtifactIndex.Result != StateNotAssessed {
+		t.Fatalf("artifact index = %+v", result.ArtifactIndex)
+	}
+	if result.OutputSafety.State != StateNotAssessed {
+		t.Fatalf("output safety = %+v", result.OutputSafety)
+	}
+}
+
+func TestEvaluateSafeTokenLengthMatchesSchema(t *testing.T) {
+	longSafeToken := strings.Repeat("a", 129)
+	manifest := validManifest()
+	manifest.AuthorityScope = longSafeToken
+	manifest.SafetyRuleset.ID = longSafeToken
+	result := Evaluate(manifest)
+	if result.AuthorityScope != AuthorityScopeObservation {
+		t.Fatalf("authority scope = %q", result.AuthorityScope)
+	}
+	if result.SafetyRuleset.ID != SafetyRulesetDefault {
+		t.Fatalf("safety ruleset id = %q", result.SafetyRuleset.ID)
+	}
+	assertNoRawMarker(t, result)
+
+	manifest = validManifest()
+	manifest.AuthorityScope = ""
+	manifest.SafetyRuleset.ID = ""
+	result = Evaluate(manifest)
+	if result.AuthorityScope != AuthorityScopeObservation {
+		t.Fatalf("empty authority scope = %q", result.AuthorityScope)
+	}
+	if result.SafetyRuleset.ID != SafetyRulesetDefault {
+		t.Fatalf("empty safety ruleset id = %q", result.SafetyRuleset.ID)
+	}
+}
+
 func TestFixtureMatrixScenarios(t *testing.T) {
 	matrixPath := filepath.Join("..", "..", "examples", "block26-ci-artifact-observation", "fixture-matrix.json")
 	data, err := os.ReadFile(matrixPath)
@@ -168,6 +265,10 @@ func TestOutputSafetyDoesNotEchoForbiddenMarkers(t *testing.T) {
 
 func TestEvaluateSanitizesUnsafeIdentityAndEnums(t *testing.T) {
 	manifest := validManifest()
+	manifest.AuthorityScope = "Bearer raw-secret-value"
+	manifest.SafetyRuleset.ID = "access_token=raw-secret-value"
+	manifest.SafetyRuleset.SHA256 = "raw-secret-value"
+	manifest.RequiredFamilies[0].RequiredProducerScope = "Bearer raw-secret-value"
 	manifest.SelectedSource.Repository = "example/repo?token=raw-secret-value"
 	manifest.SelectedSource.Ref = "refs/heads/main raw-secret-value"
 	manifest.SelectedRun.RunID = "run-1?access_token=raw-secret-value"
@@ -184,8 +285,17 @@ func TestEvaluateSanitizesUnsafeIdentityAndEnums(t *testing.T) {
 	if result.SelectedSource.Repository != "" || result.SelectedSource.Ref != "" || result.SelectedRun.RunID != "" {
 		t.Fatalf("unsafe identity copied into result: %+v %+v", result.SelectedSource, result.SelectedRun)
 	}
+	if result.AuthorityScope != AuthorityScopeObservation {
+		t.Fatalf("unsafe authority scope copied into result: %q", result.AuthorityScope)
+	}
+	if result.SafetyRuleset.ID != SafetyRulesetDefault || result.SafetyRuleset.SHA256 == "" || strings.Contains(result.SafetyRuleset.SHA256, "raw-secret-value") {
+		t.Fatalf("unsafe safety ruleset copied into result: %+v", result.SafetyRuleset)
+	}
+	if result.RequiredFamilies[0].RequiredProducerScope != ProducerCIUploaded {
+		t.Fatalf("unsafe required producer copied into result: %+v", result.RequiredFamilies[0])
+	}
 	for _, family := range result.ArtifactFamilies {
-		if family.Family == "raw-secret-value" || family.ProducerScope == "Bearer raw-secret-value" {
+		if family.Family == "raw-secret-value" || family.ProducerScope == "Bearer raw-secret-value" || family.RequiredProducer == "Bearer raw-secret-value" {
 			t.Fatalf("unsafe enum copied into family: %+v", family)
 		}
 	}

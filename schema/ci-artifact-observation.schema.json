@@ -24,7 +24,7 @@
   "properties": {
     "schema_version": { "type": "string", "const": "block26-ci-artifact-observation-v1" },
     "selected_profile": { "type": "string", "const": "ci_artifact_observation" },
-    "authority_scope": { "type": "string", "minLength": 1 },
+    "authority_scope": { "$ref": "#/$defs/safeToken" },
     "artifact_observation_state": { "$ref": "#/$defs/topLevelState" },
     "selected_source": { "$ref": "#/$defs/sourceIdentity" },
     "selected_run": { "$ref": "#/$defs/runIdentity" },

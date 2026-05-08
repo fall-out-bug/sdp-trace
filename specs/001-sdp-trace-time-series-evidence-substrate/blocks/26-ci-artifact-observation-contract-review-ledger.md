@@ -102,5 +102,27 @@ tracing/evidence, requirements-vs-implementation, and security/privacy planes.
 | I26-RI-03 | minor | requirements-vs-implementation | Explain output did not show per-family binding and producer/access states. | accepted_fixed | `assess explain` now prints producer scope, artifact access, and binding for each artifact family. |
 | I26-RI-04 | minor | requirements-vs-implementation | Block 25 did not yet point future demo iterations to Block 26 observation results for artifact truth. | accepted_fixed | Block 25 spec now references Block 26 as the artifact truth contract for future multi-feature demo claims. |
 | I26-SEC-01 | major | security/privacy | `selected_source`, `selected_run`, and enum-like fields could echo unsafe input into result JSON outside safe-message constraints. | accepted_fixed | Added source/run identity sanitization, family enum validation, producer/access/binding enum validation, and tests that unsafe markers are not copied. |
+| I26-CC-04 | major | code/correctness focused re-review | Empty artifact-index and output-safety states defaulted to `not_assessed` but fell through the switch default and became `cannot_verify`. | accepted_fixed | `evaluateIndex` and `evaluateSafety` now handle `IndexNotAssessed` and `StateNotAssessed` explicitly; `TestEvaluateDefaultsIndexAndSafetyToNotAssessed` covers the default path. |
+| I26-CC-05 | critical | code/correctness focused re-review | Reviewer claimed `selected_profile` referenced `topLevelState` and made every result schema-invalid. | rejected_false_positive | Full schema review shows `selected_profile` is `const: "ci_artifact_observation"`; focused re-review later approved the current schema. |
+| I26-SEC-02 | major | security/privacy focused re-review | `authority_scope`, `safety_ruleset.id`, and required `required_producer_scope` could echo unsafe manifest input. | accepted_fixed | Added `safeAuthorityScope`, `safeRequiredProducerScope`, and safety-ruleset ID sanitization; `TestEvaluateSanitizesUnsafeIdentityAndEnums` asserts those fields do not echo unsafe markers. |
+| I26-SEC-03 | major | security/privacy focused re-review | `authority_scope` and `safety_ruleset.id` could be syntactically safe but longer than the schema `safeToken` max length. | accepted_fixed | Added `safeToken` with a 1-128 length guard and `TestEvaluateSafeTokenLengthMatchesSchema` for 129-character and empty-token cases. |
 
-Focused implementation re-review is pending after the fixes above.
+Focused implementation re-review after the fixes above:
+
+- code/correctness: OpenRouter Qwen, `APPROVE` after rejecting I26-CC-05 as a
+  false positive and accepting/fixing I26-CC-04;
+- tracing/evidence: MiniMax-M2.7, `APPROVE`; no remaining critical or major
+  findings;
+- requirements-vs-implementation: ZAI/GLM-5.1, `APPROVE`; no remaining critical
+  or major findings;
+- security/privacy: OpenRouter DeepSeek plus MiniMax-M2.7 focused security
+  replacement, `APPROVE` after accepting/fixing I26-SEC-02 and I26-SEC-03.
+
+Fresh local verification after focused re-review fixes:
+
+- `go test ./...`: pass.
+- `jq empty schema/*.json
+  examples/block26-ci-artifact-observation/fixture-matrix.json
+  examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json`:
+  pass.
+- `git diff --check HEAD`: pass.
