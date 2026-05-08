@@ -93,6 +93,12 @@ func TestEvaluateCannotVerifyWhenManifestSourceCommitMissing(t *testing.T) {
 	if result.SourceCommitStatus != StatusMissing {
 		t.Fatalf("source commit status = %s", result.SourceCommitStatus)
 	}
+	if result.SourceCommitArtifactStatus != StatusNotAssessed {
+		t.Fatalf("source commit artifact status = %s", result.SourceCommitArtifactStatus)
+	}
+	if result.SourceCommitArtifactCounts.Checked != 0 {
+		t.Fatalf("source commit artifact counts = %+v", result.SourceCommitArtifactCounts)
+	}
 }
 
 func TestEvaluateReadsArtifactsFromManifestSourceCommit(t *testing.T) {

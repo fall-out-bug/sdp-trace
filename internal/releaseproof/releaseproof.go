@@ -128,8 +128,7 @@ func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error
 	if commitStatus == StatusMissing {
 		state = StateCannotVerify
 	}
-	counts, issues := artifactCountsForState(repoRoot, manifestSourceCommit, manifest.Artifacts, state)
-	artifactStatus, artifactReason := artifactState(counts)
+	counts, issues, artifactStatus, artifactReason := artifactVerificationState(repoRoot, manifestSourceCommit, manifest.Artifacts, state)
 	state, reason = combineState(state, reason, artifactStatus, artifactReason)
 	state, commitStatus, reason = applyDirtyState(repoRoot, state, commitStatus, reason)
 	manifestDigest := sha256.Sum256(manifestBytes)
@@ -185,11 +184,13 @@ func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
 	return StatusMatched, "source commit contains every manifest artifact path with matching digest"
 }
 
-func artifactCountsForState(repoRoot, sourceCommit string, artifacts []ManifestArtifact, state string) (ArtifactCounts, []ArtifactIssue) {
+func artifactVerificationState(repoRoot, sourceCommit string, artifacts []ManifestArtifact, state string) (ArtifactCounts, []ArtifactIssue, string, string) {
 	if state == StateCannotVerify {
-		return ArtifactCounts{Checked: len(artifacts)}, nil
+		return ArtifactCounts{}, nil, StatusNotAssessed, "manifest artifacts were not checked because source_commit cannot be verified"
 	}
-	return artifactCounts(repoRoot, sourceCommit, artifacts)
+	counts, issues := artifactCounts(repoRoot, sourceCommit, artifacts)
+	artifactStatus, artifactReason := artifactState(counts)
+	return counts, issues, artifactStatus, artifactReason
 }
 
 func artifactState(counts ArtifactCounts) (string, string) {

@@ -31,9 +31,10 @@ Relevant changed-file rows:
 
 | file/function | coverage |
 | --- | ---: |
-| `internal/releaseproof/releaseproof.go:Evaluate` | 88.2% |
+| `internal/releaseproof/releaseproof.go` file aggregate | 87.4% |
+| `internal/releaseproof/releaseproof.go:Evaluate` | 87.5% |
 | `internal/releaseproof/releaseproof.go:sourceCommitState` | 80.0% |
-| `internal/releaseproof/releaseproof.go:artifactCountsForState` | 100.0% |
+| `internal/releaseproof/releaseproof.go:artifactVerificationState` | 100.0% |
 | `internal/releaseproof/releaseproof.go:artifactState` | 80.0% |
 | `internal/releaseproof/releaseproof.go:combineState` | 100.0% |
 | `internal/releaseproof/releaseproof.go:applyDirtyState` | 100.0% |
@@ -44,11 +45,12 @@ Relevant changed-file rows:
 | `internal/releaseproof/releaseproof.go:Write` | 71.4% |
 | `internal/releaseproof/releaseproof.go:Read` | 71.4% |
 | `internal/releaseproof/releaseproof.go:RepoRoot` | 77.8% |
-| `internal/releaseproof` package | 87.2% |
+| `internal/releaseproof` package | 87.4% |
 | repository total | 66.4% |
 
-The changed production file clears the Block 23 70% changed-file threshold.
-Repository-wide 70% coverage is not claimed.
+The changed production file clears the Block 23 70% changed-file threshold:
+`internal/releaseproof/releaseproof.go` is 87.4% covered. Repository-wide 70%
+coverage is not claimed.
 
 ## Complexity
 
@@ -95,9 +97,9 @@ Formula: `CRAP = complexity^2 * (1 - coverage)^3 + complexity`.
 
 | function | complexity | coverage | CRAP | result |
 | --- | ---: | ---: | ---: | --- |
-| `Evaluate` | 4 | 0.882 | 4.03 | pass |
+| `Evaluate` | 4 | 0.875 | 4.03 | pass |
 | `sourceCommitState` | 3 | 0.800 | 3.07 | pass |
-| `artifactCountsForState` | 2 | 1.000 | 2.00 | pass |
+| `artifactVerificationState` | 2 | 1.000 | 2.00 | pass |
 | `artifactState` | 3 | 0.800 | 3.07 | pass |
 | `combineState` | 3 | 1.000 | 3.00 | pass |
 | `applyDirtyState` | 3 | 1.000 | 3.00 | pass |
