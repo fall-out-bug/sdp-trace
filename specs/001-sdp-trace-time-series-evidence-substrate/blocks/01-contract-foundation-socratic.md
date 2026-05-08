@@ -70,13 +70,13 @@ Question: AC08 bans secrets and raw customer data, but is the check automated or
 
 Resolution: AC08 now requires a documented automated artifact-safety scan. The scan must fail committed examples containing obvious secrets, credentials, raw customer data markers, or private prompt contents.
 
-### Q7: `sdp-gate` Schema Version Consumption
+### Q7: external policy consumer Schema Version Consumption
 
 Severity: major
 
-Question: Where does `sdp-gate` declare consumed schema versions, who maintains it, and how are breaking changes visible?
+Question: Where does external policy consumer declare consumed schema versions, who maintains it, and how are breaking changes visible?
 
-Resolution: The block now requires a consumer schema-version declaration example. `sdp-trace` defines and validates the portable declaration shape. The actual `sdp-gate` repository owns its real declaration. This makes contract changes visible without making `sdp-gate` a runtime dependency.
+Resolution: The block now requires a consumer schema-version declaration example. `sdp-trace` defines and validates the portable declaration shape. The actual external policy consumer repository owns its real declaration. This makes contract changes visible without making external policy consumer a runtime dependency.
 
 ### Q8: Dedupe and Conflict Metadata
 
@@ -148,7 +148,7 @@ Severity: major
 
 Question: Can the same person appear as both first-line DRI and second-line reviewer under different labels?
 
-Resolution: Accountability identities are now structured with `identity_ref`, `actor_type`, and line-of-defense metadata. `sdp-trace` records enough identity and line data for a policy consumer to detect self-review or same-line review; `sdp-gate` decides whether separation satisfies policy.
+Resolution: Accountability identities are now structured with `identity_ref`, `actor_type`, and line-of-defense metadata. `sdp-trace` records enough identity and line data for a policy consumer to detect self-review or same-line review; external policy consumer decides whether separation satisfies policy.
 
 ### GQ5: Stream-Level `not_assessed`
 

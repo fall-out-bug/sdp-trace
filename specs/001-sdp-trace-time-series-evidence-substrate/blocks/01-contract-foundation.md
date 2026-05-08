@@ -2,7 +2,7 @@
 
 Status: contract scaffold implemented; product proof blocked until self-trace and self-attestation pass
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
-Audience: CTO, CIO, CEO, implementation agents, future `sdp-gate` consumers
+Audience: technical executive, CIO, CEO, implementation agents, future external policy consumers
 
 ## Purpose
 
@@ -14,17 +14,17 @@ The block must answer a simple executive question:
 
 > Can an observer validate the contract shapes that will be used to prove `sdp-trace` development itself?
 
-The stronger CTO question, "Can `sdp-trace` prove itself before proving anyone else?", is not answered by this block. It is the mandatory next block.
+The stronger technical executive question, "Can `sdp-trace` prove itself before proving anyone else?", is not answered by this block. It is the mandatory next block.
 
 ## Executive Outcomes
 
-### CTO
+### technical executive
 
-The CTO gets a data substrate that can show process movement over time: prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. The substrate does not hide policy choices inside opaque health scores.
+The technical executive gets a data substrate that can show process movement over time: prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. The substrate does not hide policy choices inside opaque health scores.
 
 ### CIO
 
-The CIO gets portable contracts with explicit schema versions, validation commands, redaction rules, and compatibility boundaries. These contracts can be governed across repositories and inherited by `sdp-gate`.
+The CIO gets portable contracts with explicit schema versions, validation commands, redaction rules, and compatibility boundaries. These contracts can be governed across repositories and inherited by external policy consumer.
 
 ### CEO
 
@@ -53,7 +53,7 @@ Examples:
 - one `not_assessed` example
 - one negative example proving native `sdp-trace` artifacts cannot contain forbidden native policy fields
 - one negative example proving an AI actor cannot be the sole accountable owner or approver
-- one consumer schema-version declaration example for a future `sdp-gate` consumer
+- one consumer schema-version declaration example for a future external policy consumer consumer
 - one contract manifest example with digests for schemas, docs, validation scripts, fixtures, source commit, and compatibility notes
 - one contract release verification example for the target signing profile
 - one trusted identity policy example naming the authorized release signer identity, protected source ref, workflow identity, required approval refs, and release captain
@@ -73,16 +73,16 @@ Documentation:
 
 - schema ownership and versioning
 - artifact safety and integrity rules
-- `sdp-trace` / `sdp-gate` inheritance boundary
+- `sdp-trace` / external policy consumer inheritance boundary
 - consumer schema-version declaration rules
 - accountability and escalation rules
 - contract release signing and verification rules
 - trusted signer identity policy rules
-- one-minute CTO decision narrative in Russian and English, mapped to SpecKit evidence and free of native policy verdict claims
+- one-minute technical executive decision narrative in Russian and English, mapped to SpecKit evidence and free of native policy verdict claims
 
 ## Out of Scope
 
-- `sdp-gate` policy implementation
+- external policy consumer policy implementation
 - dashboard or UI
 - ingestion daemon
 - pilot execution for OpenCode, MiniMax, Kimi, GLM, or Kotlin+Bazel
@@ -116,7 +116,7 @@ evidence event
   -> metric sample / metric stream
   -> trace snapshot
   -> assessment input
-  -> external policy consumer such as sdp-gate
+  -> external policy consumer such as external policy consumer
 ```
 
 External verdicts can be recorded as evidence:
@@ -148,7 +148,7 @@ AI identities may appear in provenance as producers, reviewers, critics, or judg
 
 Evidence events may omit a direct accountability object only when they are contained in an evidence package or assessment input that provides effective accountability for every referenced evidence item. An assessment input must not claim completeness or trusted-release readiness if any referenced evidence lacks direct or inherited effective accountability.
 
-If review independence is required by an external policy assertion, the accountability record must preserve enough actor identity and line-of-defense metadata for a policy consumer to detect self-review or same-line review. `sdp-trace` records the facts; `sdp-gate` decides whether the separation satisfies policy.
+If review independence is required by an external policy assertion, the accountability record must preserve enough actor identity and line-of-defense metadata for a policy consumer to detect self-review or same-line review. `sdp-trace` records the facts; external policy consumer decides whether the separation satisfies policy.
 
 For public examples, synthetic human-held roles are allowed. For customer pilots, these fields must map to the customer's accepted identity system or approval process.
 
@@ -162,7 +162,7 @@ Contract Foundation uses a minimal risk classification aligned with current AI g
 - `classification_ref`: inspectable reference for the source that supplied the classification
 - `declared_oversight`: optional external assertion containing `origin: "external"`, `policy_ref`, `required_oversight`, and `review_independence`
 
-The classification does not decide pass/fail and does not compute oversight obligations inside `sdp-trace`. `sdp-trace` records observed autonomy and impact plus externally declared oversight requirements when supplied. A policy consumer such as `sdp-gate` decides whether the recorded classification satisfies a policy.
+The classification does not decide pass/fail and does not compute oversight obligations inside `sdp-trace`. `sdp-trace` records observed autonomy and impact plus externally declared oversight requirements when supplied. A policy consumer such as external policy consumer decides whether the recorded classification satisfies a policy.
 
 ## Contract Release Signing Profile
 
@@ -270,7 +270,7 @@ The `not_assessed` fixture must prove:
 - missing evidence explains what cannot be assessed and why
 - pending evidence remains distinct from completed evidence
 - missing signature verification does not become trusted contract release; it is recorded as `not_assessed` or invalid depending on the claim being made
-- partially assessed metric streams carry stream-level assessment state so CTO-facing movement does not hide unassessed samples inside an apparently complete comparison
+- partially assessed metric streams carry stream-level assessment state so technical executive-facing movement does not hide unassessed samples inside an apparently complete comparison
 
 ## Required Negative Fixture
 
@@ -305,7 +305,7 @@ The negative fixtures must also fail validation or verification when:
 
 ## Consumer Schema-Version Declaration
 
-Contract Foundation exports a consumer declaration example for future `sdp-gate` integration. The example records:
+Contract Foundation exports a consumer declaration example for future external policy consumer integration. The example records:
 
 - consumer name
 - consumed schema `$id`s
@@ -314,7 +314,7 @@ Contract Foundation exports a consumer declaration example for future `sdp-gate`
 - last validated fixture refs
 - compatibility notes
 
-The real `sdp-gate` repository owns its own consumer declaration. `sdp-trace` only defines the portable contract shape and example so breaking changes are visible before downstream consumers adopt them.
+The real external policy consumer repository owns its own consumer declaration. `sdp-trace` only defines the portable contract shape and example so breaking changes are visible before downstream consumers adopt them.
 
 ## Trace Schema Compatibility Decision
 
@@ -332,7 +332,7 @@ If the existing trace schema cannot represent those entities cleanly, the block 
 - AC06: `schema/trace.schema.json` remains usable or has a documented replacement path and migration note.
 - AC07: `schema/README.md` explains `sdp-trace` ownership vs external policy ownership.
 - AC08: The documented artifact-safety scan passes and no committed example contains raw secrets, credentials, raw customer data, or private prompt contents.
-- AC09: Consumer schema-version declaration example validates and does not make `sdp-gate` a runtime dependency.
+- AC09: Consumer schema-version declaration example validates and does not make external policy consumer a runtime dependency.
 - AC10: Accountability schema and fixtures prove AI actors cannot be sole accountable owners or approvers.
 - AC11: Contract manifest schema and example validate and include digests for schemas, docs, validation scripts, fixtures, source commit, approval refs, and compatibility notes.
 - AC12: Contract release verification schema and example record the target signing profile, manifest digest status, signature status, signer identity policy, and rollback or freshness status.
@@ -341,7 +341,7 @@ If the existing trace schema cannot represent those entities cleanly, the block 
 - AC15: Metric stream examples expose stream-level `assessment_state` when any sample or comparison is partial or `not_assessed`.
 - AC16: Signing proof is not theoretical: completion evidence includes one real release verification result for the selected signing profile or approved private equivalent.
 - AC17: Freshness is explicit: manifests without `valid_until` or `freshness_policy` fail validation.
-- AC18: CTO brief documents answer "what is happening and why do I need it?" in under one minute in RU/EN without marketing claims or native `sdp-trace` policy verdicts.
+- AC18: technical executive brief documents answer "what is happening and why do I need it?" in under one minute in RU/EN without marketing claims or native `sdp-trace` policy verdicts.
 
 ## Traceability
 
@@ -356,7 +356,7 @@ If the existing trace schema cannot represent those entities cleanly, the block 
 | `sdp-trace-cdn.8` | T048 | Negative AI-accountability and modified-contract-manifest fixtures |
 | `sdp-trace-cdn.8` | T049 | Trusted signer identity policy and mismatch fixture |
 | `sdp-trace-cdn.8` | T050 | Real release signature verification evidence |
-| `sdp-trace-cdn.11` | T051 | One-minute CTO decision narrative in RU/EN |
+| `sdp-trace-cdn.11` | T051 | One-minute technical executive decision narrative in RU/EN |
 | `sdp-trace-cdn.3` | T008 | Observation schema |
 | `sdp-trace-cdn.3` | T009 | Metric stream schema |
 | `sdp-trace-cdn.3` | T010 | Movement-data example |
@@ -383,7 +383,7 @@ Contract Foundation is complete when a fresh clone can run the documented syntax
 - `not_assessed` fixture passes
 - negative policy-verdict fixture fails for the intended reason
 - assessment input contains no native gate/degradation/readiness decision
-- schema docs state how `sdp-gate` inherits supported contract versions
+- schema docs state how external policy consumer inherits supported contract versions
 - consumer schema-version declaration example validates
 - artifact-safety scan passes for committed examples
 - accountability examples validate and AI-as-sole-accountable-owner fails
@@ -392,4 +392,4 @@ Contract Foundation is complete when a fresh clone can run the documented syntax
 - release verification example records `sdp-trace-signature/sigstore-dsse-keyless-v1` status without making public Rekor mandatory for private environments
 - trusted identity policy example validates and signer mismatch fails
 - local release verification evidence exists for contract scaffolding, while product trust remains blocked until self-trace and self-attestation pass
-- CTO brief explains the tool in RU/EN without saying `sdp-trace` owns gate/degradation decisions
+- technical executive brief explains the tool in RU/EN without saying `sdp-trace` owns gate/degradation decisions

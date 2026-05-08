@@ -1,4 +1,4 @@
-# Contract: sdp-trace and sdp-gate Boundary
+# Contract: sdp-trace And External Policy Consumers
 
 ## Purpose
 
@@ -24,17 +24,17 @@ This contract prevents product confusion between the trace substrate and the pol
 | Contract release verification records | `sdp-trace` records verification evidence and status |
 | Trusted signer identity policy shape | `sdp-trace` |
 | Accepted release signer identity policy values | Repository or customer governance process |
-| Accepted risk tolerance | `sdp-gate`, management, or another consuming governance process |
-| Policy thresholds | `sdp-gate` or another consuming policy engine |
-| Pass/fail/warn/block decisions | `sdp-gate` or another consuming policy engine |
-| Degradation verdicts | `sdp-gate` or another consuming policy engine |
-| Readiness decisions | `sdp-gate` or another consuming policy engine |
-| Overrides and override reasons | `sdp-gate` or another consuming policy engine |
+| Accepted risk tolerance | external policy consumer, management, or another consuming governance process |
+| Policy thresholds | external policy consumer or another consuming policy engine |
+| Pass/fail/warn/block decisions | external policy consumer or another consuming policy engine |
+| Degradation verdicts | external policy consumer or another consuming policy engine |
+| Readiness decisions | external policy consumer or another consuming policy engine |
+| Overrides and override reasons | external policy consumer or another consuming policy engine |
 
 ## Contract Rules
 
-1. `sdp-gate` may depend on `sdp-trace` contracts.
-2. `sdp-trace` must not depend on `sdp-gate`; this means no runtime import, required service call, policy configuration, or gate-specific execution path. A schema designed for downstream consumption is a consumer contract, not a runtime dependency.
+1. External policy consumers may depend on `sdp-trace` contracts.
+2. `sdp-trace` must not depend on an external policy consumer; this means no runtime import, required service call, policy configuration, or gate-specific execution path. A schema designed for downstream consumption is a consumer contract, not a runtime dependency.
 3. `sdp-trace` may record an external verdict as evidence, but must identify it as externally produced with producer, origin, verdict kind, source artifact, and policy reference when available.
 4. `sdp-trace` must use `not_assessed` when required evidence is missing.
 5. `sdp-trace` must not publish opaque health scores.
@@ -42,10 +42,10 @@ This contract prevents product confusion between the trace substrate and the pol
 7. Beads may track implementation work, but Beads must not appear as a required product dependency.
 8. `sdp-trace` must not assign evidence strength or quality verdicts. If a source supplies such a value, `sdp-trace` records it as an external assertion.
 9. `sdp-trace` must keep movement data structural: previous value, current value, delta, units, dimensions, evidence coverage, and `not_assessed` gaps. Interpretation labels are external verdicts.
-10. `sdp-trace` contracts use semver schema versions. `sdp-gate` must declare which schema versions it consumes.
+10. `sdp-trace` contracts use semver schema versions. External policy consumers must declare which schema versions they consume.
 11. `sdp-trace` must record human accountability for accountable artifacts. AI actors may produce, review, critique, or judge, but cannot be sole accountable owners or approvers.
 12. `sdp-trace` must distinguish schema validity from trusted contract release status. A checkout can be JSON-valid while still failing manifest digest or signature verification.
-13. `sdp-trace` records observed risk metadata and externally declared oversight assertions; `sdp-gate` decides whether that metadata satisfies a policy.
+13. `sdp-trace` records observed risk metadata and externally declared oversight assertions; external policy consumer decides whether that metadata satisfies a policy.
 14. `sdp-trace` may define the trusted identity policy schema and record policy values, but it does not decide business acceptance of signer risk.
 
 ## Structural Boundary Tests
@@ -79,7 +79,7 @@ spec -> plan -> task -> change -> evidence event -> accountability -> observatio
 contract manifest -> contract release verification -> assessment input
 ```
 
-`sdp-gate` consumes the assessment input:
+An external policy consumer consumes the assessment input:
 
 ```text
 assessment input -> policy evaluation -> gate decision -> decision record

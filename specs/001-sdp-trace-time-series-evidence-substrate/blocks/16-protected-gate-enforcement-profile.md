@@ -48,7 +48,7 @@ external pipeline or policy consumer."
 - No native merge, release, readiness, degradation, override approval, or risk
   acceptance decision.
 - No GitHub-specific protected branch or pull-request API integration.
-- No dependency on `sdp-gate`, Beads, agentloop, Operator Mode, Claude, Codex,
+- No dependency on external policy consumer, Beads, agentloop, Operator Mode, Claude, Codex,
   OpenCode, GitHub, or any harness runtime.
 - No Sigstore/Rekor or external witness service implementation unless already
   represented through a portable evidence artifact.

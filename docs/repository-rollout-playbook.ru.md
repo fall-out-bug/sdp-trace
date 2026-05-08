@@ -1,7 +1,11 @@
-# Playbook для тимлида
+# Playbook rollout для репозитория
 
 Используйте `sdp-trace`, когда у команды уже есть AI coding workflow и нужен
 общий evidence contract без замены текущего harness.
+
+Давайте coding agents ссылку на [Agent Onboarding](agent-onboarding.md) как
+первый вход в репозиторий. Этот playbook нужен для подключения конкретного
+репозитория к evidence path.
 
 Этот playbook описывает текущую pilot-поверхность: wrapping, task-linked runs,
 previews, local verification, reports, queries, query packs, assessment

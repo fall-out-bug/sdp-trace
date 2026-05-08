@@ -23,7 +23,7 @@ Refactor resolution:
 
 The external demo repository now produces valid local `sdp-trace` run
 directories, but the useful story is still trapped in raw run artifacts. A
-buyer should not need a separate slide deck, dashboard, or manual narration to
+customer should not need a separate slide deck, dashboard, or manual narration to
 understand what happened.
 
 The demo repository itself must contain the evidence view:

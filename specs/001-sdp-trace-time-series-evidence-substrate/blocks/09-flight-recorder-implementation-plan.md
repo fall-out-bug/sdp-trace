@@ -211,7 +211,7 @@ Exit criteria:
 
 ## Slice 6: Query Surface
 
-Purpose: make the recorder useful to CTO/reviewer workflows without policy verdicts.
+Purpose: make the recorder useful to technical executive/reviewer workflows without policy verdicts.
 
 Tasks:
 

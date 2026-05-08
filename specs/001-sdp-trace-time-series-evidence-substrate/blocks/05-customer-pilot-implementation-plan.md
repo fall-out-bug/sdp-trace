@@ -114,7 +114,7 @@ Expected result: JSON parses and docs preserve the Kotlin+Bazel gap boundary.
 Verification:
 
 ```bash
-rg -n "private customer input|redaction|not_assessed|matrix|sdp-gate|raw customer data|validation|access-neutral" retired-research-artifact
+rg -n "private customer input|redaction|not_assessed|matrix|external policy consumer|raw customer data|validation|access-neutral" retired-research-artifact
 ```
 
 Expected result: package outline is executable and safe to commit.

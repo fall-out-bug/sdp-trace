@@ -43,7 +43,7 @@ Rules:
 
 - Risk classification records observed autonomy and impact plus externally declared oversight obligations. It does not decide pass/fail.
 - `sdp-trace` must not derive `required_oversight` from the observed classification. That derivation belongs to a policy consumer or external governance source.
-- Downstream policy engines such as `sdp-gate` may use this classification to enforce review or approval policies.
+- Downstream policy engines such as external policy consumer may use this classification to enforce review or approval policies.
 - Higher autonomy and higher impact should preserve more evidence and stronger human approval references.
 
 ## Entity: Contract Manifest
@@ -206,7 +206,7 @@ Fields:
 Rules:
 
 - Observations are not policy verdicts.
-- Observations may be consumed by `sdp-gate`.
+- Observations may be consumed by external policy consumer.
 
 ## Entity: Metric Sample
 
@@ -325,7 +325,7 @@ Rules:
 
 ## Entity: Assessment Input
 
-Represents the package handed to `sdp-gate` or another policy engine.
+Represents the package handed to external policy consumer or another policy engine.
 
 Fields:
 
@@ -346,7 +346,7 @@ Fields:
 Rules:
 
 - It must be usable without Beads.
-- It must not contain policy decisions owned by `sdp-gate`.
+- It must not contain policy decisions owned by external policy consumer.
 - It may include external verdict inputs as observed evidence, clearly marked as external.
 - `schema_version` follows semver. Additive optional fields are minor changes; required field removals or semantic changes are major changes.
 - It must identify human accountability for the package. AI actors may be producers in provenance, but not sole accountable owners.

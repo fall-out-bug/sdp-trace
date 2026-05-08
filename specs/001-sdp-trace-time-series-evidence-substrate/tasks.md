@@ -1,7 +1,7 @@
 # Tasks: sdp-trace Time-Series Evidence Substrate
 
 **Input**: Design documents from `/specs/001-sdp-trace-time-series-evidence-substrate/`
-**Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/sdp-trace-sdp-gate-boundary.md`
+**Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/external-policy-consumer-boundary.md`
 **Tests**: Include schema syntax checks now; schemas target JSON Schema Draft 2020-12. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`. Earlier AJV/script validation records are historical evidence, not the current command contract.
 
 **Organization**: Tasks are grouped by user story to preserve independent value and reviewability.
@@ -26,11 +26,11 @@
 
 **Purpose**: Prevent policy/runtime coupling before schema work starts.
 
-- [x] T004 [US2] Write source-mapped extraction memo in `specs/001-sdp-trace-time-series-evidence-substrate/research.md` from `sdp_lab` sources (Beads mirror: `sdp-trace-cdn.1`)
-- [x] T005 [US2] Finalize `contracts/sdp-trace-sdp-gate-boundary.md` and update `docs/concepts.md` with the same boundary (Beads mirror: `sdp-trace-cdn.2`)
-- [x] T006 [US2] Audit `README.md`, `docs/cto-brief.en.md`, `docs/cto-brief.ru.md`, `docs/team-lead-playbook.en.md`, and `docs/team-lead-playbook.ru.md` for language implying `sdp-trace` owns policy decisions (Beads mirror: `sdp-trace-cdn.11`)
+- [x] T004 [US2] Write source-mapped extraction memo in `specs/001-sdp-trace-time-series-evidence-substrate/research.md` from prior delivery evidence source material (Beads mirror: `sdp-trace-cdn.1`)
+- [x] T005 [US2] Finalize `contracts/external-policy-consumer-boundary.md` and update `docs/concepts.md` with the same boundary (Beads mirror: `sdp-trace-cdn.2`)
+- [x] T006 [US2] Audit `README.md`, `docs/agent-onboarding.md`, `docs/agent-onboarding.md`, `docs/repository-rollout-playbook.en.md`, and `docs/repository-rollout-playbook.ru.md` for language implying `sdp-trace` owns policy decisions (Beads mirror: `sdp-trace-cdn.11`)
 - [x] T007 [US2] Replace or narrow gate/decision wording so external verdicts are recorded inputs, not `sdp-trace` decisions (Beads mirror: `sdp-trace-cdn.11`)
-- [x] T051 [US4] Rewrite `docs/cto-brief.en.md` and `docs/cto-brief.ru.md` as one-minute CTO decision narratives mapped to SpecKit evidence, with no marketing claims or native `sdp-trace` policy verdicts (Beads mirror: `sdp-trace-cdn.11`)
+- [x] T051 [US4] Rewrite `docs/agent-onboarding.md` and `docs/agent-onboarding.md` as one-minute technical executive decision narratives mapped to SpecKit evidence, with no marketing claims or native `sdp-trace` policy verdicts (Beads mirror: `sdp-trace-cdn.11`)
 - [x] T034 [US4] Document JSON Schema Draft 2020-12, current Go-first validation commands, schema IDs, and schema versioning in `schema/README.md` before new schema authoring starts (Beads mirror: `sdp-trace-cdn.8`)
 - [x] T040 [US2] Document committed artifact safety rules: sanitization, SHA-256 digests, redaction notes, `integrity_status`, and no secrets or raw customer data in committed examples
 - [x] T044 [US5] Design `schema/accountability.schema.json` for human-held DRI, approver, escalation, risk owner, authority scope, approval reference, and line of defense (Beads mirror: `sdp-trace-cdn.2`)
@@ -41,9 +41,9 @@
 - [x] T049 [US5] Add trusted signer identity policy example and mismatch fixture covering OIDC issuer, source URI, protected ref, workflow identity, release captain, and required approval refs (Beads mirror: `sdp-trace-cdn.8`)
 - [x] T050 [US5] Produce one local contract release verification evidence record for the target signing profile shape or approved private equivalent before claiming contract scaffolding complete (Beads mirror: `sdp-trace-cdn.8`)
 
-**Checkpoint**: `sdp-trace` and `sdp-gate` ownership, CTO narrative, validator strategy, and artifact safety rules are clear before new schemas are added.
+**Checkpoint**: `sdp-trace` and external policy consumer ownership, technical executive narrative, validator strategy, and artifact safety rules are clear before new schemas are added.
 
-## Phase 3: User Story 1 - CTO Reviews Process Movement (Priority: P1)
+## Phase 3: User Story 1 - technical executive Reviews Process Movement (Priority: P1)
 
 **Goal**: Define time-series observations and metric streams without built-in degradation policy.
 
@@ -62,11 +62,11 @@
 - [x] T013 [US1] Run `jq empty schema/*.json`
 - [x] T014 [US1] Record validation output in a sanitized evidence note under retired research artifacts
 
-**Checkpoint**: CTO-facing process movement exists as data, not as a policy verdict.
+**Checkpoint**: technical executive-facing process movement exists as data, not as a policy verdict.
 
-## Phase 4: User Story 2 - sdp-gate Inherits Trace Contracts (Priority: P1)
+## Phase 4: User Story 2 - external policy consumer Inherits Trace Contracts (Priority: P1)
 
-**Goal**: Produce the assessment input contract consumed by `sdp-gate`.
+**Goal**: Produce the assessment input contract consumed by external policy consumer.
 
 **Independent Test**: An assessment input example contains evidence, observations, metric streams, and `not_assessed`, but no pass/fail/degradation decision.
 
@@ -78,7 +78,7 @@
 - [x] T041 [US2] Add a negative validation example showing that a native `sdp-trace` assessment input cannot contain pass/fail/readiness/degradation fields
 - [x] T042 [US2] Update `schema/README.md` with ownership, external verdict, validation, versioning, and migration rules
 
-**Checkpoint**: `sdp-gate` has a clear inherited input contract.
+**Checkpoint**: external policy consumer has a clear inherited input contract.
 
 ## Phase 5: Self-Trace v0 - Mandatory Product Proof (Priority: P0)
 
@@ -503,7 +503,7 @@ legal, incident, audit, release, or risk decision remains downstream.
 ## Phase 18: Cross-Repository Degradation Export
 
 **Goal**: Provide deterministic cross-repository evidence posture exports for
-CTO-level movement analysis without issuing a native degradation verdict.
+technical executive-level movement analysis without issuing a native degradation verdict.
 
 **Independent Test**: A reviewer can run `export cross-repo-posture --profile
 cross-repo-evidence-posture-v1` against committed fixtures and inspect
@@ -528,7 +528,7 @@ readiness decisions, or cross-repository raw personal identifiers.
 - [x] T191 [US5] Run Socratic spec review across product-boundary, tracing/evidence, and privacy/safety planes; record every valid finding in `blocks/21-cross-repository-degradation-export-review-ledger.md` and fix every critical or major finding before implementation approval handoff.
 - [ ] T192 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 21 review disposition before PR closure.
 
-**Checkpoint**: CTO-level consumers get comparable movement facts across
+**Checkpoint**: technical executive-level consumers get comparable movement facts across
 repositories, but `sdp-trace` still emits evidence substrate exports only. Any
 degradation, readiness, alerting, or portfolio-risk decision remains downstream.
 
@@ -620,7 +620,7 @@ evidence.
 **Activation Gate**: Do not implement Block 25 until
 `blocks/25-compiled-ci-demo-pilot.md` and
 `blocks/25-compiled-ci-demo-pilot-implementation-plan.md` pass Socratic review
-across product/buyer credibility, engineering/replayability, tracing/evidence,
+across product/customer credibility, engineering/replayability, tracing/evidence,
 and security/privacy planes, and the reviewed direction is explicitly approved.
 
 - [ ] T209 [US3] Run Socratic spec review for Block 25 and record every valid
@@ -640,7 +640,7 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   artifact-index correctness.
 - [ ] T215 [US4] Add sanitized Block 25 report and artifact summary only after
   a successful demo CI run and artifact digest verification.
-- [ ] T216 [US4] Run CTO buyer, Head of Engineering, and Head of InfoSec role
+- [ ] T216 [US4] Run technical executive customer, Head of Engineering, and Head of InfoSec role
   reviews against the actual demo repository and downloaded artifacts; fix
   every valid critical or major finding, and record all findings and
   dispositions in `blocks/25-compiled-ci-demo-pilot-review-ledger.md`.

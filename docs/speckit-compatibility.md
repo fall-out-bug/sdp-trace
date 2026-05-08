@@ -1,6 +1,8 @@
 # SpecKit Compatibility
 
-`sdp-trace` should use SpecKit-aligned terms in public docs and examples.
+`sdp-trace` can map SpecKit artifacts into its portable evidence vocabulary.
+SpecKit is one supported planning shape, not a required runtime or the only
+valid workflow source.
 
 This is conceptual compatibility first. Runtime adapters can come later.
 
@@ -18,6 +20,10 @@ This is conceptual compatibility first. Runtime adapters can come later.
 
 ## Rule
 
-Use SpecKit terms in external docs. Map SDP internals only when needed.
+Use the portable `sdp-trace` terms in external docs. Map workflow-specific terms
+only when needed.
 
-SpecKit artifacts are the planning source of truth in this repository. Beads may mirror execution state and dependencies, but repository observers must be able to understand scope, acceptance, and evidence from committed SpecKit files without reading Beads.
+The current repository's working records are SpecKit-shaped. Other teams may use
+gsd, Superpowers, Oh My OpenAgent, ticket trackers, or custom workflows as long
+as the resulting trace exposes scope, acceptance, evidence, provenance, and
+decision inputs without requiring private runtime context.

@@ -16,7 +16,7 @@ No reviewer was asked to edit files.
 
 ## Core Challenge
 
-If real trust is deferred to a future block, `sdp-trace` looks like a structured logger. A CTO or CISO can reasonably reject it because the product is asking customers to trust a trust substrate that cannot yet prove its own claims.
+If real trust is deferred to a future block, `sdp-trace` looks like a structured logger. A technical executive or CISO can reasonably reject it because the product is asking customers to trust a trust substrate that cannot yet prove its own claims.
 
 ## Resolved Design Direction
 

@@ -40,7 +40,7 @@
           "actor_type": "human_role"
         },
         "escalation": {
-          "identity_ref": "role:sdp-trace-cto",
+          "identity_ref": "role:sdp-trace-technical executive",
           "actor_type": "human_role"
         },
         "authority_scope": "evidence",
@@ -191,7 +191,7 @@
       "actor_type": "human_role"
     },
     "escalation": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical executive",
       "actor_type": "human_role"
     },
     "authority_scope": "assessment_input",

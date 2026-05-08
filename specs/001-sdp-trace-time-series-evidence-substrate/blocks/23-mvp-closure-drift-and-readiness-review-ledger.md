@@ -57,5 +57,5 @@ critical or major findings. Remaining minor cautions:
 | S23-RR-01 | minor | quality/docs | CRAP join may need care for methods and anonymous functions. | deferred_not_assessed | Implementation should record any join ambiguity in `block-23-quality-report.md`; not a spec blocker. |
 | S23-RR-02 | minor | quality/docs | `export cross-repo-posture` doc shape must match actual help tree. | accepted_fixed | WS4 requires docs to match current `sdp-trace --help`; implementation must verify help tree. |
 
-Implementation remains blocked until the CTO explicitly approves the reviewed
+Implementation remains blocked until the technical executive explicitly approves the reviewed
 Block 23 direction.

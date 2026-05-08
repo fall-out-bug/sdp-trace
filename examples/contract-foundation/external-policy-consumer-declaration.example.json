@@ -1,5 +1,5 @@
 {
-  "consumer": "sdp-gate",
+  "consumer": "external policy consumer",
   "schema_version": "0.1.0",
   "supported_schema_versions": [
     {
@@ -17,27 +17,27 @@
     "examples/contract-foundation/not-assessed-assessment-input.json"
   ],
   "compatibility_notes": [
-    "This is a portable example declaration. The real sdp-gate repository owns its actual supported-version declaration.",
-    "sdp-trace defines the contract shape without depending on sdp-gate at runtime."
+    "This is a portable example declaration. The real external policy consumer repository owns its actual supported-version declaration.",
+    "sdp-trace defines the contract shape without depending on external policy consumer at runtime."
   ],
   "accountability": {
     "dri": {
-      "identity_ref": "role:sdp-gate-contract-owner",
+      "identity_ref": "role:external policy consumer-contract-owner",
       "actor_type": "human_role"
     },
     "approver": {
-      "identity_ref": "role:sdp-gate-release-captain",
+      "identity_ref": "role:external policy consumer-release-captain",
       "actor_type": "human_role"
     },
     "escalation": {
-      "identity_ref": "role:sdp-gate-cto",
+      "identity_ref": "role:external policy consumer-technical executive",
       "actor_type": "human_role"
     },
     "authority_scope": "plan",
     "accountability_claim": "recording_only",
-    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md",
     "risk_owner": {
-      "identity_ref": "role:sdp-gate-risk-owner",
+      "identity_ref": "role:external policy consumer-risk-owner",
       "actor_type": "human_role"
     },
     "line_of_defense": "second"

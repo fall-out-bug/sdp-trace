@@ -18,7 +18,7 @@ These schemas define the portable `sdp-trace` contract.
 | `observation.schema.json` | Records evidence-backed observations without policy verdicts. |
 | `metric-stream.schema.json` | Records process movement across windows without interpretation labels. |
 | `external-verdict-input.schema.json` | Records externally produced verdicts or quality assertions as external evidence. |
-| `assessment-input.schema.json` | Packages trace evidence for a policy consumer such as `sdp-gate`. |
+| `assessment-input.schema.json` | Packages trace evidence for an external policy consumer. |
 | `flight-recorder-event.schema.json` | Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
 | `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
 | `flight-recorder-witness.schema.json` | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
@@ -72,7 +72,7 @@ After v1.0:
 
 - additive optional fields are minor-version changes
 - required field removals, enum semantic changes, or ownership-boundary changes are major-version changes
-- downstream consumers such as `sdp-gate` must declare supported schema versions
+- downstream policy consumers must declare supported schema versions
 
 `schema/trace.schema.json` remains a compatibility path until a replacement path and migration note are committed.
 
@@ -80,7 +80,7 @@ After v1.0:
 
 `sdp-trace` records evidence, provenance, observations, metric movement, accountability, manifest integrity, and external verdict inputs.
 
-`sdp-trace` does not decide pass/fail, readiness, degradation, threshold sufficiency, or override outcomes. Those policy decisions belong to `sdp-gate` or another external policy consumer.
+`sdp-trace` does not decide pass/fail, readiness, degradation, threshold sufficiency, or override outcomes. Those policy decisions belong to CI, release governance, customer governance, or another external policy consumer.
 
 External verdicts may be recorded only through `external-verdict-input.schema.json` with explicit `origin: "external"`.
 

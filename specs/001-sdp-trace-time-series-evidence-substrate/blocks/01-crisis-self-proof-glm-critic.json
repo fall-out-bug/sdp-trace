@@ -6,47 +6,47 @@
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "issue": "All self-trace tasks T020-T026 remain unchecked. The product has zero self-trace artifacts proving its own development under the contracts it defines.",
-      "why_it_matters_to_CTO": "The README markets sdp-trace as a 'trust substrate' and the CTO brief promises a 'verifiable chain' from idea to contract. If the substrate cannot point to a single committed artifact that traces its own spec-to-evidence path under its own schemas, the product asks customers to trust a tool that has not applied itself to itself. This is the exact objection the CTO raised.",
+      "why_it_matters_to_executive": "The README markets sdp-trace as a 'trust substrate' and the technical executive brief promises a 'verifiable chain' from idea to contract. If the substrate cannot point to a single committed artifact that traces its own spec-to-evidence path under its own schemas, the product asks customers to trust a tool that has not applied itself to itself. This is the exact objection the technical executive raised.",
       "acceptance_risk": "A customer pilot reviewer will find no self-trace evidence and can reasonably reject the claim that sdp-trace is fit for governing AI-assisted delivery."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
       "issue": "The plan explicitly defers self-trace: 'We should not self-trace implementation work before these contracts exist.' Block 01 is marked 'implemented' and judge-PASSed without any self-trace artifact. The bootstrapping gap was acknowledged but not resolved.",
-      "why_it_matters_to_CTO": "Block 01 is the 'trusted contract foundation.' A foundation that cannot demonstrate its own development traceability has not proven the trust model works end-to-end. The CTO asked whether sdp-trace can 'directly prove its own development' and the answer in the current repo is: it has not tried.",
-      "acceptance_risk": "The Block 01 exit condition in 01-contract-foundation.md does not require self-trace evidence, so the block passed review without closing the gap the CTO identifies. Future blocks inherit an incomplete trust claim."
+      "why_it_matters_to_executive": "Block 01 is the 'trusted contract foundation.' A foundation that cannot demonstrate its own development traceability has not proven the trust model works end-to-end. The technical executive asked whether sdp-trace can 'directly prove its own development' and the answer in the current repo is: it has not tried.",
+      "acceptance_risk": "The Block 01 exit condition in 01-contract-foundation.md does not require self-trace evidence, so the block passed review without closing the gap the technical executive identifies. Future blocks inherit an incomplete trust claim."
     }
   ],
   "major_findings": [
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
       "issue": "The real signing proof uses local-dev ephemeral RSA + OpenSSL, not the target profile sdp-trace-signature/sigstore-dsse-keyless-v1. The judge accepted this as a residual risk. Contract integrity proof is therefore structural (envelope binding works) but not identity-grounded (no OIDC identity, no transparency log, no immutable commit).",
-      "why_it_matters_to_CTO": "The contract release verification docs promise Sigstore/Cosign keyless verification. The only proof in the repo is an ephemeral key pair. A customer auditor would see that the product's own contract integrity proof does not match its stated target profile.",
+      "why_it_matters_to_executive": "The contract release verification docs promise Sigstore/Cosign keyless verification. The only proof in the repo is an ephemeral key pair. A customer auditor would see that the product's own contract integrity proof does not match its stated target profile.",
       "acceptance_risk": "The manifest source_commit field reads 'working-tree-block-01' instead of an immutable git SHA. If a customer's governance requires traceable signing identity, the current proof is insufficient and the product cannot yet demonstrate it with real infrastructure."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "issue": "T011 (process metric catalog) remains unchecked. Metric names and units in fixtures are ad-hoc. The metric-stream schema allows arbitrary names without a governed catalog.",
-      "why_it_matters_to_CTO": "The CTO brief promises 'prior/current/delta values, evidence coverage, and explicit not_assessed gaps.' Without a metric catalog, two teams or pilots can record the same process signal under different names and the movement data becomes non-comparable. The substrate records structure but not semantic consistency.",
+      "why_it_matters_to_executive": "The technical executive brief promises 'prior/current/delta values, evidence coverage, and explicit not_assessed gaps.' Without a metric catalog, two teams or pilots can record the same process signal under different names and the movement data becomes non-comparable. The substrate records structure but not semantic consistency.",
       "acceptance_risk": "Pilot blocks (Phase 6) are explicitly constrained by the judge's next_block_constraints to complete T011 before claiming metric coverage. Until then, any metric stream comparison across windows or teams is structurally valid but semantically ungrounded."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
       "issue": "The judge notes that the contract manifest does not list all fixtures (negative-unauthorized-signer, contract-release-verification, DSSE envelope, public key) and justifies this as avoiding circular digest dependencies. Some contract artifacts are therefore outside manifest digest coverage.",
-      "why_it_matters_to_CTO": "A customer verifying a contract release would find artifacts not covered by the manifest digests. The trust chain has documented gaps in its own integrity coverage, which weakens the 'verifiable chain' claim in the CTO brief.",
+      "why_it_matters_to_executive": "A customer verifying a contract release would find artifacts not covered by the manifest digests. The trust chain has documented gaps in its own integrity coverage, which weakens the 'verifiable chain' claim in the technical executive brief.",
       "acceptance_risk": "The exclusion is documented and reasoned, but it means the product's own release integrity proof is incomplete by design. A governance process may or may not accept this trade-off."
     }
   ],
   "socratic_questions": [
     "Block 01 is called 'Contract Foundation' and is judge-PASSed. The self-trace phase that would prove the foundation works on itself is entirely undone. At what point does the product become invalid if self-trace is never completed — is it invalid now, or only when someone relies on it for a real delivery decision?",
     "The plan deliberately deferred self-trace to avoid 'producing evidence in an unstable format.' Is this a reasonable bootstrapping strategy, or does it create a circular dependency where the product can only be trusted after it is trusted?",
-    "The signing proof uses an ephemeral RSA key, not Sigstore keyless identity. The product promises a specific target profile it has never exercised against real infrastructure. Is a structural proof (envelope binding works) sufficient for a CTO to approve procurement, or does the missing identity proof make the trust claim incomplete?",
-    "T011 (metric catalog) is open. Metric names in fixtures are ad-hoc. If two pilot teams record 'evidence completeness' under different names, the CTO cannot compare them. Should the product claim to answer the CTO's process-movement question before it defines what process movement means?",
+    "The signing proof uses an ephemeral RSA key, not Sigstore keyless identity. The product promises a specific target profile it has never exercised against real infrastructure. Is a structural proof (envelope binding works) sufficient for a technical executive to approve procurement, or does the missing identity proof make the trust claim incomplete?",
+    "T011 (metric catalog) is open. Metric names in fixtures are ad-hoc. If two pilot teams record 'evidence completeness' under different names, the technical executive cannot compare them. Should the product claim to answer the technical executive's process-movement question before it defines what process movement means?",
     "The judge recorded five residual risks and six next-block constraints. Block 01 passed. Is a block 'complete' when its residual risks include that the product's own signing proof is not what the docs promise?"
   ],
   "evidence_checked": [
     "README.md — product positioning as 'trust substrate'",
-    "docs/cto-brief.en.md — 'verifiable chain' promise, SpecKit artifact paths",
-    "docs/cto-brief.ru.md — same promise in Russian",
+    "docs/agent-onboarding.md — 'verifiable chain' promise, SpecKit artifact paths",
+    "docs/agent-onboarding.md — same promise in Russian",
     "docs/concepts.md — definitions of evidence, provenance, accountability",
     "docs/accountability-model.md — human accountability rules",
     "docs/contract-release-signing.md — target profile and private equivalent rules",
@@ -58,7 +58,7 @@
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md — block scope, acceptance criteria",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md — WP9, self-trace deferral",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json — verdict, residual risks, next-block constraints",
-    "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md — ownership table, structural boundary tests"
+    "specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md — ownership table, structural boundary tests"
   ],
   "no_solution_policy_observed": true
 }

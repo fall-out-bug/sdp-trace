@@ -28,7 +28,7 @@ Block 24 proved that a separate repository can run CI commands, attach
 `sdp-trace`, upload artifacts, and expose `observed`, `ci_witnessed`,
 `cannot_verify`, and `fail` style outcomes. It deliberately stayed narrow.
 
-The demo repository review found two gaps that prevent a stronger buyer pilot:
+The demo repository review found two gaps that prevent a stronger customer pilot:
 
 - the primary Bazel tests are shell `grep` checks over Kotlin source, not
   compiled Kotlin/JVM behavior tests;
@@ -161,7 +161,7 @@ an explicitly numbered GitHub Actions run id on the selected source commit serve
 as Block 25 proof.
 
 Artifact retention must be explicit. The demo README and sanitized report must
-state the configured artifact retention duration, what the buyer must preserve
+state the configured artifact retention duration, what the customer must preserve
 for longer audit windows, and that `sdp-trace` does not own CI artifact
 retention.
 
@@ -226,7 +226,7 @@ The demo repository README must state:
 The `sdp-trace` repository may add a sanitized Block 25 report only after the
 demo CI run exists and downloaded artifacts have been verified. That report must
 be Markdown under retired research artifacts; it must not be a schema-validated fixture
-under `examples/`, and it must not contain a buyer questionnaire or sales
+under `examples/`, and it must not contain a customer questionnaire or sales
 narrative.
 
 ## Acceptance Criteria
@@ -245,7 +245,7 @@ Block 25 is not complete until all of these are true:
 6. Redaction scan passes over downloaded artifact sets.
 7. Demo README and `sdp-trace` sanitized report keep all residual trust states
    explicit as `not_assessed` or `cannot_verify`.
-8. Independent role reviews for CTO buyer, Head of Engineering, and Head of
+8. Independent role reviews for technical executive customer, Head of Engineering, and Head of
    InfoSec find no remaining critical or major issues after fixes.
 9. `sdp-trace` PR-level review and CI pass after sanitized Block 25 docs are
    added.
@@ -255,7 +255,7 @@ Block 25 is not complete until all of these are true:
 Socratic spec review must run before implementation approval with at least these
 planes:
 
-- product/buyer credibility: whether the compiled demo answers the pilot need
+- product/customer credibility: whether the compiled demo answers the pilot need
   without becoming sales material;
 - engineering/replayability: Bazel target shape, CI-only artifact generation,
   artifact-index verification, and local/CI reproduction;
@@ -268,11 +268,11 @@ Implementation review must repeat across at least:
 
 - demo code and CI correctness;
 - tracing/evidence and artifact integrity;
-- requirements-vs-implementation for buyer pilot readiness;
+- requirements-vs-implementation for customer pilot readiness;
 - security/privacy for artifact, token, and redaction boundaries.
 
 Any hung, empty, or off-task review is `not_assessed` and must be replaced.
-Closure requires usable CTO buyer, Head of Engineering, and Head of InfoSec
+Closure requires usable technical executive customer, Head of Engineering, and Head of InfoSec
 review outputs; a hung role is not enough for closure.
 
 ## Residual States

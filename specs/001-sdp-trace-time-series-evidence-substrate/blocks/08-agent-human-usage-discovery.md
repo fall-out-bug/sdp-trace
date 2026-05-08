@@ -2,7 +2,7 @@
 
 Status: implemented discovery + validation state; source-bound proof refreshed, external trust intentionally open
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
-Audience: implementation agents, CTO, CIO, CISO, repository observers
+Audience: implementation agents, technical executive, CIO, CISO, repository observers
 
 ## Purpose
 

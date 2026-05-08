@@ -16,11 +16,13 @@ Apply a gate to work produced by Claude Code, Codex, OpenCode, Cursor, Superpowe
 
 ## Level 3: PR Readiness
 
-Use `sdp-gate` to apply `sdp-trace` evidence to pull requests or merge requests.
+Use CI, repository policy, or release governance to apply `sdp-trace` evidence
+to pull requests or merge requests.
 
-## Level 4: SpecKit-Aligned Delivery
+## Level 4: Shared Workflow Vocabulary
 
-Map spec, plan, tasks, evidence, gates, and decisions to a shared terminology.
+Map SpecKit, gsd, Superpowers, Oh My OpenAgent, ticket-tracker, or custom flow
+artifacts to spec, plan, task, evidence, gates, and decisions.
 
 ## Level 5: Governed Delivery
 

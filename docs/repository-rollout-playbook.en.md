@@ -1,7 +1,10 @@
-# Team Lead Playbook
+# Repository Rollout Playbook
 
 Use `sdp-trace` when your team already has an AI coding workflow and needs a
 shared evidence contract without replacing the current harness.
+
+Use [Agent Onboarding](agent-onboarding.md) as the first link for coding agents.
+This playbook is for wiring one repository into the evidence path.
 
 This playbook covers the current pilot product surface: wrapping, task-linked
 runs, previews, local verification, reports, queries, query packs, assessment

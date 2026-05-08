@@ -28,7 +28,7 @@
       "resolution": "Accepted and fixed. The current file includes both previous and current samples."
     },
     {
-      "finding": "CTO briefs lack SpecKit artifact path mappings",
+      "finding": "technical executive briefs lack SpecKit artifact path mappings",
       "resolution": "Accepted and fixed. Both briefs now include concrete repository paths."
     },
     {
@@ -50,7 +50,7 @@
     "ac06_trace_compat": "trace.schema.json updated with observation, metric_sample, metric_stream, external_verdict, accountability, contract_manifest, contract_release_verification node kinds; existing trace.json example validates",
     "ac07_ownership_docs": "schema/README.md explicitly states sdp-trace does not decide pass/fail/readiness/degradation",
     "ac08_artifact_safety": "check-artifact-safety.sh scans for secrets/credentials/customer-data patterns with documented exclusions",
-    "ac09_consumer_declaration": "consumer-schema-version-declaration.schema.json and sdp-gate-consumer-declaration.example.json both exist and validate",
+    "ac09_consumer_declaration": "consumer-schema-version-declaration.schema.json and external-policy-consumer-declaration.example.json both exist and validate",
     "ac10_ai_accountability": "accountableActorType enum is restricted to human_user, human_role, human_group; negative-ai-sole-accountable-owner.json fails validation",
     "ac11_contract_manifest": "contract-manifest.example.json validates with digests for 14 schemas, 10 docs, 5 scripts, 9 fixtures, source commit, approval refs, and compatibility notes",
     "ac12_release_verification": "contract-release-verification.example.json records signing profile, manifest/artifact/identity/freshness status, and accountability",
@@ -59,7 +59,7 @@
     "ac15_stream_assessment": "metric-stream.schema.json if/then propagates partial/not_assessed from samples/comparisons to stream level",
     "ac16_signing_proof": "Real local-dev DSSE/OpenSSL signature verification evidence exists in contract-release.dsse.json verified against local-dev-signing-public.pem",
     "ac17_freshness": "contract-manifest.schema.json oneOf constraint requires exactly one of valid_until or freshness_policy",
-    "ac18_cto_brief": "docs/cto-brief.en.md and docs/cto-brief.ru.md provide one-minute narratives with SpecKit artifact paths, no native verdict claims, and clear sdp-trace/sdp-gate boundary"
+    "ac18_cto_brief": "docs/agent-onboarding.md and docs/agent-onboarding.md provide one-minute narratives with SpecKit artifact paths, no native verdict claims, and clear sdp-trace/external policy consumer boundary"
   },
   "residual_risks": [
     {

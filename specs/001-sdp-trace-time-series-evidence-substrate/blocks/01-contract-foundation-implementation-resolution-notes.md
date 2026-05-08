@@ -7,7 +7,7 @@ Critic: MiniMax via `pi`, no tools, no repository context beyond attached files.
 - `examples/contract-foundation/not-assessed-assessment-input.json`: added the missing `sample-log-availability-previous` sample so the comparison references resolve structurally.
 - `examples/contract-foundation/positive-assessment-input.json` and `examples/contract-foundation/not-assessed-assessment-input.json`: removed circular `evidence_bundle_refs` that pointed an assessment input back to itself.
 - `schema/contract-release-verification.schema.json` and `examples/contract-foundation/contract-release-verification.example.json`: added and used `transparency_log_status: "compensating_control_recorded"` for the local private-equivalent verification record.
-- `docs/cto-brief.en.md` and `docs/cto-brief.ru.md`: added direct pointers to SpecKit, schema, fixture, and validation evidence locations.
+- `docs/agent-onboarding.md` and `docs/agent-onboarding.md`: added direct pointers to SpecKit, schema, fixture, and validation evidence locations.
 
 ## Rejected With Evidence
 

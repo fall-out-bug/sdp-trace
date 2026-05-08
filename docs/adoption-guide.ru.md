@@ -1,8 +1,8 @@
-# Руководство CTO по внедрению sdp-trace
+# Руководство по внедрению sdp-trace
 
 `sdp-trace` - это sidecar trust substrate для существующей AI-assisted delivery.
 Он не заменяет harness, prompts, agents, CI, review process, repository
-templates, `sdp-gate` или release governance.
+templates или release governance.
 
 Текущая pilot-поверхность означает trace capture, явную missing telemetry,
 assessment profiles, advisory/protected gate facts, CI/customer witness
@@ -11,7 +11,7 @@ source-bound release proof. Это не automatic merge blocking, не productio
 release approval, не external audit proof и не гарантия обнаружения каждого
 unwrapped agent run.
 
-## Что получает CTO
+## Что получает владелец репозитория
 
 По каждому репозиторию и коммиту организация может проверить:
 
@@ -42,8 +42,8 @@ contract поверх этих поверхностей:
 - release proof проверяет manifest subjects against source commit вместо
   доверия к prose.
 
-Это все еще evidence, а не policy decision. `sdp-gate`, CI, release management
-или customer governance решает, что блокировать.
+Это все еще evidence, а не policy decision. CI, release management, customer
+governance или другой внешний policy consumer решает, что блокировать.
 
 ## Модель внедрения
 
@@ -65,7 +65,7 @@ report, query, assess, gate facts
 CI or customer witness where available
         |
         v
-CTO/team evidence package per repo and commit
+evidence package per repo and commit
 ```
 
 Минимальная command sequence:
@@ -95,7 +95,7 @@ events, witness bindings или profile inputs отсутствуют и дол�
 | `release-proof` | Проверяет source-bound local release manifests against source commit. | `source_bound_local_release` не равен `external_production_trust`. |
 | Air-gapped guidance | Использует customer policy/private-equivalent evidence patterns. | Нет `witness --kind air-gapped`; unsupported evidence остается `not_assessed` или `cannot_verify`. |
 
-## Что CTO должен смотреть
+## Что смотреть в репозитории
 
 - `.sdp-trace-report/summary.json`: run и report summary.
 - `.sdp-trace-report/evidence-table.json`: observed evidence rows.
@@ -105,7 +105,9 @@ events, witness bindings или profile inputs отсутствуют и дол�
 - `.sdp-trace-runs/<run-id>/`: raw run package с учетом retention/redaction policy.
 - `query-pack` output: incident или forensic reconstruction package.
 - `release-proof` output: source-bound local release state.
-- SpecKit docs: spec, plan, tasks, evidence, decisions и deferred gaps.
+- Workflow docs: spec, plan, tasks, evidence, decisions и deferred gaps из
+  SpecKit, gsd, Superpowers, Oh My OpenAgent, ticket tracker или кастомного
+  planning flow команды.
 
 ## Как читать missing states
 

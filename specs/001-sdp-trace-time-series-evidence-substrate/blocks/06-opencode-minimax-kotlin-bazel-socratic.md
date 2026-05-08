@@ -104,7 +104,7 @@ Implementation is blocked until pi-review findings on the spec artifacts are rec
 - assessment input
 - validation output or reproducible validation command
 
-**Resolution**: Keep the package narrow, but include enough artifacts for a future `sdp-gate` consumer to inspect.
+**Resolution**: Keep the package narrow, but include enough artifacts for a future external policy consumer consumer to inspect.
 
 ## Q8A: How do we prevent raw output from being committed accidentally?
 

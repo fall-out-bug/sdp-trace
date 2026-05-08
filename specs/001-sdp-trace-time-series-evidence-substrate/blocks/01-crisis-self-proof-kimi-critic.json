@@ -6,39 +6,39 @@
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "issue": "Phase 5 Self-Trace v0 tasks T020 through T026 remain unchecked; sdp-trace has not yet applied its own contracts to record evidence, provenance, observations, metric streams, trace snapshots, or assessment inputs describing its own development.",
-      "why_it_matters_to_CTO": "A traceability substrate that has never traced itself cannot demonstrate that its contracts are sufficient, inspectable, or operable for any downstream consumer. The CTO is asked to trust a chain that has never been verified to describe its own creation.",
+      "why_it_matters_to_executive": "A traceability substrate that has never traced itself cannot demonstrate that its contracts are sufficient, inspectable, or operable for any downstream consumer. The technical executive is asked to trust a chain that has never been verified to describe its own creation.",
       "acceptance_risk": "High risk that schema designs contain coverage gaps only visible during self-application; pilot consumers may inherit structural blind spots that invalidate evidence packages."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
       "issue": "Residual risk admits contract manifest uses source_commit 'working-tree-block-01' instead of an immutable git SHA, and local development signing uses an ephemeral RSA key rather than the target Sigstore keyless profile.",
-      "why_it_matters_to_CTO": "Contract integrity claims rest on digest verification tied to a mutable placeholder source reference, and release signing rests on a non-target ephemeral key. The CTO cannot verify that the checked-out contract matches an immutable historical release or a production-trusted identity.",
+      "why_it_matters_to_executive": "Contract integrity claims rest on digest verification tied to a mutable placeholder source reference, and release signing rests on a non-target ephemeral key. The technical executive cannot verify that the checked-out contract matches an immutable historical release or a production-trusted identity.",
       "acceptance_risk": "Manifest verification proves script correctness against a fake commit; production trust inheritance is unproven and the immutable provenance chain is broken."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
       "issue": "Real release verification evidence for the target signing profile sdp-trace-signature/sigstore-dsse-keyless-v1 is absent; only a local-dev-dsse-openssl-v1 private equivalent exists.",
-      "why_it_matters_to_CTO": "The target profile is the claimed production trust anchor. Its absence means the contract integrity mechanism has never been exercised under the identity policy it mandates for trusted releases. A local OpenSSL proof does not validate the intended production chain.",
-      "acceptance_risk": "Critical path to production trust is theoretical; air-gapped equivalence claims lack comparative evidence against the real target, leaving the CTO with no proof the chosen profile is operable."
+      "why_it_matters_to_executive": "The target profile is the claimed production trust anchor. Its absence means the contract integrity mechanism has never been exercised under the identity policy it mandates for trusted releases. A local OpenSSL proof does not validate the intended production chain.",
+      "acceptance_risk": "Critical path to production trust is theoretical; air-gapped equivalence claims lack comparative evidence against the real target, leaving the technical executive with no proof the chosen profile is operable."
     }
   ],
   "major_findings": [
     {
       "file": "retired-research-artifact",
       "issue": "npm audit reports high-severity findings in the pinned ajv-cli@5.0.0 dependency chain (fast-json-patch <3.1.1), and the project explicitly rejects fixing them to preserve validator pinning.",
-      "why_it_matters_to_CTO": "The validation tooling used to establish contract trust has known vulnerable dependencies. If the validator cannot be trusted, the schema validation results it produces are suspect.",
+      "why_it_matters_to_executive": "The validation tooling used to establish contract trust has known vulnerable dependencies. If the validator cannot be trusted, the schema validation results it produces are suspect.",
       "acceptance_risk": "Validation environment itself carries integrity risk; downstream consumers may reject evidence produced by a toolchain with admitted security debt."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
       "issue": "Release verification example, DSSE envelope, and public key are intentionally excluded from the contract manifest artifact list to avoid circular digest dependencies.",
-      "why_it_matters_to_CTO": "Artifacts essential to verifying contract integrity are outside the manifest's digest coverage. The manifest does not fully describe the integrity surface of the release it claims to govern.",
+      "why_it_matters_to_executive": "Artifacts essential to verifying contract integrity are outside the manifest's digest coverage. The manifest does not fully describe the integrity surface of the release it claims to govern.",
       "acceptance_risk": "An attacker could modify excluded verification artifacts without triggering manifest digest mismatch, weakening the integrity boundary."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
       "issue": "Block 01 exit condition requires real release verification evidence, but judge residual risks and task state show this was satisfied only by a local-dev private equivalent, not the declared target profile.",
-      "why_it_matters_to_CTO": "The block claims completion of a trusted contract foundation while admitting the target signing mechanism is unproven. This conflates schema completeness with trustworthiness.",
+      "why_it_matters_to_executive": "The block claims completion of a trusted contract foundation while admitting the target signing mechanism is unproven. This conflates schema completeness with trustworthiness.",
       "acceptance_risk": "Foundation completeness is overstated; governance decisions based on Block 01 completion status may assume production-ready signing exists."
     }
   ],
@@ -53,7 +53,7 @@
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-implementation-judge-result.json",
     "retired-research-artifact",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
-    "docs/cto-brief.en.md"
+    "docs/agent-onboarding.md"
   ],
   "no_solution_policy_observed": true
 }

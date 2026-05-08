@@ -250,7 +250,7 @@ Block 24 implementation must check drift against:
 
 ## Approval Record
 
-The CTO approved implementation on 2026-05-08 after Socratic review and fixes,
+The technical executive approved implementation on 2026-05-08 after Socratic review and fixes,
 with the clarified case shape:
 
 1. separate same-owner demo repo;

@@ -310,6 +310,6 @@ Review gate:
 
 - Block 06 real-run completion
 - broad model/harness aggregation
-- `sdp-gate` policy consumption
+- external policy consumer policy consumption
 
 These are not allowed to hide a missing external trust check. They are outside Block 07 only after `verify:external-trust` has either passed for a real supported profile or kept Block 07 explicitly open.

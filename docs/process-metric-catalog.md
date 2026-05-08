@@ -2,7 +2,7 @@
 
 This catalog defines portable metric names for `sdp-trace` observations over time.
 
-`sdp-trace` records metric movement. It does not decide whether a value is good, bad, sufficient, degrading, ready, blocked, or acceptable. Thresholds and interpretations belong to `sdp-gate` or another external policy consumer.
+`sdp-trace` records metric movement. It does not decide whether a value is good, bad, sufficient, degrading, ready, blocked, or acceptable. Thresholds and interpretations belong to CI, release governance, customer governance, or another external policy consumer.
 
 ## Required Dimensions
 
@@ -27,7 +27,7 @@ Unavailable dimensions must be omitted from `dimensions` and recorded through `n
 
 | Metric name | Unit | Meaning | Collection method | Evidence source | `not_assessed` rule | Privacy risk |
 |---|---|---|---|---|---|---|
-| `contract_task_completion_ratio` | ratio | Completed SpecKit tasks divided by in-scope SpecKit tasks for a block or phase. | Count checked tasks in `tasks.md` for the declared scope. | `specs/**/tasks.md`, review notes. | Use `not_assessed` if the task scope is ambiguous or task status cannot be read from committed SpecKit artifacts. | Low. |
+| `contract_task_completion_ratio` | ratio | Completed tasks divided by in-scope tasks for a block or phase. | Count checked tasks in the declared planning source. | `specs/**/tasks.md`, GSD/task files, issue tracker exports, review notes. | Use `not_assessed` if the task scope is ambiguous or task status cannot be read from committed or retained planning artifacts. | Low. |
 | `evidence_coverage_ratio` | ratio | Evidence-backed required artifacts divided by required artifacts for the scope. | Count required evidence items and committed evidence refs. | Examples, validation summaries, command evidence. | Use `not_assessed` if required evidence list is undefined. | Medium when refs point to private systems. |
 | `not_assessed_item_count` | count | Count of explicit `not_assessed` entries in the package. | Count `not_assessed[]`, `unavailable_fields[]`, and `not_assessed_reason` occurrences for the scope. | Assessment input, provenance records, metric streams. | Use `not_assessed` if the package cannot be parsed. | Low. |
 | `schema_validation_state` | enum | Whether schema validation evidence exists for the scope. Values: `passed`, `failed`, `not_assessed`. | Read validation command evidence. | `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures <fixture-root>`, validation summary. | Use `not_assessed` if validation command was not run or output is unavailable. | Low. |

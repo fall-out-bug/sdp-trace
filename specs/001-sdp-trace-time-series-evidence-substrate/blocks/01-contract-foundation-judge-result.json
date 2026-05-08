@@ -14,7 +14,7 @@
     "Q4 resolved: not_assessed is defined as state with typed-value-safe patterns.",
     "Q5 resolved: Structural trust boundary is explicit and excludes producer honesty, artifact authenticity, model quality, and policy sufficiency.",
     "Q6 resolved: AC08 requires a documented automated artifact-safety scan.",
-    "Q7 resolved: Consumer schema-version declaration example is required without making sdp-gate a runtime dependency.",
+    "Q7 resolved: Consumer schema-version declaration example is required without making external policy consumer a runtime dependency.",
     "Q8 resolved: Positive fixture requires dedupe_key and conflict_refs coverage.",
     "Q9 resolved: Required identity, scope, timestamp, schema version, and artifact boundary fields fail validation when missing.",
     "Q10 resolved: T012 has a trace compatibility decision rule and migration-note trigger."

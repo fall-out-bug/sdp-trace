@@ -13,9 +13,11 @@ claim universal harness, model, CI, or air-gapped compatibility.
 
 ## Start Here
 
-1. Read [Core Concepts](docs/concepts.md) to understand the contract:
+1. Give [Agent Onboarding](docs/agent-onboarding.md) to any coding agent before
+   it works in this repository.
+2. Read [Core Concepts](docs/concepts.md) to understand the contract:
    spec, plan, task, evidence, gate, decision, trace, and provenance.
-2. Run the local smoke path:
+3. Run the local smoke path:
 
    ```text
    go test ./...
@@ -24,11 +26,15 @@ claim universal harness, model, CI, or air-gapped compatibility.
    go run ./cmd/sdp-trace verify <run-dir>
    ```
 
-3. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
+4. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
    command and state contract.
-4. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
+5. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
    verification path and overclaim checklist.
-5. Use [Documentation Map](docs/README.md) to choose the right next document.
+6. Use [Documentation Map](docs/README.md) to choose the right next document.
+
+Origin note: `sdp-trace` was extracted from delivery evidence work in
+`sdp_lab`. That history is not a runtime dependency and should not be required
+context for using this repository.
 
 ## What It Produces
 
@@ -53,23 +59,25 @@ until the current verifier replays it or an accepted external signature binds it
 - detect every unwrapped local agent run;
 - decide pass/fail, readiness, degradation, release approval, or risk override;
 - convert missing evidence into success;
-- depend on `sdp_lab`, Beads, Operator Mode, agentloop, Claude, Codex, OpenCode,
-  GitHub, or any specific harness runtime.
+- depend on Beads, Operator Mode, agentloop, Claude, Codex, OpenCode, GitHub,
+  or any specific harness runtime.
 
-Policy decisions belong to `sdp-gate`, CI, release governance, or another
-external consumer. `sdp-trace` records evidence and gaps for those consumers.
+Policy decisions belong to CI, release governance, customer governance, or
+another external policy consumer. `sdp-trace` records evidence and gaps for
+those consumers.
 
 ## Recommended Reading Order
 
 The docs have one primary path. They should not require readers to classify
 themselves before understanding the repository.
 
-1. [Documentation Map](docs/README.md)
-2. [Core Concepts](docs/concepts.md)
-3. [Agent Entrypoint](docs/agent-entrypoint.md)
-4. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
-5. [Harness Integration](docs/harness-integration.md)
-6. [Schema Reference](schema/README.md)
+1. [Agent Onboarding](docs/agent-onboarding.md)
+2. [Documentation Map](docs/README.md)
+3. [Core Concepts](docs/concepts.md)
+4. [Agent Entrypoint](docs/agent-entrypoint.md)
+5. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
+6. [Harness Integration](docs/harness-integration.md)
+7. [Schema Reference](schema/README.md)
 
 Governance and rollout documents are supporting references after the core path
 is clear.
@@ -80,7 +88,9 @@ is clear.
 - `schema/`: portable JSON schema contracts.
 - `docs/`: product, command, governance, reviewer, and integration documentation.
 - `examples/`: sanitized fixtures and pilot evidence packages.
-- `specs/`: SpecKit working artifacts and implementation block records.
+- `specs/`: working specs and implementation block records. Current repository
+  records are SpecKit-shaped, but `sdp-trace` can map evidence from other
+  planning flows.
 
 ## Minimal Flow
 

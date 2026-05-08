@@ -1,7 +1,7 @@
 # Block 23: MVP Closure Drift And Readiness
 
 Status: draft SpecKit delta for Socratic review. Implementation is blocked until
-this spec is reviewed, valid critical/major findings are resolved, and the CTO
+this spec is reviewed, valid critical/major findings are resolved, and the technical executive
 explicitly approves the reviewed direction.
 
 Parent artifacts:
@@ -45,7 +45,7 @@ Current review found these closure gaps:
    packages. CRAP < 5 is not currently a measured repository gate.
 5. Customer-facing English and Russian docs are stale against the shipped
    Block 22 command/profile surface.
-6. Customer-facing docs answer some adoption questions, but not all buyer
+6. Customer-facing docs answer some adoption questions, but not all customer
    pressure-point questions with explicit artifact-to-answer mappings.
 7. Some spec artifacts are stale in the opposite direction: Block 22 spec status
    still says implementation is blocked even though implementation and PR review
@@ -55,7 +55,7 @@ Current review found these closure gaps:
 
 - Do not claim `external_production_trust`, `trusted_contract_release`, or
   `production_release_verified`.
-- Do not rewrite the product boundary into `sdp-gate`, reporting, dashboarding,
+- Do not rewrite the product boundary into external policy consumer, reporting, dashboarding,
   or workflow orchestration.
 - Do not remove historical review ledgers merely because their commands are
   retired. Historical evidence may stay, but it must not be accepted as current
@@ -251,7 +251,7 @@ Acceptance criteria:
 
 ### WS5 - Customer Question Coverage
 
-Create a customer-facing answer map for the known buyer questions.
+Create a customer-facing answer map for the known customer questions.
 
 Mandatory customer questions for MVP handoff:
 
@@ -259,7 +259,7 @@ Mandatory customer questions for MVP handoff:
 2. Can it attach sidecar-first without replacing the existing harness?
 3. What happens when an agent or developer bypasses the wrapper or adapter?
 4. How does it distinguish real process movement from missing telemetry?
-5. Which states are `not_assessed` or `cannot_verify`, and what should a CTO do
+5. Which states are `not_assessed` or `cannot_verify`, and what should a technical executive do
    with them?
 6. What proof exists for a local source-bound release, and what external
    production trust is still absent?
@@ -281,7 +281,7 @@ state if the answer depends on unavailable evidence.
 
 Acceptance criteria:
 
-- CTO/team docs answer why `sdp-trace` is better than CI logs, git diff, and
+- technical executive/team docs answer why `sdp-trace` is better than CI logs, git diff, and
   review comments alone.
 - Docs explain how the product separates real process movement from missing
   telemetry and `not_assessed` gaps.
@@ -419,11 +419,11 @@ Additional checks for changed surfaces:
 | MVP-02 | major | backlog/drift | Block 06 has two open Beads while historical ledger claims closure through removed scripts. | unresolved_blocker |
 | MVP-03 | major | code-quality | CRAP < 5 is not measured; complexity and coverage risks remain. | unresolved_blocker |
 | MVP-04 | critical | documentation | Russian docs do not cover shipped CLI/profile surface. | unresolved_blocker |
-| MVP-05 | critical | documentation | CTO/team docs are stale against shipped MVP scope. | unresolved_blocker |
+| MVP-05 | critical | documentation | technical executive/team docs are stale against shipped MVP scope. | unresolved_blocker |
 | MVP-06 | major | product/questions | Customer pressure-point questions lack explicit answer mapping. | unresolved_blocker |
 | MVP-07 | minor | spec-drift | Block 22 spec status still says implementation is blocked. | unresolved_blocker |
 | MVP-08 | major | release/process | Local `main` is ahead of `origin/main`; remote closure and final CI are `not_assessed`. | unresolved_blocker |
 
 MVP-04 is critical only if Russian-language handoff remains in MVP scope. If the
-CTO removes Russian from MVP closure scope, MVP-04 becomes a major follow-up and
+technical executive removes Russian from MVP closure scope, MVP-04 becomes a major follow-up and
 WS4 must be narrowed before implementation approval.

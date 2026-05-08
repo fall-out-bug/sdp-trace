@@ -7,8 +7,8 @@ Block 13B completion details now live in
 
 Parent artifacts:
 
-- `docs/cto-adoption-guide.en.md`
-- `docs/team-lead-playbook.en.md`
+- `docs/adoption-guide.en.md`
+- `docs/repository-rollout-playbook.en.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/12-ci-witness-adoption.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13b-capture-boundary-state-dx-baseline.md`
 - retired research artifact
@@ -18,8 +18,8 @@ Parent artifacts:
 Close the product gaps that prevent `sdp-trace` from being a credible control
 layer for an existing AI SDLC.
 
-The target buyer does not want to replace OpenCode, GSD, Superpowers, custom
-agents, prompts, CI, or repository templates. The buyer wants a control layer
+The target customer does not want to replace OpenCode, GSD, Superpowers, custom
+agents, prompts, CI, or repository templates. The customer wants a control layer
 that can be added read-only or sidecar-first, then tightened at real control
 points.
 
@@ -27,7 +27,7 @@ The roadmap must preserve the product boundary:
 
 - `sdp-trace` records evidence, provenance, trace, gaps, witness state, and
   verifier-derived facts;
-- `sdp-gate` or another external policy consumer decides merge, release,
+- external policy consumer or another external policy consumer decides merge, release,
   degradation, readiness, and override outcomes;
 - `sdp-report` or another reporting consumer aggregates movement over repos,
   teams, services, harnesses, and time windows.
@@ -92,7 +92,7 @@ CI-controlled enforcement profile:
 
 - requires signed or CI-witnessed checkpoints from a distinct observer boundary;
 - requires source, PR, CI, and artifact binding;
-- treats missing required evidence as a blocking policy input for `sdp-gate` or
+- treats missing required evidence as a blocking policy input for external policy consumer or
   the customer CI policy;
 - appears only after signed checkpoint and source/merge binding exist.
 
@@ -186,7 +186,7 @@ evidence, but it does not prevent unmanaged work from reaching a protected gate.
 
 Customer risk:
 
-The CTO receives telemetry only from cooperative teams and cannot distinguish
+The technical executive receives telemetry only from cooperative teams and cannot distinguish
 "team is clean" from "team avoided capture" unless CI contracts are strict.
 
 Required closure:
@@ -251,12 +251,12 @@ Required closure:
 
 Problem:
 
-Raw JSON and per-repo artifacts are not enough for incident review or CTO
+Raw JSON and per-repo artifacts are not enough for incident review or technical executive
 rollout monitoring.
 
 Customer risk:
 
-The buyer cannot answer, "what happened across this repo, commit, PR, service,
+The customer cannot answer, "what happened across this repo, commit, PR, service,
 team, and time window?" without manual reconstruction.
 
 Required closure:
@@ -309,9 +309,9 @@ Build the strongest possible protected CI contract first:
 
 Pros:
 
-- fastest buyer value;
+- fastest customer value;
 - turns non-cooperating agents into visible missing evidence;
-- aligns with the CTO request for a control layer over existing AI SDLC;
+- aligns with the technical executive request for a control layer over existing AI SDLC;
 - keeps `sdp-trace` independent from specific harnesses.
 
 Cons:
@@ -335,7 +335,7 @@ Pros:
 
 Cons:
 
-- slower buyer-visible trust closure;
+- slower customer-visible trust closure;
 - many harness-specific integration surfaces;
 - still bypassable without gate enforcement;
 - signing incomplete telemetry can make trust claims less credible.
@@ -355,7 +355,7 @@ Cons:
 
 - signatures over weak capture do not create product value;
 - higher integration friction;
-- may feel like supply-chain ceremony before the CTO sees useful posture data.
+- may feel like supply-chain ceremony before the technical executive sees useful posture data.
 
 ### Option D: Reporting First
 
@@ -364,7 +364,7 @@ artifacts.
 
 Pros:
 
-- directly addresses the CTO question about process movement;
+- directly addresses the technical executive question about process movement;
 - makes demos easier to understand;
 - gives early visibility into repo/team adoption.
 
@@ -380,7 +380,7 @@ Use a staged hybrid:
 
 1. Capture-boundary and DX baseline first, so gate contracts do not require
    unobservable facts.
-2. Advisory gate contract for buyer-visible value and deterministic
+2. Advisory gate contract for customer-visible value and deterministic
    explanations.
 3. Minimal trust-anchor work before any protected enforcement claim.
 4. Protected CI gate profile after signed checkpoint and source/PR/merge binding.
@@ -414,7 +414,7 @@ Deliverables:
 - reviewed roadmap;
 - Russian and English customer-facing gap summary;
 - block-level acceptance criteria;
-- pi review ledger with CTO, Platform, CISO, Staff Engineer, and Forensics
+- pi review ledger with technical executive, Platform, CISO, Staff Engineer, and Forensics
   dispositions.
 
 Acceptance criteria:
@@ -422,7 +422,7 @@ Acceptance criteria:
 - every known product gap maps to a later block or an explicit non-goal;
 - no block claims audit-grade, fail-closed, or degradation analytics before the
   required evidence exists;
-- persona review has no remaining critical or major findings.
+- role review has no remaining critical or major findings.
 
 ### Block 13B: Capture Boundary, State Taxonomy, And DX Baseline
 
@@ -564,7 +564,7 @@ Deliverables:
 - merge-event temporal binding: checkpoint must be shown to predate merge
   through CI/VCS evidence or remain `cannot_verify`;
 - approval and override external-reference fields;
-- fail-closed policy input for `sdp-gate` or customer CI, not a native
+- fail-closed policy input for external policy consumer or customer CI, not a native
   `sdp-trace` merge verdict.
 
 Acceptance criteria:
@@ -722,7 +722,7 @@ Acceptance criteria:
 
 Purpose:
 
-Provide the evidence substrate for CTO-level process movement analysis.
+Provide the evidence substrate for technical executive-level process movement analysis.
 
 Closes:
 
@@ -834,12 +834,12 @@ The demo must show real repo artifacts, not a slide show:
 
 ## Socratic Review Questions
 
-CTO buyer:
+technical executive customer:
 
 - Can this be adopted without changing the existing harness?
-- What does the CTO see when the agent avoids telemetry?
+- What does the technical executive see when the agent avoids telemetry?
 - Does the plan answer process movement without an opaque score?
-- Which block creates buyer-visible value first?
+- Which block creates customer-visible value first?
 
 Platform / Harness Owner:
 

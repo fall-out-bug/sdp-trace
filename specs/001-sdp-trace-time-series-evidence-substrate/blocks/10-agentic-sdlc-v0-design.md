@@ -34,7 +34,7 @@ missing.
 
 It must not claim that the agent was honest, that the code is correct, or
 that the delivery system is healthy. Those decisions belong to
-`sdp-gate`, `sdp-report`, or customer policy consumers.
+external policy consumer, `sdp-report`, or customer policy consumers.
 
 ## Product Boundary
 
@@ -70,7 +70,7 @@ Out of scope:
 
 ## Primary UX
 
-The CTO buyer wants a control layer over an existing AI SDLC. The first
+The technical executive customer wants a control layer over an existing AI SDLC. The first
 UX must therefore be sidecar-first and harness-neutral:
 
 ```bash

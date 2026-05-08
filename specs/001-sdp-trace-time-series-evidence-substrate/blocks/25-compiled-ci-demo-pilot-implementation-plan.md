@@ -139,7 +139,7 @@ Before PR readiness:
    artifacts.
 4. Confirm no raw logs, raw OIDC material, private URLs, tokens, or local
    filesystem paths were copied into `sdp-trace` or uploaded CI artifacts.
-5. Confirm every remaining buyer-relevant gap is `not_assessed` or
+5. Confirm every remaining customer-relevant gap is `not_assessed` or
    `cannot_verify`, not silently omitted.
 
 ## PR And Merge

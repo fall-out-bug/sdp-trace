@@ -1,8 +1,8 @@
-# sdp-trace CTO Adoption Guide
+# sdp-trace Adoption Guide
 
 `sdp-trace` is a sidecar trust substrate for existing AI-assisted delivery. It
 does not replace your harness, prompts, agents, CI, review process, repository
-templates, `sdp-gate`, or release governance.
+templates, or release governance.
 
 The current pilot surface means trace capture, explicit missing telemetry,
 assessment profiles, advisory/protected gate facts, CI/customer witness profiles,
@@ -11,7 +11,7 @@ release proof. It does not mean automatic merge blocking, production release
 approval, external audit proof, or guaranteed detection of every unwrapped
 agent run.
 
-## What The CTO Gets
+## What The Repository Owner Gets
 
 For every repository and commit, the organization can inspect:
 
@@ -42,8 +42,8 @@ surfaces:
 - release proof checks manifest subjects against a source commit instead of
   trusting prose.
 
-This is still evidence, not a policy decision. `sdp-gate`, CI, release
-management, or customer governance decides what to block.
+This is still evidence, not a policy decision. CI, release management, customer
+governance, or another external policy consumer decides what to block.
 
 ## Implementation Model
 
@@ -65,7 +65,7 @@ report, query, assess, gate facts
 CI or customer witness where available
         |
         v
-CTO/team evidence package per repo and commit
+evidence package per repo and commit
 ```
 
 Minimum command sequence:
@@ -95,7 +95,7 @@ bindings, or profile inputs are missing and must remain `missing_telemetry`,
 | `release-proof` | Verifies source-bound local release manifests against a source commit. | `source_bound_local_release` is not `external_production_trust`. |
 | Air-gapped guidance | Uses customer policy/private-equivalent evidence patterns. | There is no `witness --kind air-gapped`; unsupported evidence stays `not_assessed` or `cannot_verify`. |
 
-## What The CTO Should Inspect
+## What The technical executive Should Inspect
 
 - `.sdp-trace-report/summary.json`: run and report summary.
 - `.sdp-trace-report/evidence-table.json`: observed evidence rows.
@@ -105,7 +105,9 @@ bindings, or profile inputs are missing and must remain `missing_telemetry`,
 - `.sdp-trace-runs/<run-id>/`: raw run package, subject to retention and redaction policy.
 - `query-pack` output: incident or forensic reconstruction package.
 - `release-proof` output: source-bound local release state.
-- SpecKit docs: spec, plan, tasks, evidence, decisions, and deferred gaps.
+- Workflow docs: spec, plan, tasks, evidence, decisions, and deferred gaps from
+  SpecKit, gsd, Superpowers, Oh My OpenAgent, a ticket tracker, or the team's
+  custom planning flow.
 
 ## Interpreting Missing States
 

@@ -3,7 +3,7 @@
 Status: implemented; final review findings fixed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Beads mirror: `sdp-trace-cdn.13`
-Audience: CTO, CIO, CEO, release owners, future `sdp-gate` consumers
+Audience: technical executive, CIO, CEO, release owners, future external policy consumers
 
 ## Purpose
 
@@ -37,7 +37,7 @@ Missing proof remains `not_assessed`; it must not be collapsed into trusted.
 
 - full TUF metadata
 - enterprise PKI implementation
-- `sdp-gate` pass/fail policy
+- external policy consumer pass/fail policy
 - customer pilot execution
 
 ## Acceptance

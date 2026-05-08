@@ -29,7 +29,7 @@ Allowed accountable actor types:
 | Second | Contract, risk, or gate owner challenges controls and policy fit. |
 | Third | Independent assurance samples whether the process works as claimed. |
 
-`sdp-trace` records line-of-defense and identity facts. It does not decide whether separation is sufficient; that policy belongs to `sdp-gate` or another governance process.
+`sdp-trace` records line-of-defense and identity facts. It does not decide whether separation is sufficient; that policy belongs to CI, release governance, customer governance, or another external policy consumer.
 
 ## Effective Accountability
 
@@ -43,4 +43,3 @@ Evidence can inherit accountability from a containing package, but assessment in
 - `content_approval`: accountable for reviewed content
 - `risk_acceptance`: accountable for accepted residual risk
 - `release_approval`: accountable for releasing the contract artifact
-

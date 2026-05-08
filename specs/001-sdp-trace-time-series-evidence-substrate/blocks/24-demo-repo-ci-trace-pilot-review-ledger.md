@@ -3,7 +3,7 @@
 Status: Socratic spec review returned `REVISE` across product/demo
 credibility, trace/evidence, CI/witness, and privacy/safety planes. Valid
 critical and major findings were accepted into the revised SpecKit delta.
-Focused re-review returned `APPROVE` across all four planes. The CTO approved
+Focused re-review returned `APPROVE` across all four planes. The technical executive approved
 implementation on 2026-05-08 with the clarified case shape: three clean trace
 cases and two intentionally dishonest-trace cases.
 
@@ -13,7 +13,7 @@ cases and two intentionally dishonest-trace cases.
 | --- | --- | --- | --- | --- | --- | --- |
 | S24-PC-01 | critical | product/demo credibility | MiniMax-M2.7 | Same-owner demo could look like a controlled fixture rather than customer-style proof. | accepted_fixed | Added Owner Independence Gap and report requirements naming what another owner must provide. |
 | S24-PC-02 | critical | product/demo credibility | MiniMax-M2.7 | Tiny passing Go test was too low-signal unless the report shows what `sdp-trace` adds beyond raw CI. | accepted_fixed | Replaced tiny Go with the repo-native Feature Flag / Entitlements Kotlin+Bazel demo service and kept the "CI Alone vs sdp-trace" report requirement. |
-| S24-PC-09 | critical | CTO correction | user | The reviewed direction still named a tiny Go demo app, which conflicts with Block 24's purpose of replacing toy pilot proof. | accepted_fixed | Demo scope is now Feature Flag / Entitlements Kotlin+Bazel with a deterministic Bazel test; OpenCode/GSD/model-agent execution remains `not_assessed`. |
+| S24-PC-09 | critical | technical executive correction | user | The reviewed direction still named a tiny Go demo app, which conflicts with Block 24's purpose of replacing toy pilot proof. | accepted_fixed | Demo scope is now Feature Flag / Entitlements Kotlin+Bazel with a deterministic Bazel test; OpenCode/GSD/model-agent execution remains `not_assessed`. |
 | S24-PC-03 | critical | product/demo credibility | MiniMax-M2.7 | Negative `cannot_verify` path lacked customer-readable interpretation. | accepted_fixed | AC7 and Socratic Q5 now require customer interpretation and next evidence. |
 | S24-PC-04 | major | product/demo credibility | MiniMax-M2.7 | Pilot report quality bar was undefined. | accepted_fixed | Added Pilot Report Contract and answer classes for the nine Block 23 questions. |
 | S24-PC-05 | major | product/demo credibility | MiniMax-M2.7 | `gate` output was disclaimed as non-policy but not given a positive meaning. | accepted_fixed | AC5 and report contract now require "Gate Output Meaning" as verifier-derived fact output. |
@@ -50,15 +50,15 @@ cases and two intentionally dishonest-trace cases.
 | trace/evidence and claim-boundary | ZAI GLM-5.1 | `APPROVE` | none |
 | CI/witness semantics | OpenRouter Qwen 3.6 Plus | `APPROVE` | none |
 | privacy/safety | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
-| CTO correction: replace tiny Go with Feature Flag / Entitlements Kotlin+Bazel | MiniMax-M2.7 | `APPROVE` | none |
-| CTO correction: Kotlin/Bazel evidence feasibility | OpenRouter Qwen 3.6 Plus | `not_assessed` | unusable response attempted to inspect a demo repo instead of reviewing the supplied SpecKit packet |
-| CTO correction: Kotlin/Bazel evidence feasibility replacement | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
+| technical executive correction: replace tiny Go with Feature Flag / Entitlements Kotlin+Bazel | MiniMax-M2.7 | `APPROVE` | none |
+| technical executive correction: Kotlin/Bazel evidence feasibility | OpenRouter Qwen 3.6 Plus | `not_assessed` | unusable response attempted to inspect a demo repo instead of reviewing the supplied SpecKit packet |
+| technical executive correction: Kotlin/Bazel evidence feasibility replacement | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
 
 ## Implementation Approval
 
 | date | approver/source | decision | implementation constraint |
 | --- | --- | --- | --- |
-| 2026-05-08 | CTO/user | approved reviewed direction | Implement Feature Flag / Entitlements Kotlin+Bazel demo repo, GitHub Actions first, source-built `sdp-trace`, sanitized copy-back only, three clean cases, and two intentionally dishonest-trace cases. |
+| 2026-05-08 | technical executive/user | approved reviewed direction | Implement Feature Flag / Entitlements Kotlin+Bazel demo repo, GitHub Actions first, source-built `sdp-trace`, sanitized copy-back only, three clean cases, and two intentionally dishonest-trace cases. |
 
 ## Implementation Evidence
 

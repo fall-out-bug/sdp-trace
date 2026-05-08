@@ -15,7 +15,7 @@ Documentation review correction:
 
 ## Goal
 
-Turn local contract evidence into a buyer-visible CI-witnessed posture without
+Turn local contract evidence into a customer-visible CI-witnessed posture without
 claiming external trust.
 
 Block 12 adds a generic CI witness record that binds:
@@ -28,7 +28,7 @@ Block 12 adds a generic CI witness record that binds:
 - local gate result;
 - missing external witness state.
 
-This lets a CTO ask, per repository and commit:
+This lets a technical executive ask, per repository and commit:
 
 ```text
 Was this agent-assisted change only locally observed, CI-witnessed, or still
@@ -193,7 +193,7 @@ The customer implementation path is:
    sdp-trace gate --out .sdp-trace-report/gate-result.json --contract <contract> --witness .sdp-trace-report/ci-witness.json .sdp-trace-runs
    ```
 
-7. The CTO-facing artifact is `.sdp-trace-report/`.
+7. The technical executive-facing artifact is `.sdp-trace-report/`.
 
 ## Capture Boundary
 

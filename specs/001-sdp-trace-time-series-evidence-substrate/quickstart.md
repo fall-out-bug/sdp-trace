@@ -8,17 +8,17 @@ Read:
 specs/001-sdp-trace-time-series-evidence-substrate/spec.md
 ```
 
-Confirm the feature answers the CTO question as evidence-backed process movement: prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. It must not answer with a built-in yes/no degradation verdict.
+Confirm the feature answers the technical executive question as evidence-backed process movement: prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. It must not answer with a built-in yes/no degradation verdict.
 
 ## 2. Read the Boundary Contract
 
 Read:
 
 ```text
-specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md
+specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md
 ```
 
-Confirm `sdp-trace` owns evidence/provenance/observations/metric streams and `sdp-gate` owns policies, gate decisions, degradation verdicts, readiness, and overrides.
+Confirm `sdp-trace` owns evidence/provenance/observations/metric streams and external policy consumer owns policies, gate decisions, degradation verdicts, readiness, and overrides.
 
 Also confirm external verdicts or evidence-strength assertions are represented as external inputs with producer and origin, not as native `sdp-trace` decisions.
 
@@ -113,4 +113,4 @@ That path is intentionally ignored by git.
 
 ## 10. Check Schema Compatibility
 
-Every new schema and committed example that claims a schema contract must declare or reference a schema version. Breaking changes require updated examples, migration notes, and `sdp-gate` compatibility notes.
+Every new schema and committed example that claims a schema contract must declare or reference a schema version. Breaking changes require updated examples, migration notes, and external policy consumer compatibility notes.

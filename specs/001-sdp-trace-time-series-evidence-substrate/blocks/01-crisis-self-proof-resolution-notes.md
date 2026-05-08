@@ -2,7 +2,7 @@
 
 Date: 2026-04-30
 
-Trigger: CTO objection: if `sdp-trace` cannot directly prove its own development and contract integrity, it cannot prove anything for a customer.
+Trigger: technical executive objection: if `sdp-trace` cannot directly prove its own development and contract integrity, it cannot prove anything for a customer.
 
 ## Socratic Critic Results
 
@@ -29,7 +29,7 @@ Both critics returned `verdict: "needs_revision"`.
 - Promoted Phase 5 to Priority P0 and added T052-T056 for self-trace validation, crisis review evidence, accountability, metrics, and negative fixtures.
 - Added Phase 5A with T057-T061 for self-attested contract release proof.
 - Reworded Block 01 status and purpose so it no longer claims product proof.
-- Updated README and CTO briefs to state that customer trust is blocked until this repository traces itself.
+- Updated README and technical executive briefs to state that customer trust is blocked until this repository traces itself.
 
 ## Current Product State
 

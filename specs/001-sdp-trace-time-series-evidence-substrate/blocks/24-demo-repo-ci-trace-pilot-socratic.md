@@ -1,7 +1,7 @@
 # Block 24 Socratic Review: Demo Repository CI And Trace Pilot
 
 Status: Socratic review and focused re-review complete. Implementation is
-blocked until the CTO explicitly approves the reviewed direction.
+blocked until the technical executive explicitly approves the reviewed direction.
 
 ## Initial Socratic Questions And Resolutions
 
