@@ -1,7 +1,7 @@
 # Socratic Resolution Notes
 
 Date: 2026-04-30
-Source review: `sdp_lab/docs/reviews/2026-04-30-f163-sdp-trace-spec-interrogate.md`
+Source review: prior internal spec critique (archived outside this repository)
 
 ## Scope
 
@@ -9,11 +9,11 @@ Three clean-context critics (`zai/glm-5.1`, `minimax/MiniMax-M2.7`, `kimi-coding
 
 ## Resolutions
 
-### R1: CTO Degradation Question Without Native Verdict
+### R1: technical executive Degradation Question Without Native Verdict
 
 Status: resolved
 
-Resolution: `sdp-trace` answers the CTO question with movement data, not a yes/no degradation verdict. The spec now states that native movement records include prior/current values, deltas, units, dimensions, evidence coverage, and `not_assessed` gaps. Interpretation labels such as degrading, improving, pass, fail, ready, blocked, or not ready remain external verdicts.
+Resolution: `sdp-trace` answers the technical executive question with movement data, not a yes/no degradation verdict. The spec now states that native movement records include prior/current values, deltas, units, dimensions, evidence coverage, and `not_assessed` gaps. Interpretation labels such as degrading, improving, pass, fail, ready, blocked, or not ready remain external verdicts.
 
 Changed artifacts:
 
@@ -21,7 +21,7 @@ Changed artifacts:
 - `plan.md`
 - `data-model.md`
 - `quickstart.md`
-- `contracts/sdp-trace-sdp-gate-boundary.md`
+- `contracts/external-policy-consumer-boundary.md`
 
 ### R2: Policy-Adjacent Fields and External Verdicts
 
@@ -35,7 +35,7 @@ Changed artifacts:
 - `data-model.md`
 - `research.md`
 - `tasks.md`
-- `contracts/sdp-trace-sdp-gate-boundary.md`
+- `contracts/external-policy-consumer-boundary.md`
 
 ### R3: JSON Schema Draft and Validator Timing
 
@@ -70,7 +70,7 @@ Changed artifacts:
 
 Status: resolved
 
-Resolution: New schemas use stable `$id` values and semver schema versions. Additive optional fields are minor changes; required field removals, enum semantic changes, or ownership-boundary changes are major changes. `schema/trace.schema.json` remains a compatibility path until a replacement path and migration note are committed. `sdp-gate` must declare supported schema versions.
+Resolution: New schemas use stable `$id` values and semver schema versions. Additive optional fields are minor changes; required field removals, enum semantic changes, or ownership-boundary changes are major changes. `schema/trace.schema.json` remains a compatibility path until a replacement path and migration note are committed. external policy consumers must declare supported schema versions.
 
 Changed artifacts:
 
@@ -79,9 +79,9 @@ Changed artifacts:
 - `data-model.md`
 - `research.md`
 - `quickstart.md`
-- `contracts/sdp-trace-sdp-gate-boundary.md`
+- `contracts/external-policy-consumer-boundary.md`
 - `schema/README.md`
 
 ## Deferred
 
-No policy gate is added here. This review improves the SpecKit contract only. Enforcement remains a later schema/tooling task, and pass/fail policy remains owned by `sdp-gate`.
+No policy gate is added here. This review improves the SpecKit contract only. Enforcement remains a later schema/tooling task, and pass/fail policy remains owned by external policy consumer.

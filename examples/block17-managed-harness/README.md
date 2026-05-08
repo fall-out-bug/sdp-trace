@@ -1,4 +1,4 @@
-# Block 17 Managed Harness Fixtures
+# Managed Harness Fixtures
 
 These fixtures are committed examples for the managed harness assessment output
 shape. They are not external audit proof and do not make `sdp-trace` a policy

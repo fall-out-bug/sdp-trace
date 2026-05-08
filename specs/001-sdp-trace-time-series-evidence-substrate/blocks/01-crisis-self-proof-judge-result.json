@@ -10,13 +10,13 @@
     },
     {
       "finding": "Block 01 was worded as a 'trusted foundation' without self-trace",
-      "resolution": "Block 01 status reworded to 'contract scaffold implemented; product proof blocked until self-trace and self-attestation pass'; README and CTO briefs updated to state customer trust is blocked until the repository traces itself",
-      "evidence": "blocks/01-contract-foundation.md: purpose explicitly states 'This block does not prove that sdp-trace is a viable product. Product viability starts only when the repository traces its own development'; docs/cto-brief.en.md: 'The product is not allowed to ask a customer for trust until it traces itself'"
+      "resolution": "Block 01 status reworded to 'contract scaffold implemented; product proof blocked until self-trace and self-attestation pass'; README and technical executive briefs updated to state customer trust is blocked until the repository traces itself",
+      "evidence": "blocks/01-contract-foundation.md: purpose explicitly states 'This block does not prove that sdp-trace is a viable product. Product viability starts only when the repository traces its own development'; docs/agent-onboarding.md: 'The product is not allowed to ask a customer for trust until it traces itself'"
     },
     {
       "finding": "Local signing proof used ephemeral RSA instead of target Sigstore keyless profile",
       "resolution": "Local DSSE/OpenSSL proof is now explicitly framed as engineering evidence for envelope mechanics only; target profile sdp-trace-signature/sigstore-dsse-keyless-v1 remains a future requirement; docs/contract-release-signing.md and resolution notes draw the explicit distinction",
-      "evidence": "blocks/01-contract-foundation.md: 'Block 01 is not product proof even when local release verification evidence exists'; docs/research/block-01-validation-summary.md: 'locally_attested is useful engineering evidence. It is not a substitute for externally_attested or production_release_verified'"
+      "evidence": "blocks/01-contract-foundation.md: 'Block 01 is not product proof even when local release verification evidence exists'; retired-research-artifact: 'locally_attested is useful engineering evidence. It is not a substitute for externally_attested or production_release_verified'"
     },
     {
       "finding": "source_commit placeholder 'working-tree-block-01' used in contract manifest",
@@ -38,7 +38,7 @@
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "issue": "T011 (process metric catalog) remains unchecked. Metric names in fixtures are ad-hoc without a governed catalog. The spec does not yet prove that two teams recording the same process signal can produce comparable metric streams.",
-      "why_it_blocks_CTO_acceptance": "The CTO brief promises 'prior/current/delta values, evidence coverage, and not_assessed gaps' as the answer to whether the delivery process is moving toward degradation. Without a metric catalog that defines what process movement means, the movement data can be structurally valid but semantically non-comparable across windows or teams. The CTO cannot rely on metric movement comparisons until metric names, units, dimensions, and evidence sources are governed."
+      "why_it_blocks_CTO_acceptance": "The technical executive brief promises 'prior/current/delta values, evidence coverage, and not_assessed gaps' as the answer to whether the delivery process is moving toward degradation. Without a metric catalog that defines what process movement means, the movement data can be structurally valid but semantically non-comparable across windows or teams. The technical executive cannot rely on metric movement comparisons until metric names, units, dimensions, and evidence sources are governed."
     },
     {
       "file": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
@@ -54,8 +54,8 @@
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md: next mandatory block with defined acceptance",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/03-self-attestation-proof.md: blocked by Block 02 with separate proof states",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md: accepted findings and spec changes documented",
-    "docs/cto-brief.en.md: one-minute narrative with explicit self-proof blocker",
-    "docs/research/block-01-validation-summary.md: separate proof states and local-only evidence framing"
+    "docs/agent-onboarding.md: one-minute narrative with explicit self-proof blocker",
+    "retired-research-artifact: separate proof states and local-only evidence framing"
   ],
   "required_next_action": "Implement Phase 5 self-trace tasks T020-T026, T052-T056 and Phase 5A self-attestation tasks T057-T061. Complete T011 (process metric catalog) before Phase 6 pilot matrix work begins. Until then, sdp-trace correctly holds the product state as contract scaffolding with no customer trust claim.",
   "no_solution_policy_observed": true

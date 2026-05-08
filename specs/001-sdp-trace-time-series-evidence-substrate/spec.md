@@ -3,7 +3,7 @@
 **Feature Branch**: `001-sdp-trace-time-series-evidence-substrate`
 **Created**: 2026-04-30
 **Status**: Draft
-**Input**: User description: "`sdp-trace` must be the SpecKit-observable evidence and trace substrate. Beads is only discipline support. The CTO question is whether the delivery process is moving toward degradation over time; `sdp-gate` applies policy on top of inherited `sdp-trace` contracts. A CEO must also be able to see which human is accountable for each stage and whether the contract itself was changed under a trusted release process."
+**Input**: User description: "`sdp-trace` must be the repository-observable evidence and trace substrate. Planning may come from SpecKit or another workflow; Beads is only discipline support. The technical executive question is whether the delivery process is moving toward degradation over time; external policy consumers apply policy on top of `sdp-trace` contracts. A CEO must also be able to see which human is accountable for each stage and whether the contract itself was changed under a trusted release process."
 
 ## Non-Negotiable Self-Proof Rule
 
@@ -15,13 +15,13 @@ If self-trace or self-attestation is missing, the correct product state is not "
 
 ## User Scenarios & Testing
 
-### User Story 1 - CTO Reviews Process Movement (Priority: P1)
+### User Story 1 - technical executive Reviews Process Movement (Priority: P1)
 
-A CTO reviewing an AI-assisted delivery pilot can inspect accumulated `sdp-trace` artifacts and see what changed over time: evidence quality, scope discipline, correctness signals, review signals, AI behavior, and stack/harness/model slices.
+A technical executive reviewing an AI-assisted delivery pilot can inspect accumulated `sdp-trace` artifacts and see what changed over time: evidence quality, scope discipline, correctness signals, review signals, AI behavior, and stack/harness/model slices.
 
-**Why this priority**: This is the product reason for the repository. If the CTO cannot understand whether the process is improving, stable, degrading, or not assessable, the substrate is not useful.
+**Why this priority**: This is the product reason for the repository. If the technical executive cannot understand whether the process is improving, stable, degrading, or not assessable, the substrate is not useful.
 
-**Boundary**: `sdp-trace` answers the CTO question with inspectable movement data: prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. It does not answer with "yes, we are degrading" or "no, we are not degrading." A yes/no verdict or threshold interpretation belongs to `sdp-gate` or another policy consumer.
+**Boundary**: `sdp-trace` answers the technical executive question with inspectable movement data: prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. It does not answer with "yes, we are degrading" or "no, we are not degrading." A yes/no verdict or threshold interpretation belongs to an external policy consumer.
 
 **Independent Test**: A reviewer opens this SpecKit package and the generated examples, then confirms every process signal is backed by evidence or explicitly marked `not_assessed`.
 
@@ -33,17 +33,17 @@ A CTO reviewing an AI-assisted delivery pilot can inspect accumulated `sdp-trace
 
 ---
 
-### User Story 2 - sdp-gate Inherits Trace Contracts (Priority: P1)
+### User Story 2 - External Policy Consumers Use Trace Contracts (Priority: P1)
 
-A `sdp-gate` implementer can consume `sdp-trace` artifacts as policy inputs without `sdp-trace` deciding pass/fail, readiness, degradation, or override outcomes.
+An external policy consumer implementer can consume `sdp-trace` artifacts as policy inputs without `sdp-trace` deciding pass/fail, readiness, degradation, or override outcomes.
 
-**Why this priority**: `sdp-gate` is built on top of `sdp-trace`; if the boundary is vague, both products will duplicate policy logic and confuse users.
+**Why this priority**: if the boundary is vague, recorder and policy layers will duplicate policy logic and confuse users.
 
-**Independent Test**: Read the boundary contract and verify it names `sdp-trace` ownership and `sdp-gate` ownership separately.
+**Independent Test**: Read the boundary contract and verify it names `sdp-trace` ownership and external policy consumer ownership separately.
 
 **Acceptance Scenarios**:
 
-1. **Given** an evidence bundle and metric stream, **When** `sdp-gate` applies a policy, **Then** the policy decision is external to `sdp-trace`.
+1. **Given** an evidence bundle and metric stream, **When** an external policy consumer applies a policy, **Then** the policy decision is external to `sdp-trace`.
 2. **Given** an external gate verdict is recorded as evidence, **When** it appears in a trace, **Then** it is represented as an observed verdict input, not as a decision made by `sdp-trace`.
 3. **Given** an evidence event carries an externally produced quality, strength, or verdict assertion, **When** it is recorded by `sdp-trace`, **Then** the assertion records its producer, policy reference when available, and external origin rather than becoming a native `sdp-trace` assessment.
 
@@ -55,7 +55,7 @@ A CEO or CIO can inspect a contract release or assessment package and identify t
 
 **Why this priority**: A process that says "the AI did it" is not governable. A schema-valid artifact is also not trustworthy if a person or model can quietly simplify the contract and still call the result valid.
 
-**Boundary**: `sdp-trace` records accountability, release integrity, and verification status. It does not decide whether the organization accepts residual risk; that policy decision belongs to `sdp-gate`, management, or another external governance process.
+**Boundary**: `sdp-trace` records accountability, release integrity, and verification status. It does not decide whether the organization accepts residual risk; that policy decision belongs to external policy consumer, management, or another external governance process.
 
 **Independent Test**: A reviewer validates examples proving that AI actors can appear as producers/reviewers but cannot be the sole accountable owner or approver, and that a modified contract artifact fails manifest digest verification.
 
@@ -104,18 +104,18 @@ A pilot operator can run or wrap an actual OpenCode + MiniMax execution against 
 
 ---
 
-### User Story 4 - Repository Observer Finds SpecKit Evidence (Priority: P2)
+### User Story 4 - Repository Observer Finds Planning Evidence (Priority: P2)
 
-A repository observer can understand current scope and proof by reading SpecKit artifacts without needing Beads.
+A repository observer can understand current scope and proof by reading committed planning artifacts without needing a private planning runtime.
 
-**Why this priority**: Beads is a discipline tool. The repository-facing plan and evidence must live in committed SpecKit files.
+**Why this priority**: external trackers and local workflow tools are discipline support. The repository-facing plan and evidence must be inspectable from committed files.
 
 **Independent Test**: A reviewer can start from `/specs/001-sdp-trace-time-series-evidence-substrate/spec.md`, follow `plan.md` and `tasks.md`, and map task status to committed artifacts.
 
 **Acceptance Scenarios**:
 
-1. **Given** a fresh clone without Beads context loaded, **When** a reviewer opens `specs/001-sdp-trace-time-series-evidence-substrate/`, **Then** they can understand the feature, plan, tasks, contract, and evidence expectations.
-2. **Given** Beads issues exist, **When** they are inspected, **Then** they reference this SpecKit spec as secondary tracking, not the other way around.
+1. **Given** a fresh clone without private workflow context loaded, **When** a reviewer opens `specs/001-sdp-trace-time-series-evidence-substrate/`, **Then** they can understand the feature, plan, tasks, contract, and evidence expectations.
+2. **Given** external or local task trackers exist, **When** they are inspected, **Then** they reference committed planning artifacts as secondary tracking, not the other way around.
 
 ## Edge Cases
 
@@ -123,7 +123,7 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - A model or harness reports its own identity inconsistently: preserve observed identity and add an `unbacked_claim` item.
 - A PR/MR does not exist: evidence events must support local branch, commit, file, command, or manual sources without PR-only assumptions.
 - Customer data cannot be committed: examples and summaries must be sanitized while preserving artifact references, hashes, or redaction notes.
-- A consuming policy wants thresholds: thresholds belong to `sdp-gate` or another policy engine, not to `sdp-trace`.
+- A consuming policy wants thresholds: thresholds belong to external policy consumer or another policy engine, not to `sdp-trace`.
 - Duplicate, out-of-order, or conflicting evidence arrives: preserve every event with source identity, dedupe key, observed timestamp, and conflict relationship; do not collapse conflicts into a single success/failure claim.
 - Pending evidence later resolves: append a superseding event or sample revision with provenance; do not mutate already-published committed examples silently.
 - Evidence references point to private systems or raw prompts: commit only sanitized summaries, content hashes, redaction notes, and access-neutral references; credentials and secrets must not appear in committed artifacts.
@@ -149,7 +149,7 @@ A repository observer can understand current scope and proof by reading SpecKit 
 
 - **FR-001**: `sdp-trace` MUST define portable contracts for evidence, provenance, observations, metric samples, metric streams, trace snapshots, and assessment inputs.
 - **FR-002**: `sdp-trace` MUST NOT decide process pass/fail, merge readiness, degradation, override, or policy outcomes.
-- **FR-003**: `sdp-trace` MUST state that `sdp-gate` is built on top of `sdp-trace` and inherits its contracts while owning policy evaluation.
+- **FR-003**: `sdp-trace` MUST state that external policy consumers can use `sdp-trace` contracts while owning policy evaluation.
 - **FR-004**: Every metric sample MUST reference inspectable evidence or be marked `not_assessed`.
 - **FR-005**: The metric catalog MUST avoid opaque aggregate health scores.
 - **FR-006**: The contract MUST support moving time windows without requiring a fixed baseline.
@@ -158,9 +158,13 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **FR-009**: The pilot run-card set MUST include Superpowers-style, `gsd`, `gsd2`, and Oh My OpenAgent harness rows with observed evidence references or explicitly `not_assessed` state and reason codes.
 - **FR-010**: The JVM pilot path MUST define the Kotlin+Bazel evidence path; Java+Bazel, Kotlin+Gradle, and synthetic Kotlin+Bazel placeholders are not sufficient proof of real Kotlin+Bazel behavior.
 - **FR-011**: Public docs MUST use SpecKit-aligned terms first: spec, plan, task, evidence, gate, decision, trace, provenance.
-- **FR-012**: Public docs MUST not imply dependency on `sdp_lab`, Beads, Operator Mode, agentloop, OpenCode, GitHub, Claude, Codex, or any specific harness runtime.
+- **FR-012**: Public docs MUST not imply dependency on Beads, Operator Mode, agentloop, OpenCode, GitHub, Claude, Codex, or any specific harness runtime.
 - **FR-013**: Schema and example artifacts MUST be machine-checkable by documented commands.
-- **FR-014**: Compatibility matrices are legacy-named evidence matrices. They MUST record observed evidence state, artifact references, gap reasons, and next required evidence; they MUST NOT claim support, readiness, or compatibility as native `sdp-trace` outcomes.
+- **FR-014**: Static compatibility matrices are retired. Evidence for harnesses,
+  models, languages, and build tools MUST be recorded at the exact run or
+  package level with observed state, artifact reference, gap reason, and next
+  required evidence; broad support, readiness, or compatibility claims require
+  an external verdict input.
 - **FR-015**: Every schema artifact MUST declare JSON Schema Draft 2020-12 and a schema version; every committed example MUST declare or reference the schema version it follows once full validation is enabled.
 - **FR-016**: Evidence and provenance artifact references MUST be safe to commit: no secrets, credentials, raw customer data, or private prompt contents; sanitized artifacts MUST preserve hash, redaction, and access notes.
 - **FR-017**: `sdp-trace` MUST distinguish native observations from external verdict or evidence-strength assertions through explicit producer and origin fields.
@@ -285,7 +289,7 @@ A repository observer can understand current scope and proof by reading SpecKit 
 - **Metric Sample**: A numeric, boolean, categorical, or count value measured for a dimension set and time window.
 - **Metric Stream**: Ordered metric samples over time for the same metric name and comparable dimensions.
 - **Trace Snapshot**: A point-in-time graph linking specs, plans, tasks, changes, evidence, observations, external verdict inputs, and decisions.
-- **Assessment Input**: A package of trace artifacts prepared for a policy engine such as `sdp-gate`.
+- **Assessment Input**: A package of trace artifacts prepared for a policy engine such as external policy consumer.
 - **Pilot Run-Card**: A repeatable harness/model/stack assessment recipe with prompt, expected artifacts, provenance capture, validation, and `not_assessed` rules.
 - **Signed Checkpoint**: Detached-signature artifact that binds a flight-recorder run chain head to run, source, task, contract, nonce, and sequence context for replay-resistant verification.
 - **Trusted Checkpoint Policy**: Portable policy that names allowed checkpoint signer identities and the authority boundary needed to treat a checkpoint as local signed, CI signed, or externally witnessed evidence.
@@ -321,13 +325,13 @@ A repository observer can understand current scope and proof by reading SpecKit 
 ### Measurable Outcomes
 
 - **SC-001**: A repository observer can find the canonical feature spec, plan, and tasks under `specs/001-sdp-trace-time-series-evidence-substrate/`.
-- **SC-002**: At least one contract document explicitly separates `sdp-trace` data ownership from `sdp-gate` policy ownership.
-- **SC-003**: The implementation plan identifies every current Beads task as secondary tracking for a SpecKit task or artifact.
-- **SC-004**: No new public artifact claims `sdp-trace` decides degradation, readiness, gate pass/fail, or override; CTO-facing docs phrase the answer as evidence-backed movement data unless an external verdict is explicitly named.
+- **SC-002**: At least one contract document explicitly separates `sdp-trace` data ownership from external policy ownership.
+- **SC-003**: The implementation plan identifies local or external task trackers as secondary tracking for committed planning artifacts.
+- **SC-004**: No new public artifact claims `sdp-trace` decides degradation, readiness, gate pass/fail, or override; technical executive-facing docs phrase the answer as evidence-backed movement data unless an external verdict is explicitly named.
 - **SC-005**: The pilot plan contains explicit run-card coverage for OpenCode+MiniMax, OpenCode+Kimi, OpenCode+GLM, and Kotlin+Bazel.
 - **SC-006**: The schema validation plan documents Draft 2020-12, a pinned validator command, exclusions for ignored/local outputs, and validation of committed `sdp-trace` JSON artifacts.
 - **SC-007**: Self-trace examples include sanitized artifact references, SHA-256 digests where artifacts are committed, and explicit `integrity_status` for unverified external references.
-- **SC-008**: The boundary contract and data model define how `sdp-gate` inherits schema versions and how breaking changes are signaled.
+- **SC-008**: The boundary contract and data model define how external consumers declare schema versions and how breaking changes are signaled.
 - **SC-009**: Accountability examples identify human-held DRI, approver, risk owner, escalation path, approval reference, and line of defense; a negative example with AI as sole accountable owner fails validation.
 - **SC-010**: A contract manifest example validates and includes SHA-256 digests for schemas, docs, validation scripts, fixtures, source commit, compatibility notes, and previous manifest digest when available.
 - **SC-011**: A contract release verification example records `sdp-trace-signature/sigstore-dsse-keyless-v1`, manifest digest status, signer identity policy, signature status, and freshness or rollback status.
@@ -377,11 +381,11 @@ A repository observer can understand current scope and proof by reading SpecKit 
 
 ## Assumptions
 
-- `sdp-gate` will consume `sdp-trace` artifacts but will live in a separate product/repository boundary.
+- external policy consumers may consume `sdp-trace` artifacts but live outside this product boundary.
 - Beads remains useful for local work tracking, but Beads is not a product dependency and is not the repo observer's source of truth.
 - The initial implementation may be schema and documentation heavy before adding tiny validation tools.
 - Customer pilot artifacts may need sanitization before committing summaries to the repository.
 - Current schemas already declare JSON Schema Draft 2020-12; this feature standardizes that draft for new schemas unless a future major version changes it.
-- Until `sdp-trace` reaches v1.0, schema changes may still be breaking, but every breaking change must update examples, compatibility notes, and downstream `sdp-gate` handoff documentation.
+- Until `sdp-trace` reaches v1.0, schema changes may still be breaking, but every breaking change must update examples, compatibility notes, and downstream consumer handoff documentation.
 - Public examples may use synthetic human-held roles for DRI and approver fields; customer pilots must map those fields to the customer's accepted identity or approval system.
 - Public Sigstore/Rekor verification is the target profile, but private or air-gapped pilots may use an approved equivalent if the manifest, DSSE envelope, identity policy, and verification result remain explicit.

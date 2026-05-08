@@ -12,15 +12,18 @@ Capture scope, provenance, and evidence for one real change.
 
 ## Level 2: Existing Harness Gate
 
-Apply a gate to work produced by Claude Code, Codex, OpenCode, Cursor, Superpowers, or an internal harness.
+Apply a gate to work produced by an existing AI coding harness. Record the exact
+harness and run evidence at run level.
 
 ## Level 3: PR Readiness
 
-Use `sdp-gate` to apply `sdp-trace` evidence to pull requests or merge requests.
+Use CI, repository policy, or release governance to apply `sdp-trace` evidence
+to pull requests or merge requests.
 
-## Level 4: SpecKit-Aligned Delivery
+## Level 4: Shared Workflow Vocabulary
 
-Map spec, plan, tasks, evidence, gates, and decisions to a shared terminology.
+Map SpecKit, gsd, Superpowers, Oh My OpenAgent, ticket-tracker, or custom flow
+artifacts to spec, plan, task, evidence, gates, and decisions.
 
 ## Level 5: Governed Delivery
 

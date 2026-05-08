@@ -18,16 +18,16 @@ These schemas define the portable `sdp-trace` contract.
 | `observation.schema.json` | Records evidence-backed observations without policy verdicts. |
 | `metric-stream.schema.json` | Records process movement across windows without interpretation labels. |
 | `external-verdict-input.schema.json` | Records externally produced verdicts or quality assertions as external evidence. |
-| `assessment-input.schema.json` | Packages trace evidence for a policy consumer such as `sdp-gate`. |
-| `flight-recorder-event.schema.json` | Records one ordered Block 09 recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
+| `assessment-input.schema.json` | Packages trace evidence for an external policy consumer. |
+| `flight-recorder-event.schema.json` | Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
 | `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
 | `flight-recorder-witness.schema.json` | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
 | `signed-checkpoint.schema.json` | Records a detached-signature checkpoint binding run id, nonce, source snapshot, task hash, contract digest, event count, and chain head for replay-resistant verification. |
 | `trusted-checkpoint-policy.schema.json` | Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence. |
 | `checkpoint-verification.schema.json` | Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks. |
 | `ci-witness.schema.json` | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
-| `gate-result.schema.json` | Records version-separated Block 14 advisory gate facts and Block 16 protected profile facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |
-| `forensics-query-pack-result.schema.json` | Records Block 20 read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict. |
+| `gate-result.schema.json` | Records version-separated advisory and protected gate facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |
+| `forensics-query-pack-result.schema.json` | Records read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict. |
 | `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |
 | `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
 | `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |
@@ -63,16 +63,20 @@ Validation commands exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/
 Before `sdp-trace` v1.0, schema changes may be breaking only when examples and compatibility notes are updated in the same change.
 
 `gate-result.schema.json` accepts both `block14-gate-result-v1` and
-`block16-gate-result-v1`. Block 14 artifacts do not require protected profile
-fields; Block 16 protected-profile artifacts require `selected_profile`,
+`block16-gate-result-v1`. Advisory artifacts do not require protected profile
+fields; protected-profile artifacts require `selected_profile`,
 `protected_gate`, `checkpoint_verification`, and `protected_conditions` so
 readers can avoid inferring protected conclusions from older advisory output.
+Those block-numbered values are legacy compatibility tokens, not the naming
+pattern for future public contracts. New compatibility tokens should use
+semantic profile names; remove the block-numbered aliases before v1.0 unless a
+retained migration note says otherwise.
 
 After v1.0:
 
 - additive optional fields are minor-version changes
 - required field removals, enum semantic changes, or ownership-boundary changes are major-version changes
-- downstream consumers such as `sdp-gate` must declare supported schema versions
+- downstream policy consumers must declare supported schema versions
 
 `schema/trace.schema.json` remains a compatibility path until a replacement path and migration note are committed.
 
@@ -80,11 +84,11 @@ After v1.0:
 
 `sdp-trace` records evidence, provenance, observations, metric movement, accountability, manifest integrity, and external verdict inputs.
 
-`sdp-trace` does not decide pass/fail, readiness, degradation, threshold sufficiency, or override outcomes. Those policy decisions belong to `sdp-gate` or another external policy consumer.
+`sdp-trace` does not decide pass/fail, readiness, degradation, threshold sufficiency, or override outcomes. Those policy decisions belong to CI, release governance, customer governance, or another external policy consumer.
 
 External verdicts may be recorded only through `external-verdict-input.schema.json` with explicit `origin: "external"`.
 
-Flight-recorder schemas add Block 09 run evidence, not trust authority. A schema-valid local recorder chain can support local reconstruction only. Accountability, audit-grade, or external-trust claims require a verifier profile that checks witness evidence outside the mutable run artifact. Late-attach gaps remain `not_assessed`; requirement changes are represented by supersession events; unresolved redaction remains visible to verifier profiles and must not be hidden by summaries or query output.
+Flight-recorder schemas add run evidence, not trust authority. A schema-valid local recorder chain can support local reconstruction only. Accountability, audit-grade, or external-trust claims require a verifier profile that checks witness evidence outside the mutable run artifact. Late-attach gaps remain `not_assessed`; requirement changes are represented by supersession events; unresolved redaction remains visible to verifier profiles and must not be hidden by summaries or query output.
 
 ## Accountability and Signing
 

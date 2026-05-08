@@ -1,10 +1,10 @@
 # Block 01: Contract Foundation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Do not start implementation until the CTO approves this plan.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Do not start implementation until the technical executive approves this plan.
 
 **Goal:** Build the first machine-checkable `sdp-trace` contracts for evidence, provenance, accountability, contract integrity, observations, metric movement, assessment input, and external verdict inputs without making native policy decisions.
 
-**Architecture:** Keep `sdp-trace` as a portable contract, evidence, accountability, and integrity substrate. Schemas define structure, examples prove positive and negative behavior, scripts prove repeatable validation, and docs explain ownership/versioning/signing so `sdp-gate` can inherit contracts without becoming a dependency.
+**Architecture:** Keep `sdp-trace` as a portable contract, evidence, accountability, and integrity substrate. Schemas define structure, examples prove positive and negative behavior, scripts prove repeatable validation, and docs explain ownership/versioning/signing so external policy consumer can inherit contracts without becoming a dependency.
 
 **Tech Stack:** JSON Schema Draft 2020-12, pinned local `ajv@8.20.0`, `jq`, SHA-256 digest verification, in-toto Statement, DSSE, Sigstore/Cosign keyless signing profile, shell validation scripts, Markdown SpecKit artifacts.
 
@@ -12,13 +12,13 @@
 
 ## Executive Plan
 
-### CTO
+### technical executive
 
 Contract Foundation answers: "Do we have trustworthy movement data, or are we silently making policy calls?" The delivered answer is not a green/red score. It is a validated assessment input containing current/prior metric values, deltas, evidence coverage, provenance, and explicit `not_assessed` gaps.
 
 ### CIO
 
-The block creates governed contracts: stable schema IDs, semver rules, offline-capable validation, compatibility notes, artifact redaction/integrity rules, accountability records, signed-release metadata, and a consumer schema-version declaration shape for future `sdp-gate` adoption.
+The block creates governed contracts: stable schema IDs, semver rules, offline-capable validation, compatibility notes, artifact redaction/integrity rules, accountability records, signed-release metadata, and a consumer schema-version declaration shape for future external policy consumer adoption.
 
 ### CEO
 
@@ -50,7 +50,7 @@ fixture layer
   negative AI-as-sole-accountable-owner package
   negative modified-contract-manifest package
   negative unauthorized-signer package
-  sdp-gate consumer declaration example
+  external policy consumer consumer declaration example
   contract manifest example
   contract release verification example
   trusted identity policy example
@@ -67,7 +67,7 @@ governance layer
   human accountability
   autonomy/impact oversight classification
   schema ownership and versioning
-  sdp-trace / sdp-gate boundary
+  sdp-trace / external policy consumer boundary
   contract release signing profile
   trace migration notes
 ```
@@ -106,7 +106,7 @@ In scope:
 Out of scope:
 
 - Running OpenCode, MiniMax, Kimi, GLM, harness, or Kotlin+Bazel pilots.
-- Implementing `sdp-gate` policy evaluation.
+- Implementing external policy consumer policy evaluation.
 - Creating dashboards, ingestion daemons, external signing services, or compatibility claims.
 - Operating enterprise PKI, private transparency logs, or full TUF-style repository metadata.
 - Declaring any native pass/fail/readiness/degradation verdict in `sdp-trace`.
@@ -139,7 +139,7 @@ Create:
 - `examples/contract-foundation/negative-ai-sole-accountable-owner.json`
 - `examples/contract-foundation/negative-modified-contract-manifest.json`
 - `examples/contract-foundation/negative-unauthorized-signer.json`
-- `examples/contract-foundation/sdp-gate-consumer-declaration.example.json`
+- `examples/contract-foundation/external-policy-consumer-declaration.example.json`
 - `examples/contract-foundation/contract-manifest.example.json`
 - `examples/contract-foundation/contract-release-verification.example.json`
 - `examples/contract-foundation/trusted-identity-policy.example.json`
@@ -150,17 +150,17 @@ Modify:
 
 - `schema/README.md`
 - `schema/trace.schema.json`
-- `specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md`
+- `specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/tasks.md` only to mark completed tasks after implementation
 - `docs/concepts.md` if boundary wording still implies native policy decisions
-- `docs/cto-brief.en.md`
-- `docs/cto-brief.ru.md`
+- `docs/agent-onboarding.md`
+- `docs/agent-onboarding.md`
 
 Do not modify in this block:
 
-- `docs/research/opencode-model-run-card.md`
-- `docs/research/harness-run-card.md`
-- `docs/research/kotlin-bazel-fixture-plan.md`
+- retired research artifact
+- retired research artifact
+- retired research artifact
 - compatibility matrix rows for real pilots
 - `sdp_gate` repository files
 
@@ -170,7 +170,7 @@ Do not modify in this block:
 
 Trace: `sdp-trace-cdn` -> Block 01 plan approval.
 
-- [ ] CTO reviews this plan.
+- [ ] technical executive reviews this plan.
 - [ ] Implementation starts only after explicit approval.
 
 Proof:
@@ -297,7 +297,7 @@ Trace: `sdp-trace-cdn.3` -> T012; `sdp-trace-cdn.8` -> T043.
 - [ ] Update `schema/trace.schema.json` to represent `observation`, `metric_sample`, `metric_stream`, `external_verdict`, and schema-version metadata if the current trace schema can support them cleanly.
 - [ ] If the current trace schema cannot support the new entities without lossy or policy-owning fields, document a replacement path and migration note before completing the block.
 - [ ] Create `schema/consumer-schema-version-declaration.schema.json`.
-- [ ] Add `examples/contract-foundation/sdp-gate-consumer-declaration.example.json` as a portable example, not a runtime `sdp-gate` dependency.
+- [ ] Add `examples/contract-foundation/external-policy-consumer-declaration.example.json` as a portable example, not a runtime external policy consumer dependency.
 
 Proof:
 
@@ -309,17 +309,17 @@ Proof:
 Trace: `sdp-trace-cdn.2` -> T005, T040; `sdp-trace-cdn.4` -> T042; `sdp-trace-cdn.11` -> T006, T007, T051 if touched.
 
 - [ ] Update `schema/README.md` with schema IDs, versioning, migration rules, validator commands, offline validation rule, `not_assessed` encoding, and native vs external verdict ownership.
-- [ ] Update `contracts/sdp-trace-sdp-gate-boundary.md` if implementation details require clearer contract inheritance language.
+- [ ] Update `contracts/external-policy-consumer-boundary.md` if implementation details require clearer contract inheritance language.
 - [ ] Audit any touched docs for wording that implies `sdp-trace` owns policy thresholds or pass/fail decisions.
 - [ ] Classify existing `gate-verdict` artifacts as compatibility/external decision records unless a later approved block replaces them.
-- [ ] Rewrite `docs/cto-brief.en.md` and `docs/cto-brief.ru.md` as one-minute CTO decision narratives: problem, why it matters, what `sdp-trace` records, what it refuses to decide, where `sdp-gate` starts, and how Block 01 proves the foundation.
-- [ ] Ensure every CTO narrative claim maps to a SpecKit artifact or avoids the claim.
+- [ ] Rewrite `docs/agent-onboarding.md` and `docs/agent-onboarding.md` as one-minute technical executive decision narratives: problem, why it matters, what `sdp-trace` records, what it refuses to decide, where external policy consumer starts, and how Block 01 proves the foundation.
+- [ ] Ensure every technical executive narrative claim maps to a SpecKit artifact or avoids the claim.
 
 Proof:
 
 - No touched doc claims `sdp-trace` decides pass/fail, readiness, or degradation.
-- Schema docs explain how a future `sdp-gate` consumer declares supported versions.
-- CTO brief can be read in under one minute and answers "what is happening and why do I need it?" without marketing claims.
+- Schema docs explain how a future external policy consumer consumer declares supported versions.
+- technical executive brief can be read in under one minute and answers "what is happening and why do I need it?" without marketing claims.
 
 ### WP8: Local Verification Evidence
 
@@ -368,12 +368,12 @@ Proof:
 | Contract release signing | `sdp-trace-cdn.8` | T047, T049, T050 | `schema/contract-release-verification.schema.json`, `schema/trusted-identity-policy.schema.json`, `docs/contract-release-signing.md` | Target profile, identity policy, and real verification status recorded |
 | Evidence substrate | `sdp-trace-cdn.4` | T015 | `schema/evidence-event.schema.json` | Positive fixture validates |
 | Provenance substrate | `sdp-trace-cdn.4` | T016 | `schema/provenance-record.schema.json` | Unavailable model/tool fields validate as `not_assessed` |
-| CTO movement data | `sdp-trace-cdn.3` | T008, T009, T010 | observation and metric-stream schemas plus positive fixture | Prior/current/delta data validates without native verdicts |
+| technical executive movement data | `sdp-trace-cdn.3` | T008, T009, T010 | observation and metric-stream schemas plus positive fixture | Prior/current/delta data validates without native verdicts |
 | Trace compatibility | `sdp-trace-cdn.3` | T012 | updated trace schema or migration note | Existing trace example remains valid or replacement path exists |
 | Policy boundary | `sdp-trace-cdn.4` | T017, T018, T041 | assessment-input and external-verdict schemas plus negative fixture | Native policy field rejected; external verdict accepted |
-| Consumer inheritance | `sdp-trace-cdn.8` | T043 | consumer declaration schema and example | Example validates without `sdp-gate` runtime dependency |
+| Consumer inheritance | `sdp-trace-cdn.8` | T043 | consumer declaration schema and example | Example validates without external policy consumer runtime dependency |
 | Boundary docs | `sdp-trace-cdn.2`, `sdp-trace-cdn.4` | T005, T042 | boundary contract and schema docs | Docs state ownership and migration rules |
-| CTO narrative | `sdp-trace-cdn.11` | T051 | `docs/cto-brief.en.md`, `docs/cto-brief.ru.md` | One-minute RU/EN decision narrative with no native verdict claims and explicit self-proof blocker |
+| technical executive narrative | `sdp-trace-cdn.11` | T051 | `docs/agent-onboarding.md`, `docs/agent-onboarding.md` | One-minute RU/EN decision narrative with no native verdict claims and explicit self-proof blocker |
 | Self-proof blocker | `sdp-trace-cdn.12` | T020-T026, T052-T061 | no implementation in Block 01 | Tasks remain future/pending and block customer pilot claims |
 | Later pilots consume contract | `sdp-trace-cdn.6`, `.7`, `.10` | T027-T033 | no implementation in Block 01 | Tasks remain future/pending |
 

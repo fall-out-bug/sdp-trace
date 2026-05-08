@@ -3,7 +3,7 @@
 Status: Socratic spec review returned `REVISE` across product/demo
 credibility, trace/evidence, CI/witness, and privacy/safety planes. Valid
 critical and major findings were accepted into the revised SpecKit delta.
-Focused re-review returned `APPROVE` across all four planes. The CTO approved
+Focused re-review returned `APPROVE` across all four planes. The technical executive approved
 implementation on 2026-05-08 with the clarified case shape: three clean trace
 cases and two intentionally dishonest-trace cases.
 
@@ -13,7 +13,7 @@ cases and two intentionally dishonest-trace cases.
 | --- | --- | --- | --- | --- | --- | --- |
 | S24-PC-01 | critical | product/demo credibility | MiniMax-M2.7 | Same-owner demo could look like a controlled fixture rather than customer-style proof. | accepted_fixed | Added Owner Independence Gap and report requirements naming what another owner must provide. |
 | S24-PC-02 | critical | product/demo credibility | MiniMax-M2.7 | Tiny passing Go test was too low-signal unless the report shows what `sdp-trace` adds beyond raw CI. | accepted_fixed | Replaced tiny Go with the repo-native Feature Flag / Entitlements Kotlin+Bazel demo service and kept the "CI Alone vs sdp-trace" report requirement. |
-| S24-PC-09 | critical | CTO correction | user | The reviewed direction still named a tiny Go demo app, which conflicts with Block 24's purpose of replacing toy pilot proof. | accepted_fixed | Demo scope is now Feature Flag / Entitlements Kotlin+Bazel with a deterministic Bazel test; OpenCode/GSD/model-agent execution remains `not_assessed`. |
+| S24-PC-09 | critical | technical executive correction | user | The reviewed direction still named a tiny Go demo app, which conflicts with Block 24's purpose of replacing toy pilot proof. | accepted_fixed | Demo scope is now Feature Flag / Entitlements Kotlin+Bazel with a deterministic Bazel test; OpenCode/GSD/model-agent execution remains `not_assessed`. |
 | S24-PC-03 | critical | product/demo credibility | MiniMax-M2.7 | Negative `cannot_verify` path lacked customer-readable interpretation. | accepted_fixed | AC7 and Socratic Q5 now require customer interpretation and next evidence. |
 | S24-PC-04 | major | product/demo credibility | MiniMax-M2.7 | Pilot report quality bar was undefined. | accepted_fixed | Added Pilot Report Contract and answer classes for the nine Block 23 questions. |
 | S24-PC-05 | major | product/demo credibility | MiniMax-M2.7 | `gate` output was disclaimed as non-policy but not given a positive meaning. | accepted_fixed | AC5 and report contract now require "Gate Output Meaning" as verifier-derived fact output. |
@@ -50,15 +50,15 @@ cases and two intentionally dishonest-trace cases.
 | trace/evidence and claim-boundary | ZAI GLM-5.1 | `APPROVE` | none |
 | CI/witness semantics | OpenRouter Qwen 3.6 Plus | `APPROVE` | none |
 | privacy/safety | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
-| CTO correction: replace tiny Go with Feature Flag / Entitlements Kotlin+Bazel | MiniMax-M2.7 | `APPROVE` | none |
-| CTO correction: Kotlin/Bazel evidence feasibility | OpenRouter Qwen 3.6 Plus | `not_assessed` | unusable response attempted to inspect a demo repo instead of reviewing the supplied SpecKit packet |
-| CTO correction: Kotlin/Bazel evidence feasibility replacement | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
+| technical executive correction: replace tiny Go with Feature Flag / Entitlements Kotlin+Bazel | MiniMax-M2.7 | `APPROVE` | none |
+| technical executive correction: Kotlin/Bazel evidence feasibility | OpenRouter Qwen 3.6 Plus | `not_assessed` | unusable response attempted to inspect a demo repo instead of reviewing the supplied SpecKit packet |
+| technical executive correction: Kotlin/Bazel evidence feasibility replacement | OpenRouter DeepSeek V4 Pro | `APPROVE` | none |
 
 ## Implementation Approval
 
 | date | approver/source | decision | implementation constraint |
 | --- | --- | --- | --- |
-| 2026-05-08 | CTO/user | approved reviewed direction | Implement Feature Flag / Entitlements Kotlin+Bazel demo repo, GitHub Actions first, source-built `sdp-trace`, sanitized copy-back only, three clean cases, and two intentionally dishonest-trace cases. |
+| 2026-05-08 | technical executive/user | approved reviewed direction | Implement Feature Flag / Entitlements Kotlin+Bazel demo repo, GitHub Actions first, source-built `sdp-trace`, sanitized copy-back only, three clean cases, and two intentionally dishonest-trace cases. |
 
 ## Implementation Evidence
 
@@ -89,7 +89,7 @@ Implementation review and PR-level review remain open.
 | I24-RI-02 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Added `generated_at` and profile-state extracts for clean and no-OIDC witnesses. |
 | I24-RI-03 | minor | requirements-vs-implementation | OpenRouter Xiaomi MiMo V2.5 Pro | accepted_fixed | Exact scan command recorded with exit and match-count semantics. |
 | I24-CC-01 | not_assessed | code/correctness | ZAI GLM-5.1 | replaced_unusable | Reviewer returned stale/off-task content for a different Block 24 shape; not counted as review evidence. |
-| I24-CC-02 | major | code/correctness | OpenRouter Qwen 3.6 Plus | false_positive | Reviewer judged the denylist pattern file missing because it reviewed only the implementation diff. The file exists at `docs/research/block-24-redaction-denylist.patterns` from commit `5ced37b`; current blob `a6225493d2f935503a684394ad656659fc8715fe`. |
+| I24-CC-02 | major | code/correctness | OpenRouter Qwen 3.6 Plus | false_positive | Reviewer judged the denylist pattern file missing because it reviewed only the implementation diff. The file exists at retired research artifact from commit `5ced37b`; current blob `a6225493d2f935503a684394ad656659fc8715fe`. |
 | I24-CC-03 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added exact `sdp-trace` source commit `f66aa1c4619f0f6a2d56f602da9e0135b00e4a84` to report and artifact index. |
 | I24-CC-04 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added independent SHA-256 digests for `ci-witness.json` and `ci-witness-no-oidc.json`. |
 | I24-CC-05 | minor | code/correctness | OpenRouter Qwen 3.6 Plus | accepted_fixed | Added artifact download verification statement using `gh run download 25548285336`. |

@@ -1,0 +1,45 @@
+{
+  "consumer": "external policy consumer",
+  "schema_version": "0.1.0",
+  "supported_schema_versions": [
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/assessment-input.schema.json",
+      "supported_versions": ">=0.1.0 <1.0.0",
+      "pending_versions": "1.x"
+    },
+    {
+      "schema_id": "https://schemas.sdp.dev/trace/external-verdict-input.schema.json",
+      "supported_versions": ">=0.1.0 <1.0.0"
+    }
+  ],
+  "last_validated_fixture_refs": [
+    "examples/contract-foundation/positive-assessment-input.json",
+    "examples/contract-foundation/not-assessed-assessment-input.json"
+  ],
+  "compatibility_notes": [
+    "This is a portable example declaration. The real external policy consumer repository owns its actual supported-version declaration.",
+    "sdp-trace defines the contract shape without depending on external policy consumer at runtime."
+  ],
+  "accountability": {
+    "dri": {
+      "identity_ref": "role:external policy consumer-contract-owner",
+      "actor_type": "human_role"
+    },
+    "approver": {
+      "identity_ref": "role:external policy consumer-release-captain",
+      "actor_type": "human_role"
+    },
+    "escalation": {
+      "identity_ref": "role:external policy consumer-technical executive",
+      "actor_type": "human_role"
+    },
+    "authority_scope": "plan",
+    "accountability_claim": "recording_only",
+    "approval_ref": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md",
+    "risk_owner": {
+      "identity_ref": "role:external policy consumer-risk-owner",
+      "actor_type": "human_role"
+    },
+    "line_of_defense": "second"
+  }
+}

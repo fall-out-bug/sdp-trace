@@ -8,7 +8,7 @@ Parent: `09-flight-recorder-trust-kernel.md`
 The concept was reviewed adversarially through `pi` with executive roles:
 
 - CIO
-- CTO
+- technical executive
 - CFO
 - COO
 - CPO
@@ -32,7 +32,7 @@ Some outputs attempted to inspect or invent local implementation files despite r
 
 All usable executive reviews returned `revise`.
 
-No role accepted a local-only sidecar hash chain as sufficient for accountability or CTO/gate use.
+No role accepted a local-only sidecar hash chain as sufficient for accountability or technical executive/gate use.
 
 ## Critical Findings
 
@@ -90,7 +90,7 @@ Define evidence retention modes and require richer retention for profiles that c
 
 Finding:
 
-CTO, CISO, COO, and incident reviewers need queryable answers, not manual JSONL inspection.
+technical executive, CISO, COO, and incident reviewers need queryable answers, not manual JSONL inspection.
 
 Required resolution:
 
@@ -104,7 +104,7 @@ Block 09 must define query surfaces for run summary, gaps, task changes, command
 4. If a requirement changes after a failed command, can the original task be rewritten?
 5. If stdout contained a secret, what exactly is hashed, retained, redacted, and verifiable?
 6. If the model identity is a string provided by the harness, what is the verifier state: `pass`, `not_assessed`, or `cannot_verify`?
-7. What does a CTO learn from the trace that cannot be reconstructed from git history and CI logs alone?
+7. What does a technical executive learn from the trace that cannot be reconstructed from git history and CI logs alone?
 8. How does the recorder report its blind spots without turning them into soft success?
 9. What is the overhead of command/file capture on a real Kotlin+Bazel run?
 10. What downstream gate can consume missing/tampered trace evidence without `sdp-trace` becoming the policy engine?

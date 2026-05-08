@@ -1,69 +1,103 @@
 # sdp-trace
 
-Portable traceability, provenance, evidence, accountability, and contract-integrity substrate for AI-assisted delivery.
+`sdp-trace` is a portable evidence substrate for AI-assisted delivery.
 
-## Purpose
+It records what happened, which evidence exists, what is missing, where the
+evidence came from, and which human owns the next decision. It does not decide
+whether a team may merge, release, accept risk, or claim production trust.
 
-`sdp-trace` records what happened, where the evidence came from, what changed
-over time, who is accountable, and which contract was used to assess the
-evidence.
-
-Current proof authority comes from live Go verifier output under the current entrypoint contract. Checked-in block summaries and proof JSON are audit artifacts unless replayed or externally signed.
-
-## Who It Is For
-
-- CTOs who need inspectable movement data rather than opaque quality claims.
-- Team leads who need a shared evidence contract without replacing their current coding harness.
-- Tool builders integrating agents, SpecKit-style workflows, CI, and PR review.
-
-## What This Repo Contains
-
-- JSON schemas for evidence, provenance, observations, metric movement, accountability, contract manifests, assessment inputs, external verdict inputs, and legacy compatibility artifacts.
-- CTO and team lead docs in English and Russian.
-- SpecKit terminology mapping.
-- Harness integration examples.
-- Stack examples for Go and JVM/Bazel, with JVM/Bazel coverage currently scoped
-  to design fixtures and pilot evidence.
-
-## What It Does Not Do
-
-`sdp-trace` does not run a delivery workflow, write code, replace code review, manage tickets, decide pass/fail, decide readiness, decide degradation, or require SDP Operator Mode.
-
-It is the trust substrate that other tools can use.
-
-It must prove itself first. If this repository cannot trace its own development under its own contracts, it must not ask a customer to trust the substrate.
-
-## Relationship To sdp-gate
-
-`sdp-gate` uses `sdp-trace` contracts to make readiness decisions for PRs, merge requests, release handoffs, and local gates.
-
-`sdp-trace` does not depend on `sdp-gate`.
-
-```text
-sdp-gate -> sdp-trace
-sdp-trace -> no SDP runtime
-```
+Current product status: controlled-pilot ready for repo-observable evidence,
+local trace packages, assessment profiles, witness artifacts, and source-bound
+release checks. It is not a broad production trust product and it does not
+claim universal harness, model, CI, or air-gapped compatibility.
 
 ## Start Here
 
-- [Current SpecKit feature spec](specs/001-sdp-trace-time-series-evidence-substrate/spec.md)
-- [CTO brief, English](docs/cto-brief.en.md)
-- [CTO brief, Russian](docs/cto-brief.ru.md)
-- [Team lead playbook, English](docs/team-lead-playbook.en.md)
-- [Team lead playbook, Russian](docs/team-lead-playbook.ru.md)
-- [Agent entrypoint (current verifier contract)](docs/agent-entrypoint.md)
-- [Reviewer entrypoint (current proof scope)](docs/reviewer-entrypoint.md)
-- [Block 24 demo repository CI evidence guide](docs/research/block-24-demo-repo-ci-evidence-guide.md)
-- [Adoption ladder](docs/adoption-ladder.md)
-- [Core concepts](docs/concepts.md)
-- [Process metric catalog](docs/process-metric-catalog.md)
-- [SpecKit compatibility](docs/speckit-compatibility.md)
-- [Schema reference](schema/README.md)
+1. Give [Agent Onboarding](docs/agent-onboarding.md) to any coding agent before
+   it works in this repository.
+2. Read [Core Concepts](docs/concepts.md) to understand the contract:
+   spec, plan, task, evidence, gate, decision, trace, and provenance.
+3. Run the local smoke path:
+
+   ```text
+   go test ./...
+   go run ./cmd/sdp-trace --help
+   go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok
+   go run ./cmd/sdp-trace verify <run-dir>
+   ```
+
+4. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
+   command and state contract.
+5. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
+   verification path and overclaim checklist.
+6. Use [Documentation Map](docs/README.md) to choose the right next document.
+
+Origin note: `sdp-trace` was extracted from delivery evidence work in
+`sdp_lab`. That history is not a runtime dependency and should not be required
+context for using this repository.
+
+## What It Produces
+
+- trace run artifacts under `.sdp-trace-runs/`;
+- report packages under `.sdp-trace-report/`;
+- query and forensic query-pack outputs;
+- assessment results for supported profiles;
+- advisory gate facts for downstream policy consumers;
+- CI or customer witness artifacts when required evidence exists;
+- source-bound local release proof when manifest subjects match the source
+  commit.
+
+Every output is scoped. A local trace does not become CI evidence. A CI witness
+does not become production trust. A checked-in JSON file is an audit artifact
+until the current verifier replays it or an accepted external signature binds it.
+
+## What It Does Not Do
+
+`sdp-trace` does not:
+
+- replace a harness, agent, ticket tracker, code review process, or CI system;
+- detect every unwrapped local agent run;
+- decide pass/fail, readiness, degradation, release approval, or risk override;
+- convert missing evidence into success;
+- depend on Beads, Operator Mode, agentloop, Claude, Codex, OpenCode, GitHub,
+  or any specific harness runtime.
+
+Policy decisions belong to CI, release governance, customer governance, or
+another external policy consumer. `sdp-trace` records evidence and gaps for
+those consumers.
+
+## Recommended Reading Order
+
+The docs have one primary path. They should not require readers to classify
+themselves before understanding the repository.
+
+1. [Agent Onboarding](docs/agent-onboarding.md)
+2. [Documentation Map](docs/README.md)
+3. [Core Concepts](docs/concepts.md)
+4. [Agent Entrypoint](docs/agent-entrypoint.md)
+5. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
+6. [Harness Integration](docs/harness-integration.md)
+7. [Schema Reference](schema/README.md)
+
+Governance and rollout documents are supporting references after the core path
+is clear.
+
+## Repository Layout
+
+- `cmd/` and `internal/`: Go CLI and verifier implementation.
+- `schema/`: portable JSON schema contracts.
+- `docs/`: product, command, governance, reviewer, and integration documentation.
+- `examples/`: sanitized fixtures and pilot evidence packages.
+- `specs/`: working specs and implementation block records. Current repository
+  records are SpecKit-shaped, but `sdp-trace` can map evidence from other
+  planning flows.
 
 ## Minimal Flow
 
 ```text
-idea -> spec -> plan -> task -> change -> evidence -> provenance -> accountability -> metric movement -> assessment input
+spec -> plan -> task -> change -> evidence -> provenance -> accountability -> assessment input
 ```
 
-External policy consumers can turn an assessment input into a gate verdict. `sdp-trace` records those verdicts only as external inputs. When evidence is missing, use `not_assessed`.
+External policy consumers can turn assessment input and verifier facts into
+decisions. When evidence is missing, the state must remain `not_assessed`,
+`cannot_verify`, `missing_telemetry`, or an explicit failure reason.

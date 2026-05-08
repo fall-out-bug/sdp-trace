@@ -78,7 +78,7 @@ For `trusted_contract_release: true`, the release verification record must show 
 
 ## Freshness and Rollback
 
-Block 01 does not implement TUF. Rollback protection is limited to:
+This repository does not implement TUF. Rollback protection is limited to:
 
 - `previous_manifest_digest`
 - exactly one of `valid_until` or `freshness_policy`

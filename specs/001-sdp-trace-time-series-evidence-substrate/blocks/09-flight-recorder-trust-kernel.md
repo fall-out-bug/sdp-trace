@@ -2,7 +2,7 @@
 
 Status: design accepted for implementation planning; no implementation closure claimed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
-Audience: CTO, CIO, CISO, COO, CPO, Head of Engineering, corporate architecture, implementation agents
+Audience: technical executive, CIO, CISO, COO, CPO, Head of Engineering, corporate architecture, implementation agents
 
 ## Purpose
 
@@ -27,7 +27,7 @@ Converged findings:
 - Mid-flight attachment is useful only as an honest scope boundary; it cannot support claims about pre-attachment activity.
 - Digest-only evidence is too weak for forensic review unless paired with retained, sanitized, encrypted, or externally referenced artifacts.
 - Redaction cannot be hand-waved because append-only retention and secret removal pull in opposite directions.
-- CTO/CISO/COO users need queryable proof surfaces, not raw JSONL archaeology.
+- technical executive/CISO/COO users need queryable proof surfaces, not raw JSONL archaeology.
 
 Block 09 therefore requires a recorder plus a witness boundary plus a verifier/query surface. A sidecar without a witness is a development aid, not an accountability substrate.
 
@@ -61,7 +61,7 @@ The incorrect product claims are:
 - `recorder`: `sdp-trace` process that observes commands, files, artifacts, and imported transcripts.
 - `witness`: storage or notary boundary not controlled by the recorded agent process.
 - `verifier`: code that checks event-chain structure, witness anchors, artifacts, and declared gaps.
-- `consumer`: CTO, reviewer, CISO, CI policy, or downstream `sdp-gate`.
+- `consumer`: technical executive, reviewer, CISO, CI policy, or downstream external policy consumer.
 
 ### Threats In Scope
 
@@ -239,7 +239,7 @@ Profiles:
 
 ## Query Surface
 
-Raw JSONL is not an acceptable product surface for CTO or incident review.
+Raw JSONL is not an acceptable product surface for technical executive or incident review.
 
 Block 09 must define query outputs for:
 

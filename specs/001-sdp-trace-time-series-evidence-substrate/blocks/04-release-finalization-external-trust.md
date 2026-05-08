@@ -3,7 +3,7 @@
 Status: implemented artifacts present; current closure stale until verifier evidence is repaired
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Beads mirror: `sdp-trace-cdn.21`
-Audience: CTO, CIO, CEO, release owners, future `sdp-gate` consumers
+Audience: technical executive, CIO, CEO, release owners, future external policy consumers
 
 ## Purpose
 
@@ -77,7 +77,7 @@ For an externally trusted production release:
 - Implementing a real public GitHub Actions release workflow in this design pass.
 - Requiring Sigstore/Rekor for private or air-gapped customers.
 - Storing private keys, raw certificates with secrets, credentials, raw customer data, or private prompt contents in the repository.
-- Adding `sdp-gate` policy thresholds.
+- Adding external policy consumer policy thresholds.
 - Claiming pilot/customer readiness from local finalization alone.
 
 ## Recommended Approach
@@ -90,7 +90,7 @@ Layer 1 is **source-bound local finalization**. It binds the manifest subject ar
 
 Layer 2 is **external trust attestation**. It records either a public Sigstore/Rekor bundle or a customer-approved private equivalent. This layer is optional for local engineering proof and mandatory for `production_release_verified`.
 
-This design is stricter than treating local DSSE as trusted, but it is the only option that preserves the UX promise: a CTO or CIO can inspect exactly what is proven, what is missing, and who is accountable.
+This design is stricter than treating local DSSE as trusted, but it is the only option that preserves the UX promise: a technical executive or CIO can inspect exactly what is proven, what is missing, and who is accountable.
 
 ## Release Finalization Flow
 
@@ -182,7 +182,7 @@ Block 04 implementation started after consensus was accepted for option 2: local
 - `scripts/finalize-source-bound-release.sh` verifies clean source-bound artifact proof and refuses dirty working trees.
 - `schema/contract-release-verification.schema.json` records source commit artifact status, external trust profile, transparency evidence, source URI, protected ref, workflow identity, approval, and production release verification states.
 - `examples/contract-foundation/negative-trusted-release-*.json` fixtures reject unsupported `trusted_contract_release: true` claims.
-- `docs/contract-release-signing.md` and `docs/research/self-attestation-summary.md` distinguish a source-bound local release from an externally trusted production release.
+- `docs/contract-release-signing.md` and retired research artifact distinguish a source-bound local release from an externally trusted production release.
 
 ## Delivery State
 

@@ -3,8 +3,8 @@
 Status: planning draft; implementation not started
 Date: 2026-05-05
 Inputs:
-- `docs/research/agentic-sdlc-evidence-substrate-v4-brief.md`
-- `docs/research/harness-telemetry-reviews/round8-final-convergence.md`
+- retired research artifact
+- retired research artifact
 - `09-flight-recorder-trust-kernel.md`
 
 This document is a design input for implementation. It is not
@@ -34,7 +34,7 @@ missing.
 
 It must not claim that the agent was honest, that the code is correct, or
 that the delivery system is healthy. Those decisions belong to
-`sdp-gate`, `sdp-report`, or customer policy consumers.
+external policy consumer, `sdp-report`, or customer policy consumers.
 
 ## Product Boundary
 
@@ -70,7 +70,7 @@ Out of scope:
 
 ## Primary UX
 
-The CTO buyer wants a control layer over an existing AI SDLC. The first
+The technical executive customer wants a control layer over an existing AI SDLC. The first
 UX must therefore be sidecar-first and harness-neutral:
 
 ```bash

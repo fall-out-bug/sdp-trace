@@ -3,13 +3,13 @@
 Status: accepted for implementation; spec pi-review findings closed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Beads mirror: `sdp-trace-cdn.22`
-Audience: CTO, CIO, pilot operators, harness evaluators, future `sdp-gate` consumers
+Audience: technical executive, CIO, pilot operators, harness evaluators, future external policy consumers
 
 ## Purpose
 
 Block 05 turns the customer pilot matrix into executable evidence recipes without making support, readiness, or compatibility verdicts.
 
-The block answers the CTO and CIO question:
+The block answers the technical executive and CIO question:
 
 > Can a pilot operator run the requested harness, model, and Kotlin+Bazel slices and see exactly what evidence exists, what is missing, and which claims lack evidence?
 
@@ -39,7 +39,7 @@ Beads is only secondary execution tracking. A repository observer must understan
 - Claiming OpenCode, MiniMax, Kimi, GLM, Superpowers-style patterns, `gsd`, `gsd2`, Oh My OpenAgent, or Kotlin+Bazel support/readiness/compatibility as a native `sdp-trace` outcome.
 - Capturing raw customer prompts, customer logs, credentials, secrets, or proprietary source.
 - Introducing dependency on OpenCode, Beads, Superpowers, `gsd`, `gsd2`, Oh My OpenAgent, Codex, Claude, GitHub, or any specific runtime.
-- Adding `sdp-gate` thresholds, pass/fail policy, readiness decisions, or opaque compatibility scores.
+- Adding external policy consumer thresholds, pass/fail policy, readiness decisions, or opaque compatibility scores.
 
 ## Recommended Approach
 
@@ -59,7 +59,7 @@ The matrices summarize evidence state rather than marketing compatibility:
 - `observed` only when a committed sanitized run artifact or evidence summary describes actual observed behavior.
 - `not_assessed` when no valid run artifact exists, required export is missing, discovery is still required, or the only artifact is a design/synthetic fixture.
 
-This is stricter than a broad compatibility table, but it preserves trust. A CTO can see whether the pilot path is executable without confusing planned work with proof.
+This is stricter than a broad compatibility table, but it preserves trust. A technical executive can see whether the pilot path is executable without confusing planned work with proof.
 
 ## Pilot Evidence States
 
@@ -157,14 +157,14 @@ The customer package must be an outline for a safe pilot handoff. It must list:
 - matrix update rules
 - review and approval checkpoints
 - residual `not_assessed` reporting
-- handoff path to external policy consumers such as `sdp-gate`
+- handoff path to external policy consumers such as external policy consumer
 
 Private customer inputs are never committed. Committed artifacts are sanitized summaries, hashes, redaction notes, and access-neutral references only. The outline must not include raw customer data or imply the pilot has already passed.
 
 ## UX Requirements
 
 - A pilot operator must be able to run a row without reverse-engineering the repository.
-- A CTO/CIO must see the difference between planned, unassessed, and evidence-backed rows in one table.
+- A technical executive/CIO must see the difference between planned, unassessed, and evidence-backed rows in one table.
 - Missing evidence must be first-class, not buried in notes.
 - The package must make `unbacked_claim` items easy to capture and hard to launder into support/readiness/compatibility wording.
 - Matrix rows must point to exact artifact references or explain why the state is `not_assessed`.

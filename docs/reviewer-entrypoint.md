@@ -4,9 +4,10 @@ Use this path for a first-time reviewer check in under five minutes. For the
 full bilingual command/profile surface, see `docs/agent-entrypoint.md` and
 `go run ./cmd/sdp-trace --help`.
 
-For the demo-repository pilot evidence path, read
-`docs/research/block-24-demo-repo-ci-evidence-guide.md` before inspecting the
-Block 24 report and artifact index.
+For the demo-repository pilot evidence package, read
+`examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md` before inspecting
+the retained package. Treat that package as an exact observed slice, not broad
+OpenCode, MiniMax, Kotlin, or Bazel support.
 
 ## Verification Path
 

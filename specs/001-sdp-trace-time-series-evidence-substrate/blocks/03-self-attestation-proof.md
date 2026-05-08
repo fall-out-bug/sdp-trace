@@ -3,7 +3,7 @@
 Status: implemented; final review findings fixed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Beads mirror: `sdp-trace-cdn.13`
-Audience: CTO, CIO, CEO, release owners, future `sdp-gate` consumers
+Audience: technical executive, CIO, CEO, release owners, future external policy consumers
 
 ## Purpose
 
@@ -31,13 +31,13 @@ Missing proof remains `not_assessed`; it must not be collapsed into trusted.
 - self-attestation verification command
 - self-attestation evidence record under `examples/self-trace/`
 - negative fixtures for wrong source commit, wrong signer, wrong trusted identity policy, stale manifest, missing external attestation, and modified verification artifact
-- summary in `docs/research/self-attestation-summary.md`
+- summary in retired research artifact
 
 ## Out of Scope
 
 - full TUF metadata
 - enterprise PKI implementation
-- `sdp-gate` pass/fail policy
+- external policy consumer pass/fail policy
 - customer pilot execution
 
 ## Acceptance

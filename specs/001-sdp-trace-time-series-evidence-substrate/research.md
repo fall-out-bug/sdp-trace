@@ -1,40 +1,29 @@
 # Research: sdp-trace Time-Series Evidence Substrate
 
-## Decision 1: SpecKit Artifacts Are Canonical
+## Decision 1: Repository-Visible Planning Artifacts Are Canonical
 
-**Decision**: Use `specs/001-sdp-trace-time-series-evidence-substrate/` as the repository-visible source of truth. Beads issues mirror the work graph but do not replace SpecKit artifacts.
+**Decision**: Use `specs/001-sdp-trace-time-series-evidence-substrate/` as the repository-visible source of truth for this feature. External teams may use SpecKit, gsd, Superpowers, Oh My OpenAgent, ticket trackers, or another planning flow as long as the retained trace exposes spec, plan, task, evidence, provenance, and decision inputs.
 
-**Rationale**: A repository observer must be able to inspect scope, plan, tasks, and evidence without loading a local Beads database.
+**Rationale**: A repository observer must be able to inspect scope, plan, tasks, and evidence without loading a private planning runtime.
 
 **Alternatives Rejected**:
 
-- Beads-only planning: rejected because it hides the plan from plain repository review.
-- Loose docs under `docs/research/`: rejected because it does not preserve the SpecKit `spec -> plan -> tasks` flow.
+- Private-runtime-only planning: rejected because it hides the plan from plain repository review.
+- Loose docs under retired research artifacts: rejected because they do not preserve a stable `spec -> plan -> task -> evidence` flow.
 
-## Decision 2: Import Evidence Concepts, Not Gate Policy, From sdp_lab
+## Decision 2: Preserve Origin, Not Dependency
 
-**Decision**: Reuse the best portable ideas from `sdp_lab` as source material, but translate them into `sdp-trace` contracts.
-
-Useful source ideas:
-
-| Source | Portable idea |
-|---|---|
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/schema/evidence-envelope.schema.json` | Strict evidence sections, provenance, boundary, trace fields |
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/schema/sdp-pr-gate/evidence-event.schema.json` | Event-level evidence ingestion with source, external ref, timestamps, actor, status, artifact URI/hash |
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/docs/PROCESS_HYGIENE_TELEMETRY_SPEC.md` | Process observations such as stale work, blocked debt, missing trace/evidence links |
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/internal/metrics/types.go` | Process metric categories: hygiene, waste, git flow, release quality, stabilization, knowledge risk, decay |
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/docs/REVIEW_AND_DELIVERY_TRACE_WORKING_MODEL.md` | Trace continuation through review, delivery, rollback, and follow-up |
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/schema/telemetry/sdp-trace-events.schema.json` | Attribute allowlist, consent levels, and metadata-first telemetry discipline |
-| `/Users/fall_out_bug/projects/vibe_coding/sdp_lab/docs/plans/2026-04-27-f150-product-layering-release-readiness-design.md` | Product layering: substrate vs policy product vs operator runtime |
+**Decision**: Record that `sdp-trace` originated from delivery evidence work in
+`sdp_lab`, but keep all public contracts independent from that repository.
 
 Rejected source ideas:
 
 | Rejected idea | Reason |
 |---|---|
-| Gate pass/fail/readiness policies | Belongs in `sdp-gate`, not `sdp-trace`. |
+| Gate pass/fail/readiness policies | Belongs in external policy consumer, not `sdp-trace`. |
 | Traffic-light thresholds from `sdp metrics` | Thresholds are policy. `sdp-trace` records samples and evidence. |
 | Beads IDs as required trace fields | Beads is not portable and not a product dependency. |
-| Operator Mode phases as required public contract | Runtime-specific and too coupled to `sdp_lab`. |
+| Operator Mode phases as required public contract | Runtime-specific and not portable. |
 | PR-only passport assumptions | `sdp-trace` must also support local branches, commits, files, commands, and non-GitHub systems. |
 
 ## Decision 3: Use Moving Windows Instead of Fixed Baseline Ownership
@@ -59,7 +48,7 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 **Alternatives Rejected**:
 
 - Fixed baseline entity: rejected because it overfits to one evaluation method.
-- Built-in degradation verdict: rejected because `sdp-gate` owns policy.
+- Built-in degradation verdict: rejected because external policy consumer owns policy.
 
 ## Decision 4: Close Kotlin+Bazel Evidence Gap
 
@@ -70,8 +59,8 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 **Evidence from current repo**:
 
 - `docs/jvm-bazel-guide.md` states that Bazel markers must prevent Maven/Gradle inference.
-- `docs/research/phase-a-bazel-codex-summary.md` records a Java-heavy Bazel baseline, not Kotlin+Bazel.
-- `docs/research/bootstrap-smoke-summary.md` records Kotlin as Gradle and Bazel as Java/Starlark/Python.
+- retired research artifact records a Java-heavy Bazel baseline, not Kotlin+Bazel.
+- retired research artifact records Kotlin as Gradle and Bazel as Java/Starlark/Python.
 
 ## Decision 5: Compatibility Claims Require Committed Evidence
 
@@ -83,7 +72,7 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 
 **Decision**: New schemas target JSON Schema Draft 2020-12. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`.
 
-**Rationale**: Existing schemas already declare Draft 2020-12. Selecting the draft and validator before authoring new schemas prevents incompatible schema features, invalid examples, and rework across `sdp-gate` consumers.
+**Rationale**: Existing schemas already declare Draft 2020-12. Selecting the draft and validator before authoring new schemas prevents incompatible schema features, invalid examples, and rework across external policy consumers.
 
 **Alternatives Rejected**:
 
@@ -95,7 +84,7 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 
 **Decision**: `sdp-trace` does not assign evidence strength, quality scores, readiness, degradation, pass/fail, or override semantics. If another producer emits such a value, `sdp-trace` records it as an external verdict input or external assertion with producer, origin, policy reference when available, artifact reference, and provenance.
 
-**Rationale**: Evidence strength is policy-adjacent. Recording it as a native trace judgment would erode the `sdp-trace` / `sdp-gate` boundary.
+**Rationale**: Evidence strength is policy-adjacent. Recording it as a native trace judgment would erode the `sdp-trace` / external policy consumer boundary.
 
 ## Decision 8: Use Digest-And-Redaction Integrity for Committed Evidence
 
@@ -103,8 +92,8 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 
 **Rationale**: A self-trace or pilot example must be inspectable without leaking secrets, credentials, customer data, or raw prompts. SHA-256 digests provide continuity for committed artifacts but are not authentication signatures. Signing and write authorization are external policy unless a future schema version adds them.
 
-## Decision 9: Version Schemas Before sdp-gate Inherits Them
+## Decision 9: Version Schemas Before External Consumers Adopt Them
 
-**Decision**: Every new schema gets a stable `$id` and semver schema version. `sdp-gate` or any other consumer must declare supported versions.
+**Decision**: Every new schema gets a stable `$id` and semver schema version. External consumers must declare supported versions.
 
-**Rationale**: `sdp-gate` builds on `sdp-trace`; silent breaking changes would break inherited policy inputs. Before v1.0, breaking changes are allowed only when examples and compatibility notes are updated with the same change.
+**Rationale**: silent breaking changes would break policy inputs. Before v1.0, breaking changes are allowed only when examples and compatibility notes are updated with the same change.

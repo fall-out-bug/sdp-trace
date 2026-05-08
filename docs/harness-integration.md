@@ -15,8 +15,8 @@ A harness integration should provide:
 - assessment input output location
 - optional external verdict input location when a policy consumer runs
 
-Block 19 adapter capture adds a portable adapter-event path. Harness adapters
-should emit generic event families rather than product-specific concepts:
+The adapter-capture path uses portable adapter events. Harness adapters should
+emit generic event families rather than product-specific concepts:
 
 - `run_started`
 - `task_locked`
@@ -44,24 +44,26 @@ responses, command args, stdout/stderr bodies, tool input/output bodies, adapter
 configuration, gateway secrets, provider tokens, authenticated URLs, or raw
 review bodies.
 
-## Harness Families To Validate
+## Evidence State
 
-- Superpowers
-- Hyperpowers
-- gsd / gsd2
-- Oh My OpenAgent
-- Paperclip
-- Codex
-- Claude Code
-- OpenCode
-- Kilo
-- Pi
+Do not maintain static compatibility matrices for harnesses, models, languages,
+or build tools. They collapse different questions into one table and invite
+false support claims.
 
-## Model Families To Validate
+Record evidence at the run or package level instead:
 
-- GLM
-- MiniMax
-- Kimi
-- MiMo
+- [Agent Entrypoint](agent-entrypoint.md) defines the current command and state
+  contract.
+- [Reviewer Entrypoint](reviewer-entrypoint.md) defines how to inspect verifier
+  output without overclaiming it.
+- [OpenCode + MiniMax + Kotlin/Bazel proof package](../examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md)
+  is one exact observed slice, not general support for OpenCode, MiniMax,
+  Kotlin, or Bazel.
+- [JVM And Bazel Guide](jvm-bazel-guide.md) documents the current JVM/Bazel
+  fixture boundary.
 
-Validation must measure tool-use reliability, structured output discipline, context handling, and evidence-grounded claims.
+Validation must measure tool-use reliability, structured output discipline,
+context handling, retained evidence, redaction behavior, and evidence-grounded
+claims for the exact observed run. Broader support, readiness, or compatibility
+language requires a separate downstream verdict; it is not a native
+`sdp-trace` claim.

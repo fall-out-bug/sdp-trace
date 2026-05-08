@@ -22,7 +22,7 @@ Those decisions remain external policy-consumer concerns.
 ## Problem
 
 The current gate path can report local contract evidence and CI witness posture,
-but the next buyer-visible questions are still weak:
+but the next customer-visible questions are still weak:
 
 - Was an expected run absent, or merely unmatched?
 - Was the CI witness for the same repository, ref, commit, run id, and artifact

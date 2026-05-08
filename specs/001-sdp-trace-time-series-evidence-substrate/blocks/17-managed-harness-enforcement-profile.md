@@ -8,8 +8,8 @@ Parent artifacts:
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13-product-gap-closure-roadmap.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/13b-capture-boundary-state-dx-baseline.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/16-protected-gate-enforcement-profile.md`
-- `docs/research/harness-telemetry-trust-brief.md`
-- `docs/research/agentic-sdlc-evidence-substrate-v3-brief.md`
+- retired research artifact
+- retired research artifact
 
 ## Goal
 
@@ -21,7 +21,7 @@ The user-facing outcome is that a platform owner can prove whether a selected
 run used an approved managed boundary, whether required wrapper and adapter
 telemetry was present, and whether bypass or suppression prevents a managed
 profile claim. `sdp-trace` emits verifier facts and deterministic exit behavior;
-external CI, `sdp-gate`, or customer policy owns the block/allow decision.
+external CI, external policy consumer, or customer policy owns the block/allow decision.
 
 ## Problem
 
@@ -49,7 +49,7 @@ enrolled and the required wrapper/adapter evidence verifies."
 ## Command Naming Risk
 
 The existing `sdp-trace gate` command name is a UX and product-boundary risk
-because `sdp-gate` is the complementary policy project. Adding more profiles
+because policy evaluation belongs outside this recorder. Adding more profiles
 under `sdp-trace gate` makes it easier for users to believe `sdp-trace` owns
 gate decisions.
 
@@ -67,7 +67,7 @@ profiles in Block 17. Block 17 must not add `sdp-trace gate --profile
 managed-harness`; callers must use `sdp-trace assess --profile
 managed-harness`. A later approved migration may add `assess` aliases for
 Block 14/16 profiles, but Block 17 does not remove or rename existing commands.
-`sdp-gate` remains the policy consumer that turns assessment facts into a gate
+external policy consumer remains the policy consumer that turns assessment facts into a gate
 decision.
 
 Block 17 must also avoid new schema field names that imply `sdp-trace` owns the
@@ -479,7 +479,7 @@ Exit code table:
 
 | Exit | Meaning | Canonical CI action |
 |---|---|---|
-| `0` | Managed harness assessment passed for the selected profile. | External CI or `sdp-gate` may consume the artifact as a passing managed-profile fact. |
+| `0` | Managed harness assessment passed for the selected profile. | External CI or external policy consumer may consume the artifact as a passing managed-profile fact. |
 | `1` | Verifier found contradictory evidence. | Block or escalate under the external policy; fix the run, policy, adapter, or witness. |
 | `2` | Usage error: required flag omitted, named input unreadable, or named input not JSON. | Fix command invocation; no assessment artifact is authoritative. |
 | `3` | The verifier could not establish managed profile facts, or the selected assessment was not available. | Treat as fail-closed for managed enforcement; either supply missing evidence or lower the claim to observation/advisory. |
@@ -629,8 +629,8 @@ Tasks:
 Files:
 
 - `examples/block17-managed-harness/`
-- `docs/research/block-17-implementation-evidence.md`
-- `docs/research/block-17-implementation-review-disposition.md`
+- retired research artifact
+- retired research artifact
 
 Tasks:
 

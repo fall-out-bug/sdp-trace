@@ -138,7 +138,7 @@ Files:
 
 - `specs/001-sdp-trace-time-series-evidence-substrate/tasks.md`
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md`
-- `docs/research/opencode-minimax-kotlin-bazel-proof-report.md`
+- retired research artifact
 - `examples/contract-foundation/contract-release-verification.example.json`
 - `examples/self-trace/self-attestation-verification.json`
 
@@ -208,7 +208,7 @@ Files:
 - modify `scripts/validate-e2e-pilot-package.sh`
 - modify `scripts/test-e2e-pilot-package.sh`
 - update `examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md`
-- update `docs/research/opencode-minimax-kotlin-bazel-proof-report.md`
+- update retired research artifact
 
 Modes:
 
@@ -310,6 +310,6 @@ Review gate:
 
 - Block 06 real-run completion
 - broad model/harness aggregation
-- `sdp-gate` policy consumption
+- external policy consumer policy consumption
 
 These are not allowed to hide a missing external trust check. They are outside Block 07 only after `verify:external-trust` has either passed for a real supported profile or kept Block 07 explicitly open.

@@ -12,7 +12,7 @@ Parent artifacts:
 
 ## Goal
 
-Provide a portable evidence export that lets a CTO or downstream reporting
+Provide a portable evidence export that lets a technical executive or downstream reporting
 consumer compare evidence posture across repositories, teams, services,
 harnesses, change types, and time windows without `sdp-trace` issuing a native
 degradation verdict.
@@ -42,7 +42,7 @@ acceptable."
   state, or hidden severity ordering.
 - No policy thresholds, alert thresholds, service-level objectives, or
   "acceptable" / "unacceptable" labels.
-- No dependency on `sdp-report`, `sdp-gate`, GitHub, GitLab, Jira, Buildkite,
+- No dependency on `sdp-report`, external policy consumer, GitHub, GitLab, Jira, Buildkite,
   Jenkins, BigQuery, Snowflake, Datadog, Grafana, Tableau, or any named harness.
 - No raw command, test, prompt, model-response, stdout/stderr, source-snippet,
   tool payload, review body, provider URL, private path, or credential export.
@@ -98,7 +98,7 @@ Required inputs per repository/window:
 Optional inputs:
 
 - external repository/team/service catalog with safe labels;
-- external verdict input artifacts from `sdp-gate`, `sdp-report`, or another
+- external verdict input artifacts from external policy consumer, `sdp-report`, or another
   named policy consumer;
 - CI or external witness summaries from later witness profiles.
 

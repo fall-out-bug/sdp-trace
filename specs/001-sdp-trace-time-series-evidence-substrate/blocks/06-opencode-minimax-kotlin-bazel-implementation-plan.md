@@ -16,12 +16,12 @@ Consensus is recorded for a real E2E proof. A packaging-only fixture is not enou
 
 - `scripts/run-opencode-minimax-kotlin-bazel-proof.sh`: reference runner and evidence capture wrapper.
 - `scripts/validate-e2e-pilot-package.sh`: validates a generated E2E proof package.
-- `docs/research/opencode-minimax-kotlin-bazel-proof-report.md`: human-readable tested-on report after a real run.
+- retired research artifact: human-readable tested-on report after a real run.
 - `examples/pilot-runs/opencode-minimax-kotlin-bazel/`: committed sanitized proof package after a real run.
-- `docs/research/opencode-model-run-card.md`: update with the new runner command and exact MiniMax proof boundary.
-- `docs/research/kotlin-bazel-fixture-plan.md`: update with E2E proof requirements and Bazel execution proof state.
-- `docs/harness-compatibility-matrix.md`: update only the exact OpenCode row when committed evidence exists.
-- `docs/model-compatibility.md`: update only the exact MiniMax row when committed evidence exists.
+- retired research artifact: update with the new runner command and exact MiniMax proof boundary.
+- retired research artifact: update with E2E proof requirements and Bazel execution proof state.
+- retired static harness matrix: update only the exact OpenCode row when committed evidence exists.
+- retired static model matrix: update only the exact MiniMax row when committed evidence exists.
 - `specs/001-sdp-trace-time-series-evidence-substrate/spec.md`: sync Block 06 functional and success criteria.
 - `specs/001-sdp-trace-time-series-evidence-substrate/tasks.md`: add T078-T086 and keep them open until evidence exists.
 - `specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md`: committed pi-review ledger.
@@ -161,7 +161,7 @@ Expected result: committed proof package validates after a real run exists; miss
 ## Task 7: Committed Sanitized Report
 
 - After a real OpenCode + MiniMax + Kotlin+Bazel run with assessed Bazel command execution exists, copy only sanitized artifacts into `examples/pilot-runs/opencode-minimax-kotlin-bazel/`.
-- Add `docs/research/opencode-minimax-kotlin-bazel-proof-report.md` with:
+- Add retired research artifact with:
   - tested-on environment
   - command summary
   - proof-state table
@@ -172,7 +172,7 @@ Expected result: committed proof package validates after a real run exists; miss
 Verification:
 
 ```bash
-rg -n "OpenCode|MiniMax|Kotlin|Bazel|not_assessed|no policy verdict" docs/research/opencode-minimax-kotlin-bazel-proof-report.md examples/pilot-runs/opencode-minimax-kotlin-bazel
+rg -n "OpenCode|MiniMax|Kotlin|Bazel|not_assessed|no policy verdict" retired-research-artifact examples/pilot-runs/opencode-minimax-kotlin-bazel
 ```
 
 Expected result: report is readable without raw logs or secrets.
@@ -188,7 +188,7 @@ Verification:
 
 ```bash
 node scripts/validate-pilot-matrices.mjs
-rg -n "opencode-minimax-kotlin-bazel" docs/harness-compatibility-matrix.md docs/model-compatibility.md docs/research/opencode-model-run-card.md
+rg -n "opencode-minimax-kotlin-bazel" retired static harness matrix retired static model matrix retired-research-artifact
 ```
 
 Expected result: matrices cite the exact proof package and do not broaden the claim.

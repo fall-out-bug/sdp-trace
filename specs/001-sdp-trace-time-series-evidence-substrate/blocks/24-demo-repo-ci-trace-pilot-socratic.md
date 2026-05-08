@@ -1,7 +1,7 @@
 # Block 24 Socratic Review: Demo Repository CI And Trace Pilot
 
 Status: Socratic review and focused re-review complete. Implementation is
-blocked until the CTO explicitly approves the reviewed direction.
+blocked until the technical executive explicitly approves the reviewed direction.
 
 ## Initial Socratic Questions And Resolutions
 
@@ -111,7 +111,7 @@ separate and external production trust remains `not_assessed`.
 **Critic**: "Redaction scan" as prose is not evidence.
 
 **Resolution**: The implementation must run a concrete denylist scan using
-`docs/research/block-24-redaction-denylist.patterns`, record the pattern-file
+retired research artifact, record the pattern-file
 digest, scanned roots, exit state, and match count, and treat a missing scan as
 `cannot_verify`.
 

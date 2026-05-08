@@ -3,7 +3,7 @@
 Status: accepted for implementation; spec pi-review findings closed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Beads mirror: `sdp-trace-drq`
-Audience: CTO, pilot operator, future `sdp-gate` consumer, repository observer
+Audience: technical executive, pilot operator, future external policy consumer consumer, repository observer
 
 ## Purpose
 

@@ -2,13 +2,13 @@
 
 Status: implementation in progress; Slice 0 implemented under verifier authority; Block 07 not closed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
-Audience: CTO, CIO, CISO, release owners, future `sdp-gate` consumers
+Audience: technical executive, CIO, CISO, release owners, future external policy consumers
 
 ## Purpose
 
 Block 07 responds to the product objection:
 
-> Why should a CTO or CISO trust a product that says real trust will arrive later?
+> Why should a technical executive or CISO trust a product that says real trust will arrive later?
 
 The answer cannot be more prose. `sdp-trace` must make its own claims verifier-derived before it asks customers to rely on those claims.
 
@@ -269,7 +269,7 @@ The first ledger may be Markdown for human review. Implementation must later add
 
 ## Out of Scope
 
-- Implementing `sdp-gate` policy thresholds.
+- Implementing external policy consumer policy thresholds.
 - Claiming pilot readiness.
 - Claiming broad harness/model compatibility.
 - Making OpenCode, MiniMax, Kotlin, Bazel, Bazelisk, GitHub, or any provider SDK a product dependency.

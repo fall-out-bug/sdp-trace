@@ -104,7 +104,7 @@ Expected result: the doc contains the required profile/command/claim guidance an
 ## Task 3: Human Reviewer Entrypoint Doc
 
 - Create `docs/reviewer-entrypoint.md`.
-- Make it a five-minute first-use path for CTO/CISO/reviewer audiences.
+- Make it a five-minute first-use path for technical executive/CISO/reviewer audiences.
 - Include:
   - clean-checkout first-pass commands
   - explicit warning that `verify:external-trust` currently exits `1` from a clean checkout

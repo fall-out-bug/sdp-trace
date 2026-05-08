@@ -4,9 +4,9 @@
   "verdict": "needs_revision",
   "critical_findings": [
     {
-      "file": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
+      "file": "examples/contract-foundation/external-policy-consumer-declaration.example.json",
       "issue": "Consumer schema-version declaration schema does not exist, yet validation script calls validate against it and contract manifest lists it as an artifact",
-      "why_it_matters": "AC09 requires consumer schema-version declaration example to validate. The consumer-schema-version-declaration.schema.json file does not exist in the provided files. The validation script calls `validate schema/consumer-schema-version-declaration.schema.json examples/contract-foundation/sdp-gate-consumer-declaration.example.json` which will fail because the schema file is missing. Contract manifest artifact list also references this schema by SHA-256 digest, implying it was committed.",
+      "why_it_matters": "AC09 requires consumer schema-version declaration example to validate. The consumer-schema-version-declaration.schema.json file does not exist in the provided files. The validation script calls `validate schema/consumer-schema-version-declaration.schema.json examples/contract-foundation/external-policy-consumer-declaration.example.json` which will fail because the schema file is missing. Contract manifest artifact list also references this schema by SHA-256 digest, implying it was committed.",
       "acceptance_risk": "AC09 fails. Positive validation cannot complete. Contract manifest references an artifact that does not exist as a file."
     },
     {
@@ -56,10 +56,10 @@
   ],
   "minor_findings": [
     {
-      "file": "docs/cto-brief.en.md and docs/cto-brief.ru.md",
-      "issue": "CTO briefs do not map problem statements to specific SpecKit artifact paths",
-      "why_it_matters": "AC18 requires CTO brief to be mapped to SpecKit evidence. The brief states 'evidence contracts', 'accountability', 'manifest verification', 'signing profile', 'negative fixtures', 'not_assessed proof' but does not link these to specific file paths, SHA-256 digests, or validation command outputs. A CTO who wants to verify the claims independently cannot follow the narrative to concrete evidence.",
-      "acceptance_risk": "CTO brief is readable in under one minute but does not enable independent verification of the claims."
+      "file": "docs/agent-onboarding.md and docs/agent-onboarding.md",
+      "issue": "technical executive briefs do not map problem statements to specific SpecKit artifact paths",
+      "why_it_matters": "AC18 requires technical executive brief to be mapped to SpecKit evidence. The brief states 'evidence contracts', 'accountability', 'manifest verification', 'signing profile', 'negative fixtures', 'not_assessed proof' but does not link these to specific file paths, SHA-256 digests, or validation command outputs. A technical executive who wants to verify the claims independently cannot follow the narrative to concrete evidence.",
+      "acceptance_risk": "technical executive brief is readable in under one minute but does not enable independent verification of the claims."
     },
     {
       "file": "examples/contract-foundation/positive-assessment-input.json",
@@ -97,14 +97,14 @@
     "scripts/validate-contracts.sh",
     "scripts/check-artifact-safety.sh",
     "scripts/verify-contract-manifest.sh",
-    "docs/cto-brief.en.md",
-    "docs/cto-brief.ru.md",
+    "docs/agent-onboarding.md",
+    "docs/agent-onboarding.md",
     "docs/accountability-model.md",
     "docs/contract-release-signing.md",
     "schema/README.md",
     "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
     "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
-    "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md",
+    "specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md",
     "Missing files confirmed by absence: package.json, package-lock.json, scripts/verify-release-signature.sh, scripts/generate-local-dev-dsse.sh, examples/contract-foundation/contract-release.dsse.json, examples/contract-foundation/local-dev-signing-public.pem, schema/consumer-schema-version-declaration.schema.json, docs/process-metric-catalog.md"
   ],
   "no_solution_policy_observed": true

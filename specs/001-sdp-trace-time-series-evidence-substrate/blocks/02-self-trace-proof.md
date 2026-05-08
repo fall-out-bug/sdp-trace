@@ -3,13 +3,13 @@
 Status: implemented; pi review passed
 Parent Spec: `001-sdp-trace-time-series-evidence-substrate`
 Beads mirror: `sdp-trace-cdn.12`
-Audience: CTO, CIO, CEO, implementation agents, future `sdp-gate` consumers
+Audience: technical executive, CIO, CEO, implementation agents, future external policy consumers
 
 ## Purpose
 
 Self-Trace Proof makes `sdp-trace` its own first real consumer.
 
-The block answers the CTO objection:
+The block answers the technical executive objection:
 
 > If `sdp-trace` cannot prove its own development, why should anyone trust it for customer work?
 
@@ -29,7 +29,7 @@ This is not a gate verdict. It is a replayable evidence package showing what was
 - `examples/self-trace/assessment-input.json`
 - negative self-trace fixture proving native policy fields fail validation
 - self-trace validation command
-- sanitized summary in `docs/research/self-trace-v0-summary.md`
+- sanitized summary in retired research artifact
 
 ## Required Evidence
 
@@ -47,7 +47,7 @@ The self-trace package must include:
 ## Out of Scope
 
 - customer pilot execution
-- `sdp-gate` policy decisions
+- external policy consumer policy decisions
 - production Sigstore/Rekor release proof
 
 ## Acceptance

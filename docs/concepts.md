@@ -6,7 +6,8 @@
 
 The intended behavior and acceptance criteria for a change.
 
-The spec may come from GitHub SpecKit, an issue, a product brief, a ticket, or a human-written note.
+The spec may come from SpecKit, gsd, Superpowers, Oh My OpenAgent, an issue, a
+product brief, a ticket, or a human-written note.
 
 ## Plan
 
@@ -18,7 +19,8 @@ Plans are useful evidence because they establish what work was expected before c
 
 An executable unit of work.
 
-In full SDP this may map to a Beads issue or workstream. In `sdp-trace`, it is just a task.
+It may map to a ticket, bead, checklist item, GSD task, or workflow step. In
+`sdp-trace`, it is just a task.
 
 ## Change
 
@@ -60,7 +62,8 @@ Evidence should be referenced, not paraphrased into vague claims.
 
 ## Gate
 
-A policy check applied to evidence by `sdp-gate` or another external policy consumer.
+A policy check applied to evidence by CI, release governance, customer
+governance, or another external policy consumer.
 
 Examples:
 

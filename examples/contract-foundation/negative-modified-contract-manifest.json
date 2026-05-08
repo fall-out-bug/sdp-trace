@@ -10,7 +10,7 @@
   ],
   "artifacts": [
     {
-      "path": "docs/cto-brief.en.md",
+      "path": "docs/agent-onboarding.md",
       "kind": "doc",
       "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     }
@@ -32,11 +32,11 @@
       "actor_type": "human_role"
     },
     "approver": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical executive",
       "actor_type": "human_role"
     },
     "escalation": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical executive",
       "actor_type": "human_role"
     },
     "authority_scope": "contract_release",

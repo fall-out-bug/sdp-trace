@@ -86,39 +86,44 @@
   ],
   "artifacts": [
     {
+      "path": "README.md",
+      "kind": "doc",
+      "sha256": "c6f807fbfcb65640b3fdec53ac8e4a7efbe40bd2532d8b312d7fe700eefb8af9"
+    },
+    {
       "path": "docs/accountability-model.md",
       "kind": "doc",
-      "sha256": "214e53273c4d4dc3533f9a1551cdb671253f3b14b598020d5c6d122b9a43e599"
+      "sha256": "a4177cb976f2f1a63320efdf4ac3f913fe6c7b6cceb4b55942406cf564ea855c"
+    },
+    {
+      "path": "docs/adoption-guide.en.md",
+      "kind": "doc",
+      "sha256": "84817adc3e2f45bd821ea288f4851a1d5e16f7197df37fc9429a5dde15c54c41"
+    },
+    {
+      "path": "docs/adoption-guide.ru.md",
+      "kind": "doc",
+      "sha256": "a15b87613b4bc58e261f8a6830f689c80197da30bb6fd6468a899356ddf0a7dd"
+    },
+    {
+      "path": "docs/agent-onboarding.md",
+      "kind": "doc",
+      "sha256": "3d942b4a24648099e3c23c9742894379fe142033ea5badcf42bd2349f83819e8"
     },
     {
       "path": "docs/concepts.md",
       "kind": "doc",
-      "sha256": "f1462307a9463f4df0289656ba5ce7a5d6dd8ceee40e36eaa06ee6646d80733e"
+      "sha256": "904ab9984e898326968c60cc95e83c18968682990ef369f87098183f17b898f7"
     },
     {
       "path": "docs/contract-release-signing.md",
       "kind": "doc",
-      "sha256": "343b30cad6bec7482b98222f9f051348f0265b1bdf8d9e5bed987b5df9fe16dc"
-    },
-    {
-      "path": "docs/cto-brief.en.md",
-      "kind": "doc",
-      "sha256": "ea47adb962eea9d718e79b88c67df4f364234d7e8c1d41f529ab3fe569879eb1"
-    },
-    {
-      "path": "docs/cto-brief.ru.md",
-      "kind": "doc",
-      "sha256": "195c1db7e6509de7d79d5f4a0cf901e2b5c285c0f7d1c251ac764de72f7bd57a"
+      "sha256": "7f3dfc39794d381531582293b0d47526fda4af7ef0e1cf279ba8f65b14aa47d5"
     },
     {
       "path": "docs/flight-recorder.md",
       "kind": "doc",
-      "sha256": "4aa4fdd7aa0b647e0ce0c545f9cc0c8cab942cd5e87476af2a3f0626ec3b011c"
-    },
-    {
-      "path": "docs/harness-compatibility-matrix.md",
-      "kind": "compatibility_note",
-      "sha256": "a181ec960dac654ceee42eef02f96b975c2e53d677c3b2fc27faaa6295a2f212"
+      "sha256": "3901f7928a9f5b6aa6986d988121e85815c09270fb4a22a2878c0ed8672dae9e"
     },
     {
       "path": "docs/jvm-bazel-guide.md",
@@ -126,59 +131,24 @@
       "sha256": "eddc853223d353a271a10e416b7a7cc07d25f2d87c6ca088dcac96540553bec8"
     },
     {
-      "path": "docs/model-compatibility.md",
-      "kind": "compatibility_note",
-      "sha256": "d38e9b001b507bc5c66b395f07f0d2df95bfbfaba039b1775cb6ef281803e0ca"
+      "path": "docs/repository-rollout-playbook.en.md",
+      "kind": "doc",
+      "sha256": "a34630be6696e1ecf5b952af4c29697c2266c4a690360d641325cbd46d63c606"
     },
     {
-      "path": "docs/research/customer-pilot-evidence-package.md",
+      "path": "docs/repository-rollout-playbook.ru.md",
       "kind": "doc",
-      "sha256": "2bdb7277728182e7c75300c79b2f2cc44d6430d83a1ac611515d35f9c44e7cb0"
-    },
-    {
-      "path": "docs/research/harness-run-card.md",
-      "kind": "doc",
-      "sha256": "44fdd1255bdb3d8bf6741818b06f09d441c1bb551b364947aa6de25318133cfc"
-    },
-    {
-      "path": "docs/research/kotlin-bazel-fixture-plan.md",
-      "kind": "doc",
-      "sha256": "0ba0a00d7f6c9afb90cff54c436e7bd5a18f1f5f54496c7346c2ac224a2ad3c2"
-    },
-    {
-      "path": "docs/research/opencode-minimax-kotlin-bazel-proof-report.md",
-      "kind": "doc",
-      "sha256": "13813af07a7d50334a076eb7f620a2331037bb1aa4e75b2ce9853b475d54553b"
-    },
-    {
-      "path": "docs/research/opencode-model-run-card.md",
-      "kind": "doc",
-      "sha256": "d972e0698ec68f619111c1b9475a1391e7c0adbca08c01b18620c4597544fa4c"
-    },
-    {
-      "path": "docs/research/run-card-template.md",
-      "kind": "doc",
-      "sha256": "ebf285497630528ec57b3cdd13e3f81b737a3951d4d7c32c20b78e20ae7382bc"
-    },
-    {
-      "path": "docs/research/self-attestation-summary.md",
-      "kind": "doc",
-      "sha256": "11877861bd5e31d13ba8d0af2d0039b93c2861e196dbebe172236dd0ea616463"
+      "sha256": "25c59cebf7f6f93b13ecf0b3295afe5c10fb6940c802fe6f1d5b9defdda7aa32"
     },
     {
       "path": "docs/speckit-compatibility.md",
       "kind": "compatibility_note",
-      "sha256": "d1503f280289c63a5a35c42efba9392a0e7a7b5f6cb3b31dedcb1e560610006a"
+      "sha256": "5b946bcc8804c880b87be185077ef40bdc0ad51b130924bd4101dac55beac928"
     },
     {
-      "path": "docs/team-lead-playbook.en.md",
-      "kind": "doc",
-      "sha256": "549ba56415a4e0001279484c0cf8a4d6166d5558f29728c0b4ec7c67e365d133"
-    },
-    {
-      "path": "docs/team-lead-playbook.ru.md",
-      "kind": "doc",
-      "sha256": "2e33223a2cc3abae45f7cc6a4d8b1bc52252d65ad85a22a7a137688e97d433be"
+      "path": "examples/contract-foundation/external-policy-consumer-declaration.example.json",
+      "kind": "fixture",
+      "sha256": "94dbc1bbddac9039b171db151cb7cd30a64674e0a6e1c7c9d81b016957ef77b4"
     },
     {
       "path": "examples/contract-foundation/local-dev-wrong-public.pem",
@@ -198,12 +168,12 @@
     {
       "path": "examples/contract-foundation/negative-modified-contract-manifest.json",
       "kind": "fixture",
-      "sha256": "dbec89f9b1d498f6b3fd8ceb66f04435206a94f67baae288d9cb262fe730c352"
+      "sha256": "a7d5334231540f9f7237ecf6d3a478f12d0bf2c2354e67c4aee6252d2df8da52"
     },
     {
       "path": "examples/contract-foundation/negative-native-policy-field.json",
       "kind": "fixture",
-      "sha256": "f1372a30df6185cc7094581e98c12fbcba215e9bdc676aee7e8a51ebc2455c3a"
+      "sha256": "dda3fb4e7cb45be3c2c386276a05290467f43e0e6797ee8949277af6b79e349e"
     },
     {
       "path": "examples/contract-foundation/negative-native-policy-trace.json",
@@ -213,27 +183,22 @@
     {
       "path": "examples/contract-foundation/not-assessed-assessment-input.json",
       "kind": "fixture",
-      "sha256": "53fcaa0d3f1700d705d4538fc0d0b016b9dfdb2e28ebbc42cb65b86e4f50c085"
+      "sha256": "244440a8f573f06f3ecd16bc1d24b31086584a7fe71d0d61f2c2e967ad12e020"
     },
     {
       "path": "examples/contract-foundation/positive-assessment-input.json",
       "kind": "fixture",
-      "sha256": "2acd15dc2fd75b47fc6afddb4af5e448734429133c8dbc3edd805f2111743ab1"
-    },
-    {
-      "path": "examples/contract-foundation/sdp-gate-consumer-declaration.example.json",
-      "kind": "fixture",
-      "sha256": "a51d5a81a47e9bf4cfbd57a1b28ef40ea1e99cd2030e962c5a7bb3ee7e041665"
+      "sha256": "d3726afbb19f62ea1737e62fe5604a2a4aa6a1d2cd3b0d0234b7a654453ed153"
     },
     {
       "path": "examples/contract-foundation/trusted-identity-policy-wrong-profile.example.json",
       "kind": "fixture",
-      "sha256": "1a5c42efdcc65c6fc290433d35dcd689fc4b103fb755e8e7a8934de30b3ffcdd"
+      "sha256": "c1248a7e1efbc803b3c32975f49f12424aa2abd36d105abb082bb253a1e08366"
     },
     {
       "path": "examples/contract-foundation/trusted-identity-policy.example.json",
       "kind": "fixture",
-      "sha256": "b5973baa6c343ba2e4d56e285b9dc0a96dc6babc0fd47fb0d51f36b8fc5ec007"
+      "sha256": "ec7cc7cb23b39a7f21a055c90dad669e7c710cb79748cc197632fcbf6213f427"
     },
     {
       "path": "examples/flight-recorder/forensic-digest-only-negative/events/000-run-started.json",
@@ -481,14 +446,14 @@
       "sha256": "4043936f06c05441fc6124f8d198baac6ed3071ace3977d3e4c2d5f1f2133d28"
     },
     {
-      "path": "examples/jvm-bazel/evidence-bundle.json",
-      "kind": "fixture",
-      "sha256": "ca8aa3ee30dc7fc2121b7f017a73820c409a29c7bfd0b5c56eeb7fea2bacdec6"
-    },
-    {
       "path": "examples/jvm-bazel/README.md",
       "kind": "doc",
       "sha256": "e1120b5442b50f35f2e687684f4555cfc986d0a8378ac9ccaee1c51c81032273"
+    },
+    {
+      "path": "examples/jvm-bazel/evidence-bundle.json",
+      "kind": "fixture",
+      "sha256": "ca8aa3ee30dc7fc2121b7f017a73820c409a29c7bfd0b5c56eeb7fea2bacdec6"
     },
     {
       "path": "examples/pilot-fixtures/kotlin-bazel-service/MODULE.bazel",
@@ -504,6 +469,11 @@
       "path": "examples/pilot-fixtures/kotlin-bazel-service/services/example/Hello.kt",
       "kind": "fixture",
       "sha256": "9aff584dc92a33627445c05cbd7c92cd822292170090a2a81092213a6fb70670"
+    },
+    {
+      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
+      "kind": "fixture",
+      "sha256": "772b66d98a104ef5a4fc2c49ec96433a90ea5a24ea9d38f83357050ca957425d"
     },
     {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json",
@@ -541,11 +511,6 @@
       "sha256": "e48cfdfacfeab3bae8c0d2c52efc3e1b39b3fb4564a5d007b6c6f670db0b40ad"
     },
     {
-      "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md",
-      "kind": "fixture",
-      "sha256": "9e540f7dc6dcf6ba350a90ee6514e0cfcd9cf3510d701915333b386ac04aabfa"
-    },
-    {
       "path": "examples/pilot-runs/opencode-minimax-kotlin-bazel/redaction-note.md",
       "kind": "fixture",
       "sha256": "4892b8a6dc320e2a80bffa5398e4e525972dd514155c2635d5655b5c9b620773"
@@ -556,9 +521,9 @@
       "sha256": "af973e3efc4f9ea5c3d131b8d94ad3673702f59451cfd18a017de0a057db4d52"
     },
     {
-      "path": "README.md",
+      "path": "schema/README.md",
       "kind": "doc",
-      "sha256": "af99c04014c06c5866edad1f56d3ea7b08f9aba4404fd17994b497be85cb93c2"
+      "sha256": "cb8e71db1a1d872c65458dac87f8e3fd23df8071e218fca975cbeace8f888ed4"
     },
     {
       "path": "schema/accountability.schema.json",
@@ -641,11 +606,6 @@
       "sha256": "c7a5c80490640b34078fda861eab2cd2401dbd779960b4277bb41d94d3daafda"
     },
     {
-      "path": "schema/README.md",
-      "kind": "doc",
-      "sha256": "61b1b53b869896c07c40e8ea409de7d43ccf717fe52f88df7e49393202341a0b"
-    },
-    {
       "path": "schema/risk-classification.schema.json",
       "kind": "schema",
       "sha256": "a4c23ac836e44b16dbdf442c69e97a9672baaf3f5f70e606b096e2cc424e0919"
@@ -668,47 +628,47 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation-plan.md",
       "kind": "doc",
-      "sha256": "5bc48cf6df17d656de1a760961dcbd634509eb49af32e606bb439d3c78b431e0"
+      "sha256": "ea3e3fcbc536a81d668ce221fbae3d7868ed9e5c3f971c4a0e318c20ea0a6265"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-contract-foundation.md",
       "kind": "doc",
-      "sha256": "7aa4534bb5e50403bcf032ac99fefb90b62a9709d501b1c9c5897326d613bc21"
+      "sha256": "98031dbf9c6aff7903cf0a124b57596d1dc07e9fe10431ee140ddea8c5861969"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-glm-critic.json",
       "kind": "fixture",
-      "sha256": "8cdeea41210b46cf1dd5a40f86358cc1455baeb73bbdcaa004e463c74c5a666e"
+      "sha256": "812ec6093a130acac76a3867f86f98ccf3a07603f7c9c440d9903cbd565c7163"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-kimi-critic.json",
       "kind": "fixture",
-      "sha256": "87e75abccb07e8dfc26bdd9be2c76aead7083e18b8ae7cddbaa588ffc2505498"
+      "sha256": "9aacfe90c79711b643c7b3c1f13ae2c171e54a7002806455928b161bfd26002a"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-resolution-notes.md",
       "kind": "doc",
-      "sha256": "5a85260a43b25b47e33ee243e17ed4bfe54b8a4378c17a068881848f6aea87e7"
+      "sha256": "84eb6b49e2eb2fb99e4af36a4e3f50fb235379f1a7aa47fe939bfc8a5dbb7035"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/02-self-trace-proof.md",
       "kind": "doc",
-      "sha256": "b08f1fee0f2ee26ce39eaf5409a212f2d5c299d535e6ae80a745644a6a914abd"
+      "sha256": "b7b990f582558da3c0ee95dd38864db80c04ab1b34174fc025929f935f148a8c"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/03-self-attestation-proof.md",
       "kind": "doc",
-      "sha256": "06498fdea426ae7b8500543682de03c5b1b123cd5ac8914b0dd346c20e669c7a"
+      "sha256": "98cef7c1eb9e5b48a8afb56e537a3ff8f1e6f5524db1c80c606f3fe70adfc4fa"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-external-trust.md",
       "kind": "doc",
-      "sha256": "846863e1e9e3a3e29f474d7e1c6f4a0819a84fdaad920e557b6b20335f5a5201"
+      "sha256": "682946557f9ad50f64ab01c9c2d996a3730287c7ec08f88795fbfe3a210c4c38"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-implementation-plan.md",
       "kind": "doc",
-      "sha256": "efd730f25ed7dd8fec214cb37f655d61b97849c9a74576dcbc05a7adf438a96f"
+      "sha256": "de3fea59a39fbb630d1dfeb747c24dbf6ad2e49083a19f51dee5f05c6d061976"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/04-release-finalization-socratic.md",
@@ -718,62 +678,62 @@
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-evidence-package.md",
       "kind": "doc",
-      "sha256": "deaee7c995f96753f8ff57791f95c3da7cc7dd4a7102ec84a559f5326e5579ae"
+      "sha256": "fd8da714634a8127a267a01a45568b9189da4903f6aead5396de4406d3a9b6fb"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-implementation-plan.md",
       "kind": "doc",
-      "sha256": "af49975f245227f97dfa4bc24ae807f25b145b6342b542c1b3361ab513435ac1"
+      "sha256": "7654b4760da4f25c9b4720fc4556459913d968e37063b95cf61e9ccf2408fe10"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-review-ledger.md",
       "kind": "doc",
-      "sha256": "b99eff5246762a9c4f9735605abe929f5233abdac5ea6ac1cd98ba71999e6bd9"
+      "sha256": "faadeb26f47f8c7d4897297e2848083db610cb73169190a75def50e4f689650e"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/05-customer-pilot-socratic.md",
       "kind": "doc",
-      "sha256": "f73260e768fe3555b387c1ad25c800fec78998cb7ec04260ff40bdb58697e110"
+      "sha256": "72f56d6b5ebe91cd674fecbe39b240e0f05de68daa1171a7e4bc0fc3cb63c115"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-e2e-proof.md",
       "kind": "doc",
-      "sha256": "2a0f54ea9ba88b3d3790b09a17bb01750bb8d3f37b63875dbb8db3afeb6b904d"
+      "sha256": "52deb4f1b05dbb8d451b9326c47e39b1bfea94a12e8e230e195ac9e76c3a70a5"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-implementation-plan.md",
       "kind": "doc",
-      "sha256": "4975437cfabd7042774d79f402bcd62f817d95a155f58bdbbd799a105e15967b"
+      "sha256": "5a0864d2fb94fd424730236cd68fedaaae5ff1da7ee7ce945b0f28130d83a2b9"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-review-ledger.md",
       "kind": "doc",
-      "sha256": "6a7859f7c252dd3986d6d37ebbaa50cdc685f9c96c1927b825f5ae0514b3d375"
+      "sha256": "dff9ee04addac6aff87a1669336470b1064443aa9d41d1430526ba515955d8ce"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/06-opencode-minimax-kotlin-bazel-socratic.md",
       "kind": "doc",
-      "sha256": "89a5a5f45b9170b5339562fabc08fae2f47153033ee5280575145fa00c480a77"
+      "sha256": "ff4a16b2cc3d1b959f5591af58af03574e39493e6190ced62207be9c8cb4e300"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-implementation-plan.md",
       "kind": "doc",
-      "sha256": "4bb97fea16451c0cf833dfc00ad2d0aff9dacf5c175ece36581b482bf1324567"
+      "sha256": "f7f56c8809dccd3e1f097297e9d06472aa3b168f2ed1e2a8fee18d2f2ec65148"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-review-ledger.md",
       "kind": "doc",
-      "sha256": "344a03a4a47bad51094dbd935c5b940b745adf081b4d8dfff77cd57b4c7c85d8"
+      "sha256": "3e2d80fbdbe7b158e687ef598c782e8223ede20a6cef7edab769707c367df188"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-socratic.md",
       "kind": "doc",
-      "sha256": "0a1d5a3883c4fe3df985b923d278eb8f180a2b87314d5a78a5e896c2a9e520a3"
+      "sha256": "9a62cec8ae623c4c31abcc614f376e1cd434f0755879d4005de7d42cb24c26b1"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/09-flight-recorder-trust-kernel.md",
       "kind": "doc",
-      "sha256": "11fd6bf8b1cb1b45edd0c0511f4d1da97088f8216a11de7deaef139a35dbd572"
+      "sha256": "039409b23c3d90b787ed47f1f0db315195ec3cf9aad814da433aa86a2ccdc8f1"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/blocks-01-03-final-review-fixes.json",
@@ -781,52 +741,42 @@
       "sha256": "2e081de7f28972e0bc8be529b683eef3534edf02472d2640e91f1ff1a44bb88e"
     },
     {
-      "path": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/sdp-trace-sdp-gate-boundary.md",
+      "path": "specs/001-sdp-trace-time-series-evidence-substrate/contracts/external-policy-consumer-boundary.md",
       "kind": "doc",
-      "sha256": "5294fb67ee26ba52e949edfe5fb953040a178b2e7a0a7cd32d66bc1d50013918"
+      "sha256": "60368029a4ff758d06f46bae9b1dad4d8fdf0030f8690c1cadc1cb9adda07b86"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/data-model.md",
       "kind": "doc",
-      "sha256": "34d5d74c37cc2b1a7a1194e935eaf05832401ace66117769cef22934266c15e5"
+      "sha256": "6df71c3a728d52093a93277753c2f38864247d23b5b5dec195f186c2c1d3c448"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/plan.md",
       "kind": "doc",
-      "sha256": "6aaccd154c8accccb15e72d57c806a762ddd650fdb01e754fb2f12cfa7b9f1bc"
+      "sha256": "c940064c61cffd87e620bf41febf9b9156bdfdfbe501c2e2fa539befadbb4fee"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/quickstart.md",
       "kind": "doc",
-      "sha256": "8e83820f88ae79987309c74b65f84410705cfd0c991e10df7b482d6f6d2e22bf"
+      "sha256": "a006058d59b108e56fd0da3eac258fee87d897d5fa5b18a7b63c95e4b869c04e"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/research.md",
       "kind": "doc",
-      "sha256": "305af1399e490a2042990f0536999b6d4cf20ee7b23059589c2279a64b8dd697"
+      "sha256": "47d4b4004990676609023e7b275bc67a010744d566bce1ec1cab50965c14def7"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/spec.md",
       "kind": "doc",
-      "sha256": "8d920bfb68780c63cbf2be97d56cf345219f90ab8f05c5a675f670bf76af63e6"
+      "sha256": "7b934d1fc2cf2099c0bf1da63e932b6facce03144ef686b4cbf648eb2ac32a07"
     },
     {
       "path": "specs/001-sdp-trace-time-series-evidence-substrate/tasks.md",
       "kind": "doc",
-      "sha256": "c59ae964f5e1927a965ed3657bd9006b68aabbbc0cfec6eb4b1dd7ab191ce08b"
-    },
-    {
-      "path": "docs/research/historical-verifier-retirement-2026-05-07.md",
-      "kind": "doc",
-      "sha256": "1939f740f0c807fe96e1297f55df1435f1a8be3fa02f989b24a68c803bc432ad"
-    },
-    {
-      "path": "docs/research/closed-block-task-drift-audit-2026-05-07.md",
-      "kind": "doc",
-      "sha256": "18ebc649c25528e167c21fb9a9cf3beaafc5cfaec40066b0791507a32f989bd6"
+      "sha256": "95c7b2a662130050090e695ee5afc51ec9472a7e1807bf9ba1afa232b4f19c1d"
     }
   ],
-  "source_commit": "cb65899da1340240ee1df789f2ffd022edfd7998",
+  "source_commit": "2c53535b5ad65f4205eea5bb047e85757b6d33b4",
   "issued_at": "2026-04-30T10:00:00Z",
   "valid_until": "2026-07-30T10:00:00Z",
   "trusted_identity_policy_ref": "examples/contract-foundation/trusted-identity-policy.example.json",
@@ -835,7 +785,7 @@
   ],
   "compatibility_notes": [
     "Block 01 contract foundation is pre-v1 and may change with migration notes.",
-    "sdp-gate consumes declarations, not runtime dependencies."
+    "External policy consumers declare supported schema versions; no policy runtime is a product dependency."
   ],
   "accountability": {
     "dri": {
@@ -843,11 +793,11 @@
       "actor_type": "human_role"
     },
     "approver": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical-owner",
       "actor_type": "human_role"
     },
     "escalation": {
-      "identity_ref": "role:sdp-trace-cto",
+      "identity_ref": "role:sdp-trace-technical-owner",
       "actor_type": "human_role"
     },
     "authority_scope": "contract_release",

@@ -5,7 +5,7 @@
 
 ## Summary
 
-Reframe `sdp-trace` as the portable evidence, provenance, observation, accountability, contract-integrity, and time-series trace substrate for AI-assisted delivery. The implementation creates SpecKit-visible artifacts first, then evolves schemas, examples, docs, and pilot run-cards so `sdp-gate` can later apply policy without `sdp-trace` owning gate decisions.
+Reframe `sdp-trace` as the portable evidence, provenance, observation, accountability, contract-integrity, and time-series trace substrate for AI-assisted delivery. The implementation creates repository-visible planning artifacts first, then evolves schemas, examples, docs, and pilot run-cards so external policy consumers can apply policy without `sdp-trace` owning gate decisions.
 
 The roadmap now treats self-proof as the first product proof, not as a later nicety. Block 01 may establish contract scaffolding, but it cannot establish product viability until Block 02 self-trace and Block 03 self-attestation are validated.
 
@@ -18,7 +18,7 @@ The roadmap now treats self-proof as the first product proof, not as a later nic
 **Target Platform**: Portable repository artifacts
 **Project Type**: Schema and documentation substrate
 **Performance Goals**: Validation commands should run locally in seconds over committed artifacts
-**Constraints**: No dependency on `sdp_lab`, Beads, Operator Mode, agentloop, OpenCode, GitHub, Claude, Codex, or any specific harness runtime
+**Constraints**: No dependency on Beads, Operator Mode, agentloop, OpenCode, GitHub, Claude, Codex, or any specific harness runtime
 **Scale/Scope**: Pilot covers OpenCode model slices, selected harness families, and JVM/Kotlin/Bazel evidence paths
 
 ## Constitution Check
@@ -27,11 +27,11 @@ The repository rules act as the constitution for this feature.
 
 | Rule | Status | Evidence |
 |---|---|---|
-| Use SpecKit terms first | Pass | Spec, plan, task, evidence, gate, decision, trace, provenance are used throughout this package. |
-| Keep `sdp-trace` independent | Pass | Plan excludes runtime dependencies on `sdp_lab`, Beads, Operator Mode, agentloop, and harness runtimes. |
+| Use portable workflow terms first | Pass | Spec, plan, task, evidence, gate, decision, trace, provenance are used throughout this package. |
+| Keep `sdp-trace` independent | Pass | Plan excludes runtime dependencies on Beads, Operator Mode, agentloop, and harness runtimes. |
 | Evidence-backed claims only | Conditional | Contract scaffolding is validated, but product viability remains blocked until committed self-trace and self-attestation artifacts validate. |
 | No opaque health scores | Pass | Metric catalog explicitly excludes aggregate health scores. |
-| Do not implement without plan/spec | Pass | This SpecKit package is the implementation gate. |
+| Do not implement without plan/spec | Pass | This committed spec package is the implementation gate for this repository. |
 
 ## Project Structure
 
@@ -47,7 +47,7 @@ specs/001-sdp-trace-time-series-evidence-substrate/
 ├── socratic-resolution-notes.md
 ├── socratic-judge-result.json
 ├── contracts/
-│   └── sdp-trace-sdp-gate-boundary.md
+│   └── external-policy-consumer-boundary.md
 └── tasks.md
 ```
 
@@ -76,8 +76,8 @@ docs/
 ├── contract-release-signing.md
 ├── concepts.md
 ├── evidence-policy.md
-├── harness-compatibility-matrix.md
-├── model-compatibility.md
+├── retired static harness matrix
+├── retired static model matrix
 └── jvm-bazel-guide.md
 ```
 
@@ -85,38 +85,38 @@ docs/
 
 ## Contract Decisions From Socratic Review
 
-This SpecKit package was challenged by clean-context `pi` critics using GLM, MiniMax, and Kimi. The converged blockers are resolved by these plan decisions:
+This committed spec package was challenged by clean-context `pi` critics using GLM, MiniMax, and Kimi. The converged blockers are resolved by these plan decisions:
 
 | Blocker | Plan decision |
 |---|---|
-| CTO asks "are we degrading?" while `sdp-trace` must not issue verdicts | `sdp-trace` records prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. A yes/no degradation verdict is external. |
+| technical executive asks "are we degrading?" while `sdp-trace` must not issue verdicts | `sdp-trace` records prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. A yes/no degradation verdict is external. |
 | External verdicts and evidence strength can blur into native trace judgments | Native trace entities record observations and samples only. External verdicts, scores, and strength assertions use an explicit external verdict input shape with producer and origin. |
 | JSON Schema draft and validator were selected too late | New schemas target Draft 2020-12. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`. Earlier AJV/script validation records are historical evidence, not the current command contract. |
 | Evidence references can leak sensitive or unverifiable artifacts | Committed examples require sanitized summaries, SHA-256 hashes when artifacts are committed, redaction notes, and `integrity_status`. Raw local outputs stay ignored under `.sdp-trace-runs/`. |
-| `sdp-gate` inherits contracts without versioning policy | Every new schema gets a semver `schema_version`; additive optional changes are minor, required/semantic changes are major. `schema/trace.schema.json` remains a compatibility path until a replacement and migration note exist. |
+| External consumers need stable version declarations | Every new schema gets a semver `schema_version`; additive optional changes are minor, required/semantic changes are major. `schema/trace.schema.json` remains a compatibility path until a replacement and migration note exist. |
 | CEO asks who is accountable when AI-assisted work fails | Accountable artifacts carry human-held DRI, approver, risk owner, escalation path, approval reference, and line of defense. AI actors can produce or review but cannot be sole accountable owners. |
 | Humans or models can simplify the contract and still pass JSON validation | Trusted contract release requires a manifest with SHA-256 digests, a trusted identity policy, and release verification under `sdp-trace-signature/sigstore-dsse-keyless-v1` or an explicit private equivalent. JSON-valid but unsigned, unauthorized-signer, stale, or digest-mismatched artifacts are not trusted releases. |
 
 ## Phase 0: Research
 
-Research is captured in [research.md](research.md). It maps useful `sdp_lab` ideas into portable `sdp-trace` terms and rejects runtime or policy coupling.
+Research is captured in [research.md](research.md). It records product origin and rejects runtime or policy coupling.
 
 ## Phase 1: Design
 
 Design outputs:
 
 - [data-model.md](data-model.md) defines the entities and relationships.
-- [contracts/sdp-trace-sdp-gate-boundary.md](contracts/sdp-trace-sdp-gate-boundary.md) defines product ownership boundaries.
+- [contracts/external-policy-consumer-boundary.md](contracts/external-policy-consumer-boundary.md) defines product ownership boundaries.
 - [quickstart.md](quickstart.md) defines how a repository observer validates the artifacts.
 
 ## Phase 2: Task Breakdown
 
 Task breakdown lives in [tasks.md](tasks.md). Beads issues mirror these tasks for execution discipline only:
 
-| SpecKit task area | Beads mirror |
+| Repository task area | Beads mirror |
 |---|---|
-| Extract portable ideas from `sdp_lab` | `sdp-trace-cdn.1` |
-| Define `sdp-trace` / `sdp-gate` boundary | `sdp-trace-cdn.2` |
+| Record origin without dependency | `sdp-trace-cdn.1` |
+| Define `sdp-trace` / external policy consumer boundary | `sdp-trace-cdn.2` |
 | Define human accountability and oversight classification | `sdp-trace-cdn.2` |
 | Design time-series observation contract | `sdp-trace-cdn.3` |
 | Design evidence event and provenance contract | `sdp-trace-cdn.4` |
@@ -130,13 +130,13 @@ Task breakdown lives in [tasks.md](tasks.md). Beads issues mirror these tasks fo
 | Self-attest the contract release proof | `sdp-trace-cdn.13` |
 | Build customer pilot evidence package outline | `sdp-trace-cdn.9` |
 | Update compatibility matrices from evidence | `sdp-trace-cdn.10` |
-| Reframe CTO and team docs | `sdp-trace-cdn.11` |
+| Reframe technical executive and team docs | `sdp-trace-cdn.11` |
 
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| Multiple schema artifacts | Separate evidence events, observations, metric streams, and assessment inputs have different consumers and validation needs. | One large schema would make `sdp-gate` inheritance less clear and would force unrelated fields into every artifact. |
+| Multiple schema artifacts | Separate evidence events, observations, metric streams, and assessment inputs have different consumers and validation needs. | One large schema would make external policy consumer inheritance less clear and would force unrelated fields into every artifact. |
 | Pilot matrix across harness/model/stack | Customer pilot explicitly asks for OpenCode, MiniMax/Kimi/GLM, Superpowers/GSD-style harnesses, and JVM/Kotlin/Bazel. | A single Codex or JVM baseline would not prove portability. |
 | Managed harness enforcement profile | Platform-owned teams need fail-closed evidence that a run used an approved wrapper or adapter boundary. | Making managed enrollment mandatory would break sidecar-first adoption and hide value for unmanaged harnesses. |
 
@@ -171,7 +171,7 @@ examples/self-trace/
 └── assessment-input.json
 ```
 
-The first self-trace is not a gate decision. It is a consumer test proving the contracts can describe the development of this SpecKit feature itself.
+The first self-trace is not a gate decision. It is a consumer test proving the contracts can describe the development of this feature itself.
 
 ## Self-Attestation Milestone
 
