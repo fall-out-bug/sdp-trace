@@ -396,9 +396,7 @@ func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
 		switch requiredRun.State {
 		case GateMissingTelemetry:
 			result.LocalGate = worseGateState(result.LocalGate, GateFail)
-			for _, reason := range requiredRun.Reasons {
-				result.Reasons = append(result.Reasons, reason)
-			}
+			result.Reasons = append(result.Reasons, requiredRun.Reasons...)
 			result.NextActions = append(result.NextActions, fmt.Sprintf("Run required wrapper %s through sdp-trace before evaluating advisory gate.", requiredRun.WrapperName))
 		case GateCannotVerify:
 			result.LocalGate = worseGateState(result.LocalGate, GateCannotVerify)

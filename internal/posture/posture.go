@@ -729,10 +729,6 @@ func unsafeLabel(value string) bool {
 		strings.Contains(lower, "credential")
 }
 
-func unsafePath(value string) bool {
-	return strings.Contains(value, "://") || strings.Contains(value, "..") || strings.HasPrefix(value, "/")
-}
-
 func validateInputPaths(repo RepositoryWindow) error {
 	for _, path := range []string{repo.QueryPackResult, repo.ArtifactDigestManifest, repo.PostureSignalManifest} {
 		if strings.TrimSpace(path) == "" {

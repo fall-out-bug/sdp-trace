@@ -10,22 +10,22 @@ import (
 
 // AuthorityPolicy is the loaded and validated authority policy for adapters, signers, and witness scopes.
 type AuthorityPolicy struct {
-	SchemaVersion          string                    `json:"schema_version"`
-	PolicyID               string                    `json:"policy_id"`
-	AuthorityDescription   string                    `json:"authority_description"`
-	AllowedAdapters        []AdapterAuthorityEntry   `json:"allowed_adapters"`
-	AllowedSigners         []SignerAuthorityEntry    `json:"allowed_signers"`
-	AllowedWitnessProfiles []string                  `json:"allowed_witness_profiles"`
-	DemonstrationProfiles  []string                  `json:"demonstration_profiles"`
-	TrustBoundaryDefaults  TrustBoundaryDefaults     `json:"trust_boundary_defaults"`
+	SchemaVersion          string                  `json:"schema_version"`
+	PolicyID               string                  `json:"policy_id"`
+	AuthorityDescription   string                  `json:"authority_description"`
+	AllowedAdapters        []AdapterAuthorityEntry `json:"allowed_adapters"`
+	AllowedSigners         []SignerAuthorityEntry  `json:"allowed_signers"`
+	AllowedWitnessProfiles []string                `json:"allowed_witness_profiles"`
+	DemonstrationProfiles  []string                `json:"demonstration_profiles"`
+	TrustBoundaryDefaults  TrustBoundaryDefaults   `json:"trust_boundary_defaults"`
 }
 
 type AdapterAuthorityEntry struct {
-	AdapterID       string   `json:"adapter_id"`
-	Provider        string   `json:"provider"`
-	IdentityState   string   `json:"identity_state"`
+	AdapterID         string   `json:"adapter_id"`
+	Provider          string   `json:"provider"`
+	IdentityState     string   `json:"identity_state"`
 	AllowedEventTypes []string `json:"allowed_event_types"`
-	AllowedByPolicy bool     `json:"allowed_by_policy"`
+	AllowedByPolicy   bool     `json:"allowed_by_policy"`
 }
 
 type SignerAuthorityEntry struct {
@@ -38,22 +38,22 @@ type SignerAuthorityEntry struct {
 
 type TrustBoundaryDefaults struct {
 	DefaultWitnessIndependence string `json:"default_witness_independence"`
-	LocalProfileLabel         string `json:"local_profile_label"`
+	LocalProfileLabel          string `json:"local_profile_label"`
 }
 
 type SigningProfileSpec struct {
 	SchemaVersion string `json:"schema_version"`
-	ProfileID    string `json:"profile_id"`
-	Format       string `json:"format"`
-	Description  string `json:"description"`
-	VerifierHost string `json:"verifier_host"`
+	ProfileID     string `json:"profile_id"`
+	Format        string `json:"format"`
+	Description   string `json:"description"`
+	VerifierHost  string `json:"verifier_host"`
 }
 
 type RedactionProfileSpec struct {
 	SchemaVersion string `json:"schema_version"`
-	ProfileID    string `json:"profile_id"`
-	Description  string `json:"description"`
-	DefaultMode  string `json:"default_retention_mode"`
+	ProfileID     string `json:"profile_id"`
+	Description   string `json:"description"`
+	DefaultMode   string `json:"default_retention_mode"`
 }
 
 type AuthorityPolicyValidator struct {
@@ -157,4 +157,3 @@ func (signer SignerAuthorityEntry) ScopeAllowed(scope string) bool {
 	}
 	return false
 }
-

@@ -42,14 +42,14 @@ func GenerateMissingEvidenceTable(contract Contract, observed map[string]bool) M
 			continue
 		}
 		rows = append(rows, MissingEvidenceRow{
-			ExpectedEvent:      eventType,
-			ObservedState:      string(EvidenceStateMissing),
-			Reason:             "required_by_contract",
+			ExpectedEvent:       eventType,
+			ObservedState:       string(EvidenceStateMissing),
+			Reason:              "required_by_contract",
 			ReplayabilityImpact: string(ReplayabilityPartial),
 		})
 	}
 	return MissingEvidenceTable{
 		ContractID: contract.ContractID,
-		Rows:      rows,
+		Rows:       rows,
 	}
 }
