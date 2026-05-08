@@ -36,10 +36,8 @@ func Render(result posture.ExportResult, profile string) (string, error) {
 }
 
 func RenderPrometheus(result posture.ExportResult) (string, error) {
-	if result.SchemaVersion != posture.SchemaVersion ||
-		result.ExportProfileID != posture.ProfileID ||
-		result.ExportProfileVersion != posture.ProfileVer {
-		return "", fmt.Errorf("unsupported posture export")
+	if err := posture.ValidateExportResult(result); err != nil {
+		return "", err
 	}
 	series, err := BuildSeries(result)
 	if err != nil {
@@ -248,8 +246,10 @@ func unsafeValue(value string) bool {
 		strings.Contains(lower, "token") ||
 		strings.Contains(lower, "credential") ||
 		strings.Contains(lower, "password") ||
-		strings.Contains(lower, "bearer ") ||
-		strings.Contains(lower, "private/") ||
+		strings.Contains(lower, "bearer") ||
+		strings.Contains(lower, "api_key") ||
+		strings.Contains(lower, "access_key") ||
+		strings.Contains(lower, "private") ||
 		strings.Contains(value, "@") ||
 		strings.Contains(value, "/") ||
 		strings.Contains(value, "\\")

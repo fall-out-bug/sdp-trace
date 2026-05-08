@@ -40,6 +40,9 @@ func TestTelemetryExportWritesPrometheusTextToStdoutAndFile(t *testing.T) {
 		strings.Contains(rendered, "/private") {
 		t.Fatalf("unsafe or convention-breaking telemetry output")
 	}
+	if !strings.HasSuffix(rendered, "# EOF\n") {
+		t.Fatalf("telemetry output missing OpenMetrics EOF terminator")
+	}
 
 	out.Reset()
 	errOut.Reset()
@@ -96,5 +99,28 @@ func TestTelemetryExportRejectsBadInputs(t *testing.T) {
 	}
 	if !strings.Contains(errOut.String(), "posture_unreadable") {
 		t.Fatalf("unexpected unreadable error: %s", errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	malformed := t.TempDir() + "/minimal-posture.json"
+	if err := os.WriteFile(malformed, []byte(`{
+  "schema_version": "block21-cross-repo-posture-export-v1",
+  "export_profile_id": "cross-repo-evidence-posture-v1",
+  "export_profile_version": "v1"
+}`), 0o644); err != nil {
+		t.Fatalf("write malformed posture fixture: %v", err)
+	}
+	exit = run([]string{
+		"export", "telemetry",
+		"--profile", "prometheus-text-v1",
+		"--cross-repo-posture", malformed,
+		"--out", "-",
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if out.String() != "" || !strings.Contains(errOut.String(), "telemetry_cannot_verify") {
+		t.Fatalf("malformed posture was not rejected fail-closed: out=%s err=%s", out.String(), errOut.String())
 	}
 }

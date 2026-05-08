@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -32,15 +33,13 @@ func TestRenderPrometheusTextRendersFamiliesAndEOF(t *testing.T) {
 
 func TestRenderPrometheusTextOrdersByMetricThenLabels(t *testing.T) {
 	result := validResult()
-	result.MetricRows = append(result.MetricRows, posture.MetricRow{
-		MetricID:      "cannot_verify_rows",
-		MetricVersion: "v1",
-		Numerator:     1,
-		Denominator:   3,
-		TimeWindow:    "2026-w02",
-		Dimensions:    map[string]string{"repo": "repo-0"},
-		DimensionKey:  "repo=repo-0",
-	})
+	row := result.MetricRows[0]
+	row.ID = "metric.0002"
+	row.Numerator = 1
+	row.Denominator = 3
+	row.Dimensions = map[string]string{"repo": "repo-0"}
+	row.DimensionKey = "repo=repo-0"
+	result.MetricRows = append(result.MetricRows, row)
 	out, err := RenderPrometheusText(result)
 	if err != nil {
 		t.Fatalf("render: %v", err)
@@ -53,13 +52,10 @@ func TestRenderPrometheusTextOrdersByMetricThenLabels(t *testing.T) {
 }
 
 func TestRenderPrometheusTextEscapesLabelValues(t *testing.T) {
-	result := validResult()
-	result.MetricRows[0].Dimensions["repo"] = "repo\"a\nb\rc"
-	result.MetricRows[0].DimensionKey = "repo=\"a\nb\rc"
-	out, err := RenderPrometheusText(result)
-	if err != nil {
-		t.Fatalf("render: %v", err)
-	}
+	out := renderLabels(map[string]string{
+		"dimension_key": "repo=\"a\nb\rc",
+		"repo":          "repo\"a\nb\rc",
+	})
 	if !strings.Contains(out, `dimension_key="repo=\"a\nb\rc"`) || !strings.Contains(out, `repo="repo\"a\nb\rc"`) {
 		t.Fatalf("labels were not escaped:\n%s", out)
 	}
@@ -73,11 +69,28 @@ func TestRenderPrometheusTextRejectsDuplicateSeries(t *testing.T) {
 	}
 }
 
-func TestRenderPrometheusTextRejectsUnsafeLabelsWithoutPartialOutput(t *testing.T) {
+func TestRenderPrometheusTextDoesNotLetDimensionsOverrideDimensionKey(t *testing.T) {
 	result := validResult()
-	result.MetricRows[0].Dimensions["repo"] = "https://example.test/private"
-	if out, err := RenderPrometheusText(result); err == nil || out != "" {
-		t.Fatalf("render = %q, %v; want empty unsafe error", out, err)
+	result.MetricRows[0].Dimensions["dimension_key"] = "repo=spoofed"
+	out, err := RenderPrometheusText(result)
+	if err == nil || out != "" {
+		t.Fatalf("render = %q, %v; want empty malformed-dimension error", out, err)
+	}
+}
+
+func TestRenderPrometheusTextRejectsUnsafeLabelsWithoutPartialOutput(t *testing.T) {
+	for _, value := range []string{
+		"https://example.test/private",
+		"api_key",
+		"access_key",
+		"bearer",
+		"private",
+	} {
+		result := validResult()
+		result.MetricRows[0].Dimensions["repo"] = value
+		if out, err := RenderPrometheusText(result); err == nil || out != "" {
+			t.Fatalf("render = %q, %v; want empty unsafe error for %q", out, err, value)
+		}
 	}
 }
 
@@ -99,16 +112,26 @@ func TestRenderPrometheusTextRejectsUnsupportedInput(t *testing.T) {
 
 func TestRenderPrometheusTextEnforcesSeriesLimit(t *testing.T) {
 	result := validResult()
-	result.MovementRows = nil
-	result.RefusalRows = nil
-	result.InputSelection = nil
+	result.MovementRows = []posture.MovementRow{}
+	result.RefusalRows = []posture.RefusalRow{}
+	result.InputSelection = []posture.InputSelection{}
 	result.MetricRows = make([]posture.MetricRow, 3334)
 	for i := range result.MetricRows {
+		repo := "repo-" + strconv.Itoa(i+1)
 		result.MetricRows[i] = posture.MetricRow{
-			MetricID:      "cannot_verify_rows",
-			MetricVersion: "v1",
-			TimeWindow:    "2026-w02",
-			DimensionKey:  "repo=repo-a",
+			ID:                      "metric." + strings.Repeat("0", 4-len(strconv.Itoa(i+1))) + strconv.Itoa(i+1),
+			MetricID:                "cannot_verify_rows",
+			MetricVersion:           "v1",
+			Numerator:               1,
+			Denominator:             1,
+			Unit:                    "rows",
+			TimeWindow:              "2026-w02",
+			Dimensions:              map[string]string{"repo": repo},
+			DimensionKey:            "repo=" + repo,
+			SourceInputRefs:         []string{},
+			SourceArtifactDigestSet: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+			SourceFieldState:        "present",
+			InputTrustStateSummary:  map[string]int{},
 		}
 	}
 	if out, err := RenderPrometheusText(result); err == nil || out != "" {
@@ -118,10 +141,11 @@ func TestRenderPrometheusTextEnforcesSeriesLimit(t *testing.T) {
 
 func TestRenderPrometheusTextEmptyResult(t *testing.T) {
 	result := validResult()
-	result.MetricRows = nil
-	result.MovementRows = nil
-	result.RefusalRows = nil
-	result.InputSelection = nil
+	result.MetricRows = []posture.MetricRow{}
+	result.MovementRows = []posture.MovementRow{}
+	result.RefusalRows = []posture.RefusalRow{}
+	result.InputSelection = []posture.InputSelection{}
+	result.MovementSummary = posture.MovementSummary{NonComparableReason: map[string]int{}}
 	out, err := RenderPrometheusText(result)
 	if err != nil {
 		t.Fatalf("render: %v", err)
@@ -136,36 +160,60 @@ func validResult() posture.ExportResult {
 		SchemaVersion:        posture.SchemaVersion,
 		ExportProfileID:      posture.ProfileID,
 		ExportProfileVersion: posture.ProfileVer,
+		ExportID:             "export:0123456789abcdef",
+		Producer:             "sdp-trace",
+		GeneratedAt:          "2026-01-10T00:00:00Z",
+		GroupingSetID:        posture.GroupingRepoWindow,
+		ActiveGroupingKeys:   []string{"repo", "time_window"},
 		InputSelection: []posture.InputSelection{
-			{Repository: "repo-a", TimeWindow: "2026-w02", InputTrustState: "trusted_input"},
-			{Repository: "repo-a", TimeWindow: "2026-w02", InputTrustState: "trusted_input"},
+			{InputID: "input-a", Repository: "repo-a", TimeWindow: "2026-w02", PathRedactedID: "artifact:query:not_assessed0000", InputTrustState: "trusted_input"},
+			{InputID: "input-b", Repository: "repo-a", TimeWindow: "2026-w02", PathRedactedID: "artifact:query:not_assessed0000", InputTrustState: "trusted_input"},
 		},
 		MetricRows: []posture.MetricRow{
 			{
-				MetricID:         "cannot_verify_rows",
-				MetricVersion:    "v1",
-				Numerator:        2,
-				Denominator:      5,
-				NotAssessedCount: 3,
-				TimeWindow:       "2026-w02",
-				Dimensions:       map[string]string{"repo": "repo-a"},
-				DimensionKey:     "repo=repo-a",
+				MetricID:                "cannot_verify_rows",
+				MetricVersion:           "v1",
+				ID:                      "metric.0001",
+				Numerator:               2,
+				Denominator:             5,
+				Unit:                    "rows",
+				NotAssessedCount:        3,
+				TimeWindow:              "2026-w02",
+				Dimensions:              map[string]string{"repo": "repo-a"},
+				DimensionKey:            "repo=repo-a",
+				SourceInputRefs:         []string{"input-a"},
+				SourceArtifactDigestSet: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				SourceFieldState:        "present",
+				InputTrustStateSummary:  map[string]int{"trusted_input": 1},
 			},
 		},
 		MovementRows: []posture.MovementRow{
 			{
-				MetricID:            "cannot_verify_rows",
-				MetricVersion:       "v1",
-				DimensionKey:        "repo=repo-a",
-				CurrentValue:        2,
-				PreviousValue:       1,
-				Delta:               1,
-				Comparable:          false,
-				NonComparableReason: "non_comparable_missing_window",
+				ID:                   "movement.0001",
+				MetricID:             "cannot_verify_rows",
+				MetricVersion:        "v1",
+				DimensionKey:         "repo=repo-a",
+				CurrentMetricRowRef:  "metric.0001",
+				PreviousMetricRowRef: "metric.0001",
+				CurrentValue:         2,
+				PreviousValue:        1,
+				Delta:                1,
+				ComparisonBasis:      "non_comparable_missing_window",
+				Comparable:           false,
+				NonComparableReason:  "non_comparable_missing_window",
 			},
 		},
+		MovementSummary: posture.MovementSummary{
+			ComparableCount:     0,
+			NonComparableCount:  1,
+			NonComparableReason: map[string]int{"non_comparable_missing_window": 1},
+		},
 		RefusalRows: []posture.RefusalRow{
-			{TimeWindow: "2026-w02", RefusalReason: "malformed_input", InputTrustState: "cannot_verify_input"},
+			{ID: "refusal.0001", InputID: "input-a", TimeWindow: "2026-w02", RefusalReason: "malformed_input", InputTrustState: "cannot_verify_input"},
+		},
+		Handoff: map[string]string{},
+		OutputSafety: posture.OutputSafety{
+			VerifiedAbsentSensitiveClasses: posture.SensitiveClasses(),
 		},
 	}
 }

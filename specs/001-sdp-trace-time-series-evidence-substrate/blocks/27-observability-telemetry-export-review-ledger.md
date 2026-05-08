@@ -1,6 +1,6 @@
 # Block 27 Review Ledger: Standard Telemetry Export
 
-Status: implementation review in progress.
+Status: PR merge gate review complete; post-merge verification remains pending until PR #22 is merged.
 
 ## Spec Review Inputs
 
@@ -36,12 +36,37 @@ findings for the repository.
 | S27-TEL-06 | major | telemetry implementation | Duplicate metric name plus label set would produce invalid Prometheus series. | Accepted and fixed. Renderer rejects duplicate series before serialization. |
 | S27-TEL-07 | major | telemetry implementation | Reviewer suggested allowing `/` in labels for `org/repo`. | Rejected for current profile. Block 21 safe-label contract forbids `/`, and preserving private-path fail-closed behavior is more important for v1. |
 | S27-TEL-08 | minor | telemetry implementation | Carriage returns in labels were not escaped. | Accepted and fixed. Renderer escapes `\r`. |
-| S27-DEMO-01 | critical | drift discovery | Current customer demo repo was observed as Java/Bazel despite earlier Kotlin/Bazel framing. | Accepted as separate demo reset blocker. Block 27 does not repair demo history; demo repo must be reset after this block. |
+| S27-DEMO-01 | critical | drift discovery | Current customer demo repo was observed as Java/Bazel despite earlier Kotlin/Bazel framing. | Accepted as separate demo reset blocker, not a Block 27 PR blocker. Block 27 changes only the portable telemetry exporter and does not claim demo readiness. Follow-up: reset `fall-out-bug/sdp-trace-demo-jvm-gsd` immediately after PR #22 merge before making any customer demo claim. |
+| PR27-CODE-01 | major | PR-level code/correctness | Reviewer reported possible `dimension_key` contamination through `metric_rows[].dimensions`. | Accepted defensively. The exporter already copied only closed dimensions, and a regression test now rejects malformed `dimension_key` inside the dimensions map. |
+| PR27-CODE-02 | major | PR-level code/correctness | Reviewer claimed `os.CreateTemp` creates a world-readable race before chmod. | Rejected as false positive. Go creates temp files with mode `0600`; the CLI writes and closes the sibling temp file before chmod and atomic rename to the destination. |
+| PR27-REQ-01 | major | PR-level requirements-vs-implementation | A minimal JSON object with only version/profile fields was treated as a valid empty posture export. | Accepted and fixed. `posture.ValidateExportResult` now enforces required structural fields before telemetry rendering; malformed input exits `cannot_verify` with no partial output. |
+| PR27-REQ-02 | minor | PR-level requirements-vs-implementation | Command docs obscured stdout support and the unsafe-label heuristic missed some credential-shaped labels. | Accepted and fixed. English/Russian docs use `--out <file\|->`, and telemetry unsafe-value checks include `bearer`, `api_key`, `access_key`, and `private`. |
+| PR27-TRACE-01 | major | PR-level tracing/evidence | Ledger still said implementation review and full verification were pending. | Accepted and fixed. This ledger now records PR-level code, tracing/evidence, and requirements review dispositions; post-merge verification remains explicitly pending until merge. |
 
 ## Verification Notes
 
-Current focused verification:
+Focused implementation verification:
 
 - `go test ./internal/telemetry ./cmd/sdp-trace`: passed.
 
-Full repository verification and PR-level review remain pending.
+PR-level review planes:
+
+- Code/correctness: revised for PR27-CODE-01; false positive recorded for
+  PR27-CODE-02; independent code audit returned `APPROVE`.
+- Tracing/evidence: revised for ledger status and demo follow-up rationale;
+  initial PR-level tracing/evidence review returned `APPROVE`, then
+  Kierkegaard re-review returned `REVISE` for overbroad fixture wording.
+  Fixed: telemetry `metrics.prom` drift is checked by live export plus byte
+  comparison; the Block 21 posture fixture was regenerated structurally for
+  `refusal_rows: []`, not claimed as byte-stable because `generated_at` changes.
+- Requirements-vs-implementation: revised for malformed posture input
+  fail-closed behavior; replacement Qwen review returned `APPROVE` with minor
+  findings fixed.
+
+Fresh verification before final PR update:
+
+- `go test ./internal/posture ./internal/telemetry ./cmd/sdp-trace`: passed.
+- Minimal malformed posture JSON exits `cannot_verify` and writes no telemetry.
+- Regenerated Block 21 posture fixture now serializes `refusal_rows` as `[]`
+  instead of `null`; this is structural fixture repair, not a byte-stable
+  posture regeneration claim.
