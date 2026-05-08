@@ -55,13 +55,13 @@ The manifest digest is verified by the release verification record and DSSE enve
 
 A source-bound local release proves that the selected `source_commit` contains every manifest artifact path with the exact SHA-256 digest recorded in the manifest.
 
-Run:
+Run the current Go verifier:
 
 ```bash
-scripts/finalize-source-bound-release.sh --manifest examples/contract-foundation/contract-manifest.example.json --source-ref HEAD
+go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json
 ```
 
-The command refuses to run from a dirty working tree because uncommitted files cannot be honestly attributed to an immutable source reference. A successful source-bound local release may assess `source_commit_artifacts_verified: true`, but it still records external trust and production release verification as `not_assessed`.
+The verifier refuses to treat uncommitted source changes as immutable source-bound proof because they cannot be honestly attributed to a clean source reference. A successful source-bound local release may assess `source_commit_artifacts_verified: true`, but it still records external trust and production release verification as `not_assessed`.
 
 This is intentionally narrower than production trust. A source-bound local release does not prove protected GitHub OIDC identity, Rekor inclusion, customer PKI audit evidence, protected ref status, workflow identity, or release approval.
 

@@ -81,14 +81,14 @@ The words degrading, improving, pass, fail, ready, and blocked are not native mo
 
 ## Decision 6: Pin JSON Schema Draft and Validator Before Schema Work
 
-**Decision**: New schemas target JSON Schema Draft 2020-12. The full-validation command uses pinned local `ajv@8.20.0` through `scripts/validate-json-schema.mjs`.
+**Decision**: New schemas target JSON Schema Draft 2020-12. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`.
 
 **Rationale**: Existing schemas already declare Draft 2020-12. Selecting the draft and validator before authoring new schemas prevents incompatible schema features, invalid examples, and rework across `sdp-gate` consumers.
 
 **Alternatives Rejected**:
 
 - Keep validator selection late: rejected because schema authors would not know which draft and features are allowed.
-- Use `jq` only: rejected because `jq empty` checks JSON syntax, not schema conformance.
+- Use `jq` only: rejected because `jq empty` checks JSON syntax, not verifier behavior or fixture conformance.
 - Choose a harness-specific runtime validator: rejected because validation tooling must not imply dependency on any AI harness runtime.
 
 ## Decision 7: Record External Assertions Instead of Native Strength

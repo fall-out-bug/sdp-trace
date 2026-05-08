@@ -41,7 +41,7 @@ Changed artifacts:
 
 Status: resolved
 
-Resolution: New schemas target JSON Schema Draft 2020-12. The original `ajv-cli@5.0.0` strategy was superseded on 2026-05-01 after final review found a dependency audit risk. Current validation uses exact local `ajv@8.20.0` through `scripts/validate-json-schema.mjs`; T034/T036 now point at that pinned local validator.
+Resolution: New schemas target JSON Schema Draft 2020-12. The original `ajv-cli@5.0.0` strategy was superseded on 2026-05-01 after final review found a dependency audit risk, and later retired from the active product path. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`. Earlier AJV/script validation records are historical evidence, not the current command contract.
 
 Changed artifacts:
 

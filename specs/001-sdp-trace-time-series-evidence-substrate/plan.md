@@ -11,10 +11,10 @@ The roadmap now treats self-proof as the first product proof, not as a later nic
 
 ## Technical Context
 
-**Language/Version**: JSON Schema Draft 2020-12, Markdown, shell validation commands
+**Language/Version**: Go verifier CLI, JSON Schema Draft 2020-12, Markdown
 **Primary Dependencies**: Go; `jq` for JSON parse checks; SHA-256 digest verification; target signing profile using in-toto Statement, DSSE, and Sigstore/Cosign keyless verification where available
 **Storage**: Files committed to the repository; local ignored pilot outputs under `.sdp-trace-runs/`
-**Testing**: `jq empty schema/*.json`; Draft 2020-12 validation over committed examples with pinned local `ajv@8.20.0`
+**Testing**: `go test ./...`; `jq empty schema/*.json`; `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`; `git diff --check`
 **Target Platform**: Portable repository artifacts
 **Project Type**: Schema and documentation substrate
 **Performance Goals**: Validation commands should run locally in seconds over committed artifacts
@@ -91,7 +91,7 @@ This SpecKit package was challenged by clean-context `pi` critics using GLM, Min
 |---|---|
 | CTO asks "are we degrading?" while `sdp-trace` must not issue verdicts | `sdp-trace` records prior/current values, deltas, dimensions, evidence coverage, and `not_assessed` gaps. A yes/no degradation verdict is external. |
 | External verdicts and evidence strength can blur into native trace judgments | Native trace entities record observations and samples only. External verdicts, scores, and strength assertions use an explicit external verdict input shape with producer and origin. |
-| JSON Schema draft and validator were selected too late | New schemas target Draft 2020-12. Validation strategy is pinned before schema authoring: local `ajv@8.20.0` plus `jq` syntax checks. |
+| JSON Schema draft and validator were selected too late | New schemas target Draft 2020-12. Current active validation is Go-first: `go test ./...`, `jq empty schema/*.json`, `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`, and `git diff --check`. Earlier AJV/script validation records are historical evidence, not the current command contract. |
 | Evidence references can leak sensitive or unverifiable artifacts | Committed examples require sanitized summaries, SHA-256 hashes when artifacts are committed, redaction notes, and `integrity_status`. Raw local outputs stay ignored under `.sdp-trace-runs/`. |
 | `sdp-gate` inherits contracts without versioning policy | Every new schema gets a semver `schema_version`; additive optional changes are minor, required/semantic changes are major. `schema/trace.schema.json` remains a compatibility path until a replacement and migration note exist. |
 | CEO asks who is accountable when AI-assisted work fails | Accountable artifacts carry human-held DRI, approver, risk owner, escalation path, approval reference, and line of defense. AI actors can produce or review but cannot be sole accountable owners. |
@@ -195,11 +195,11 @@ Syntax verification:
 jq empty schema/*.json
 ```
 
-Draft 2020-12 validation strategy (Block 10 compatible):
+Current Go-first validation strategy:
 
 ```bash
 go test ./...
-go run ./cmd/sdp-trace validate-fixtures examples/github-speckit
+go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
 ```
 
-T036 will generalize this into a repository command that validates committed examples while excluding `.git/`, `.beads/`, `.sdp-trace-runs/`, and `benchmarks/repos/`.
+T036 documents the repository command surface that validates committed examples while excluding `.git/`, `.beads/`, `.sdp-trace-runs/`, and `benchmarks/repos/`. `examples/github-speckit` is schema/example material, not a current `validate-fixtures` run package.
