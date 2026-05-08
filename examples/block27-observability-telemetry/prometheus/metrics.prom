@@ -1,0 +1,149 @@
+# HELP sdp_trace_posture_input Posture selected input count from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_input gauge
+sdp_trace_posture_input{input_trust_state="trusted_input",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_input{input_trust_state="trusted_input",repo="repo-a",time_window="2026-w02"} 1
+# HELP sdp_trace_posture_metric_denominator Posture metric denominator from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_metric_denominator gauge
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_denominator{dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 2
+# HELP sdp_trace_posture_metric_not_assessed Posture metric not assessed row count from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_metric_not_assessed gauge
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 2
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_not_assessed{dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+# HELP sdp_trace_posture_metric_numerator Posture metric numerator from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_metric_numerator gauge
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 1
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1",repo="repo-a",time_window="2026-w01"} 0
+sdp_trace_posture_metric_numerator{dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1",repo="repo-a",time_window="2026-w02"} 0
+# HELP sdp_trace_posture_movement_comparable Posture movement comparability fact from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_movement_comparable gauge
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_comparable{comparable="true",dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1"} 1
+# HELP sdp_trace_posture_movement_current Current posture movement value from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_movement_current gauge
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_current{comparable="true",dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1"} 0
+# HELP sdp_trace_posture_movement_delta Signed posture movement delta from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_movement_delta gauge
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_delta{comparable="true",dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1"} 0
+# HELP sdp_trace_posture_movement_previous Previous posture movement value from sdp-trace evidence posture export.
+# TYPE sdp_trace_posture_movement_previous gauge
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="cannot_verify_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="ci_witnessed_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="contract_change_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="external_witnessed_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="issue_observed_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="late_attach_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="local_only_evidence_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="missing_telemetry_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="not_assessed_rows",metric_version="v1"} 1
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="not_integrated_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="override_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="retention_limited_rows",metric_version="v1"} 0
+sdp_trace_posture_movement_previous{comparable="true",dimension_key="repo=repo-a",metric_id="unsupported_observer_rows",metric_version="v1"} 0
+# EOF

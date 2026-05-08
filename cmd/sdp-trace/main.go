@@ -24,6 +24,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
 	"github.com/fall_out_bug/sdp-trace/internal/releaseproof"
+	"github.com/fall_out_bug/sdp-trace/internal/telemetry"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"github.com/fall_out_bug/sdp-trace/internal/verifier"
 	"github.com/fall_out_bug/sdp-trace/internal/witness"
@@ -1405,6 +1406,30 @@ func writeJSONFile(path string, value any) error {
 	return os.WriteFile(path, append(data, '\n'), 0o644)
 }
 
+func writeTextFileAtomic(path, value string) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+	if _, err := tmp.WriteString(value); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmpName, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, path)
+}
+
 func previewGateMode(contract trace.Contract) string {
 	mode := demo.GateModeObservation
 	for _, required := range contract.RequiredRuns {
@@ -1889,14 +1914,63 @@ func runQueryPackExplain(args []string, stdout, stderr io.Writer) int {
 }
 
 func runExport(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "telemetry" {
+		return runTelemetryExport(args[1:], stdout, stderr)
+	}
 	if len(args) > 1 && args[0] == "cross-repo-posture" && args[1] == "explain" {
 		return runCrossRepoPostureExplain(args[2:], stdout, stderr)
 	}
 	if len(args) > 0 && args[0] == "cross-repo-posture" {
 		return runCrossRepoPostureExport(args[1:], stdout, stderr)
 	}
-	fmt.Fprintln(stderr, "export requires cross-repo-posture")
+	fmt.Fprintln(stderr, "export requires cross-repo-posture or telemetry")
 	return exitUsage
+}
+
+func runTelemetryExport(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "export telemetry"}
+	opts.setString("profile", "")
+	opts.setString("cross-repo-posture", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "export telemetry accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) != telemetry.ProfilePrometheusTextV1 {
+		fmt.Fprintln(stderr, "export telemetry requires --profile prometheus-text-v1")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("cross-repo-posture")) == "" {
+		fmt.Fprintln(stderr, "export telemetry requires --cross-repo-posture")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "export telemetry requires --out")
+		return exitUsage
+	}
+	var result posture.ExportResult
+	if err := readJSONFile(opts.stringValue("cross-repo-posture"), &result); err != nil {
+		fmt.Fprintln(stderr, "posture_unreadable")
+		return exitCannotVerify
+	}
+	rendered, err := telemetry.RenderPrometheus(result)
+	if err != nil {
+		fmt.Fprintln(stderr, "telemetry_cannot_verify")
+		return exitCannotVerify
+	}
+	if opts.stringValue("out") == "-" {
+		fmt.Fprint(stdout, rendered)
+		return 0
+	}
+	if err := writeTextFileAtomic(opts.stringValue("out"), rendered); err != nil {
+		fmt.Fprintln(stderr, "out_unwritable")
+		return 1
+	}
+	return 0
 }
 
 func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
@@ -2366,6 +2440,7 @@ Usage:
   sdp-trace query-pack explain --result <file>
   sdp-trace export cross-repo-posture --profile cross-repo-evidence-posture-v1 --selection <file> --out <file>
   sdp-trace export cross-repo-posture explain --result <file>
+  sdp-trace export telemetry --profile prometheus-text-v1 --cross-repo-posture <file> --out <file|->
   sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>
   sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
   sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>
