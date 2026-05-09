@@ -217,6 +217,117 @@ func TestObserveSessionNormalizesNativeOpenCodeJSONL(t *testing.T) {
 	}
 }
 
+func TestObserveSessionNormalizesRealOpenCodeGSDToolPaths(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := strings.Join([]string{
+		`{"type":"step_start","timestamp":1778326453680,"sessionID":"ses_fixture","part":{"type":"step-start"}}`,
+		`{"type":"text","timestamp":1778326453882,"sessionID":"ses_fixture","part":{"type":"text","text":"initializing GSD project"}}`,
+		`{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_read","state":{"status":"completed","input":{"path":"/private/tmp/sdp-trace-demo-observe-gsd-new-project-input.md"},"output":"digest only"}}}`,
+		`{"type":"tool_use","timestamp":1778326474358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"glob","callID":"call_glob","state":{"status":"completed","input":{"path":"/Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd","pattern":"*.md"},"output":".planning/ROADMAP.md"}}}`,
+		`{"type":"tool_use","timestamp":1778326475358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"bash","callID":"call_bash","state":{"status":"completed","input":{"command":"rtk ls -la"},"output":"digest only"}}}`,
+		`{"type":"task","timestamp":1778326476358,"sessionID":"ses_fixture","model":"minimax-coding-plan/MiniMax-M2.5","part":{"type":"task","state":{"status":"completed"}}}`,
+		`{"type":"tool_use","timestamp":1778326477358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_plan","state":{"status":"completed","input":{"path":".planning/ROADMAP.md"},"output":"digest only"}}}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "raw-source.jsonl"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{
+		"observe", "session", "--profile", "session-profile.json", "--out", "session-run", "--",
+		"sh", "-c", "cp raw-source.jsonl opencode-raw.jsonl && true --model minimax-coding-plan/MiniMax-M2.5",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("session should not reject path-like tool input exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	// Seven native raw lines plus the digest-only session command model fact.
+	if !strings.Contains(out.String(), `"collection_state": "pass"`) || !strings.Contains(out.String(), `"event_count": 8`) {
+		t.Fatalf("session output missing real GSD normalized events: %s", out.String())
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "normalized-events.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "/private/tmp") || strings.Contains(string(data), "/Users/fall_out_bug") {
+		t.Fatalf("normalized output retained private raw path: %s", string(data))
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(out.String(), `"validation_state": "not_assessed"`) {
+		t.Fatalf("validate should remain not_assessed exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	for _, family := range []string{"harness", "model", "interaction", "tool"} {
+		if !strings.Contains(out.String(), `"family": "`+family+`"`) || !strings.Contains(out.String(), `"state": "pass"`) {
+			t.Fatalf("validation missing pass family %s: %s", family, out.String())
+		}
+	}
+	for _, family := range []string{"phase", "mutation", "test"} {
+		if !strings.Contains(out.String(), `"family": "`+family+`"`) || !strings.Contains(out.String(), `"state": "not_assessed"`) {
+			t.Fatalf("validation should keep %s not_assessed: %s", family, out.String())
+		}
+	}
+}
+
+func TestObserveCollectRejectsTokenInRawOpenCodePathField(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := `{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_token","state":{"status":"completed","input":{"path":"sk-testtoken1234567890abcdef"},"output":"digest only"}}}`
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.path:token_like_value") {
+		t.Fatalf("collect should reject token-like path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
+		t.Fatalf("normalized source written after token-like raw path")
+	}
+}
+
+func TestObserveCollectRejectsAuthenticatedURLInRawOpenCodePathField(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := `{"type":"tool_use","timestamp":1778326474358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_url","state":{"status":"completed","input":{"path":"https://user:pass@example.test/secret"},"output":"digest only"}}}`
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.path:authenticated_url") {
+		t.Fatalf("collect should reject authenticated URL path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
+		t.Fatalf("normalized source written after authenticated URL raw path")
+	}
+}
+
 func TestObserveCollectNormalizesNativeOpenCodeToolUseWithPrivateOutput(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "tool", "mutation"})
