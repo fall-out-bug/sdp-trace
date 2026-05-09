@@ -173,6 +173,7 @@ type ReviewRole struct {
 	RequiredOutputSchema string   `json:"required_output_schema,omitempty"`
 	RawOutputRetention   string   `json:"raw_output_retention,omitempty"`
 	ReadOnlyEnforced     bool     `json:"read_only_enforced,omitempty"`
+	WorkingTreeMode      string   `json:"working_tree_mode,omitempty"`
 }
 
 type RunOptions struct {
@@ -271,6 +272,7 @@ type Validation struct {
 	SchemaVersion       string          `json:"schema_version"`
 	PacketDigest        string          `json:"packet_digest"`
 	ReviewCoverageState string          `json:"review_coverage_state"`
+	CIState             string          `json:"ci_state"`
 	AuthorityScope      string          `json:"authority_scope"`
 	MergeDecision       string          `json:"merge_decision"`
 	ReleaseDecision     string          `json:"release_decision"`
@@ -471,6 +473,13 @@ func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) 
 		reasons = append(reasons, "packet_digest_mismatch")
 		nextActions = append(nextActions, "Create a new packet and rerun review for the current head.")
 	}
+	for _, result := range runs.Results {
+		if result.PacketDigest != packet.PacketDigest {
+			cannotVerify = true
+			reasons = append(reasons, "result_packet_digest_mismatch:"+safeID(result.ReviewRunID))
+			nextActions = append(nextActions, "Discard stale reviewer results and rerun review for the current packet.")
+		}
+	}
 	for plane := range required {
 		best := PlaneResult{Plane: plane, Status: StateNotAssessed, Usable: false, Reason: "required_plane_not_assessed", NextAction: "Run or import a reviewer result for this plane."}
 		for _, result := range runs.Results {
@@ -529,6 +538,7 @@ func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) 
 		SchemaVersion:       SchemaVersionValidation,
 		PacketDigest:        packet.PacketDigest,
 		ReviewCoverageState: state,
+		CIState:             packet.CIState,
 		AuthorityScope:      AuthorityReviewRecordOnly,
 		MergeDecision:       DecisionNotAuthorized,
 		ReleaseDecision:     DecisionNotAuthorized,
@@ -555,6 +565,7 @@ func modelMismatchWithoutFallback(role ReviewRole, result ReviewerResult) bool {
 func Summarize(validation Validation, ledger Ledger) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Review coverage: %s\n", validation.ReviewCoverageState)
+	fmt.Fprintf(&b, "CI state: %s\n", validation.CIState)
 	fmt.Fprintf(&b, "Authority scope: %s\n", validation.AuthorityScope)
 	fmt.Fprintf(&b, "Merge decision: %s\n", validation.MergeDecision)
 	fmt.Fprintf(&b, "Release decision: %s\n", validation.ReleaseDecision)
@@ -739,6 +750,22 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 		result.Reason = "opencode_read_only_not_enforced"
 		return result, nil
 	}
+	var baseline *workingTreeBaseline
+	if role.Runner == RunnerOpenCode {
+		mode := defaultString(role.WorkingTreeMode, "clean_required")
+		var err error
+		baseline, err = captureWorkingTreeBaseline(opts.WorkDir)
+		if err != nil {
+			result.Status = StatusCannotVerify
+			result.Reason = "working_tree_baseline_cannot_verify"
+			return result, nil
+		}
+		if mode == "clean_required" && baseline.Count > 0 {
+			result.Status = StatusNotAssessed
+			result.Reason = "working_tree_dirty"
+			return result, nil
+		}
+	}
 	if len(role.Command) == 0 {
 		result.Reason = "runner_command_not_configured"
 		return result, nil
@@ -779,11 +806,44 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 		result.Status = StatusParseFailed
 		result.Reason = "runner_output_parse_failed"
 	}
+	if role.Runner == RunnerOpenCode && baseline != nil {
+		after, err := captureWorkingTreeBaseline(opts.WorkDir)
+		if err != nil {
+			result.Status = StatusCannotVerify
+			result.Reason = "working_tree_baseline_cannot_verify"
+		} else if after.Digest != baseline.Digest || after.Count != baseline.Count {
+			result.Status = StatusCannotVerify
+			result.Reason = "mutation_detected"
+		}
+	}
 	return writeRawResult(result, rawDir, output)
+}
+
+type workingTreeBaseline struct {
+	Count  int
+	Digest string
+}
+
+func captureWorkingTreeBaseline(workDir string) (*workingTreeBaseline, error) {
+	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Dir = workDir
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	count := 0
+	if strings.TrimSpace(string(output)) != "" {
+		count = len(lines)
+	}
+	sum := sha256.Sum256(output)
+	return &workingTreeBaseline{Count: count, Digest: hex.EncodeToString(sum[:])}, nil
 }
 
 func parseReviewerOutput(base ReviewerResult, role ReviewRole, packet Packet, output []byte) (ReviewerResult, error) {
 	var parsed ReviewerResult
+	// RequiredOutputSchema identifies the declared schema contract; this parser
+	// enforces the concrete Go contract with unknown-field rejection.
 	decoder := json.NewDecoder(strings.NewReader(string(output)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&parsed); err != nil {

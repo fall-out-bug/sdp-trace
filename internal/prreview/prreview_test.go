@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -211,6 +212,21 @@ func TestValidateCannotVerifyUnexplainedModelMismatch(t *testing.T) {
 	}
 }
 
+func TestValidateCannotVerifyPerResultPacketDigestMismatch(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("a")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "default", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{ReviewRunID: "run-code", PacketDigest: "sha256:" + sixtyFour("b"), Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings}}}
+	ledger := SynthesizeLedger(packet, runs, nil)
+	validation := Validate(packet, profile, runs, ledger)
+	if validation.ReviewCoverageState != CoverageCannotVerify {
+		t.Fatalf("per-result stale digest should be cannot_verify: %+v", validation)
+	}
+	if !strings.Contains(strings.Join(validation.Reasons, ","), "result_packet_digest_mismatch") {
+		t.Fatalf("per-result mismatch reason missing: %+v", validation.Reasons)
+	}
+}
+
 func TestValidateCoverageStatesForNoReviewersUnresolvedAndStaleDigest(t *testing.T) {
 	packetDigest := "sha256:" + sixtyFour("6")
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
@@ -291,6 +307,9 @@ func TestValidationAndSummaryRedactUnsafeMarkerClasses(t *testing.T) {
 	ledger := SynthesizeLedger(packet, runs, nil)
 	validation := Validate(packet, profile, runs, ledger)
 	summary := Summarize(validation, ledger)
+	if !strings.Contains(summary, "CI state: not_assessed") {
+		t.Fatalf("summary should render CI state: %s", summary)
+	}
 	payload, err := json.Marshal(validation)
 	if err != nil {
 		t.Fatal(err)
@@ -308,6 +327,13 @@ func TestValidationAndSummaryRedactUnsafeMarkerClasses(t *testing.T) {
 
 func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	root := t.TempDir()
+	workDir := filepath.Join(root, "work")
+	if err := os.MkdirAll(workDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGitInit(workDir); err != nil {
+		t.Fatal(err)
+	}
 	packetDigest := "sha256:" + sixtyFour("4")
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
 	promptPath := writeText(t, root, "prompt.md", "review {{packet_digest}}\n")
@@ -322,7 +348,7 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 			{RoleID: "offtask", Plane: PlaneRequirements, Runner: RunnerManualExternal, RequestedModel: "fake-offtask", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "offtask"}},
 			{RoleID: "readonly", Plane: PlanePrivacySafety, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: false, Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "success"}},
 			{RoleID: "pi-success", Plane: PlaneSecurity, Runner: RunnerPI, RequestedModel: "fake-pi", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "pi-success"}},
-			{RoleID: "opencode-mutation", Plane: PlaneDXReplayability, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: true, Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "opencode-mutation"}},
+			{RoleID: "opencode-mutation", Plane: PlaneDXReplayability, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: true, WorkingTreeMode: "clean_required", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "opencode-mutation"}},
 		},
 	}
 	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
@@ -330,6 +356,7 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 		OutDir:         filepath.Join(root, "runs"),
 		AllowedRunners: map[string]bool{RunnerOpenCode: true, RunnerPI: true},
 		Now:            time.Date(2026, 5, 9, 12, 0, 0, 0, time.UTC),
+		WorkDir:        workDir,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -420,7 +447,10 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"security_forgery_overclaim","role_id":"pi-success","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
 		os.Exit(0)
 	case "opencode-mutation":
-		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"dx_replayability","role_id":"opencode-mutation","runner":"opencode","requested_model":"fake-opencode","observed_model":"fake-opencode","model_family":"fake","model_version":"v1","status":"cannot_verify","reason":"mutation_detected","findings":[]}`)
+		if err := os.WriteFile("mutated-by-helper.txt", []byte("mutation\n"), 0o644); err != nil {
+			os.Exit(2)
+		}
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"dx_replayability","role_id":"opencode-mutation","runner":"opencode","requested_model":"fake-opencode","observed_model":"fake-opencode","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
 		os.Exit(0)
 	case "timeout":
 		time.Sleep(2 * time.Second)
@@ -428,6 +458,12 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 	default:
 		os.Exit(2)
 	}
+}
+
+func runGitInit(workDir string) error {
+	cmd := exec.Command("git", "init")
+	cmd.Dir = workDir
+	return cmd.Run()
 }
 
 func writeText(t *testing.T, root, name, content string) string {

@@ -427,6 +427,7 @@ Failure mapping:
 | Empty output | `empty_output` | No | `cannot_verify` |
 | Output not parseable as required JSON | `parse_failed` | No | `cannot_verify` |
 | Parsed output declares wrong packet, plane, or role | `off_task` | No | `cannot_verify` |
+| OpenCode working tree mutates during execution | `cannot_verify` | No | `cannot_verify` |
 | Parsed output matches schema and has findings | `findings_reported` | Yes | depends on disposition |
 | Parsed output matches schema and has zero findings | `no_findings` | Yes | depends on other planes and findings |
 

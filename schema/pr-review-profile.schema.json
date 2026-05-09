@@ -52,7 +52,8 @@
           "prompt_template_ref": { "type": "string" },
           "required_output_schema": { "type": "string" },
           "raw_output_retention": { "enum": ["digest_only", "redacted", "encrypted_ref", "external_ref", "withheld"] },
-          "read_only_enforced": { "type": "boolean" }
+          "read_only_enforced": { "type": "boolean" },
+          "working_tree_mode": { "enum": ["clean_required", "dirty_baseline"] }
         }
       }
     }

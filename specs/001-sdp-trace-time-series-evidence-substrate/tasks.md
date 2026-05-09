@@ -758,7 +758,7 @@ approved.
 - [x] T235 [US5] Run implementation review across code/correctness,
   trace/evidence, and requirements-vs-implementation planes; fix and re-review
   every valid critical or major finding.
-- [ ] T236 [US5] Run local verification, PR-level multi-plane review, and record
+- [x] T236 [US5] Run local verification, PR-level multi-plane review, and record
   Block 30 review disposition before claiming the mechanism is complete.
 
 **Checkpoint**: Block 30 is complete only when the repo has a working review

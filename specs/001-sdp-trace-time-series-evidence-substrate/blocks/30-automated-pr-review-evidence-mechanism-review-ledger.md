@@ -1,6 +1,7 @@
 # Block 30 Review Ledger: Automated PR Review Evidence Mechanism
 
-Status: Spec review complete; implementation approved.
+Status: Spec review, implementation review, and PR-level review completed; no
+remaining critical or major findings are recorded for Block 30.
 
 Raw review outputs are local scratch under `.codex-review/block30/` and are not
 committed.
@@ -102,4 +103,42 @@ and are not committed.
 - Critical findings remaining: 0
 - Major findings remaining: 0
 - Local verification after fixes: `go test ./cmd/sdp-trace ./internal/prreview`, `go test ./...`, `jq empty schema/*.json examples/pr-review/trust-sensitive-default.profile.json`, `git diff --check`
-- PR-level review: pending
+- PR-level review: assessed on PR #28; accepted trace/evidence blockers were
+  fixed and focused trace/evidence re-review returned `APPROVE`.
+
+## PR-Level Review: PR #28
+
+Date: 2026-05-09
+
+Raw review outputs are local scratch under `.codex-review/block30-pr/` and are
+not committed.
+
+| plane | model | status | evidence status |
+| --- | --- | --- | --- |
+| code/correctness | `minimax/MiniMax-M2.7` | no confirmed critical or major blocker in reviewed output | counted |
+| trace/evidence/provenance | `openrouter/qwen/qwen3.6-plus` | REVISE | counted |
+| requirements-vs-implementation | `openrouter/xiaomi/mimo-v2.5-pro` | REVISE with minor findings | counted |
+| focused trace/evidence re-review | `openrouter/qwen/qwen3.6-plus` | APPROVE | counted |
+
+### PR-Level Findings
+
+| id | severity | plane | finding | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| PR30-TE-01 | major | trace/evidence | `ci_state` was captured in packets but not consumed or rendered by validation and summary output. | accepted_fixed | Added `Validation.CIState`, validation schema requirement, summary rendering, and regression coverage. |
+| PR30-TE-02 | major | trace/evidence | OpenCode runner handling only recorded `read_only_enforced`; it did not establish a working-tree baseline or detect post-run mutations. | accepted_fixed | OpenCode roles now default to `clean_required`, refuse dirty starts, record safe baseline digest/count, and return `cannot_verify` with `mutation_detected` on mutation. |
+| PR30-TE-03 | major | trace/evidence | Imported run sets validated only top-level packet digest, allowing individual stale reviewer results to count. | accepted_fixed | Validation now checks every `ReviewerResult.PacketDigest` and returns `cannot_verify` with `result_packet_digest_mismatch:<runID>` for stale results. |
+| PR30-TE-04 | minor | trace/evidence | `coverage_partial` exits zero and may be mistaken for successful closure. | accepted_documented | This is intentional: partial review is not merge authorization and the validation JSON/summary carry explicit `coverage_partial`; non-zero is reserved for unresolved blockers and `cannot_verify`. |
+| PR30-TE-05 | minor | trace/evidence | `required_output_schema` is declared but not used for generic runtime JSON Schema validation. | accepted_documented | The parser enforces the concrete Block 30 Go contract with unknown-field rejection; generic schema dispatch is outside this slice. |
+| PR30-RI-01 | minor | requirements-vs-implementation | T236 was still unchecked while PR-level review was in progress. | accepted_fixed | T236 is checked only after PR-level fixes, focused re-review, fresh verification, and this ledger update. |
+| PR30-RI-02 | minor | requirements-vs-implementation | `mutation_detected` was not listed in the failure mapping table. | accepted_fixed | Added the OpenCode mutation row to the failure mapping. |
+
+### PR-Level Review State
+
+- Critical findings remaining: 0
+- Major findings remaining: 0
+- Focused re-review: `openrouter/qwen/qwen3.6-plus` returned `APPROVE`
+  after the PR-level fixes.
+- Local verification after PR-level fixes: `go test ./internal/prreview
+  ./cmd/sdp-trace`, `go test ./...`, `jq empty schema/*.json
+  examples/pr-review/trust-sensitive-default.profile.json`, `git diff --check`
+- GitHub CI: pending/not yet re-assessed after this follow-up commit.
