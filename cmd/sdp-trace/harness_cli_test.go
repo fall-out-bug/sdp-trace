@@ -126,6 +126,226 @@ func TestObserveSessionRunsControlledProxyWithoutRetainingStdout(t *testing.T) {
 	}
 }
 
+func TestObserveSessionNormalizesOpenCodeRawJSONL(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := strings.Join([]string{
+		`{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5","timestamp":"2026-05-09T12:00:00Z"}`,
+		`{"type":"message","role":"assistant","content":"ack"}`,
+		`{"type":"phase","name":"gsd.plan"}`,
+		`{"type":"tool.call","tool":"edit"}`,
+		`{"type":"file.write","path":"src/App.kt"}`,
+		`{"type":"test.finished","status":"pass"}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "raw-source.jsonl"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{
+		"observe", "session", "--profile", "session-profile.json", "--out", "session-run", "--",
+		"sh", "-c", "cp raw-source.jsonl opencode-raw.jsonl && printf 'raw output must not be retained'",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("session exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if strings.Contains(out.String(), "raw output must not be retained") || strings.Contains(errOut.String(), "raw output must not be retained") {
+		t.Fatalf("session retained command output stdout=%s stderr=%s", out.String(), errOut.String())
+	}
+	if !strings.Contains(out.String(), `"normalized_digest"`) || !strings.Contains(out.String(), `"collection_state": "pass"`) {
+		t.Fatalf("session output missing raw normalization evidence: %s", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err != nil {
+		t.Fatalf("normalized source not written: %v", err)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed", "--out", "validation.json"}, &out, &errOut)
+	if exit != 0 || !strings.Contains(out.String(), `"validation_state": "pass"`) {
+		t.Fatalf("validate exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestObserveSessionDoesNotPromoteMessageTextToEvidence(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := strings.Join([]string{
+		`{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5"}`,
+		`{"type":"message","role":"assistant","content":"I used a tool, edited files, completed the phase, and tests pass"}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("collect exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed", "--out", "validation.json"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(out.String(), `"validation_state": "not_assessed"`) {
+		t.Fatalf("validate should not promote message text exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	for _, family := range []string{"phase", "tool", "mutation", "test"} {
+		if !strings.Contains(out.String(), `"family": "`+family+`"`) || !strings.Contains(out.String(), `"state": "not_assessed"`) {
+			t.Fatalf("validation missing not_assessed family %s: %s", family, out.String())
+		}
+	}
+}
+
+func TestObserveCollectDoesNotTreatFileReadAsMutation(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "mutation"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := strings.Join([]string{
+		`{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5"}`,
+		`{"type":"file.read","path":"src/App.kt"}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("collect exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(out.String(), `"family": "mutation"`) || !strings.Contains(out.String(), `"state": "not_assessed"`) {
+		t.Fatalf("file.read should not count as mutation exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestObserveCollectDoesNotFabricateEventsForUnrecognizedRawJSONL(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(`{"type":"custom.event","data":"x"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != 0 || !strings.Contains(out.String(), `"collection_state": "pass"`) {
+		t.Fatalf("collect exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if data, err := os.ReadFile(filepath.Join(dir, "normalized-events.jsonl")); err != nil {
+		t.Fatal(err)
+	} else if strings.TrimSpace(string(data)) != "" {
+		t.Fatalf("unrecognized raw source produced events: %s", string(data))
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(out.String(), `"validation_state": "not_assessed"`) {
+		t.Fatalf("validate should remain not_assessed exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestObserveCollectRejectsUnsafeRawOpenCodeJSONL(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := `{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5","api_key":"redacted"}`
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:api_key:sensitive_field") {
+		t.Fatalf("collect should reject unsafe raw source exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
+		t.Fatalf("normalized source written after unsafe raw input")
+	}
+}
+
+func TestObserveCollectRejectsNestedUnsafeRawOpenCodeJSONL(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := `{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5","content":{"api_key":"redacted"}}`
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:content.api_key:sensitive_field") {
+		t.Fatalf("collect should reject nested unsafe raw source exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestObserveCollectRejectsUnsafeRawEventSourcePath(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "../opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "raw_event_source_path invalid") {
+		t.Fatalf("collect should reject unsafe raw source path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
 func TestObserveCollectRecordsCannotVerifyForMissingSource(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfile(t, dir)
@@ -235,12 +455,17 @@ func TestHarnessCLIRequiresDocumentedFlags(t *testing.T) {
 
 func writeHarnessCLIProfile(t *testing.T, dir string) {
 	t.Helper()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model"})
+}
+
+func writeHarnessCLIProfileWithFamilies(t *testing.T, dir string, families []string) {
+	t.Helper()
 	profile := harnessobs.Profile{
 		SchemaVersion:         harnessobs.ProfileSchemaVersion,
 		ProfileID:             "generic-harness-v1",
 		HarnessFamily:         "generic-harness",
 		EventSchemaVersion:    harnessobs.EventSchemaVersion,
-		RequiredEventFamilies: []string{"harness", "model"},
+		RequiredEventFamilies: families,
 		RawRetentionPolicy:    "digest_only",
 		DegradationRules: map[string]harnessobs.Rule{
 			"missing_required_family": {State: harnessobs.StateNotAssessed, ReasonCode: "required_event_family_absent"},
@@ -278,6 +503,30 @@ func writeHarnessSessionProfileWithStream(t *testing.T, dir, eventSource, stream
 			{ID: "profile", Kind: "profile", Required: true},
 		},
 		StreamCapture: streamCapture,
+	}
+	data, err := json.MarshalIndent(profile, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "session-profile.json"), append(data, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeHarnessSessionProfileWithRaw(t *testing.T, dir, eventSource, rawSource, rawFormat string) {
+	t.Helper()
+	profile := harnessobs.SessionProfile{
+		SchemaVersion:      harnessobs.SessionProfileSchemaVersion,
+		ProfileID:          "opencode-gsd-fixture-v1",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    eventSource,
+		RawEventSourcePath: rawSource,
+		RawEventFormat:     rawFormat,
+		SetupActions: []harnessobs.SessionSetupAction{
+			{ID: "init", Kind: "init", Required: true},
+			{ID: "profile", Kind: "profile", Required: true},
+		},
+		StreamCapture: "disabled",
 	}
 	data, err := json.MarshalIndent(profile, "", "  ")
 	if err != nil {

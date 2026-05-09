@@ -198,6 +198,75 @@ Until `sdp-trace` can run against the actual customer-case workflow and produce
 verifier-backed observation evidence, any claim that P0-001 is fixed would be an
 overclaim. Current closure state: `unresolved_blocker`.
 
+#### Recheck on 2026-05-09 after PR #29 / first-run observation merge
+
+Status remains `open`.
+
+Verified:
+
+- `sdp-trace` `main` includes `64c3583 Merge pull request #29 from
+  fall-out-bug/codex/block-31-first-run-observation`.
+- `sdp-trace --help` exposes `observe setup`, `observe collect`, and
+  `observe session`.
+- Example profiles exist:
+  `examples/harness-observation/opencode-gsd-session-profile.example.json` and
+  `examples/harness-observation/opencode-gsd-harness-profile.example.json`.
+- A live `observe session` run can execute OpenCode with
+  `minimax-coding-plan/MiniMax-M2.5` without mutating the demo repository.
+
+Closure failed because the first-run path records only command/process
+provenance for native OpenCode execution. It still does not produce or collect
+OpenCode/GSD harness events for the real workflow:
+
+```text
+$ sdp-trace observe session --profile session-profile.json --out run -- \
+    opencode run --format json --model minimax-coding-plan/MiniMax-M2.5 \
+    --dir /Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd \
+    "Respond with OK only."
+...
+"command_digest_state": "pass",
+"process_id_state": "pass",
+"source_commit_state": "cannot_verify",
+"collection_state": "cannot_verify",
+"collection_reason": "source_unavailable"
+```
+
+The command proves that `sdp-trace` can wrap a first-run process and avoid raw
+stdout/stderr retention. It does not prove the required OpenCode/GSD observation
+path because the declared `event_source_path` was not produced by the product or
+the harness. Continuing the five-feature demo would still require either a
+pre-shaped `harness-event-v1` file, a customer-built adapter, or hand-authored
+events, which is the original blocker.
+
+#### Block 31 implementation response on 2026-05-09
+
+Status remains `open` pending demo-repo recheck against the real customer-case
+workflow, but the accepted product gap is now fixed in `sdp-trace`: a session
+profile can declare a raw OpenCode JSONL source via `raw_event_source_path` and
+`raw_event_format: opencode-jsonl-v1`; `observe collect` and `observe session`
+normalize that raw source into digest-only `harness-event-v1` records before
+validation.
+
+Review dispositions:
+
+| id | severity | plane | finding | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| B31-RETURN-01 | critical | requirements | First-run OpenCode/GSD path still required a pre-shaped `harness-event-v1`, customer adapter, or hand-authored events after setup. | accepted_fixed | `SessionProfile.raw_event_source_path`, `raw_event_format`, `CollectSession` raw normalization, and `TestObserveSessionNormalizesOpenCodeRawJSONL`; demo recheck still required before closing this ledger item. |
+| B31-REVIEW-01 | critical | tracing/evidence | Normalizer fabricated a `harness_observed` fallback for unrecognized raw lines. | accepted_fixed | Removed fallback event synthesis; `TestObserveCollectDoesNotFabricateEventsForUnrecognizedRawJSONL` asserts unrecognized raw input produces no events and validation remains `not_assessed`. |
+| B31-REVIEW-02 | major | tracing/evidence | Raw message content could promote free text such as "tests pass" or "used a tool" into event-family evidence. | accepted_fixed | Family classification now uses structured signal keys and selected event-type metadata, not arbitrary content; `TestObserveSessionDoesNotPromoteMessageTextToEvidence` covers the overclaim case. |
+| B31-REVIEW-03 | major | code/safety | Raw sensitive fields such as `api_key` were not rejected by field name alone. | accepted_fixed | Added sensitive field-name rejection; `TestObserveCollectRejectsUnsafeRawOpenCodeJSONL` asserts raw normalization fails before writing normalized output. |
+| B31-REVIEW-04 | minor | code/safety | A profile could point raw input and normalized output at the same file. | accepted_fixed | `normalizeRawEvents` rejects equal raw and normalized paths before reading/writing. |
+| B31-REVIEW-05 | minor | requirements | `file.*` mutation detection was too broad and could count read-only file events as mutation evidence. | accepted_fixed | Mutation detection now accepts explicit mutation event types only; `TestObserveCollectDoesNotTreatFileReadAsMutation` keeps `file.read` at `not_assessed`. |
+| B31-REVIEW-06 | minor | tracing/evidence | Negative content-promotion coverage did not include the `phase` family. | accepted_fixed | `TestObserveSessionDoesNotPromoteMessageTextToEvidence` now requires `phase` and asserts message text does not satisfy it. |
+
+Local verification:
+
+```text
+go test ./...
+jq empty schema/*.json examples/harness-observation/*.json
+git diff --check
+```
+
 ## P1
 
 No P1 findings recorded yet.
