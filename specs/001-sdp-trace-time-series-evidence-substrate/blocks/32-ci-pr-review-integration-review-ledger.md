@@ -84,3 +84,26 @@ and are not committed.
   `openrouter/qwen/qwen3.6-plus` returned `APPROVE` with minor notes.
 - Critical findings remaining: 0
 - Major findings remaining: 0
+
+## PR Review Findings
+
+Raw review outputs are local scratch under `.codex-review/block32-pr/` and are
+not committed.
+
+| ID | Severity | Plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| PR32-REQ-01 | major | requirements-vs-implementation | Reviewer claimed `actions/checkout@v6`, `actions/setup-go@v6`, `actions/setup-node@v6`, and `actions/upload-artifact@v6` do not exist and would fail the workflow. | rejected_false_positive | Live upstream checks on 2026-05-10 showed official v6 releases exist for the referenced actions; downgrading would be stale advice. |
+| PR32-TE-01 | major | tracing/evidence | T242 was checked off without proving the full uploaded artifact pipeline redacts unsafe structured reviewer text from `results.json`, `ledger.json`, `validation.json`, and `summary.md`. | accepted_fixed | `parseReviewerOutput` now sanitizes structured reviewer findings before `results.json` is written; `TestRunReviewArtifactPipelineRedactsUnsafeReviewerText` injects synthetic token, prompt, authenticated URL, and private-path markers and asserts the workflow upload artifact candidates do not contain them. |
+| PR32-TE-02 | major | tracing/evidence | The `pr-review-pi.sh` wrapper passes rendered prompts as a `pi -p` command argument, which can hit argument length limits for large prompts. | rejected_narrower | Current Block 32 prompt templates intentionally pass metadata and packet identifiers only, not PR diff bodies. The reviewer identified a valid future robustness risk, but it is not a blocker for this CI profile. |
+
+## PR Review State
+
+- Requirements-vs-implementation: `openrouter/qwen/qwen3.6-plus` returned
+  `REWORK`; one major was rejected as stale after live upstream verification.
+- Tracing/evidence: `zai/glm-5.1` returned `REWORK`; valid T242 artifact
+  pipeline finding accepted and fixed.
+- Code/correctness: `minimax/MiniMax-M2.7` output was not clean findings-only
+  JSON and is recorded as lower-quality review evidence; no additional
+  critical or major blocker was accepted from that output.
+- Critical findings remaining: 0
+- Major findings remaining: 0

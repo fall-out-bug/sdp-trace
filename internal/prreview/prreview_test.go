@@ -481,6 +481,74 @@ func TestValidationAndSummaryRedactUnsafeMarkerClasses(t *testing.T) {
 	}
 }
 
+func TestRunReviewArtifactPipelineRedactsUnsafeReviewerText(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("9")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "artifact-safety",
+		RequiredPlanes: []string{PlanePrivacySafety},
+		Roles: []ReviewRole{{
+			RoleID:             "privacy",
+			Plane:              PlanePrivacySafety,
+			Runner:             RunnerPI,
+			RequestedModel:     "fake-pi",
+			Command:            []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "unsafe-structured-output"},
+			RawOutputRetention: RedactionDigestOnly,
+		}},
+	}
+	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
+	runs, _, err := RunReview(packet, profile, RunOptions{
+		OutDir:         filepath.Join(root, "runs"),
+		AllowedRunners: map[string]bool{RunnerPI: true},
+		Now:            time.Date(2026, 5, 9, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ledger := SynthesizeLedger(packet, runs, nil)
+	validation := Validate(packet, profile, runs, ledger)
+	summary := Summarize(validation, ledger)
+	artifactPaths := []string{
+		filepath.Join(root, "runs", "results.json"),
+		filepath.Join(root, "ledger.json"),
+		filepath.Join(root, "validation.json"),
+		filepath.Join(root, "summary.md"),
+	}
+	if err := WriteJSON(artifactPaths[1], ledger); err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteJSON(artifactPaths[2], validation); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(artifactPaths[3], []byte(summary), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range artifactPaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, marker := range []string{
+			"SYNTHETIC_TOKEN_SECRET_PIPELINE",
+			"SYNTHETIC_PROMPT_SECRET_PIPELINE",
+			"https://access_token=secret@example.invalid/review",
+			"/Users/private/repo",
+		} {
+			if strings.Contains(string(data), marker) {
+				t.Fatalf("%s leaked marker %q:\n%s", path, marker, string(data))
+			}
+		}
+		if !strings.Contains(string(data), "[redacted unsafe reviewer text]") && path != filepath.Join(root, "summary.md") {
+			t.Fatalf("%s missing redaction marker:\n%s", path, string(data))
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "runs", "raw", "run-privacy.out")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("digest-only raw output should not persist raw bytes, err=%v", err)
+	}
+}
+
 func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	root := t.TempDir()
 	workDir := filepath.Join(root, "work")
@@ -846,6 +914,9 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 			os.Exit(3)
 		}
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"security_forgery_overclaim","role_id":"pi-success","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
+		os.Exit(0)
+	case "unsafe-structured-output":
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("9") + `","plane":"privacy_output_safety","role_id":"privacy","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"findings_reported","findings":[{"id":"F1","severity":"minor","citation":{"context_ref_id":"diff","diff_hunk_id":"hunk-1"},"summary":"SYNTHETIC_TOKEN_SECRET_PIPELINE","suggested_fix":"remove SYNTHETIC_PROMPT_SECRET_PIPELINE","question":"is /Users/private/repo visible?","evidence_refs":["https://access_token=secret@example.invalid/review"]}]}`)
 		os.Exit(0)
 	case "should-not-run":
 		os.Exit(4)
