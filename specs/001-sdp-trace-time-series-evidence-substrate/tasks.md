@@ -655,15 +655,27 @@ unless separately assessed.
 
 ## Phase 22: Non-Interfering Harness Observation
 
-**Goal**: Fix the demo JVM/GSD P0 by defining a portable harness observation
-intake that can ingest external harness lifecycle exports without prompt relay,
-hand-authored proof artifacts, or product dependency on OpenCode/GSD.
+**Goal**: Fix the demo JVM/GSD P0 by giving the customer-case OpenCode/GSD
+workflow a usable first-run observation path, without prompt relay,
+hand-authored proof artifacts, customer-built adapters, or product dependency on
+OpenCode/GSD. Bounded pre-work setup such as repository initialization, wrapper
+installation, or profile configuration is acceptable; new friction inside the
+harness delivery loop is not.
 
-**Independent Test**: Given a reviewed harness observation profile and harness
-event export, `sdp-trace` can record which model, phase, prompt-boundary, tool,
-mutation, test, PR, and merge dimensions were observed, which were unsafe, and
-which remain `not_assessed` or `cannot_verify`, then render a safe summary that
-does not imply harness compliance or feature delivery.
+**Delivery loop**: the period from harness command invocation through
+feature-delivery evidence collection for that run, including harness subprocess
+lifecycle, model route observation, interaction boundaries, tool or command
+execution, file mutations, test observations, and PR or merge state when those
+states are part of the run.
+
+**Independent Test**: Given the real customer-case OpenCode/GSD workflow,
+`sdp-trace` can complete any required pre-work setup, then run beside the
+harness command without additional operator steps inside the delivery loop,
+produce the observation evidence needed for validation, record which model,
+phase, prompt-boundary, tool, mutation, test, PR, and merge dimensions were
+observed, which were unsafe, and which remain `not_assessed` or
+`cannot_verify`, then render a safe summary that does not imply harness
+compliance or feature delivery.
 
 **Activation Gate**: Do not implement Block 31 until
 `blocks/31-non-interfering-harness-observation.md` and
@@ -699,13 +711,21 @@ direction is explicitly approved.
 - [x] T225 [US5] Run implementation review across code/correctness,
   trace/evidence, and requirements-vs-implementation planes; fix and re-review
   every valid critical or major finding.
-- [ ] T226 [US4] Validate a real or fixture-backed OpenCode/GSD export before
-  moving P0-001 out of `open`; if the export cannot provide required dimensions,
-  record those dimensions as `not_assessed` or `cannot_verify`.
+- [ ] T226 [US4] Add and validate a customer-usable first-run OpenCode/GSD
+  observation path before moving P0-001 out of `open`; a pre-shaped fixture or
+  customer-built adapter is not enough. Bounded setup before delivery is
+  allowed, but the delivery loop must stay "set up and forget" with no extra
+  prompt, export, adapter-authoring, or manual trace steps. The first-run path
+  must emit `harness-event-v1` JSONL or an equivalent observed run directory
+  bound to setup metadata, command digest, time bounds, source commit, and output
+  artifact digests. If the real workflow cannot provide required dimensions,
+  record those dimensions as `not_assessed` or `cannot_verify` without weakening
+  the core claim that the delivery loop was observed.
 
-**Checkpoint**: Block 31 is complete only when `sdp-trace` can validate a
-non-interfering harness observation export. It still must not claim harness
-compliance, feature delivery, PR approval, merge approval, or production trust.
+**Checkpoint**: Block 31 remains incomplete for the demo until `sdp-trace` can
+observe the customer-case OpenCode/GSD workflow through a supported first-run
+path. It still must not claim harness compliance, feature delivery, PR approval,
+merge approval, or production trust.
 
 ## Dependencies & Execution Order
 

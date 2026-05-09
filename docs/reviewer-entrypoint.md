@@ -41,6 +41,7 @@ upgrade the state in prose.
 The current top-level command set is:
 
 - `wrap`, `run`, `dry-run`, `preview`, `doctor`
+- `observe setup`, `observe collect`, `observe session`
 - `harness observe`, `harness validate`, `harness summarize`
 - `verify`, `explain`, `query`
 - `query-pack`, `query-pack explain`
@@ -70,6 +71,13 @@ Harness observation commands import and validate explicit local harness event
 exports. They do not run OpenCode, GSD, MiniMax, GitHub, provider APIs, or any
 other harness. Treat missing harness event families as `not_assessed` or
 `cannot_verify`, not as feature delivery evidence.
+
+First-run observation commands use a session profile to bound setup and
+collection. `observe setup` writes setup metadata before delivery,
+`observe collect` normalizes declared harness output after the normal harness
+command, and `observe session` is a convenience wrapper for one controlled
+command. They do not inject stdin, relay prompts, retain stdout/stderr bodies by
+default, or turn missing harness output into a pass.
 
 ## Dirty Checkout Behavior
 
@@ -126,6 +134,8 @@ You may not state external production trust guarantees until
 | Missing evidence review | `go run ./cmd/sdp-trace query --query missing-evidence <run-dir>` | Missing evidence remains visible, not passed |
 | Forensic package review | `go run ./cmd/sdp-trace query-pack explain --result <file>` | Explanation of retained evidence only |
 | Managed harness review | `go run ./cmd/sdp-trace assess explain --assessment-result <file>` | Assessment facts; external policy owns block/allow |
+| First-run harness observation review | `go run ./cmd/sdp-trace observe collect --profile <session-profile.json> --run <run-dir>` | Session-profile collection; missing declared output is `cannot_verify` |
+| Harness event validation | `go run ./cmd/sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <file>` | Event-family facts; missing required families are not passes |
 | Authority envelope review | `go run ./cmd/sdp-trace assess --profile authority-envelope --authority-package <file> --out <file>` | Authority facts only; external policy owns consequences |
 | CI/customer witness review | `go run ./cmd/sdp-trace witness --kind <kind> --out <file> <runs-root-or-run-dir>` | CI/customer-bound evidence, not production trust by itself |
 | Source-bound release review | `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |

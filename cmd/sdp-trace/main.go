@@ -69,6 +69,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runInstall(ctx, cmdArgs, stdout, stderr)
 	case "interaction":
 		return runInteraction(ctx, cmdArgs, stdout, stderr)
+	case "observe":
+		return runObserve(cmdArgs, stdout, stderr)
 	case "harness":
 		return runHarness(cmdArgs, stdout, stderr)
 	case "envelope":
@@ -103,6 +105,27 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
 		return 1
+	}
+}
+
+func runObserve(args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "observe requires setup, collect, or session")
+		return exitUsage
+	}
+	switch args[0] {
+	case "help", "--help", "-h":
+		fmt.Fprintln(stdout, "Usage: sdp-trace observe <setup|collect|session> [flags]")
+		return 0
+	case "setup":
+		return runObserveSetup(args[1:], stdout, stderr)
+	case "collect":
+		return runObserveCollect(args[1:], stdout, stderr)
+	case "session":
+		return runObserveSession(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintf(stderr, "unknown observe command: %s\n", args[0])
+		return exitUsage
 	}
 }
 
@@ -164,6 +187,129 @@ func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
 	payload, err := json.MarshalIndent(run, "", "  ")
 	if err != nil {
 		fmt.Fprintf(stderr, "marshal harness run: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runObserveSetup(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "observe setup"}
+	opts.setString("profile", "")
+	opts.setString("out", "")
+	opts.setString("command", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "observe setup accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) == "" {
+		fmt.Fprintln(stderr, "observe setup requires --profile")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "observe setup requires --out")
+		return exitUsage
+	}
+	session, err := harnessobs.SetupSession(harnessobs.SessionSetupOptions{
+		ProfilePath: opts.stringValue("profile"),
+		OutDir:      opts.stringValue("out"),
+		Command:     opts.stringValue("command"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, err := json.MarshalIndent(session, "", "  ")
+	if err != nil {
+		fmt.Fprintf(stderr, "marshal observe setup: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runObserveCollect(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "observe collect"}
+	opts.setString("profile", "")
+	opts.setString("run", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "observe collect accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) == "" {
+		fmt.Fprintln(stderr, "observe collect requires --profile")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("run")) == "" {
+		fmt.Fprintln(stderr, "observe collect requires --run")
+		return exitUsage
+	}
+	session, observed, err := harnessobs.CollectSession(harnessobs.SessionCollectOptions{
+		ProfilePath: opts.stringValue("profile"),
+		RunDir:      opts.stringValue("run"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, err := json.MarshalIndent(struct {
+		Session harnessobs.SessionRun `json:"session"`
+		Run     harnessobs.Run        `json:"run"`
+	}{Session: session, Run: observed}, "", "  ")
+	if err != nil {
+		fmt.Fprintf(stderr, "marshal observe collect: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	if session.CollectionState == harnessobs.StateCannotVerify {
+		return exitCannotVerify
+	}
+	return 0
+}
+
+func runObserveSession(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "observe session"}
+	opts.setString("profile", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) == "" {
+		fmt.Fprintln(stderr, "observe session requires --profile")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "observe session requires --out")
+		return exitUsage
+	}
+	if len(opts.rest()) == 0 {
+		fmt.Fprintln(stderr, "observe session requires command after --")
+		return exitUsage
+	}
+	session, observed, err := harnessobs.RunSession(harnessobs.SessionOptions{
+		ProfilePath: opts.stringValue("profile"),
+		OutDir:      opts.stringValue("out"),
+		Command:     opts.rest(),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, err := json.MarshalIndent(struct {
+		Session harnessobs.SessionRun `json:"session"`
+		Run     harnessobs.Run        `json:"run"`
+	}{Session: session, Run: observed}, "", "  ")
+	if err != nil {
+		fmt.Fprintf(stderr, "marshal observe session: %v\n", err)
 		return exitCannotVerify
 	}
 	fmt.Fprintf(stdout, "%s\n", payload)
@@ -2970,6 +3116,9 @@ Usage:
   sdp-trace interaction relay --task-id <safe-id> --event-type <type> --out <file> -- <forward-command...>
   sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id <safe-id> --events-jsonl <file> --out <file>
   sdp-trace interaction summarize --trace <file> [--out <file>]
+  sdp-trace observe setup --profile <session-profile.json> --out <run-dir> [--command <harness-command-preview>]
+  sdp-trace observe collect --profile <session-profile.json> --run <run-dir>
+  sdp-trace observe session --profile <session-profile.json> --out <run-dir> -- <harness-command...>
   sdp-trace harness observe --profile <harness-profile.json> --source <harness-events.jsonl> --out <run-dir>
   sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <validation.json>
   sdp-trace harness summarize --validation <validation.json>
