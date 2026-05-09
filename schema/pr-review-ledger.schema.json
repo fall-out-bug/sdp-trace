@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdp-trace.local/schema/pr-review-ledger.schema.json",
+  "title": "PR Review Ledger",
+  "type": "object",
+  "required": ["schema_version", "packet_digest", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "block30-pr-review-ledger-v1" },
+    "packet_digest": { "$ref": "pr-review-common.schema.json#/$defs/packetDigest" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "review_run_id",
+          "plane",
+          "role_id",
+          "severity",
+          "summary",
+          "citation",
+          "disposition"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "review_run_id": { "type": "string", "minLength": 1 },
+          "plane": { "type": "string", "minLength": 1 },
+          "role_id": { "type": "string", "minLength": 1 },
+          "severity": { "enum": ["critical", "major", "minor", "informational"] },
+          "summary": { "type": "string", "minLength": 1 },
+          "citation": { "$ref": "pr-review-common.schema.json#/$defs/citation" },
+          "disposition": {
+            "enum": [
+              "accepted_fixed",
+              "accepted_review_blocking",
+              "accepted_narrower",
+              "rejected_false_positive",
+              "deferred_not_assessed",
+              "unresolved_review_blocker"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "disposition_evidence": { "type": "string" }
+        }
+      }
+    }
+  }
+}

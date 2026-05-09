@@ -24,6 +24,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
+	"github.com/fall_out_bug/sdp-trace/internal/prreview"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
 	"github.com/fall_out_bug/sdp-trace/internal/releaseproof"
@@ -99,6 +100,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runValidateFixtures(ctx, cmdArgs, stdout, stderr)
 	case "release-proof":
 		return runReleaseProof(ctx, cmdArgs, stdout, stderr)
+	case "pr-review":
+		return runPRReview(ctx, cmdArgs, stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
@@ -241,6 +244,453 @@ func runHarnessSummarize(args []string, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprint(stdout, harnessobs.Summarize(validation))
 	return 0
+}
+
+func runPRReview(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "pr-review requires packet, run, synthesize, validate, summarize, or check")
+		return exitUsage
+	}
+	switch args[0] {
+	case "packet":
+		return runPRReviewPacket(args[1:], stdout, stderr)
+	case "run":
+		return runPRReviewRun(args[1:], stdout, stderr)
+	case "synthesize":
+		return runPRReviewSynthesize(args[1:], stdout, stderr)
+	case "validate":
+		return runPRReviewValidate(args[1:], stdout, stderr)
+	case "summarize":
+		return runPRReviewSummarize(args[1:], stdout, stderr)
+	case "check":
+		return runPRReviewCheck(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintf(stderr, "unknown pr-review command: %s\n", args[0])
+		return exitUsage
+	}
+}
+
+func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "pr-review packet"}
+	opts.setString("out", "")
+	opts.setString("repo-id", "")
+	opts.setString("change-ref", "")
+	opts.setString("base", "")
+	opts.setString("head", "")
+	opts.setString("diff", "")
+	opts.setString("metadata", "")
+	opts.setString("context", "")
+	opts.setString("verification", "")
+	opts.setString("ci-state", prreview.StateNotAssessed)
+	opts.setString("created-by", "sdp-trace-cli")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "pr-review packet accepts only flags")
+		return exitUsage
+	}
+	if err := requirePRReviewPacketInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	packet, err := prreview.BuildPacket(prreview.PacketOptions{
+		OutDir:            opts.stringValue("out"),
+		RepoID:            opts.stringValue("repo-id"),
+		ChangeRef:         opts.stringValue("change-ref"),
+		BaseCommit:        opts.stringValue("base"),
+		HeadCommit:        opts.stringValue("head"),
+		DiffPath:          opts.stringValue("diff"),
+		MetadataPath:      opts.stringValue("metadata"),
+		ContextPaths:      repeatedFlagValues(args, "context", opts.stringValue("context")),
+		VerificationPaths: repeatedFlagValues(args, "verification", opts.stringValue("verification")),
+		CIState:           opts.stringValue("ci-state"),
+		CreatedBy:         opts.stringValue("created-by"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, _ := json.MarshalIndent(packet, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runPRReviewRun(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "pr-review run"}
+	opts.setString("packet", "")
+	opts.setString("profile", "")
+	opts.setString("out", "")
+	opts.setString("allow-external-runner", "")
+	opts.setString("work-dir", ".")
+	opts.setBool("preview", false)
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "pr-review run accepts only flags")
+		return exitUsage
+	}
+	packet, profile, ok := readPRReviewPacketAndProfile(opts, stderr)
+	if !ok {
+		return exitCannotVerify
+	}
+	if err := requireDirectory(opts.stringValue("work-dir")); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	runs, preview, err := prreview.RunReview(packet, profile, prreview.RunOptions{
+		OutDir:         opts.stringValue("out"),
+		AllowedRunners: allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
+		Preview:        opts.boolValue("preview"),
+		WorkDir:        opts.stringValue("work-dir"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	var payload []byte
+	if preview != nil {
+		payload, _ = json.MarshalIndent(preview, "", "  ")
+	} else {
+		payload, _ = json.MarshalIndent(runs, "", "  ")
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runPRReviewSynthesize(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "pr-review synthesize"}
+	opts.setString("packet", "")
+	opts.setString("runs", "")
+	opts.setString("existing-ledger", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "pr-review synthesize accepts only flags")
+		return exitUsage
+	}
+	if err := requireOutputFile("pr-review synthesize", opts.stringValue("out")); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	packet, err := prreview.ReadPacket(opts.stringValue("packet"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	runs, err := prreview.ReadRunSet(opts.stringValue("runs"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	var existing *prreview.Ledger
+	if opts.stringValue("existing-ledger") != "" {
+		ledger, err := prreview.ReadLedger(opts.stringValue("existing-ledger"))
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		existing = &ledger
+	}
+	ledger := prreview.SynthesizeLedger(packet, runs, existing)
+	if err := prreview.WriteJSON(opts.stringValue("out"), ledger); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(ledger, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runPRReviewValidate(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "pr-review validate"}
+	opts.setString("packet", "")
+	opts.setString("profile", "")
+	opts.setString("runs", "")
+	opts.setString("ledger", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "pr-review validate accepts only flags")
+		return exitUsage
+	}
+	if err := requireOutputFile("pr-review validate", opts.stringValue("out")); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	packet, profile, ok := readPRReviewPacketAndProfile(opts, stderr)
+	if !ok {
+		return exitCannotVerify
+	}
+	runs, err := prreview.ReadRunSet(opts.stringValue("runs"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	ledger, err := prreview.ReadLedger(opts.stringValue("ledger"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	validation := prreview.Validate(packet, profile, runs, ledger)
+	if err := prreview.WriteJSON(opts.stringValue("out"), validation); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(validation, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	if reviewValidationExitCode(validation) != 0 {
+		return exitCannotVerify
+	}
+	return 0
+}
+
+func runPRReviewSummarize(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "pr-review summarize"}
+	opts.setString("validation", "")
+	opts.setString("ledger", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "pr-review summarize accepts only flags")
+		return exitUsage
+	}
+	validation, err := prreview.ReadValidation(opts.stringValue("validation"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	ledger, err := prreview.ReadLedger(opts.stringValue("ledger"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	summary := prreview.Summarize(validation, ledger)
+	if opts.stringValue("out") != "" {
+		if err := refuseExistingFile(opts.stringValue("out")); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitUsage
+		}
+		if err := os.WriteFile(opts.stringValue("out"), []byte(summary), 0o644); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+	}
+	fmt.Fprint(stdout, summary)
+	return 0
+}
+
+func runPRReviewCheck(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "pr-review check"}
+	opts.setString("out", "")
+	opts.setString("repo-id", "")
+	opts.setString("change-ref", "")
+	opts.setString("base", "")
+	opts.setString("head", "")
+	opts.setString("diff", "")
+	opts.setString("metadata", "")
+	opts.setString("context", "")
+	opts.setString("verification", "")
+	opts.setString("profile", "")
+	opts.setString("ci-state", prreview.StateNotAssessed)
+	opts.setString("created-by", "sdp-trace-cli")
+	opts.setString("allow-external-runner", "")
+	opts.setString("work-dir", ".")
+	opts.setBool("preview", false)
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "pr-review check accepts only flags")
+		return exitUsage
+	}
+	outDir := opts.stringValue("out")
+	if strings.TrimSpace(outDir) == "" {
+		fmt.Fprintln(stderr, "pr-review check requires --out")
+		return exitUsage
+	}
+	if err := requirePRReviewPacketInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	packet, err := prreview.BuildPacket(prreview.PacketOptions{
+		OutDir:            filepath.Join(outDir, "packet"),
+		RepoID:            opts.stringValue("repo-id"),
+		ChangeRef:         opts.stringValue("change-ref"),
+		BaseCommit:        opts.stringValue("base"),
+		HeadCommit:        opts.stringValue("head"),
+		DiffPath:          opts.stringValue("diff"),
+		MetadataPath:      opts.stringValue("metadata"),
+		ContextPaths:      repeatedFlagValues(args, "context", opts.stringValue("context")),
+		VerificationPaths: repeatedFlagValues(args, "verification", opts.stringValue("verification")),
+		CIState:           opts.stringValue("ci-state"),
+		CreatedBy:         opts.stringValue("created-by"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if err := requireDirectory(opts.stringValue("work-dir")); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	runs, preview, err := prreview.RunReview(packet, profile, prreview.RunOptions{
+		OutDir:         filepath.Join(outDir, "runs"),
+		AllowedRunners: allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
+		Preview:        opts.boolValue("preview"),
+		WorkDir:        opts.stringValue("work-dir"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if preview != nil {
+		payload, _ := json.MarshalIndent(preview, "", "  ")
+		fmt.Fprintf(stdout, "%s\n", payload)
+		return 0
+	}
+	if err := prreview.WriteJSON(filepath.Join(outDir, "runs", "results.json"), runs); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	ledger := prreview.SynthesizeLedger(packet, runs, nil)
+	validation := prreview.Validate(packet, profile, runs, ledger)
+	if err := prreview.WriteJSON(filepath.Join(outDir, "ledger.json"), ledger); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if err := prreview.WriteJSON(filepath.Join(outDir, "validation.json"), validation); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprint(stdout, prreview.Summarize(validation, ledger))
+	if reviewValidationExitCode(validation) != 0 {
+		return exitCannotVerify
+	}
+	return 0
+}
+
+func requirePRReviewPacketInputs(opts *flagSet) error {
+	required := map[string]string{
+		"--out":        opts.stringValue("out"),
+		"--repo-id":    opts.stringValue("repo-id"),
+		"--change-ref": opts.stringValue("change-ref"),
+		"--base":       opts.stringValue("base"),
+		"--head":       opts.stringValue("head"),
+		"--diff":       opts.stringValue("diff"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			return fmt.Errorf("pr-review packet requires %s", flag)
+		}
+	}
+	return nil
+}
+
+func requireOutputFile(command, path string) error {
+	if strings.TrimSpace(path) == "" {
+		return fmt.Errorf("%s requires --out", command)
+	}
+	return refuseExistingFile(path)
+}
+
+func refuseExistingFile(path string) error {
+	info, err := os.Stat(path)
+	if err == nil {
+		if info.IsDir() {
+			return fmt.Errorf("output path is a directory: %s", path)
+		}
+		return fmt.Errorf("output file exists: %s", path)
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
+func requireDirectory(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("work-dir: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("work-dir is not a directory: %s", path)
+	}
+	return nil
+}
+
+func reviewValidationExitCode(validation prreview.Validation) int {
+	switch validation.ReviewCoverageState {
+	case prreview.CoverageCannotVerify, prreview.CoverageUnresolved:
+		return exitCannotVerify
+	default:
+		return 0
+	}
+}
+
+func readPRReviewPacketAndProfile(opts *flagSet, stderr io.Writer) (prreview.Packet, prreview.ReviewProfile, bool) {
+	packet, err := prreview.ReadPacket(opts.stringValue("packet"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return prreview.Packet{}, prreview.ReviewProfile{}, false
+	}
+	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return prreview.Packet{}, prreview.ReviewProfile{}, false
+	}
+	return packet, profile, true
+}
+
+func repeatedFlagValues(args []string, key, parsedFallback string) []string {
+	prefix := "--" + key + "="
+	values := []string{}
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, prefix) {
+			values = append(values, strings.TrimPrefix(arg, prefix))
+			continue
+		}
+		if arg == "--"+key && i+1 < len(args) {
+			values = append(values, args[i+1])
+			i++
+		}
+	}
+	if len(values) == 0 && strings.TrimSpace(parsedFallback) != "" {
+		values = append(values, parsedFallback)
+	}
+	return values
+}
+
+func allowedRunnerSet(values []string) map[string]bool {
+	allowed := map[string]bool{}
+	for _, value := range values {
+		for _, item := range strings.Split(value, ",") {
+			item = strings.TrimSpace(item)
+			if item != "" {
+				allowed[item] = true
+			}
+		}
+	}
+	return allowed
 }
 
 func runReleaseProof(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -2993,6 +3443,12 @@ Usage:
   sdp-trace gate --out <file> <runs-root-or-run-dir>
   sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>
   sdp-trace release-proof --manifest <file> --out <file>
+  sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--ci-state <state>] [--created-by <actor>]
+  sdp-trace pr-review run --packet <dir> --profile <file> --out <dir> [--preview] [--work-dir <dir>] [--allow-external-runner <runner>]...
+  sdp-trace pr-review synthesize --packet <dir> --runs <dir> --out <file>
+  sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>
+  sdp-trace pr-review summarize --validation <file> --ledger <file> [--out <file>]
+  sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]...
   sdp-trace validate-fixtures [root-dir]
 `
 	fmt.Fprint(w, usage)

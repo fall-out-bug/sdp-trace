@@ -46,7 +46,7 @@ The current top-level command set is:
 - `query-pack`, `query-pack explain`
 - `export cross-repo-posture`, `export cross-repo-posture explain`
 - `assess`, `assess preview`, `assess explain`
-- `report`, `gate`, `witness`, `release-proof`, `validate-fixtures`
+- `report`, `gate`, `witness`, `release-proof`, `pr-review`, `validate-fixtures`
 
 Current assessment profiles:
 
@@ -95,6 +95,10 @@ What it does not allow:
 
 ## Gate, Witness, And Release Caveats
 
+- `pr-review` emits review-record evidence over a frozen PR packet. It can
+  report `coverage_satisfied`, `coverage_partial`, `coverage_unresolved`,
+  `not_assessed`, or `cannot_verify`, but it does not approve, merge, mark
+  ready, release, accept risk, or replace human approval.
 - `gate` emits verifier-derived facts and deterministic states. It does not own
   merge, release, readiness, degradation, override approval, or risk acceptance.
 - `witness` binds available CI or customer-PKI evidence. A CI witness file is
@@ -129,6 +133,7 @@ You may not state external production trust guarantees until
 | Authority envelope review | `go run ./cmd/sdp-trace assess --profile authority-envelope --authority-package <file> --out <file>` | Authority facts only; external policy owns consequences |
 | CI/customer witness review | `go run ./cmd/sdp-trace witness --kind <kind> --out <file> <runs-root-or-run-dir>` | CI/customer-bound evidence, not production trust by itself |
 | Source-bound release review | `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |
+| Automated PR review evidence | `go run ./cmd/sdp-trace pr-review check --out review --repo-id <safe-id> --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review-record completeness only; not merge approval |
 
 This entrypoint is intentionally minimal and is intended to prevent over-claiming
 from reproducible verifier output.

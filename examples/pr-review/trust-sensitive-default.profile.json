@@ -1,0 +1,38 @@
+{
+  "schema_version": "block30-pr-review-profile-v1",
+  "profile_id": "trust-sensitive-default",
+  "required_planes": [
+    "code_correctness",
+    "trace_evidence_provenance",
+    "requirements_vs_implementation"
+  ],
+  "roles": [
+    {
+      "role_id": "code-correctness",
+      "plane": "code_correctness",
+      "runner": "manual_external",
+      "requested_model": "not_assessed",
+      "timeout_seconds": 600,
+      "required_output_schema": "schema/pr-review-result.schema.json",
+      "raw_output_retention": "digest_only"
+    },
+    {
+      "role_id": "trace-evidence",
+      "plane": "trace_evidence_provenance",
+      "runner": "manual_external",
+      "requested_model": "not_assessed",
+      "timeout_seconds": 600,
+      "required_output_schema": "schema/pr-review-result.schema.json",
+      "raw_output_retention": "digest_only"
+    },
+    {
+      "role_id": "requirements",
+      "plane": "requirements_vs_implementation",
+      "runner": "manual_external",
+      "requested_model": "not_assessed",
+      "timeout_seconds": 600,
+      "required_output_schema": "schema/pr-review-result.schema.json",
+      "raw_output_retention": "digest_only"
+    }
+  ]
+}

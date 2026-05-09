@@ -707,6 +707,64 @@ direction is explicitly approved.
 non-interfering harness observation export. It still must not claim harness
 compliance, feature delivery, PR approval, merge approval, or production trust.
 
+## Phase 23: Automated PR Review Evidence Mechanism
+
+**Goal**: Make multi-agent PR review an observable evidence mechanism instead
+of an informal local ritual or a model-owned merge decision.
+
+**Independent Test**: Given a frozen PR review packet, a review profile, and
+simulated `pi`/OpenCode reviewer outputs, the mechanism can validate which
+review planes were usable, which findings were recorded and disposed, which
+review attempts were `not_assessed` or `cannot_verify`, and render a PR-safe
+summary that does not imply merge approval.
+
+**Activation Gate**: Do not implement Block 30 until
+`blocks/30-automated-pr-review-evidence-mechanism.md` and
+`blocks/30-automated-pr-review-evidence-mechanism-implementation-plan.md` pass
+Socratic review across product boundary, UX/DX, trace/evidence, security, and
+implementation-feasibility planes, and the reviewed direction is explicitly
+approved.
+
+- [x] T227 [US5] Run Socratic spec review for Block 30 and record every valid
+  critical or major finding in
+  `blocks/30-automated-pr-review-evidence-mechanism-review-ledger.md`.
+- [x] T228 [US5] Close every valid Block 30 Socratic spec finding before
+  implementation starts.
+- [x] T229 [US2] Add PR review packet, review profile, reviewer result,
+  review ledger synthesis, and review validation contracts that bind every
+  reviewer output to source base/head, per-ref context digests, diff digest,
+  packet digest, prompt digest, requested/observed/fallback model provenance,
+  redaction state, and explicit unavailable fields.
+- [x] T230 [US4] Add `sdp-trace pr-review packet` over explicit local/provider
+  inputs without hidden GitHub coupling, provider API calls, or path-derived
+  repository identity.
+- [x] T231 [US4] Add optional `sdp-trace pr-review run` support for configured
+  `pi` and OpenCode runners without making them product dependencies, requiring
+  explicit runner allowance, preview mode, proactive read-only OpenCode
+  enforcement, timeout handling, raw-output digesting, deterministic status
+  mapping, and Go fake-runner fixtures that do not require network calls.
+- [x] T232 [US5] Add `sdp-trace pr-review synthesize`, `validate`,
+  `summarize`, and common-path `check` so required planes, finding
+  dispositions, stale packet digests, hung/empty/off-task reviewers, absent CI,
+  and residual `not_assessed`/`cannot_verify` states are visible without
+  creating merge approval.
+- [x] T233 [US5] Add safety-sensitive tests proving PR review validation and
+  summary output do not print raw prompts, raw model responses, raw command
+  bodies, provider tokens, authenticated URLs, private paths, unsafe personal
+  identifiers, or synthetic secret markers.
+- [x] T234 [US4] Update `docs/agent-entrypoint.md` and
+  `docs/reviewer-entrypoint.md` only after the PR review command help surface
+  exists, preserving the boundary that review evidence is not approval.
+- [x] T235 [US5] Run implementation review across code/correctness,
+  trace/evidence, and requirements-vs-implementation planes; fix and re-review
+  every valid critical or major finding.
+- [ ] T236 [US5] Run local verification, PR-level multi-plane review, and record
+  Block 30 review disposition before claiming the mechanism is complete.
+
+**Checkpoint**: Block 30 is complete only when the repo has a working review
+evidence mechanism, not merely a runbook. Merge, release, production trust, risk
+acceptance, and human approval remain outside `sdp-trace`.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -756,6 +814,10 @@ compliance, feature delivery, PR approval, merge approval, or production trust.
   observer UX, and Block 29 delivery trace envelopes. It must fix the demo
   JVM/GSD P0 without making OpenCode, GSD, MiniMax, GitHub, or any harness
   runtime a product dependency.
+- **Phase 23**: Depends on Block 19 provider-neutral PR/review refs, Block 28
+  repository observer UX, Block 29 delivery trace envelopes, and the durable
+  review-ledger/evidence/provenance contracts. It must make automated PR review
+  observable without becoming a native merge gate or hosted-model dependency.
 
 ### Parallel Opportunities
 
@@ -813,6 +875,12 @@ compliance, feature delivery, PR approval, merge approval, or production trust.
   exercise separate summary and unsafe-input paths.
 - T224 can run only after T221-T223 because docs and the demo ledger must not
   claim command behavior before it exists.
+- T229 and T230 can run in parallel after T228 if schema/contract work and
+  packet command wiring keep separate write scopes.
+- T231 and T232 can run in parallel after T229 if runner records and validation
+  output share only the reviewed contract.
+- T233 can run in parallel with T232 after T229 because output-safety tests
+  exercise separate rendering and fixture paths.
 
 ## Implementation Strategy
 
@@ -855,6 +923,9 @@ compliance, feature delivery, PR approval, merge approval, or production trust.
 24. Complete Block 31 non-interfering harness observation only after explicit
     spec approval, preserving OpenCode/GSD as a tested export profile rather
     than a product dependency and keeping missing harness dimensions explicit.
+25. Complete Block 30 automated PR review evidence mechanism only after
+    explicit spec approval, preserving model reviews as evidence and keeping
+    merge, release, risk acceptance, and human approval outside `sdp-trace`.
 
 ### Evidence Discipline
 

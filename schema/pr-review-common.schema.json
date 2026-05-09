@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdp-trace.local/schema/pr-review-common.schema.json",
+  "title": "PR Review Common Types",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "packetDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "safeRef": {
+      "type": "object",
+      "required": ["id", "kind", "ref", "digest_sha256", "content_type", "redaction_state"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": ["diff", "metadata", "spec", "plan", "task", "doc", "schema", "source_excerpt", "verification", "prompt", "raw_output", "sanitized_output", "external"]
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "not": { "pattern": "^/" }
+        },
+        "digest_sha256": { "$ref": "#/$defs/sha256" },
+        "content_type": {
+          "enum": ["unified_diff", "markdown", "json", "text"]
+        },
+        "redaction_state": {
+          "enum": ["none", "redacted", "digest_only", "encrypted_ref", "external_ref", "withheld", "not_assessed"]
+        }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "context_ref_id": { "type": "string" },
+        "diff_hunk_id": { "type": "string" },
+        "source_digest": { "type": "string" },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 }
+      },
+      "anyOf": [
+        { "required": ["context_ref_id", "diff_hunk_id"] },
+        { "required": ["context_ref_id", "source_digest"] },
+        { "required": ["source_digest"] }
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "required": ["id", "severity", "citation", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["critical", "major", "minor", "informational"] },
+        "citation": { "$ref": "#/$defs/citation" },
+        "summary": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string" },
+        "suggested_fix": { "type": "string" },
+        "question": { "type": "string" },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

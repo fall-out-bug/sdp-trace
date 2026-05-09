@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdp-trace.local/schema/pr-review-profile.schema.json",
+  "title": "PR Review Profile",
+  "type": "object",
+  "required": ["schema_version", "profile_id", "required_planes", "roles"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "block30-pr-review-profile-v1" },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "required_planes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "code_correctness",
+          "trace_evidence_provenance",
+          "requirements_vs_implementation",
+          "security_forgery_overclaim",
+          "dx_replayability",
+          "privacy_output_safety"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["role_id", "plane", "runner", "requested_model"],
+        "additionalProperties": false,
+        "properties": {
+          "role_id": { "type": "string", "minLength": 1 },
+          "plane": {
+            "enum": [
+              "code_correctness",
+              "trace_evidence_provenance",
+              "requirements_vs_implementation",
+              "security_forgery_overclaim",
+              "dx_replayability",
+              "privacy_output_safety"
+            ]
+          },
+          "runner": { "enum": ["pi", "opencode", "manual_external"] },
+          "requested_model": { "type": "string", "minLength": 1 },
+          "command": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "timeout_seconds": { "type": "integer", "minimum": 1 },
+          "prompt_template_ref": { "type": "string" },
+          "required_output_schema": { "type": "string" },
+          "raw_output_retention": { "enum": ["digest_only", "redacted", "encrypted_ref", "external_ref", "withheld"] },
+          "read_only_enforced": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}
