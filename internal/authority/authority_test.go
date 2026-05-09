@@ -29,8 +29,6 @@ func TestEvaluateGitOnlyKeepsAttributionNotAssessed(t *testing.T) {
 	pkg := validPackage()
 	pkg.AuthorityEnvelopes[0].TargetRules[0].DeniedEvents = nil
 	pkg.AuthorityEnvelopes[0].TargetRules[0].AllowedEvents = []string{"direct_mutation"}
-	pkg.ObservedActions[0].ActorID = ""
-	pkg.ObservedActions[0].OperationID = ""
 	pkg.ObservedActions[0].SourceType = "git"
 	result := Evaluate(pkg)
 	eval := result.Evaluations[0]
@@ -41,6 +39,24 @@ func TestEvaluateGitOnlyKeepsAttributionNotAssessed(t *testing.T) {
 		if got != AttributionNotAssessed {
 			t.Fatalf("unexpected attribution state in %+v", eval)
 		}
+	}
+}
+
+func TestEvaluateMissingApprovalEvidenceIsOutsideAuthority(t *testing.T) {
+	pkg := validPackage()
+	pkg.AuthorityEnvelopes[0].TargetRules[0].DeniedEvents = nil
+	pkg.AuthorityEnvelopes[0].TargetRules[0].AllowedEvents = []string{"direct_mutation"}
+	pkg.AuthorityEnvelopes[0].ApprovalRequirements = []ApprovalRequirement{{
+		RequirementID: "approval-1",
+		EventType:     "direct_mutation",
+		TargetRuleRef: "rule-ci-denied",
+	}}
+	result := Evaluate(pkg)
+	if result.AuthorityEvaluationState != StateOutsideAuthority {
+		t.Fatalf("state = %s reasons=%v", result.AuthorityEvaluationState, result.Reasons)
+	}
+	if result.Evaluations[0].ReasonCode != "approval_evidence_missing" {
+		t.Fatalf("evaluation = %+v", result.Evaluations[0])
 	}
 }
 

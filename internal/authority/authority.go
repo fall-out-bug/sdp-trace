@@ -308,7 +308,7 @@ func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope
 		EvaluationID:     evaluationID,
 		EventID:          action.EventID,
 		PolicyID:         selectedPolicyID,
-		ActorAttribution: attributionState(action.ActorID),
+		ActorAttribution: actorAttributionState(action),
 		ToolAttribution:  AttributionNotAssessed,
 		ModelAttribution: AttributionNotAssessed,
 		SourceCoverage:   uniqueStrings([]string{action.SourceType}),
@@ -316,7 +316,7 @@ func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope
 		ActorID:          action.ActorID,
 		OperationID:      action.OperationID,
 	}
-	if action.OperationID != "" {
+	if action.SourceType == "harness_log" && action.OperationID != "" {
 		eval.ToolAttribution = AttributionVerified
 	}
 	if hasVerifiedGatewayBinding(action, eventBindings) {
@@ -624,11 +624,16 @@ func nextActions(result Result) []string {
 	}
 }
 
-func attributionState(value string) string {
-	if strings.TrimSpace(value) == "" {
+func actorAttributionState(action ObservedAction) string {
+	if strings.TrimSpace(action.ActorID) == "" {
 		return AttributionNotAssessed
 	}
-	return AttributionVerified
+	switch action.SourceType {
+	case "harness_log", "manual_import", "pr_api", "ci_artifact":
+		return AttributionVerified
+	default:
+		return AttributionNotAssessed
+	}
 }
 
 func missingAttributes(eval AuthorityEvaluation) []string {
