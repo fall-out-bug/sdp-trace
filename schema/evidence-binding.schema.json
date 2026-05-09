@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/evidence-binding.schema.json",
+  "title": "SDP Trace Evidence Binding",
+  "type": "object",
+  "required": ["binding_id", "left_event_id", "right_event_id", "binding_type", "binding_state", "matched_fields", "evidence_ref"],
+  "properties": {
+    "binding_id": { "$ref": "#/$defs/safeToken" },
+    "left_event_id": { "$ref": "#/$defs/safeToken" },
+    "right_event_id": { "$ref": "#/$defs/safeToken" },
+    "binding_type": {
+      "type": "string",
+      "enum": ["same_path", "same_commit", "same_operation", "same_gateway_request", "same_artifact_digest", "custom"]
+    },
+    "binding_state": {
+      "type": "string",
+      "enum": ["verified", "not_assessed", "cannot_verify"]
+    },
+    "matched_fields": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/safeToken" }
+    },
+    "evidence_ref": { "$ref": "#/$defs/evidenceRef" },
+    "reason_code": { "$ref": "#/$defs/reasonCode" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "evidenceRef": {
+      "type": "string",
+      "pattern": "^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$"
+    },
+    "reasonCode": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,80}$"
+    },
+    "safeToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    }
+  }
+}

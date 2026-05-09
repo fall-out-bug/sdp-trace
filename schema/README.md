@@ -34,6 +34,10 @@ These schemas define the portable `sdp-trace` contract.
 | `evidence-bundle.schema.json` | Compatibility schema for reviewable proof bundles. |
 | `gate-verdict.schema.json` | Compatibility schema for externally recorded gate results with explicit `origin: "external"`. |
 | `decision-record.schema.json` | Compatibility schema for final human or external automated decisions. |
+| `authority-envelope.schema.json` | Declares selected actor/task authority without embedding downstream policy consequences. |
+| `observed-action.schema.json` | Records observed review, mutation, harness, gateway, and custom events with source evidence refs. |
+| `evidence-binding.schema.json` | Records cross-source binding state for git, harness, gateway, artifact, and custom evidence links. |
+| `authority-evaluation.schema.json` | Records authority evaluation facts, attribution state, source coverage, and replay evidence refs. |
 
 ## Validation
 

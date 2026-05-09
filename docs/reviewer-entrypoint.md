@@ -52,6 +52,8 @@ Current assessment profiles:
 - `adapter-capture`
 - `managed-harness`
 - `forensic-retention`
+- `ci-artifact-observation`
+- `authority-envelope`
 
 Current witness kinds:
 
@@ -118,6 +120,7 @@ You may not state external production trust guarantees until
 | Missing evidence review | `go run ./cmd/sdp-trace query --query missing-evidence <run-dir>` | Missing evidence remains visible, not passed |
 | Forensic package review | `go run ./cmd/sdp-trace query-pack explain --result <file>` | Explanation of retained evidence only |
 | Managed harness review | `go run ./cmd/sdp-trace assess explain --assessment-result <file>` | Assessment facts; external policy owns block/allow |
+| Authority envelope review | `go run ./cmd/sdp-trace assess --profile authority-envelope --authority-package <file> --out <file>` | Authority facts only; external policy owns consequences |
 | CI/customer witness review | `go run ./cmd/sdp-trace witness --kind <kind> --out <file> <runs-root-or-run-dir>` | CI/customer-bound evidence, not production trust by itself |
 | Source-bound release review | `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |
 

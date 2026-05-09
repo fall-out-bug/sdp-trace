@@ -1,0 +1,68 @@
+{
+  "schema_version": "authority-observation-package-v1",
+  "selected_policy_id": "policy-allow-docs",
+  "actors": [
+    {
+      "actor_id": "agent-1",
+      "actor_type": "ai_agent",
+      "declared_role": "implementer",
+      "harness": "generic-harness",
+      "operation_id": "op-1"
+    }
+  ],
+  "authority_envelopes": [
+    {
+      "schema_version": "authority-envelope-v1",
+      "task_id": "task-1",
+      "policy_id": "policy-allow-docs",
+      "authority_scope": "task",
+      "actor_ref": "agent-1",
+      "allowed_events": ["gateway_request"],
+      "denied_events": [],
+      "target_rules": [
+        {
+          "rule_id": "rule-docs",
+          "target_pattern": "docs/**",
+          "allowed_events": ["direct_mutation"],
+          "denied_events": []
+        }
+      ]
+    }
+  ],
+  "observed_actions": [
+    {
+      "event_id": "event-docs-edit",
+      "task_id": "task-1",
+      "event_type": "direct_mutation",
+      "target": "docs/authority-envelope.md",
+      "source_type": "harness_log",
+      "evidence_refs": ["file:evidence/git-diff.json"],
+      "actor_id": "agent-1",
+      "operation_id": "op-1",
+      "observed_at": "2026-05-09T00:00:00Z",
+      "observation_confidence": "single_source"
+    },
+    {
+      "event_id": "event-model-request",
+      "task_id": "task-1",
+      "event_type": "gateway_request",
+      "source_type": "llm_gateway",
+      "evidence_refs": ["artifact:gateway#requests/1"],
+      "actor_id": "agent-1",
+      "operation_id": "op-2",
+      "observed_at": "2026-05-09T00:00:01Z",
+      "observation_confidence": "single_source"
+    }
+  ],
+  "evidence_bindings": [
+    {
+      "binding_id": "binding-gateway-mismatch",
+      "left_event_id": "event-docs-edit",
+      "right_event_id": "event-model-request",
+      "binding_type": "same_gateway_request",
+      "binding_state": "cannot_verify",
+      "matched_fields": ["operation_id"],
+      "evidence_ref": "artifact:harness#bindings/gateway"
+    }
+  ]
+}

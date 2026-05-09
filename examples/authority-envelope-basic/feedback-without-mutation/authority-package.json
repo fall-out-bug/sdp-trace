@@ -1,0 +1,35 @@
+{
+  "schema_version": "authority-observation-package-v1",
+  "selected_policy_id": "policy-review-only",
+  "actors": [
+    {
+      "actor_id": "reviewer-1",
+      "actor_type": "human",
+      "declared_role": "reviewer"
+    }
+  ],
+  "authority_envelopes": [
+    {
+      "schema_version": "authority-envelope-v1",
+      "task_id": "task-1",
+      "policy_id": "policy-review-only",
+      "authority_scope": "task",
+      "actor_ref": "reviewer-1",
+      "allowed_events": ["review", "feedback"],
+      "denied_events": [],
+      "target_rules": []
+    }
+  ],
+  "observed_actions": [
+    {
+      "event_id": "event-feedback-1",
+      "task_id": "task-1",
+      "event_type": "feedback",
+      "source_type": "manual_import",
+      "evidence_refs": ["file:evidence/review-feedback.json"],
+      "actor_id": "reviewer-1",
+      "observed_at": "2026-05-09T00:00:00Z",
+      "observation_confidence": "single_source"
+    }
+  ]
+}
