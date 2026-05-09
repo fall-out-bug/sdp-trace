@@ -496,6 +496,161 @@ hardening; reviewer note about --model=value was a false positive against the
 full function because extractCommandModelArgs still handles --model= and -m=
 ```
 
+### P0-002: Real OpenCode/GSD raw stream is rejected before observed run creation
+
+- Status: open
+- Severity: P0
+- Demo state: stopped during first GSD project-initialization cycle
+- Observed on: 2026-05-10
+- Disposition: unresolved product blocker. The real OpenCode/GSD run produced
+  native JSONL events with model metadata, tool calls, and file mutations, but
+  `sdp-trace observe session` rejected the raw stream during collection.
+
+#### Expected product behavior
+
+After bounded setup, `sdp-trace observe session` should run beside the real
+OpenCode/GSD command, normalize the native OpenCode JSONL stream, create an
+observed run, and preserve unsupported fields as explicit `not_assessed` or
+`cannot_verify` states. Safety handling may redact or hash sensitive values, but
+it must not make the whole customer-case run unverifiable when the raw stream is
+valid harness output.
+
+#### Observed behavior
+
+A real GSD initialization run succeeded under OpenCode with the required model
+route:
+
+```text
+opencode run --format json --model minimax-coding-plan/MiniMax-M2.5 \
+  --dir /Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd \
+  "/gsd-new-project --auto" \
+  --file /private/tmp/sdp-trace-demo-observe-gsd-new-project-input.md \
+  --dangerously-skip-permissions
+```
+
+The run created GSD planning files in the demo repository:
+
+```text
+.planning/PROJECT.md
+.planning/REQUIREMENTS.md
+.planning/ROADMAP.md
+.planning/STATE.md
+```
+
+The raw OpenCode stream contained useful evidence:
+
+```text
+line 3: tool_use read /private/tmp/sdp-trace-demo-observe-gsd-new-project-input.md
+line 9: tool_use glob path /Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd
+line 12: tool_use bash command "rtk ls -la"
+line 15: task metadata model minimax-coding-plan/MiniMax-M2.5
+line 18: read .planning/ROADMAP.md
+```
+
+However, `sdp-trace observe session` failed during raw collection:
+
+```text
+raw source line 9: unsafe_input:part.state.input.path:token_like_value
+```
+
+The session metadata retained only command-level facts:
+
+```text
+"command_model": "minimax-coding-plan/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"collection_state": "cannot_verify"
+"collection_reason": "not_collected"
+```
+
+No `run/observed` package was produced, so `harness validate` could not assess
+the actual GSD activity.
+
+#### Impact
+
+The demo must stop. The product can now see that the selected model route was
+requested, but it cannot ingest the real OpenCode/GSD event stream that proves
+what happened during the delivery loop. Continuing would require manually
+editing or filtering trace artifacts outside the product, which violates the
+demo boundary and would be self-forged evidence.
+
+This is buyer-critical: the first non-trivial GSD run already contains exactly
+the kind of evidence `sdp-trace` must preserve, but the current safety filter
+turns a valid harness field into a fatal collection error instead of retaining a
+safe representation or marking only that field unavailable.
+
+#### Required product change
+
+`sdp-trace` must handle real OpenCode/GSD JSONL fields such as
+`part.state.input.path` without aborting collection. Acceptable fixes include
+schema-aware path classification, safe path hashing/redaction, or per-field
+`cannot_verify` retention. The closure test must replay this real run shape and
+prove that the observed run contains verifier-backed evidence for at least:
+
+- harness and interaction boundaries;
+- selected model route;
+- tool calls, including `read`, `glob`, `bash`, and `task`;
+- file mutations or generated artifact reads for `.planning/*`;
+- explicit `not_assessed` or `cannot_verify` states for missing phase/test/PR
+  evidence.
+
+#### Implementation response on 2026-05-10
+
+| id | severity | plane | finding | disposition | response |
+| --- | --- | --- | --- | --- | --- |
+| B31-RETURN-09 | critical | tracing/evidence | Real OpenCode/GSD `tool_use` events with path-like tool inputs, for example `part.state.input.path`, were rejected as `token_like_value` before an observed run could be created. | accepted_fixed | Raw OpenCode safety scanning now treats known path-like field names as path evidence under digest-only normalization, so private local paths are not retained and do not abort collection. Sensitive keys such as `api_key`, `token`, `authorization`, and authenticated URLs remain fatal unsafe input. |
+| B31-RETURN-10 | critical | tracing/evidence | Review challenged whether the path-like exemption could hide secrets in `path` fields. | accepted_fixed | The exemption was narrowed to direct file/directory field names only, and regression tests prove provider-token values and authenticated URLs in `part.state.input.path` still fail before any normalized output is written. |
+
+Regression coverage now replays the returned GSD shape with native OpenCode
+`tool_use` events for `read`, `glob`, `bash`, `task` model metadata, and a
+`.planning/ROADMAP.md` read. The observed run is created with digest-only
+events, and normalized output is asserted not to retain `/private/tmp` or
+`/Users/fall_out_bug` paths.
+
+Observed result from the regression:
+
+```text
+SESSION
+"command_model": "minimax-coding-plan/MiniMax-M2.5"
+"command_model_state": "pass"
+"collection_state": "pass"
+
+RUN
+"event_count": 8
+events/raw-000001-harness.json
+events/raw-000002-interaction.json
+events/raw-000003-tool.json
+events/raw-000004-tool.json
+events/raw-000005-tool.json
+events/raw-000006-model.json
+events/raw-000007-tool.json
+events/session-command-model.json
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass
+interaction: pass
+model: pass
+tool: pass
+phase/mutation/test: not_assessed
+```
+
+This closes the collection-abort blocker only. The demo P0 remains open for
+phase, mutation, and test evidence until those signals are emitted as
+verifier-backed events in the customer-case delivery loop.
+
+Review disposition:
+
+```text
+code/correctness: no critical or major findings; minor hard-coded event-count
+comment accepted and fixed
+tracing/evidence and safety: initial critical concern accepted as proof gap;
+allowlist narrowed and token/authenticated-url negative tests added
+focused safety re-review: pass; no critical, major, or minor findings
+requirements-vs-implementation replacement review: pass; implementation
+satisfies P0-002 without claiming phase/mutation/test closure
+```
+
 ## P1
 
 No P1 findings recorded yet.

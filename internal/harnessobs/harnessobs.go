@@ -1764,11 +1764,27 @@ func findUnsafeRawEventAt(path string, value any) (string, string) {
 		if providerTokenPrefix.MatchString(v) {
 			return path, "token_like_value"
 		}
-		if !digestField(path) && base64TokenPattern.MatchString(v) && !sha256Pattern.MatchString(v) {
+		if !digestField(path) && !rawPathLikeField(path) && base64TokenPattern.MatchString(v) && !sha256Pattern.MatchString(v) {
 			return path, "token_like_value"
 		}
 	}
 	return "", ""
+}
+
+func rawPathLikeField(path string) bool {
+	field := path
+	if idx := strings.LastIndex(field, "."); idx >= 0 {
+		field = field[idx+1:]
+	}
+	if idx := strings.LastIndex(field, "["); idx >= 0 {
+		field = field[:idx]
+	}
+	switch strings.ToLower(field) {
+	case "path", "file", "filepath", "file_path", "dir", "directory", "cwd":
+		return true
+	default:
+		return false
+	}
 }
 
 func unretainedRawBodyField(key string) bool {
