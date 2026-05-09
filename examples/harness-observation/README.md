@@ -23,3 +23,15 @@ authoritative.
 
 OpenCode/GSD remains a profile exemplar, not a product dependency. Missing
 OpenCode/GSD export dimensions remain `not_assessed` or `cannot_verify`.
+
+## First-Run Session Profile
+
+`opencode-gsd-session-profile.example.json` documents the first-run customer
+path shape. Setup is bounded to declared actions before delivery starts. The
+normal harness workflow then writes or exposes the declared event source, and
+`sdp-trace observe collect` normalizes that source into the same observed-run
+contract used by `harness validate` and `harness summarize`.
+
+The example keeps stream capture disabled. Raw stdout/stderr bodies, prompts,
+model responses, provider tokens, authenticated URLs, and private paths are not
+retained by default.

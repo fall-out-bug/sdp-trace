@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/harness-session-profile.schema.json",
+  "title": "SDP Trace Harness Session Profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile_id",
+    "harness_profile_path",
+    "event_source_path",
+    "stream_capture"
+  ],
+  "properties": {
+    "schema_version": { "const": "harness-session-profile-v1" },
+    "profile_id": { "$ref": "#/$defs/safeId" },
+    "harness_profile_path": { "$ref": "#/$defs/relativeFile" },
+    "event_source_path": { "$ref": "#/$defs/relativeFile" },
+    "setup_actions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/setupAction" }
+    },
+    "stream_capture": {
+      "enum": ["disabled", "digest_only", "retained_safe"]
+    }
+  },
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "relativeFile": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_./:-]{1,256}$",
+      "not": {
+        "anyOf": [
+          { "pattern": "^/" },
+          { "pattern": "\\.\\." },
+          { "pattern": "://" }
+        ]
+      }
+    },
+    "setupAction": {
+      "type": "object",
+      "required": ["id", "kind", "required"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "kind": { "enum": ["init", "profile", "wrapper", "hook"] },
+        "required": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

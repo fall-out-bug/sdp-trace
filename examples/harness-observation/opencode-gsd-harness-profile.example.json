@@ -1,0 +1,40 @@
+{
+  "schema_version": "harness-observation-profile-v1",
+  "profile_id": "opencode-gsd-jsonl-v1",
+  "harness_family": "opencode-gsd",
+  "event_schema_version": "harness-event-v1",
+  "required_event_families": ["harness", "model", "interaction", "phase", "tool", "mutation", "test"],
+  "optional_event_families": ["review", "pr", "merge", "gap"],
+  "raw_retention_policy": "digest_only",
+  "unsupported_fields": ["raw_prompt", "raw_model_response"],
+  "degradation_rules": {
+    "missing_required_family": {
+      "state": "not_assessed",
+      "reason_code": "required_event_family_absent"
+    },
+    "missing_optional_family": {
+      "state": "not_assessed",
+      "reason_code": "optional_event_family_absent"
+    },
+    "source_unavailable": {
+      "state": "cannot_verify",
+      "reason_code": "source_unavailable"
+    },
+    "unsafe_input": {
+      "state": "fail",
+      "reason_code": "unsafe_input"
+    },
+    "digest_mismatch": {
+      "state": "cannot_verify",
+      "reason_code": "source_digest_mismatch"
+    },
+    "schema_version_mismatch": {
+      "state": "cannot_verify",
+      "reason_code": "schema_version_mismatch"
+    },
+    "cross_link_conflict": {
+      "state": "cannot_verify",
+      "reason_code": "adapter_harness_state_conflict"
+    }
+  }
+}

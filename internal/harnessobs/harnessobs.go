@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -35,6 +36,9 @@ const (
 
 	DefaultMaxLineBytes = 1024 * 1024
 	DefaultMaxEvents    = 100000
+
+	SessionProfileSchemaVersion = "harness-session-profile-v1"
+	SessionRunSchemaVersion     = "harness-session-run-v1"
 )
 
 var (
@@ -142,6 +146,62 @@ type ObserveOptions struct {
 	Now         time.Time
 }
 
+type SessionProfile struct {
+	SchemaVersion      string               `json:"schema_version"`
+	ProfileID          string               `json:"profile_id"`
+	HarnessProfilePath string               `json:"harness_profile_path"`
+	EventSourcePath    string               `json:"event_source_path"`
+	SetupActions       []SessionSetupAction `json:"setup_actions,omitempty"`
+	StreamCapture      string               `json:"stream_capture"`
+}
+
+type SessionSetupAction struct {
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	Required bool   `json:"required"`
+}
+
+type SessionRun struct {
+	SchemaVersion      string   `json:"schema_version"`
+	ProfileID          string   `json:"profile_id"`
+	HarnessProfilePath string   `json:"harness_profile_path"`
+	EventSourcePath    string   `json:"event_source_path"`
+	SetupActionIDs     []string `json:"setup_action_ids,omitempty"`
+	CommandDigest      string   `json:"command_digest,omitempty"`
+	CommandDigestState string   `json:"command_digest_state,omitempty"`
+	ProcessID          int      `json:"process_id,omitempty"`
+	ProcessIDState     string   `json:"process_id_state,omitempty"`
+	StartTime          string   `json:"start_time,omitempty"`
+	EndTime            string   `json:"end_time,omitempty"`
+	SourceCommit       string   `json:"source_commit,omitempty"`
+	SourceCommitState  string   `json:"source_commit_state,omitempty"`
+	ObservedRunDir     string   `json:"observed_run_dir,omitempty"`
+	OutputDigest       string   `json:"output_digest,omitempty"`
+	CollectionState    string   `json:"collection_state,omitempty"`
+	CollectionReason   string   `json:"collection_reason,omitempty"`
+	CreatedAt          string   `json:"created_at"`
+}
+
+type SessionSetupOptions struct {
+	ProfilePath string
+	OutDir      string
+	Command     string
+	Now         time.Time
+}
+
+type SessionCollectOptions struct {
+	ProfilePath string
+	RunDir      string
+	Now         time.Time
+}
+
+type SessionOptions struct {
+	ProfilePath string
+	OutDir      string
+	Command     []string
+	Now         time.Time
+}
+
 type ValidateOptions struct {
 	ProfilePath string
 	RunDir      string
@@ -205,6 +265,174 @@ func Observe(opts ObserveOptions) (Run, error) {
 		return Run{}, err
 	}
 	return run, nil
+}
+
+func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
+	if strings.TrimSpace(opts.ProfilePath) == "" {
+		return SessionRun{}, errors.New("observe setup requires --profile")
+	}
+	if strings.TrimSpace(opts.OutDir) == "" {
+		return SessionRun{}, errors.New("observe setup requires --out")
+	}
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return SessionRun{}, fmt.Errorf("unsafe profile path: %w", err)
+	}
+	outDir, err := safeOutDir(opts.OutDir)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	profile, err := LoadSessionProfile(profilePath)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	if opts.Now.IsZero() {
+		opts.Now = time.Now().UTC()
+	}
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return SessionRun{}, err
+	}
+	run := newSessionRun(profile, opts.Now)
+	if strings.TrimSpace(opts.Command) != "" {
+		run.CommandDigest = digestCommand([]string{opts.Command})
+		run.CommandDigestState = StatePass
+	}
+	if err := writeJSON(filepath.Join(outDir, "session.json"), run); err != nil {
+		return SessionRun{}, err
+	}
+	return run, nil
+}
+
+func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
+	if strings.TrimSpace(opts.ProfilePath) == "" {
+		return SessionRun{}, Run{}, errors.New("observe collect requires --profile")
+	}
+	if strings.TrimSpace(opts.RunDir) == "" {
+		return SessionRun{}, Run{}, errors.New("observe collect requires --run")
+	}
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return SessionRun{}, Run{}, fmt.Errorf("unsafe profile path: %w", err)
+	}
+	runDir, err := safeExistingDir(opts.RunDir)
+	if err != nil {
+		return SessionRun{}, Run{}, fmt.Errorf("unsafe run path: %w", err)
+	}
+	profile, err := LoadSessionProfile(profilePath)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	session, err := LoadSessionRun(filepath.Join(runDir, "session.json"))
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	if session.ProfileID != profile.ProfileID {
+		return SessionRun{}, Run{}, errors.New("session profile mismatch")
+	}
+	harnessProfilePath, err := safeProfileRelativeFile(profilePath, profile.HarnessProfilePath)
+	if err != nil {
+		return SessionRun{}, Run{}, fmt.Errorf("unsafe harness profile path: %w", err)
+	}
+	harnessProfile, err := LoadProfile(harnessProfilePath)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	if opts.Now.IsZero() {
+		opts.Now = time.Now().UTC()
+	}
+	sourcePath, err := safeProfileRelativeFile(profilePath, profile.EventSourcePath)
+	if err != nil {
+		session.CollectionState = StateCannotVerify
+		session.CollectionReason = "source_unavailable"
+		session.EndTime = opts.Now.Format(time.RFC3339)
+		if writeErr := writeJSON(filepath.Join(runDir, "session.json"), session); writeErr != nil {
+			return SessionRun{}, Run{}, writeErr
+		}
+		return session, Run{
+			SchemaVersion:      RunSchemaVersion,
+			ProfileID:          harnessProfile.ProfileID,
+			HarnessFamily:      harnessProfile.HarnessFamily,
+			EventSchemaVersion: harnessProfile.EventSchemaVersion,
+			SourcePath:         filepath.Base(profile.EventSourcePath),
+			EventCount:         0,
+			CreatedAt:          opts.Now.Format(time.RFC3339),
+		}, nil
+	}
+	observedDir := filepath.Join(runDir, "observed")
+	if err := os.MkdirAll(observedDir, 0o755); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	events, sourceDigest, err := readEventsFromPath(harnessProfilePath, sourcePath)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	for _, event := range events {
+		if err := writeJSON(filepath.Join(observedDir, "events", event.EventID+".json"), event); err != nil {
+			return SessionRun{}, Run{}, err
+		}
+	}
+	observed := Run{
+		SchemaVersion:      RunSchemaVersion,
+		ProfileID:          harnessProfile.ProfileID,
+		HarnessFamily:      harnessProfile.HarnessFamily,
+		EventSchemaVersion: harnessProfile.EventSchemaVersion,
+		SourcePath:         filepath.Base(sourcePath),
+		SourceDigest:       sourceDigest,
+		EventCount:         len(events),
+		EventRefs:          eventRefs(events),
+		CreatedAt:          opts.Now.Format(time.RFC3339),
+	}
+	if err := writeJSON(filepath.Join(observedDir, "run.json"), observed); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	session.ObservedRunDir = filepath.ToSlash("observed")
+	session.OutputDigest = digestFile(filepath.Join(observedDir, "run.json"))
+	session.CollectionState = StatePass
+	session.CollectionReason = "source_collected"
+	if session.EndTime == "" {
+		session.EndTime = opts.Now.Format(time.RFC3339)
+	}
+	if err := writeJSON(filepath.Join(runDir, "session.json"), session); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	return session, observed, nil
+}
+
+func RunSession(opts SessionOptions) (SessionRun, Run, error) {
+	if len(opts.Command) == 0 {
+		return SessionRun{}, Run{}, errors.New("observe session requires command after --")
+	}
+	session, err := SetupSession(SessionSetupOptions{ProfilePath: opts.ProfilePath, OutDir: opts.OutDir, Now: opts.Now})
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	start := time.Now().UTC()
+	cmd := exec.Command(opts.Command[0], opts.Command[1:]...)
+	cmd.Stdin = nil
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	session.CommandDigest = digestCommand(opts.Command)
+	session.CommandDigestState = StatePass
+	session.StartTime = start.Format(time.RFC3339)
+	if err := cmd.Start(); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	session.ProcessID = cmd.Process.Pid
+	session.ProcessIDState = StatePass
+	waitErr := cmd.Wait()
+	end := time.Now().UTC()
+	session.EndTime = end.Format(time.RFC3339)
+	if err := writeJSON(filepath.Join(opts.OutDir, "session.json"), session); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	collected, observed, err := CollectSession(SessionCollectOptions{ProfilePath: opts.ProfilePath, RunDir: opts.OutDir, Now: end})
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	if waitErr != nil {
+		return collected, observed, waitErr
+	}
+	return collected, observed, nil
 }
 
 func Validate(opts ValidateOptions) (Validation, error) {
@@ -278,6 +506,122 @@ func LoadProfile(path string) (Profile, error) {
 		return Profile{}, err
 	}
 	return profile, nil
+}
+
+func LoadSessionProfile(path string) (SessionProfile, error) {
+	safePath, err := safeExistingFile(path)
+	if err != nil {
+		return SessionProfile{}, err
+	}
+	data, err := os.ReadFile(safePath)
+	if err != nil {
+		return SessionProfile{}, err
+	}
+	var profile SessionProfile
+	if err := json.Unmarshal(data, &profile); err != nil {
+		return SessionProfile{}, err
+	}
+	if profile.SchemaVersion != SessionProfileSchemaVersion {
+		return SessionProfile{}, fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
+	}
+	if !safeIDPattern.MatchString(profile.ProfileID) {
+		return SessionProfile{}, errors.New("unsafe session profile_id")
+	}
+	if strings.TrimSpace(profile.HarnessProfilePath) == "" {
+		return SessionProfile{}, errors.New("session profile requires harness_profile_path")
+	}
+	if strings.TrimSpace(profile.EventSourcePath) == "" {
+		return SessionProfile{}, errors.New("session profile requires event_source_path")
+	}
+	if profile.StreamCapture == "" {
+		profile.StreamCapture = "disabled"
+	}
+	if profile.StreamCapture != "disabled" && profile.StreamCapture != ContentDigestOnly && profile.StreamCapture != ContentRetainedSafe {
+		return SessionProfile{}, errors.New("unsupported stream_capture")
+	}
+	if profile.StreamCapture != "disabled" {
+		return SessionProfile{}, errors.New("stream_capture mode not implemented")
+	}
+	for _, action := range profile.SetupActions {
+		if !safeIDPattern.MatchString(action.ID) {
+			return SessionProfile{}, errors.New("unsafe setup action id")
+		}
+		if action.Kind != "init" && action.Kind != "profile" && action.Kind != "wrapper" && action.Kind != "hook" {
+			return SessionProfile{}, errors.New("unsupported setup action kind")
+		}
+	}
+	if len(profile.SetupActions) > 3 {
+		return SessionProfile{}, errors.New("too many setup actions")
+	}
+	return profile, nil
+}
+
+func LoadSessionRun(path string) (SessionRun, error) {
+	safePath, err := safeExistingFile(path)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	data, err := os.ReadFile(safePath)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	var run SessionRun
+	if err := json.Unmarshal(data, &run); err != nil {
+		return SessionRun{}, err
+	}
+	if run.SchemaVersion != SessionRunSchemaVersion {
+		return SessionRun{}, fmt.Errorf("unsupported session schema_version %q", run.SchemaVersion)
+	}
+	if !safeIDPattern.MatchString(run.ProfileID) {
+		return SessionRun{}, errors.New("unsafe session profile_id")
+	}
+	return run, nil
+}
+
+func newSessionRun(profile SessionProfile, now time.Time) SessionRun {
+	actionIDs := make([]string, 0, len(profile.SetupActions))
+	for _, action := range profile.SetupActions {
+		actionIDs = append(actionIDs, action.ID)
+	}
+	sort.Strings(actionIDs)
+	commit := sourceCommit()
+	commitState := StatePass
+	if commit == "" {
+		commitState = StateCannotVerify
+	}
+	return SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          profile.ProfileID,
+		HarnessProfilePath: profile.HarnessProfilePath,
+		EventSourcePath:    profile.EventSourcePath,
+		SetupActionIDs:     actionIDs,
+		CommandDigestState: StateCannotVerify,
+		ProcessIDState:     StateCannotVerify,
+		SourceCommit:       commit,
+		SourceCommitState:  commitState,
+		CollectionState:    StateCannotVerify,
+		CollectionReason:   "not_collected",
+		CreatedAt:          now.Format(time.RFC3339),
+	}
+}
+
+func readEventsFromPath(profilePath, sourcePath string) ([]Event, string, error) {
+	profile, err := LoadProfile(profilePath)
+	if err != nil {
+		return nil, "", err
+	}
+	return readEvents(profile, sourcePath)
+}
+
+func safeProfileRelativeFile(profilePath, relPath string) (string, error) {
+	if filepath.IsAbs(relPath) || strings.Contains(relPath, "://") || strings.Contains(relPath, "..") {
+		return "", errors.New("profile relative path must be local without traversal")
+	}
+	baseDir := filepath.Dir(profilePath)
+	if baseDir == "." {
+		return safeExistingFile(relPath)
+	}
+	return safeExistingFile(filepath.Join(baseDir, relPath))
 }
 
 func LoadRun(dir string) (Run, []Event, error) {
@@ -802,6 +1146,34 @@ func validationDigest(validation Validation) string {
 	data, _ := json.Marshal(copy)
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
+}
+
+func digestCommand(command []string) string {
+	data, _ := json.Marshal(command)
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+func digestFile(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+func sourceCommit() string {
+	cmd := exec.Command("git", "rev-parse", "--verify", "HEAD")
+	data, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	commit := strings.TrimSpace(string(data))
+	if regexp.MustCompile(`^[a-f0-9]{40}$`).MatchString(commit) {
+		return commit
+	}
+	return ""
 }
 
 func findUnsafe(value any) (string, string) {

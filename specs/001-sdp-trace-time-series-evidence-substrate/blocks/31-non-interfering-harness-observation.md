@@ -19,21 +19,37 @@ harness, prompt router, or repo mutator.
 The immediate dogfood pressure comes from the OpenCode + GSD + MiniMax JVM demo:
 the demo cannot honestly claim `sdp-trace` observed the agentic delivery loop
 when the product can only diagnose repo observer setup, wrap command execution,
-or relay prompts through `sdp-trace`.
+relay prompts through `sdp-trace`, or validate a pre-shaped event file that the
+customer had to manufacture first.
 
 The product answer should be:
 
 ```text
-For this task run, these harness events were imported or observed from an
-external harness source, these fields were present, these fields were unavailable,
-and these claims remain not_assessed or cannot_verify.
+Set up observation once, run the normal harness workflow, and then inspect which
+delivery-loop facts were observed, which fields were unavailable, and which
+claims remain not_assessed or cannot_verify.
 ```
+
+The core problem is first-run usability, not schema expressiveness. A contract
+that only accepts already-normalized `harness-event-v1` JSONL pushes the hardest
+part of the product onto the customer and makes the demo a choreography layer
+over a raw product. Block 31 is not complete until it includes a customer-usable
+OpenCode/GSD path where bounded setup is acceptable, but no additional prompt,
+export, adapter-authoring, or manual trace step is required inside the delivery
+loop.
+
+For this block, the delivery loop is the period from harness command invocation
+through feature-delivery evidence collection for that run: harness subprocess
+lifecycle, model route observation, interaction boundaries, tool or command
+execution, file mutations, test observations, and PR or merge state when those
+states are part of the run.
 
 ## Product Question
 
-"Can `sdp-trace` observe an external agent harness delivery cycle without
-changing the harness prompt stream, hand-authoring trace artifacts after the
-fact, or depending on one harness runtime?"
+"Can `sdp-trace` be set up once and then observe an external agent harness
+delivery cycle without changing the harness prompt stream, requiring in-loop
+operator chores, hand-authoring trace artifacts after the fact, or depending on
+one harness runtime?"
 
 The answer must include:
 
@@ -50,8 +66,8 @@ The answer must include:
 
 ## Dogfood Finding
 
-`docs/reviews/demo-jvm-gsd-observation-ledger.md` records P0-001: no
-non-interfering OpenCode/GSD observation path exists for the required demo proof.
+`docs/reviews/demo-jvm-gsd-observation-ledger.md` records P0-001: no usable
+first-run OpenCode/GSD observation path exists for the customer case.
 
 Current product surfaces are insufficient:
 
@@ -66,22 +82,38 @@ Current product surfaces are insufficient:
   `sdp-trace`, which changes the harness path.
 - `assess preview --profile adapter-capture` can name the missing evidence
   shape, but no OpenCode/GSD adapter event source exists.
+- `harness observe` can validate explicit `harness-event-v1` JSONL after the
+  observation problem has already been solved, but it does not give the customer
+  a "set up and forget" way to produce those events from the real OpenCode/GSD
+  delivery loop.
 
-The correct product response is not to lower the demo bar. The correct response
-is to define a portable harness observation intake that can ingest externally
-emitted harness events and validate exactly what was and was not observed.
+The correct product response is not to lower the demo bar and not to push an
+adapter-building chore onto the customer. The correct response is to keep the
+portable harness observation contract and add the missing first-run path inside
+Block 31: bounded setup before work starts, passive observation during the real
+workflow, and verifier-backed facts after the run.
 
 OpenCode/GSD is the first dogfood exemplar, not the product dependency and not
 the canonical harness format. No `sdp-trace` command, schema, Go package, or
 acceptance test may require OpenCode, GSD, MiniMax, or an OpenCode/GSD binary to
-exist. The first fixture set must include a harness-generic complete export and
-may include `opencode-gsd-jsonl-v1` as one tested profile exemplar.
+exist for the generic contract tests. The demo-critical acceptance path may
+exercise OpenCode/GSD as an external tested-on workflow. The first fixture set
+must include a harness-generic complete export and may include
+`opencode-gsd-jsonl-v1` as one tested profile exemplar, but fixtures alone cannot
+close P0-001.
 
 ## Non-Goals
 
 - No native dependency on OpenCode, GSD, MiniMax, Codex, Claude, GitHub, Beads,
   Operator Mode, or any specific harness runtime.
 - No prompt relay as the required observation path.
+- No in-loop operator chores after bounded setup. The customer may initialize
+  repo files, install a wrapper, or configure a profile before delivery starts;
+  after that, the delivery workflow must stay "set up and forget".
+- No process injection, network interposition, stdin injection, prompt
+  rewriting, hidden PATH rewriting, or undeclared environment mutation. If a
+  dimension cannot be observed without those mechanisms, it remains
+  `cannot_verify`.
 - No hidden prompt injection, harness prompt rewriting, or managed harness
   takeover.
 - No automatic mutation of the assessed repository.
@@ -96,11 +128,57 @@ may include `opencode-gsd-jsonl-v1` as one tested profile exemplar.
 
 ## Product Boundary
 
-Block 31 adds an observation intake and validation path. It does not operate the
-harness.
+Block 31 adds an observation intake, validation path, and the missing
+customer-case first-run path. It does not operate the harness as a prompt router,
+managed agent runtime, or harness-specific parser embedded in product code.
+
+Allowed observation mechanisms are constrained:
+
+- `sdp-trace` may record an explicit harness command boundary, capture
+  stdout/stderr digests or retained-safe excerpts only when the session profile
+  declares those streams safe, tail declared log files, watch declared output
+  directories, and read filesystem artifacts the harness writes.
+- `sdp-trace` may set only profile-declared environment variables needed for
+  observation, and those variables must be rendered in setup evidence by safe
+  name and digest or redacted value state.
+- `sdp-trace` must not inject into stdin, rewrite harness arguments after setup,
+  alter PATH unless the profile explicitly installed a reviewed wrapper before
+  delivery, intercept provider network calls, or act as a communication
+  intermediary between the harness and its model provider.
+- If a field cannot be observed through the allowed mechanisms, validation must
+  record `cannot_verify` or `not_assessed`; it must not ask the operator to
+  hand-author evidence during delivery.
+
+The first-run mechanism is profile-driven rather than hard-coded to OpenCode/GSD.
+A session profile declares the raw observation surfaces and how they normalize to
+`harness-event-v1`:
+
+- profile id and version;
+- setup actions and whether each action is required or optional;
+- allowed environment variables by safe name;
+- declared safe log paths or output directories to inspect;
+- stream capture policy: `digest_only`, `retained_safe`, or `disabled`;
+- event mappings from profile-declared raw surfaces to `harness-event-v1`
+  families;
+- redaction and unsafe-value rejection policy;
+- external-tool requirements, each marked as `external` so default `go test
+  ./...` does not depend on OpenCode/GSD binaries.
+
+The OpenCode/GSD mapping must ship as a reviewed profile fixture or example
+under `examples/harness-observation/`, not as hidden Go special-case logic.
+
+Bounded setup means at most three documented setup actions before delivery:
+
+1. one initialization command;
+2. one profile or configuration file selection;
+3. one reviewed wrapper or hook installation when the profile requires it.
+
+Additional setup actions require a spec amendment before they can satisfy
+P0-001 closure.
 
 `sdp-trace` may say:
 
+- "this repo has been set up for passive observation before the harness run";
 - "this harness run has imported lifecycle events from source X";
 - "model route was observed through event field Y";
 - "GSD phase boundaries were observed, but review output was absent";
@@ -123,7 +201,13 @@ harness.
 
 ## First Product Surface
 
-The first implementation should be a file-based intake and validator:
+The first implementation has two connected surfaces:
+
+1. a file-based intake and validator for normalized harness observation events;
+2. a customer-case first-run path that can be set up before delivery and then
+   run beside the real OpenCode/GSD workflow without additional in-loop chores.
+
+The already-implemented intake surface is:
 
 ```text
 sdp-trace harness observe \
@@ -143,6 +227,49 @@ sdp-trace harness summarize \
 `observe` reads explicit local files only. It must not call OpenCode, GSD,
 provider APIs, GitHub APIs, or hidden shell commands. External harness tooling can
 export events into the agreed event shape before `sdp-trace` ingests them.
+
+That intake surface is necessary but insufficient for P0-001. Block 31 must also
+define and implement a first-run customer workflow. The CLI shape may evolve,
+but profile resolution must be explicit:
+
+```text
+sdp-trace observe setup --profile <session-profile.json> --out <run-dir> [--command <harness-command-preview>]
+<normal harness command>
+sdp-trace observe collect --profile <session-profile.json> --run <run-dir>
+```
+
+For a convenience wrapper, the equivalent single-command form may be:
+
+```text
+sdp-trace observe session --profile <session-profile.json> --out <run-dir> -- <harness-command>
+```
+
+`--profile` must resolve like other product inputs: a file path by default, or a
+documented built-in reference only with an explicit `builtin:` prefix. The
+OpenCode/GSD case should use a checked-in profile example, not an implicit
+`opencode-gsd` code path.
+
+The exact CLI may change during implementation review, but the workflow cannot:
+
+- setup may happen before delivery starts;
+- the actual harness command runs without prompt relay or prompt rewriting; if
+  the user chooses the split setup/collect workflow, the harness invocation stays
+  normal after setup;
+- observation emits `harness-event-v1` JSONL or writes an observed run directory
+  with the same normalized event content that `harness observe`, `harness
+  validate`, and `harness summarize` consume;
+- the operator is not asked to hand-export logs, write adapter events, or edit
+  trace artifacts during delivery;
+- raw stdout/stderr bodies are not retained by default; stream capture is
+  disabled unless the session profile explicitly declares a safe digest-only or
+  retained-safe policy;
+- setup metadata records the setup actions, profile id, harness command digest,
+  process id or unavailable reason, start/end time bounds, source commit, and
+  output artifact digests so a reviewer can distinguish in-run evidence from
+  post-hoc manufactured events;
+- unsupported fields remain explicit `not_assessed` or `cannot_verify`, but the
+  buyer-critical delivery-loop evidence is observed, not replaced by
+  disclaimers.
 
 `observe` is strict for the initial product surface. If it detects an unsafe
 absolute path, parent traversal, URL-like local ref, authenticated URL,
@@ -323,7 +450,9 @@ Positive composition rule:
 
 ## OpenCode/GSD Tested Profile Acceptance
 
-The first tested profile is acceptable only if a reviewer can reconstruct:
+The first tested profile is acceptable only if a reviewer can reconstruct the
+customer-case run after bounded setup, without relying on manual in-loop export
+or hand-authored adapter events:
 
 1. which OpenCode version and model route were declared or observed;
 2. which GSD phases or reviews occurred;
@@ -333,9 +462,26 @@ The first tested profile is acceptable only if a reviewer can reconstruct:
 6. which PR and merge states are observed or explicitly unavailable;
 7. which parts remain `not_assessed` or `cannot_verify`.
 
-If OpenCode/GSD cannot export some required fields without prompt relay or
+If OpenCode/GSD cannot expose some required fields without prompt relay or
 manual trace writing, the profile must report those dimensions honestly instead
-of lowering the requirement.
+of lowering the requirement. However, missing secondary fields cannot substitute
+for the primary product promise: `sdp-trace` must observe enough of the real
+delivery loop to prove the customer can use the product after setup without
+building the observation system themselves.
+
+Concrete first-run acceptance scenario:
+
+1. Given a clean customer-case checkout and reviewed OpenCode/GSD session profile
+   file, the customer performs no more than the bounded setup actions listed in
+   this spec.
+2. The customer runs the normal harness command after setup, or chooses the
+   single-command convenience wrapper explicitly.
+3. The first-run path writes `harness-event-v1` JSONL or an equivalent observed
+   run directory for that same run without manual export or normalization.
+4. `harness validate` and `harness summarize` consume that output without
+   additional in-loop operator action.
+5. Fixture-only validation and customer-authored adapter events remain separate
+   test classes and cannot close P0-001.
 
 ## Safety Requirements
 
@@ -390,6 +536,15 @@ identifiers.
   events, prompt digest only, tool-event gap, unsafe raw prompt, unsafe source
   ref, symlink escape, source digest mismatch, schema version mismatch, file
   mutation without source binding, absent PR state, and no run supplied.
+- A customer-case first-run path exists for OpenCode/GSD: bounded setup may be
+  required before delivery, but the real harness workflow then runs without
+  prompt relay, hand-export chores, adapter authoring, or manual trace edits.
+- The customer-case first-run path produces evidence that `harness observe`,
+  `validate`, and `summarize` can consume for the same run.
+- The first-run acceptance test exercises a live or controlled-proxy harness
+  command invocation, not only a static fixture file.
+- Setup evidence records provenance sufficient to distinguish in-run observation
+  from post-hoc manufactured events.
 - Go tests validate every fixture against the implemented contracts. JSON syntax
   checks with `jq empty` are necessary but not sufficient.
 - `go test ./...`, schema validation, and `git diff --check` pass for the changed
@@ -397,20 +552,22 @@ identifiers.
 - `docs/agent-entrypoint.md` and `docs/reviewer-entrypoint.md` are updated only
   after the command surface exists.
 - `docs/reviews/demo-jvm-gsd-observation-ledger.md` references this block and
-  keeps P0-001 open until the implemented validator can assess a real
-  OpenCode/GSD export.
+  keeps P0-001 open until the customer-case OpenCode/GSD workflow has been
+  observed through the supported first-run path.
 
 ## Socratic Review Questions
 
-1. Does the file-based intake avoid interfering with OpenCode/GSD while still
-   producing enough evidence to assess harness participation?
+1. Does the Block 31 path avoid interfering with OpenCode/GSD while still
+   producing enough evidence to assess harness participation after one-time
+   setup?
 2. Is `harness observe` too close to an adapter-capture duplicate, or does it
    correctly sit above adapter events as a harness-export intake?
 3. Does the first OpenCode/GSD profile accidentally create a product dependency
    on OpenCode/GSD?
 4. Are raw prompt and model response boundaries strict enough for committed
    examples and PR summaries?
-5. Can a demo operator produce the required source export without hand-authoring
-   proof artifacts?
+5. Can a demo operator complete bounded setup once and then run the normal
+   OpenCode/GSD workflow without hand-exporting proof artifacts or authoring
+   adapter events?
 6. Are `not_assessed` and `cannot_verify` preserved at dimension level and
    top-level validation?

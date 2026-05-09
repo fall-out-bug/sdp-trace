@@ -50,6 +50,152 @@ func TestHarnessObserveValidateSummarizeCLI(t *testing.T) {
 	}
 }
 
+func TestObserveSetupCollectSupportsSetUpAndForgetWorkflow(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfile(t, dir, "events.jsonl")
+	writeHarnessCLIEventsFile(t, filepath.Join(dir, "source-events.jsonl"), []map[string]any{
+		harnessCLIEvent("e1", "harness"),
+		harnessCLIEvent("e2", "model"),
+	})
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run", "--command", "opencode run demo"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"command_digest_state": "pass"`) {
+		t.Fatalf("setup output missing command digest state: %s", out.String())
+	}
+
+	if data, err := os.ReadFile("source-events.jsonl"); err != nil {
+		t.Fatal(err)
+	} else if err := os.WriteFile("events.jsonl", data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("collect exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"observed_run_dir": "observed"`) {
+		t.Fatalf("collect output missing observed run dir: %s", out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed", "--out", "validation.json"}, &out, &errOut)
+	if exit != 0 || !strings.Contains(out.String(), `"validation_state": "pass"`) {
+		t.Fatalf("validate exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestObserveSessionRunsControlledProxyWithoutRetainingStdout(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfile(t, dir, "events.jsonl")
+	writeHarnessCLIEventsFile(t, filepath.Join(dir, "source-events.jsonl"), []map[string]any{
+		harnessCLIEvent("e1", "harness"),
+		harnessCLIEvent("e2", "model"),
+	})
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{
+		"observe", "session", "--profile", "session-profile.json", "--out", "session-run", "--",
+		"sh", "-c", "cp source-events.jsonl events.jsonl && printf 'sk-should-not-be-captured'",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("session exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if strings.Contains(out.String(), "sk-should-not-be-captured") {
+		t.Fatalf("session leaked command stdout: %s", out.String())
+	}
+	if strings.Contains(errOut.String(), "sk-should-not-be-captured") {
+		t.Fatalf("session leaked command stderr: %s", errOut.String())
+	}
+	if !strings.Contains(out.String(), `"command_digest"`) ||
+		!strings.Contains(out.String(), `"command_digest_state": "pass"`) ||
+		!strings.Contains(out.String(), `"observed_run_dir": "observed"`) {
+		t.Fatalf("session output missing provenance: %s", out.String())
+	}
+}
+
+func TestObserveCollectRecordsCannotVerifyForMissingSource(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfile(t, dir, "missing-events.jsonl")
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("collect exit=%d, want cannot_verify; stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"collection_state": "cannot_verify"`) || !strings.Contains(out.String(), `"collection_reason": "source_unavailable"`) {
+		t.Fatalf("collect output missing cannot_verify evidence: %s", out.String())
+	}
+}
+
+func TestObserveCollectResolvesSourcesRelativeToSessionProfile(t *testing.T) {
+	dir := t.TempDir()
+	profileDir := filepath.Join(dir, "profiles")
+	if err := os.Mkdir(profileDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeHarnessCLIProfile(t, profileDir)
+	writeHarnessSessionProfile(t, profileDir, "events.jsonl")
+	writeHarnessCLIEventsFile(t, filepath.Join(profileDir, "events.jsonl"), []map[string]any{
+		harnessCLIEvent("e1", "harness"),
+		harnessCLIEvent("e2", "model"),
+	})
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "profiles/session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "profiles/session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("collect exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"event_count": 2`) {
+		t.Fatalf("collect output missing observed event count: %s", out.String())
+	}
+}
+
+func TestObserveSetupRejectsUnimplementedStreamCapture(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	writeHarnessSessionProfileWithStream(t, dir, "events.jsonl", harnessobs.ContentDigestOnly)
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "stream_capture mode not implemented") {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
 func TestHarnessObserveCLIRejectsUnsafePrompt(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfile(t, dir)
@@ -115,6 +261,33 @@ func writeHarnessCLIProfile(t *testing.T, dir string) {
 	}
 }
 
+func writeHarnessSessionProfile(t *testing.T, dir, eventSource string) {
+	t.Helper()
+	writeHarnessSessionProfileWithStream(t, dir, eventSource, "disabled")
+}
+
+func writeHarnessSessionProfileWithStream(t *testing.T, dir, eventSource, streamCapture string) {
+	t.Helper()
+	profile := harnessobs.SessionProfile{
+		SchemaVersion:      harnessobs.SessionProfileSchemaVersion,
+		ProfileID:          "opencode-gsd-fixture-v1",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    eventSource,
+		SetupActions: []harnessobs.SessionSetupAction{
+			{ID: "init", Kind: "init", Required: true},
+			{ID: "profile", Kind: "profile", Required: true},
+		},
+		StreamCapture: streamCapture,
+	}
+	data, err := json.MarshalIndent(profile, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "session-profile.json"), append(data, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func harnessCLIEvent(id, family string) map[string]any {
 	return map[string]any{
 		"event_id":             id,
@@ -130,6 +303,11 @@ func harnessCLIEvent(id, family string) map[string]any {
 
 func writeHarnessCLIEvents(t *testing.T, dir string, events []map[string]any) {
 	t.Helper()
+	writeHarnessCLIEventsFile(t, filepath.Join(dir, "events.jsonl"), events)
+}
+
+func writeHarnessCLIEventsFile(t *testing.T, path string, events []map[string]any) {
+	t.Helper()
 	lines := make([]string, 0, len(events))
 	for _, event := range events {
 		event["source_digest"] = ""
@@ -137,7 +315,7 @@ func writeHarnessCLIEvents(t *testing.T, dir string, events []map[string]any) {
 		event["source_digest"] = digestHarnessCLI(t, line)
 		lines = append(lines, marshalHarnessCLI(t, event))
 	}
-	if err := os.WriteFile(filepath.Join(dir, "events.jsonl"), []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }
