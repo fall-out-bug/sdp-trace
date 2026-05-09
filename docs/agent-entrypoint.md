@@ -103,6 +103,12 @@ Current command surface:
 - `go run ./cmd/sdp-trace gate --out <file> <runs-root-or-run-dir>`
 - `go run ./cmd/sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>`
 - `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>`
+- `go run ./cmd/sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--ci-state <state>] [--created-by <actor>] [--context <file>]... [--verification <file>]...`
+- `go run ./cmd/sdp-trace pr-review run --packet <dir> --profile <file> --out <dir> [--preview] [--work-dir <dir>] [--allow-external-runner <runner>]...`
+- `go run ./cmd/sdp-trace pr-review synthesize --packet <dir> --runs <dir> --out <file>`
+- `go run ./cmd/sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>`
+- `go run ./cmd/sdp-trace pr-review summarize --validation <file> --ledger <file> [--out <file>]`
+- `go run ./cmd/sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]...`
 - `go run ./cmd/sdp-trace validate-fixtures [root-dir]`
 
 Do not add aliases, hidden switches, or workflow-specific wrappers as product
@@ -148,6 +154,7 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `witness --kind buildkite` | Record Buildkite witness profile evidence. | `go run ./cmd/sdp-trace witness --kind buildkite --out buildkite-witness.json --witness-envelope envelope.json .sdp-trace-runs` | Caveat: CI-bound evidence is not a transparency log or release approval. |
 | `witness --kind customer-pki` | Record customer PKI/private-equivalent witness evidence. | `go run ./cmd/sdp-trace witness --kind customer-pki --out customer-pki-witness.json --customer-pki-authority-policy policy.json --customer-pki-public-cert cert.pem --customer-pki-payload-digest <sha256> --customer-pki-freshness-evidence freshness.json .sdp-trace-runs` | Caveat: customer PKI requires accepted customer policy, key/cert material, payload digest, and freshness evidence; missing pieces are not production trust. |
 | `release-proof` | Verify a source-bound local release manifest and proof artifact. | `go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json` | Caveat: `source_bound_local_release` is narrower than external production trust; dirty/stale source, manifest mismatch, or absent source commit fails or returns `cannot_verify`. |
+| `pr-review` | Build, run, synthesize, validate, and summarize automated PR review evidence over a frozen packet. | `go run ./cmd/sdp-trace pr-review check --out review --repo-id demo_repo --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Emits review-record facts only. `coverage_satisfied` is not merge approval; merge, release, risk acceptance, and human approval remain external. |
 | `validate-fixtures` | Validate checked fixture directories. | `go run ./cmd/sdp-trace validate-fixtures examples` | Structural fixture validation only; does not prove customer production readiness. |
 
 ## Russian Command Reference

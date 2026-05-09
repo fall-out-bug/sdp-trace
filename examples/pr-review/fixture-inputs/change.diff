@@ -1,0 +1,4 @@
+diff --git a/cmd/sdp-trace/main.go b/cmd/sdp-trace/main.go
+@@ -1,2 +1,2 @@
+-old
++new

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdp-trace.local/schema/pr-review-packet.schema.json",
+  "title": "PR Review Packet",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "packet_id",
+    "packet_digest",
+    "repo_id",
+    "change_ref",
+    "base_commit",
+    "head_commit",
+    "diff_ref",
+    "context_refs",
+    "verification_refs",
+    "ci_state",
+    "created_at",
+    "created_by",
+    "redaction_state"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "block30-pr-review-packet-v1" },
+    "packet_id": { "type": "string", "minLength": 1 },
+    "packet_digest": { "$ref": "pr-review-common.schema.json#/$defs/packetDigest" },
+    "repo_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,62}[a-z0-9]$"
+    },
+    "change_ref": {
+      "type": "string",
+      "pattern": "^(pr|mr|change)-[A-Za-z0-9._-]{1,64}$"
+    },
+    "base_commit": { "$ref": "pr-review-common.schema.json#/$defs/commitSha" },
+    "head_commit": { "$ref": "pr-review-common.schema.json#/$defs/commitSha" },
+    "diff_ref": { "$ref": "pr-review-common.schema.json#/$defs/safeRef" },
+    "metadata_ref": { "$ref": "pr-review-common.schema.json#/$defs/safeRef" },
+    "context_refs": {
+      "type": "array",
+      "items": { "$ref": "pr-review-common.schema.json#/$defs/safeRef" }
+    },
+    "verification_refs": {
+      "type": "array",
+      "items": { "$ref": "pr-review-common.schema.json#/$defs/safeRef" }
+    },
+    "ci_state": { "enum": ["pass", "fail", "pending", "not_assessed", "cannot_verify"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "created_by": { "type": "string", "minLength": 1 },
+    "redaction_state": { "enum": ["none", "redacted", "digest_only", "encrypted_ref", "external_ref", "withheld", "not_assessed"] },
+    "unavailable_fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "state", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "state": { "enum": ["not_assessed", "cannot_verify"] },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

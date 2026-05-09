@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdp-trace.local/schema/pr-review-result.schema.json",
+  "title": "PR Review Run Set",
+  "type": "object",
+  "required": ["schema_version", "packet_digest", "results"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "block30-pr-review-runs-v1" },
+    "packet_digest": { "$ref": "pr-review-common.schema.json#/$defs/packetDigest" },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "review_run_id",
+          "packet_digest",
+          "plane",
+          "role_id",
+          "runner",
+          "requested_model",
+          "observed_model",
+          "model_family",
+          "model_version",
+          "status",
+          "findings"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "review_run_id": { "type": "string", "minLength": 1 },
+          "packet_digest": { "$ref": "pr-review-common.schema.json#/$defs/packetDigest" },
+          "plane": { "type": "string", "minLength": 1 },
+          "role_id": { "type": "string", "minLength": 1 },
+          "runner": { "enum": ["pi", "opencode", "manual_external"] },
+          "requested_model": { "type": "string", "minLength": 1 },
+          "observed_model": { "type": "string", "minLength": 1 },
+          "model_family": { "type": "string", "minLength": 1 },
+          "model_version": { "type": "string", "minLength": 1 },
+          "fallback_for_model": { "type": "string" },
+          "fallback_reason": { "type": "string" },
+          "status": { "enum": ["findings_reported", "no_findings", "not_assessed", "failed", "timed_out", "empty_output", "off_task", "parse_failed", "cannot_verify"] },
+          "command_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "findings": {
+            "type": "array",
+            "items": { "$ref": "pr-review-common.schema.json#/$defs/finding" }
+          },
+          "raw_output_ref": { "$ref": "pr-review-common.schema.json#/$defs/safeRef" },
+          "prompt_ref": { "$ref": "pr-review-common.schema.json#/$defs/safeRef" },
+          "context_refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "started_at": { "type": "string", "format": "date-time" },
+          "ended_at": { "type": "string", "format": "date-time" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}
