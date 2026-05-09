@@ -395,6 +395,107 @@ without asking the customer to hand-author events. It still cannot honestly
 claim GSD phase, tool, mutation, or test coverage unless the real delivery
 workflow emits corresponding native `tool_use`/mutation/test/phase facts.
 
+#### Recheck on 2026-05-10 after PR #33 / session command facts merge
+
+Status remains `open`.
+
+Verified:
+
+- `sdp-trace` `main` includes `4fa61ad Merge pull request #33 from
+  fall-out-bug/codex/block-31-session-facts`.
+- `go test ./...` passes.
+- Live `observe session` can execute OpenCode with
+  `minimax-coding-plan/MiniMax-M2.5`, collect native JSONL, normalize it, and
+  keep the demo repository clean.
+
+Closure failed because the live replay did not emit the claimed model event:
+
+```text
+SESSION
+"command_digest_state": "pass"
+"process_id_state": "pass"
+"collection_state": "pass"
+"event_count": 3
+
+NORMALIZED EVENTS
+harness
+interaction
+harness
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass, event_count=2
+interaction: pass, event_count=1
+model: not_assessed, event_count=0
+phase/tool/mutation/test: not_assessed
+```
+
+This contradicts the expected recheck result recorded above for PR #33, where
+`command_model` and a digest-only `model` event were expected from the command
+argv. Either the live path is not using the new command-model fact during
+normalization, or the example session profile does not activate that path. In
+both cases the demo must remain stopped: the product still fails to preserve the
+selected model route as verifier-backed harness evidence in this customer-case
+run.
+
+#### Implementation response on 2026-05-10
+
+| id | severity | plane | finding | disposition | response |
+| --- | --- | --- | --- | --- | --- |
+| B31-RETURN-07 | critical | requirements | PR #33 extracted the model only from tokenized argv. The live demo command uses `sh -c`, so `--model minimax-coding-plan/MiniMax-M2.5` lived inside the shell command string and no verifier-backed `model` event was emitted. | accepted_fixed | Session observation now falls back to a shell-aware field scan for strict `sh -c` / `bash -c` wrappers after tokenized argv extraction fails. It still stores only a sanitized model id and command digest; raw command text remains unretained. |
+| B31-RETURN-08 | major | tracing/evidence | Review found that a shell-extracted model id could retain whitespace or a line-continuation artifact, weakening the retained model evidence contract. | accepted_fixed | `safeCommandModel` now rejects spaces, tabs, CR, and LF in retained model ids; shell field splitting skips escaped newline continuations. Unit tests cover whitespace and newline rejection. |
+
+Live replay after the fix used the same customer-case command shape:
+
+```text
+sdp-trace observe session --profile session-profile.json --out run -- \
+  sh -c 'opencode run --format json --model minimax-coding-plan/MiniMax-M2.5 \
+  --dir /Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd \
+  "Respond with OK only." > opencode-gsd-run.jsonl'
+```
+
+Observed result:
+
+```text
+SESSION
+"command_model": "minimax-coding-plan/MiniMax-M2.5"
+"command_model_state": "pass"
+"collection_state": "pass"
+
+RUN
+"event_count": 4
+events/raw-000001-harness.json
+events/raw-000002-interaction.json
+events/raw-000003-harness.json
+events/session-command-model.json
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass, event_count=2
+interaction: pass, event_count=1
+model: pass, event_count=1
+phase/tool/mutation/test: not_assessed, event_count=0
+```
+
+This closes only the returned model-route finding. The five-feature demo P0
+remains open until phase, tool, mutation, and test signals are also emitted as
+verifier-backed evidence in the customer-case delivery loop.
+
+Review disposition:
+
+```text
+code/correctness: no remaining critical or major findings after accepted fixes;
+shell escape and sh -c positional-argv precedence risks accepted and fixed
+requirements-vs-implementation: no critical or major findings; minor bash/doc
+coverage notes accepted and fixed
+tracing/evidence: one major finding accepted and fixed; minor zsh/login-shell
+generalization deferred because the customer-case command is strict sh -c and
+the current product contract intentionally avoids broad shell inference
+focused evidence re-review: pass; no critical or major findings after sanitizer
+hardening; reviewer note about --model=value was a false positive against the
+full function because extractCommandModelArgs still handles --model= and -m=
+```
+
 ## P1
 
 No P1 findings recorded yet.

@@ -90,9 +90,18 @@ func TestExtractCommandModel(t *testing.T) {
 		{name: "long flag", command: []string{"opencode", "run", "--model", "minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
 		{name: "long equals flag", command: []string{"opencode", "run", "--model=minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
 		{name: "short flag", command: []string{"opencode", "run", "-m", "minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "shell command flag", command: []string{"sh", "-c", `opencode run --format json --model minimax-coding-plan/MiniMax-M2.5 --dir demo "Respond with OK only." > opencode-gsd-run.jsonl`}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "shell command equals flag", command: []string{"sh", "-c", "opencode run --format json --model=minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "bash shell command flag", command: []string{"bash", "-c", "opencode run --model minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "shell command preferred over positional argv", command: []string{"sh", "-c", "opencode run --model minimax-coding-plan/MiniMax-M2.5", "--model", "wrong-model"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "shell quoted prompt flag ignored", command: []string{"sh", "-c", `opencode run 'please ignore --model fake' --model minimax-coding-plan/MiniMax-M2.5`}, want: "minimax-coding-plan/MiniMax-M2.5"},
 		{name: "missing value", command: []string{"opencode", "run", "--model"}, want: ""},
 		{name: "unsafe url", command: []string{"opencode", "run", "--model", "https://example.com/model"}, want: ""},
 		{name: "unsafe shell", command: []string{"opencode", "run", "--model", "model$(touch x)"}, want: ""},
+		{name: "unsafe shell command model", command: []string{"sh", "-c", "opencode run --model https://example.com/model"}, want: ""},
+		{name: "unsafe shell escape", command: []string{"sh", "-c", `opencode run --model "model\name"`}, want: ""},
+		{name: "unsafe whitespace", command: []string{"opencode", "run", "--model", "model name"}, want: ""},
+		{name: "unsafe newline", command: []string{"sh", "-c", "opencode run --model 'model\nname'"}, want: ""},
 		{name: "unsafe path", command: []string{"opencode", "run", "--model", "../model"}, want: ""},
 	}
 	for _, tt := range tests {
