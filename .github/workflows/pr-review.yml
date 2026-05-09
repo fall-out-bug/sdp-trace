@@ -1,0 +1,236 @@
+name: PR Review Evidence
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+jobs:
+  pr-review-evidence-only:
+    name: pr-review-evidence-only
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build trusted sdp-trace
+        run: go build -o .review-bin/sdp-trace ./cmd/sdp-trace
+
+      - name: Prepare PR diff as data
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p review/input review/runs
+          git fetch origin "pull/${PR_NUMBER}/head:pr-head"
+          git diff --binary "${BASE_SHA}" pr-head > review/input/change.diff
+          printf 'PR #%s\nBase: %s\nHead: %s\n' "${PR_NUMBER}" "${BASE_SHA}" "${HEAD_SHA}" > review/input/metadata.txt
+          printf 'Ordinary CI state is assessed by the separate verify workflow.\n' > review/input/verification.txt
+
+      - name: Ensure review profile
+        run: |
+          set -euo pipefail
+          if [ -f examples/pr-review/trust-sensitive-ci-pi.profile.json ]; then
+            cp examples/pr-review/trust-sensitive-ci-pi.profile.json review/profile.json
+          else
+            cat > review/profile.json <<'JSON'
+          {
+            "schema_version": "block30-pr-review-profile-v1",
+            "profile_id": "trust-sensitive-ci-pi-bootstrap",
+            "required_planes": [
+              "code_correctness",
+              "trace_evidence_provenance",
+              "requirements_vs_implementation"
+            ],
+            "roles": [
+              {
+                "role_id": "code-correctness-minimax",
+                "plane": "code_correctness",
+                "runner": "pi",
+                "requested_model": "minimax/MiniMax-M2.7",
+                "timeout_seconds": 600,
+                "required_output_schema": "schema/pr-review-result.schema.json",
+                "raw_output_retention": "digest_only"
+              },
+              {
+                "role_id": "trace-evidence-glm",
+                "plane": "trace_evidence_provenance",
+                "runner": "pi",
+                "requested_model": "zai/glm-5.1",
+                "timeout_seconds": 600,
+                "required_output_schema": "schema/pr-review-result.schema.json",
+                "raw_output_retention": "digest_only"
+              },
+              {
+                "role_id": "requirements-kimi",
+                "plane": "requirements_vs_implementation",
+                "runner": "pi",
+                "requested_model": "kimi-coding/k2p6",
+                "timeout_seconds": 600,
+                "required_output_schema": "schema/pr-review-result.schema.json",
+                "raw_output_retention": "digest_only"
+              }
+            ]
+          }
+          JSON
+          fi
+
+      - name: Create PR review packet
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          .review-bin/sdp-trace pr-review packet \
+            --out review/packet \
+            --repo-id "${REPO_NAME}" \
+            --change-ref "pr-${PR_NUMBER}" \
+            --base "${BASE_SHA}" \
+            --head "${HEAD_SHA}" \
+            --diff review/input/change.diff \
+            --metadata review/input/metadata.txt \
+            --verification review/input/verification.txt \
+            --ci-state not_assessed \
+            --created-by github-actions
+
+      - name: Set up Node for pi runner
+        if: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install pinned pi runner
+        if: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
+        run: npm install -g @mariozechner/pi-coding-agent@0.74.0
+
+      - name: Run configured model reviewers
+        if: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          set -euo pipefail
+          .review-bin/sdp-trace pr-review run \
+            --packet review/packet \
+            --profile review/profile.json \
+            --out review/runs \
+            --work-dir . \
+            --allow-external-runner pi
+
+      - name: Record model review not assessed
+        if: ${{ secrets.ZAI_API_KEY == '' || secrets.KIMI_API_KEY == '' || secrets.MINIMAX_API_KEY == '' || hashFiles('.github/scripts/pr-review-pi.sh') == '' }}
+        run: |
+          set -euo pipefail
+          packet_digest="$(jq -r '.packet_digest' review/packet/packet.json)"
+          jq -n --arg digest "$packet_digest" '{
+            schema_version: "block30-pr-review-runs-v1",
+            packet_digest: $digest,
+            results: [
+              {
+                review_run_id: "run-code-correctness-minimax",
+                packet_digest: $digest,
+                plane: "code_correctness",
+                role_id: "code-correctness-minimax",
+                runner: "pi",
+                requested_model: "minimax/MiniMax-M2.7",
+                observed_model: "not_assessed",
+                model_family: "not_assessed",
+                model_version: "not_assessed",
+                status: "not_assessed",
+                reason: "ci_model_review_not_configured",
+                findings: []
+              },
+              {
+                review_run_id: "run-trace-evidence-glm",
+                packet_digest: $digest,
+                plane: "trace_evidence_provenance",
+                role_id: "trace-evidence-glm",
+                runner: "pi",
+                requested_model: "zai/glm-5.1",
+                observed_model: "not_assessed",
+                model_family: "not_assessed",
+                model_version: "not_assessed",
+                status: "not_assessed",
+                reason: "ci_model_review_not_configured",
+                findings: []
+              },
+              {
+                review_run_id: "run-requirements-kimi",
+                packet_digest: $digest,
+                plane: "requirements_vs_implementation",
+                role_id: "requirements-kimi",
+                runner: "pi",
+                requested_model: "kimi-coding/k2p6",
+                observed_model: "not_assessed",
+                model_family: "not_assessed",
+                model_version: "not_assessed",
+                status: "not_assessed",
+                reason: "ci_model_review_not_configured",
+                findings: []
+              }
+            ]
+          }' > review/runs/results.json
+
+      - name: Validate and summarize review evidence
+        run: |
+          set -euo pipefail
+          .review-bin/sdp-trace pr-review synthesize \
+            --packet review/packet \
+            --runs review/runs \
+            --out review/ledger.json
+          .review-bin/sdp-trace pr-review validate \
+            --packet review/packet \
+            --profile review/profile.json \
+            --runs review/runs \
+            --ledger review/ledger.json \
+            --out review/validation.json
+          .review-bin/sdp-trace pr-review summarize \
+            --validation review/validation.json \
+            --ledger review/ledger.json \
+            --out review/summary.md
+
+      - name: Write evidence-only step summary
+        if: always()
+        run: |
+          {
+            echo '# PR review evidence only'
+            echo
+            echo 'This check records review evidence. It is not merge approval, release readiness, production trust, or risk acceptance.'
+            echo
+            if [ -f review/summary.md ]; then
+              cat review/summary.md
+            else
+              echo 'Review summary was not produced.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload safe review artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sdp-trace-pr-review
+          if-no-files-found: warn
+          path: |
+            review/packet/packet.json
+            review/runs/results.json
+            review/ledger.json
+            review/validation.json
+            review/summary.md
+            review/profile.json

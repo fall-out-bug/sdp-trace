@@ -71,3 +71,15 @@ If GitHub does not report checks for a PR, record CI as `not_assessed`; do not
 treat local verification as a substitute for remote CI evidence. Local
 verification may support implementation review, but CI-backed closure requires
 the workflow result or an explicit repo-tracked replacement policy.
+
+## PR Review Evidence
+
+`pr-review-evidence-only` records automated model-review evidence for a frozen
+PR packet. It is deliberately named as evidence-only because a green model-review
+check is not human approval, merge approval, release readiness, production
+trust, or risk acceptance.
+
+Do not configure `pr-review-evidence-only` as a substitute for required human
+review or release approval. If model-review coverage is missing because provider
+secrets are unavailable, the job must record `not_assessed` rather than claim
+review coverage is satisfied.

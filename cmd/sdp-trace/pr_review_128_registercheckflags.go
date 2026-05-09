@@ -9,6 +9,7 @@ func registerPRReviewCheckFlags(opts *flagSet) {
 	opts.setString("profile", "")
 	opts.setString("allow-external-runner", "")
 	opts.setString("work-dir", ".")
+	opts.setString("not-assessed-reason", "")
 	// Preview changes publication only; it does not add evidence inputs.
 	opts.setBool("preview", false)
 }

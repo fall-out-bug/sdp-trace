@@ -57,3 +57,30 @@ and are not committed.
   accepted fixes above.
 - Focused re-review: `zai/glm-5.1` returned `APPROVE`; no remaining critical
   or major blockers were reported for the five accepted blocker classes.
+
+## Implementation Review Findings
+
+Raw review outputs are local scratch under `.codex-review/block32-implementation/`
+and are not committed.
+
+| ID | Severity | Plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| I32-CODE-01 | critical | code/correctness | Reviewer claimed `--not-assessed-reason` bypassed runner allowance checks. | rejected_false_positive | `--not-assessed-reason` is a no-execution path for recording missing CI model-review evidence. It never invokes the runner, so `runner_not_allowed` is not the relevant execution gate. `TestRunReviewNotAssessedReasonDoesNotInvokeRunner` proves no command runs. |
+| I32-CODE-02 | critical | code/correctness | Prompt template read failures were silently swallowed by `renderPrompt`, risking empty prompts. | accepted_fixed | `renderPrompt` now returns an error and `runRole` records `cannot_verify` with `prompt_ref_cannot_verify`; `TestRunReviewCannotVerifyUnreadablePromptTemplate` covers the path. |
+| I32-CODE-03 | major | code/correctness / CI permissions | Workflow/spec used `actions: write` while describing it as artifact-upload-only. | accepted_fixed | Workflow and spec now use `actions: read`, preserving no write permission for PR/content surfaces. |
+| I32-TE-01 | minor | trace/evidence | Non-digest raw-output retention path still writes bytes while marking refs `digest_only`. | deferred_not_assessed | Pre-existing Block 30 behavior outside the CI digest-only path. Block 32 CI profile uses `raw_output_retention: digest_only`, and tests assert raw bytes are not persisted for that mode. |
+| I32-TE-02 | minor | trace/evidence | Prompt template refs are trusted profile paths without a broader path-containment policy. | deferred_not_assessed | Profiles remain trusted inputs in this block. CI uses trusted-base profile files, not PR-head profile code. |
+| I32-REQ-01 | minor | requirements-vs-implementation | Missing prompt-template failure path lacked direct test coverage. | accepted_fixed | Added `TestRunReviewCannotVerifyUnreadablePromptTemplate`. |
+| I32-REQ-02 | minor | requirements-vs-implementation | Simple `{{key}}` replacement is intentionally limited. | deferred_not_assessed | Accepted as sufficient for Block 32 deterministic prompt fields; richer template semantics are future work. |
+
+## Implementation Review State
+
+- Code/correctness: `minimax/MiniMax-M2.7` returned `REWORK`; valid findings
+  fixed or rejected with evidence.
+- Trace/evidence: `zai/glm-5.1` returned `APPROVE` with minor notes.
+- Requirements-vs-implementation: `kimi-coding/k2p6` attempt returned repeated
+  tool-read requests instead of reviewing the supplied packet and is
+  `not_assessed`; replacement
+  `openrouter/qwen/qwen3.6-plus` returned `APPROVE` with minor notes.
+- Critical findings remaining: 0
+- Major findings remaining: 0

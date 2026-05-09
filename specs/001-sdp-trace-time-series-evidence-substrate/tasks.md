@@ -809,20 +809,20 @@ secret-handling planes, and the reviewed direction is explicitly approved.
 - [x] T238 [US5] Run Socratic spec review for Block 32, fix every valid
   critical or major finding, and record focused re-review disposition before
   implementation approval.
-- [ ] T239 [US4] Add CI-specific PR-review profile and deterministic prompt
+- [x] T239 [US4] Add CI-specific PR-review profile and deterministic prompt
   templates for GLM, Kimi, and MiniMax `pi` reviewers with digest-only raw
   output retention.
-- [ ] T240 [US5] Add explicit no-secret CI reviewer-result path that records
+- [x] T240 [US5] Add explicit no-secret CI reviewer-result path that records
   all required planes as `not_assessed` with reason
   `ci_model_review_not_configured` without invoking external runners.
-- [ ] T241 [US5] Add `pr-review-evidence-only` GitHub Actions workflow that
+- [x] T241 [US5] Add `pr-review-evidence-only` GitHub Actions workflow that
   builds trusted-base `sdp-trace`, treats PR-head code only as diff/context
   data in the secret-bearing job, uploads safe artifacts, and writes an
   evidence-only Step Summary.
-- [ ] T242 [US5] Add safety tests and workflow checks proving provider keys,
+- [x] T242 [US5] Add safety tests and workflow checks proving provider keys,
   raw prompts, raw model responses, raw `pi` stderr, private paths,
   authenticated URLs, and token-shaped markers are not persisted or rendered.
-- [ ] T243 [US4] Update CI policy and command docs so maintainers cannot
+- [x] T243 [US4] Update CI policy and command docs so maintainers cannot
   mistake `pr-review-evidence-only` for human approval, release readiness, risk
   acceptance, or production trust.
 - [ ] T244 [US5] Run local verification, implementation multi-plane review,

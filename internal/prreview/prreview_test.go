@@ -2,7 +2,9 @@ package prreview
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -501,7 +503,7 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 			{RoleID: "malformed", Plane: PlaneTraceEvidence, Runner: RunnerManualExternal, RequestedModel: "fake-malformed", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "malformed"}},
 			{RoleID: "offtask", Plane: PlaneRequirements, Runner: RunnerManualExternal, RequestedModel: "fake-offtask", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "offtask"}},
 			{RoleID: "readonly", Plane: PlanePrivacySafety, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: false, Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "success"}},
-			{RoleID: "pi-success", Plane: PlaneSecurity, Runner: RunnerPI, RequestedModel: "fake-pi", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "pi-success"}},
+			{RoleID: "pi-success", Plane: PlaneSecurity, Runner: RunnerPI, RequestedModel: "fake-pi", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "pi-success"}, PromptTemplateRef: promptPath, RawOutputRetention: RedactionDigestOnly},
 			{RoleID: "opencode-mutation", Plane: PlaneDXReplayability, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: true, WorkingTreeMode: "clean_required", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "opencode-mutation"}},
 		},
 	}
@@ -543,6 +545,12 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	}
 	if statuses["empty"].RawOutputRef == nil || statuses["malformed"].RawOutputRef == nil || statuses["offtask"].RawOutputRef == nil {
 		t.Fatalf("raw output digest refs missing: %+v", statuses)
+	}
+	if statuses["pi-success"].RawOutputRef == nil || !strings.HasPrefix(statuses["pi-success"].RawOutputRef.Ref, "digest-only:") {
+		t.Fatalf("pi digest-only raw output ref missing: %+v", statuses["pi-success"])
+	}
+	if _, err := os.Stat(filepath.Join(root, "runs", "raw", "run-pi-success.out")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("digest-only raw output should not persist raw bytes, err=%v", err)
 	}
 	if statuses["readonly"].Reason != "opencode_read_only_not_enforced" {
 		t.Fatalf("opencode read-only reason missing: %+v", statuses["readonly"])
@@ -711,6 +719,59 @@ func TestApplyRunnerErrorClassifiesUnavailableAndFailure(t *testing.T) {
 	}
 }
 
+func TestRunReviewNotAssessedReasonDoesNotInvokeRunner(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("7")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "missing-secrets",
+		RequiredPlanes: []string{PlaneCodeCorrectness, PlaneTraceEvidence},
+		Roles: []ReviewRole{
+			{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerPI, RequestedModel: "minimax/MiniMax-M2.7", Command: []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"}},
+			{RoleID: "trace", Plane: PlaneTraceEvidence, Runner: RunnerPI, RequestedModel: "zai/glm-5.1", Command: []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"}},
+		},
+	}
+	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs"), NotAssessedReason: "ci_model_review_not_configured"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs.Results) != 2 {
+		t.Fatalf("unexpected result count: %+v", runs.Results)
+	}
+	for _, result := range runs.Results {
+		if result.Status != StatusNotAssessed || result.Reason != "ci_model_review_not_configured" {
+			t.Fatalf("missing-secret result should be not_assessed: %+v", result)
+		}
+	}
+}
+
+func TestRunReviewCannotVerifyUnreadablePromptTemplate(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("8")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "missing-prompt",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{{
+			RoleID:            "code",
+			Plane:             PlaneCodeCorrectness,
+			Runner:            RunnerManualExternal,
+			RequestedModel:    "fake",
+			Command:           []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"},
+			PromptTemplateRef: filepath.Join(root, "missing.md"),
+		}},
+	}
+	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs.Results) != 1 || runs.Results[0].Status != StatusCannotVerify || runs.Results[0].Reason != "prompt_ref_cannot_verify" {
+		t.Fatalf("missing prompt should be cannot_verify without runner execution: %+v", runs.Results)
+	}
+}
+
 func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	root := t.TempDir()
 	packetDigest := "sha256:" + sixtyFour("9")
@@ -780,8 +841,14 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"privacy_output_safety","role_id":"readonly","runner":"opencode","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"fake","status":"no_findings","findings":[]}`)
 		os.Exit(0)
 	case "pi-success":
+		stdin, err := io.ReadAll(os.Stdin)
+		if err != nil || !strings.Contains(string(stdin), "sha256:"+sixtyFour("4")) {
+			os.Exit(3)
+		}
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"security_forgery_overclaim","role_id":"pi-success","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
 		os.Exit(0)
+	case "should-not-run":
+		os.Exit(4)
 	case "opencode-mutation":
 		if err := os.WriteFile("mutated-by-helper.txt", []byte("mutation\n"), 0o644); err != nil {
 			os.Exit(2)

@@ -5,11 +5,12 @@ import (
 )
 
 type RunOptions struct {
-	OutDir         string
-	AllowedRunners map[string]bool
-	Preview        bool
-	Now            time.Time
-	WorkDir        string
+	OutDir            string
+	AllowedRunners    map[string]bool
+	Preview           bool
+	Now               time.Time
+	WorkDir           string
+	NotAssessedReason string
 }
 
 // RunPreview is a dry-run artifact: it exposes intended commands and prompts

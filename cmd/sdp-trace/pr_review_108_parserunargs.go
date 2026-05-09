@@ -16,6 +16,7 @@ func parsePRReviewRunArgs(args []string, stderr io.Writer) (*flagSet, int, bool)
 	opts.setString("out", "")
 	opts.setString("allow-external-runner", "")
 	opts.setString("work-dir", ".")
+	opts.setString("not-assessed-reason", "")
 	// Preview is the only boolean because it changes publication, not inputs.
 	opts.setBool("preview", false)
 	if err := opts.parse(args); err != nil {
