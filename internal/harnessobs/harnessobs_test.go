@@ -81,6 +81,29 @@ func TestObserveRejectsUnsafeRawPromptAndDoesNotWriteRun(t *testing.T) {
 	}
 }
 
+func TestExtractCommandModel(t *testing.T) {
+	tests := []struct {
+		name    string
+		command []string
+		want    string
+	}{
+		{name: "long flag", command: []string{"opencode", "run", "--model", "minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "long equals flag", command: []string{"opencode", "run", "--model=minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "short flag", command: []string{"opencode", "run", "-m", "minimax-coding-plan/MiniMax-M2.5"}, want: "minimax-coding-plan/MiniMax-M2.5"},
+		{name: "missing value", command: []string{"opencode", "run", "--model"}, want: ""},
+		{name: "unsafe url", command: []string{"opencode", "run", "--model", "https://example.com/model"}, want: ""},
+		{name: "unsafe shell", command: []string{"opencode", "run", "--model", "model$(touch x)"}, want: ""},
+		{name: "unsafe path", command: []string{"opencode", "run", "--model", "../model"}, want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := extractCommandModel(tt.command); got != tt.want {
+				t.Fatalf("extractCommandModel() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestObserveRejectsDigestMismatch(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
