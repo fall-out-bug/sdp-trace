@@ -141,4 +141,4 @@ not committed.
 - Local verification after PR-level fixes: `go test ./internal/prreview
   ./cmd/sdp-trace`, `go test ./...`, `jq empty schema/*.json
   examples/pr-review/trust-sensitive-default.profile.json`, `git diff --check`
-- GitHub CI: pending/not yet re-assessed after this follow-up commit.
+- GitHub CI: `verify` passed for PR #28 after the follow-up commit.
