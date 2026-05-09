@@ -28,9 +28,15 @@ OpenCode/GSD export dimensions remain `not_assessed` or `cannot_verify`.
 
 `opencode-gsd-session-profile.example.json` documents the first-run customer
 path shape. Setup is bounded to declared actions before delivery starts. The
-normal harness workflow then writes or exposes the declared event source, and
-`sdp-trace observe collect` normalizes that source into the same observed-run
-contract used by `harness validate` and `harness summarize`.
+normal harness workflow then writes or exposes the declared raw OpenCode JSONL
+source, and `sdp-trace observe collect` normalizes supported raw events into the
+same `harness-event-v1` observed-run contract used by `harness validate` and
+`harness summarize`.
+
+Raw normalization is a digest-only bridge. It maps observable OpenCode session,
+model, interaction, phase, tool, mutation, and test signals when those signals
+are present in the raw JSONL. Missing signals remain `not_assessed` under the
+harness profile instead of being fabricated.
 
 The example keeps stream capture disabled. Raw stdout/stderr bodies, prompts,
 model responses, provider tokens, authenticated URLs, and private paths are not

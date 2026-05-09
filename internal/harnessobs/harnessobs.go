@@ -39,6 +39,7 @@ const (
 
 	SessionProfileSchemaVersion = "harness-session-profile-v1"
 	SessionRunSchemaVersion     = "harness-session-run-v1"
+	OpenCodeJSONLRawFormat      = "opencode-jsonl-v1"
 )
 
 var (
@@ -55,6 +56,14 @@ var (
 		"model_response":     true,
 		"raw_command":        true,
 		"command_body":       true,
+	}
+	sensitiveFieldNames = map[string]bool{
+		"access_token":  true,
+		"api_key":       true,
+		"apikey":        true,
+		"authorization": true,
+		"auth":          true,
+		"token":         true,
 	}
 	authQueryKeys = map[string]bool{
 		"token": true, "access_token": true, "api_key": true, "apikey": true,
@@ -151,6 +160,8 @@ type SessionProfile struct {
 	ProfileID          string               `json:"profile_id"`
 	HarnessProfilePath string               `json:"harness_profile_path"`
 	EventSourcePath    string               `json:"event_source_path"`
+	RawEventSourcePath string               `json:"raw_event_source_path,omitempty"`
+	RawEventFormat     string               `json:"raw_event_format,omitempty"`
 	SetupActions       []SessionSetupAction `json:"setup_actions,omitempty"`
 	StreamCapture      string               `json:"stream_capture"`
 }
@@ -166,6 +177,8 @@ type SessionRun struct {
 	ProfileID          string   `json:"profile_id"`
 	HarnessProfilePath string   `json:"harness_profile_path"`
 	EventSourcePath    string   `json:"event_source_path"`
+	RawEventSourcePath string   `json:"raw_event_source_path,omitempty"`
+	RawEventFormat     string   `json:"raw_event_format,omitempty"`
 	SetupActionIDs     []string `json:"setup_action_ids,omitempty"`
 	CommandDigest      string   `json:"command_digest,omitempty"`
 	CommandDigestState string   `json:"command_digest_state,omitempty"`
@@ -177,6 +190,7 @@ type SessionRun struct {
 	SourceCommitState  string   `json:"source_commit_state,omitempty"`
 	ObservedRunDir     string   `json:"observed_run_dir,omitempty"`
 	OutputDigest       string   `json:"output_digest,omitempty"`
+	NormalizedDigest   string   `json:"normalized_digest,omitempty"`
 	CollectionState    string   `json:"collection_state,omitempty"`
 	CollectionReason   string   `json:"collection_reason,omitempty"`
 	CreatedAt          string   `json:"created_at"`
@@ -342,21 +356,38 @@ func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
 	}
 	sourcePath, err := safeProfileRelativeFile(profilePath, profile.EventSourcePath)
 	if err != nil {
-		session.CollectionState = StateCannotVerify
-		session.CollectionReason = "source_unavailable"
-		session.EndTime = opts.Now.Format(time.RFC3339)
-		if writeErr := writeJSON(filepath.Join(runDir, "session.json"), session); writeErr != nil {
-			return SessionRun{}, Run{}, writeErr
+		if profile.RawEventFormat != "" {
+			rawPath, rawErr := safeProfileRelativeFile(profilePath, profile.RawEventSourcePath)
+			if rawErr != nil {
+				return SessionRun{}, Run{}, fmt.Errorf("raw_event_source_path invalid: %w", rawErr)
+			}
+			normalizedPath, outErr := safeProfileRelativeOutFile(profilePath, profile.EventSourcePath)
+			if outErr != nil {
+				return SessionRun{}, Run{}, outErr
+			}
+			if normalizeErr := normalizeRawEvents(profile.RawEventFormat, rawPath, normalizedPath, opts.Now); normalizeErr != nil {
+				return SessionRun{}, Run{}, normalizeErr
+			}
+			session.NormalizedDigest = digestFile(normalizedPath)
 		}
-		return session, Run{
-			SchemaVersion:      RunSchemaVersion,
-			ProfileID:          harnessProfile.ProfileID,
-			HarnessFamily:      harnessProfile.HarnessFamily,
-			EventSchemaVersion: harnessProfile.EventSchemaVersion,
-			SourcePath:         filepath.Base(profile.EventSourcePath),
-			EventCount:         0,
-			CreatedAt:          opts.Now.Format(time.RFC3339),
-		}, nil
+		sourcePath, err = safeProfileRelativeFile(profilePath, profile.EventSourcePath)
+		if err != nil {
+			session.CollectionState = StateCannotVerify
+			session.CollectionReason = "source_unavailable"
+			session.EndTime = opts.Now.Format(time.RFC3339)
+			if writeErr := writeJSON(filepath.Join(runDir, "session.json"), session); writeErr != nil {
+				return SessionRun{}, Run{}, writeErr
+			}
+			return session, Run{
+				SchemaVersion:      RunSchemaVersion,
+				ProfileID:          harnessProfile.ProfileID,
+				HarnessFamily:      harnessProfile.HarnessFamily,
+				EventSchemaVersion: harnessProfile.EventSchemaVersion,
+				SourcePath:         filepath.Base(profile.EventSourcePath),
+				EventCount:         0,
+				CreatedAt:          opts.Now.Format(time.RFC3339),
+			}, nil
+		}
 	}
 	observedDir := filepath.Join(runDir, "observed")
 	if err := os.MkdirAll(observedDir, 0o755); err != nil {
@@ -533,6 +564,15 @@ func LoadSessionProfile(path string) (SessionProfile, error) {
 	if strings.TrimSpace(profile.EventSourcePath) == "" {
 		return SessionProfile{}, errors.New("session profile requires event_source_path")
 	}
+	if profile.RawEventFormat != "" && profile.RawEventFormat != OpenCodeJSONLRawFormat {
+		return SessionProfile{}, errors.New("unsupported raw_event_format")
+	}
+	if profile.RawEventFormat != "" && strings.TrimSpace(profile.RawEventSourcePath) == "" {
+		return SessionProfile{}, errors.New("raw_event_source_path required for raw_event_format")
+	}
+	if profile.RawEventFormat == "" && strings.TrimSpace(profile.RawEventSourcePath) != "" {
+		return SessionProfile{}, errors.New("raw_event_format required for raw_event_source_path")
+	}
 	if profile.StreamCapture == "" {
 		profile.StreamCapture = "disabled"
 	}
@@ -594,6 +634,8 @@ func newSessionRun(profile SessionProfile, now time.Time) SessionRun {
 		ProfileID:          profile.ProfileID,
 		HarnessProfilePath: profile.HarnessProfilePath,
 		EventSourcePath:    profile.EventSourcePath,
+		RawEventSourcePath: profile.RawEventSourcePath,
+		RawEventFormat:     profile.RawEventFormat,
 		SetupActionIDs:     actionIDs,
 		CommandDigestState: StateCannotVerify,
 		ProcessIDState:     StateCannotVerify,
@@ -622,6 +664,311 @@ func safeProfileRelativeFile(profilePath, relPath string) (string, error) {
 		return safeExistingFile(relPath)
 	}
 	return safeExistingFile(filepath.Join(baseDir, relPath))
+}
+
+func safeProfileRelativeOutFile(profilePath, relPath string) (string, error) {
+	if filepath.IsAbs(relPath) || strings.Contains(relPath, "://") || strings.Contains(relPath, "..") {
+		return "", errors.New("profile relative output path must be local without traversal")
+	}
+	baseDir := filepath.Dir(profilePath)
+	if baseDir == "." {
+		return safeOutFile(relPath)
+	}
+	return safeOutFile(filepath.Join(baseDir, relPath))
+}
+
+func normalizeRawEvents(format, rawPath, outPath string, now time.Time) error {
+	if format != OpenCodeJSONLRawFormat {
+		return errors.New("unsupported raw_event_format")
+	}
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	if filepath.Clean(rawPath) == filepath.Clean(outPath) {
+		return errors.New("raw_event_source_path and event_source_path must be different files")
+	}
+	file, err := os.Open(rawPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), DefaultMaxLineBytes)
+	lineNo := 0
+	events := []Event{}
+	for scanner.Scan() {
+		lineNo++
+		line := scanner.Bytes()
+		if len(strings.TrimSpace(string(line))) == 0 {
+			continue
+		}
+		var raw map[string]any
+		if err := json.Unmarshal(line, &raw); err != nil {
+			return fmt.Errorf("raw source line %d: malformed_jsonl", lineNo)
+		}
+		if unsafeField, reason := findUnsafe(raw); unsafeField != "" {
+			return fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
+		}
+		for _, event := range normalizeOpenCodeRawLine(raw, lineNo, now) {
+			data, err := json.Marshal(event)
+			if err != nil {
+				return err
+			}
+			event.SourceDigest = digestLine(data)
+			events = append(events, event)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+		return err
+	}
+	out, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	for _, event := range events {
+		data, err := json.Marshal(event)
+		if err != nil {
+			return err
+		}
+		if _, err := out.Write(append(data, '\n')); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []Event {
+	signals := rawSignals(raw)
+	families := map[string]bool{}
+	if hasSignal(signals, "session.started", "session.completed", "run.started", "run.completed") || hasSignalPrefix(signals, "session.", "run.") {
+		families["harness"] = true
+	}
+	if hasKey(raw, "model", "model_id", "modelid", "provider") {
+		families["model"] = true
+	}
+	if hasKey(raw, "role") || hasSignal(signals, "message", "response") || hasSignalPrefix(signals, "message.", "response.") {
+		families["interaction"] = true
+	}
+	if hasKey(raw, "tool", "tool_call", "toolcall") || hasSignal(signals, "tool.call", "tool.result") || hasSignalPrefix(signals, "tool.") {
+		families["tool"] = true
+	}
+	if hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") || hasSignalPrefix(signals, "mutation.") {
+		families["mutation"] = true
+	}
+	if hasSignal(signals, "test.finished", "test.started", "test.passed", "test.failed") || hasSignalPrefix(signals, "test.") {
+		families["test"] = true
+	}
+	if hasKey(raw, "phase") || hasSignal(signals, "phase") || hasSignalPrefix(signals, "phase.", "gsd.", "gsd_") {
+		families["phase"] = true
+	}
+	if hasSignal(signals, "review") || hasSignalPrefix(signals, "review.") {
+		families["review"] = true
+	}
+	if hasSignal(signals, "pull_request", "pull request") || hasSignalPrefix(signals, "pr.", "pr_") {
+		families["pr"] = true
+	}
+	if hasSignal(signals, "merge") || hasSignalPrefix(signals, "merge.") {
+		families["merge"] = true
+	}
+	if len(families) == 0 {
+		return nil
+	}
+	ordered := make([]string, 0, len(families))
+	for family := range families {
+		ordered = append(ordered, family)
+	}
+	sort.Strings(ordered)
+	observedAt := findTimestamp(raw)
+	if observedAt == "" {
+		observedAt = now.Format(time.RFC3339)
+	}
+	actor := "opencode"
+	if model := findStringByKey(raw, "model", "model_id", "modelid"); model != "" {
+		actor = safeToken(model)
+	} else if provider := findStringByKey(raw, "provider"); provider != "" {
+		actor = safeToken(provider)
+	}
+	sourceRef := fmt.Sprintf("raw-%06d", lineNo)
+	events := make([]Event, 0, len(ordered))
+	for _, family := range ordered {
+		events = append(events, normalizedEvent(
+			fmt.Sprintf("%s-%s", sourceRef, family),
+			family,
+			family+"_observed",
+			observedAt,
+			sourceRef,
+			actor,
+		))
+	}
+	return events
+}
+
+func normalizedEvent(id, family, eventType, observedAt, sourceRef, actor string) Event {
+	return Event{
+		EventID:            id,
+		EventSchemaVersion: EventSchemaVersion,
+		EventFamily:        family,
+		EventType:          eventType,
+		ObservedAt:         observedAt,
+		SourceRef:          sourceRef,
+		SourceDigest:       "",
+		ActorRef:           actor,
+		ContentState:       ContentDigestOnly,
+	}
+}
+
+func rawSignals(value any) []string {
+	return rawSignalsAt("", value)
+}
+
+func rawSignalsAt(parentKey string, value any) []string {
+	switch v := value.(type) {
+	case map[string]any:
+		parts := make([]string, 0, len(v)*2)
+		for key, child := range v {
+			parts = append(parts, strings.ToLower(key))
+			parts = append(parts, rawSignalsAt(key, child)...)
+		}
+		return parts
+	case []any:
+		parts := make([]string, 0, len(v))
+		for _, child := range v {
+			parts = append(parts, rawSignalsAt(parentKey, child)...)
+		}
+		return parts
+	case string:
+		if rawSignalValueKey(parentKey) {
+			return []string{strings.ToLower(v)}
+		}
+		return nil
+	default:
+		return []string{strings.ToLower(fmt.Sprint(v))}
+	}
+}
+
+func rawSignalValueKey(key string) bool {
+	switch strings.ToLower(key) {
+	case "type", "kind", "event", "event_type", "name", "phase", "role", "provider", "model", "model_id", "status", "tool", "action", "operation":
+		return true
+	default:
+		return false
+	}
+}
+
+func hasSignal(signals []string, values ...string) bool {
+	wanted := map[string]bool{}
+	for _, value := range values {
+		wanted[strings.ToLower(value)] = true
+	}
+	for _, signal := range signals {
+		if wanted[signal] {
+			return true
+		}
+	}
+	return false
+}
+
+func hasSignalPrefix(signals []string, prefixes ...string) bool {
+	for _, signal := range signals {
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(signal, strings.ToLower(prefix)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func hasKey(value any, keys ...string) bool {
+	wanted := map[string]bool{}
+	for _, key := range keys {
+		wanted[strings.ToLower(key)] = true
+	}
+	return hasKeyIn(value, wanted)
+}
+
+func hasKeyIn(value any, wanted map[string]bool) bool {
+	switch v := value.(type) {
+	case map[string]any:
+		for key, child := range v {
+			if wanted[strings.ToLower(key)] || hasKeyIn(child, wanted) {
+				return true
+			}
+		}
+	case []any:
+		for _, child := range v {
+			if hasKeyIn(child, wanted) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func findStringByKey(value any, keys ...string) string {
+	wanted := map[string]bool{}
+	for _, key := range keys {
+		wanted[strings.ToLower(key)] = true
+	}
+	return findStringByKeyIn(value, wanted)
+}
+
+func findStringByKeyIn(value any, wanted map[string]bool) string {
+	switch v := value.(type) {
+	case map[string]any:
+		for key, child := range v {
+			if wanted[strings.ToLower(key)] {
+				if s, ok := child.(string); ok && strings.TrimSpace(s) != "" {
+					return s
+				}
+			}
+			if s := findStringByKeyIn(child, wanted); s != "" {
+				return s
+			}
+		}
+	case []any:
+		for _, child := range v {
+			if s := findStringByKeyIn(child, wanted); s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
+
+func findTimestamp(raw map[string]any) string {
+	for _, key := range []string{"time", "timestamp", "created_at", "observed_at"} {
+		if value := findStringByKey(raw, key); value != "" {
+			if parsed, err := time.Parse(time.RFC3339, value); err == nil {
+				return parsed.UTC().Format(time.RFC3339)
+			}
+		}
+	}
+	return ""
+}
+
+func safeToken(value string) string {
+	var b strings.Builder
+	for _, r := range value {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '_', r == '.', r == ':', r == '-':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+		if b.Len() >= 128 {
+			break
+		}
+	}
+	token := strings.Trim(b.String(), "-_.:")
+	if token == "" {
+		return "opencode"
+	}
+	return token
 }
 
 func LoadRun(dir string) (Run, []Event, error) {
@@ -1190,6 +1537,9 @@ func findUnsafeAt(path string, value any) (string, string) {
 			}
 			if rawFieldNames[strings.ToLower(key)] {
 				return childPath, "forbidden_raw_field"
+			}
+			if sensitiveFieldNames[strings.ToLower(key)] {
+				return childPath, "sensitive_field"
 			}
 			if field, reason := findUnsafeAt(childPath, child); field != "" {
 				return field, reason

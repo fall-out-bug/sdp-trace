@@ -15,6 +15,8 @@
     "profile_id": { "$ref": "#/$defs/safeId" },
     "harness_profile_path": { "$ref": "#/$defs/relativeFile" },
     "event_source_path": { "$ref": "#/$defs/relativeFile" },
+    "raw_event_source_path": { "$ref": "#/$defs/relativeFile" },
+    "raw_event_format": { "enum": ["opencode-jsonl-v1"] },
     "setup_actions": {
       "type": "array",
       "maxItems": 3,
@@ -23,6 +25,10 @@
     "stream_capture": {
       "enum": ["disabled", "digest_only", "retained_safe"]
     }
+  },
+  "dependentRequired": {
+    "raw_event_source_path": ["raw_event_format"],
+    "raw_event_format": ["raw_event_source_path"]
   },
   "$defs": {
     "safeId": {

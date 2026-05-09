@@ -2,7 +2,9 @@
   "schema_version": "harness-session-profile-v1",
   "profile_id": "opencode-gsd-session-v1",
   "harness_profile_path": "opencode-gsd-harness-profile.example.json",
-  "event_source_path": "opencode-gsd-events.jsonl",
+  "event_source_path": "opencode-gsd-events.normalized.jsonl",
+  "raw_event_source_path": "opencode-gsd-run.jsonl",
+  "raw_event_format": "opencode-jsonl-v1",
   "setup_actions": [
     {
       "id": "init-observation-dir",
