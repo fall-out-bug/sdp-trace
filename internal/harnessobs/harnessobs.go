@@ -1735,6 +1735,9 @@ func findUnsafeRawEventAt(path string, value any) (string, string) {
 				childPath = path + "." + key
 			}
 			keyLower := strings.ToLower(key)
+			if unretainedRawToolInputField(childPath, keyLower, child) {
+				continue
+			}
 			if rawFieldNames[keyLower] {
 				return childPath, "forbidden_raw_field"
 			}
@@ -1785,6 +1788,20 @@ func rawPathLikeField(path string) bool {
 	default:
 		return false
 	}
+}
+
+func unretainedRawToolInputField(path, key string, value any) bool {
+	if key != "prompt" {
+		return false
+	}
+	if _, ok := value.(string); !ok {
+		return false
+	}
+	segments := strings.Split(path, ".")
+	if len(segments) < 3 {
+		return false
+	}
+	return path == "part.state.input.prompt"
 }
 
 func unretainedRawBodyField(key string) bool {

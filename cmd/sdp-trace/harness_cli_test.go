@@ -227,7 +227,7 @@ func TestObserveSessionNormalizesRealOpenCodeGSDToolPaths(t *testing.T) {
 		`{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_read","state":{"status":"completed","input":{"path":"/private/tmp/sdp-trace-demo-observe-gsd-new-project-input.md"},"output":"digest only"}}}`,
 		`{"type":"tool_use","timestamp":1778326474358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"glob","callID":"call_glob","state":{"status":"completed","input":{"path":"/Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd","pattern":"*.md"},"output":".planning/ROADMAP.md"}}}`,
 		`{"type":"tool_use","timestamp":1778326475358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"bash","callID":"call_bash","state":{"status":"completed","input":{"command":"rtk ls -la"},"output":"digest only"}}}`,
-		`{"type":"task","timestamp":1778326476358,"sessionID":"ses_fixture","model":"minimax-coding-plan/MiniMax-M2.5","part":{"type":"task","state":{"status":"completed"}}}`,
+		`{"type":"tool_use","timestamp":1778326476358,"sessionID":"ses_fixture","model":"minimax-coding-plan/MiniMax-M2.5","part":{"type":"tool","tool":"task","callID":"call_task","state":{"status":"completed","input":{"prompt":"Plan phase 1 for the GSD project without retaining this body","subagent_type":"gsd-planner"},"output":"phase planning output"}}}`,
 		`{"type":"tool_use","timestamp":1778326477358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_plan","state":{"status":"completed","input":{"path":".planning/ROADMAP.md"},"output":"digest only"}}}`,
 	}, "\n") + "\n"
 	if err := os.WriteFile(filepath.Join(dir, "raw-source.jsonl"), []byte(raw), 0o644); err != nil {
@@ -244,16 +244,18 @@ func TestObserveSessionNormalizesRealOpenCodeGSDToolPaths(t *testing.T) {
 	if exit != 0 {
 		t.Fatalf("session should not reject path-like tool input exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
 	}
-	// Seven native raw lines plus the digest-only session command model fact.
-	if !strings.Contains(out.String(), `"collection_state": "pass"`) || !strings.Contains(out.String(), `"event_count": 8`) {
+	// Seven native raw lines plus the digest-only session command model fact;
+	// the task line emits both model and tool evidence.
+	if !strings.Contains(out.String(), `"collection_state": "pass"`) || !strings.Contains(out.String(), `"event_count": 9`) {
 		t.Fatalf("session output missing real GSD normalized events: %s", out.String())
 	}
 	data, err := os.ReadFile(filepath.Join(dir, "normalized-events.jsonl"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(data), "/private/tmp") || strings.Contains(string(data), "/Users/fall_out_bug") {
-		t.Fatalf("normalized output retained private raw path: %s", string(data))
+	if strings.Contains(string(data), "/private/tmp") || strings.Contains(string(data), "/Users/fall_out_bug") ||
+		strings.Contains(string(data), "Plan phase 1") || strings.Contains(string(data), "gsd-planner") {
+		t.Fatalf("normalized output retained private raw body: %s", string(data))
 	}
 
 	out.Reset()
@@ -325,6 +327,60 @@ func TestObserveCollectRejectsAuthenticatedURLInRawOpenCodePathField(t *testing.
 	}
 	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
 		t.Fatalf("normalized source written after authenticated URL raw path")
+	}
+}
+
+func TestObserveCollectRejectsTopLevelRawPromptOpenCodeJSONL(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := `{"type":"tool_use","timestamp":1778326474358,"prompt":"raw prompt should remain forbidden","part":{"type":"tool","tool":"task","state":{"status":"completed"}}}`
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:prompt:forbidden_raw_field") {
+		t.Fatalf("collect should reject top-level prompt exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
+		t.Fatalf("normalized source written after top-level raw prompt")
+	}
+}
+
+func TestObserveCollectRejectsNestedSecretInRawOpenCodePromptObject(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := `{"type":"tool_use","timestamp":1778326474358,"part":{"type":"tool","tool":"task","state":{"status":"completed","input":{"prompt":{"api_key":"redacted"}}}}}`
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.prompt:forbidden_raw_field") {
+		t.Fatalf("collect should reject nested prompt secret exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
+		t.Fatalf("normalized source written after nested prompt secret")
 	}
 }
 
