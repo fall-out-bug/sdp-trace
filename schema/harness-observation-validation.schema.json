@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/harness-observation-validation.schema.json",
+  "title": "SDP Trace Harness Observation Validation",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile_id",
+    "harness_family",
+    "event_schema_version",
+    "validation_state",
+    "reason_code",
+    "dimensions",
+    "event_count",
+    "non_authority"
+  ],
+  "properties": {
+    "schema_version": { "const": "harness-observation-validation-v1" },
+    "profile_id": { "$ref": "#/$defs/safeId" },
+    "harness_family": { "$ref": "#/$defs/safeId" },
+    "event_schema_version": { "const": "harness-event-v1" },
+    "validation_state": { "$ref": "#/$defs/state" },
+    "reason_code": { "$ref": "#/$defs/safeId" },
+    "dimensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["family", "required", "state", "reason_code", "event_count"],
+        "properties": {
+          "family": {
+            "enum": ["harness", "model", "interaction", "phase", "review", "tool", "mutation", "test", "pr", "merge", "gap"]
+          },
+          "required": { "type": "boolean" },
+          "state": { "$ref": "#/$defs/state" },
+          "reason_code": { "$ref": "#/$defs/safeId" },
+          "event_count": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "event_count": { "type": "integer", "minimum": 0 },
+    "validation_digest": { "$ref": "#/$defs/sha256" },
+    "non_authority": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "state": {
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
+    }
+  },
+  "additionalProperties": false
+}

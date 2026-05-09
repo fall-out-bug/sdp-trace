@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/harness-observation-profile.schema.json",
+  "title": "SDP Trace Harness Observation Profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile_id",
+    "harness_family",
+    "event_schema_version",
+    "required_event_families",
+    "raw_retention_policy",
+    "degradation_rules"
+  ],
+  "properties": {
+    "schema_version": { "const": "harness-observation-profile-v1" },
+    "profile_id": { "$ref": "#/$defs/safeId" },
+    "harness_family": { "$ref": "#/$defs/safeId" },
+    "event_schema_version": { "const": "harness-event-v1" },
+    "required_event_families": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/eventFamily" },
+      "uniqueItems": true
+    },
+    "optional_event_families": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/eventFamily" },
+      "uniqueItems": true
+    },
+    "raw_retention_policy": {
+      "enum": ["digest_only", "redacted", "retained_safe", "not_applicable"]
+    },
+    "unsupported_fields": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/safeId" },
+      "uniqueItems": true
+    },
+    "degradation_rules": {
+      "type": "object",
+      "required": [
+        "missing_required_family",
+        "missing_optional_family",
+        "source_unavailable",
+        "unsafe_input",
+        "digest_mismatch",
+        "schema_version_mismatch",
+        "cross_link_conflict"
+      ],
+      "properties": {
+        "missing_required_family": { "$ref": "#/$defs/rule" },
+        "missing_optional_family": { "$ref": "#/$defs/rule" },
+        "source_unavailable": { "$ref": "#/$defs/rule" },
+        "unsafe_input": { "$ref": "#/$defs/rule" },
+        "digest_mismatch": { "$ref": "#/$defs/rule" },
+        "schema_version_mismatch": { "$ref": "#/$defs/rule" },
+        "cross_link_conflict": { "$ref": "#/$defs/rule" }
+      },
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "max_line_bytes": { "type": "integer", "minimum": 1 },
+        "max_events": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "eventFamily": {
+      "enum": ["harness", "model", "interaction", "phase", "review", "tool", "mutation", "test", "pr", "merge", "gap"]
+    },
+    "rule": {
+      "type": "object",
+      "required": ["state", "reason_code"],
+      "properties": {
+        "state": { "enum": ["pass", "fail", "cannot_verify", "not_assessed"] },
+        "reason_code": { "$ref": "#/$defs/safeId" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

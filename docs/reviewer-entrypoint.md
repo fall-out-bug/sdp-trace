@@ -41,6 +41,7 @@ upgrade the state in prose.
 The current top-level command set is:
 
 - `wrap`, `run`, `dry-run`, `preview`, `doctor`
+- `harness observe`, `harness validate`, `harness summarize`
 - `verify`, `explain`, `query`
 - `query-pack`, `query-pack explain`
 - `export cross-repo-posture`, `export cross-repo-posture explain`
@@ -64,6 +65,11 @@ Current witness kinds:
 
 Air-gapped evidence is represented through customer policy/private-equivalent
 guidance and fixtures, not as a separate `witness --kind` value.
+
+Harness observation commands import and validate explicit local harness event
+exports. They do not run OpenCode, GSD, MiniMax, GitHub, provider APIs, or any
+other harness. Treat missing harness event families as `not_assessed` or
+`cannot_verify`, not as feature delivery evidence.
 
 ## Dirty Checkout Behavior
 

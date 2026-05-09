@@ -38,6 +38,10 @@ These schemas define the portable `sdp-trace` contract.
 | `observed-action.schema.json` | Records observed review, mutation, harness, gateway, and custom events with source evidence refs. |
 | `evidence-binding.schema.json` | Records cross-source binding state for git, harness, gateway, artifact, and custom evidence links. |
 | `authority-evaluation.schema.json` | Records authority evaluation facts, attribution state, source coverage, and replay evidence refs. |
+| `harness-observation-profile.schema.json` | Declares required and optional external harness event families, retention policy, degradation rules, and profile limits. |
+| `harness-event.schema.json` | Records one imported harness lifecycle event with digest-bound source identity and content treatment state. |
+| `harness-observation-run.schema.json` | Records an observed harness export run produced by `harness observe`. |
+| `harness-observation-validation.schema.json` | Records `harness validate` state, per-family dimensions, and non-authority boundary. |
 
 ## Validation
 

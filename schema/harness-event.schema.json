@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/harness-event.schema.json",
+  "title": "SDP Trace Harness Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_schema_version",
+    "event_family",
+    "event_type",
+    "source_ref",
+    "source_digest",
+    "content_state"
+  ],
+  "properties": {
+    "event_id": { "$ref": "#/$defs/safeFileId" },
+    "event_schema_version": { "const": "harness-event-v1" },
+    "event_family": {
+      "enum": ["harness", "model", "interaction", "phase", "review", "tool", "mutation", "test", "pr", "merge", "gap"]
+    },
+    "event_type": { "$ref": "#/$defs/safeId" },
+    "observed_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "source_ref": { "$ref": "#/$defs/safeRef" },
+    "source_digest": { "$ref": "#/$defs/sha256" },
+    "task_ref": { "$ref": "#/$defs/safeRef" },
+    "operation_ref": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "actor_ref": { "$ref": "#/$defs/safeRef" },
+    "content_state": {
+      "enum": ["redacted", "digest_only", "retained_safe", "not_applicable"]
+    },
+    "unavailable_fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "state", "reason_code"],
+        "properties": {
+          "field": { "$ref": "#/$defs/safeId" },
+          "state": { "const": "not_assessed" },
+          "reason_code": { "$ref": "#/$defs/safeId" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "safeFileId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "safeRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

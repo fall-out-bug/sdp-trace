@@ -1,0 +1,36 @@
+{
+  "schema_version": "harness-observation-fixture-matrix-v1",
+  "authority_scope": "fixture_expectation_only",
+  "scenarios": [
+    {
+      "scenario": "generic-complete",
+      "profile_id": "generic-harness-v1",
+      "expected_validation_state": "pass",
+      "expected_reason_code": "all_required_dimensions_observed"
+    },
+    {
+      "scenario": "zero-event-source",
+      "profile_id": "generic-harness-v1",
+      "expected_validation_state": "not_assessed",
+      "expected_reason_code": "required_event_family_absent"
+    },
+    {
+      "scenario": "unsafe-raw-prompt",
+      "profile_id": "generic-harness-v1",
+      "expected_observe_state": "fail",
+      "expected_reason_code": "unsafe_input"
+    },
+    {
+      "scenario": "source-digest-mismatch",
+      "profile_id": "generic-harness-v1",
+      "expected_observe_state": "cannot_verify",
+      "expected_reason_code": "source_digest_mismatch"
+    },
+    {
+      "scenario": "opencode-gsd-exemplar-missing-tool-events",
+      "profile_id": "opencode-gsd-jsonl-v1",
+      "expected_validation_state": "not_assessed",
+      "expected_reason_code": "required_event_family_absent"
+    }
+  ]
+}
