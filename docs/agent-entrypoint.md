@@ -82,6 +82,9 @@ Current command surface:
 - `go run ./cmd/sdp-trace interaction relay --task-id <safe-id> --event-type <type> --out <file> -- <forward-command...>`
 - `go run ./cmd/sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id <safe-id> --events-jsonl <file> --out <file>`
 - `go run ./cmd/sdp-trace interaction summarize --trace <file> [--out <file>]`
+- `go run ./cmd/sdp-trace harness observe --profile <harness-profile.json> --source <harness-events.jsonl> --out <run-dir>`
+- `go run ./cmd/sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <validation.json>`
+- `go run ./cmd/sdp-trace harness summarize --validation <validation.json>`
 - `go run ./cmd/sdp-trace envelope summarize --envelope <file> [--out <file>]`
 - `go run ./cmd/sdp-trace verify <run-dir>`
 - `go run ./cmd/sdp-trace explain <run-dir>`
@@ -119,6 +122,9 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `interaction relay` | Record an interaction event before forwarding message content to a command. | `printf 'correct plan boundary\n' \| go run ./cmd/sdp-trace interaction relay --task-id T1 --event-type corrective_feedback --out trace.json -- /bin/cat` | Writes a local interaction trace before delivery. If recording fails, forwarding does not happen. This records observation, not agent compliance. |
 | `interaction import-transcript` | Import pre-classified interaction events from JSONL. | `go run ./cmd/sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id T1 --events-jsonl events.jsonl --out trace.json` | Post-hoc import only. Source completeness can be `complete`, `partial`, `not_assessed`, or `cannot_verify`; free-form chat parsing is out of scope. |
 | `interaction summarize` | Summarize interaction trace events and friction counts. | `go run ./cmd/sdp-trace interaction summarize --trace trace.json --out summary.json` | Read-only summary; friction counts are facts, not model, employee, or spec scores. |
+| `harness observe` | Import a local harness lifecycle export without running or modifying the harness. | `go run ./cmd/sdp-trace harness observe --profile profile.json --source events.jsonl --out harness-run` | Reads explicit files only. Unsafe raw prompts, model responses, tokens, authenticated URLs, private paths, digest mismatches, and malformed JSONL fail before a run is written. |
+| `harness validate` | Validate observed harness events against a selected profile. | `go run ./cmd/sdp-trace harness validate --profile profile.json --run harness-run --out validation.json` | Emits evidence facts with `pass`, `fail`, `not_assessed`, or `cannot_verify`; missing required event families are not passes. |
+| `harness summarize` | Render a safe human summary of harness validation. | `go run ./cmd/sdp-trace harness summarize --validation validation.json` | Summary output is non-authoritative: it does not claim harness compliance, feature delivery, PR approval, merge approval, release readiness, or production trust. |
 | `envelope summarize` | Summarize a delivery trace envelope across task, run, promise, LLM, mutation, stage, and friction refs. | `go run ./cmd/sdp-trace envelope summarize --envelope envelope.json --out summary.json` | Read-only over refs, including recorder run refs. It reports linked and `not_assessed` areas without readiness or quality verdicts. |
 | `verify` | Verify one recorded run directory. | `go run ./cmd/sdp-trace verify .sdp-trace-runs/run-1` | Supports local structural assertions only; use JSON/state output for exact `observed`, `fail`, `not_assessed`, or `cannot_verify` interpretation. |
 | `explain` | Render human-readable explanation for one run. | `go run ./cmd/sdp-trace explain .sdp-trace-runs/run-1` | Explanation is derived from run artifacts; it does not upgrade trust scope. |

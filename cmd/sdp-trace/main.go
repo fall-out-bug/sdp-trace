@@ -20,6 +20,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/ciartifact"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/forensic"
+	"github.com/fall_out_bug/sdp-trace/internal/harnessobs"
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
@@ -68,6 +69,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runInstall(ctx, cmdArgs, stdout, stderr)
 	case "interaction":
 		return runInteraction(ctx, cmdArgs, stdout, stderr)
+	case "harness":
+		return runHarness(cmdArgs, stdout, stderr)
 	case "envelope":
 		return runEnvelope(ctx, cmdArgs, stdout, stderr)
 	case "verify":
@@ -101,6 +104,143 @@ func run(args []string, stdout, stderr io.Writer) int {
 		printUsage(stderr)
 		return 1
 	}
+}
+
+func runHarness(args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "harness requires observe, validate, or summarize")
+		return exitUsage
+	}
+	switch args[0] {
+	case "help", "--help", "-h":
+		fmt.Fprintln(stdout, "Usage: sdp-trace harness <observe|validate|summarize> [flags]")
+		return 0
+	case "observe":
+		return runHarnessObserve(args[1:], stdout, stderr)
+	case "validate":
+		return runHarnessValidate(args[1:], stdout, stderr)
+	case "summarize":
+		return runHarnessSummarize(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintf(stderr, "unknown harness command: %s\n", args[0])
+		return exitUsage
+	}
+}
+
+func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "harness observe"}
+	opts.setString("profile", "")
+	opts.setString("source", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "harness observe accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) == "" {
+		fmt.Fprintln(stderr, "harness observe requires --profile")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("source")) == "" {
+		fmt.Fprintln(stderr, "harness observe requires --source")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		fmt.Fprintln(stderr, "harness observe requires --out")
+		return exitUsage
+	}
+	run, err := harnessobs.Observe(harnessobs.ObserveOptions{
+		ProfilePath: opts.stringValue("profile"),
+		SourcePath:  opts.stringValue("source"),
+		OutDir:      opts.stringValue("out"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, err := json.MarshalIndent(run, "", "  ")
+	if err != nil {
+		fmt.Fprintf(stderr, "marshal harness run: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func runHarnessValidate(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "harness validate"}
+	opts.setString("profile", "")
+	opts.setString("run", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "harness validate accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("profile")) == "" {
+		fmt.Fprintln(stderr, "harness validate requires --profile")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("run")) == "" {
+		fmt.Fprintln(stderr, "harness validate requires --run")
+		return exitUsage
+	}
+	validation, err := harnessobs.Validate(harnessobs.ValidateOptions{
+		ProfilePath: opts.stringValue("profile"),
+		RunDir:      opts.stringValue("run"),
+		OutPath:     opts.stringValue("out"),
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	payload, err := json.MarshalIndent(validation, "", "  ")
+	if err != nil {
+		fmt.Fprintf(stderr, "marshal harness validation: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	switch validation.ValidationState {
+	case harnessobs.StatePass:
+		return 0
+	case harnessobs.StateFail:
+		return 1
+	case harnessobs.StateNotAssessed, harnessobs.StateCannotVerify:
+		return exitCannotVerify
+	default:
+		fmt.Fprintf(stderr, "unknown harness validation state: %s\n", validation.ValidationState)
+		return exitCannotVerify
+	}
+}
+
+func runHarnessSummarize(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "harness summarize"}
+	opts.setString("validation", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "harness summarize accepts only flags")
+		return exitUsage
+	}
+	if strings.TrimSpace(opts.stringValue("validation")) == "" {
+		fmt.Fprintln(stderr, "harness summarize requires --validation")
+		return exitUsage
+	}
+	validation, err := harnessobs.LoadValidation(opts.stringValue("validation"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	fmt.Fprint(stdout, harnessobs.Summarize(validation))
+	return 0
 }
 
 func runReleaseProof(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -2830,6 +2970,9 @@ Usage:
   sdp-trace interaction relay --task-id <safe-id> --event-type <type> --out <file> -- <forward-command...>
   sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id <safe-id> --events-jsonl <file> --out <file>
   sdp-trace interaction summarize --trace <file> [--out <file>]
+  sdp-trace harness observe --profile <harness-profile.json> --source <harness-events.jsonl> --out <run-dir>
+  sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <validation.json>
+  sdp-trace harness summarize --validation <validation.json>
   sdp-trace envelope summarize --envelope <file> [--out <file>]
   sdp-trace verify <run-dir>
   sdp-trace explain <run-dir>

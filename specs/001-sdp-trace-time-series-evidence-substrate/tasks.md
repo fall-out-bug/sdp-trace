@@ -653,6 +653,60 @@ owner independence, non-GitHub portability, release binary acquisition, broad
 JVM/Bazel compatibility, and broad monorepo scalability remain outside scope
 unless separately assessed.
 
+## Phase 22: Non-Interfering Harness Observation
+
+**Goal**: Fix the demo JVM/GSD P0 by defining a portable harness observation
+intake that can ingest external harness lifecycle exports without prompt relay,
+hand-authored proof artifacts, or product dependency on OpenCode/GSD.
+
+**Independent Test**: Given a reviewed harness observation profile and harness
+event export, `sdp-trace` can record which model, phase, prompt-boundary, tool,
+mutation, test, PR, and merge dimensions were observed, which were unsafe, and
+which remain `not_assessed` or `cannot_verify`, then render a safe summary that
+does not imply harness compliance or feature delivery.
+
+**Activation Gate**: Do not implement Block 31 until
+`blocks/31-non-interfering-harness-observation.md` and
+`blocks/31-non-interfering-harness-observation-implementation-plan.md` pass
+Socratic review across product boundary, UX/DX, trace/evidence,
+safety/privacy, and implementation-feasibility planes, and the reviewed
+direction is explicitly approved.
+
+- [x] T218 [US4] Run Socratic spec review for Block 31 and record every valid
+  critical or major finding in
+  `blocks/31-non-interfering-harness-observation-review-ledger.md`.
+- [x] T219 [US4] Close every valid Block 31 Socratic spec finding before
+  implementation starts.
+- [x] T220 [US4] Add harness observation profile, harness event, observed run,
+  and validation contracts that preserve required, optional, unavailable, unsafe,
+  `not_assessed`, and `cannot_verify` dimensions without product dependency on
+  OpenCode/GSD.
+- [x] T221 [US4] Add `sdp-trace harness observe` over explicit local export
+  files only, with no hidden harness execution, prompt relay, provider API calls,
+  GitHub API calls, or assessed-repository mutation.
+- [x] T222 [US5] Add `sdp-trace harness validate` and `summarize` so model
+  route, phase/review activity, prompt-boundary refs, tool events, mutations,
+  tests, PR state, merge state, unsafe fields, and unavailable dimensions remain
+  visible as evidence facts rather than delivery verdicts.
+- [x] T223 [US5] Add safety-sensitive tests proving harness summaries do not
+  print raw prompts, raw model responses, raw command bodies, provider tokens,
+  authenticated URLs, private paths, unsafe personal identifiers, or synthetic
+  secret markers.
+- [x] T224 [US4] Update `docs/agent-entrypoint.md`,
+  `docs/reviewer-entrypoint.md`, and
+  `docs/reviews/demo-jvm-gsd-observation-ledger.md` only after the harness
+  observation command help surface exists and fixture validation passes.
+- [x] T225 [US5] Run implementation review across code/correctness,
+  trace/evidence, and requirements-vs-implementation planes; fix and re-review
+  every valid critical or major finding.
+- [ ] T226 [US4] Validate a real or fixture-backed OpenCode/GSD export before
+  moving P0-001 out of `open`; if the export cannot provide required dimensions,
+  record those dimensions as `not_assessed` or `cannot_verify`.
+
+**Checkpoint**: Block 31 is complete only when `sdp-trace` can validate a
+non-interfering harness observation export. It still must not claim harness
+compliance, feature delivery, PR approval, merge approval, or production trust.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -698,6 +752,10 @@ unless separately assessed.
   replace grep-only proof as the primary pilot path with a compiled JVM/Bazel
   behavior target, generate artifacts through CI, and verify artifact digests
   from downloaded artifacts before updating `sdp-trace` claims.
+- **Phase 22**: Depends on Block 19 adapter event contracts, Block 28 repository
+  observer UX, and Block 29 delivery trace envelopes. It must fix the demo
+  JVM/GSD P0 without making OpenCode, GSD, MiniMax, GitHub, or any harness
+  runtime a product dependency.
 
 ### Parallel Opportunities
 
@@ -747,6 +805,14 @@ unless separately assessed.
 - T214 and T215 must wait for T213 because stale-digest and sanitized report
   evidence must not depend on the old self-indexing bug.
 - T216 can run only after T211-T215 have fresh demo CI evidence.
+- T220 and T221 can run in parallel after T219 if schema/fixture work and observe
+  command wiring keep separate write scopes.
+- T222 can run after T220 because validation must use the reviewed event and
+  profile contracts.
+- T223 can run in parallel with T222 after T220 because output-safety tests
+  exercise separate summary and unsafe-input paths.
+- T224 can run only after T221-T223 because docs and the demo ledger must not
+  claim command behavior before it exists.
 
 ## Implementation Strategy
 
@@ -786,6 +852,9 @@ unless separately assessed.
     demo-repo pilot is closed.
 23. Complete Block 25 compiled CI demo pilot before making a pilot claim for
     Kotlin/JVM+Bazel behavior evidence.
+24. Complete Block 31 non-interfering harness observation only after explicit
+    spec approval, preserving OpenCode/GSD as a tested export profile rather
+    than a product dependency and keeping missing harness dimensions explicit.
 
 ### Evidence Discipline
 
