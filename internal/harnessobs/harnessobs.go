@@ -1602,10 +1602,22 @@ func digestCommand(command []string) string {
 }
 
 func extractCommandModel(command []string) string {
-	for i, arg := range command {
+	if len(command) >= 3 && command[1] == "-c" {
+		base := filepath.Base(command[0])
+		if base == "sh" || base == "bash" {
+			if model := extractCommandModelArgs(shellFields(command[2])); model != "" {
+				return model
+			}
+		}
+	}
+	return extractCommandModelArgs(command)
+}
+
+func extractCommandModelArgs(args []string) string {
+	for i, arg := range args {
 		if arg == "--model" || arg == "-m" {
-			if i+1 < len(command) {
-				return safeCommandModel(command[i+1])
+			if i+1 < len(args) {
+				return safeCommandModel(args[i+1])
 			}
 			return ""
 		}
@@ -1618,9 +1630,61 @@ func extractCommandModel(command []string) string {
 	return ""
 }
 
+// shellFields handles the shell field syntax needed to locate --model inside a
+// controlled sh -c wrapper. It is not a general shell parser; model values still
+// have to pass safeCommandModel before they become retained facts.
+func shellFields(command string) []string {
+	var fields []string
+	var b strings.Builder
+	var quote rune
+	escaped := false
+	for _, r := range command {
+		if escaped {
+			if r == '\n' {
+				escaped = false
+				continue
+			}
+			b.WriteRune('\\')
+			b.WriteRune(r)
+			escaped = false
+			continue
+		}
+		if quote != '\'' && r == '\\' {
+			escaped = true
+			continue
+		}
+		if quote != 0 {
+			if r == quote {
+				quote = 0
+				continue
+			}
+			b.WriteRune(r)
+			continue
+		}
+		switch {
+		case r == '\'' || r == '"':
+			quote = r
+		case r == ' ' || r == '\t' || r == '\n' || r == '\r':
+			if b.Len() > 0 {
+				fields = append(fields, b.String())
+				b.Reset()
+			}
+		default:
+			b.WriteRune(r)
+		}
+	}
+	if escaped {
+		b.WriteRune('\\')
+	}
+	if b.Len() > 0 {
+		fields = append(fields, b.String())
+	}
+	return fields
+}
+
 func safeCommandModel(model string) string {
 	model = strings.TrimSpace(model)
-	if model == "" || strings.Contains(model, "://") || strings.ContainsAny(model, "\"'`$\\") {
+	if model == "" || strings.Contains(model, "://") || strings.ContainsAny(model, " \t\n\r\"'`$\\") {
 		return ""
 	}
 	if strings.Contains(model, "../") || strings.HasPrefix(model, "/") {

@@ -186,9 +186,10 @@ func TestObserveSessionNormalizesNativeOpenCodeJSONL(t *testing.T) {
 	defer oldwd()
 
 	var out, errOut bytes.Buffer
+	// true stands in for OpenCode; this test verifies extraction from inside sh -c.
 	exit := run([]string{
 		"observe", "session", "--profile", "session-profile.json", "--out", "session-run", "--",
-		"sh", "-c", "cp raw-source.jsonl opencode-raw.jsonl", "--model", "minimax-coding-plan/MiniMax-M2.5",
+		"sh", "-c", "cp raw-source.jsonl opencode-raw.jsonl && true --model minimax-coding-plan/MiniMax-M2.5",
 	}, &out, &errOut)
 	if exit != 0 {
 		t.Fatalf("session exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
