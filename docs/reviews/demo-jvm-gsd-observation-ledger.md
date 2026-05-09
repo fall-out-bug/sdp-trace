@@ -651,6 +651,118 @@ requirements-vs-implementation replacement review: pass; implementation
 satisfies P0-002 without claiming phase/mutation/test closure
 ```
 
+#### Recheck on 2026-05-10 after PR #35 / digest-only OpenCode tool paths
+
+Status remains `open`.
+
+Verified:
+
+- `sdp-trace` `main` includes `9e1027b Allow digest-only OpenCode tool paths
+  (#35)`.
+- A live customer-case GSD planning run used the required model route:
+
+```text
+sdp-trace observe session --profile session-profile.json --out run -- \
+  sh -c 'opencode run --format json \
+  --model minimax-coding-plan/MiniMax-M2.5 \
+  --dir /Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd \
+  "/gsd-plan-phase 1 --skip-research --text" \
+  --dangerously-skip-permissions > opencode-gsd-run.jsonl'
+```
+
+The run reached real GSD activity. The raw stream contained a completed
+`tool_use` event with `tool:"task"`, `subagent_type:"gsd-planner"`, model
+metadata `minimax-coding-plan/MiniMax-M2.5`, and phase-planning output for
+Phase 1. The demo repository still had only harness-generated `.opencode/` and
+`.planning/` artifacts; no trace artifact was hand-edited.
+
+Closure failed because the native OpenCode/GSD stream is still rejected before
+observed run creation:
+
+```text
+raw source line 2: unsafe_input:part.state.input.prompt:forbidden_raw_field
+```
+
+The session metadata again retained only command-level facts:
+
+```text
+"command_model": "minimax-coding-plan/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"collection_state": "cannot_verify"
+"collection_reason": "not_collected"
+```
+
+This proves PR #35 fixed only the first path-field rejection. The broader P0
+remains: `sdp-trace` cannot yet ingest a valid real OpenCode/GSD event stream
+without aborting on native tool input fields. Manual removal or filtering of
+`part.state.input.prompt` would be trace artifact tampering and cannot be used
+as demo evidence.
+
+Required closure now needs a live replay of this `gsd-plan-phase` shape where
+`part.state.input.prompt` is either safely summarized, digest-retained, or
+marked unavailable at field level without aborting the whole collection. The
+resulting observed run must then pass `harness validate` for harness,
+interaction, model, and tool evidence while keeping phase/mutation/test/PR gaps
+explicit as `not_assessed` or `cannot_verify`.
+
+#### Implementation response on 2026-05-10
+
+| id | severity | plane | finding | disposition | response |
+| --- | --- | --- | --- | --- | --- |
+| B31-RETURN-11 | critical | tracing/evidence | Real OpenCode/GSD `tool_use` task events with `part.state.input.prompt` were rejected as `forbidden_raw_field`, so no observed run could be created for the `gsd-plan-phase` customer-case stream. | accepted_fixed | Raw OpenCode scanning now treats string-valued `part.state.input.prompt` as an unretained native tool input body under digest-only normalization. Top-level `prompt` remains forbidden, and sensitive nested keys still remain fatal. |
+| B31-RETURN-12 | major | safety | Review found that the `*.input.prompt` allowance needed tighter shape constraints so non-string prompt objects could not bypass nested safety scanning. | accepted_fixed | The allowance now applies only to string-valued `input.prompt` fields with exact path segments; object-valued prompt remains forbidden before normalized output is written. |
+
+Regression coverage now extends the real GSD shape with a native OpenCode
+`tool_use` task event containing `input.prompt` and `subagent_type:
+gsd-planner`. The observed run is created, and normalized output is asserted
+not to retain the prompt body or `gsd-planner` input metadata.
+
+Observed result from the regression:
+
+```text
+SESSION
+"command_model": "minimax-coding-plan/MiniMax-M2.5"
+"command_model_state": "pass"
+"collection_state": "pass"
+
+RUN
+"event_count": 9
+events/raw-000001-harness.json
+events/raw-000002-interaction.json
+events/raw-000003-tool.json
+events/raw-000004-tool.json
+events/raw-000005-tool.json
+events/raw-000006-model.json
+events/raw-000006-tool.json
+events/raw-000007-tool.json
+events/session-command-model.json
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass
+interaction: pass
+model: pass
+tool: pass
+phase/mutation/test: not_assessed
+```
+
+This closes only the prompt-field collection-abort blocker. The demo P0 remains
+open for phase, mutation, and test evidence until those signals are emitted as
+verifier-backed events in the customer-case delivery loop.
+
+Review disposition:
+
+```text
+requirements-vs-implementation: pass; native gsd-plan-phase input.prompt
+ingests without manual filtering, prompt body is not retained, and top-level
+prompt remains forbidden
+tracing/evidence: pass; no overclaim beyond collection-abort closure
+code/safety: initial critical/major concerns accepted; allowance narrowed to
+string-valued part.state.input.prompt only, object prompt remains forbidden
+focused safety re-review: pass; no remaining critical or major findings
+```
+
 ## P1
 
 No P1 findings recorded yet.
