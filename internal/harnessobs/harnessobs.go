@@ -706,7 +706,7 @@ func normalizeRawEvents(format, rawPath, outPath string, now time.Time) error {
 		if err := json.Unmarshal(line, &raw); err != nil {
 			return fmt.Errorf("raw source line %d: malformed_jsonl", lineNo)
 		}
-		if unsafeField, reason := findUnsafe(raw); unsafeField != "" {
+		if unsafeField, reason := findUnsafeRawEvent(raw); unsafeField != "" {
 			return fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
 		}
 		for _, event := range normalizeOpenCodeRawLine(raw, lineNo, now) {
@@ -744,19 +744,19 @@ func normalizeRawEvents(format, rawPath, outPath string, now time.Time) error {
 func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []Event {
 	signals := rawSignals(raw)
 	families := map[string]bool{}
-	if hasSignal(signals, "session.started", "session.completed", "run.started", "run.completed") || hasSignalPrefix(signals, "session.", "run.") {
+	if hasSignal(signals, "session.started", "session.completed", "run.started", "run.completed", "step_start", "step-start", "step_finish", "step-finish") || hasSignalPrefix(signals, "session.", "run.") {
 		families["harness"] = true
 	}
 	if hasKey(raw, "model", "model_id", "modelid", "provider") {
 		families["model"] = true
 	}
-	if hasKey(raw, "role") || hasSignal(signals, "message", "response") || hasSignalPrefix(signals, "message.", "response.") {
+	if hasKey(raw, "role") || hasSignal(signals, "message", "response", "text") || hasSignalPrefix(signals, "message.", "response.") {
 		families["interaction"] = true
 	}
-	if hasKey(raw, "tool", "tool_call", "toolcall") || hasSignal(signals, "tool.call", "tool.result") || hasSignalPrefix(signals, "tool.") {
+	if hasKey(raw, "tool", "tool_call", "toolcall") || hasSignal(signals, "tool.call", "tool.result", "tool_use") || hasSignalPrefix(signals, "tool.") {
 		families["tool"] = true
 	}
-	if hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") || hasSignalPrefix(signals, "mutation.") {
+	if hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") || hasSignalPrefix(signals, "mutation.") || nativeMutationTool(raw) {
 		families["mutation"] = true
 	}
 	if hasSignal(signals, "test.finished", "test.started", "test.passed", "test.failed") || hasSignalPrefix(signals, "test.") {
@@ -947,8 +947,70 @@ func findTimestamp(raw map[string]any) string {
 				return parsed.UTC().Format(time.RFC3339)
 			}
 		}
+		if value, ok := findNumberByKey(raw, key); ok {
+			if observedAt := unixMillisTimestamp(value); observedAt != "" {
+				return observedAt
+			}
+		}
 	}
 	return ""
+}
+
+func findNumberByKey(value any, keys ...string) (float64, bool) {
+	wanted := map[string]bool{}
+	for _, key := range keys {
+		wanted[strings.ToLower(key)] = true
+	}
+	return findNumberByKeyIn(value, wanted)
+}
+
+func findNumberByKeyIn(value any, wanted map[string]bool) (float64, bool) {
+	switch v := value.(type) {
+	case map[string]any:
+		for key, child := range v {
+			if wanted[strings.ToLower(key)] {
+				switch n := child.(type) {
+				case float64:
+					return n, true
+				case int:
+					return float64(n), true
+				}
+			}
+			if n, ok := findNumberByKeyIn(child, wanted); ok {
+				return n, true
+			}
+		}
+	case []any:
+		for _, child := range v {
+			if n, ok := findNumberByKeyIn(child, wanted); ok {
+				return n, true
+			}
+		}
+	}
+	return 0, false
+}
+
+func unixMillisTimestamp(value float64) string {
+	if value <= 0 {
+		return ""
+	}
+	if value > 1_000_000_000_000 {
+		return time.UnixMilli(int64(value)).UTC().Format(time.RFC3339)
+	}
+	if value > 1_000_000_000 {
+		return time.Unix(int64(value), 0).UTC().Format(time.RFC3339)
+	}
+	return ""
+}
+
+func nativeMutationTool(raw map[string]any) bool {
+	tool := strings.ToLower(findStringByKey(raw, "tool"))
+	switch tool {
+	case "edit", "write", "patch", "apply_patch", "update", "delete":
+		return true
+	default:
+		return false
+	}
 }
 
 func safeToken(value string) string {
@@ -1525,6 +1587,73 @@ func sourceCommit() string {
 
 func findUnsafe(value any) (string, string) {
 	return findUnsafeAt("", value)
+}
+
+func findUnsafeRawEvent(value any) (string, string) {
+	return findUnsafeRawEventAt("", value)
+}
+
+func findUnsafeRawEventAt(path string, value any) (string, string) {
+	switch v := value.(type) {
+	case map[string]any:
+		for key, child := range v {
+			childPath := key
+			if path != "" {
+				childPath = path + "." + key
+			}
+			keyLower := strings.ToLower(key)
+			if rawFieldNames[keyLower] {
+				return childPath, "forbidden_raw_field"
+			}
+			if sensitiveFieldNames[keyLower] {
+				return childPath, "sensitive_field"
+			}
+			if unretainedRawBodyField(keyLower) && !structuredRawBody(child) {
+				continue
+			}
+			if field, reason := findUnsafeRawEventAt(childPath, child); field != "" {
+				return field, reason
+			}
+		}
+	case []any:
+		for i, child := range v {
+			if field, reason := findUnsafeRawEventAt(fmt.Sprintf("%s[%d]", path, i), child); field != "" {
+				return field, reason
+			}
+		}
+	case string:
+		if strings.TrimSpace(v) == "" {
+			return "", ""
+		}
+		if unsafeURL(v) {
+			return path, "authenticated_url"
+		}
+		if providerTokenPrefix.MatchString(v) {
+			return path, "token_like_value"
+		}
+		if !digestField(path) && base64TokenPattern.MatchString(v) && !sha256Pattern.MatchString(v) {
+			return path, "token_like_value"
+		}
+	}
+	return "", ""
+}
+
+func unretainedRawBodyField(key string) bool {
+	switch key {
+	case "text", "content", "input", "output", "stdout", "stderr":
+		return true
+	default:
+		return false
+	}
+}
+
+func structuredRawBody(value any) bool {
+	switch value.(type) {
+	case map[string]any:
+		return true
+	default:
+		return false
+	}
 }
 
 func findUnsafeAt(path string, value any) (string, string) {

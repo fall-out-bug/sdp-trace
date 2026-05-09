@@ -170,6 +170,79 @@ func TestObserveSessionNormalizesOpenCodeRawJSONL(t *testing.T) {
 	}
 }
 
+func TestObserveSessionNormalizesNativeOpenCodeJSONL(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "interaction"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := strings.Join([]string{
+		`{"type":"step_start","timestamp":1778326453680,"sessionID":"ses_fixture","part":{"id":"prt_start","messageID":"msg_fixture","sessionID":"ses_fixture","snapshot":"4b825dc642cb6eb9a060e54bf8d69288fbee4904","type":"step-start"}}`,
+		`{"type":"text","timestamp":1778326453882,"sessionID":"ses_fixture","part":{"id":"prt_text","messageID":"msg_fixture","sessionID":"ses_fixture","type":"text","text":"OK","time":{"start":1778326453875,"end":1778326453882}}}`,
+		`{"type":"step_finish","timestamp":1778326453906,"sessionID":"ses_fixture","part":{"id":"prt_finish","reason":"stop","snapshot":"4b825dc642cb6eb9a060e54bf8d69288fbee4904","messageID":"msg_fixture","sessionID":"ses_fixture","type":"step-finish","tokens":{"total":13137,"input":6,"output":27,"reasoning":0},"cost":0}}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "raw-source.jsonl"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{
+		"observe", "session", "--profile", "session-profile.json", "--out", "session-run", "--",
+		"sh", "-c", "cp raw-source.jsonl opencode-raw.jsonl",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("session exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"event_count": 3`) || !strings.Contains(out.String(), `"collection_state": "pass"`) {
+		t.Fatalf("session output missing native OpenCode events: %s", out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed"}, &out, &errOut)
+	if exit != 0 || !strings.Contains(out.String(), `"validation_state": "pass"`) {
+		t.Fatalf("validate exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestObserveCollectNormalizesNativeOpenCodeToolUseWithPrivateOutput(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "tool"})
+	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	raw := strings.Join([]string{
+		`{"type":"step_start","timestamp":1778326472992,"sessionID":"ses_fixture","part":{"type":"step-start"}}`,
+		`{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"glob","callID":"call_fixture","state":{"status":"completed","input":{"pattern":"*"},"output":"/Users/fall_out_bug/projects/vibe_coding/sdp-trace/schema/harness-event.schema.json"}}}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("collect exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if data, err := os.ReadFile(filepath.Join(dir, "normalized-events.jsonl")); err != nil {
+		t.Fatal(err)
+	} else if strings.Contains(string(data), "/Users/fall_out_bug") {
+		t.Fatalf("normalized output retained private raw body: %s", string(data))
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"harness", "validate", "--profile", "profile.json", "--run", "session-run/observed"}, &out, &errOut)
+	if exit != 0 || !strings.Contains(out.String(), `"validation_state": "pass"`) {
+		t.Fatalf("validate exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+}
+
 func TestObserveSessionDoesNotPromoteMessageTextToEvidence(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})

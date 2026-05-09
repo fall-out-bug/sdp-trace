@@ -267,6 +267,95 @@ jq empty schema/*.json examples/harness-observation/*.json
 git diff --check
 ```
 
+#### Recheck on 2026-05-09 after PR #30 / OpenCode normalizer merge
+
+Status remains `open`.
+
+Verified:
+
+- `sdp-trace` `main` includes `049658b Merge pull request #30 from
+  fall-out-bug/codex/block-31-opencode-normalizer`.
+- `SessionProfile` supports `raw_event_source_path` and
+  `raw_event_format: opencode-jsonl-v1`.
+- A live `observe session` run can execute OpenCode with
+  `minimax-coding-plan/MiniMax-M2.5`, redirect native `opencode run --format
+  json` output to the declared raw event source, normalize that source, and
+  keep the demo repository clean.
+
+Closure failed because the actual OpenCode 1.14.41 JSONL stream was normalized
+to zero `harness-event-v1` events:
+
+```text
+$ sdp-trace observe session --profile session-profile-safe.json --out run -- \
+    sh -c 'opencode run --format json --model minimax-coding-plan/MiniMax-M2.5 \
+    --dir /Users/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd \
+    "Respond with OK only." > opencode_raw.jsonl'
+...
+"collection_state": "pass",
+"collection_reason": "source_collected",
+"event_count": 0
+
+$ sdp-trace harness validate --profile opencode-gsd-harness-profile.example.json \
+    --run run/observed --out validation.json
+"validation_state": "not_assessed",
+"reason_code": "required_event_family_absent"
+```
+
+Observed raw OpenCode event types were:
+
+```text
+{"type":"step_start", ...}
+{"type":"text", ...}
+{"type":"step_finish", ...}
+```
+
+The current normalizer recognizes fixture-style signals such as
+`session.started`, `message`, `phase`, `tool.call`, `file.write`, and
+`test.finished`, but it did not map the native OpenCode 1.14.41 stream observed
+in the customer-case run. The product now has a raw-source mechanism, but it
+still does not observe real OpenCode/GSD delivery-loop evidence for the demo.
+
+#### Block 31 implementation response on 2026-05-09 for native OpenCode JSONL
+
+Status remains `open` pending demo-repo recheck against the real delivery-loop
+workflow, but the native OpenCode stream regression is accepted and fixed in
+`sdp-trace`.
+
+Review dispositions:
+
+| id | severity | plane | finding | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| B31-RETURN-02 | critical | requirements | Actual OpenCode 1.14.41 `--format json` emits `step_start`, `text`, and `step_finish`; PR #30 normalized those native events to zero `harness-event-v1` records. | accepted_fixed | Native `step_start`/`step_finish` now map to `harness`; native `text` maps to `interaction`; `TestObserveSessionNormalizesNativeOpenCodeJSONL` covers the observed stream. |
+| B31-RETURN-03 | major | DX/replayability | The example session profile used `opencode-gsd-events.normalized.jsonl`, which failed `safeOutFile` because the output stem contained a dot. | accepted_fixed | Example output path changed to `opencode-gsd-events-normalized.jsonl`; live replay now reaches collection instead of `unsafe output filename`. |
+| B31-RETURN-04 | major | tracing/evidence | Native OpenCode `tool_use` can include private absolute paths in unretained `state.output`; rejecting those bodies prevents digest-only observation of real OpenCode tool events. | accepted_fixed | Raw normalization uses a narrower raw-event safety scan: sensitive field names and token-like structural values still fail, while unretained text/input/output bodies are not persisted and do not block classification; `TestObserveCollectNormalizesNativeOpenCodeToolUseWithPrivateOutput` covers the case. |
+
+Live replay after the fix against OpenCode 1.14.41 and
+`minimax-coding-plan/MiniMax-M2.5`:
+
+```text
+RAW TYPES
+step_start
+text
+step_finish
+
+SESSION
+"collection_state": "pass",
+"event_count": 3
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass, event_count=2
+interaction: pass, event_count=1
+model/phase/tool/mutation/test: not_assessed
+```
+
+This proves native OpenCode JSONL is no longer normalized to zero events. It
+does not close P0-001 yet: the simple OK run does not contain structured model,
+phase, tool, mutation, or test evidence, so the full
+`opencode-gsd-harness-profile.example.json` validation correctly remains
+`not_assessed` until the real demo delivery loop produces those signals or the
+profile is narrowed with an explicit evidence rationale.
+
 ## P1
 
 No P1 findings recorded yet.
