@@ -356,6 +356,45 @@ phase, tool, mutation, or test evidence, so the full
 `not_assessed` until the real demo delivery loop produces those signals or the
 profile is narrowed with an explicit evidence rationale.
 
+#### Block 31 implementation response on 2026-05-10 for session facts
+
+Status remains `open` pending real delivery-loop evidence for `phase`, `test`,
+and mutation-producing work, but the safe session-command fact gap is accepted
+and fixed in `sdp-trace`.
+
+Review dispositions:
+
+| id | severity | plane | finding | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| B31-RETURN-05 | critical | requirements | The selected OpenCode model route was visible in the controlled command but lost as verifier-backed harness evidence because only the command digest was retained. | accepted_fixed | `SessionRun.command_model` records a safe model id extracted from `--model`; raw command bodies remain unretained; normalized output emits a digest-only `model` event with `source_ref: session-command`. |
+| B31-RETURN-06 | major | tracing/evidence | Native `tool_use` should satisfy `tool`, but read-only tools such as `glob` or `bash` must not satisfy `mutation`. | accepted_fixed | Native `tool_use` maps to `tool`; `mutation` is emitted only for mutation tool names such as `edit`, `write`, `patch`, `apply_patch`, `update`, or `delete`; tests cover both read-only and edit cases. |
+| B31-REVIEW-07 | critical | code/correctness | Reviewer suspected `extractCommandModel(opts.Command)` was a compile-time type mismatch. | false_positive | `SessionOptions.Command` is `[]string`; `go test ./...` passes. |
+| B31-REVIEW-08 | major | code/correctness | Positive edit-tool test did not explicitly assert the `mutation` family state. | accepted_fixed | `TestObserveCollectTreatsNativeEditToolAsMutation` now asserts both `tool` and `mutation` pass. |
+
+Live replay after the fix against OpenCode 1.14.41 and
+`minimax-coding-plan/MiniMax-M2.5`:
+
+```text
+SESSION
+"command_model": "minimax-coding-plan/MiniMax-M2.5"
+"command_model_state": "pass"
+"collection_state": "pass"
+"event_count": 4
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass, event_count=2
+interaction: pass, event_count=1
+model: pass, event_count=1
+phase/tool/mutation/test: not_assessed
+```
+
+This improves the customer-case proof surface without closing P0-001. The
+product can now prove the selected model route and native OpenCode base stream
+without asking the customer to hand-author events. It still cannot honestly
+claim GSD phase, tool, mutation, or test coverage unless the real delivery
+workflow emits corresponding native `tool_use`/mutation/test/phase facts.
+
 ## P1
 
 No P1 findings recorded yet.

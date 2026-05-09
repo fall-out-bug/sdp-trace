@@ -182,6 +182,8 @@ type SessionRun struct {
 	SetupActionIDs     []string `json:"setup_action_ids,omitempty"`
 	CommandDigest      string   `json:"command_digest,omitempty"`
 	CommandDigestState string   `json:"command_digest_state,omitempty"`
+	CommandModel       string   `json:"command_model,omitempty"`
+	CommandModelState  string   `json:"command_model_state,omitempty"`
 	ProcessID          int      `json:"process_id,omitempty"`
 	ProcessIDState     string   `json:"process_id_state,omitempty"`
 	StartTime          string   `json:"start_time,omitempty"`
@@ -308,8 +310,13 @@ func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
 	}
 	run := newSessionRun(profile, opts.Now)
 	if strings.TrimSpace(opts.Command) != "" {
-		run.CommandDigest = digestCommand([]string{opts.Command})
+		command := []string{opts.Command}
+		run.CommandDigest = digestCommand(command)
 		run.CommandDigestState = StatePass
+		if model := extractCommandModel(command); model != "" {
+			run.CommandModel = model
+			run.CommandModelState = StatePass
+		}
 	}
 	if err := writeJSON(filepath.Join(outDir, "session.json"), run); err != nil {
 		return SessionRun{}, err
@@ -365,7 +372,7 @@ func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
 			if outErr != nil {
 				return SessionRun{}, Run{}, outErr
 			}
-			if normalizeErr := normalizeRawEvents(profile.RawEventFormat, rawPath, normalizedPath, opts.Now); normalizeErr != nil {
+			if normalizeErr := normalizeRawEvents(profile.RawEventFormat, rawPath, normalizedPath, sessionCommandFacts(session), opts.Now); normalizeErr != nil {
 				return SessionRun{}, Run{}, normalizeErr
 			}
 			session.NormalizedDigest = digestFile(normalizedPath)
@@ -444,6 +451,10 @@ func RunSession(opts SessionOptions) (SessionRun, Run, error) {
 	cmd.Stderr = io.Discard
 	session.CommandDigest = digestCommand(opts.Command)
 	session.CommandDigestState = StatePass
+	if model := extractCommandModel(opts.Command); model != "" {
+		session.CommandModel = model
+		session.CommandModelState = StatePass
+	}
 	session.StartTime = start.Format(time.RFC3339)
 	if err := cmd.Start(); err != nil {
 		return SessionRun{}, Run{}, err
@@ -677,7 +688,7 @@ func safeProfileRelativeOutFile(profilePath, relPath string) (string, error) {
 	return safeOutFile(filepath.Join(baseDir, relPath))
 }
 
-func normalizeRawEvents(format, rawPath, outPath string, now time.Time) error {
+func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, now time.Time) error {
 	if format != OpenCodeJSONLRawFormat {
 		return errors.New("unsupported raw_event_format")
 	}
@@ -695,7 +706,7 @@ func normalizeRawEvents(format, rawPath, outPath string, now time.Time) error {
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), DefaultMaxLineBytes)
 	lineNo := 0
-	events := []Event{}
+	events := append([]Event{}, sessionFacts...)
 	for scanner.Scan() {
 		lineNo++
 		line := scanner.Bytes()
@@ -805,6 +816,33 @@ func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []E
 		))
 	}
 	return events
+}
+
+func sessionCommandFacts(session SessionRun) []Event {
+	if session.CommandModelState != StatePass || strings.TrimSpace(session.CommandModel) == "" {
+		return nil
+	}
+	observedAt := session.StartTime
+	if observedAt == "" {
+		observedAt = session.CreatedAt
+	}
+	if _, err := time.Parse(time.RFC3339, observedAt); err != nil {
+		observedAt = time.Now().UTC().Format(time.RFC3339)
+	}
+	event := normalizedEvent(
+		"session-command-model",
+		"model",
+		"model_observed",
+		observedAt,
+		"session-command",
+		safeToken(session.CommandModel),
+	)
+	data, err := json.Marshal(event)
+	if err != nil {
+		return nil
+	}
+	event.SourceDigest = digestLine(data)
+	return []Event{event}
 }
 
 func normalizedEvent(id, family, eventType, observedAt, sourceRef, actor string) Event {
@@ -1561,6 +1599,37 @@ func digestCommand(command []string) string {
 	data, _ := json.Marshal(command)
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
+}
+
+func extractCommandModel(command []string) string {
+	for i, arg := range command {
+		if arg == "--model" || arg == "-m" {
+			if i+1 < len(command) {
+				return safeCommandModel(command[i+1])
+			}
+			return ""
+		}
+		for _, prefix := range []string{"--model=", "-m="} {
+			if strings.HasPrefix(arg, prefix) {
+				return safeCommandModel(strings.TrimPrefix(arg, prefix))
+			}
+		}
+	}
+	return ""
+}
+
+func safeCommandModel(model string) string {
+	model = strings.TrimSpace(model)
+	if model == "" || strings.Contains(model, "://") || strings.ContainsAny(model, "\"'`$\\") {
+		return ""
+	}
+	if strings.Contains(model, "../") || strings.HasPrefix(model, "/") {
+		return ""
+	}
+	if len(model) > 128 {
+		return ""
+	}
+	return model
 }
 
 func digestFile(path string) string {
