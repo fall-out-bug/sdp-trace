@@ -1,0 +1,77 @@
+{
+  "schema_version": "authority-envelope-fixture-matrix-v1",
+  "scenarios": [
+    {
+      "name": "valid-within-authority",
+      "path": "valid-within-authority/authority-package.json",
+      "expected_state": "within_authority",
+      "reason_code": "target_event_allowed"
+    },
+    {
+      "name": "outside-authority-denied-target",
+      "path": "outside-authority-denied-target/authority-package.json",
+      "expected_state": "outside_authority",
+      "reason_code": "target_event_denied"
+    },
+    {
+      "name": "git-only-attribution-not-assessed",
+      "path": "git-only-attribution-not-assessed/authority-package.json",
+      "expected_state": "within_authority",
+      "reason_code": "target_event_allowed"
+    },
+    {
+      "name": "gateway-unbound-model-not-assessed",
+      "path": "gateway-unbound-model-not-assessed/authority-package.json",
+      "expected_state": "within_authority",
+      "reason_code": "target_event_allowed"
+    },
+    {
+      "name": "malformed-policy-cannot-verify",
+      "path": "malformed-policy-cannot-verify/authority-package.json",
+      "expected_state": "cannot_verify",
+      "reason_code": "allow_deny_event_conflict"
+    },
+    {
+      "name": "schema-invalid-policy-cannot-verify",
+      "path": "malformed-policy-cannot-verify/authority-package-schema-invalid.json",
+      "expected_state": "cannot_verify",
+      "reason_code": "authority_envelope_malformed"
+    },
+    {
+      "name": "overlapping-target-rules-cannot-verify",
+      "path": "malformed-policy-cannot-verify/authority-package-overlap.json",
+      "expected_state": "cannot_verify",
+      "reason_code": "overlapping_target_rules_conflict"
+    },
+    {
+      "name": "failed-binding-cannot-verify",
+      "path": "failed-binding-cannot-verify/authority-package.json",
+      "expected_state": "cannot_verify",
+      "reason_code": "evidence_binding_cannot_verify"
+    },
+    {
+      "name": "stale-evidence-cannot-verify",
+      "path": "stale-evidence-cannot-verify/authority-package.json",
+      "expected_state": "cannot_verify",
+      "reason_code": "evidence_ref_stale"
+    },
+    {
+      "name": "feedback-without-mutation",
+      "path": "feedback-without-mutation/authority-package.json",
+      "expected_state": "within_authority",
+      "reason_code": "event_allowed"
+    },
+    {
+      "name": "policy-specific-deny",
+      "path": "policy-specific/authority-package-deny.json",
+      "expected_state": "outside_authority",
+      "reason_code": "target_event_denied"
+    },
+    {
+      "name": "policy-specific-allow",
+      "path": "policy-specific/authority-package-allow.json",
+      "expected_state": "within_authority",
+      "reason_code": "target_event_allowed"
+    }
+  ]
+}

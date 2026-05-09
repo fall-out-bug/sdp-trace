@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/observed-action.schema.json",
+  "title": "SDP Trace Observed Action",
+  "type": "object",
+  "required": ["event_id", "event_type", "source_type", "evidence_refs", "observed_at", "observation_confidence"],
+  "properties": {
+    "event_id": { "$ref": "#/$defs/safeToken" },
+    "task_id": { "$ref": "#/$defs/safeToken" },
+    "event_type": { "$ref": "#/$defs/eventType" },
+    "target": { "$ref": "#/$defs/targetRef" },
+    "source_type": {
+      "type": "string",
+      "enum": ["git", "pr_api", "ci_artifact", "harness_log", "llm_gateway", "manual_import", "external_assertion"]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/evidenceRef" }
+    },
+    "actor_id": { "$ref": "#/$defs/safeToken" },
+    "operation_id": { "$ref": "#/$defs/safeToken" },
+    "observed_at": {
+      "oneOf": [
+        { "type": "string", "format": "date-time" },
+        { "type": "string", "const": "not_assessed" }
+      ]
+    },
+    "observation_confidence": {
+      "type": "string",
+      "enum": ["single_source", "corroborated", "external_assertion_only", "not_assessed", "cannot_verify"]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "eventType": {
+      "type": "string",
+      "pattern": "^(observe|review|feedback|direct_mutation|commit|merge|ci_run|harness_tool_call|gateway_request|custom:[A-Za-z0-9_.:-]{1,96})$"
+    },
+    "evidenceRef": {
+      "type": "string",
+      "pattern": "^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$"
+    },
+    "targetRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_./#:-]{1,256}$"
+    },
+    "safeToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    }
+  }
+}

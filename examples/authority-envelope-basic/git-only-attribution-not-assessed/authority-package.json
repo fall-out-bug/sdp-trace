@@ -1,0 +1,36 @@
+{
+  "schema_version": "authority-observation-package-v1",
+  "selected_policy_id": "policy-allow-docs",
+  "actors": [],
+  "authority_envelopes": [
+    {
+      "schema_version": "authority-envelope-v1",
+      "task_id": "task-1",
+      "policy_id": "policy-allow-docs",
+      "authority_scope": "task",
+      "actor_ref": "unknown-actor",
+      "allowed_events": [],
+      "denied_events": [],
+      "target_rules": [
+        {
+          "rule_id": "rule-docs",
+          "target_pattern": "docs/**",
+          "allowed_events": ["direct_mutation"],
+          "denied_events": []
+        }
+      ]
+    }
+  ],
+  "observed_actions": [
+    {
+      "event_id": "event-git-edit",
+      "task_id": "task-1",
+      "event_type": "direct_mutation",
+      "target": "docs/authority-envelope.md",
+      "source_type": "git",
+      "evidence_refs": ["git:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa#docs/authority-envelope.md"],
+      "observed_at": "2026-05-09T00:00:00Z",
+      "observation_confidence": "single_source"
+    }
+  ]
+}

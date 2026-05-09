@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/authority-evaluation.schema.json",
+  "title": "SDP Trace Authority Evaluation Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "selected_profile",
+    "selected_policy_id",
+    "authority_evaluation_state",
+    "evaluations",
+    "binding_evaluations",
+    "source_coverage",
+    "reasons",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "authority-evaluation-result-v1" },
+    "selected_profile": { "type": "string", "const": "authority-envelope" },
+    "selected_policy_id": { "type": "string" },
+    "authority_evaluation_state": { "$ref": "#/$defs/authorityState" },
+    "evaluations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evaluation" }
+    },
+    "binding_evaluations": {
+      "type": "array",
+      "items": { "$ref": "evidence-binding.schema.json" }
+    },
+    "source_coverage": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sourceType" }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reasonCode" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/safeMessage" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "evaluation": {
+      "type": "object",
+      "required": [
+        "evaluation_id",
+        "event_id",
+        "policy_id",
+        "state",
+        "reason_code",
+        "actor_attribution",
+        "tool_attribution",
+        "model_attribution",
+        "source_coverage",
+        "evidence_refs"
+      ],
+      "properties": {
+        "evaluation_id": { "$ref": "#/$defs/safeToken" },
+        "event_id": { "$ref": "#/$defs/safeToken" },
+        "policy_id": { "type": "string" },
+        "state": { "$ref": "#/$defs/authorityState" },
+        "reason_code": { "$ref": "#/$defs/reasonCode" },
+        "matched_rule_ref": { "$ref": "#/$defs/safeToken" },
+        "actor_attribution": { "$ref": "#/$defs/attributionState" },
+        "tool_attribution": { "$ref": "#/$defs/attributionState" },
+        "model_attribution": { "$ref": "#/$defs/attributionState" },
+        "source_coverage": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceType" }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceRef" }
+        },
+        "actor_id": { "$ref": "#/$defs/safeToken" },
+        "operation_id": { "$ref": "#/$defs/safeToken" },
+        "missing_attributes": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["actor", "tool", "model"] }
+        }
+      },
+      "additionalProperties": false
+    },
+    "authorityState": {
+      "type": "string",
+      "enum": ["within_authority", "outside_authority", "not_assessed", "cannot_verify"]
+    },
+    "attributionState": {
+      "type": "string",
+      "enum": ["verified", "not_assessed", "cannot_verify"]
+    },
+    "sourceType": {
+      "type": "string",
+      "enum": ["git", "pr_api", "ci_artifact", "harness_log", "llm_gateway", "manual_import", "external_assertion"]
+    },
+    "evidenceRef": {
+      "type": "string",
+      "pattern": "^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$"
+    },
+    "reasonCode": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,80}$"
+    },
+    "safeMessage": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "not": {
+        "pattern": "(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)"
+      }
+    },
+    "safeToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    }
+  }
+}

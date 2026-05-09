@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
+	"github.com/fall_out_bug/sdp-trace/internal/authority"
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/ciartifact"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
@@ -338,6 +339,7 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	opts.setString("managed-witness", "")
 	opts.setString("redaction-policy", "")
 	opts.setString("artifact-manifest", "")
+	opts.setString("authority-package", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -355,10 +357,38 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		return runForensicAssess(opts, stdout, stderr)
 	case "ci-artifact-observation":
 		return runCIArtifactAssess(opts, stdout, stderr)
+	case "authority-envelope":
+		return runAuthorityAssess(opts, stdout, stderr)
 	default:
-		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, forensic-retention, or ci-artifact-observation")
+		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope")
 		return exitUsage
 	}
+}
+
+func runAuthorityAssess(opts *flagSet, stdout, stderr io.Writer) int {
+	required := map[string]string{
+		"--out":               opts.stringValue("out"),
+		"--authority-package": opts.stringValue("authority-package"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "authority-envelope assess requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	pkg, err := authority.ReadPackage(opts.stringValue("authority-package"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	result := authority.Evaluate(pkg)
+	if err := authority.Write(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return authorityExitCode(result)
 }
 
 func runAdapterCaptureAssess(opts *flagSet, stdout, stderr io.Writer) int {
@@ -537,6 +567,7 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 	opts.setString("managed-witness", "")
 	opts.setString("redaction-policy", "")
 	opts.setString("artifact-manifest", "")
+	opts.setString("authority-package", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
@@ -554,8 +585,10 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 		return runForensicAssessPreview(opts, stdout)
 	case "ci-artifact-observation":
 		return runCIArtifactAssessPreview(opts, stdout)
+	case "authority-envelope":
+		return runAuthorityAssessPreview(opts, stdout)
 	default:
-		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, or ci-artifact-observation")
+		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope")
 		return exitUsage
 	}
 }
@@ -674,6 +707,48 @@ type ciArtifactPreviewReport struct {
 	Claim            string            `json:"claim"`
 }
 
+type authorityPreviewReport struct {
+	Command         string            `json:"command"`
+	SelectedProfile string            `json:"selected_profile"`
+	Inputs          map[string]string `json:"inputs"`
+	StateModel      map[string]string `json:"state_model"`
+	Safety          map[string]string `json:"safety"`
+	NextActions     []string          `json:"next_actions"`
+	Claim           string            `json:"claim"`
+}
+
+func runAuthorityAssessPreview(opts *flagSet, stdout io.Writer) int {
+	inputs := map[string]string{
+		"authority_package": managedInputStatus(opts.stringValue("authority-package")),
+	}
+	report := authorityPreviewReport{
+		Command:         "assess preview",
+		SelectedProfile: authority.Profile,
+		Inputs:          inputs,
+		StateModel: map[string]string{
+			"authority":   "within_authority,outside_authority,not_assessed,cannot_verify",
+			"attribution": "verified,not_assessed,cannot_verify",
+			"binding":     "verified,not_assessed,cannot_verify",
+		},
+		Safety: map[string]string{
+			"raw_prompts":       "not_accepted",
+			"raw_model_outputs": "not_accepted",
+			"credential_refs":   "rejected_as_malformed",
+			"policy_effects":    "not_emitted",
+		},
+		NextActions: authorityPreviewActions(inputs),
+		Claim:       "preview is read-only and does not emit an authority or policy verdict",
+	}
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	for _, state := range inputs {
+		if state == "present_unreadable" || state == "present_malformed" {
+			return exitCannotVerify
+		}
+	}
+	return 0
+}
+
 func runCIArtifactAssessPreview(opts *flagSet, stdout io.Writer) int {
 	inputs := map[string]string{
 		"artifact_manifest": managedInputStatus(opts.stringValue("artifact-manifest")),
@@ -762,6 +837,13 @@ func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 			return exitCannotVerify
 		}
 		return explainCIArtifactObservation(result, stdout)
+	case authority.ResultSchemaVersion:
+		var result authority.Result
+		if err := readJSONFile(path, &result); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		return explainAuthorityEvaluation(result, stdout)
 	default:
 		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", envelope.SchemaVersion)
 		return exitCannotVerify
@@ -836,6 +918,31 @@ func explainCIArtifactObservation(result ciartifact.ObservationResult, stdout io
 	}
 	fmt.Fprintf(stdout, "Artifact index: %s (%s)\n", result.ArtifactIndex.Result, result.ArtifactIndex.ReasonCode)
 	fmt.Fprintf(stdout, "Output safety: %s (%s)\n", result.OutputSafety.State, result.OutputSafety.ReasonCode)
+	for _, reason := range result.Reasons {
+		fmt.Fprintf(stdout, "Reason: %s\n", reason)
+	}
+	for _, action := range result.NextActions {
+		fmt.Fprintf(stdout, "Next action: %s\n", action)
+	}
+	return 0
+}
+
+func explainAuthorityEvaluation(result authority.Result, stdout io.Writer) int {
+	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
+	fmt.Fprintf(stdout, "Authority evaluation: %s\n", result.AuthorityEvaluationState)
+	fmt.Fprintf(stdout, "Selected policy: %s\n", result.SelectedPolicyID)
+	for _, eval := range result.Evaluations {
+		fmt.Fprintf(stdout, "Observed action %s: %s (%s)\n", eval.EventID, eval.State, eval.ReasonCode)
+		fmt.Fprintf(stdout, "  Actor attribution: %s\n", eval.ActorAttribution)
+		fmt.Fprintf(stdout, "  Tool attribution: %s\n", eval.ToolAttribution)
+		fmt.Fprintf(stdout, "  Model attribution: %s\n", eval.ModelAttribution)
+		if eval.MatchedRuleRef != "" {
+			fmt.Fprintf(stdout, "  Matched rule: %s\n", eval.MatchedRuleRef)
+		}
+	}
+	for _, binding := range result.BindingEvaluations {
+		fmt.Fprintf(stdout, "Binding %s: %s (%s)\n", binding.BindingID, binding.BindingState, binding.ReasonCode)
+	}
 	for _, reason := range result.Reasons {
 		fmt.Fprintf(stdout, "Reason: %s\n", reason)
 	}
@@ -925,6 +1032,17 @@ func ciArtifactPreviewActions(inputs map[string]string) []string {
 	}
 }
 
+func authorityPreviewActions(inputs map[string]string) []string {
+	switch inputs["authority_package"] {
+	case "absent":
+		return []string{"Supply authority package before authority envelope assessment."}
+	case "present_unreadable", "present_malformed":
+		return []string{"Fix authority package so it is readable JSON."}
+	default:
+		return nil
+	}
+}
+
 func adapterCaptureExitCode(result adaptercapture.AssessmentResult) int {
 	switch result.AdapterCaptureAssessment {
 	case adaptercapture.StatePass:
@@ -964,6 +1082,19 @@ func ciArtifactExitCode(result ciartifact.ObservationResult) int {
 		return 0
 	case ciartifact.StateFail:
 		return 1
+	default:
+		return exitCannotVerify
+	}
+}
+
+func authorityExitCode(result authority.Result) int {
+	switch result.AuthorityEvaluationState {
+	case authority.StateWithinAuthority:
+		return 0
+	case authority.StateOutsideAuthority:
+		return 1
+	case authority.StateNotAssessed:
+		return exitCannotVerify
 	default:
 		return exitCannotVerify
 	}
@@ -2712,7 +2843,8 @@ Usage:
   sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>
   sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>
   sdp-trace assess --profile ci-artifact-observation --out <file> --artifact-manifest <file>
-  sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention|ci-artifact-observation> [profile inputs]
+  sdp-trace assess --profile authority-envelope --out <file> --authority-package <file>
+  sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention|ci-artifact-observation|authority-envelope> [profile inputs]
   sdp-trace assess explain --assessment-result <file>
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>

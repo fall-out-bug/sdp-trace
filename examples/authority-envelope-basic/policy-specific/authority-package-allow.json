@@ -1,0 +1,59 @@
+{
+  "schema_version": "authority-observation-package-v1",
+  "selected_policy_id": "policy-allow-ci",
+  "actors": [
+    {
+      "actor_id": "agent-1",
+      "actor_type": "ai_agent",
+      "declared_role": "implementer"
+    }
+  ],
+  "authority_envelopes": [
+    {
+      "schema_version": "authority-envelope-v1",
+      "task_id": "task-1",
+      "policy_id": "policy-deny-ci",
+      "authority_scope": "task",
+      "actor_ref": "agent-1",
+      "allowed_events": [],
+      "denied_events": [],
+      "target_rules": [
+        {
+          "rule_id": "rule-ci-denied",
+          "target_pattern": ".github/workflows/**",
+          "allowed_events": [],
+          "denied_events": ["direct_mutation"]
+        }
+      ]
+    },
+    {
+      "schema_version": "authority-envelope-v1",
+      "task_id": "task-1",
+      "policy_id": "policy-allow-ci",
+      "authority_scope": "task",
+      "actor_ref": "agent-1",
+      "allowed_events": [],
+      "denied_events": [],
+      "target_rules": [
+        {
+          "rule_id": "rule-ci-allowed",
+          "target_pattern": ".github/workflows/**",
+          "allowed_events": ["direct_mutation"],
+          "denied_events": []
+        }
+      ]
+    }
+  ],
+  "observed_actions": [
+    {
+      "event_id": "event-ci-edit",
+      "task_id": "task-1",
+      "event_type": "direct_mutation",
+      "target": ".github/workflows/verify.yml",
+      "source_type": "git",
+      "evidence_refs": ["git:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa#.github/workflows/verify.yml"],
+      "observed_at": "2026-05-09T00:00:00Z",
+      "observation_confidence": "single_source"
+    }
+  ]
+}

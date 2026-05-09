@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/authority-envelope.schema.json",
+  "title": "SDP Trace Authority Envelope",
+  "type": "object",
+  "required": ["schema_version", "task_id", "policy_id", "authority_scope", "actor_ref", "allowed_events", "denied_events", "target_rules"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "authority-envelope-v1" },
+    "task_id": { "$ref": "#/$defs/safeToken" },
+    "policy_id": { "$ref": "#/$defs/safeToken" },
+    "authority_scope": { "type": "string", "enum": ["task", "phase", "repository", "custom"] },
+    "actor_ref": { "$ref": "#/$defs/safeToken" },
+    "allowed_events": { "type": "array", "items": { "$ref": "#/$defs/eventType" } },
+    "denied_events": { "type": "array", "items": { "$ref": "#/$defs/eventType" } },
+    "target_rules": { "type": "array", "items": { "$ref": "#/$defs/targetRule" } },
+    "approval_requirements": { "type": "array", "items": { "$ref": "#/$defs/approvalRequirement" } },
+    "effective_from_event_id": { "$ref": "#/$defs/safeToken" },
+    "supersedes_policy_id": { "$ref": "#/$defs/safeToken" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "targetRule": {
+      "type": "object",
+      "required": ["rule_id", "target_pattern", "allowed_events", "denied_events"],
+      "properties": {
+        "rule_id": { "$ref": "#/$defs/safeToken" },
+        "target_pattern": { "$ref": "#/$defs/targetPattern" },
+        "allowed_events": { "type": "array", "items": { "$ref": "#/$defs/eventType" } },
+        "denied_events": { "type": "array", "items": { "$ref": "#/$defs/eventType" } }
+      },
+      "additionalProperties": false
+    },
+    "approvalRequirement": {
+      "type": "object",
+      "required": ["requirement_id", "approval_evidence_ref"],
+      "properties": {
+        "requirement_id": { "$ref": "#/$defs/safeToken" },
+        "event_type": { "$ref": "#/$defs/eventType" },
+        "target_rule_ref": { "$ref": "#/$defs/safeToken" },
+        "approval_evidence_ref": { "$ref": "#/$defs/evidenceRef" }
+      },
+      "additionalProperties": false
+    },
+    "eventType": {
+      "type": "string",
+      "pattern": "^(observe|review|feedback|direct_mutation|commit|merge|ci_run|harness_tool_call|gateway_request|custom:[A-Za-z0-9_.:-]{1,96})$"
+    },
+    "evidenceRef": {
+      "type": "string",
+      "pattern": "^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$"
+    },
+    "targetPattern": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_./*:-]{1,256}$"
+    },
+    "safeToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    }
+  }
+}
