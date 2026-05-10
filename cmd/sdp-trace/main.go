@@ -3271,49 +3271,70 @@ func runCrossRepoPostureExplain(args []string, stdout, stderr io.Writer) int {
 }
 
 func runValidateFixtures(_ context.Context, args []string, stdout, stderr io.Writer) int {
-	fixtureRoot := "."
-	if len(args) > 0 {
-		fixtureRoot = args[0]
-	}
+	fixtureRoot := fixtureRootArg(args)
 	runDirs, err := demo.DiscoverRunDirs(fixtureRoot)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	failed := false
-	for _, runDir := range runDirs {
-		result, table, audit, verifyErr := verifier.VerifyRun(runDir)
-		if err := verifier.WriteVerifierArtifacts(runDir, result, table, audit); err != nil {
-			fmt.Fprintf(stderr, "failed writing verifier artifacts for %s: %v\n", runDir, err)
-			failed = true
-			continue
-		}
-		fmt.Fprintf(stdout, "%s => %s\n", runDir, result.Result)
-		if verifyErr != nil {
-			fmt.Fprintf(stderr, "%s verification error: %v\n", runDir, verifyErr)
-		}
-		expectation, err := readFixtureExpectation(fixtureRoot, runDir)
-		if err != nil {
-			fmt.Fprintf(stderr, "invalid fixture expectation for %s: %v\n", runDir, err)
-			failed = true
-			continue
-		}
-		if expectation.ExpectedResult != "" && expectation.ExpectedResult != string(result.Result) {
-			fmt.Fprintf(stderr, "%s expected %s, got %s\n", runDir, expectation.ExpectedResult, result.Result)
-			failed = true
-			continue
-		}
-		if expectation.ExpectedResult == "" && result.Result == trace.VerdictFail {
-			failed = true
-		}
-		if expectation.ExpectedResult == "" && result.Result == trace.VerdictCannotVerify {
-			failed = true
-		}
-	}
-	if failed {
+	if validateFixtureRuns(fixtureRoot, runDirs, stdout, stderr) {
 		return 1
 	}
 	return 0
+}
+
+func fixtureRootArg(args []string) string {
+	if len(args) > 0 {
+		return args[0]
+	}
+	return "."
+}
+
+func validateFixtureRuns(fixtureRoot string, runDirs []string, stdout, stderr io.Writer) bool {
+	failed := false
+	for _, runDir := range runDirs {
+		if validateFixtureRun(fixtureRoot, runDir, stdout, stderr) {
+			failed = true
+		}
+	}
+	return failed
+}
+
+func validateFixtureRun(fixtureRoot, runDir string, stdout, stderr io.Writer) bool {
+	result, table, audit, verifyErr := verifier.VerifyRun(runDir)
+	if err := verifier.WriteVerifierArtifacts(runDir, result, table, audit); err != nil {
+		fmt.Fprintf(stderr, "failed writing verifier artifacts for %s: %v\n", runDir, err)
+		return true
+	}
+	fmt.Fprintf(stdout, "%s => %s\n", runDir, result.Result)
+	if verifyErr != nil {
+		fmt.Fprintf(stderr, "%s verification error: %v\n", runDir, verifyErr)
+	}
+	return fixtureExpectationFailed(fixtureRoot, runDir, result, stderr)
+}
+
+func fixtureExpectationFailed(fixtureRoot, runDir string, result trace.VerifierResult, stderr io.Writer) bool {
+	expectation, err := readFixtureExpectation(fixtureRoot, runDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "invalid fixture expectation for %s: %v\n", runDir, err)
+		return true
+	}
+	if expectation.ExpectedResult != "" {
+		return expectedFixtureResultFailed(runDir, result, expectation, stderr)
+	}
+	return unexpectedFixtureResultFailed(result)
+}
+
+func expectedFixtureResultFailed(runDir string, result trace.VerifierResult, expectation fixtureExpectation, stderr io.Writer) bool {
+	if expectation.ExpectedResult == string(result.Result) {
+		return false
+	}
+	fmt.Fprintf(stderr, "%s expected %s, got %s\n", runDir, expectation.ExpectedResult, result.Result)
+	return true
+}
+
+func unexpectedFixtureResultFailed(result trace.VerifierResult) bool {
+	return result.Result == trace.VerdictFail || result.Result == trace.VerdictCannotVerify
 }
 
 type doctorReport struct {
