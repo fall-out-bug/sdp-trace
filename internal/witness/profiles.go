@@ -479,7 +479,7 @@ func validateCIEnvelope(kind string, envelope EnvelopeInput, current []ArtifactD
 	if envelope.ProfileID != kind+"-v1" {
 		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonUnsupported}
 	}
-	if strings.TrimSpace(envelope.Source.CommitSHA) == "" || strings.TrimSpace(envelope.CI.RunID) == "" {
+	if missingEnvelopeIdentity(envelope) {
 		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity}
 	}
 	if state := validateCIEnvelopeStates(envelope.ProfileStates); state.reason != "" {
@@ -492,6 +492,10 @@ func validateCIEnvelope(kind string, envelope EnvelopeInput, current []ArtifactD
 		return profileDecision{StatusFail, stateFail, ReasonArtifactMismatch}
 	}
 	return profileDecision{}
+}
+
+func missingEnvelopeIdentity(envelope EnvelopeInput) bool {
+	return strings.TrimSpace(envelope.Source.CommitSHA) == "" || strings.TrimSpace(envelope.CI.RunID) == ""
 }
 
 func validateCIEnvelopeStates(states ProfileStates) profileDecision {
@@ -679,25 +683,33 @@ func runIDsFromRoot(runsRoot string) ([]string, error) {
 	}
 	runIDs := make([]string, 0, len(runDirs))
 	for _, runDir := range runDirs {
-		raw, err := os.ReadFile(filepath.Join(runDir, "run.json"))
+		runID, err := runIDFromDir(runDir)
 		if err != nil {
 			return nil, err
 		}
-		var payload struct {
-			RunID string `json:"run_id"`
-			ID    string `json:"id"`
-		}
-		if err := json.Unmarshal(raw, &payload); err != nil {
-			return nil, err
-		}
-		switch {
-		case strings.TrimSpace(payload.RunID) != "":
-			runIDs = append(runIDs, payload.RunID)
-		case strings.TrimSpace(payload.ID) != "":
-			runIDs = append(runIDs, payload.ID)
+		if runID != "" {
+			runIDs = append(runIDs, runID)
 		}
 	}
 	return runIDs, nil
+}
+
+func runIDFromDir(runDir string) (string, error) {
+	raw, err := os.ReadFile(filepath.Join(runDir, "run.json"))
+	if err != nil {
+		return "", err
+	}
+	var payload struct {
+		RunID string `json:"run_id"`
+		ID    string `json:"id"`
+	}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(payload.RunID) != "" {
+		return payload.RunID, nil
+	}
+	return strings.TrimSpace(payload.ID), nil
 }
 
 func ambientCIEnvPresent(kind string) bool {
@@ -747,13 +759,22 @@ func readSafeJSON(path string, target any) error {
 }
 
 func unsafeInputPath(path string) bool {
-	if strings.TrimSpace(path) == "" || strings.Contains(path, "\x00") {
-		return true
-	}
 	lower := strings.ToLower(filepath.ToSlash(path))
-	if strings.Contains(lower, "://") || strings.Contains(lower, "..") || strings.Contains(lower, "private.key") {
+	if unsafeInputPathText(path, lower) {
 		return true
 	}
+	return inputPathIsSymlink(path)
+}
+
+func unsafeInputPathText(path, lower string) bool {
+	return strings.TrimSpace(path) == "" ||
+		strings.Contains(path, "\x00") ||
+		strings.Contains(lower, "://") ||
+		strings.Contains(lower, "..") ||
+		strings.Contains(lower, "private.key")
+}
+
+func inputPathIsSymlink(path string) bool {
 	info, err := os.Lstat(path)
 	return err == nil && info.Mode()&os.ModeSymlink != 0
 }
@@ -792,20 +813,28 @@ func containsSecretLike(raw []byte) bool {
 }
 
 func jwtLike(text string) bool {
-	for _, field := range strings.FieldsFunc(text, func(r rune) bool {
+	for _, field := range jwtCandidateFields(text) {
+		if jwtCandidate(field) {
+			return true
+		}
+	}
+	return false
+}
+
+func jwtCandidateFields(text string) []string {
+	return strings.FieldsFunc(text, func(r rune) bool {
 		switch r {
 		case '"', '\'', ' ', '\n', '\t', '\r', ',', ':', '{', '}', '[', ']', '(', ')':
 			return true
 		default:
 			return false
 		}
-	}) {
-		parts := strings.Split(field, ".")
-		if len(parts) == 3 && strings.HasPrefix(parts[0], "eyj") && len(parts[1]) >= 8 && len(parts[2]) >= 8 {
-			return true
-		}
-	}
-	return false
+	})
+}
+
+func jwtCandidate(field string) bool {
+	parts := strings.Split(field, ".")
+	return len(parts) == 3 && strings.HasPrefix(parts[0], "eyj") && len(parts[1]) >= 8 && len(parts[2]) >= 8
 }
 
 func unsafeEnvelopeFields(envelope EnvelopeInput) bool {

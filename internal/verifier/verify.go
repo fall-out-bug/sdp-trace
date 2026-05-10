@@ -91,22 +91,28 @@ func verifiedChain(runDir string, manifest trace.RunManifest, events []trace.Eve
 func verifiedContract(manifest trace.RunManifest, result trace.VerifierResult) (trace.Contract, trace.MissingEvidenceTable, trace.VerifierResult, *trace.IntegrityAudit, error, bool) {
 	contract := trace.DefaultContract
 	if manifest.ContractPath != "" {
-		resolvedContract, err := trace.LoadContract(filepath.Clean(manifest.ContractPath))
-		if err != nil {
-			return contract, trace.MissingEvidenceTable{ContractID: manifest.ContractID}, cannotVerifyReplayResult(result, err.Error()), audit(manifest.RunID, "contract_unreadable", err.Error(), "contract_path", manifest.ContractPath), err, false
-		}
-		contractDigest := trace.SHA256Hex(string(mustMarshalJSON(resolvedContract)))
-		if manifest.ContractDigest != "" && manifest.ContractDigest != contractDigest {
-			return contract, trace.MissingEvidenceTable{ContractID: manifest.ContractID}, cannotVerifyReplayResult(result, "contract digest mismatch"), audit(manifest.RunID, "contract_digest_mismatch", "contract digest changed after run", "contract_path", manifest.ContractPath), nil, false
-		}
-		contract = resolvedContract
+		return verifiedManifestContract(manifest, result, contract)
 	} else if manifest.ContractDigest != "" {
-		defaultDigest := trace.SHA256Hex(string(mustMarshalJSON(trace.DefaultContract)))
-		if manifest.ContractDigest != defaultDigest {
+		if manifest.ContractDigest != contractDigest(trace.DefaultContract) {
 			return contract, trace.MissingEvidenceTable{ContractID: manifest.ContractID}, cannotVerifyReplayResult(result, "default contract digest mismatch"), audit(manifest.RunID, "contract_digest_mismatch", "default contract digest changed after run", "", ""), nil, false
 		}
 	}
 	return contract, trace.MissingEvidenceTable{}, result, nil, nil, true
+}
+
+func verifiedManifestContract(manifest trace.RunManifest, result trace.VerifierResult, fallback trace.Contract) (trace.Contract, trace.MissingEvidenceTable, trace.VerifierResult, *trace.IntegrityAudit, error, bool) {
+	resolvedContract, err := trace.LoadContract(filepath.Clean(manifest.ContractPath))
+	if err != nil {
+		return fallback, trace.MissingEvidenceTable{ContractID: manifest.ContractID}, cannotVerifyReplayResult(result, err.Error()), audit(manifest.RunID, "contract_unreadable", err.Error(), "contract_path", manifest.ContractPath), err, false
+	}
+	if manifest.ContractDigest != "" && manifest.ContractDigest != contractDigest(resolvedContract) {
+		return fallback, trace.MissingEvidenceTable{ContractID: manifest.ContractID}, cannotVerifyReplayResult(result, "contract digest mismatch"), audit(manifest.RunID, "contract_digest_mismatch", "contract digest changed after run", "contract_path", manifest.ContractPath), nil, false
+	}
+	return resolvedContract, trace.MissingEvidenceTable{}, result, nil, nil, true
+}
+
+func contractDigest(contract trace.Contract) string {
+	return trace.SHA256Hex(string(mustMarshalJSON(contract)))
 }
 
 func observedResult(runDir, runID string) trace.VerifierResult {
@@ -331,10 +337,14 @@ func WriteVerifierArtifacts(runDir string, result trace.VerifierResult, table tr
 	if err := writeJSON(filepath.Join(verifierDir, "missing-evidence-table.json"), table); err != nil {
 		return err
 	}
-	if audit != nil {
-		return writeJSON(filepath.Join(verifierDir, "integrity-audit.json"), audit)
+	return writeIntegrityAudit(verifierDir, audit)
+}
+
+func writeIntegrityAudit(verifierDir string, audit *trace.IntegrityAudit) error {
+	if audit == nil {
+		return nil
 	}
-	return nil
+	return writeJSON(filepath.Join(verifierDir, "integrity-audit.json"), audit)
 }
 
 func writeJSON(path string, value any) error {

@@ -26,21 +26,42 @@ func ExplainRun(runDir string) (string, error) {
 		fmt.Sprintf("contract_id: %s", manifest.ContractID),
 		fmt.Sprintf("result: %s", verification.Result),
 	}
-	if manifest.ClosureState != "" {
-		lines = append(lines, fmt.Sprintf("closure_state: %s", manifest.ClosureState))
-	}
-	if audit != nil && audit.Issue != "" {
-		lines = append(lines, fmt.Sprintf("integrity_issue: %s", audit.Issue))
-		lines = append(lines, fmt.Sprintf("integrity_reason: %s", audit.Reason))
-	}
-	if len(table.Rows) > 0 {
-		lines = append(lines, "missing_evidence:")
-		for _, row := range table.Rows {
-			lines = append(lines, fmt.Sprintf(" - %s: %s (%s)", row.ExpectedEvent, row.ObservedState, row.Reason))
-		}
-	}
-	if strings.TrimSpace(manifest.ContractPath) != "" {
-		lines = append(lines, fmt.Sprintf("contract_path: %s", manifest.ContractPath))
-	}
+	lines = appendClosureState(lines, manifest)
+	lines = appendAuditIssue(lines, audit)
+	lines = appendMissingEvidence(lines, table.Rows)
+	lines = appendContractPath(lines, manifest)
 	return strings.Join(lines, "\n"), nil
+}
+
+func appendClosureState(lines []string, manifest trace.RunManifest) []string {
+	if manifest.ClosureState == "" {
+		return lines
+	}
+	return append(lines, fmt.Sprintf("closure_state: %s", manifest.ClosureState))
+}
+
+func appendAuditIssue(lines []string, audit *trace.IntegrityAudit) []string {
+	if audit == nil || audit.Issue == "" {
+		return lines
+	}
+	lines = append(lines, fmt.Sprintf("integrity_issue: %s", audit.Issue))
+	return append(lines, fmt.Sprintf("integrity_reason: %s", audit.Reason))
+}
+
+func appendMissingEvidence(lines []string, rows []trace.MissingEvidenceRow) []string {
+	if len(rows) == 0 {
+		return lines
+	}
+	lines = append(lines, "missing_evidence:")
+	for _, row := range rows {
+		lines = append(lines, fmt.Sprintf(" - %s: %s (%s)", row.ExpectedEvent, row.ObservedState, row.Reason))
+	}
+	return lines
+}
+
+func appendContractPath(lines []string, manifest trace.RunManifest) []string {
+	if strings.TrimSpace(manifest.ContractPath) == "" {
+		return lines
+	}
+	return append(lines, fmt.Sprintf("contract_path: %s", manifest.ContractPath))
 }

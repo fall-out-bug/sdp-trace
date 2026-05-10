@@ -628,51 +628,45 @@ func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
 
 func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondition {
 	if input.Witness == nil || strings.TrimSpace(input.Witness.GeneratedAt) == "" {
-		return ProtectedCondition{
-			ID:         "witness_freshness_valid",
-			State:      GateCannotVerify,
-			ReasonCode: "missing_witness_freshness",
-			Reason:     "CI witness generated_at is required for protected freshness evaluation",
-			NextAction: "Supply CI witness evidence with generated_at freshness data.",
-		}
+		return witnessFreshnessCannotVerify("missing_witness_freshness", "CI witness generated_at is required for protected freshness evaluation", "Supply CI witness evidence with generated_at freshness data.")
 	}
 	generatedAt, err := time.Parse(time.RFC3339, input.Witness.GeneratedAt)
 	if err != nil {
-		return ProtectedCondition{
-			ID:         "witness_freshness_valid",
-			State:      GateCannotVerify,
-			ReasonCode: "invalid_witness_freshness",
-			Reason:     "CI witness generated_at cannot be parsed",
-			NextAction: "Regenerate CI witness evidence with an RFC3339 generated_at timestamp.",
-		}
+		return witnessFreshnessCannotVerify("invalid_witness_freshness", "CI witness generated_at cannot be parsed", "Regenerate CI witness evidence with an RFC3339 generated_at timestamp.")
 	}
 	now := input.Now
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
 	if generatedAt.After(now.Add(5 * time.Minute)) {
-		return ProtectedCondition{
-			ID:         "witness_freshness_valid",
-			State:      GateFail,
-			ReasonCode: "witness_from_future",
-			Reason:     "CI witness generated_at is after the verifier time window",
-			NextAction: "Regenerate CI witness evidence in the selected CI run.",
-		}
+		return witnessFreshnessFail("witness_from_future", "CI witness generated_at is after the verifier time window", "Regenerate CI witness evidence in the selected CI run.")
 	}
 	if now.Sub(generatedAt) > 24*time.Hour {
-		return ProtectedCondition{
-			ID:         "witness_freshness_valid",
-			State:      GateFail,
-			ReasonCode: "stale_witness",
-			Reason:     "CI witness generated_at is outside the protected freshness window",
-			NextAction: "Regenerate CI witness evidence for the selected run.",
-		}
+		return witnessFreshnessFail("stale_witness", "CI witness generated_at is outside the protected freshness window", "Regenerate CI witness evidence for the selected run.")
 	}
 	return ProtectedCondition{
 		ID:         "witness_freshness_valid",
 		State:      GatePass,
 		ReasonCode: "witness_fresh",
 		Reason:     "CI witness freshness is within the protected profile window",
+	}
+}
+
+func witnessFreshnessCannotVerify(code, reason, next string) ProtectedCondition {
+	return witnessFreshnessCondition(GateCannotVerify, code, reason, next)
+}
+
+func witnessFreshnessFail(code, reason, next string) ProtectedCondition {
+	return witnessFreshnessCondition(GateFail, code, reason, next)
+}
+
+func witnessFreshnessCondition(state, code, reason, next string) ProtectedCondition {
+	return ProtectedCondition{
+		ID:         "witness_freshness_valid",
+		State:      state,
+		ReasonCode: code,
+		Reason:     reason,
+		NextAction: next,
 	}
 }
 
@@ -717,10 +711,10 @@ func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
 		}
 	}
 	state := mapCheckpointState(input.Checkpoint.SignerAuthorityState)
-	if state == GatePass && input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned {
+	if protectedSignerPass(state, input.Checkpoint.TrustScope) {
 		return ProtectedCondition{ID: "checkpoint_signer_authorized", State: GatePass, ReasonCode: "checkpoint_signer_authorized", Reason: "checkpoint signer is authorized for CI signed protected profile"}
 	}
-	if state == GatePass && input.Checkpoint.TrustScope == checkpoint.TrustScopeLocalSigned {
+	if protectedSignerLocalOnly(state, input.Checkpoint.TrustScope) {
 		state = GateFail
 	}
 	return ProtectedCondition{
@@ -730,6 +724,14 @@ func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
 		Reason:     "checkpoint signer authority does not satisfy protected profile",
 		NextAction: "Run checkpoint signing in an authorized CI signer context.",
 	}
+}
+
+func protectedSignerPass(state, trustScope string) bool {
+	return state == GatePass && trustScope == checkpoint.TrustScopeCISigned
+}
+
+func protectedSignerLocalOnly(state, trustScope string) bool {
+	return state == GatePass && trustScope == checkpoint.TrustScopeLocalSigned
 }
 
 func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
@@ -835,20 +837,18 @@ func topLevelProtectedState(state string) string {
 }
 
 func protectedSeverity(state string) int {
-	switch state {
-	case GateFail:
-		return 5
-	case GateCannotVerify, "not_integrated":
-		return 4
-	case GateMissingTelemetry:
-		return 3
-	case GateNotAssessed:
-		return 2
-	case GatePass:
-		return 1
-	default:
-		return 0
-	}
+	return severityByState(map[string]int{
+		GateFail:             5,
+		GateCannotVerify:     4,
+		"not_integrated":     4,
+		GateMissingTelemetry: 3,
+		GateNotAssessed:      2,
+		GatePass:             1,
+	}, state)
+}
+
+func severityByState(values map[string]int, state string) int {
+	return values[state]
 }
 
 func protectedReasons(conditions []ProtectedCondition) []string {
@@ -963,20 +963,30 @@ func commandEvents(events []trace.Event) (trace.Event, trace.Event) {
 
 func classify(events []trace.Event, requirements []trace.EvidenceRequirement) (string, string) {
 	for _, requirement := range requirements {
-		if requirement.ID == "" {
-			continue
-		}
-		for _, event := range events {
-			if requirement.EventType != "" && event.EventType != trace.EventType(requirement.EventType) {
-				continue
-			}
-			value := payloadString(event, requirement.PayloadField)
-			if value == requirement.PayloadEquals {
-				return requirement.ID, "matched contract evidence requirement"
-			}
+		if evidenceRequirementMatches(events, requirement) {
+			return requirement.ID, "matched contract evidence requirement"
 		}
 	}
 	return "unmatched", "no contract evidence requirement matched"
+}
+
+func evidenceRequirementMatches(events []trace.Event, requirement trace.EvidenceRequirement) bool {
+	if requirement.ID == "" {
+		return false
+	}
+	for _, event := range events {
+		if eventMatchesRequirement(event, requirement) {
+			return true
+		}
+	}
+	return false
+}
+
+func eventMatchesRequirement(event trace.Event, requirement trace.EvidenceRequirement) bool {
+	if requirement.EventType != "" && event.EventType != trace.EventType(requirement.EventType) {
+		return false
+	}
+	return payloadString(event, requirement.PayloadField) == requirement.PayloadEquals
 }
 
 func payloadString(event trace.Event, key string) string {
@@ -1166,24 +1176,32 @@ func applyWitnessWithExpectation(result GateResult, witnessPath string, expected
 		return result
 	}
 	result.Witness = &record
-	if record.Kind == "github-actions" && record.Status == GatePass && record.TrustScope == "ci_witnessed" {
-		if bindingState, bindingReasons := witnessBindingState(record, expected); bindingState != GatePass {
-			result.CIWitnessGate = bindingState
-			result.Reasons = append(result.Reasons, bindingReasons...)
-			for _, reason := range bindingReasons {
-				result.WitnessBindings = append(result.WitnessBindings, WitnessBinding{ID: "source", State: bindingState, Reason: reason})
-			}
-			sort.Strings(result.Reasons)
-			result.GateConditions = gateConditions(result)
-			return result
-		}
-		result.CIWitnessGate = GatePass
-		result.MissingAuditEvidence = []string{"external_witness_checkpoint"}
-		result.GateConditions = gateConditions(result)
-		return result
+	if ciWitnessVerified(record) {
+		return applyVerifiedCIWitness(result, record, expected)
 	}
 	result.CIWitnessGate = GateCannotVerify
 	result.MissingAuditEvidence = []string{"ci_oidc_witness", "external_witness_checkpoint"}
+	result.GateConditions = gateConditions(result)
+	return result
+}
+
+func ciWitnessVerified(record WitnessSummary) bool {
+	return record.Kind == "github-actions" && record.Status == GatePass && record.TrustScope == "ci_witnessed"
+}
+
+func applyVerifiedCIWitness(result GateResult, record WitnessSummary, expected WitnessExpectation) GateResult {
+	if bindingState, bindingReasons := witnessBindingState(record, expected); bindingState != GatePass {
+		result.CIWitnessGate = bindingState
+		result.Reasons = append(result.Reasons, bindingReasons...)
+		for _, reason := range bindingReasons {
+			result.WitnessBindings = append(result.WitnessBindings, WitnessBinding{ID: "source", State: bindingState, Reason: reason})
+		}
+		sort.Strings(result.Reasons)
+		result.GateConditions = gateConditions(result)
+		return result
+	}
+	result.CIWitnessGate = GatePass
+	result.MissingAuditEvidence = []string{"external_witness_checkpoint"}
 	result.GateConditions = gateConditions(result)
 	return result
 }
@@ -1238,25 +1256,37 @@ func validateWitnessScalarBinding(binding witnessScalarBinding) (string, []strin
 }
 
 func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (string, []string) {
-	expectedArtifacts := map[string]string{}
-	for _, artifact := range expected {
-		expectedArtifacts[artifact.Path] = artifact.SHA256
-	}
+	expectedArtifacts := witnessArtifactsByPath(expected)
 	seenArtifacts := map[string]bool{}
 	for _, artifact := range actual {
 		seenArtifacts[artifact.Path] = true
-		expectedDigest, ok := expectedArtifacts[artifact.Path]
-		if !ok {
-			return GateCannotVerify, []string{fmt.Sprintf("ci witness artifact %s is not present in current gate input", artifact.Path)}
-		}
-		if expectedDigest != artifact.SHA256 {
-			return GateFail, []string{fmt.Sprintf("ci witness artifact digest mismatch for %s", artifact.Path)}
+		if state, reasons := validateWitnessArtifact(artifact, expectedArtifacts); state != GatePass {
+			return state, reasons
 		}
 	}
 	for path := range expectedArtifacts {
 		if !seenArtifacts[path] {
 			return GateCannotVerify, []string{fmt.Sprintf("ci witness artifact %s is missing from witness", path)}
 		}
+	}
+	return GatePass, nil
+}
+
+func witnessArtifactsByPath(artifacts []WitnessArtifactDigest) map[string]string {
+	byPath := map[string]string{}
+	for _, artifact := range artifacts {
+		byPath[artifact.Path] = artifact.SHA256
+	}
+	return byPath
+}
+
+func validateWitnessArtifact(artifact WitnessArtifactDigest, expected map[string]string) (string, []string) {
+	expectedDigest, ok := expected[artifact.Path]
+	if !ok {
+		return GateCannotVerify, []string{fmt.Sprintf("ci witness artifact %s is not present in current gate input", artifact.Path)}
+	}
+	if expectedDigest != artifact.SHA256 {
+		return GateFail, []string{fmt.Sprintf("ci witness artifact digest mismatch for %s", artifact.Path)}
 	}
 	return GatePass, nil
 }

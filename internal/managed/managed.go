@@ -261,13 +261,23 @@ func boundaryCondition(input Input) Condition {
 	if boundary == nil {
 		return fail("managed_boundary_enrolled_before_run", "run_not_managed", "selected run has no managed boundary enrollment event", "Run through the managed wrapper or lower the claim.")
 	}
-	if boundary.Sequence >= input.Run.ChildLaunch.Sequence || input.Run.ChildLaunch.Sequence == 0 {
+	if boundaryNotBeforeLaunch(*boundary, input.Run.ChildLaunch) {
 		return fail("managed_boundary_enrolled_before_run", "late_enrollment", "managed boundary enrollment is not before child launch", "Enroll the managed boundary before child harness execution.")
 	}
-	if boundary.ManagedPolicyDigest != input.Policy.PolicyProvenance.Digest || boundary.AdapterRegistryDigest != input.Registry.Provenance.Digest || boundary.RunNonce != input.Run.RunNonce {
+	if boundaryBindingMismatch(*boundary, input) {
 		return fail("managed_boundary_enrolled_before_run", "managed_boundary_not_in_chain", "managed boundary event does not bind the selected policy, registry, or run nonce", "Regenerate the run under the selected managed policy and registry.")
 	}
 	return pass("managed_boundary_enrolled_before_run", "managed_boundary_enrolled", "managed boundary enrollment is in chain before child launch")
+}
+
+func boundaryNotBeforeLaunch(boundary ManagedBoundaryEnrolled, launch LaunchEvent) bool {
+	return boundary.Sequence >= launch.Sequence || launch.Sequence == 0
+}
+
+func boundaryBindingMismatch(boundary ManagedBoundaryEnrolled, input Input) bool {
+	return boundary.ManagedPolicyDigest != input.Policy.PolicyProvenance.Digest ||
+		boundary.AdapterRegistryDigest != input.Registry.Provenance.Digest ||
+		boundary.RunNonce != input.Run.RunNonce
 }
 
 func adapterIdentityCondition(input Input) Condition {
@@ -275,17 +285,18 @@ func adapterIdentityCondition(input Input) Condition {
 	if !ok {
 		return fail("adapter_identity_authorized", "adapter_identity_unauthorized", "selected adapter is not present in the registry", "Register an authorized adapter before the run.")
 	}
-	authorized := false
-	for _, allowed := range input.Policy.AuthorizedAdapters {
-		if allowed.AdapterID == adapter.AdapterID && allowed.HarnessID == adapter.HarnessID && allowed.AuthorityRef == adapter.AuthorityRef && allowed.DeploymentRef == adapter.DeploymentRef {
-			authorized = true
-			break
-		}
-	}
-	if !authorized || adapter.IdentityState != IdentityVerified {
+	if !adapterIdentityAuthorized(input, adapter) {
 		return fail("adapter_identity_authorized", "adapter_identity_unauthorized", "adapter identity is not verified and authorized by policy", "Use a verified adapter identity authorized by managed policy.")
 	}
 	return pass("adapter_identity_authorized", "adapter_identity_authorized", "adapter identity is verified and authorized by policy")
+}
+
+func adapterIdentityAuthorized(input Input, adapter Adapter) bool {
+	if adapter.IdentityState != IdentityVerified {
+		return false
+	}
+	_, ok := selectedAuthorizedAdapter(input, adapter)
+	return ok
 }
 
 func capabilityCondition(input Input) Condition {
@@ -428,12 +439,19 @@ func testProvenanceCondition(input Input) Condition {
 
 func suppressionCondition(input Input) Condition {
 	for _, suppressed := range input.Run.SuppressedEventGroups {
-		rule, ok := suppressionRuleForGroup(input.Policy, suppressed.EventGroup)
-		if !ok || !suppressed.AuthorizedByPolicy || !preRunProvenance(suppressed.PolicyProvenanceSource) || !preRunProvenance(rule.PolicyProvenanceSource) {
+		if !suppressionVerified(input.Policy, suppressed) {
 			return fail("suppression_policy_valid", "suppression_unverified", "suppression is not authorized by pre-run policy provenance", "Use pre-run policy authority for suppression or capture the event.")
 		}
 	}
 	return pass("suppression_policy_valid", "suppression_policy_valid", "suppression policy is valid or no suppression is present")
+}
+
+func suppressionVerified(policy Policy, suppressed SuppressedEventGroup) bool {
+	rule, ok := suppressionRuleForGroup(policy, suppressed.EventGroup)
+	return ok &&
+		suppressed.AuthorizedByPolicy &&
+		preRunProvenance(suppressed.PolicyProvenanceSource) &&
+		preRunProvenance(rule.PolicyProvenanceSource)
 }
 
 func bypassCondition(input Input) Condition {
@@ -515,11 +533,18 @@ func selectedAdapter(input Input) (Adapter, bool) {
 
 func selectedAuthorizedAdapter(input Input, adapter Adapter) (AuthorizedAdapter, bool) {
 	for _, allowed := range input.Policy.AuthorizedAdapters {
-		if allowed.AdapterID == adapter.AdapterID && allowed.HarnessID == adapter.HarnessID && allowed.AuthorityRef == adapter.AuthorityRef && allowed.DeploymentRef == adapter.DeploymentRef {
+		if authorizedAdapterMatches(allowed, adapter) {
 			return allowed, true
 		}
 	}
 	return AuthorizedAdapter{}, false
+}
+
+func authorizedAdapterMatches(allowed AuthorizedAdapter, adapter Adapter) bool {
+	return allowed.AdapterID == adapter.AdapterID &&
+		allowed.HarnessID == adapter.HarnessID &&
+		allowed.AuthorityRef == adapter.AuthorityRef &&
+		allowed.DeploymentRef == adapter.DeploymentRef
 }
 
 func requiredEventTypes(input Input) []string {
@@ -564,13 +589,21 @@ func suppressionForGroup(input Input, groupID string) (bool, bool, bool) {
 		if suppressed.EventGroup != groupID {
 			continue
 		}
-		rule, ok := suppressionRuleForGroup(input.Policy, groupID)
-		if !ok || !suppressed.AuthorizedByPolicy || !preRunProvenance(suppressed.PolicyProvenanceSource) || !preRunProvenance(rule.PolicyProvenanceSource) {
+		rule, ok := verifiedSuppressionRule(input.Policy, suppressed)
+		if !ok {
 			return true, false, false
 		}
 		return true, true, rule.SuppressionMaySatisfyProfile && suppressed.AuthorizedByPolicy
 	}
 	return false, false, false
+}
+
+func verifiedSuppressionRule(policy Policy, suppressed SuppressedEventGroup) (SuppressionRule, bool) {
+	rule, ok := suppressionRuleForGroup(policy, suppressed.EventGroup)
+	if !ok || !suppressionVerified(policy, suppressed) {
+		return SuppressionRule{}, false
+	}
+	return rule, true
 }
 
 func suppressionRuleForGroup(policy Policy, groupID string) (SuppressionRule, bool) {
@@ -590,16 +623,25 @@ func groupReasonPrefix(group string) string {
 }
 
 func eventObserved(events []EvidenceEvent, eventType string, scopes []string) bool {
-	scopeSet := map[string]bool{}
-	for _, scope := range scopes {
-		scopeSet[scope] = true
-	}
+	scopeSet := scopeSet(scopes)
 	for _, event := range events {
-		if event.EventType == eventType && (len(scopeSet) == 0 || scopeSet[event.ProvenanceScope]) {
+		if eventObservedInScope(event, eventType, scopeSet) {
 			return true
 		}
 	}
 	return false
+}
+
+func scopeSet(scopes []string) map[string]bool {
+	scopeSet := map[string]bool{}
+	for _, scope := range scopes {
+		scopeSet[scope] = true
+	}
+	return scopeSet
+}
+
+func eventObservedInScope(event EvidenceEvent, eventType string, scopes map[string]bool) bool {
+	return event.EventType == eventType && (len(scopes) == 0 || scopes[event.ProvenanceScope])
 }
 
 func preRunProvenance(source string) bool {
@@ -615,10 +657,7 @@ func artifactsMatch(expected, observed []ArtifactDigest) bool {
 	if len(expected) == 0 || len(observed) == 0 {
 		return false
 	}
-	want := map[string]string{}
-	for _, artifact := range expected {
-		want[artifact.Path] = artifact.SHA256
-	}
+	want := artifactDigestsByPath(expected)
 	for _, artifact := range observed {
 		if want[artifact.Path] != artifact.SHA256 {
 			return false
@@ -626,6 +665,14 @@ func artifactsMatch(expected, observed []ArtifactDigest) bool {
 		delete(want, artifact.Path)
 	}
 	return len(want) == 0
+}
+
+func artifactDigestsByPath(artifacts []ArtifactDigest) map[string]string {
+	want := map[string]string{}
+	for _, artifact := range artifacts {
+		want[artifact.Path] = artifact.SHA256
+	}
+	return want
 }
 
 func topLevel(conditions []Condition) string {
@@ -653,18 +700,16 @@ func topLevelState(state string) string {
 }
 
 func severity(state string) int {
-	switch topLevelState(state) {
-	case StateFail:
-		return 4
-	case StateCannotVerify:
-		return 3
-	case StateNotAssessed:
-		return 2
-	case StatePass:
-		return 1
-	default:
-		return 0
-	}
+	return managedSeverityByState(topLevelState(state))
+}
+
+func managedSeverityByState(state string) int {
+	return map[string]int{
+		StateFail:         4,
+		StateCannotVerify: 3,
+		StateNotAssessed:  2,
+		StatePass:         1,
+	}[state]
 }
 
 func reasons(conditions []Condition) []string {

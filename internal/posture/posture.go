@@ -53,6 +53,15 @@ var rowStateMetrics = map[string]string{
 	"issue_observed_rows":    query.RowStateIssueObserved,
 }
 
+var signalMetricPredicates = map[string]func(PostureSignal) bool{
+	"local_only_evidence_rows":         func(signal PostureSignal) bool { return signal.WitnessScope == "local_only" },
+	"ci_witnessed_evidence_rows":       func(signal PostureSignal) bool { return signal.WitnessScope == "ci_witnessed" },
+	"external_witnessed_evidence_rows": func(signal PostureSignal) bool { return signal.WitnessScope == "external_witnessed" },
+	"override_rows":                    func(signal PostureSignal) bool { return signal.OverrideMarker == "override_present" },
+	"late_attach_rows":                 func(signal PostureSignal) bool { return signal.LateAttachMarker == "late_attach_observed" },
+	"contract_change_rows":             func(signal PostureSignal) bool { return signal.ContractChangeMarker == "contract_change_observed" },
+}
+
 var safeLabelPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 
 type SelectionManifest struct {
@@ -225,25 +234,40 @@ func prepareBuildInput(selectionPath string, now time.Time) (buildInput, error) 
 	if err != nil {
 		return buildInput{}, err
 	}
-	if err := validateSelection(selection); err != nil {
+	activeKeys, err := validateBuildSelection(selection)
+	if err != nil {
 		return buildInput{}, err
-	}
-	activeKeys := groupingKeys(selection.GroupingSetID)
-	if len(activeKeys) == 0 {
-		return buildInput{}, fmt.Errorf("unsupported grouping set")
 	}
 	cutoff, hasCutoff, err := parseFreshnessBoundary(selection.FreshnessBoundary, now)
 	if err != nil {
 		return buildInput{}, err
 	}
-	handoff := selection.Handoff
+	handoff, err := validatedHandoff(selection.Handoff)
+	if err != nil {
+		return buildInput{}, err
+	}
+	return buildInput{selection: selection, activeKeys: activeKeys, cutoff: cutoff, hasCutoff: hasCutoff, handoff: handoff}, nil
+}
+
+func validateBuildSelection(selection SelectionManifest) ([]string, error) {
+	if err := validateSelection(selection); err != nil {
+		return nil, err
+	}
+	activeKeys := groupingKeys(selection.GroupingSetID)
+	if len(activeKeys) == 0 {
+		return nil, fmt.Errorf("unsupported grouping set")
+	}
+	return activeKeys, nil
+}
+
+func validatedHandoff(handoff map[string]string) (map[string]string, error) {
 	if handoff == nil {
 		handoff = map[string]string{}
 	}
 	if !safeHandoff(handoff) {
-		return buildInput{}, fmt.Errorf("unsafe handoff")
+		return nil, fmt.Errorf("unsafe handoff")
 	}
-	return buildInput{selection: selection, activeKeys: activeKeys, cutoff: cutoff, hasCutoff: hasCutoff, handoff: handoff}, nil
+	return handoff, nil
 }
 
 func ingestRepositories(selection SelectionManifest, activeKeys []string, cutoff time.Time, hasCutoff bool) ([]InputSelection, []RefusalRow, map[string]*aggregateGroup) {
@@ -406,18 +430,26 @@ func ValidateExportResult(result ExportResult) error {
 }
 
 func validateExportHeader(result ExportResult) error {
-	if result.SchemaVersion != SchemaVersion ||
-		result.ExportProfileID != ProfileID ||
-		result.ExportProfileVersion != ProfileVer {
+	if unsupportedExportHeader(result) {
 		return fmt.Errorf("unsupported posture export")
 	}
-	if result.ExportID == "" || result.Producer != "sdp-trace" || result.GeneratedAt == "" {
+	if malformedExportHeader(result) {
 		return fmt.Errorf("malformed posture export")
 	}
 	if _, err := time.Parse(time.RFC3339, result.GeneratedAt); err != nil {
 		return fmt.Errorf("malformed posture export generated_at")
 	}
 	return nil
+}
+
+func unsupportedExportHeader(result ExportResult) bool {
+	return result.SchemaVersion != SchemaVersion ||
+		result.ExportProfileID != ProfileID ||
+		result.ExportProfileVersion != ProfileVer
+}
+
+func malformedExportHeader(result ExportResult) bool {
+	return result.ExportID == "" || result.Producer != "sdp-trace" || result.GeneratedAt == ""
 }
 
 func validateExportRows(result ExportResult) error {
@@ -611,12 +643,18 @@ func validateMovementSummary(summary MovementSummary) error {
 }
 
 func validateRefusalRow(row RefusalRow) error {
-	if row.ID == "" || !safeLabel(row.InputID) || !validRefusalReason(row.RefusalReason) ||
-		!validInputTrustState(row.InputTrustState) ||
-		(row.TimeWindow != "" && !safeLabel(row.TimeWindow)) {
+	if malformedRefusalRow(row) {
 		return fmt.Errorf("malformed posture export refusal_row")
 	}
 	return nil
+}
+
+func malformedRefusalRow(row RefusalRow) bool {
+	return row.ID == "" ||
+		!safeLabel(row.InputID) ||
+		!validRefusalReason(row.RefusalReason) ||
+		!validInputTrustState(row.InputTrustState) ||
+		(row.TimeWindow != "" && !safeLabel(row.TimeWindow))
 }
 
 func SensitiveClasses() []string {
@@ -711,6 +749,16 @@ func readSelection(path string) (SelectionManifest, error) {
 }
 
 func validateSelection(selection SelectionManifest) error {
+	if err := validateSelectionHeader(selection); err != nil {
+		return err
+	}
+	if err := validateSelectionGrouping(selection); err != nil {
+		return err
+	}
+	return validateSelectionRepositories(selection)
+}
+
+func validateSelectionHeader(selection SelectionManifest) error {
 	if selection.SchemaVersion != SelectionSchemaVersion {
 		return fmt.Errorf("unsupported selection schema")
 	}
@@ -720,12 +768,20 @@ func validateSelection(selection SelectionManifest) error {
 	if selection.ProfileVersion != "" && selection.ProfileVersion != ProfileVer {
 		return fmt.Errorf("unsupported profile version")
 	}
+	return nil
+}
+
+func validateSelectionGrouping(selection SelectionManifest) error {
 	if len(groupingKeys(selection.GroupingSetID)) == 0 {
 		return fmt.Errorf("unsupported grouping set")
 	}
 	if !groupingAllowedByExposure(selection.GroupingSetID, selection.DimensionExposurePolicy) {
 		return fmt.Errorf("dimension exposure policy excludes grouping key")
 	}
+	return nil
+}
+
+func validateSelectionRepositories(selection SelectionManifest) error {
 	if len(selection.Repositories) == 0 {
 		return fmt.Errorf("empty selection")
 	}
@@ -758,12 +814,16 @@ func readSignals(path string) (map[string]PostureSignal, error) {
 	}
 	out := map[string]PostureSignal{}
 	for _, signal := range manifest.Signals {
-		if unsafeOutput(signal.RowRef + signal.WitnessScope + signal.ObserverState + signal.OverrideMarker + signal.LateAttachMarker + signal.ContractChangeMarker) {
+		if unsafeSignal(signal) {
 			return nil, fmt.Errorf("unsafe signal")
 		}
 		out[signal.RowRef] = signal
 	}
 	return out, nil
+}
+
+func unsafeSignal(signal PostureSignal) bool {
+	return unsafeOutput(signal.RowRef + signal.WitnessScope + signal.ObserverState + signal.OverrideMarker + signal.LateAttachMarker + signal.ContractChangeMarker)
 }
 
 func verifyDigestManifest(manifestPath, queryPackPath string) (string, error) {
@@ -948,22 +1008,8 @@ func metricMatches(metricID string, row query.QueryPackRow, signal PostureSignal
 }
 
 func signalMetricMatches(metricID string, signal PostureSignal) bool {
-	switch metricID {
-	case "local_only_evidence_rows":
-		return signal.WitnessScope == "local_only"
-	case "ci_witnessed_evidence_rows":
-		return signal.WitnessScope == "ci_witnessed"
-	case "external_witnessed_evidence_rows":
-		return signal.WitnessScope == "external_witnessed"
-	case "override_rows":
-		return signal.OverrideMarker == "override_present"
-	case "late_attach_rows":
-		return signal.LateAttachMarker == "late_attach_observed"
-	case "contract_change_rows":
-		return signal.ContractChangeMarker == "contract_change_observed"
-	default:
-		return false
-	}
+	matches, ok := signalMetricPredicates[metricID]
+	return ok && matches(signal)
 }
 
 func metricNotAssessed(def metricDef, row query.QueryPackRow, hasSignal bool) bool {
@@ -974,14 +1020,7 @@ func metricNotAssessed(def metricDef, row query.QueryPackRow, hasSignal bool) bo
 }
 
 func buildMovements(metrics []MetricRow, currentWindow, previousWindow string) ([]MovementRow, MovementSummary) {
-	byKey := map[string]map[string]MetricRow{}
-	for _, row := range metrics {
-		key := row.MetricID + "|" + row.MetricVersion + "|" + row.DimensionKey
-		if byKey[key] == nil {
-			byKey[key] = map[string]MetricRow{}
-		}
-		byKey[key][row.TimeWindow] = row
-	}
+	byKey := metricsByMovementKey(metrics)
 	keys := make([]string, 0, len(byKey))
 	for key := range byKey {
 		keys = append(keys, key)
@@ -1010,17 +1049,33 @@ func buildMovements(metrics []MetricRow, currentWindow, previousWindow string) (
 			row.PreviousValue = previous.Numerator
 		}
 		row.Delta = row.CurrentValue - row.PreviousValue
-		if row.Comparable {
-			summary.ComparableCount++
-		} else {
-			row.ComparisonBasis = "non_comparable_missing_window"
-			row.NonComparableReason = "non_comparable_missing_window"
-			summary.NonComparableCount++
-			summary.NonComparableReason[row.NonComparableReason]++
-		}
+		summarizeMovement(&summary, &row)
 		rows = append(rows, row)
 	}
 	return rows, summary
+}
+
+func metricsByMovementKey(metrics []MetricRow) map[string]map[string]MetricRow {
+	byKey := map[string]map[string]MetricRow{}
+	for _, row := range metrics {
+		key := row.MetricID + "|" + row.MetricVersion + "|" + row.DimensionKey
+		if byKey[key] == nil {
+			byKey[key] = map[string]MetricRow{}
+		}
+		byKey[key][row.TimeWindow] = row
+	}
+	return byKey
+}
+
+func summarizeMovement(summary *MovementSummary, row *MovementRow) {
+	if row.Comparable {
+		summary.ComparableCount++
+		return
+	}
+	row.ComparisonBasis = "non_comparable_missing_window"
+	row.NonComparableReason = "non_comparable_missing_window"
+	summary.NonComparableCount++
+	summary.NonComparableReason[row.NonComparableReason]++
 }
 
 func groupingKeys(groupingSet string) []string {
@@ -1158,19 +1213,22 @@ func validateInputPaths(repo RepositoryWindow) error {
 
 func unsafeSelectionPath(value string) bool {
 	clean := strings.ReplaceAll(value, "\\", "/")
+	return hasUnsafeSelectionPathPrefix(clean) || strings.Contains(clean, "../") || strings.Contains(clean, "/..")
+}
+
+func hasUnsafeSelectionPathPrefix(clean string) bool {
 	return strings.Contains(clean, "://") ||
 		hasWindowsVolume(clean) ||
 		strings.HasPrefix(clean, "/") ||
-		strings.HasPrefix(clean, "../") ||
-		strings.Contains(clean, "../") ||
-		strings.Contains(clean, "/..")
+		strings.HasPrefix(clean, "../")
 }
 
 func hasWindowsVolume(value string) bool {
-	return len(value) >= 3 &&
-		((value[0] >= 'A' && value[0] <= 'Z') || (value[0] >= 'a' && value[0] <= 'z')) &&
-		value[1] == ':' &&
-		value[2] == '/'
+	return len(value) >= 3 && isASCIIAlpha(value[0]) && value[1] == ':' && value[2] == '/'
+}
+
+func isASCIIAlpha(value byte) bool {
+	return (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z')
 }
 
 func safeHandoff(values map[string]string) bool {
