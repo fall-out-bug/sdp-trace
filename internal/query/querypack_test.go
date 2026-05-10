@@ -308,6 +308,56 @@ func TestForensicsBasicPackSafetyClassesAreVerifiedAgainstOutput(t *testing.T) {
 	}
 }
 
+func TestSafeTokenPreservesAllowedCharsAndDropsUnsafe(t *testing.T) {
+	t.Run("keepsAllowedCharacters", func(t *testing.T) {
+		got := safeToken("abc_DEF-012")
+		if got != "abc_DEF-012" {
+			t.Fatalf("safeToken preserved = %q", got)
+		}
+	})
+
+	t.Run("dropsUnsafeCharacters", func(t *testing.T) {
+		got := safeToken("a b+c:d/e.f:g")
+		if got != "abcdefg" {
+			t.Fatalf("safeToken filtered = %q", got)
+		}
+	})
+
+	t.Run("normalizesEmptyResult", func(t *testing.T) {
+		got := safeToken(" a+b ")
+		if got != "ab" {
+			t.Fatalf("safeToken removed all unsafe chars = %q", got)
+		}
+	})
+
+	t.Run("dropsNonAscii", func(t *testing.T) {
+		got := safeToken("a-b_🙂-1")
+		if got != "a-b_-1" {
+			t.Fatalf("safeToken filtered unicode = %q", got)
+		}
+	})
+}
+
+func TestSafeTokenUnknownForEmptyOrFullyUnsafe(t *testing.T) {
+	t.Run("emptyValue", func(t *testing.T) {
+		if got := safeToken(""); got != "unknown" {
+			t.Fatalf("empty value = %q", got)
+		}
+	})
+
+	t.Run("preservesSingleSafeCharacter", func(t *testing.T) {
+		if got := safeToken("a!@#$"); got != "a" {
+			t.Fatalf("fully unsafe with one safe char = %q", got)
+		}
+	})
+
+	t.Run("allUnsafe", func(t *testing.T) {
+		if got := safeToken(" !*"); got != "unknown" {
+			t.Fatalf("all-unsafe value = %q", got)
+		}
+	})
+}
+
 func writeForensicsPackFixture(t *testing.T) string {
 	t.Helper()
 	runDir := t.TempDir()

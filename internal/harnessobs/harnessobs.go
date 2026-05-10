@@ -1443,6 +1443,29 @@ func LoadValidation(path string) (Validation, error) {
 }
 
 func validateProfile(profile Profile) error {
+	if err := validateProfileMetadata(profile); err != nil {
+		return err
+	}
+	if err := validateProfileEventFamilies(profile.RequiredEventFamilies, profile.OptionalEventFamilies); err != nil {
+		return err
+	}
+	return validateProfileDegradationRules(profile.DegradationRules)
+}
+
+func validateProfileMetadata(profile Profile) error {
+	if err := validateProfileIdentity(profile); err != nil {
+		return err
+	}
+	if profile.EventSchemaVersion != EventSchemaVersion {
+		return errors.New("unsupported event_schema_version")
+	}
+	if len(profile.RequiredEventFamilies) == 0 {
+		return errors.New("profile requires at least one required_event_family")
+	}
+	return nil
+}
+
+func validateProfileIdentity(profile Profile) error {
 	if profile.SchemaVersion != ProfileSchemaVersion {
 		return fmt.Errorf("unsupported harness profile schema_version: %s", profile.SchemaVersion)
 	}
@@ -1452,26 +1475,39 @@ func validateProfile(profile Profile) error {
 	if !safeIDPattern.MatchString(profile.HarnessFamily) {
 		return errors.New("unsafe harness_family")
 	}
-	if profile.EventSchemaVersion != EventSchemaVersion {
-		return errors.New("unsupported event_schema_version")
+	return nil
+}
+
+func validateProfileEventFamilies(requiredEventFamilies []string, optionalEventFamilies []string) error {
+	if err := validateFamilyList(requiredEventFamilies); err != nil {
+		return err
 	}
-	if len(profile.RequiredEventFamilies) == 0 {
-		return errors.New("profile requires at least one required_event_family")
-	}
-	for _, family := range append(profile.RequiredEventFamilies, profile.OptionalEventFamilies...) {
+	return validateFamilyList(optionalEventFamilies)
+}
+
+func validateFamilyList(families []string) error {
+	for _, family := range families {
 		if !validFamily(family) {
 			return fmt.Errorf("unsupported event family: %s", family)
 		}
 	}
-	for key, rule := range profile.DegradationRules {
+	return nil
+}
+
+func validateProfileDegradationRules(rules map[string]Rule) error {
+	for key, rule := range rules {
 		if !validRuleKey(key) {
 			return fmt.Errorf("unsupported degradation rule: %s", key)
 		}
-		if !validState(rule.State) || !safeIDPattern.MatchString(rule.ReasonCode) {
+		if !validDegradationRule(rule) {
 			return fmt.Errorf("invalid degradation rule %s", key)
 		}
 	}
 	return nil
+}
+
+func validDegradationRule(rule Rule) bool {
+	return validState(rule.State) && safeIDPattern.MatchString(rule.ReasonCode)
 }
 
 func readEvents(profile Profile, sourcePath string) ([]Event, string, error) {

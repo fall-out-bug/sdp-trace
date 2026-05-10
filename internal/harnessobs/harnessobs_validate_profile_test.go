@@ -1,0 +1,149 @@
+package harnessobs
+
+import "testing"
+
+func TestValidateProfile(t *testing.T) {
+	tests := []struct {
+		name    string
+		profile Profile
+		wantErr string
+	}{
+		{
+			name:    "passes with valid profile",
+			profile: validProfileFixture(),
+			wantErr: "",
+		},
+		{
+			name: "unsupported schema version",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.SchemaVersion = "bad"
+				return p
+			}(),
+			wantErr: "unsupported harness profile schema_version: bad",
+		},
+		{
+			name: "unsafe profile id",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.ProfileID = "../bad"
+				return p
+			}(),
+			wantErr: "unsafe profile_id",
+		},
+		{
+			name: "unsafe harness family",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.HarnessFamily = "bad family"
+				return p
+			}(),
+			wantErr: "unsafe harness_family",
+		},
+		{
+			name: "unsupported event schema version",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.EventSchemaVersion = "bad"
+				return p
+			}(),
+			wantErr: "unsupported event_schema_version",
+		},
+		{
+			name: "missing required family",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.RequiredEventFamilies = nil
+				return p
+			}(),
+			wantErr: "profile requires at least one required_event_family",
+		},
+		{
+			name: "unsupported required family",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.RequiredEventFamilies = []string{"harness", "bad-family"}
+				return p
+			}(),
+			wantErr: "unsupported event family: bad-family",
+		},
+		{
+			name: "unsupported optional family",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.OptionalEventFamilies = []string{"bad-family"}
+				return p
+			}(),
+			wantErr: "unsupported event family: bad-family",
+		},
+		{
+			name: "unsupported degradation rule",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.DegradationRules = map[string]Rule{
+					"bad-key": {State: StatePass, ReasonCode: "ok"},
+				}
+				return p
+			}(),
+			wantErr: "unsupported degradation rule: bad-key",
+		},
+		{
+			name: "invalid degradation rule state",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.DegradationRules = map[string]Rule{
+					"missing_required_family": {State: "bad", ReasonCode: "bad"},
+				}
+				return p
+			}(),
+			wantErr: "invalid degradation rule missing_required_family",
+		},
+		{
+			name: "invalid degradation rule reason code",
+			profile: func() Profile {
+				p := validProfileFixture()
+				p.DegradationRules = map[string]Rule{
+					"missing_required_family": {State: StateNotAssessed, ReasonCode: "bad reason"},
+				}
+				return p
+			}(),
+			wantErr: "invalid degradation rule missing_required_family",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateProfile(tt.profile)
+			if err == nil {
+				if tt.wantErr != "" {
+					t.Fatalf("validateProfile() = nil, want %q", tt.wantErr)
+				}
+				return
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("validateProfile() = %q, want %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func validProfileFixture() Profile {
+	return Profile{
+		SchemaVersion:         ProfileSchemaVersion,
+		ProfileID:             "generic-harness-v1",
+		HarnessFamily:         "generic-harness",
+		EventSchemaVersion:    EventSchemaVersion,
+		RequiredEventFamilies: []string{"harness"},
+		OptionalEventFamilies: []string{"model"},
+		RawRetentionPolicy:    "digest_only",
+		DegradationRules: map[string]Rule{
+			"missing_required_family": {State: StateNotAssessed, ReasonCode: "required_event_family_absent"},
+			"missing_optional_family": {State: StateNotAssessed, ReasonCode: "optional_event_family_absent"},
+			"source_unavailable":      {State: StateCannotVerify, ReasonCode: "source_unavailable"},
+			"unsafe_input":            {State: StateFail, ReasonCode: "unsafe_input"},
+			"digest_mismatch":         {State: StateCannotVerify, ReasonCode: "source_digest_mismatch"},
+			"schema_version_mismatch": {State: StateCannotVerify, ReasonCode: "schema_version_mismatch"},
+			"cross_link_conflict":     {State: StateCannotVerify, ReasonCode: "adapter_harness_state_conflict"},
+		},
+	}
+}

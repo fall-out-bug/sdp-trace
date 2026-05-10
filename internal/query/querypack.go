@@ -564,17 +564,31 @@ func familyForVerifierState(id string) string {
 }
 
 func safeToken(value string) string {
-	var b strings.Builder
+	sanitized := sanitizeToken(value)
+	return tokenOrUnknown(sanitized)
+}
+
+const safeTokenAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+
+func sanitizeToken(value string) string {
+	var builder strings.Builder
 	for _, r := range value {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
-			b.WriteRune(r)
+		if isSafeTokenChar(r) {
+			builder.WriteRune(r)
 		}
 	}
-	out := b.String()
-	if out == "" {
+	return builder.String()
+}
+
+func isSafeTokenChar(r rune) bool {
+	return strings.ContainsRune(safeTokenAlphabet, r)
+}
+
+func tokenOrUnknown(value string) string {
+	if value == "" {
 		return "unknown"
 	}
-	return out
+	return value
 }
 
 func sensitiveClasses() []string {
