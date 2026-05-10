@@ -231,27 +231,89 @@ func Evaluate(input Input) AssessmentResult {
 }
 
 func policyCondition(input Input) Condition {
-	if input.Policy.PolicyID == "" || input.Policy.PolicyDigest == "" {
-		return cannotVerify("redaction_policy_bound", "missing_redaction_policy", "redaction policy is required", "Supply a redaction policy with stable id, version, digest, and provenance.")
+	if condition, ok := validatePolicyContract(input.Policy); ok {
+		return condition
 	}
-	if len(input.Policy.RedactionActions) == 0 || len(input.Policy.ForbiddenPersistenceClasses) == 0 || input.Policy.Authority.ActorID == "" || len(input.Policy.ProfileMappings) == 0 || input.Policy.UnresolvedRedactionImpact == "" {
-		return cannotVerify("redaction_policy_bound", "redaction_policy_contract_incomplete", "redaction policy contract is incomplete", "Supply redaction actions, forbidden persistence classes, authority, profile mappings, and unresolved-redaction impact.")
+	if condition, ok := validateRunPolicyBinding(input); ok {
+		return condition
 	}
-	if input.Policy.Authority.VerificationState == AuthoritySelfClaimed {
-		return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction policy authority is self-claimed", "Use a provenance or accountability-bound redaction policy authority.")
-	}
-	if input.Run.RedactionPolicyDigest != input.Policy.PolicyDigest {
-		return fail("redaction_policy_bound", "redaction_policy_mismatch", "run evidence is not bound to the selected redaction policy", "Regenerate or select evidence bound to the redaction policy.")
-	}
-	for _, event := range input.Run.Events {
-		if event.RedactionPolicyDigest != "" && event.RedactionPolicyDigest != input.Policy.PolicyDigest {
-			return fail("redaction_policy_bound", "redaction_policy_mismatch", "event evidence contradicts the selected redaction policy digest", "Use a run whose event redaction policy digests match.")
-		}
-		if event.RedactionAuthority.VerificationState == AuthoritySelfClaimed {
-			return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction authority is self-claimed", "Use a provenance or accountability-bound redaction authority.")
-		}
+	if condition, ok := validateEventPolicyBindings(input); ok {
+		return condition
 	}
 	return pass("redaction_policy_bound", "redaction_policy_bound", "redaction policy digest and authority evidence are bound")
+}
+
+func validatePolicyContract(policy Policy) (Condition, bool) {
+	for _, check := range policyContractChecks(policy) {
+		if check.failed {
+			return check.condition, true
+		}
+	}
+	return Condition{}, false
+}
+
+type policyContractCheck struct {
+	failed    bool
+	condition Condition
+}
+
+func policyContractChecks(policy Policy) []policyContractCheck {
+	return []policyContractCheck{
+		{
+			failed:    policy.PolicyID == "" || policy.PolicyDigest == "",
+			condition: cannotVerify("redaction_policy_bound", "missing_redaction_policy", "redaction policy is required", "Supply a redaction policy with stable id, version, digest, and provenance."),
+		},
+		{
+			failed:    policyContractIncomplete(policy),
+			condition: cannotVerify("redaction_policy_bound", "redaction_policy_contract_incomplete", "redaction policy contract is incomplete", "Supply redaction actions, forbidden persistence classes, authority, profile mappings, and unresolved-redaction impact."),
+		},
+		{
+			failed:    policy.Authority.VerificationState == AuthoritySelfClaimed,
+			condition: cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction policy authority is self-claimed", "Use a provenance or accountability-bound redaction policy authority."),
+		},
+	}
+}
+
+func policyContractIncomplete(policy Policy) bool {
+	missingParts := []bool{
+		len(policy.RedactionActions) == 0,
+		len(policy.ForbiddenPersistenceClasses) == 0,
+		policy.Authority.ActorID == "",
+		len(policy.ProfileMappings) == 0,
+		policy.UnresolvedRedactionImpact == "",
+	}
+	for _, missing := range missingParts {
+		if missing {
+			return true
+		}
+	}
+	return false
+}
+
+func validateRunPolicyBinding(input Input) (Condition, bool) {
+	if input.Run.RedactionPolicyDigest == input.Policy.PolicyDigest {
+		return Condition{}, false
+	}
+	return fail("redaction_policy_bound", "redaction_policy_mismatch", "run evidence is not bound to the selected redaction policy", "Regenerate or select evidence bound to the redaction policy."), true
+}
+
+func validateEventPolicyBindings(input Input) (Condition, bool) {
+	for _, event := range input.Run.Events {
+		if condition, ok := validateEventPolicyBinding(input.Policy, event); ok {
+			return condition, true
+		}
+	}
+	return Condition{}, false
+}
+
+func validateEventPolicyBinding(policy Policy, event EventRetention) (Condition, bool) {
+	if event.RedactionPolicyDigest != "" && event.RedactionPolicyDigest != policy.PolicyDigest {
+		return fail("redaction_policy_bound", "redaction_policy_mismatch", "event evidence contradicts the selected redaction policy digest", "Use a run whose event redaction policy digests match."), true
+	}
+	if event.RedactionAuthority.VerificationState == AuthoritySelfClaimed {
+		return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction authority is self-claimed", "Use a provenance or accountability-bound redaction authority."), true
+	}
+	return Condition{}, false
 }
 
 func prewriteCondition(input Input) Condition {

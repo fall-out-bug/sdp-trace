@@ -118,6 +118,68 @@ func TestEvaluateFailsWeakDigestAndCannotVerifySelfClaimedAuthority(t *testing.T
 	}
 }
 
+func TestPolicyConditionPreservesPrecedence(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate     func(*Input)
+		wantState  string
+		wantReason string
+	}{
+		"missing-policy-preempts-other-errors": {
+			mutate: func(input *Input) {
+				input.Policy.PolicyID = ""
+				input.Run.RedactionPolicyDigest = "different"
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "missing_redaction_policy",
+		},
+		"incomplete-policy-preempts-self-claimed-authority": {
+			mutate: func(input *Input) {
+				input.Policy.RedactionActions = nil
+				input.Policy.Authority.VerificationState = AuthoritySelfClaimed
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_policy_contract_incomplete",
+		},
+		"policy-authority-preempts-run-mismatch": {
+			mutate: func(input *Input) {
+				input.Policy.Authority.VerificationState = AuthoritySelfClaimed
+				input.Run.RedactionPolicyDigest = "different"
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "authority_self_claimed",
+		},
+		"run-mismatch-preempts-event-mismatch": {
+			mutate: func(input *Input) {
+				input.Run.RedactionPolicyDigest = "different"
+				input.Run.Events[0].RedactionPolicyDigest = "also-different"
+			},
+			wantState:  StateFail,
+			wantReason: "redaction_policy_mismatch",
+		},
+		"event-self-claimed-authority": {
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionAuthority.VerificationState = AuthoritySelfClaimed
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "authority_self_claimed",
+		},
+		"valid-policy-binding-passes": {
+			mutate:     func(*Input) {},
+			wantState:  StatePass,
+			wantReason: "redaction_policy_bound",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			input := validInput()
+			tc.mutate(&input)
+			condition := policyCondition(input)
+			if condition.State != tc.wantState || condition.ReasonCode != tc.wantReason {
+				t.Fatalf("condition = %+v, want state=%s reason=%s", condition, tc.wantState, tc.wantReason)
+			}
+		})
+	}
+}
+
 func TestEvaluateWithholdMapsToNotAssessedWithoutRawReference(t *testing.T) {
 	input := validInput()
 	input.Run.Events[0].RedactionAction = RedactionActionWithhold
