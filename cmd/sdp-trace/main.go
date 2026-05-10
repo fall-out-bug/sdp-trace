@@ -44,6 +44,7 @@ const (
 var cliStdin io.Reader = os.Stdin
 
 type commandHandler func(context.Context, []string, io.Writer, io.Writer) int
+type subcommandHandler func([]string, io.Writer, io.Writer) int
 
 var commandHandlers = map[string]commandHandler{
 	"wrap":              runWrap,
@@ -101,46 +102,44 @@ func runHarnessCommand(_ context.Context, args []string, stdout, stderr io.Write
 	return runHarness(args, stdout, stderr)
 }
 
-func runObserve(args []string, stdout, stderr io.Writer) int {
+func runSubcommand(args []string, stdout, stderr io.Writer, label, usage string, handlers map[string]subcommandHandler) int {
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "observe requires setup, collect, or session")
+		fmt.Fprintln(stderr, usage)
 		return exitUsage
 	}
-	switch args[0] {
-	case "help", "--help", "-h":
-		fmt.Fprintln(stdout, "Usage: sdp-trace observe <setup|collect|session> [flags]")
+	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+		fmt.Fprintf(stdout, "Usage: sdp-trace %s\n", label)
 		return 0
-	case "setup":
-		return runObserveSetup(args[1:], stdout, stderr)
-	case "collect":
-		return runObserveCollect(args[1:], stdout, stderr)
-	case "session":
-		return runObserveSession(args[1:], stdout, stderr)
-	default:
-		fmt.Fprintf(stderr, "unknown observe command: %s\n", args[0])
+	}
+	handler, ok := handlers[args[0]]
+	if !ok {
+		fmt.Fprintf(stderr, "unknown %s command: %s\n", subcommandName(label), args[0])
 		return exitUsage
 	}
+	return handler(args[1:], stdout, stderr)
+}
+
+func subcommandName(label string) string {
+	if before, _, ok := strings.Cut(label, " "); ok {
+		return before
+	}
+	return label
+}
+
+func runObserve(args []string, stdout, stderr io.Writer) int {
+	return runSubcommand(args, stdout, stderr, "observe <setup|collect|session> [flags]", "observe requires setup, collect, or session", map[string]subcommandHandler{
+		"setup":   runObserveSetup,
+		"collect": runObserveCollect,
+		"session": runObserveSession,
+	})
 }
 
 func runHarness(args []string, stdout, stderr io.Writer) int {
-	if len(args) == 0 {
-		fmt.Fprintln(stderr, "harness requires observe, validate, or summarize")
-		return exitUsage
-	}
-	switch args[0] {
-	case "help", "--help", "-h":
-		fmt.Fprintln(stdout, "Usage: sdp-trace harness <observe|validate|summarize> [flags]")
-		return 0
-	case "observe":
-		return runHarnessObserve(args[1:], stdout, stderr)
-	case "validate":
-		return runHarnessValidate(args[1:], stdout, stderr)
-	case "summarize":
-		return runHarnessSummarize(args[1:], stdout, stderr)
-	default:
-		fmt.Fprintf(stderr, "unknown harness command: %s\n", args[0])
-		return exitUsage
-	}
+	return runSubcommand(args, stdout, stderr, "harness <observe|validate|summarize> [flags]", "harness requires observe, validate, or summarize", map[string]subcommandHandler{
+		"observe":   runHarnessObserve,
+		"validate":  runHarnessValidate,
+		"summarize": runHarnessSummarize,
+	})
 }
 
 func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
@@ -383,27 +382,14 @@ func runHarnessSummarize(args []string, stdout, stderr io.Writer) int {
 }
 
 func runPRReview(_ context.Context, args []string, stdout, stderr io.Writer) int {
-	if len(args) == 0 {
-		fmt.Fprintln(stderr, "pr-review requires packet, run, synthesize, validate, summarize, or check")
-		return exitUsage
-	}
-	switch args[0] {
-	case "packet":
-		return runPRReviewPacket(args[1:], stdout, stderr)
-	case "run":
-		return runPRReviewRun(args[1:], stdout, stderr)
-	case "synthesize":
-		return runPRReviewSynthesize(args[1:], stdout, stderr)
-	case "validate":
-		return runPRReviewValidate(args[1:], stdout, stderr)
-	case "summarize":
-		return runPRReviewSummarize(args[1:], stdout, stderr)
-	case "check":
-		return runPRReviewCheck(args[1:], stdout, stderr)
-	default:
-		fmt.Fprintf(stderr, "unknown pr-review command: %s\n", args[0])
-		return exitUsage
-	}
+	return runSubcommand(args, stdout, stderr, "pr-review <packet|run|synthesize|validate|summarize|check> [flags]", "pr-review requires packet, run, synthesize, validate, summarize, or check", map[string]subcommandHandler{
+		"packet":     runPRReviewPacket,
+		"run":        runPRReviewRun,
+		"synthesize": runPRReviewSynthesize,
+		"validate":   runPRReviewValidate,
+		"summarize":  runPRReviewSummarize,
+		"check":      runPRReviewCheck,
+	})
 }
 
 func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
