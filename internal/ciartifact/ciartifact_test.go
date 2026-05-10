@@ -334,6 +334,67 @@ func TestSafeIdentityToken(t *testing.T) {
 	}
 }
 
+func TestSanitizeRun(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    RunIdentity
+		want     RunIdentity
+		wantSafe bool
+	}{
+		{
+			name:     "all fields are safe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: true,
+		},
+		{
+			name:     "unsafe provider is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "Bearer raw-secret-value", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe run id is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1?token=raw-secret-value", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe run attempt is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "attempt/1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe workflow id is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "/unsafe-workflow", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe job is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "/job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe and safe mixed preserve safe fields",
+			input:    RunIdentity{Provider: "Bearer raw-secret-value", RunID: "run-1", RunAttempt: "attempt/1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{RunID: "run-1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, gotSafe := sanitizeRun(tc.input)
+			if gotSafe != tc.wantSafe || got != tc.want {
+				t.Fatalf("sanitizeRun(%+v) = (%+v, %v), want (%+v, %v)", tc.input, got, gotSafe, tc.want, tc.wantSafe)
+			}
+		})
+	}
+}
+
 func TestFixtureMatrixScenarios(t *testing.T) {
 	matrixPath := filepath.Join("..", "..", "examples", "block26-ci-artifact-observation", "fixture-matrix.json")
 	data, err := os.ReadFile(matrixPath)

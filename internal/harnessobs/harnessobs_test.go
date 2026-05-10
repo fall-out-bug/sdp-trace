@@ -339,6 +339,187 @@ func TestLoadSessionProfileRejectsUnsafeSetupAction(t *testing.T) {
 	}
 }
 
+func TestSetupSessionRequireOptions(t *testing.T) {
+	dir := t.TempDir()
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+	})
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	for name, tc := range map[string]struct {
+		opts    SessionSetupOptions
+		wantErr string
+	}{
+		"missing-profile": {
+			opts:    SessionSetupOptions{OutDir: "run"},
+			wantErr: "observe setup requires --profile",
+		},
+		"missing-out": {
+			opts:    SessionSetupOptions{ProfilePath: "session-profile.json"},
+			wantErr: "observe setup requires --out",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, _, err := validateSessionSetupOptions(tc.opts); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("validateSessionSetupOptions() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestSetupSessionRejectsInvalidOptions(t *testing.T) {
+	dir := t.TempDir()
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+	})
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	if _, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "../session-profile.json",
+		OutDir:      "run",
+	}); err == nil || err.Error() != "unsafe profile path: path must be relative local file without traversal" {
+		t.Fatalf("SetupSession() error = %v, want unsafe profile path: path must be relative local file without traversal", err)
+	}
+	if _, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "session-profile.json",
+		OutDir:      "../run",
+	}); err == nil || err.Error() != "out must be a relative local directory without traversal" {
+		t.Fatalf("SetupSession() error = %v, want out path traversal error", err)
+	}
+}
+
+func TestSetupSessionRejectsInvalidProfilePayload(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "session-profile.json"), []byte(`{"schema_version":"bad"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	if _, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "session-profile.json",
+		OutDir:      "run",
+	}); err == nil || !strings.Contains(err.Error(), "unsupported session profile schema_version") {
+		t.Fatalf("SetupSession() error = %v, want unsupported session profile schema_version", err)
+	}
+}
+
+func TestSetupSessionWritesSessionRunWithCommand(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	sessionProfile := SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		SetupActions: []SessionSetupAction{{
+			ID:       "init",
+			Kind:     "init",
+			Required: true,
+		}},
+	}
+	writeJSONFixture(t, "session-profile.json", sessionProfile)
+
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	command := "--model=minimax-coding-plan/MiniMax-M2.7"
+	run, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "session-profile.json",
+		OutDir:      "run",
+		Command:     command,
+		Now:         now,
+	})
+	if err != nil {
+		t.Fatalf("SetupSession() error = %v", err)
+	}
+	if run.CreatedAt != now.Format(time.RFC3339) {
+		t.Fatalf("CreatedAt = %s, want %s", run.CreatedAt, now.Format(time.RFC3339))
+	}
+	if run.CommandDigest == "" || run.CommandDigestState != StatePass {
+		t.Fatalf("command digest state = %s/%s, want pass", run.CommandDigestState, run.CommandDigest)
+	}
+	if run.CommandModel != "minimax-coding-plan/MiniMax-M2.7" || run.CommandModelState != StatePass {
+		t.Fatalf("command model = %s/%s, want minimax-coding-plan/MiniMax-M2.7/pass", run.CommandModel, run.CommandModelState)
+	}
+	if run.SourceCommitState != StateCannotVerify || run.SourceCommit != "" {
+		t.Fatalf("source commit state/commit = %s/%s, want cannot_verify with empty source_commit in test workspace", run.SourceCommitState, run.SourceCommit)
+	}
+	var saved SessionRun
+	readJSONFixture(t, filepath.Join("run", "session.json"), &saved)
+	if saved.CommandDigest != run.CommandDigest || saved.CommandDigestState != run.CommandDigestState {
+		t.Fatalf("saved command digest = %s/%s, run = %s/%s", saved.CommandDigest, saved.CommandDigestState, run.CommandDigest, run.CommandDigestState)
+	}
+}
+
+func TestSetupSessionWritesBlankCommandDefaults(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	sessionProfile := SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+	}
+	writeJSONFixture(t, "session-profile.json", sessionProfile)
+
+	run, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "session-profile.json",
+		OutDir:      "run",
+		Command:     "   ",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("SetupSession() error = %v", err)
+	}
+	if run.CommandDigest != "" || run.CommandDigestState != StateCannotVerify {
+		t.Fatalf("command digest state = %s/%s, want cannot_verify/", run.CommandDigestState, run.CommandDigest)
+	}
+	if run.CommandModel != "" || run.CommandModelState != "" {
+		t.Fatalf("command model state = %s/%s, want empty/empty", run.CommandModelState, run.CommandModel)
+	}
+}
+
+func TestSetupSessionCommandRejectsModelAndWritesDigest(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	sessionProfile := SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+	}
+	writeJSONFixture(t, "session-profile.json", sessionProfile)
+
+	run, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "session-profile.json",
+		OutDir:      "run",
+		Command:     "opencode run --model model name",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("SetupSession() error = %v", err)
+	}
+	if run.CommandDigest == "" || run.CommandDigestState != StatePass {
+		t.Fatalf("command digest state = %s/%s, want pass", run.CommandDigestState, run.CommandDigest)
+	}
+	if run.CommandModel != "" || run.CommandModelState != "" {
+		t.Fatalf("command model state = %s/%s, want empty/empty", run.CommandModelState, run.CommandModel)
+	}
+}
+
 func TestCollectSessionWritesObservedRun(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)

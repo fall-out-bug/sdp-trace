@@ -653,33 +653,29 @@ func sanitizeSource(input SourceIdentity) (SourceIdentity, bool) {
 
 func sanitizeRun(input RunIdentity) (RunIdentity, bool) {
 	out := RunIdentity{}
-	ok := true
-	if safeIdentityToken(input.Provider, "._-") {
-		out.Provider = input.Provider
-	} else if input.Provider != "" {
-		ok = false
+	var okProvider, okRunID, okRunAttempt, okWorkflowID, okJobID bool
+	out.Provider, okProvider = sanitizeRunField(input.Provider, "._-")
+	out.RunID, okRunID = sanitizeRunField(input.RunID, "._:-")
+	out.RunAttempt, okRunAttempt = sanitizeRunField(input.RunAttempt, "._:-")
+	out.WorkflowID, okWorkflowID = sanitizeRunField(input.WorkflowID, "._:-")
+	out.JobID, okJobID = sanitizeRunField(input.JobID, "._:-")
+	return out, allTrue(okProvider, okRunID, okRunAttempt, okWorkflowID, okJobID)
+}
+
+func sanitizeRunField(value, extra string) (string, bool) {
+	if value == "" || safeIdentityToken(value, extra) {
+		return value, true
 	}
-	if safeIdentityToken(input.RunID, "._:-") {
-		out.RunID = input.RunID
-	} else if input.RunID != "" {
-		ok = false
+	return "", false
+}
+
+func allTrue(values ...bool) bool {
+	for _, value := range values {
+		if !value {
+			return false
+		}
 	}
-	if safeIdentityToken(input.RunAttempt, "._:-") {
-		out.RunAttempt = input.RunAttempt
-	} else if input.RunAttempt != "" {
-		ok = false
-	}
-	if safeIdentityToken(input.WorkflowID, "._:-") {
-		out.WorkflowID = input.WorkflowID
-	} else if input.WorkflowID != "" {
-		ok = false
-	}
-	if safeIdentityToken(input.JobID, "._:-") {
-		out.JobID = input.JobID
-	} else if input.JobID != "" {
-		ok = false
-	}
-	return out, ok
+	return true
 }
 
 func safeRef(value string) bool {

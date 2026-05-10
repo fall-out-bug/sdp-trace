@@ -45,6 +45,20 @@ var (
 	unsafeRefPattern   = regexp.MustCompile(`(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)`)
 )
 
+var aggregateStatePriority = map[string]int{
+	StateCannotVerify:     3,
+	StateOutsideAuthority: 2,
+	StateWithinAuthority:  1,
+	StateNotAssessed:      0,
+}
+
+var aggregateStateByRank = []string{
+	StateNotAssessed,
+	StateWithinAuthority,
+	StateOutsideAuthority,
+	StateCannotVerify,
+}
+
 type Package struct {
 	SchemaVersion      string                 `json:"schema_version"`
 	SelectedPolicyID   string                 `json:"selected_policy_id"`
@@ -626,31 +640,22 @@ func aggregateState(evaluations []AuthorityEvaluation, envState string) string {
 	if len(evaluations) == 0 {
 		return StateNotAssessed
 	}
-	hasOutside := false
-	hasWithin := false
-	hasNotAssessed := false
+	rank := highestEvaluationStateRank(evaluations)
+	if rank < 0 {
+		return StateCannotVerify
+	}
+	return aggregateStateByRank[rank]
+}
+
+func highestEvaluationStateRank(evaluations []AuthorityEvaluation) int {
+	highestRank := -1
 	for _, eval := range evaluations {
-		switch eval.State {
-		case StateCannotVerify:
-			return StateCannotVerify
-		case StateOutsideAuthority:
-			hasOutside = true
-		case StateWithinAuthority:
-			hasWithin = true
-		case StateNotAssessed:
-			hasNotAssessed = true
+		rank, ok := aggregateStatePriority[eval.State]
+		if ok && rank > highestRank {
+			highestRank = rank
 		}
 	}
-	if hasOutside {
-		return StateOutsideAuthority
-	}
-	if hasWithin {
-		return StateWithinAuthority
-	}
-	if hasNotAssessed {
-		return StateNotAssessed
-	}
-	return StateCannotVerify
+	return highestRank
 }
 
 func resultReasons(result Result) []string {

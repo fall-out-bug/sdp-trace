@@ -203,6 +203,67 @@ func TestEvaluateOverlappingTargetRulesCannotVerify(t *testing.T) {
 	}
 }
 
+func TestAggregateState(t *testing.T) {
+	tests := []struct {
+		name        string
+		envState    string
+		evaluations []AuthorityEvaluation
+		want        string
+	}{
+		{
+			name:     "policy envelope verification failure wins",
+			envState: StateCannotVerify,
+			want:     StateCannotVerify,
+		},
+		{
+			name: "no actions",
+			want: StateNotAssessed,
+		},
+		{
+			name: "cannot verify action dominates all",
+			evaluations: []AuthorityEvaluation{
+				{State: StateWithinAuthority},
+				{State: StateCannotVerify},
+				{State: StateOutsideAuthority},
+			},
+			want: StateCannotVerify,
+		},
+		{
+			name: "outside dominates within and not assessed",
+			evaluations: []AuthorityEvaluation{
+				{State: StateWithinAuthority},
+				{State: StateNotAssessed},
+				{State: StateOutsideAuthority},
+			},
+			want: StateOutsideAuthority,
+		},
+		{
+			name: "within dominates not assessed",
+			evaluations: []AuthorityEvaluation{
+				{State: StateNotAssessed},
+				{State: StateWithinAuthority},
+			},
+			want: StateWithinAuthority,
+		},
+		{
+			name: "unknown state defaults to cannot verify",
+			evaluations: []AuthorityEvaluation{
+				{State: "unexpected"},
+			},
+			want: StateCannotVerify,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := aggregateState(tt.evaluations, tt.envState)
+			if got != tt.want {
+				t.Fatalf("aggregateState() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestValidateEnvelopeReasons(t *testing.T) {
 	base := validPackage().AuthorityEnvelopes[0]
 	tests := []struct {

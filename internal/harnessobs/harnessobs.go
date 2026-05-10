@@ -351,44 +351,90 @@ func newObservedRun(ctx observationContext) Run {
 }
 
 func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return SessionRun{}, errors.New("observe setup requires --profile")
-	}
-	if strings.TrimSpace(opts.OutDir) == "" {
-		return SessionRun{}, errors.New("observe setup requires --out")
-	}
-	profilePath, err := safeExistingFile(opts.ProfilePath)
-	if err != nil {
-		return SessionRun{}, fmt.Errorf("unsafe profile path: %w", err)
-	}
-	outDir, err := safeOutDir(opts.OutDir)
+	profilePath, outDir, err := validateSessionSetupOptions(opts)
 	if err != nil {
 		return SessionRun{}, err
 	}
+	run, err := setupSessionRun(profilePath, outDir, opts.Now, opts.Command)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	return run, nil
+}
+
+func validateSessionSetupOptions(opts SessionSetupOptions) (string, string, error) {
+	profilePath, err := resolveSessionSetupProfilePath(opts.ProfilePath)
+	if err != nil {
+		return "", "", err
+	}
+	outDir, err := resolveSessionSetupOutDir(opts.OutDir)
+	if err != nil {
+		return "", "", err
+	}
+	return profilePath, outDir, nil
+}
+
+func resolveSessionSetupProfilePath(profilePath string) (string, error) {
+	if strings.TrimSpace(profilePath) == "" {
+		return "", errors.New("observe setup requires --profile")
+	}
+	safePath, err := safeExistingFile(profilePath)
+	if err != nil {
+		return "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+	return safePath, nil
+}
+
+func resolveSessionSetupOutDir(outDir string) (string, error) {
+	if strings.TrimSpace(outDir) == "" {
+		return "", errors.New("observe setup requires --out")
+	}
+	return safeOutDir(outDir)
+}
+
+func setupSessionRun(profilePath, outDir string, now time.Time, rawCommand string) (SessionRun, error) {
 	profile, err := LoadSessionProfile(profilePath)
 	if err != nil {
 		return SessionRun{}, err
 	}
-	if opts.Now.IsZero() {
-		opts.Now = time.Now().UTC()
-	}
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return SessionRun{}, err
 	}
-	run := newSessionRun(profile, opts.Now)
-	if strings.TrimSpace(opts.Command) != "" {
-		command := []string{opts.Command}
-		run.CommandDigest = digestCommand(command)
-		run.CommandDigestState = StatePass
-		if model := extractCommandModel(command); model != "" {
-			run.CommandModel = model
-			run.CommandModelState = StatePass
-		}
-	}
-	if err := writeJSON(filepath.Join(outDir, "session.json"), run); err != nil {
+	run := newSessionRunWithCommand(profile, now, rawCommand)
+	if err := writeSessionJSON(filepath.Join(outDir, "session.json"), run); err != nil {
 		return SessionRun{}, err
 	}
 	return run, nil
+}
+
+func newSessionRunWithCommand(profile SessionProfile, now time.Time, rawCommand string) SessionRun {
+	run := newSessionRun(profile, sessionRunTime(now))
+	setSessionCommand(&run, rawCommand)
+	return run
+}
+
+func setSessionCommand(run *SessionRun, rawCommand string) {
+	if strings.TrimSpace(rawCommand) == "" {
+		return
+	}
+	command := []string{rawCommand}
+	run.CommandDigest = digestCommand(command)
+	run.CommandDigestState = StatePass
+	if model := extractCommandModel(command); model != "" {
+		run.CommandModel = model
+		run.CommandModelState = StatePass
+	}
+}
+
+func sessionRunTime(now time.Time) time.Time {
+	if now.IsZero() {
+		return time.Now().UTC()
+	}
+	return now
+}
+
+func writeSessionJSON(path string, run SessionRun) error {
+	return writeJSON(path, run)
 }
 
 func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
