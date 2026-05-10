@@ -59,11 +59,7 @@ func writeCanonicalJSON(buf *bytes.Buffer, value any) error {
 }
 
 func writeCanonicalMap(buf *bytes.Buffer, value map[string]any) error {
-	keys := make([]string, 0, len(value))
-	for key := range value {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := sortedMapKeys(value)
 	buf.WriteByte('{')
 	for i, key := range keys {
 		if i > 0 {
@@ -77,6 +73,15 @@ func writeCanonicalMap(buf *bytes.Buffer, value map[string]any) error {
 	}
 	buf.WriteByte('}')
 	return nil
+}
+
+func sortedMapKeys(value map[string]any) []string {
+	keys := make([]string, 0, len(value))
+	for key := range value {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func writeCanonicalList(buf *bytes.Buffer, value []any) error {
@@ -98,7 +103,7 @@ func writeCanonicalScalar(buf *bytes.Buffer, value any) error {
 	case string:
 		writeJSONString(buf, typed)
 	case bool:
-		writeJSONBool(buf, typed)
+		return writeCanonicalBool(buf, typed)
 	case nil:
 		buf.WriteString("null")
 	default:
@@ -108,6 +113,15 @@ func writeCanonicalScalar(buf *bytes.Buffer, value any) error {
 		return writeJSONFallback(buf, typed)
 	}
 	return nil
+}
+
+func writeCanonicalBool(buf *bytes.Buffer, value bool) error {
+	writeJSONBool(buf, value)
+	return nil
+}
+
+func invalidFloat(value float64) bool {
+	return math.IsNaN(value) || math.IsInf(value, 0)
 }
 
 func writeNumericScalar(buf *bytes.Buffer, value any) bool {
@@ -181,7 +195,7 @@ func trimFloatToJSON(value float64) json.Number {
 }
 
 func trimFloatToString(value float64) string {
-	if math.IsNaN(value) || math.IsInf(value, 0) {
+	if invalidFloat(value) {
 		return "0"
 	}
 	if value == math.Trunc(value) {

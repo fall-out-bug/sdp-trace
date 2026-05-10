@@ -213,7 +213,10 @@ func (event Event) VerifyPayloadDigest() error {
 	if err != nil {
 		return err
 	}
-	event = synced
+	return verifySyncedPayloadDigest(synced)
+}
+
+func verifySyncedPayloadDigest(event Event) error {
 	computed, err := CanonicalEventPayloadDigest(event.Payload)
 	if err != nil {
 		return err

@@ -220,6 +220,10 @@ func Relay(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stde
 	if len(opts.Command) == 0 {
 		return Trace{}, 0, errors.New("interaction relay requires forward command after --")
 	}
+	return relayWithCommand(ctx, opts, stdin, stdout, stderr)
+}
+
+func relayWithCommand(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stderr io.Writer) (Trace, int, error) {
 	body, err := readBody(stdin)
 	if err != nil {
 		return Trace{}, 0, err
@@ -969,10 +973,15 @@ func readJSONLEvents(path string) ([]Event, error) {
 		return nil, err
 	}
 	defer file.Close()
+	return scanJSONLEvents(file)
+}
+
+func scanJSONLEvents(file *os.File) ([]Event, error) {
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), MaxBodyBytes*4)
 	events := make([]Event, 0)
 	for scanner.Scan() {
+		var err error
 		events, err = appendJSONLEventLine(events, scanner.Text())
 		if err != nil {
 			return nil, err

@@ -299,6 +299,10 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 	if err := ensureNewDir(opts.OutDir); err != nil {
 		return Packet{}, err
 	}
+	return buildPacketInPreparedDir(opts)
+}
+
+func buildPacketInPreparedDir(opts PacketOptions) (Packet, error) {
 	now, createdBy, ciState := packetDefaults(opts)
 	refs, err := buildPacketRefs(opts)
 	if err != nil {
@@ -384,6 +388,10 @@ func collectPacketRefs(inputDir string, opts PacketOptions) (packetRefs, error) 
 	if err != nil {
 		return packetRefs{}, err
 	}
+	return packetRefsWithVerification(inputDir, opts, diffRef, metadataRef, contextRefs)
+}
+
+func packetRefsWithVerification(inputDir string, opts PacketOptions, diffRef SafeRef, metadataRef *SafeRef, contextRefs []SafeRef) (packetRefs, error) {
 	verificationRefs, err := packetVerificationRefs(inputDir, opts.VerificationPaths)
 	if err != nil {
 		return packetRefs{}, err
@@ -698,6 +706,14 @@ func reviewCoverageState(required map[string]bool, usableCount int, cannotVerify
 	if noReviewCoverage(required, usableCount) {
 		return CoverageNotAssessed
 	}
+	return assessedReviewCoverageState(required, usableCount, unresolved)
+}
+
+func noReviewCoverage(required map[string]bool, usableCount int) bool {
+	return len(required) == 0 || usableCount == 0
+}
+
+func assessedReviewCoverageState(required map[string]bool, usableCount int, unresolved bool) string {
 	if usableCount < len(required) {
 		return CoveragePartial
 	}
@@ -705,10 +721,6 @@ func reviewCoverageState(required map[string]bool, usableCount int, cannotVerify
 		return CoverageUnresolved
 	}
 	return CoverageSatisfied
-}
-
-func noReviewCoverage(required map[string]bool, usableCount int) bool {
-	return len(required) == 0 || usableCount == 0
 }
 
 func modelMismatchWithoutFallback(role ReviewRole, result ReviewerResult) bool {
@@ -720,11 +732,15 @@ func modelMismatchWithoutFallback(role ReviewRole, result ReviewerResult) bool {
 	if requested == observed {
 		return false
 	}
-	return result.FallbackForModel == "" || result.FallbackReason == ""
+	return fallbackMetadataMissing(result)
 }
 
 func modelIdentityMissing(model string) bool {
 	return model == "" || model == StateNotAssessed
+}
+
+func fallbackMetadataMissing(result ReviewerResult) bool {
+	return result.FallbackForModel == "" || result.FallbackReason == ""
 }
 
 func Summarize(validation Validation, ledger Ledger) string {
@@ -799,9 +815,7 @@ func ReadProfile(path string) (ReviewProfile, error) {
 
 func ReadRunSet(path string) (RunSet, error) {
 	var runs RunSet
-	if fileInfo, err := os.Stat(path); err == nil && fileInfo.IsDir() {
-		path = filepath.Join(path, "results.json")
-	}
+	path = runSetPath(path)
 	if err := readJSON(path, &runs); err != nil {
 		return runs, err
 	}
@@ -809,6 +823,13 @@ func ReadRunSet(path string) (RunSet, error) {
 		return runs, err
 	}
 	return runs, nil
+}
+
+func runSetPath(path string) string {
+	if fileInfo, err := os.Stat(path); err == nil && fileInfo.IsDir() {
+		return filepath.Join(path, "results.json")
+	}
+	return path
 }
 
 func ReadLedger(path string) (Ledger, error) {
@@ -849,20 +870,28 @@ func validatePacketIdentityOptions(opts PacketOptions) error {
 	if !changeRefPattern.MatchString(opts.ChangeRef) {
 		return fmt.Errorf("unsafe_change_ref: change_ref must match %s", changeRefPattern.String())
 	}
-	if !sha40Pattern.MatchString(opts.BaseCommit) || !sha40Pattern.MatchString(opts.HeadCommit) {
+	if !validPacketCommits(opts) {
 		return errors.New("invalid_commit_sha: base and head must be 40 lowercase hex characters")
 	}
 	return nil
+}
+
+func validPacketCommits(opts PacketOptions) bool {
+	return sha40Pattern.MatchString(opts.BaseCommit) && sha40Pattern.MatchString(opts.HeadCommit)
 }
 
 func validatePacketInputOptions(opts PacketOptions) error {
 	if strings.TrimSpace(opts.DiffPath) == "" {
 		return errors.New("pr_review_packet_requires_diff")
 	}
-	if opts.CIState != "" && !validCIState(opts.CIState) {
+	if invalidPacketCIState(opts) {
 		return fmt.Errorf("invalid_ci_state: %s", opts.CIState)
 	}
 	return nil
+}
+
+func invalidPacketCIState(opts PacketOptions) bool {
+	return opts.CIState != "" && !validCIState(opts.CIState)
 }
 
 func validateRunSet(runs RunSet) error {
@@ -966,7 +995,7 @@ func completeRoleResult(result ReviewerResult, role ReviewRole, packet Packet, w
 	if applyRunnerError(&result, runErr) != nil {
 		return result
 	}
-	if len(strings.TrimSpace(string(output))) == 0 {
+	if emptyReviewerOutput(output) {
 		result.Status = StatusEmptyOutput
 		result.Reason = "runner_empty_output"
 		return result
@@ -976,8 +1005,16 @@ func completeRoleResult(result ReviewerResult, role ReviewRole, packet Packet, w
 		parsed.Status = StatusParseFailed
 		parsed.Reason = "runner_output_parse_failed"
 	}
+	return completeParsedRoleResult(parsed, role, workDir, baseline)
+}
+
+func completeParsedRoleResult(parsed ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) ReviewerResult {
 	applyOpenCodeMutationCheck(&parsed, role, workDir, baseline)
 	return parsed
+}
+
+func emptyReviewerOutput(output []byte) bool {
+	return len(strings.TrimSpace(string(output))) == 0
 }
 
 func newReviewerResult(packet Packet, role ReviewRole, now time.Time) ReviewerResult {
@@ -1044,6 +1081,10 @@ func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir st
 		result.Reason = "working_tree_baseline_cannot_verify"
 		return nil, false, nil
 	}
+	return openCodeBaselineReady(result, role, baseline)
+}
+
+func openCodeBaselineReady(result *ReviewerResult, role ReviewRole, baseline *workingTreeBaseline) (*workingTreeBaseline, bool, error) {
 	if !openCodeBaselineClean(result, role, baseline) {
 		return nil, false, nil
 	}

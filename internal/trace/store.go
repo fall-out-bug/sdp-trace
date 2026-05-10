@@ -86,6 +86,10 @@ func OpenRunArtifact(runDir string) (RunArtifact, error) {
 	if err != nil {
 		return RunArtifact{}, err
 	}
+	return openRunArtifactWithManifest(layout, manifestData)
+}
+
+func openRunArtifactWithManifest(layout RunLayout, manifestData []byte) (RunArtifact, error) {
 	var manifest RunManifest
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
 		return RunArtifact{}, err
@@ -120,6 +124,10 @@ func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, 
 	if err := artifact.Layout.WriteEvent(event); err != nil {
 		return Event{}, err
 	}
+	return appendRunEventManifest(artifact, event)
+}
+
+func appendRunEventManifest(artifact RunArtifact, event Event) (Event, error) {
 	artifact.Manifest.EventCount = event.Sequence + 1
 	artifact.Manifest.EventChainHead = event.EventHash
 	artifact.Manifest.FinalChainHead = event.EventHash
@@ -300,7 +308,10 @@ func CopyArtifactFile(src, dst string) error {
 		return err
 	}
 	defer input.Close()
+	return copyArtifactReader(input, dst)
+}
 
+func copyArtifactReader(input io.Reader, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}

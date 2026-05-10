@@ -164,6 +164,10 @@ func Install(opts Options) (Status, error) {
 	if !opts.Write {
 		return status, nil
 	}
+	return installWriteMode(opts, status)
+}
+
+func installWriteMode(opts Options, status Status) (Status, error) {
 	summary, err := writeInstallFiles(opts)
 	status.ForceDiffSummary = summary
 	if err != nil {
@@ -264,6 +268,10 @@ func withConfiguredRepositoryID(opts Options) (Options, error) {
 	if opts.RepositoryID != "" {
 		return opts, nil
 	}
+	return withConfigFileRepositoryID(opts)
+}
+
+func withConfigFileRepositoryID(opts Options) (Options, error) {
 	config, err := LoadConfig(opts.RepoRoot)
 	if errors.Is(err, os.ErrNotExist) {
 		return opts, nil
@@ -479,6 +487,10 @@ func ciWorkflowSurface(opts Options) Surface {
 		proof := StateNotAssessed
 		return surface(SurfaceCIWorkflow, StatePass, proof, ScopeLocalStructural, "filesystem:"+rel, reason, rel, "observe a CI run artifact before treating workflow as proof")
 	}
+	return missingCIWorkflowSurface(rel, err)
+}
+
+func missingCIWorkflowSurface(rel string, err error) Surface {
 	if errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIWorkflow, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonCIWorkflowAbsent, rel, "install GitHub Actions observer workflow")
 	}
@@ -491,6 +503,10 @@ func ciArtifactUploadSurface(opts Options) Surface {
 	if err == nil && strings.Contains(string(data), "actions/upload-artifact") {
 		return surface(SurfaceCIArtifactUpload, StatePass, StateNotAssessed, ScopeCIUploaded, "workflow_declaration:"+rel, ReasonCIArtifactUploadPresent, rel, "inspect uploaded artifact bundle from a real CI run")
 	}
+	return missingCIArtifactUploadSurface(rel, err)
+}
+
+func missingCIArtifactUploadSurface(rel string, err error) Surface {
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIArtifactUpload, StateFail, StateNotAssessed, ScopeCIUploaded, "workflow_declaration:"+rel, ReasonCIArtifactUploadAbsent, rel, "declare CI artifact upload in observer workflow")
 	}
@@ -504,6 +520,10 @@ func ciArtifactBundleSurface(opts Options) Surface {
 	if err == nil && len(entries) > 0 {
 		return surface(SurfaceCIArtifactBundleObservation, StatePass, StateNotAssessed, ScopeCIUploaded, "filesystem:"+rel, ReasonCIArtifactBundleObserved, rel, "treat as local structural only unless downloaded from CI artifact storage")
 	}
+	return missingCIArtifactBundleSurface(rel, err)
+}
+
+func missingCIArtifactBundleSurface(rel string, err error) Surface {
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIArtifactBundleObservation, StateNotAssessed, StateNotAssessed, ScopeCIUploaded, "filesystem:"+rel, ReasonCIArtifactBundleNotObserved, rel, "run CI and inspect uploaded artifact bundle")
 	}
@@ -581,9 +601,15 @@ func combineProofState(current, next string) string {
 	case StateFail:
 		return StateFail
 	case StateNotAssessed:
-		if current == StatePass {
-			return StateNotAssessed
-		}
+		return combineNotAssessedProofState(current)
+	default:
+		return current
+	}
+}
+
+func combineNotAssessedProofState(current string) string {
+	if current == StatePass {
+		return StateNotAssessed
 	}
 	return current
 }
