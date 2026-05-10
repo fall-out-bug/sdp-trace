@@ -299,46 +299,10 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 	if err := ensureNewDir(opts.OutDir); err != nil {
 		return Packet{}, err
 	}
-	now := opts.Now
-	if now.IsZero() {
-		now = time.Now().UTC()
-	}
-	createdBy := strings.TrimSpace(opts.CreatedBy)
-	if createdBy == "" {
-		createdBy = "sdp-trace"
-	}
-	if opts.CIState == "" {
-		opts.CIState = StateNotAssessed
-	}
-	inputDir := filepath.Join(opts.OutDir, "inputs")
-	if err := os.MkdirAll(inputDir, 0o755); err != nil {
-		return Packet{}, err
-	}
-	diffRef, err := copyInput(inputDir, "diff.patch", opts.DiffPath, RefKindDiff, ContentUnifiedDiff)
+	now, createdBy, ciState := packetDefaults(opts)
+	refs, err := buildPacketRefs(opts)
 	if err != nil {
 		return Packet{}, err
-	}
-	var metadataRef *SafeRef
-	if strings.TrimSpace(opts.MetadataPath) != "" {
-		ref, err := copyInput(inputDir, "metadata.json", opts.MetadataPath, RefKindMetadata, contentType(opts.MetadataPath))
-		if err != nil {
-			return Packet{}, err
-		}
-		metadataRef = &ref
-	}
-	contextRefs, err := copyInputs(inputDir, "context", opts.ContextPaths)
-	if err != nil {
-		return Packet{}, err
-	}
-	for i := range contextRefs {
-		contextRefs[i].Kind = contextKind(opts.ContextPaths[i])
-	}
-	verificationRefs, err := copyInputs(inputDir, "verification", opts.VerificationPaths)
-	if err != nil {
-		return Packet{}, err
-	}
-	for i := range verificationRefs {
-		verificationRefs[i].Kind = RefKindVerification
 	}
 	packet := Packet{
 		SchemaVersion:     SchemaVersionPacket,
@@ -347,11 +311,11 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 		ChangeRef:         opts.ChangeRef,
 		BaseCommit:        opts.BaseCommit,
 		HeadCommit:        opts.HeadCommit,
-		DiffRef:           diffRef,
-		MetadataRef:       metadataRef,
-		ContextRefs:       contextRefs,
-		VerificationRefs:  verificationRefs,
-		CIState:           opts.CIState,
+		DiffRef:           refs.diff,
+		MetadataRef:       refs.metadata,
+		ContextRefs:       refs.context,
+		VerificationRefs:  refs.verification,
+		CIState:           ciState,
 		CreatedAt:         now.Format(time.RFC3339),
 		CreatedBy:         createdBy,
 		RedactionState:    RedactionNone,
@@ -366,6 +330,86 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 		return Packet{}, err
 	}
 	return packet, nil
+}
+
+type packetRefs struct {
+	diff         SafeRef
+	metadata     *SafeRef
+	context      []SafeRef
+	verification []SafeRef
+}
+
+func packetDefaults(opts PacketOptions) (time.Time, string, string) {
+	now := opts.Now
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	createdBy := strings.TrimSpace(opts.CreatedBy)
+	if createdBy == "" {
+		createdBy = "sdp-trace"
+	}
+	ciState := opts.CIState
+	if ciState == "" {
+		ciState = StateNotAssessed
+	}
+	return now, createdBy, ciState
+}
+
+func buildPacketRefs(opts PacketOptions) (packetRefs, error) {
+	inputDir := filepath.Join(opts.OutDir, "inputs")
+	if err := os.MkdirAll(inputDir, 0o755); err != nil {
+		return packetRefs{}, err
+	}
+	diffRef, err := copyInput(inputDir, "diff.patch", opts.DiffPath, RefKindDiff, ContentUnifiedDiff)
+	if err != nil {
+		return packetRefs{}, err
+	}
+	metadataRef, err := optionalMetadataRef(inputDir, opts.MetadataPath)
+	if err != nil {
+		return packetRefs{}, err
+	}
+	contextRefs, err := packetContextRefs(inputDir, opts.ContextPaths)
+	if err != nil {
+		return packetRefs{}, err
+	}
+	verificationRefs, err := packetVerificationRefs(inputDir, opts.VerificationPaths)
+	if err != nil {
+		return packetRefs{}, err
+	}
+	return packetRefs{diff: diffRef, metadata: metadataRef, context: contextRefs, verification: verificationRefs}, nil
+}
+
+func optionalMetadataRef(inputDir, metadataPath string) (*SafeRef, error) {
+	if strings.TrimSpace(metadataPath) == "" {
+		return nil, nil
+	}
+	ref, err := copyInput(inputDir, "metadata.json", metadataPath, RefKindMetadata, contentType(metadataPath))
+	if err != nil {
+		return nil, err
+	}
+	return &ref, nil
+}
+
+func packetContextRefs(inputDir string, paths []string) ([]SafeRef, error) {
+	refs, err := copyInputs(inputDir, "context", paths)
+	if err != nil {
+		return nil, err
+	}
+	for i := range refs {
+		refs[i].Kind = contextKind(paths[i])
+	}
+	return refs, nil
+}
+
+func packetVerificationRefs(inputDir string, paths []string) ([]SafeRef, error) {
+	refs, err := copyInputs(inputDir, "verification", paths)
+	if err != nil {
+		return nil, err
+	}
+	for i := range refs {
+		refs[i].Kind = RefKindVerification
+	}
+	return refs, nil
 }
 
 func unavailablePacketFields(opts PacketOptions) []UnavailableField {
@@ -766,8 +810,47 @@ func validateProfile(profile ReviewProfile) error {
 }
 
 func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (ReviewerResult, error) {
-	started := opts.Now.Format(time.RFC3339)
-	result := ReviewerResult{
+	result := newReviewerResult(packet, role, opts.Now)
+	result.CommandDigest = commandDigest(role.Command)
+	promptRef, err := promptSafeRef(role)
+	if err != nil {
+		result.Status = StatusCannotVerify
+		result.Reason = "prompt_ref_cannot_verify"
+		return result, nil
+	}
+	result.PromptRef = promptRef
+	baseline, ready, err := prepareRoleRunner(&result, role, opts)
+	if err != nil || !ready {
+		return result, err
+	}
+	output, timedOut, err := runRoleCommand(role, opts)
+	ended := time.Now().UTC().Format(time.RFC3339)
+	result.EndedAt = ended
+	if timedOut {
+		result.Status = StatusTimedOut
+		result.Reason = "runner_timed_out"
+		return writeRawResult(result, rawDir, output)
+	}
+	if err := applyRunnerError(&result, err); err != nil {
+		return writeRawResult(result, rawDir, output)
+	}
+	if len(strings.TrimSpace(string(output))) == 0 {
+		result.Status = StatusEmptyOutput
+		result.Reason = "runner_empty_output"
+		return writeRawResult(result, rawDir, output)
+	}
+	result, err = parseReviewerOutput(result, role, packet, output)
+	if err != nil {
+		result.Status = StatusParseFailed
+		result.Reason = "runner_output_parse_failed"
+	}
+	applyOpenCodeMutationCheck(&result, role, opts.WorkDir, baseline)
+	return writeRawResult(result, rawDir, output)
+}
+
+func newReviewerResult(packet Packet, role ReviewRole, now time.Time) ReviewerResult {
+	started := now.Format(time.RFC3339)
+	return ReviewerResult{
 		ReviewRunID:    safeID("run-" + role.RoleID),
 		PacketDigest:   packet.PacketDigest,
 		Plane:          role.Plane,
@@ -781,41 +864,49 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 		StartedAt:      started,
 		EndedAt:        started,
 	}
-	result.CommandDigest = commandDigest(role.Command)
-	promptRef, err := promptSafeRef(role)
-	if err != nil {
-		result.Status = StatusCannotVerify
-		result.Reason = "prompt_ref_cannot_verify"
-		return result, nil
-	}
-	result.PromptRef = promptRef
+}
+
+func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions) (*workingTreeBaseline, bool, error) {
 	if role.Runner != RunnerManualExternal && !opts.AllowedRunners[role.Runner] {
-		return result, fmt.Errorf("runner_not_allowed: %s", role.Runner)
+		return nil, false, fmt.Errorf("runner_not_allowed: %s", role.Runner)
 	}
 	if role.Runner == RunnerOpenCode && !role.ReadOnlyEnforced {
+		// Keep the default not_assessed status: this is a safety preflight
+		// refusal, not a runner execution failure.
 		result.Reason = "opencode_read_only_not_enforced"
-		return result, nil
+		return nil, false, nil
 	}
-	var baseline *workingTreeBaseline
 	if role.Runner == RunnerOpenCode {
-		mode := defaultString(role.WorkingTreeMode, "clean_required")
-		var err error
-		baseline, err = captureWorkingTreeBaseline(opts.WorkDir)
-		if err != nil {
-			result.Status = StatusCannotVerify
-			result.Reason = "working_tree_baseline_cannot_verify"
-			return result, nil
-		}
-		if mode == "clean_required" && baseline.Count > 0 {
-			result.Status = StatusNotAssessed
-			result.Reason = "working_tree_dirty"
-			return result, nil
-		}
+		return prepareOpenCodeBaseline(result, role, opts.WorkDir)
 	}
 	if len(role.Command) == 0 {
 		result.Reason = "runner_command_not_configured"
-		return result, nil
+		return nil, false, nil
 	}
+	return nil, true, nil
+}
+
+func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir string) (*workingTreeBaseline, bool, error) {
+	mode := defaultString(role.WorkingTreeMode, "clean_required")
+	baseline, err := captureWorkingTreeBaseline(workDir)
+	if err != nil {
+		result.Status = StatusCannotVerify
+		result.Reason = "working_tree_baseline_cannot_verify"
+		return nil, false, nil
+	}
+	if mode == "clean_required" && baseline.Count > 0 {
+		result.Status = StatusNotAssessed
+		result.Reason = "working_tree_dirty"
+		return nil, false, nil
+	}
+	if len(role.Command) == 0 {
+		result.Reason = "runner_command_not_configured"
+		return nil, false, nil
+	}
+	return baseline, true, nil
+}
+
+func runRoleCommand(role ReviewRole, opts RunOptions) ([]byte, bool, error) {
 	timeout := time.Duration(role.TimeoutSeconds) * time.Second
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -825,44 +916,37 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 	cmd := exec.CommandContext(ctx, role.Command[0], role.Command[1:]...)
 	cmd.Dir = opts.WorkDir
 	output, err := cmd.Output()
-	ended := time.Now().UTC().Format(time.RFC3339)
-	result.EndedAt = ended
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		result.Status = StatusTimedOut
-		result.Reason = "runner_timed_out"
-		return writeRawResult(result, rawDir, output)
+	return output, errors.Is(ctx.Err(), context.DeadlineExceeded), err
+}
+
+func applyRunnerError(result *ReviewerResult, err error) error {
+	if err == nil {
+		return nil
 	}
+	if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
+		result.Status = StatusNotAssessed
+		result.Reason = "runner_unavailable"
+	} else {
+		result.Status = StatusFailed
+		result.Reason = "runner_failed"
+	}
+	return err
+}
+
+func applyOpenCodeMutationCheck(result *ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) {
+	if role.Runner != RunnerOpenCode || baseline == nil {
+		return
+	}
+	after, err := captureWorkingTreeBaseline(workDir)
 	if err != nil {
-		if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
-			result.Status = StatusNotAssessed
-			result.Reason = "runner_unavailable"
-		} else {
-			result.Status = StatusFailed
-			result.Reason = "runner_failed"
-		}
-		return writeRawResult(result, rawDir, output)
+		result.Status = StatusCannotVerify
+		result.Reason = "working_tree_baseline_cannot_verify"
+		return
 	}
-	if len(strings.TrimSpace(string(output))) == 0 {
-		result.Status = StatusEmptyOutput
-		result.Reason = "runner_empty_output"
-		return writeRawResult(result, rawDir, output)
+	if after.Digest != baseline.Digest || after.Count != baseline.Count {
+		result.Status = StatusCannotVerify
+		result.Reason = "mutation_detected"
 	}
-	result, err = parseReviewerOutput(result, role, packet, output)
-	if err != nil {
-		result.Status = StatusParseFailed
-		result.Reason = "runner_output_parse_failed"
-	}
-	if role.Runner == RunnerOpenCode && baseline != nil {
-		after, err := captureWorkingTreeBaseline(opts.WorkDir)
-		if err != nil {
-			result.Status = StatusCannotVerify
-			result.Reason = "working_tree_baseline_cannot_verify"
-		} else if after.Digest != baseline.Digest || after.Count != baseline.Count {
-			result.Status = StatusCannotVerify
-			result.Reason = "mutation_detected"
-		}
-	}
-	return writeRawResult(result, rawDir, output)
 }
 
 type workingTreeBaseline struct {
