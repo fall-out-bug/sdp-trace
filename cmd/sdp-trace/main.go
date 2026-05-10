@@ -1995,12 +1995,8 @@ func runCheckpointVerify(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "checkpoint verify accepts only flags")
 		return exitUsage
 	}
-	if strings.TrimSpace(opts.stringValue("run")) == "" {
-		fmt.Fprintln(stderr, "checkpoint verify requires --run")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("checkpoint")) == "" {
-		fmt.Fprintln(stderr, "checkpoint verify requires --checkpoint")
+	if err := requireCheckpointVerifyInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
 	var signed checkpoint.SignedCheckpoint
@@ -2008,26 +2004,46 @@ func runCheckpointVerify(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	var policy *checkpoint.TrustedCheckpointPolicy
-	if opts.stringValue("policy") != "" {
-		var loaded checkpoint.TrustedCheckpointPolicy
-		if err := readJSONFile(opts.stringValue("policy"), &loaded); err != nil {
-			fmt.Fprintln(stderr, err)
-			return 1
-		}
-		policy = &loaded
+	policy, err := readCheckpointPolicy(opts.stringValue("policy"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
 	}
 	result := checkpoint.Verify(opts.stringValue("run"), signed, policy)
 	payload, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Fprintf(stdout, "%s\n", payload)
-	switch result.Result {
-	case checkpoint.StatePass:
-		return 0
-	case checkpoint.StateCannotVerify:
-		return exitCannotVerify
-	default:
-		return 1
+	return checkpointVerifyExitCode(result.Result)
+}
+
+func readCheckpointPolicy(path string) (*checkpoint.TrustedCheckpointPolicy, error) {
+	if path == "" {
+		return nil, nil
 	}
+	var loaded checkpoint.TrustedCheckpointPolicy
+	if err := readJSONFile(path, &loaded); err != nil {
+		return nil, err
+	}
+	return &loaded, nil
+}
+
+func requireCheckpointVerifyInputs(opts *flagSet) error {
+	if strings.TrimSpace(opts.stringValue("run")) == "" {
+		return fmt.Errorf("checkpoint verify requires --run")
+	}
+	if strings.TrimSpace(opts.stringValue("checkpoint")) == "" {
+		return fmt.Errorf("checkpoint verify requires --checkpoint")
+	}
+	return nil
+}
+
+func checkpointVerifyExitCode(state string) int {
+	if state == checkpoint.StatePass {
+		return 0
+	}
+	if state == checkpoint.StateCannotVerify {
+		return exitCannotVerify
+	}
+	return 1
 }
 
 func runReport(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -3169,50 +3185,82 @@ func runDoctor(_ context.Context, args []string, stdout, stderr io.Writer) int {
 }
 
 func runInstall(_ context.Context, args []string, stdout, stderr io.Writer) int {
-	if isHelp(args) {
-		printUsage(stdout)
+	opts, code, ok := parseInstallRepoObserverArgs(args, stdout, stderr)
+	if !ok {
+		return code
+	}
+	status, err := repoobserver.Install(repoObserverOptionsFromFlags(opts))
+	if writeErr := repoobserver.WriteJSON(opts.stringValue("out"), status); writeErr != nil {
+		fmt.Fprintln(stderr, writeErr)
+		return 1
+	}
+	if code, handled := handleRepoObserverInstallError(status, err, stdout, stderr); handled {
+		return code
+	}
+	fmt.Fprint(stdout, repoobserver.HumanTable(status))
+	return repoObserverInstallExitCode(opts.boolValue("write"), status)
+}
+
+func handleRepoObserverInstallError(status repoobserver.Status, err error, stdout, stderr io.Writer) (int, bool) {
+	if err == nil {
+		return 0, false
+	}
+	if status.SchemaVersion != "" {
+		fmt.Fprint(stdout, repoobserver.HumanTable(status))
+	}
+	fmt.Fprintln(stderr, err)
+	return exitCannotVerify, true
+}
+
+func repoObserverInstallExitCode(write bool, status repoobserver.Status) int {
+	if !write {
 		return 0
 	}
-	if len(args) == 0 || args[0] != "repo-observer" {
-		fmt.Fprintln(stderr, "install requires repo-observer")
-		return exitUsage
+	return repoObserverExitCode(status)
+}
+
+func parseInstallRepoObserverArgs(args []string, stdout, stderr io.Writer) (*flagSet, int, bool) {
+	if isHelp(args) {
+		printUsage(stdout)
+		return nil, 0, false
 	}
+	if !hasInstallRepoObserverSubcommand(args) {
+		fmt.Fprintln(stderr, "install requires repo-observer")
+		return nil, exitUsage, false
+	}
+	opts := installRepoObserverFlagSet()
+	if err := opts.parse(args[1:]); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "install repo-observer accepts only flags")
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
+}
+
+func hasInstallRepoObserverSubcommand(args []string) bool {
+	return len(args) != 0 && args[0] == "repo-observer"
+}
+
+func installRepoObserverFlagSet() *flagSet {
 	opts := &flagSet{name: "install repo-observer"}
 	opts.setString("profile", repoobserver.ProfileGithubActionsGitHooksV1)
 	opts.setString("repository-id", "")
 	opts.setString("out", "")
 	opts.setBool("write", false)
 	opts.setBool("force", false)
-	if err := opts.parse(args[1:]); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "install repo-observer accepts only flags")
-		return exitUsage
-	}
-	status, err := repoobserver.Install(repoobserver.Options{
+	return opts
+}
+
+func repoObserverOptionsFromFlags(opts *flagSet) repoobserver.Options {
+	return repoobserver.Options{
 		Profile:      opts.stringValue("profile"),
 		RepositoryID: opts.stringValue("repository-id"),
 		Write:        opts.boolValue("write"),
 		Force:        opts.boolValue("force"),
-	})
-	if writeErr := repoobserver.WriteJSON(opts.stringValue("out"), status); writeErr != nil {
-		fmt.Fprintln(stderr, writeErr)
-		return 1
 	}
-	if err != nil {
-		if status.SchemaVersion != "" {
-			fmt.Fprint(stdout, repoobserver.HumanTable(status))
-		}
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	fmt.Fprint(stdout, repoobserver.HumanTable(status))
-	if !opts.boolValue("write") {
-		return 0
-	}
-	return repoObserverExitCode(status)
 }
 
 func repoObserverExitCode(status repoobserver.Status) int {
@@ -3467,37 +3515,56 @@ func runTelemetryExport(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "export telemetry accepts only flags")
 		return exitUsage
 	}
-	if strings.TrimSpace(opts.stringValue("profile")) != telemetry.ProfilePrometheusTextV1 {
-		fmt.Fprintln(stderr, "export telemetry requires --profile prometheus-text-v1")
+	if err := requireTelemetryExportInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if strings.TrimSpace(opts.stringValue("cross-repo-posture")) == "" {
-		fmt.Fprintln(stderr, "export telemetry requires --cross-repo-posture")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("out")) == "" {
-		fmt.Fprintln(stderr, "export telemetry requires --out")
-		return exitUsage
-	}
-	var result posture.ExportResult
-	if err := readJSONFile(opts.stringValue("cross-repo-posture"), &result); err != nil {
-		fmt.Fprintln(stderr, "posture_unreadable")
-		return exitCannotVerify
-	}
-	rendered, err := telemetry.RenderPrometheus(result)
+	rendered, err := renderTelemetryExport(opts.stringValue("cross-repo-posture"))
 	if err != nil {
-		fmt.Fprintln(stderr, "telemetry_cannot_verify")
+		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	if opts.stringValue("out") == "-" {
-		fmt.Fprint(stdout, rendered)
-		return 0
-	}
-	if err := writeTextFileAtomic(opts.stringValue("out"), rendered); err != nil {
-		fmt.Fprintln(stderr, "out_unwritable")
+	if err := writeTelemetryExportOutput(opts.stringValue("out"), rendered, stdout); err != nil {
+		fmt.Fprintln(stderr, err)
 		return 1
 	}
 	return 0
+}
+
+func renderTelemetryExport(posturePath string) (string, error) {
+	var result posture.ExportResult
+	if err := readJSONFile(posturePath, &result); err != nil {
+		return "", fmt.Errorf("posture_unreadable")
+	}
+	rendered, err := telemetry.RenderPrometheus(result)
+	if err != nil {
+		return "", fmt.Errorf("telemetry_cannot_verify")
+	}
+	return rendered, nil
+}
+
+func writeTelemetryExportOutput(outPath, rendered string, stdout io.Writer) error {
+	if outPath == "-" {
+		fmt.Fprint(stdout, rendered)
+		return nil
+	}
+	if err := writeTextFileAtomic(outPath, rendered); err != nil {
+		return fmt.Errorf("out_unwritable")
+	}
+	return nil
+}
+
+func requireTelemetryExportInputs(opts *flagSet) error {
+	if strings.TrimSpace(opts.stringValue("profile")) != telemetry.ProfilePrometheusTextV1 {
+		return fmt.Errorf("export telemetry requires --profile prometheus-text-v1")
+	}
+	if strings.TrimSpace(opts.stringValue("cross-repo-posture")) == "" {
+		return fmt.Errorf("export telemetry requires --cross-repo-posture")
+	}
+	if strings.TrimSpace(opts.stringValue("out")) == "" {
+		return fmt.Errorf("export telemetry requires --out")
+	}
+	return nil
 }
 
 func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
@@ -3514,12 +3581,8 @@ func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "export cross-repo-posture accepts only flags")
 		return exitUsage
 	}
-	if strings.TrimSpace(opts.stringValue("profile")) != posture.ProfileID {
-		fmt.Fprintln(stderr, "export cross-repo-posture requires --profile cross-repo-evidence-posture-v1")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("selection")) == "" {
-		fmt.Fprintln(stderr, "export cross-repo-posture requires --selection")
+	if err := requireCrossRepoPostureInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
 	result, err := posture.Build(opts.stringValue("selection"), time.Now())
@@ -3527,6 +3590,11 @@ func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "no_export_artifact")
 		return exitCannotVerify
 	}
+	_ = stdout
+	return writeCrossRepoPostureExport(opts, result, stderr)
+}
+
+func writeCrossRepoPostureExport(opts *flagSet, result posture.ExportResult, stderr io.Writer) int {
 	if opts.boolValue("validate-only") {
 		return 0
 	}
@@ -3538,8 +3606,17 @@ func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "out_unwritable")
 		return 1
 	}
-	_ = stdout
 	return 0
+}
+
+func requireCrossRepoPostureInputs(opts *flagSet) error {
+	if strings.TrimSpace(opts.stringValue("profile")) != posture.ProfileID {
+		return fmt.Errorf("export cross-repo-posture requires --profile cross-repo-evidence-posture-v1")
+	}
+	if strings.TrimSpace(opts.stringValue("selection")) == "" {
+		return fmt.Errorf("export cross-repo-posture requires --selection")
+	}
+	return nil
 }
 
 func runCrossRepoPostureExplain(args []string, stdout, stderr io.Writer) int {
@@ -3819,24 +3896,7 @@ func expectedEvidenceReferenceCheck(contract trace.Contract) doctorCheck {
 			Contract: contract.ContractID,
 		}
 	}
-	missing := make([]string, 0)
-	for _, eventType := range contract.RequiredEvents {
-		if !knownEventType(eventType) {
-			missing = append(missing, "required_events:"+eventType)
-		}
-	}
-	for _, evidence := range contract.RequiredEvidence {
-		if strings.TrimSpace(evidence.ID) == "" {
-			missing = append(missing, "required_evidence:<missing_id>")
-		}
-		if strings.TrimSpace(evidence.EventType) == "" {
-			missing = append(missing, "required_evidence:"+evidence.ID+":<missing_event_type>")
-			continue
-		}
-		if !knownEventType(evidence.EventType) {
-			missing = append(missing, "required_evidence:"+evidence.ID+":"+evidence.EventType)
-		}
-	}
+	missing := expectedEvidenceReferenceGaps(contract)
 	if len(missing) > 0 {
 		return doctorCheck{
 			ID:       "expected_evidence_references",
@@ -3852,6 +3912,33 @@ func expectedEvidenceReferenceCheck(contract trace.Contract) doctorCheck {
 		Reason:   "contract required events and evidence references are supported by the current local event model",
 		Contract: contract.ContractID,
 	}
+}
+
+func expectedEvidenceReferenceGaps(contract trace.Contract) []string {
+	missing := make([]string, 0)
+	for _, eventType := range contract.RequiredEvents {
+		if !knownEventType(eventType) {
+			missing = append(missing, "required_events:"+eventType)
+		}
+	}
+	for _, evidence := range contract.RequiredEvidence {
+		missing = append(missing, expectedEvidenceGaps(evidence)...)
+	}
+	return missing
+}
+
+func expectedEvidenceGaps(evidence trace.EvidenceRequirement) []string {
+	missing := make([]string, 0, 2)
+	if strings.TrimSpace(evidence.ID) == "" {
+		missing = append(missing, "required_evidence:<missing_id>")
+	}
+	if strings.TrimSpace(evidence.EventType) == "" {
+		return append(missing, "required_evidence:"+evidence.ID+":<missing_event_type>")
+	}
+	if !knownEventType(evidence.EventType) {
+		missing = append(missing, "required_evidence:"+evidence.ID+":"+evidence.EventType)
+	}
+	return missing
 }
 
 func knownEventType(eventType string) bool {

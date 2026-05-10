@@ -82,6 +82,20 @@ func TestCrossRepoPostureValidateOnlyAndRequiredFlags(t *testing.T) {
 	if exit != 0 {
 		t.Fatalf("validate-only exit=%d err=%s out=%s", exit, errOut.String(), out.String())
 	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"export", "cross-repo-posture",
+		"--profile", "cross-repo-evidence-posture-v1",
+		"--selection", selectionPath,
+	}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("missing out exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "requires --out") {
+		t.Fatalf("missing out error: %s", errOut.String())
+	}
 }
 
 func writePostureCLISelection(t *testing.T, root, current, previous string) string {

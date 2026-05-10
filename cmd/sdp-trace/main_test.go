@@ -505,6 +505,94 @@ func TestDoctorReportsUnsupportedExpectedEvidenceCannotVerify(t *testing.T) {
 	}
 }
 
+func TestExpectedEvidenceReferenceGapsClassifiesMissingAndUnsupportedFields(t *testing.T) {
+	gaps := expectedEvidenceReferenceGaps(trace.Contract{
+		RequiredEvents: []string{"unsupported_event"},
+		RequiredEvidence: []trace.EvidenceRequirement{
+			{},
+			{ID: "missing-event-type"},
+			{ID: "unsupported", EventType: "unsupported_event"},
+			{ID: "supported", EventType: string(trace.EventCommandStarted)},
+		},
+	})
+
+	want := []string{
+		"required_events:unsupported_event",
+		"required_evidence:<missing_id>",
+		"required_evidence::<missing_event_type>",
+		"required_evidence:missing-event-type:<missing_event_type>",
+		"required_evidence:unsupported:unsupported_event",
+	}
+	if !reflect.DeepEqual(gaps, want) {
+		t.Fatalf("gaps = %#v, want %#v", gaps, want)
+	}
+}
+
+func TestCheckpointVerifyHelpersCoverPolicyAndExitBranches(t *testing.T) {
+	policyPath := filepath.Join(t.TempDir(), "policy.json")
+	writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{
+		SchemaVersion: checkpoint.PolicySchemaVersion,
+		AllowedSigners: []checkpoint.TrustedSigner{{
+			SignerID: "ci",
+		}},
+	})
+
+	policy, err := readCheckpointPolicy(policyPath)
+	if err != nil {
+		t.Fatalf("read policy: %v", err)
+	}
+	if policy == nil || policy.SchemaVersion != checkpoint.PolicySchemaVersion {
+		t.Fatalf("unexpected policy: %+v", policy)
+	}
+	policy, err = readCheckpointPolicy("")
+	if err != nil || policy != nil {
+		t.Fatalf("empty policy path = %+v, %v", policy, err)
+	}
+	if _, err := readCheckpointPolicy(filepath.Join(t.TempDir(), "missing.json")); err == nil {
+		t.Fatalf("missing policy did not fail")
+	}
+
+	if checkpointVerifyExitCode(checkpoint.StatePass) != 0 {
+		t.Fatalf("pass exit code changed")
+	}
+	if checkpointVerifyExitCode(checkpoint.StateCannotVerify) != exitCannotVerify {
+		t.Fatalf("cannot_verify exit code changed")
+	}
+	if checkpointVerifyExitCode(checkpoint.StateFail) != 1 {
+		t.Fatalf("fail exit code changed")
+	}
+}
+
+func TestInstallRepoObserverHelpersCoverErrorAndParseBranches(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if opts, code, ok := parseInstallRepoObserverArgs([]string{"repo-observer", "--profile", repoobserver.ProfileGithubActionsGitHooksV1}, &out, &errOut); !ok || code != 0 || opts == nil {
+		t.Fatalf("parse install opts failed: ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if _, code, ok := parseInstallRepoObserverArgs([]string{}, &out, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing subcommand parse = ok:%v code:%d", ok, code)
+	}
+	if _, code, ok := parseInstallRepoObserverArgs([]string{"repo-observer", "extra"}, &out, &errOut); ok || code != exitUsage {
+		t.Fatalf("extra arg parse = ok:%v code:%d", ok, code)
+	}
+
+	code, handled := handleRepoObserverInstallError(repoobserver.Status{}, nil, &out, &errOut)
+	if handled || code != 0 {
+		t.Fatalf("nil error handled unexpectedly: handled=%v code=%d", handled, code)
+	}
+	status := repoobserver.Status{SchemaVersion: repoobserver.SchemaVersion}
+	code, handled = handleRepoObserverInstallError(status, os.ErrPermission, &out, &errOut)
+	if !handled || code != exitCannotVerify || !strings.Contains(errOut.String(), os.ErrPermission.Error()) {
+		t.Fatalf("install error handling changed: handled=%v code=%d err=%s", handled, code, errOut.String())
+	}
+	if repoObserverInstallExitCode(false, repoobserver.Status{InstallState: repoobserver.StateFail}) != 0 {
+		t.Fatalf("dry-run install exit changed")
+	}
+	if repoObserverInstallExitCode(true, repoobserver.Status{InstallState: repoobserver.StateCannotVerify}) != exitCannotVerify {
+		t.Fatalf("write install cannot_verify exit changed")
+	}
+}
+
 func TestInstallRepoObserverDryRunDoesNotRequirePromptCooperation(t *testing.T) {
 	repo := t.TempDir()
 	runGit(t, repo, "init")
