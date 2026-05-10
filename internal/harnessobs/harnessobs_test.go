@@ -65,6 +65,32 @@ func TestValidateZeroEventSourceIsNotAssessed(t *testing.T) {
 	}
 }
 
+func TestObserveRequiredOptionErrors(t *testing.T) {
+	for name, tc := range map[string]struct {
+		opts    ObserveOptions
+		wantErr string
+	}{
+		"missing-profile": {
+			opts:    ObserveOptions{SourcePath: "events.jsonl", OutDir: "run"},
+			wantErr: "harness observe requires --profile",
+		},
+		"missing-source": {
+			opts:    ObserveOptions{ProfilePath: "profile.json", OutDir: "run"},
+			wantErr: "harness observe requires --source",
+		},
+		"missing-out": {
+			opts:    ObserveOptions{ProfilePath: "profile.json", SourcePath: "events.jsonl"},
+			wantErr: "harness observe requires --out",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := requireObserveOptions(tc.opts); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("requireObserveOptions() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
 func TestObserveRejectsUnsafeRawPromptAndDoesNotWriteRun(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)

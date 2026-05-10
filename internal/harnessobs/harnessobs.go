@@ -226,62 +226,128 @@ type ValidateOptions struct {
 }
 
 func Observe(opts ObserveOptions) (Run, error) {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return Run{}, errors.New("harness observe requires --profile")
-	}
-	if strings.TrimSpace(opts.SourcePath) == "" {
-		return Run{}, errors.New("harness observe requires --source")
-	}
-	if strings.TrimSpace(opts.OutDir) == "" {
-		return Run{}, errors.New("harness observe requires --out")
-	}
-	profilePath, err := safeExistingFile(opts.ProfilePath)
-	if err != nil {
-		return Run{}, fmt.Errorf("unsafe profile path: %w", err)
-	}
-	sourcePath, err := safeExistingFile(opts.SourcePath)
-	if err != nil {
-		return Run{}, fmt.Errorf("unsafe source path: %w", err)
-	}
-	outDir, err := safeOutDir(opts.OutDir)
+	ctx, err := prepareObservation(opts)
 	if err != nil {
 		return Run{}, err
 	}
-	profile, err := LoadProfile(profilePath)
-	if err != nil {
+	if err := writeObservationEvents(ctx.outDir, ctx.events); err != nil {
 		return Run{}, err
 	}
-	events, sourceDigest, err := readEvents(profile, sourcePath)
-	if err != nil {
-		return Run{}, err
-	}
-	if opts.Now.IsZero() {
-		opts.Now = time.Now().UTC()
-	}
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return Run{}, err
-	}
-	for _, event := range events {
-		path := filepath.Join(outDir, "events", event.EventID+".json")
-		if err := writeJSON(path, event); err != nil {
-			return Run{}, err
-		}
-	}
-	run := Run{
-		SchemaVersion:      RunSchemaVersion,
-		ProfileID:          profile.ProfileID,
-		HarnessFamily:      profile.HarnessFamily,
-		EventSchemaVersion: profile.EventSchemaVersion,
-		SourcePath:         filepath.Base(sourcePath),
-		SourceDigest:       sourceDigest,
-		EventCount:         len(events),
-		EventRefs:          eventRefs(events),
-		CreatedAt:          opts.Now.Format(time.RFC3339),
-	}
-	if err := writeJSON(filepath.Join(outDir, "run.json"), run); err != nil {
+	run := newObservedRun(ctx)
+	if err := writeJSON(filepath.Join(ctx.outDir, "run.json"), run); err != nil {
 		return Run{}, err
 	}
 	return run, nil
+}
+
+type observationContext struct {
+	outDir       string
+	sourcePath   string
+	sourceDigest string
+	now          time.Time
+	profile      Profile
+	events       []Event
+}
+
+func prepareObservation(opts ObserveOptions) (observationContext, error) {
+	profilePath, sourcePath, outDir, err := validateObserveOptions(opts)
+	if err != nil {
+		return observationContext{}, err
+	}
+	profile, events, sourceDigest, err := loadObservationSource(profilePath, sourcePath)
+	if err != nil {
+		return observationContext{}, err
+	}
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return observationContext{}, err
+	}
+	return observationContext{
+		outDir:       outDir,
+		sourcePath:   sourcePath,
+		sourceDigest: sourceDigest,
+		now:          observationTime(opts.Now),
+		profile:      profile,
+		events:       events,
+	}, nil
+}
+
+func validateObserveOptions(opts ObserveOptions) (string, string, string, error) {
+	if err := requireObserveOptions(opts); err != nil {
+		return "", "", "", err
+	}
+	return resolveObservePaths(opts)
+}
+
+func requireObserveOptions(opts ObserveOptions) error {
+	if strings.TrimSpace(opts.ProfilePath) == "" {
+		return errors.New("harness observe requires --profile")
+	}
+	if strings.TrimSpace(opts.SourcePath) == "" {
+		return errors.New("harness observe requires --source")
+	}
+	if strings.TrimSpace(opts.OutDir) == "" {
+		return errors.New("harness observe requires --out")
+	}
+	return nil
+}
+
+func resolveObservePaths(opts ObserveOptions) (string, string, string, error) {
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return "", "", "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+	sourcePath, err := safeExistingFile(opts.SourcePath)
+	if err != nil {
+		return "", "", "", fmt.Errorf("unsafe source path: %w", err)
+	}
+	outDir, err := safeOutDir(opts.OutDir)
+	if err != nil {
+		return "", "", "", err
+	}
+	return profilePath, sourcePath, outDir, nil
+}
+
+func observationTime(now time.Time) time.Time {
+	if now.IsZero() {
+		return time.Now().UTC()
+	}
+	return now
+}
+
+func loadObservationSource(profilePath, sourcePath string) (Profile, []Event, string, error) {
+	profile, err := LoadProfile(profilePath)
+	if err != nil {
+		return Profile{}, nil, "", err
+	}
+	events, sourceDigest, err := readEvents(profile, sourcePath)
+	if err != nil {
+		return Profile{}, nil, "", err
+	}
+	return profile, events, sourceDigest, nil
+}
+
+func writeObservationEvents(outDir string, events []Event) error {
+	for _, event := range events {
+		path := filepath.Join(outDir, "events", event.EventID+".json")
+		if err := writeJSON(path, event); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func newObservedRun(ctx observationContext) Run {
+	return Run{
+		SchemaVersion:      RunSchemaVersion,
+		ProfileID:          ctx.profile.ProfileID,
+		HarnessFamily:      ctx.profile.HarnessFamily,
+		EventSchemaVersion: ctx.profile.EventSchemaVersion,
+		SourcePath:         filepath.Base(ctx.sourcePath),
+		SourceDigest:       ctx.sourceDigest,
+		EventCount:         len(ctx.events),
+		EventRefs:          eventRefs(ctx.events),
+		CreatedAt:          ctx.now.Format(time.RFC3339),
+	}
 }
 
 func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
