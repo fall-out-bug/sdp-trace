@@ -17,8 +17,8 @@
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
-| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/witness.BuildCustomerPKI`, and `internal/witness.validateCIEnvelope` were decomposed below 15. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `harnessobs`, `interaction` (67.3%), `prreview` (73.7%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
+| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, and `internal/forensic.rawReferenceCondition` were decomposed below 15. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `forensic` (84.0%), `harnessobs`, `interaction` (67.3%), `prreview` (73.7%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
 
 ## Command Evidence
 
@@ -28,7 +28,7 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-witness-cover.out` | pass | Total coverage: 71.9%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-forensic-cover.out` | pass | Total coverage: 72.0%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
@@ -38,9 +38,10 @@
 | `gocyclo -over 15 internal/interaction/interaction.go` | pass | `internal/interaction.ValidateEvent` decomposition removed production complexity findings in the interaction file. |
 | `gocyclo -over 15 internal/prreview/prreview.go` | fail_assessed_gap | `internal/prreview.Validate` was decomposed to complexity 4; remaining prreview findings are `runRole` at 23 and `BuildPacket` at 16. |
 | `gocyclo -over 15 internal/witness/profiles.go` | pass | `internal/witness.BuildCustomerPKI` and `internal/witness.validateCIEnvelope` were decomposed below 15. |
+| `gocyclo -over 15 internal/forensic/forensic.go` | pass | `internal/forensic.rawReferenceCondition` was decomposed below 15. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-witness-cover-func.txt -gocyclo /tmp/sdp-trace-witness-gocyclo.txt -threshold 5` | fail_assessed_gap | 383 functions exceed strict CRAP threshold 5; `internal/witness.BuildCustomerPKI` and `internal/witness.validateCIEnvelope` were removed from >15 complexity findings, but extracted helpers still exceed CRAP 5 at current coverage. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-forensic-cover-func.txt -gocyclo /tmp/sdp-trace-forensic-gocyclo.txt -threshold 5` | fail_assessed_gap | 383 functions exceed strict CRAP threshold 5; `internal/forensic.rawReferenceCondition` was removed from the top offenders, but strict repo-wide CRAP remains open. |
 
 ## Coverage Delta
 
@@ -75,7 +76,6 @@ Top current CRAP/complexity findings:
 | Function | Cyclo | Coverage | CRAP | State |
 |---|---:|---:|---:|---|
 | `cmd/sdp-trace.run` | 29 | 91.2% | 29.57 | assessed_gap |
-| `internal/forensic.rawReferenceCondition` | 24 | 73.7% | 34.48 | assessed_gap |
 | `internal/prreview.runRole` | 23 | 70.6% | 36.44 | assessed_gap |
 | `internal/harnessobs.safeOutDir` | 23 | 48.8% | 94.00 | assessed_gap |
 | `internal/harnessobs.findUnsafeAt` | 20 | 56.0% | 54.07 | assessed_gap |
@@ -94,11 +94,11 @@ Immediate ratchet now enforced or measurable:
 Next decomposition candidates before stronger MVP-readiness claim:
 
 1. `cmd/sdp-trace.run`
-2. `internal/forensic.rawReferenceCondition`
-3. `internal/prreview.runRole`
-4. `internal/harnessobs.safeOutDir`
-5. `internal/demo.witnessBindingState`
-6. `internal/harnessobs.findUnsafeRawEventAt`
+2. `internal/prreview.runRole`
+3. `internal/harnessobs.safeOutDir`
+4. `internal/demo.witnessBindingState`
+5. `internal/harnessobs.findUnsafeRawEventAt`
+6. `internal/harnessobs.findUnsafeAt`
 
 ## External Evidence Boundary
 
@@ -119,6 +119,7 @@ this draft PR must not be treated as approved to merge.
 | PR-review validator refactor evidence subagent | `codex-subagent pi` / `openrouter/qwen/qwen3.6-plus` | ASSESSED_WITH_GAPS | Quantitative evidence artifact concern accepted narrower: fresh local commands were rerun and recorded above, but raw `/tmp` coverage/CRAP outputs are ephemeral and not committed as durable release artifacts in this MVP-hardening slice. Merge approval remains `not_assessed`. |
 | Witness profile refactor code subagent | `codex-subagent pi` / `zai/glm-5.1` | FINDINGS_ONLY | Accepted and fixed test gaps for invalid freshness signature, policy digest mismatch, and `customerPKIFail` unknown-field consistency. Quantitative evidence note remains handled by local command evidence above. |
 | Witness profile refactor evidence subagent | `codex-subagent pi` / `openrouter/qwen/qwen3.6-plus` | APPROVED_WITH_GAPS | Accepted and fixed CustomerPKI authority/freshness branch gaps: unsupported profile, empty signer, public key mismatch, policy digest mismatch, run mismatch, invalid signature, and source-binding invariant assertion. External/ephemeral evidence artifact concerns remain `not_assessed` for durable release proof. |
+| Forensic raw-reference refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | No behavior drift found; ledger honesty confirmed. Minor pass-by-value observation accepted and fixed by passing `*RawReference` into `validateRawReference`. |
 
 Unusable attempts:
 

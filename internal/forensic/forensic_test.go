@@ -47,6 +47,60 @@ func TestEvaluateCannotVerifyUnverifiableRawReferenceAccess(t *testing.T) {
 	}
 }
 
+func TestEvaluateRawReferenceReasonCodes(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RawReference)
+		state  string
+		reason string
+	}{
+		{
+			name: "invalid reference type",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeDigestOnly
+			},
+			state:  StateFail,
+			reason: "raw_reference_type_invalid",
+		},
+		{
+			name: "missing reference uri",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceURI = ""
+			},
+			state:  StateCannotVerify,
+			reason: "missing_reference",
+		},
+		{
+			name: "encrypted key custody unknown",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeEncryptedRawRef
+				ref.KeyCustodyState = KeyCustodyUnknown
+			},
+			state:  StateCannotVerify,
+			reason: "key_custody_unverifiable",
+		},
+		{
+			name: "retention lifecycle expired",
+			mutate: func(ref *RawReference) {
+				ref.RetentionLifecycle.State = RetentionLifecycleExpired
+			},
+			state:  StateCannotVerify,
+			reason: "retention_lifecycle_unverifiable",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := validInput()
+			tt.mutate(input.Run.Events[1].RawReference)
+			result := Evaluate(input)
+			condition := conditionByID(result.ForensicConditions, "raw_reference_bound")
+			if condition.State != tt.state || condition.ReasonCode != tt.reason {
+				t.Fatalf("condition = %+v", condition)
+			}
+		})
+	}
+}
+
 func TestEvaluateFailsWeakDigestAndCannotVerifySelfClaimedAuthority(t *testing.T) {
 	input := validInput()
 	input.Run.Events[1].RawReference.Digest.Algorithm = "sha1"

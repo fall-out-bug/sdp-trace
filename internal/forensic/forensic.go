@@ -340,29 +340,66 @@ func rawReferenceCondition(input Input) Condition {
 		if ref == nil {
 			continue
 		}
-		if ref.Digest.Algorithm != "sha256" || len(ref.Digest.Value) != 64 {
-			return fail("raw_reference_bound", "weak_digest", "raw reference digest is weak, unknown, or malformed", "Use SHA-256 or stronger digest binding for raw references.")
-		}
-		if ref.ReferenceType != RetentionModeEncryptedRawRef && ref.ReferenceType != RetentionModeExternalArtifactRef {
-			return fail("raw_reference_bound", "raw_reference_type_invalid", "raw reference type is not an accepted FR-054 raw reference mode", "Use encrypted_raw_ref or external_artifact_ref.")
-		}
-		if ref.ReferenceURI == "" {
-			return cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference.")
-		}
-		if ref.AccessState == "" || ref.AccessState == AccessStateNotAssessed || ref.AccessState == AccessStateUnavailable || ref.AccessState == AccessStateRevoked {
-			return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time.")
-		}
-		if ref.AccessStateLastVerified == "" {
-			return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment.")
-		}
-		if ref.ReferenceType == RetentionModeEncryptedRawRef && (ref.KeyCustodyState == "" || ref.KeyCustodyState == KeyCustodyUnknown || ref.KeyCustodyState == KeyCustodyNotAssessed || ref.KeyCustodyState == KeyCustodyCompromised || ref.KeyCustodyState == KeyCustodyDestroyed) {
-			return cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state.")
-		}
-		if ref.RetentionLifecycle.State == "" || ref.RetentionLifecycle.State == RetentionLifecycleNotAssessed || ref.RetentionLifecycle.State == RetentionLifecycleExpired || ref.RetentionLifecycle.State == RetentionLifecycleRevoked || ref.RetentionLifecycle.State == RetentionLifecycleDeleted {
-			return cannotVerify("raw_reference_bound", "retention_lifecycle_unverifiable", "raw reference retention lifecycle is not active", "Record active retention lifecycle evidence.")
+		if condition, ok := validateRawReference(ref); !ok {
+			return condition
 		}
 	}
 	return pass("raw_reference_bound", "raw_reference_bound", "raw references are digest-bound and access-verifiable")
+}
+
+func validateRawReference(ref *RawReference) (Condition, bool) {
+	if ref.Digest.Algorithm != "sha256" || len(ref.Digest.Value) != 64 {
+		return fail("raw_reference_bound", "weak_digest", "raw reference digest is weak, unknown, or malformed", "Use SHA-256 or stronger digest binding for raw references."), false
+	}
+	if ref.ReferenceType != RetentionModeEncryptedRawRef && ref.ReferenceType != RetentionModeExternalArtifactRef {
+		return fail("raw_reference_bound", "raw_reference_type_invalid", "raw reference type is not an accepted FR-054 raw reference mode", "Use encrypted_raw_ref or external_artifact_ref."), false
+	}
+	if ref.ReferenceURI == "" {
+		return cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference."), false
+	}
+	if rawReferenceAccessUnverifiable(ref) {
+		return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time."), false
+	}
+	if ref.AccessStateLastVerified == "" {
+		return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment."), false
+	}
+	if encryptedKeyCustodyUnverifiable(ref) {
+		return cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state."), false
+	}
+	if retentionLifecycleUnverifiable(ref.RetentionLifecycle.State) {
+		return cannotVerify("raw_reference_bound", "retention_lifecycle_unverifiable", "raw reference retention lifecycle is not active", "Record active retention lifecycle evidence."), false
+	}
+	return Condition{}, true
+}
+
+func rawReferenceAccessUnverifiable(ref *RawReference) bool {
+	switch ref.AccessState {
+	case "", AccessStateNotAssessed, AccessStateUnavailable, AccessStateRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
+func encryptedKeyCustodyUnverifiable(ref *RawReference) bool {
+	if ref.ReferenceType != RetentionModeEncryptedRawRef {
+		return false
+	}
+	switch ref.KeyCustodyState {
+	case "", KeyCustodyUnknown, KeyCustodyNotAssessed, KeyCustodyCompromised, KeyCustodyDestroyed:
+		return true
+	default:
+		return false
+	}
+}
+
+func retentionLifecycleUnverifiable(state string) bool {
+	switch state {
+	case "", RetentionLifecycleNotAssessed, RetentionLifecycleExpired, RetentionLifecycleRevoked, RetentionLifecycleDeleted:
+		return true
+	default:
+		return false
+	}
 }
 
 func overclaimCondition(input Input) Condition {
