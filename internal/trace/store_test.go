@@ -138,6 +138,61 @@ func TestValidateRunDirectorySkipsEventChainCheckWhenDisabled(t *testing.T) {
 	}
 }
 
+func TestAppendRunEventExtendsChainAndUpdatesManifest(t *testing.T) {
+	runDir := t.TempDir()
+	layout, err := NewRunLayout(runDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	manifest := RunManifest{
+		SchemaVersion:   SchemaVersion,
+		RunID:           "run-a",
+		RecorderVersion: RecorderVersion,
+		ContractID:      DefaultContract.ContractID,
+		EventCount:      1,
+		EventChainHead:  first.EventHash,
+		FinalChainHead:  first.EventHash,
+	}
+	if err := layout.WriteRun(manifest); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+	if err := layout.WriteEvent(first); err != nil {
+		t.Fatalf("write first event: %v", err)
+	}
+
+	appended, err := AppendRunEvent(runDir, EventCommandFinished, map[string]any{"exit_code": 0}, "test-observer")
+	if err != nil {
+		t.Fatalf("AppendRunEvent() error = %v", err)
+	}
+	if appended.Sequence != 1 {
+		t.Fatalf("sequence = %d, want 1", appended.Sequence)
+	}
+	if appended.PrevEventHash != first.EventHash {
+		t.Fatalf("prev hash = %s, want %s", appended.PrevEventHash, first.EventHash)
+	}
+	if appended.ObservedBy != "test-observer" {
+		t.Fatalf("observed_by = %s", appended.ObservedBy)
+	}
+	if appended.EventHash == "" || appended.PayloadDigest == "" {
+		t.Fatalf("append did not compute hashes: %+v", appended)
+	}
+
+	artifact, err := OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("OpenRunArtifact() error = %v", err)
+	}
+	if artifact.Manifest.EventCount != 2 {
+		t.Fatalf("event_count = %d, want 2", artifact.Manifest.EventCount)
+	}
+	if artifact.Manifest.EventChainHead != appended.EventHash || artifact.Manifest.FinalChainHead != appended.EventHash {
+		t.Fatalf("manifest chain heads not updated: %+v appended=%s", artifact.Manifest, appended.EventHash)
+	}
+	if err := ValidateRunDirectory(runDir, true); err != nil {
+		t.Fatalf("ValidateRunDirectory() error = %v", err)
+	}
+}
+
 func TestValidateEventChainRejectsBrokenPreviousHash(t *testing.T) {
 	first := Event{
 		SchemaVersion: SchemaVersion,

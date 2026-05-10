@@ -311,6 +311,48 @@ func TestInvalidRepositoryIDRejected(t *testing.T) {
 	}
 }
 
+func TestSanitizeOriginRedactsCredentialsAndKeepsStableRepoRef(t *testing.T) {
+	tests := []struct {
+		name   string
+		origin string
+		want   string
+	}{
+		{
+			name:   "ssh scp form removes user",
+			origin: "git@github.com:org/repo.git",
+			want:   "github.com:org/repo.git",
+		},
+		{
+			name:   "https token redacted before host",
+			origin: "https://token@example.com/org/repo.git#fragment",
+			want:   "https://example.com/org/repo.git",
+		},
+		{
+			name:   "long path keeps owner and repo",
+			origin: "https://github.com/org/repo.git",
+			want:   "org/repo.git",
+		},
+		{
+			name:   "windows separators normalized",
+			origin: `C:\work\org\repo`,
+			want:   "org/repo",
+		},
+		{
+			name:   "short local ref preserved",
+			origin: "repo",
+			want:   "repo",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := sanitizeOrigin(tt.origin); got != tt.want {
+				t.Fatalf("sanitizeOrigin(%q) = %q, want %q", tt.origin, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBlock28ExampleStatusesUseClosedReasonCodes(t *testing.T) {
 	allowed := map[string]bool{
 		ReasonHooksPathAbsent:             true,

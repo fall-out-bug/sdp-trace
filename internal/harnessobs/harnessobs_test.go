@@ -422,6 +422,93 @@ func TestNormalizeOpenCodeRawLineUsesDefaultActorAndTime(t *testing.T) {
 	}
 }
 
+func TestNormalizeOpenCodeRawLineBytesRejectsMalformedAndUnsafeRawInput(t *testing.T) {
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	if events, err := normalizeOpenCodeRawLineBytes([]byte("  "), 1, now); err != nil || len(events) != 0 {
+		t.Fatalf("blank line events/error = %+v/%v, want none/nil", events, err)
+	}
+	if _, err := normalizeOpenCodeRawLineBytes([]byte("{"), 2, now); err == nil || !strings.Contains(err.Error(), "raw source line 2: malformed_jsonl") {
+		t.Fatalf("malformed error = %v", err)
+	}
+	if _, err := normalizeOpenCodeRawLineBytes([]byte(`{"raw_prompt":"secret"}`), 3, now); err == nil || !strings.Contains(err.Error(), "unsafe_input:raw_prompt:forbidden_raw_field") {
+		t.Fatalf("unsafe error = %v", err)
+	}
+}
+
+func TestNormalizeOpenCodeRawLineBytesComputesDigestForEachEvent(t *testing.T) {
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	events, err := normalizeOpenCodeRawLineBytes([]byte(`{"type":"tool.call","model":"qwen3.6","timestamp":"2026-05-10T12:00:00Z"}`), 4, now)
+	if err != nil {
+		t.Fatalf("normalizeOpenCodeRawLineBytes() error = %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("events = %+v, want model and tool", events)
+	}
+	for _, event := range events {
+		if event.SourceDigest == "" {
+			t.Fatalf("%s missing source digest: %+v", event.EventFamily, event)
+		}
+	}
+}
+
+func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "nested", "events.jsonl")
+	events := []Event{
+		normalizedEvent("e1", "harness", "harness_observed", "2026-05-10T12:00:00Z", "raw-000001", "opencode"),
+		normalizedEvent("e2", "model", "model_observed", "2026-05-10T12:00:01Z", "raw-000002", "qwen"),
+	}
+	if err := writeNormalizedEvents(outPath, events); err != nil {
+		t.Fatalf("writeNormalizedEvents() error = %v", err)
+	}
+	data, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read normalized events: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("lines = %d, want 2\n%s", len(lines), string(data))
+	}
+	var got Event
+	if err := json.Unmarshal([]byte(lines[1]), &got); err != nil {
+		t.Fatalf("parse second line: %v", err)
+	}
+	if got.EventID != "e2" || got.EventFamily != "model" {
+		t.Fatalf("second event = %+v", got)
+	}
+}
+
+func TestSessionCommandFactsRequirePassedModelAndUseSafeTimestamp(t *testing.T) {
+	if facts := sessionCommandFacts(SessionRun{CommandModelState: StateCannotVerify, CommandModel: "qwen"}); len(facts) != 0 {
+		t.Fatalf("facts for cannot_verify model = %+v, want none", facts)
+	}
+	if facts := sessionCommandFacts(SessionRun{CommandModelState: StatePass, CommandModel: "   "}); len(facts) != 0 {
+		t.Fatalf("facts for blank model = %+v, want none", facts)
+	}
+
+	facts := sessionCommandFacts(SessionRun{
+		CommandModelState: StatePass,
+		CommandModel:      "openrouter/qwen/qwen3.6-plus",
+		StartTime:         "not-rfc3339",
+		CreatedAt:         "2026-05-10T12:00:00Z",
+	})
+	if len(facts) != 1 {
+		t.Fatalf("facts = %+v, want one", facts)
+	}
+	if facts[0].EventID != "session-command-model" || facts[0].EventFamily != "model" {
+		t.Fatalf("fact identity = %+v", facts[0])
+	}
+	if facts[0].ActorRef != "openrouter-qwen-qwen3.6-plus" {
+		t.Fatalf("actor_ref = %s", facts[0].ActorRef)
+	}
+	if _, err := time.Parse(time.RFC3339, facts[0].ObservedAt); err != nil {
+		t.Fatalf("observed_at is not RFC3339: %s", facts[0].ObservedAt)
+	}
+	if facts[0].SourceDigest == "" {
+		t.Fatalf("missing source digest: %+v", facts[0])
+	}
+}
+
 func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
 	dir := t.TempDir()
 	oldwd := chdir(t, dir)
