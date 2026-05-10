@@ -386,36 +386,45 @@ func (w *runWriter) eventCount() int {
 }
 
 func runCommand(ctx context.Context, command []string, env []string, writer *runWriter) (int, string) {
-	stdoutWriter := io.MultiWriter(os.Stdout, &writer.stdoutHash)
-	stderrWriter := io.MultiWriter(os.Stderr, &writer.stderrHash)
-	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
-	cmd.Env = env
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = stdoutWriter
-	cmd.Stderr = stderrWriter
-
+	cmd := recordedCommand(ctx, command, env, writer)
 	if err := cmd.Start(); err != nil {
 		return 1, "start_failed"
 	}
+	return waitCommand(ctx, cmd)
+}
+
+func recordedCommand(ctx context.Context, command []string, env []string, writer *runWriter) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
+	cmd.Env = env
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = io.MultiWriter(os.Stdout, &writer.stdoutHash)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &writer.stderrHash)
+	return cmd
+}
+
+func waitCommand(ctx context.Context, cmd *exec.Cmd) (int, string) {
 	err := cmd.Wait()
 	if err == nil {
 		return 0, ""
 	}
-	exitCode := 1
-	signal := ""
 	if exitErr, ok := err.(*exec.ExitError); ok {
-		exitCode = exitErr.ExitCode()
-		if ps := exitErr.ProcessState; ps != nil {
-			if !ps.Exited() {
-				if status, ok := ps.Sys().(syscall.WaitStatus); ok {
-					signal = status.Signal().String()
-				}
-			}
-		}
-	} else if ctx.Err() != nil {
-		signal = "context_cancelled"
+		return exitErr.ExitCode(), processSignal(exitErr.ProcessState)
 	}
-	return exitCode, signal
+	if ctx.Err() != nil {
+		return 1, "context_cancelled"
+	}
+	return 1, ""
+}
+
+func processSignal(processState *os.ProcessState) string {
+	if processState == nil || processState.Exited() {
+		return ""
+	}
+	status, ok := processState.Sys().(syscall.WaitStatus)
+	if !ok {
+		return ""
+	}
+	return status.Signal().String()
 }
 
 func eventFilename(sequence int, eventType trace.EventType) string {

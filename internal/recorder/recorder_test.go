@@ -2,6 +2,8 @@ package recorder
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -58,6 +60,53 @@ func TestRunPreservesNonZeroExitCode(t *testing.T) {
 	if result.ExitCode != 11 {
 		t.Fatalf("exit code = %d, expected 11", result.ExitCode)
 	}
+}
+
+func TestRunCommandHashesOutputAndPreservesExitState(t *testing.T) {
+	sh := mustFindShell(t)
+	writer := newTestRunWriter(t)
+
+	exitCode, signal := runCommand(context.Background(), []string{sh, "-c", "printf stdout; printf stderr >&2; exit 7"}, os.Environ(), writer)
+
+	if exitCode != 7 {
+		t.Fatalf("exit code = %d, expected 7", exitCode)
+	}
+	if signal != "" {
+		t.Fatalf("signal = %q, expected empty", signal)
+	}
+	if writer.stdoutDigest() != sha256Hex("stdout") {
+		t.Fatalf("stdout digest = %q, expected hash of stdout", writer.stdoutDigest())
+	}
+	if writer.stderrDigest() != sha256Hex("stderr") {
+		t.Fatalf("stderr digest = %q, expected hash of stderr", writer.stderrDigest())
+	}
+}
+
+func TestRunCommandReportsStartFailure(t *testing.T) {
+	writer := newTestRunWriter(t)
+
+	exitCode, signal := runCommand(context.Background(), []string{"/path/that/does/not/exist"}, os.Environ(), writer)
+
+	if exitCode != 1 {
+		t.Fatalf("exit code = %d, expected 1", exitCode)
+	}
+	if signal != "start_failed" {
+		t.Fatalf("signal = %q, expected start_failed", signal)
+	}
+}
+
+func newTestRunWriter(t *testing.T) *runWriter {
+	t.Helper()
+	writer, err := newRunWriter(t.TempDir(), trace.DefaultContract, "test")
+	if err != nil {
+		t.Fatalf("newRunWriter error: %v", err)
+	}
+	return writer
+}
+
+func sha256Hex(value string) string {
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:])
 }
 
 func mustFindShell(t *testing.T) string {
