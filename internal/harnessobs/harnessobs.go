@@ -1409,6 +1409,19 @@ func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
 }
 
 func validateEvent(profile Profile, event Event) error {
+	if err := validateEventIdentity(profile, event); err != nil {
+		return err
+	}
+	if err := validateEventRefs(event); err != nil {
+		return err
+	}
+	if err := validateEventContent(event); err != nil {
+		return err
+	}
+	return validateUnavailableFields(event.UnavailableFields)
+}
+
+func validateEventIdentity(profile Profile, event Event) error {
 	if !safeFileIDPattern.MatchString(event.EventID) {
 		return errors.New("unsafe event_id")
 	}
@@ -1426,6 +1439,10 @@ func validateEvent(profile Profile, event Event) error {
 			return errors.New("invalid observed_at")
 		}
 	}
+	return nil
+}
+
+func validateEventRefs(event Event) error {
 	if !safeRef(event.SourceRef) {
 		return errors.New("unsafe source_ref")
 	}
@@ -1441,15 +1458,29 @@ func validateEvent(profile Profile, event Event) error {
 	if event.ActorRef != "" && !safeRef(event.ActorRef) {
 		return errors.New("unsafe actor_ref")
 	}
+	return nil
+}
+
+func validateEventContent(event Event) error {
 	if !validContentState(event.ContentState) {
 		return errors.New("invalid content_state")
 	}
-	for _, field := range event.UnavailableFields {
-		if !safeIDPattern.MatchString(field.Field) || field.State != StateNotAssessed || !safeIDPattern.MatchString(field.ReasonCode) {
+	return nil
+}
+
+func validateUnavailableFields(fields []UnavailableField) error {
+	for _, field := range fields {
+		if !validUnavailableField(field) {
 			return errors.New("invalid unavailable_fields")
 		}
 	}
 	return nil
+}
+
+func validUnavailableField(field UnavailableField) bool {
+	return safeIDPattern.MatchString(field.Field) &&
+		field.State == StateNotAssessed &&
+		safeIDPattern.MatchString(field.ReasonCode)
 }
 
 func evaluate(profile Profile, run Run, events []Event) Validation {

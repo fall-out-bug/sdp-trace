@@ -538,6 +538,61 @@ func TestObserveRejectsUnsafeEventIDBeforeWrite(t *testing.T) {
 	}
 }
 
+func TestValidateEventRejectsInvalidFields(t *testing.T) {
+	profile := Profile{EventSchemaVersion: EventSchemaVersion}
+	base := Event{
+		EventID:            "event-1",
+		EventSchemaVersion: EventSchemaVersion,
+		EventFamily:        "harness",
+		EventType:          "observe",
+		ObservedAt:         "2026-05-10T12:00:00Z",
+		SourceRef:          "source-1",
+		SourceDigest:       strings.Repeat("a", 64),
+		TaskRef:            "task-1",
+		OperationRef:       "adapter-run:fixture",
+		ActorRef:           "actor-1",
+		ContentState:       ContentDigestOnly,
+		UnavailableFields: []UnavailableField{{
+			Field:      "raw_prompt",
+			State:      StateNotAssessed,
+			ReasonCode: "redacted",
+		}},
+	}
+	tests := []struct {
+		name string
+		edit func(*Event)
+		want string
+	}{
+		{name: "schema", edit: func(event *Event) { event.EventSchemaVersion = "old" }, want: "schema_version_mismatch"},
+		{name: "family", edit: func(event *Event) { event.EventFamily = "unknown" }, want: "unsupported event_family"},
+		{name: "event type", edit: func(event *Event) { event.EventType = "../bad" }, want: "unsafe event_type"},
+		{name: "observed at", edit: func(event *Event) { event.ObservedAt = "not-time" }, want: "invalid observed_at"},
+		{name: "source ref", edit: func(event *Event) { event.SourceRef = "../source" }, want: "unsafe source_ref"},
+		{name: "source digest", edit: func(event *Event) { event.SourceDigest = "bad" }, want: "invalid source_digest"},
+		{name: "task ref", edit: func(event *Event) { event.TaskRef = "../task" }, want: "unsafe task_ref"},
+		{name: "operation ref", edit: func(event *Event) { event.OperationRef = "adapter-run://bad" }, want: "unsafe operation_ref"},
+		{name: "actor ref", edit: func(event *Event) { event.ActorRef = "../actor" }, want: "unsafe actor_ref"},
+		{name: "content state", edit: func(event *Event) { event.ContentState = "raw" }, want: "invalid content_state"},
+		{name: "unavailable field name", edit: func(event *Event) { event.UnavailableFields[0].Field = "../raw_prompt" }, want: "invalid unavailable_fields"},
+		{name: "unavailable field state", edit: func(event *Event) { event.UnavailableFields[0].State = StatePass }, want: "invalid unavailable_fields"},
+		{name: "unavailable field reason", edit: func(event *Event) { event.UnavailableFields[0].ReasonCode = "../redacted" }, want: "invalid unavailable_fields"},
+	}
+
+	if err := validateEvent(profile, base); err != nil {
+		t.Fatalf("base validateEvent() error = %v", err)
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			event := base
+			event.UnavailableFields = append([]UnavailableField(nil), base.UnavailableFields...)
+			tt.edit(&event)
+			if err := validateEvent(profile, event); err == nil || err.Error() != tt.want {
+				t.Fatalf("validateEvent() error = %v, want %s", err, tt.want)
+			}
+		})
+	}
+}
+
 func TestValidateWritesCannotVerifyOutForMissingRun(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
