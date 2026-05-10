@@ -1,6 +1,6 @@
 # Block 32: MVP Readiness Hardening
 
-**Status**: Implementation in progress; local docs/lint/coverage hardening complete; CRAP/complexity gaps assessed
+**Status**: Implementation complete locally; PR-level review and final-head CI pending
 **Spec package**: `specs/004-mvp-readiness-hardening/`
 **Branch/worktree**: `codex/mvp-readiness-spec` in `/Users/fall_out_bug/projects/vibe_coding/sdp-trace-mvp-readiness-spec`
 
@@ -52,8 +52,7 @@ It cannot close external production trust.
 - Implementation evidence is recorded in
   `specs/004-mvp-readiness-hardening/implementation-ledger.md`.
 - Local lint and tests now pass.
-- Strict `CRAP < 5` remains `assessed_gap` for existing production code; the
-  repository now has a reproducible CRAP calculation tool and baseline instead
-  of a proxy-only `gocyclo` claim.
-- GitHub CI and PR-level review remain `not_assessed` until a PR exists and live
-  checks/reviews are observed.
+- Strict production `CRAP < 5`, cyclomatic complexity `< 15`, and cognitive
+  complexity `< 15` now pass locally for `cmd` and `internal`.
+- GitHub CI and PR-level review remain `not_assessed` for the final head until
+  PR #37 is pushed and live checks/reviews are observed.
