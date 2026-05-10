@@ -17,8 +17,8 @@
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
-| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, and `internal/forensic.rawReferenceCondition` were decomposed below 15. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `forensic` (84.0%), `harnessobs`, `interaction` (67.3%), `prreview` (73.9%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
+| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/harnessobs.safeOutDir`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, and `internal/forensic.rawReferenceCondition` were decomposed below 15. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `forensic` (84.0%), `harnessobs` (66.3%), `interaction` (67.3%), `prreview` (73.9%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
 
 ## Command Evidence
 
@@ -28,7 +28,7 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-prreview-runner-cover.out` | pass | Total coverage: 72.0%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-harnessobs-cover.out` | pass | Total coverage: 72.1%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
@@ -36,13 +36,13 @@
 | `rg --files -g '*.go' \| xargs /Users/fall_out_bug/go/bin/gopls check` | pass | `gopls` v0.21.1 LSP diagnostics across all Go files. |
 | `/Users/fall_out_bug/go/bin/govulncheck ./...` | pass | Rebuilt with Go 1.26.3 as govulncheck v1.3.0; vulnerability DB updated 2026-05-07; no vulnerabilities found. |
 | `gocyclo -over 15 internal/interaction/interaction.go` | pass | `internal/interaction.ValidateEvent` decomposition removed production complexity findings in the interaction file. |
-| `gocyclo -over 15 internal/prreview/prreview.go` | fail_assessed_gap | `internal/prreview.Validate` was decomposed to complexity 4; remaining prreview findings are `runRole` at 23 and `BuildPacket` at 16. |
 | `gocyclo -over 15 internal/witness/profiles.go` | pass | `internal/witness.BuildCustomerPKI` and `internal/witness.validateCIEnvelope` were decomposed below 15. |
 | `gocyclo -over 15 internal/forensic/forensic.go` | pass | `internal/forensic.rawReferenceCondition` was decomposed below 15. |
 | `gocyclo -over 15 internal/prreview/prreview.go` | pass | `internal/prreview.Validate`, `internal/prreview.runRole`, and `internal/prreview.BuildPacket` were decomposed below 15. |
+| `gocyclo -over 15 internal/harnessobs/harnessobs.go` | fail_assessed_gap | `internal/harnessobs.safeOutDir` was decomposed below 15; remaining harness observation findings include `findUnsafeRawEventAt`, `findUnsafeAt`, `validateEvent`, `shellFields`, and `normalizeRawEvents`. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-prreview-runner-cover-func.txt -gocyclo /tmp/sdp-trace-prreview-runner-gocyclo.txt -threshold 5` | fail_assessed_gap | 389 functions exceed strict CRAP threshold 5; `internal/prreview.runRole` and `internal/prreview.BuildPacket` were removed from >15 complexity findings, but extracted helpers still exceed CRAP 5 at current coverage. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-harnessobs-cover-func.txt -gocyclo /tmp/sdp-trace-harnessobs-gocyclo.txt -threshold 5` | fail_assessed_gap | 391 functions exceed strict CRAP threshold 5; `internal/harnessobs.safeOutDir` was removed from the top offenders, but extracted helpers still exceed CRAP 5 at current coverage. |
 
 ## Coverage Delta
 
@@ -77,7 +77,6 @@ Top current CRAP/complexity findings:
 | Function | Cyclo | Coverage | CRAP | State |
 |---|---:|---:|---:|---|
 | `cmd/sdp-trace.run` | 29 | 91.2% | 29.57 | assessed_gap |
-| `internal/harnessobs.safeOutDir` | 23 | 48.8% | 94.00 | assessed_gap |
 | `internal/harnessobs.findUnsafeAt` | 20 | 56.0% | 54.07 | assessed_gap |
 | `internal/harnessobs.validateEvent` | 20 | 55.6% | 55.01 | assessed_gap |
 
@@ -94,11 +93,11 @@ Immediate ratchet now enforced or measurable:
 Next decomposition candidates before stronger MVP-readiness claim:
 
 1. `cmd/sdp-trace.run`
-2. `internal/harnessobs.safeOutDir`
-3. `internal/demo.witnessBindingState`
-4. `internal/harnessobs.findUnsafeRawEventAt`
-5. `internal/harnessobs.findUnsafeAt`
-6. `internal/harnessobs.validateEvent`
+2. `internal/demo.witnessBindingState`
+3. `internal/harnessobs.findUnsafeRawEventAt`
+4. `internal/harnessobs.findUnsafeAt`
+5. `internal/harnessobs.validateEvent`
+6. `internal/posture.Build`
 
 ## External Evidence Boundary
 
@@ -121,6 +120,7 @@ this draft PR must not be treated as approved to merge.
 | Witness profile refactor evidence subagent | `codex-subagent pi` / `openrouter/qwen/qwen3.6-plus` | APPROVED_WITH_GAPS | Accepted and fixed CustomerPKI authority/freshness branch gaps: unsupported profile, empty signer, public key mismatch, policy digest mismatch, run mismatch, invalid signature, and source-binding invariant assertion. External/ephemeral evidence artifact concerns remain `not_assessed` for durable release proof. |
 | Forensic raw-reference refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | No behavior drift found; ledger honesty confirmed. Minor pass-by-value observation accepted and fixed by passing `*RawReference` into `validateRawReference`. |
 | PR-review runner/packet refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | No behavior drift found for packet refs, runner status/reason mapping, raw output retention, OpenCode read-only/dirty/mutation checks, and ledger updates. Minor OpenCode preflight status comment accepted and added. |
+| Harness out-dir safety refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Initial major finding accepted: extracted path-safety helpers needed isolated tests. Fixed with direct tests for `pathEscapesWorkingDirectory`, `relativeSymlinkTarget`, `safeExistingOutDir`, `outParentEscapes`, and `ensureOutDirEmptyOrMissing`; focused re-review approved path-safety equivalence. |
 
 Unusable attempts:
 
@@ -128,3 +128,5 @@ Unusable attempts:
   not counted as evidence.
 - First `minimax/MiniMax-M2.7` requirements review did not receive usable diff
   context; not counted as evidence.
+- `openrouter/deepseek/deepseek-v4-pro` harness out-dir focused re-review
+  returned a tool-call request under `--no-tools`; not counted as evidence.

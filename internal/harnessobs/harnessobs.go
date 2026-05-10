@@ -1660,52 +1660,68 @@ func safeOutDir(path string) (string, error) {
 	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
 		return "", errors.New("out must be a relative local directory without traversal")
 	}
+	clean := filepath.Clean(path)
+	if _, err := os.Lstat(clean); err == nil {
+		return safeExistingOutDir(clean)
+	} else {
+		if parentEscapes, err := outParentEscapes(clean); err != nil {
+			return "", err
+		} else if parentEscapes {
+			return "", errors.New("out parent path escapes working directory")
+		}
+	}
+	return ensureOutDirEmptyOrMissing(clean)
+}
+
+func safeExistingOutDir(clean string) (string, error) {
+	rel, err := relativeSymlinkTarget(clean)
+	if err != nil {
+		return "", err
+	}
+	if pathEscapesWorkingDirectory(rel) {
+		return "", errors.New("out path escapes working directory")
+	}
+	// Preserve the original behavior: when --out is a symlink, check the
+	// resolved target directory for emptiness, not the symlink entry itself.
+	return ensureOutDirEmptyOrMissing(rel)
+}
+
+func outParentEscapes(clean string) (bool, error) {
+	parent := filepath.Dir(clean)
+	for parent != "." && parent != string(filepath.Separator) {
+		if _, statErr := os.Lstat(parent); statErr == nil {
+			rel, err := relativeSymlinkTarget(parent)
+			if err != nil {
+				return false, err
+			}
+			return pathEscapesWorkingDirectory(rel), nil
+		}
+		parent = filepath.Dir(parent)
+	}
+	return false, nil
+}
+
+func relativeSymlinkTarget(path string) (string, error) {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return "", err
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	clean := filepath.Clean(path)
-	if _, err := os.Lstat(clean); err == nil {
-		resolved, err := filepath.EvalSymlinks(clean)
-		if err != nil {
-			return "", err
-		}
-		abs, err := filepath.Abs(resolved)
-		if err != nil {
-			return "", err
-		}
-		rel, err := filepath.Rel(cwd, abs)
-		if err != nil {
-			return "", err
-		}
-		if strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
-			return "", errors.New("out path escapes working directory")
-		}
-		clean = rel
-	} else {
-		parent := filepath.Dir(clean)
-		for parent != "." && parent != string(filepath.Separator) {
-			if _, statErr := os.Lstat(parent); statErr == nil {
-				resolved, err := filepath.EvalSymlinks(parent)
-				if err != nil {
-					return "", err
-				}
-				abs, err := filepath.Abs(resolved)
-				if err != nil {
-					return "", err
-				}
-				rel, err := filepath.Rel(cwd, abs)
-				if err != nil {
-					return "", err
-				}
-				if strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
-					return "", errors.New("out parent path escapes working directory")
-				}
-				break
-			}
-			parent = filepath.Dir(parent)
-		}
+	abs, err := filepath.Abs(resolved)
+	if err != nil {
+		return "", err
 	}
+	return filepath.Rel(cwd, abs)
+}
+
+func pathEscapesWorkingDirectory(rel string) bool {
+	return strings.HasPrefix(rel, "..") || filepath.IsAbs(rel)
+}
+
+func ensureOutDirEmptyOrMissing(clean string) (string, error) {
 	entries, err := os.ReadDir(clean)
 	if err == nil && len(entries) > 0 {
 		return "", errors.New("harness observe refuses existing non-empty --out")

@@ -516,6 +516,148 @@ func TestObserveRejectsOutParentSymlinkEscape(t *testing.T) {
 	}
 }
 
+func TestObserveRejectsExistingOutSymlinkEscapeAndNonEmptyOut(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeEvents(t, dir, []map[string]any{eventMap("e1", "harness")})
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(dir, "out-link")); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	_, err := Observe(ObserveOptions{ProfilePath: "profile.json", SourcePath: "events.jsonl", OutDir: "out-link"})
+	if err == nil || !strings.Contains(err.Error(), "out path escapes") {
+		t.Fatalf("Observe() error = %v, want out escape", err)
+	}
+
+	if err := os.Mkdir("occupied", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join("occupied", "existing.json"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = Observe(ObserveOptions{ProfilePath: "profile.json", SourcePath: "events.jsonl", OutDir: "occupied"})
+	if err == nil || !strings.Contains(err.Error(), "refuses existing non-empty") {
+		t.Fatalf("Observe() error = %v, want non-empty out refusal", err)
+	}
+}
+
+func TestPathEscapesWorkingDirectory(t *testing.T) {
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{path: "..", want: true},
+		{path: "../escape", want: true},
+		{path: "safe", want: false},
+		{path: string(filepath.Separator) + "abs", want: true},
+		{path: ".", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			if got := pathEscapesWorkingDirectory(tt.path); got != tt.want {
+				t.Fatalf("pathEscapesWorkingDirectory(%q) = %v, want %v", tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRelativeSymlinkTarget(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, filepath.Join(dir, "link")); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	rel, err := relativeSymlinkTarget("link")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rel != "target" {
+		t.Fatalf("relativeSymlinkTarget() = %q, want target", rel)
+	}
+}
+
+func TestSafeExistingOutDir(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	if err := os.Mkdir("empty-target", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("empty-target", "empty-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	got, err := safeExistingOutDir("empty-link")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "empty-target" {
+		t.Fatalf("safeExistingOutDir() = %q, want empty-target", got)
+	}
+
+	outside := t.TempDir()
+	if err := os.Symlink(outside, "escape-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if _, err := safeExistingOutDir("escape-link"); err == nil || !strings.Contains(err.Error(), "out path escapes") {
+		t.Fatalf("safeExistingOutDir() error = %v, want escape", err)
+	}
+}
+
+func TestOutParentEscapes(t *testing.T) {
+	dir := t.TempDir()
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(dir, "escape-parent")); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	escapes, err := outParentEscapes(filepath.Join("escape-parent", "child"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !escapes {
+		t.Fatalf("outParentEscapes() = false, want true")
+	}
+	escapes, err = outParentEscapes(filepath.Join("safe-parent", "child"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if escapes {
+		t.Fatalf("missing safe parent should not escape")
+	}
+}
+
+func TestEnsureOutDirEmptyOrMissing(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	if got, err := ensureOutDirEmptyOrMissing("missing"); err != nil || got != "missing" {
+		t.Fatalf("missing path = %q/%v, want pass", got, err)
+	}
+	if err := os.Mkdir("empty", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := ensureOutDirEmptyOrMissing("empty"); err != nil || got != "empty" {
+		t.Fatalf("empty path = %q/%v, want pass", got, err)
+	}
+	if err := os.Mkdir("occupied-unit", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join("occupied-unit", "file.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ensureOutDirEmptyOrMissing("occupied-unit"); err == nil || !strings.Contains(err.Error(), "refuses existing non-empty") {
+		t.Fatalf("ensureOutDirEmptyOrMissing() error = %v, want non-empty refusal", err)
+	}
+}
+
 func TestSummarizeDoesNotPrintUnsafeValues(t *testing.T) {
 	validation := Validation{
 		ValidationState:    StateCannotVerify,
