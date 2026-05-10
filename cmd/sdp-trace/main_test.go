@@ -1587,6 +1587,48 @@ func TestGateExplainRendersProtectedFields(t *testing.T) {
 	}
 }
 
+func TestGateExplainParseUsage(t *testing.T) {
+	for name, tc := range map[string]struct {
+		args    []string
+		wantOK  bool
+		wantErr string
+	}{
+		"unknown-flag": {
+			args:    []string{"--unknown"},
+			wantErr: "unknown flag --unknown",
+		},
+		"rest-arg": {
+			args:    []string{"--gate-result", "gate.json", "extra"},
+			wantErr: "gate explain accepts only flags",
+		},
+		"missing-gate-result": {
+			args:    []string{},
+			wantErr: "gate explain requires --gate-result <file>",
+		},
+		"valid": {
+			args:   []string{"--gate-result", "gate.json"},
+			wantOK: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			path, code, ok := parseGateExplainArgs(tc.args, &errOut)
+			if ok != tc.wantOK {
+				t.Fatalf("ok = %v want %v path=%q code=%d err=%s", ok, tc.wantOK, path, code, errOut.String())
+			}
+			if tc.wantOK {
+				if path != "gate.json" || code != 0 || errOut.Len() != 0 {
+					t.Fatalf("valid parse path=%q code=%d err=%s", path, code, errOut.String())
+				}
+				return
+			}
+			if code != exitUsage || !strings.Contains(errOut.String(), tc.wantErr) {
+				t.Fatalf("usage parse code=%d err=%s want %q", code, errOut.String(), tc.wantErr)
+			}
+		})
+	}
+}
+
 func TestGateExplainUnsupportedArtifactCannotVerify(t *testing.T) {
 	gatePath := filepath.Join(t.TempDir(), "unsupported-gate.json")
 	if err := os.WriteFile(gatePath, []byte(`{"schema_version":"unknown-gate-result-v1"}`), 0o644); err != nil {

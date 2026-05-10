@@ -2094,33 +2094,60 @@ func runProtectedGate(target, outPath string, opts *flagSet, stdout, stderr io.W
 }
 
 func runGateExplain(args []string, stdout, stderr io.Writer) int {
+	path, code, ok := parseGateExplainArgs(args, stderr)
+	if !ok {
+		return code
+	}
+	result, code, ok := readGateExplainResult(path, stderr)
+	if !ok {
+		return code
+	}
+	explainGateResult(result, stdout)
+	return 0
+}
+
+func parseGateExplainArgs(args []string, stderr io.Writer) (string, int, bool) {
 	opts := &flagSet{name: "gate explain"}
 	opts.setString("gate-result", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return "", exitUsage, false
 	}
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "gate explain accepts only flags")
-		return exitUsage
+		return "", exitUsage, false
 	}
 	path := opts.stringValue("gate-result")
 	if path == "" {
 		fmt.Fprintln(stderr, "gate explain requires --gate-result <file>")
-		return exitUsage
+		return "", exitUsage, false
 	}
+	return path, 0, true
+}
+
+func readGateExplainResult(path string, stderr io.Writer) (demo.GateResult, int, bool) {
 	var result demo.GateResult
 	if err := readJSONFile(path, &result); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+		return demo.GateResult{}, exitCannotVerify, false
 	}
 	if result.SchemaVersion != demo.GateSchemaVersion && result.SchemaVersion != demo.GateSchemaVersionBlock16 {
 		fmt.Fprintf(stderr, "unsupported gate-result schema_version: %s\n", result.SchemaVersion)
-		return exitCannotVerify
+		return demo.GateResult{}, exitCannotVerify, false
 	}
+	return result, 0, true
+}
+
+func explainGateResult(result demo.GateResult, stdout io.Writer) {
 	if result.SchemaVersion == demo.GateSchemaVersion {
 		fmt.Fprintln(stdout, "Protected profile fields: absent")
 	}
+	explainGateSummary(result, stdout)
+	explainProtectedGateDetails(result, stdout)
+	explainGateCollections(result, stdout)
+}
+
+func explainGateSummary(result demo.GateResult, stdout io.Writer) {
 	fmt.Fprintf(stdout, "Gate mode: %s\n", result.GateMode)
 	fmt.Fprintf(stdout, "Trust cap: %s\n", result.TrustCap)
 	if result.SelectedProfile != "" {
@@ -2132,6 +2159,9 @@ func runGateExplain(args []string, stdout, stderr io.Writer) int {
 	if result.ProtectedGate != "" {
 		fmt.Fprintf(stdout, "Protected gate: %s\n", result.ProtectedGate)
 	}
+}
+
+func explainProtectedGateDetails(result demo.GateResult, stdout io.Writer) {
 	if result.CheckpointVerification != nil {
 		fmt.Fprintf(stdout, "Checkpoint result: %s\n", result.CheckpointVerification.Result)
 		fmt.Fprintf(stdout, "Checkpoint trust scope: %s\n", result.CheckpointVerification.TrustScope)
@@ -2139,25 +2169,51 @@ func runGateExplain(args []string, stdout, stderr io.Writer) int {
 	for _, condition := range result.ProtectedConditions {
 		fmt.Fprintf(stdout, "Protected condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
 	}
-	for _, requiredRun := range result.RequiredRuns {
+}
+
+func explainGateCollections(result demo.GateResult, stdout io.Writer) {
+	explainRequiredRuns(result.RequiredRuns, stdout)
+	explainWitnessBindings(result.WitnessBindings, stdout)
+	explainMissingAuditEvidence(result.MissingAuditEvidence, stdout)
+	explainOverrideRequests(result.OverrideRequests, stdout)
+	explainReasons(result.Reasons, stdout)
+	explainNextActions(result.NextActions, stdout)
+}
+
+func explainRequiredRuns(requiredRuns []demo.RequiredRunResult, stdout io.Writer) {
+	for _, requiredRun := range requiredRuns {
 		fmt.Fprintf(stdout, "Required run %s: %s\n", requiredRun.ID, requiredRun.State)
 	}
-	for _, binding := range result.WitnessBindings {
+}
+
+func explainWitnessBindings(bindings []demo.WitnessBinding, stdout io.Writer) {
+	for _, binding := range bindings {
 		fmt.Fprintf(stdout, "Witness binding %s: %s\n", binding.ID, binding.State)
 	}
-	for _, missing := range result.MissingAuditEvidence {
+}
+
+func explainMissingAuditEvidence(missingEvidence []string, stdout io.Writer) {
+	for _, missing := range missingEvidence {
 		fmt.Fprintf(stdout, "Missing audit evidence: %s\n", missing)
 	}
-	for _, override := range result.OverrideRequests {
+}
+
+func explainOverrideRequests(overrides []demo.OverrideRequest, stdout io.Writer) {
+	for _, override := range overrides {
 		fmt.Fprintf(stdout, "Override %s: %s\n", override.OverrideID, override.State)
 	}
-	for _, reason := range result.Reasons {
+}
+
+func explainReasons(reasons []string, stdout io.Writer) {
+	for _, reason := range reasons {
 		fmt.Fprintf(stdout, "Reason: %s\n", reason)
 	}
-	for _, action := range result.NextActions {
+}
+
+func explainNextActions(actions []string, stdout io.Writer) {
+	for _, action := range actions {
 		fmt.Fprintf(stdout, "Next action: %s\n", action)
 	}
-	return 0
 }
 
 type gatePreviewReport struct {
