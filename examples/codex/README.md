@@ -1,3 +1,7 @@
 # Codex Example
 
-This example will show how Codex sessions can preserve traceability across files, commands, and verification output.
+State: `placeholder`.
+
+This directory is not first-class MVP evidence. It is reserved for a future
+Codex-specific fixture that may show how sessions preserve traceability across
+files, commands, and verification output.

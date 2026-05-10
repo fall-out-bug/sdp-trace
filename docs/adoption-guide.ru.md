@@ -1,15 +1,14 @@
 # Руководство по внедрению sdp-trace
 
-`sdp-trace` - это sidecar trust substrate для существующей AI-assisted delivery.
-Он не заменяет harness, prompts, agents, CI, review process, repository
-templates или release governance.
+`sdp-trace` добавляет рядом с существующим AI-workflow слой записей: что было
+сделано, какие доказательства есть, чего не хватает и кто принимает следующий
+человеческий decision. Он не заменяет агента, CI, code review или release
+governance.
 
-Текущая pilot-поверхность означает trace capture, явную missing telemetry,
-assessment profiles, advisory/protected gate facts, CI/customer witness
-profiles, forensic query packs, cross-repository posture export и local
-source-bound release proof. Это не automatic merge blocking, не production
-release approval, не external audit proof и не гарантия обнаружения каждого
-unwrapped agent run.
+Текущий controlled-pilot MVP позволяет пробовать local trace packages,
+repo-observable evidence, assessment profiles, witness artifacts и source-bound
+release checks. Это не automatic merge blocking, не production release approval,
+не external audit proof и не гарантия обнаружения каждого unwrapped agent run.
 
 ## Что дает sdp-trace
 

@@ -412,6 +412,104 @@ func TestSchemaMirrorsPostureEnums(t *testing.T) {
 	assertSchemaEnumValue(t, items, SensitiveClasses())
 }
 
+func TestValidateExportResultAcceptsCanonicalResult(t *testing.T) {
+	result := validExportResult()
+	if err := ValidateExportResult(result); err != nil {
+		t.Fatalf("validate export result: %v", err)
+	}
+}
+
+func TestValidateExportResultRejectsMalformedNestedRows(t *testing.T) {
+	for name, mutate := range map[string]func(*ExportResult){
+		"metric-dimension": func(result *ExportResult) {
+			result.MetricRows[0].Dimensions["repo"] = "https://provider.example/private"
+		},
+		"metric-trust-summary": func(result *ExportResult) {
+			result.MetricRows[0].InputTrustStateSummary["trusted_input"] = -1
+		},
+		"movement-summary": func(result *ExportResult) {
+			result.MovementSummary.NonComparableReason["unknown"] = 1
+		},
+		"refusal-reason": func(result *ExportResult) {
+			result.RefusalRows[0].RefusalReason = "ok"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := validExportResult()
+			mutate(&result)
+			if err := ValidateExportResult(result); err == nil {
+				t.Fatalf("expected malformed %s to be rejected", name)
+			}
+		})
+	}
+}
+
+func validExportResult() ExportResult {
+	return ExportResult{
+		SchemaVersion:        SchemaVersion,
+		ExportProfileID:      ProfileID,
+		ExportProfileVersion: ProfileVer,
+		ExportID:             "export.0001",
+		Producer:             "sdp-trace",
+		GeneratedAt:          "2026-01-10T00:00:00Z",
+		GroupingSetID:        GroupingRepoWindow,
+		ActiveGroupingKeys:   []string{"repo", "time_window"},
+		InputSelection: []InputSelection{{
+			InputID:         "input-a",
+			Repository:      "repo-a",
+			TimeWindow:      "2026-w02",
+			PathRedactedID:  "query-pack",
+			SHA256:          strings.Repeat("a", 64),
+			InputTrustState: "trusted_input",
+		}},
+		MetricRows: []MetricRow{{
+			ID:                      "metric.0001",
+			MetricID:                "missing_telemetry_rows",
+			MetricVersion:           ProfileVer,
+			Numerator:               1,
+			Denominator:             2,
+			Unit:                    "rows",
+			TimeWindow:              "2026-w02",
+			Dimensions:              map[string]string{"repo": "repo-a", "time_window": "2026-w02"},
+			DimensionKey:            "repo=repo-a|time_window=2026-w02",
+			SourceInputRefs:         []string{"input-a"},
+			SourceArtifactDigestSet: strings.Repeat("b", 64),
+			SourceFieldState:        "present",
+			NotAssessedCount:        0,
+			InputTrustStateSummary:  map[string]int{"trusted_input": 1},
+		}},
+		MovementRows: []MovementRow{{
+			ID:                   "movement.0001",
+			MetricID:             "missing_telemetry_rows",
+			MetricVersion:        ProfileVer,
+			DimensionKey:         "repo=repo-a|time_window=2026-w02",
+			CurrentMetricRowRef:  "metric.0001",
+			PreviousMetricRowRef: "metric.0000",
+			CurrentValue:         1,
+			PreviousValue:        0,
+			Delta:                1,
+			ComparisonBasis:      "same_profile_metric_dimension_window",
+			Comparable:           true,
+		}},
+		MovementSummary: MovementSummary{
+			ComparableCount:     1,
+			NonComparableCount:  0,
+			NonComparableReason: map[string]int{},
+		},
+		RefusalRows: []RefusalRow{{
+			ID:              "refusal.0001",
+			InputID:         "input-b",
+			TimeWindow:      "2026-w02",
+			RefusalReason:   "stale_input",
+			InputTrustState: "stale_input",
+		}},
+		Handoff: map[string]string{"consumer": "sdp-report"},
+		OutputSafety: OutputSafety{
+			VerifiedAbsentSensitiveClasses: []string{"tokens"},
+		},
+	}
+}
+
 func selectionRepo(inputID, window, qp, digestManifest, signals string) RepositoryWindow {
 	return RepositoryWindow{
 		InputID:                inputID,

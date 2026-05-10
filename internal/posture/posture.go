@@ -44,6 +44,15 @@ var metricCatalog = []metricDef{
 	{"contract_change_rows", "v1", "posture_signal"},
 }
 
+var rowStateMetrics = map[string]string{
+	"missing_telemetry_rows": query.RowStateMissingTelemetry,
+	"not_assessed_rows":      query.RowStateNotAssessed,
+	"cannot_verify_rows":     query.RowStateCannotVerify,
+	"not_integrated_rows":    query.RowStateNotIntegrated,
+	"retention_limited_rows": query.RowStateRetentionLimited,
+	"issue_observed_rows":    query.RowStateIssueObserved,
+}
+
 var safeLabelPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 
 type SelectionManifest struct {
@@ -330,6 +339,16 @@ func Explain(result ExportResult) (string, error) {
 }
 
 func ValidateExportResult(result ExportResult) error {
+	if err := validateExportHeader(result); err != nil {
+		return err
+	}
+	if err := validateExportCollections(result); err != nil {
+		return err
+	}
+	return validateExportRows(result)
+}
+
+func validateExportHeader(result ExportResult) error {
 	if result.SchemaVersion != SchemaVersion ||
 		result.ExportProfileID != ProfileID ||
 		result.ExportProfileVersion != ProfileVer {
@@ -341,6 +360,37 @@ func ValidateExportResult(result ExportResult) error {
 	if _, err := time.Parse(time.RFC3339, result.GeneratedAt); err != nil {
 		return fmt.Errorf("malformed posture export generated_at")
 	}
+	return nil
+}
+
+func validateExportRows(result ExportResult) error {
+	for _, item := range result.InputSelection {
+		if err := validateInputSelectionRow(item); err != nil {
+			return err
+		}
+	}
+	for _, row := range result.MetricRows {
+		if err := validateMetricRow(row); err != nil {
+			return err
+		}
+	}
+	for _, row := range result.MovementRows {
+		if err := validateMovementRow(row); err != nil {
+			return err
+		}
+	}
+	if err := validateMovementSummary(result.MovementSummary); err != nil {
+		return err
+	}
+	for _, row := range result.RefusalRows {
+		if err := validateRefusalRow(row); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateExportCollections(result ExportResult) error {
 	if len(groupingKeys(result.GroupingSetID)) == 0 || len(result.ActiveGroupingKeys) < 2 {
 		return fmt.Errorf("malformed posture export grouping")
 	}
@@ -351,54 +401,84 @@ func ValidateExportResult(result ExportResult) error {
 	if len(result.OutputSafety.VerifiedAbsentSensitiveClasses) == 0 {
 		return fmt.Errorf("malformed posture export output_safety")
 	}
-	for _, item := range result.InputSelection {
-		if !safeLabel(item.InputID) || !safeLabel(item.Repository) || !safeLabel(item.TimeWindow) ||
-			item.PathRedactedID == "" || !validInputTrustState(item.InputTrustState) {
-			return fmt.Errorf("malformed posture export input_selection")
+	return nil
+}
+
+func validateInputSelectionRow(item InputSelection) error {
+	if !safeLabel(item.InputID) || !safeLabel(item.Repository) || !safeLabel(item.TimeWindow) ||
+		item.PathRedactedID == "" || !validInputTrustState(item.InputTrustState) {
+		return fmt.Errorf("malformed posture export input_selection")
+	}
+	return nil
+}
+
+func validateMetricRow(row MetricRow) error {
+	if err := validateMetricRowShape(row); err != nil {
+		return err
+	}
+	if err := validateMetricDimensions(row.Dimensions); err != nil {
+		return err
+	}
+	return validateMetricTrustSummary(row.InputTrustStateSummary)
+}
+
+func validateMetricRowShape(row MetricRow) error {
+	if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
+		row.Numerator < 0 || row.Denominator < 0 || row.Unit != "rows" ||
+		!safeLabel(row.TimeWindow) || row.Dimensions == nil || row.DimensionKey == "" ||
+		row.SourceInputRefs == nil || row.SourceArtifactDigestSet == "" ||
+		!validSourceFieldState(row.SourceFieldState) || row.NotAssessedCount < 0 ||
+		row.InputTrustStateSummary == nil {
+		return fmt.Errorf("malformed posture export metric_row")
+	}
+	return nil
+}
+
+func validateMetricDimensions(dimensions map[string]string) error {
+	for key, value := range dimensions {
+		if !validDimensionName(key) || !safeLabel(value) {
+			return fmt.Errorf("malformed posture export metric_row dimensions")
 		}
 	}
-	for _, row := range result.MetricRows {
-		if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
-			row.Numerator < 0 || row.Denominator < 0 || row.Unit != "rows" ||
-			!safeLabel(row.TimeWindow) || row.Dimensions == nil || row.DimensionKey == "" ||
-			row.SourceInputRefs == nil || row.SourceArtifactDigestSet == "" ||
-			!validSourceFieldState(row.SourceFieldState) || row.NotAssessedCount < 0 ||
-			row.InputTrustStateSummary == nil {
-			return fmt.Errorf("malformed posture export metric_row")
-		}
-		for key, value := range row.Dimensions {
-			if !validDimensionName(key) || !safeLabel(value) {
-				return fmt.Errorf("malformed posture export metric_row dimensions")
-			}
-		}
-		for state, count := range row.InputTrustStateSummary {
-			if !validInputTrustState(state) || count < 0 {
-				return fmt.Errorf("malformed posture export input_trust_state_summary")
-			}
+	return nil
+}
+
+func validateMetricTrustSummary(summary map[string]int) error {
+	for state, count := range summary {
+		if !validInputTrustState(state) || count < 0 {
+			return fmt.Errorf("malformed posture export input_trust_state_summary")
 		}
 	}
-	for _, row := range result.MovementRows {
-		if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
-			row.DimensionKey == "" || row.CurrentValue < 0 || row.PreviousValue < 0 ||
-			!validComparisonBasis(row.ComparisonBasis) ||
-			(!row.Comparable && row.NonComparableReason != "non_comparable_missing_window") {
-			return fmt.Errorf("malformed posture export movement_row")
-		}
+	return nil
+}
+
+func validateMovementRow(row MovementRow) error {
+	if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
+		row.DimensionKey == "" || row.CurrentValue < 0 || row.PreviousValue < 0 ||
+		!validComparisonBasis(row.ComparisonBasis) ||
+		(!row.Comparable && row.NonComparableReason != "non_comparable_missing_window") {
+		return fmt.Errorf("malformed posture export movement_row")
 	}
-	if result.MovementSummary.ComparableCount < 0 || result.MovementSummary.NonComparableCount < 0 {
+	return nil
+}
+
+func validateMovementSummary(summary MovementSummary) error {
+	if summary.ComparableCount < 0 || summary.NonComparableCount < 0 {
 		return fmt.Errorf("malformed posture export movement_summary")
 	}
-	for reason, count := range result.MovementSummary.NonComparableReason {
+	for reason, count := range summary.NonComparableReason {
 		if reason != "non_comparable_missing_window" || count < 0 {
 			return fmt.Errorf("malformed posture export movement_summary")
 		}
 	}
-	for _, row := range result.RefusalRows {
-		if row.ID == "" || !safeLabel(row.InputID) || !validRefusalReason(row.RefusalReason) ||
-			!validInputTrustState(row.InputTrustState) ||
-			(row.TimeWindow != "" && !safeLabel(row.TimeWindow)) {
-			return fmt.Errorf("malformed posture export refusal_row")
-		}
+	return nil
+}
+
+func validateRefusalRow(row RefusalRow) error {
+	if row.ID == "" || !safeLabel(row.InputID) || !validRefusalReason(row.RefusalReason) ||
+		!validInputTrustState(row.InputTrustState) ||
+		(row.TimeWindow != "" && !safeLabel(row.TimeWindow)) {
+		return fmt.Errorf("malformed posture export refusal_row")
 	}
 	return nil
 }
@@ -680,33 +760,32 @@ func metricForGroup(counter int, def metricDef, group *aggregateGroup) MetricRow
 }
 
 func metricMatches(metricID string, row query.QueryPackRow, signal PostureSignal, hasSignal bool) bool {
-	switch metricID {
-	case "missing_telemetry_rows":
-		return row.EvidenceState == query.RowStateMissingTelemetry
-	case "not_assessed_rows":
-		return row.EvidenceState == query.RowStateNotAssessed
-	case "cannot_verify_rows":
-		return row.EvidenceState == query.RowStateCannotVerify
-	case "unsupported_observer_rows":
+	if expectedState, ok := rowStateMetrics[metricID]; ok {
+		return row.EvidenceState == expectedState
+	}
+	if metricID == "unsupported_observer_rows" {
 		return row.EvidenceState == query.RowStateUnsupported || (hasSignal && signal.ObserverState == "unsupported")
-	case "not_integrated_rows":
-		return row.EvidenceState == query.RowStateNotIntegrated
-	case "retention_limited_rows":
-		return row.EvidenceState == query.RowStateRetentionLimited
+	}
+	if !hasSignal {
+		return false
+	}
+	return signalMetricMatches(metricID, signal)
+}
+
+func signalMetricMatches(metricID string, signal PostureSignal) bool {
+	switch metricID {
 	case "local_only_evidence_rows":
-		return hasSignal && signal.WitnessScope == "local_only"
+		return signal.WitnessScope == "local_only"
 	case "ci_witnessed_evidence_rows":
-		return hasSignal && signal.WitnessScope == "ci_witnessed"
+		return signal.WitnessScope == "ci_witnessed"
 	case "external_witnessed_evidence_rows":
-		return hasSignal && signal.WitnessScope == "external_witnessed"
-	case "issue_observed_rows":
-		return row.EvidenceState == query.RowStateIssueObserved
+		return signal.WitnessScope == "external_witnessed"
 	case "override_rows":
-		return hasSignal && signal.OverrideMarker == "override_present"
+		return signal.OverrideMarker == "override_present"
 	case "late_attach_rows":
-		return hasSignal && signal.LateAttachMarker == "late_attach_observed"
+		return signal.LateAttachMarker == "late_attach_observed"
 	case "contract_change_rows":
-		return hasSignal && signal.ContractChangeMarker == "contract_change_observed"
+		return signal.ContractChangeMarker == "contract_change_observed"
 	default:
 		return false
 	}

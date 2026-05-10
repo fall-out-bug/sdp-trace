@@ -98,12 +98,8 @@ func BuildSeries(result posture.ExportResult) ([]Series, error) {
 			gauge("sdp_trace_posture_movement_comparable", "Posture movement comparability fact from sdp-trace evidence posture export.", base, comparableValue(row.Comparable)),
 		)
 	}
-	for _, item := range aggregateRefusals(result.RefusalRows) {
-		series = append(series, item)
-	}
-	for _, item := range aggregateInputs(result.InputSelection) {
-		series = append(series, item)
-	}
+	series = append(series, aggregateRefusals(result.RefusalRows)...)
+	series = append(series, aggregateInputs(result.InputSelection)...)
 	for _, item := range series {
 		if err := validateLabels(item.Labels); err != nil {
 			return nil, err

@@ -1,8 +1,9 @@
 # sdp-trace Adoption Guide
 
-`sdp-trace` is a sidecar trust substrate for existing AI-assisted delivery. It
-does not replace your harness, prompts, agents, CI, review process, repository
-templates, or release governance.
+`sdp-trace` adds evidence records beside an existing AI-assisted delivery flow:
+what happened, which evidence exists, what is missing, and who owns the next
+human decision. It does not replace your harness, prompts, agents, CI, review
+process, repository templates, or release governance.
 
 The current pilot surface means trace capture, explicit missing telemetry,
 assessment profiles, advisory/protected gate facts, CI/customer witness profiles,

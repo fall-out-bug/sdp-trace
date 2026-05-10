@@ -16,7 +16,11 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Go tests
-        run: go test ./...
+        run: go test ./... -coverprofile=coverage.out
+      - name: Go lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v1.62.0
       - name: JSON syntax
         run: jq empty schema/*.json examples/block19-adapter-capture/*.json
       - name: Whitespace check

@@ -467,7 +467,7 @@ func evaluateBindings(inputs []EvidenceBindingInput, actions []ObservedAction) [
 	out := make([]EvidenceBinding, 0, len(inputs))
 	for _, input := range inputs {
 		state := input.BindingState
-		reason := "binding_verified"
+		reason := ""
 		switch {
 		case !actionIDs[input.LeftEventID] || !actionIDs[input.RightEventID]:
 			state = BindingNotAssessed

@@ -1,3 +1,6 @@
 # Go Service Example
 
-This example will show a simple Go service change with tests, CI evidence, and a gate verdict.
+State: `placeholder`.
+
+This directory is not first-class MVP evidence. It is reserved for a future
+simple Go service fixture with tests, CI evidence, and gate facts.
