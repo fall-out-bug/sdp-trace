@@ -203,6 +203,36 @@ func BuildCIEnvelopeProfile(kind, runsRoot, reportDir, envelopePath string) (Rec
 }
 
 func BuildCustomerPKI(runsRoot, reportDir string, opts ProfileOptions) (Record, error) {
+	record, err := newCustomerPKIRecord(runsRoot, reportDir)
+	if err != nil {
+		return Record{}, err
+	}
+	publicKey, policy, freshness, ok := loadCustomerPKIInputs(&record, opts)
+	if !ok {
+		return record, nil
+	}
+	record.CI = CIIdentity{Provider: KindCustomerPKI, RunID: freshness.RunID}
+	states := customerPKIPassStates(policy)
+	record.ProfileStates = states
+
+	if !validateCustomerPKIAuthority(&record, states, publicKey, policy, freshness) {
+		return record, nil
+	}
+	if !validateCustomerPKIFreshness(&record, states, runsRoot, opts.CustomerPKIPayloadDigest, freshness) {
+		return record, nil
+	}
+	if !verifyFreshnessSignature(publicKey, freshness) {
+		customerPKIFail(&record, states, "freshness", ReasonSignerMismatch)
+		return record, nil
+	}
+	record.Status = StatusPass
+	record.TrustScope = TrustScopeExternal
+	record.EstablishedTrustScope = TrustScopeExternal
+	record.Reason = ReasonProfileVerified
+	return record, nil
+}
+
+func newCustomerPKIRecord(runsRoot, reportDir string) (Record, error) {
 	record := baseRecord(KindCustomerPKI)
 	runArtifacts, err := hashRunArtifacts(runsRoot)
 	if err != nil {
@@ -220,39 +250,50 @@ func BuildCustomerPKI(runsRoot, reportDir string, opts ProfileOptions) (Record, 
 	record.ProfileVersion = "1.0"
 	record.ProviderKind = KindCustomerPKI
 	record.RequestedTrustScope = TrustScopeExternal
+	return record, nil
+}
 
+func loadCustomerPKIInputs(record *Record, opts ProfileOptions) (ed25519.PublicKey, CustomerPKIAuthorityPolicy, CustomerPKIFreshnessEvidence, bool) {
 	requiredMissing := missingCustomerPKIInputs(opts)
 	if len(requiredMissing) > 0 {
 		record.MissingIdentityFields = requiredMissing
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity)
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceExternal)
-		return record, nil
+		customerPKICannotVerify(record, ReasonMissingIdentity)
+		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
 	if privateKeyInput(opts.CustomerPKIPublicCert) || privateKeyInput(opts.CustomerPKIPublicKey) {
-		applyProfileState(&record, StatusFail, stateFail, ReasonPrivateKeyInput)
-		record.ProfileStates = defaultProfileStates(stateFail, independenceExternal)
-		return record, nil
+		customerPKIInputFail(record, ReasonPrivateKeyInput)
+		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
 	publicKey, err := loadCustomerPublicKey(opts)
 	if err != nil {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMalformedInput)
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceExternal)
-		return record, nil
+		customerPKICannotVerify(record, ReasonMalformedInput)
+		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
 	var policy CustomerPKIAuthorityPolicy
 	if err := readSafeJSON(opts.CustomerPKIAuthorityPolicy, &policy); err != nil {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonPolicyMissing)
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceExternal)
-		return record, nil
+		customerPKICannotVerify(record, ReasonPolicyMissing)
+		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
 	var freshness CustomerPKIFreshnessEvidence
 	if err := readSafeJSON(opts.CustomerPKIFreshness, &freshness); err != nil {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingFreshness)
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceExternal)
-		return record, nil
+		customerPKICannotVerify(record, ReasonMissingFreshness)
+		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
-	record.CI = CIIdentity{Provider: KindCustomerPKI, RunID: freshness.RunID}
-	states := &ProfileStates{
+	return publicKey, policy, freshness, true
+}
+
+func customerPKICannotVerify(record *Record, reason string) {
+	applyProfileState(record, StatusCannotVerify, stateCannotVerify, reason)
+	record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceExternal)
+}
+
+func customerPKIInputFail(record *Record, reason string) {
+	applyProfileState(record, StatusFail, stateFail, reason)
+	record.ProfileStates = defaultProfileStates(stateFail, independenceExternal)
+}
+
+func customerPKIPassStates(policy CustomerPKIAuthorityPolicy) *ProfileStates {
+	return &ProfileStates{
 		IdentityState:        statePass,
 		SignerAuthorityState: statePass,
 		FreshnessState:       statePass,
@@ -263,57 +304,65 @@ func BuildCustomerPKI(runsRoot, reportDir string, opts ProfileOptions) (Record, 
 		IndependenceState:    independenceExternal,
 		KeyCustodyState:      defaultString(policy.KeyCustodyState, "not_assessed"),
 	}
-	record.ProfileStates = states
+}
+
+func validateCustomerPKIAuthority(record *Record, states *ProfileStates, publicKey ed25519.PublicKey, policy CustomerPKIAuthorityPolicy, freshness CustomerPKIFreshnessEvidence) bool {
 	if policy.ProfileID != "customer-pki-v1" || policy.AllowedSignerID == "" || policy.AllowedSignerID != freshness.SignerID {
-		states.SignerAuthorityState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonSignerMismatch)
-		return record, nil
+		customerPKIFail(record, states, "signer", ReasonSignerMismatch)
+		return false
 	}
 	if policy.PublicKeySHA256 != "" && policy.PublicKeySHA256 != digestBytes(publicKey) {
-		states.SignerAuthorityState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonSignerMismatch)
-		return record, nil
+		customerPKIFail(record, states, "signer", ReasonSignerMismatch)
+		return false
 	}
 	if policy.PolicyDigest != "" && policy.PolicyDigest != freshness.PolicyDigest {
-		states.PolicyBindingState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonPolicyMismatch)
-		return record, nil
+		customerPKIFail(record, states, "policy", ReasonPolicyMismatch)
+		return false
 	}
 	if policy.RevocationRequired && policy.RevocationState == "" {
 		states.SignerAuthorityState = stateNotAssessed
-		applyProfileState(&record, StatusNotAssessed, stateNotAssessed, ReasonRevocationNA)
-		return record, nil
+		applyProfileState(record, StatusNotAssessed, stateNotAssessed, ReasonRevocationNA)
+		return false
 	}
 	if policy.RevocationState == "revoked" {
-		states.SignerAuthorityState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonCertRevoked)
-		return record, nil
+		customerPKIFail(record, states, "signer", ReasonCertRevoked)
+		return false
 	}
-	if opts.CustomerPKIPayloadDigest != freshness.PayloadDigest || !strongDigest(freshness.PayloadDigest) {
-		states.ArtifactBindingState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonArtifactMismatch)
-		return record, nil
+	return true
+}
+
+func validateCustomerPKIFreshness(record *Record, states *ProfileStates, runsRoot, payloadDigest string, freshness CustomerPKIFreshnessEvidence) bool {
+	if payloadDigest != freshness.PayloadDigest || !strongDigest(freshness.PayloadDigest) {
+		customerPKIFail(record, states, "artifact", ReasonArtifactMismatch)
+		return false
 	}
 	if !freshnessCurrent(freshness, time.Now().UTC()) {
-		states.FreshnessState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonStaleFreshness)
-		return record, nil
+		customerPKIFail(record, states, "freshness", ReasonStaleFreshness)
+		return false
 	}
 	if !runIDMatches(runsRoot, freshness.RunID) {
-		states.RunBindingState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonRunMismatch)
-		return record, nil
+		customerPKIFail(record, states, "run", ReasonRunMismatch)
+		return false
 	}
-	if !verifyFreshnessSignature(publicKey, freshness) {
+	return true
+}
+
+func customerPKIFail(record *Record, states *ProfileStates, field, reason string) {
+	switch field {
+	case "artifact":
+		states.ArtifactBindingState = stateFail
+	case "freshness":
 		states.FreshnessState = stateFail
-		applyProfileState(&record, StatusFail, stateFail, ReasonSignerMismatch)
-		return record, nil
+	case "policy":
+		states.PolicyBindingState = stateFail
+	case "run":
+		states.RunBindingState = stateFail
+	case "signer":
+		states.SignerAuthorityState = stateFail
+	default:
+		states.IdentityState = stateFail
 	}
-	record.Status = StatusPass
-	record.TrustScope = TrustScopeExternal
-	record.EstablishedTrustScope = TrustScopeExternal
-	record.Reason = ReasonProfileVerified
-	return record, nil
+	applyProfileState(record, StatusFail, stateFail, reason)
 }
 
 type profileDecision struct {
@@ -329,38 +378,45 @@ func validateCIEnvelope(kind string, envelope EnvelopeInput, current []ArtifactD
 	if strings.TrimSpace(envelope.Source.CommitSHA) == "" || strings.TrimSpace(envelope.CI.RunID) == "" {
 		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity}
 	}
-	if envelope.ProfileStates.IdentityState != statePass {
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity}
-	}
-	if envelope.ProfileStates.SignerAuthorityState != statePass {
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingSigner}
-	}
-	if envelope.ProfileStates.FreshnessState != statePass {
-		if envelope.ProfileStates.FreshnessState == stateFail {
-			return profileDecision{StatusFail, stateFail, ReasonStaleFreshness}
-		}
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingFreshness}
-	}
-	if envelope.ProfileStates.SourceBindingState != statePass {
-		return profileDecision{StatusFail, stateFail, ReasonSourceMismatch}
-	}
-	if envelope.ProfileStates.RunBindingState != statePass {
-		return profileDecision{StatusFail, stateFail, ReasonRunMismatch}
-	}
-	if envelope.ProfileStates.PolicyBindingState != statePass {
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonPolicyMissing}
-	}
-	if envelope.ProfileStates.ArtifactBindingState != statePass {
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingArtifact}
-	}
-	if envelope.ProfileStates.IndependenceState != independenceCIJob && envelope.ProfileStates.IndependenceState != independenceExternal {
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonEnvOnly}
+	if state := validateCIEnvelopeStates(envelope.ProfileStates); state.reason != "" {
+		return state
 	}
 	if len(envelope.RunArtifacts) == 0 {
 		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingArtifact}
 	}
 	if !artifactSetsMatch(envelope.RunArtifacts, current) {
 		return profileDecision{StatusFail, stateFail, ReasonArtifactMismatch}
+	}
+	return profileDecision{}
+}
+
+func validateCIEnvelopeStates(states ProfileStates) profileDecision {
+	if states.IdentityState != statePass {
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity}
+	}
+	if states.SignerAuthorityState != statePass {
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingSigner}
+	}
+	if states.FreshnessState != statePass {
+		if states.FreshnessState == stateFail {
+			return profileDecision{StatusFail, stateFail, ReasonStaleFreshness}
+		}
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingFreshness}
+	}
+	if states.SourceBindingState != statePass {
+		return profileDecision{StatusFail, stateFail, ReasonSourceMismatch}
+	}
+	if states.RunBindingState != statePass {
+		return profileDecision{StatusFail, stateFail, ReasonRunMismatch}
+	}
+	if states.PolicyBindingState != statePass {
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonPolicyMissing}
+	}
+	if states.ArtifactBindingState != statePass {
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingArtifact}
+	}
+	if states.IndependenceState != independenceCIJob && states.IndependenceState != independenceExternal {
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonEnvOnly}
 	}
 	return profileDecision{}
 }

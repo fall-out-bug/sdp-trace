@@ -371,6 +371,9 @@ func TestCustomerPKIPassesWithSignedFreshnessEvidence(t *testing.T) {
 	if record.ProfileStates.KeyCustodyState != "hsm" {
 		t.Fatalf("key custody = %s", record.ProfileStates.KeyCustodyState)
 	}
+	if record.ProfileStates.SourceBindingState != stateNotAssessed {
+		t.Fatalf("source binding = %s", record.ProfileStates.SourceBindingState)
+	}
 }
 
 func TestCustomerPKIRejectsPrivateKeyInput(t *testing.T) {
@@ -428,9 +431,34 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 		name     string
 		policy   CustomerPKIAuthorityPolicy
 		evidence CustomerPKIFreshnessEvidence
+		key      ed25519.PublicKey
 		reason   string
 		status   string
 	}{
+		{
+			name: "unsupported profile",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.ProfileID = "customer-pki-v2"
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonSignerMismatch,
+		},
+		{
+			name: "empty signer",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.AllowedSignerID = ""
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonSignerMismatch,
+		},
 		{
 			name: "signer mismatch",
 			policy: func() CustomerPKIAuthorityPolicy {
@@ -439,8 +467,33 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				return copy
 			}(),
 			evidence: evidence,
+			key:      publicKey,
 			status:   StatusFail,
 			reason:   ReasonSignerMismatch,
+		},
+		{
+			name: "public key mismatch",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.PublicKeySHA256 = strings.Repeat("c", 64)
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonSignerMismatch,
+		},
+		{
+			name: "policy digest mismatch",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.PolicyDigest = strings.Repeat("c", 64)
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonPolicyMismatch,
 		},
 		{
 			name:   "expired freshness",
@@ -451,8 +504,34 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte(freshnessPayload(copy))))
 				return copy
 			}(),
+			key:    publicKey,
 			status: StatusFail,
 			reason: ReasonStaleFreshness,
+		},
+		{
+			name:   "run mismatch",
+			policy: policy,
+			evidence: func() CustomerPKIFreshnessEvidence {
+				copy := evidence
+				copy.RunID = "other-run"
+				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte(freshnessPayload(copy))))
+				return copy
+			}(),
+			key:    publicKey,
+			status: StatusFail,
+			reason: ReasonRunMismatch,
+		},
+		{
+			name:   "invalid signature",
+			policy: policy,
+			evidence: func() CustomerPKIFreshnessEvidence {
+				copy := evidence
+				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte("tampered")))
+				return copy
+			}(),
+			key:    publicKey,
+			status: StatusFail,
+			reason: ReasonSignerMismatch,
 		},
 		{
 			name: "revocation not assessed",
@@ -462,6 +541,7 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				return copy
 			}(),
 			evidence: evidence,
+			key:      publicKey,
 			status:   StatusNotAssessed,
 			reason:   ReasonRevocationNA,
 		},
@@ -473,6 +553,7 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				return copy
 			}(),
 			evidence: evidence,
+			key:      publicKey,
 			status:   StatusFail,
 			reason:   ReasonCertRevoked,
 		},
@@ -485,6 +566,7 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte(freshnessPayload(copy))))
 				return copy
 			}(),
+			key:    publicKey,
 			status: StatusFail,
 			reason: ReasonArtifactMismatch,
 		},
@@ -493,9 +575,13 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			policyPath := writeJSON(t, dir, tt.name+"-policy.json", tt.policy)
 			freshnessPath := writeJSON(t, dir, tt.name+"-freshness.json", tt.evidence)
+			keyPath := publicKeyPath
+			if tt.key != nil {
+				keyPath = writePublicKey(t, dir, tt.key)
+			}
 			record, err := BuildCustomerPKI(root, "", ProfileOptions{
 				CustomerPKIAuthorityPolicy: policyPath,
-				CustomerPKIPublicKey:       publicKeyPath,
+				CustomerPKIPublicKey:       keyPath,
 				CustomerPKIPayloadDigest:   payloadDigest,
 				CustomerPKIFreshness:       freshnessPath,
 			})
