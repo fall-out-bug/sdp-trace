@@ -62,6 +62,67 @@ func TestBuildPacketBindsRefsAndRejectsUnsafeIdentity(t *testing.T) {
 	}
 }
 
+func TestValidateProfileRejectsMalformedProfiles(t *testing.T) {
+	valid := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "default",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles:          []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}},
+	}
+	for name, tc := range map[string]struct {
+		mutate  func(*ReviewProfile)
+		wantErr string
+	}{
+		"bad-schema": {
+			mutate:  func(profile *ReviewProfile) { profile.SchemaVersion = "unknown" },
+			wantErr: "invalid_profile_schema_version: unknown",
+		},
+		"missing-profile-id": {
+			mutate:  func(profile *ReviewProfile) { profile.ProfileID = "" },
+			wantErr: "profile_requires_profile_id",
+		},
+		"missing-required-planes": {
+			mutate:  func(profile *ReviewProfile) { profile.RequiredPlanes = nil },
+			wantErr: "profile_requires_required_planes",
+		},
+		"missing-roles": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles = nil },
+			wantErr: "profile_requires_roles",
+		},
+		"missing-role-fields": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles[0].Runner = "" },
+			wantErr: "profile_role_requires_id_plane_runner",
+		},
+		"invalid-runner": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles[0].Runner = "unknown" },
+			wantErr: "profile_role_invalid_runner: unknown",
+		},
+		"required-plane-without-role": {
+			mutate: func(profile *ReviewProfile) {
+				profile.RequiredPlanes = []string{PlaneCodeCorrectness, PlanePrivacySafety}
+			},
+			wantErr: "profile_required_plane_without_role: privacy_output_safety",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			profile := cloneReviewProfile(valid)
+			tc.mutate(&profile)
+			if err := validateProfile(profile); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("validateProfile() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+	if err := validateProfile(valid); err != nil {
+		t.Fatalf("valid profile rejected: %v", err)
+	}
+}
+
+func cloneReviewProfile(profile ReviewProfile) ReviewProfile {
+	profile.RequiredPlanes = append([]string(nil), profile.RequiredPlanes...)
+	profile.Roles = append([]ReviewRole(nil), profile.Roles...)
+	return profile
+}
+
 func TestBuildPacketRecordsUnavailableInputsAndDigestChangesWithDiff(t *testing.T) {
 	root := t.TempDir()
 	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")

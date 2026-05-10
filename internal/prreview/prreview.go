@@ -779,9 +779,24 @@ func validateRunSet(runs RunSet) error {
 }
 
 func validateProfile(profile ReviewProfile) error {
+	if err := validateProfileHeader(profile); err != nil {
+		return err
+	}
+	rolePlanes, err := validateProfileRoles(profile.Roles)
+	if err != nil {
+		return err
+	}
+	return validateRequiredPlaneRoles(profile.RequiredPlanes, rolePlanes)
+}
+
+func validateProfileHeader(profile ReviewProfile) error {
 	if profile.SchemaVersion != "" && profile.SchemaVersion != SchemaVersionProfile {
 		return fmt.Errorf("invalid_profile_schema_version: %s", profile.SchemaVersion)
 	}
+	return requireProfileFields(profile)
+}
+
+func requireProfileFields(profile ReviewProfile) error {
 	if strings.TrimSpace(profile.ProfileID) == "" {
 		return errors.New("profile_requires_profile_id")
 	}
@@ -791,17 +806,36 @@ func validateProfile(profile ReviewProfile) error {
 	if len(profile.Roles) == 0 {
 		return errors.New("profile_requires_roles")
 	}
+	return nil
+}
+
+func validateProfileRoles(roles []ReviewRole) (map[string]bool, error) {
 	rolePlanes := map[string]bool{}
-	for _, role := range profile.Roles {
-		if role.RoleID == "" || role.Plane == "" || role.Runner == "" {
-			return errors.New("profile_role_requires_id_plane_runner")
-		}
-		if !validRunner(role.Runner) {
-			return fmt.Errorf("profile_role_invalid_runner: %s", role.Runner)
+	for _, role := range roles {
+		if err := validateProfileRole(role); err != nil {
+			return nil, err
 		}
 		rolePlanes[role.Plane] = true
 	}
-	for _, plane := range profile.RequiredPlanes {
+	return rolePlanes, nil
+}
+
+func validateProfileRole(role ReviewRole) error {
+	if profileRoleMissingRequiredField(role) {
+		return errors.New("profile_role_requires_id_plane_runner")
+	}
+	if !validRunner(role.Runner) {
+		return fmt.Errorf("profile_role_invalid_runner: %s", role.Runner)
+	}
+	return nil
+}
+
+func profileRoleMissingRequiredField(role ReviewRole) bool {
+	return role.RoleID == "" || role.Plane == "" || role.Runner == ""
+}
+
+func validateRequiredPlaneRoles(requiredPlanes []string, rolePlanes map[string]bool) error {
+	for _, plane := range requiredPlanes {
 		if !rolePlanes[plane] {
 			return fmt.Errorf("profile_required_plane_without_role: %s", plane)
 		}
