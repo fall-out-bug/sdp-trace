@@ -240,32 +240,64 @@ func validateEnvelope(env AuthorityEnvelope) string {
 	if reason := validateEventSet(env.AllowedEvents, env.DeniedEvents); reason != "" {
 		return reason
 	}
-	for _, rule := range env.TargetRules {
-		if rule.RuleID == "" || rule.TargetPattern == "" {
-			return "target_rule_malformed"
-		}
-		if reason := validateEventSet(rule.AllowedEvents, rule.DeniedEvents); reason != "" {
-			return "target_rule_conflict"
-		}
-		for _, event := range rule.AllowedEvents {
-			if contains(env.DeniedEvents, event) {
-				return "target_rule_conflicts_with_top_level"
-			}
-		}
-		for _, event := range rule.DeniedEvents {
-			if contains(env.AllowedEvents, event) {
-				return "target_rule_conflicts_with_top_level"
-			}
-		}
+	if reason := validateTargetRules(env); reason != "" {
+		return reason
 	}
-	for i := range env.TargetRules {
-		for j := i + 1; j < len(env.TargetRules); j++ {
-			if targetRulesConflict(env.TargetRules[i], env.TargetRules[j]) {
-				return "overlapping_target_rules_conflict"
-			}
+	return validateTargetRuleOverlap(env.TargetRules)
+}
+
+func validateTargetRules(env AuthorityEnvelope) string {
+	for _, rule := range env.TargetRules {
+		if reason := validateTargetRule(env, rule); reason != "" {
+			return reason
 		}
 	}
 	return ""
+}
+
+func validateTargetRule(env AuthorityEnvelope, rule TargetRule) string {
+	if rule.RuleID == "" || rule.TargetPattern == "" {
+		return "target_rule_malformed"
+	}
+	if reason := validateEventSet(rule.AllowedEvents, rule.DeniedEvents); reason != "" {
+		return "target_rule_conflict"
+	}
+	if targetRuleConflictsWithTopLevel(env, rule) {
+		return "target_rule_conflicts_with_top_level"
+	}
+	return ""
+}
+
+func targetRuleConflictsWithTopLevel(env AuthorityEnvelope, rule TargetRule) bool {
+	for _, event := range rule.AllowedEvents {
+		if contains(env.DeniedEvents, event) {
+			return true
+		}
+	}
+	for _, event := range rule.DeniedEvents {
+		if contains(env.AllowedEvents, event) {
+			return true
+		}
+	}
+	return false
+}
+
+func validateTargetRuleOverlap(rules []TargetRule) string {
+	for i := range rules {
+		if targetRuleConflictsWithAny(rules[i], rules[i+1:]) {
+			return "overlapping_target_rules_conflict"
+		}
+	}
+	return ""
+}
+
+func targetRuleConflictsWithAny(rule TargetRule, others []TargetRule) bool {
+	for _, other := range others {
+		if targetRulesConflict(rule, other) {
+			return true
+		}
+	}
+	return false
 }
 
 func validateEventSet(allowed, denied []string) string {

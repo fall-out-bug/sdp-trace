@@ -203,6 +203,101 @@ func TestEvaluateOverlappingTargetRulesCannotVerify(t *testing.T) {
 	}
 }
 
+func TestValidateEnvelopeReasons(t *testing.T) {
+	base := validPackage().AuthorityEnvelopes[0]
+	tests := []struct {
+		name   string
+		mutate func(*AuthorityEnvelope)
+		want   string
+	}{
+		{
+			name:   "missing required field",
+			mutate: func(env *AuthorityEnvelope) { env.ActorRef = "" },
+			want:   "authority_envelope_malformed",
+		},
+		{
+			name:   "unsupported top level event",
+			mutate: func(env *AuthorityEnvelope) { env.AllowedEvents = []string{"unknown"} },
+			want:   "unsupported_event_type",
+		},
+		{
+			name: "top level allow deny conflict",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = []string{"review"}
+				env.DeniedEvents = []string{"review"}
+			},
+			want: "allow_deny_event_conflict",
+		},
+		{
+			name:   "target rule malformed",
+			mutate: func(env *AuthorityEnvelope) { env.TargetRules[0].RuleID = "" },
+			want:   "target_rule_malformed",
+		},
+		{
+			name:   "target unsupported event",
+			mutate: func(env *AuthorityEnvelope) { env.TargetRules[0].DeniedEvents = []string{"unknown"} },
+			want:   "target_rule_conflict",
+		},
+		{
+			name: "target allow deny conflict",
+			mutate: func(env *AuthorityEnvelope) {
+				env.TargetRules[0].AllowedEvents = []string{"direct_mutation"}
+				env.TargetRules[0].DeniedEvents = []string{"direct_mutation"}
+			},
+			want: "target_rule_conflict",
+		},
+		{
+			name: "target allowed conflicts with top level denial",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = nil
+				env.DeniedEvents = []string{"direct_mutation"}
+				env.TargetRules[0].AllowedEvents = []string{"direct_mutation"}
+				env.TargetRules[0].DeniedEvents = nil
+			},
+			want: "target_rule_conflicts_with_top_level",
+		},
+		{
+			name: "target denied conflicts with top level allow",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = []string{"direct_mutation"}
+				env.DeniedEvents = nil
+				env.TargetRules[0].AllowedEvents = nil
+				env.TargetRules[0].DeniedEvents = []string{"direct_mutation"}
+			},
+			want: "target_rule_conflicts_with_top_level",
+		},
+		{
+			name: "overlapping target rules conflict",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = nil
+				env.TargetRules = append(env.TargetRules, TargetRule{
+					RuleID:        "rule-ci-allow",
+					TargetPattern: ".github/workflows/**",
+					AllowedEvents: []string{"direct_mutation"},
+				})
+			},
+			want: "overlapping_target_rules_conflict",
+		},
+		{
+			name: "valid envelope",
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := base
+			env.TargetRules = append([]TargetRule(nil), base.TargetRules...)
+			if tt.mutate != nil {
+				tt.mutate(&env)
+			}
+			if got := validateEnvelope(env); got != tt.want {
+				t.Fatalf("reason = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateExternalAndStaleEvidenceCannotVerify(t *testing.T) {
 	for name, mutate := range map[string]func(*Package){
 		"unresolved-external": func(pkg *Package) {
