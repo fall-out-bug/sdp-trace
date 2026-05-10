@@ -18,6 +18,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
+	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -264,6 +265,213 @@ func TestCLISmallHelpersCoverFallbackPaths(t *testing.T) {
 	}
 	if !strings.Contains(errOut.String(), "marshal helper:") {
 		t.Fatalf("missing marshal error: %s", errOut.String())
+	}
+}
+
+func TestCLIArgumentHelpersCoverErrorBranches(t *testing.T) {
+	tests := []struct {
+		name string
+		run  func(*bytes.Buffer) int
+		want string
+	}{
+		{
+			name: "envelope missing subcommand",
+			run: func(errOut *bytes.Buffer) int {
+				_, code, ok := parseEnvelopeSummarizeArgs(nil, errOut)
+				if ok {
+					t.Fatalf("parseEnvelopeSummarizeArgs unexpectedly succeeded")
+				}
+				return code
+			},
+			want: "envelope requires summarize",
+		},
+		{
+			name: "envelope rejects rest",
+			run: func(errOut *bytes.Buffer) int {
+				_, code, ok := parseEnvelopeSummarizeArgs([]string{"summarize", "extra"}, errOut)
+				if ok {
+					t.Fatalf("parseEnvelopeSummarizeArgs unexpectedly accepted rest args")
+				}
+				return code
+			},
+			want: "envelope summarize accepts only flags",
+		},
+		{
+			name: "envelope requires path",
+			run: func(errOut *bytes.Buffer) int {
+				_, code, ok := parseEnvelopeSummarizeArgs([]string{"summarize"}, errOut)
+				if ok {
+					t.Fatalf("parseEnvelopeSummarizeArgs unexpectedly accepted missing envelope")
+				}
+				return code
+			},
+			want: "envelope summarize requires --envelope",
+		},
+		{
+			name: "wrapped command parse error",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--unknown"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted unknown flag")
+				}
+				return code
+			},
+			want: "",
+		},
+		{
+			name: "wrapped command missing command",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--task", "T", "--use-default-contract"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted missing command")
+				}
+				return code
+			},
+			want: "run requires a command",
+		},
+		{
+			name: "wrapped command missing task",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--use-default-contract", "--", "echo", "ok"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted missing task")
+				}
+				return code
+			},
+			want: "run requires --task",
+		},
+		{
+			name: "wrapped command missing contract",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--task", "T", "--", "echo", "ok"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted missing contract")
+				}
+				return code
+			},
+			want: "run requires --contract unless --use-default-contract is set",
+		},
+		{
+			name: "preview parse error",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parsePreviewCommandArgs("preview", []string{"--unknown"}, errOut)
+				if ok {
+					t.Fatalf("parsePreviewCommandArgs unexpectedly accepted unknown flag")
+				}
+				return code
+			},
+			want: "",
+		},
+		{
+			name: "preview missing command",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parsePreviewCommandArgs("preview", nil, errOut)
+				if ok {
+					t.Fatalf("parsePreviewCommandArgs unexpectedly accepted missing command")
+				}
+				return code
+			},
+			want: "preview requires a command",
+		},
+		{
+			name: "preview missing contract",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parsePreviewCommandArgs("preview", []string{"--use-default-contract=false", "--", "echo", "ok"}, errOut)
+				if ok {
+					t.Fatalf("parsePreviewCommandArgs unexpectedly accepted missing contract")
+				}
+				return code
+			},
+			want: "preview requires --contract unless --use-default-contract is set",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			if got := tt.run(&errOut); got != exitUsage {
+				t.Fatalf("exit=%d err=%s", got, errOut.String())
+			}
+			if tt.want != "" && !strings.Contains(errOut.String(), tt.want) {
+				t.Fatalf("missing %q in %s", tt.want, errOut.String())
+			}
+		})
+	}
+
+	var errOut bytes.Buffer
+	opts, command, code, ok := parseWrappedCommandArgs([]string{"--task", "T", "--use-default-contract", "--", "echo", "ok"}, &errOut)
+	if !ok || code != 0 || opts.stringValue("task") != "T" || strings.Join(command, " ") != "echo ok" {
+		t.Fatalf("valid wrapped args parse failed ok=%v code=%d command=%v err=%s", ok, code, command, errOut.String())
+	}
+	opts, command, code, ok = parsePreviewCommandArgs("preview", []string{"--", "echo", "ok"}, &errOut)
+	if !ok || code != 0 || !opts.boolValue("use-default-contract") || strings.Join(command, " ") != "echo ok" {
+		t.Fatalf("valid preview args parse failed ok=%v code=%d command=%v err=%s", ok, code, command, errOut.String())
+	}
+}
+
+func TestProtectedInputStatusBranches(t *testing.T) {
+	dir := t.TempDir()
+	readable := filepath.Join(dir, "readable.json")
+	malformed := filepath.Join(dir, "malformed.json")
+	if err := os.WriteFile(readable, []byte(`{"ok":true}`), 0o644); err != nil {
+		t.Fatalf("write readable fixture: %v", err)
+	}
+	if err := os.WriteFile(malformed, []byte(`{not-json`), 0o644); err != nil {
+		t.Fatalf("write malformed fixture: %v", err)
+	}
+	for _, tt := range []struct {
+		name string
+		path string
+		want string
+	}{
+		{"blank", "  ", "absent"},
+		{"missing", filepath.Join(dir, "missing.json"), "present_unreadable"},
+		{"directory", dir, "present_malformed"},
+		{"malformed", malformed, "present_malformed"},
+		{"readable", readable, "present_readable"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := protectedInputStatus(tt.path); got != tt.want {
+				t.Fatalf("protectedInputStatus(%q)=%q want %q", tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCLICommandDispatchAndQueryErrorBranches(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	exit := runInteraction(context.Background(), nil, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "interaction requires relay, import-transcript, or summarize") {
+		t.Fatalf("missing interaction command exit=%d err=%s", exit, errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runInteraction(context.Background(), []string{"unknown"}, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "unknown interaction command: unknown") {
+		t.Fatalf("unknown interaction command exit=%d err=%s", exit, errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runExport(context.Background(), nil, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "export requires cross-repo-posture or telemetry") {
+		t.Fatalf("missing export command exit=%d err=%s", exit, errOut.String())
+	}
+	if exportCommandIs(nil, "telemetry") || exportSubcommandIs([]string{"cross-repo-posture"}, "explain") {
+		t.Fatalf("export command helpers accepted missing args")
+	}
+
+	_, code, ok := runNamedQuery("unknown-query", t.TempDir(), &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "unsupported query: unknown-query") {
+		t.Fatalf("unsupported query ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = runNamedQuery(query.QueryCaptureDepth, filepath.Join(t.TempDir(), "missing-run"), &errOut)
+	if ok || code != exitCannotVerify {
+		t.Fatalf("missing query run ok=%v code=%d err=%s", ok, code, errOut.String())
 	}
 }
 
