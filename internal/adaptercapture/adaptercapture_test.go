@@ -251,6 +251,111 @@ func TestEvaluateAllowsRedactedCapturedEventWithCap(t *testing.T) {
 	}
 }
 
+func TestOverclaimConditionRejectsUncappedInsufficientEvidence(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RunEvidence)
+	}{
+		{
+			name: "summary state insufficient",
+			mutate: func(run *RunEvidence) {
+				run.EventFamilySummaries = []EventFamilyState{{
+					EventFamily:     "tool_call",
+					State:           StateCannotVerify,
+					RetentionMode:   RetentionSanitizedExcerpt,
+					Reconstructable: true,
+				}}
+			},
+		},
+		{
+			name: "summary retention insufficient",
+			mutate: func(run *RunEvidence) {
+				run.EventFamilySummaries = []EventFamilyState{{
+					EventFamily:     "tool_call",
+					State:           StatePass,
+					RetentionMode:   RetentionDigestOnly,
+					Reconstructable: true,
+				}}
+			},
+		},
+		{
+			name: "event capture state insufficient",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "redacted"
+				run.AdapterEvents[2].RetentionMode = RetentionSanitizedExcerpt
+				run.AdapterEvents[2].ReconstructableClaimed = true
+			},
+		},
+		{
+			name: "event retention insufficient",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "captured"
+				run.AdapterEvents[2].RetentionMode = RetentionNotAssessed
+				run.AdapterEvents[2].ReconstructableClaimed = true
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			run := validInput().Run
+			tt.mutate(&run)
+			condition := overclaimCondition(run)
+			if condition.State != StateFail || condition.ReasonCode != "capture_depth_overclaimed" {
+				t.Fatalf("condition = %+v", condition)
+			}
+		})
+	}
+}
+
+func TestOverclaimConditionAllowsSufficientOrCappedEvidence(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RunEvidence)
+	}{
+		{
+			name: "summary cap annotation",
+			mutate: func(run *RunEvidence) {
+				run.EventFamilySummaries = []EventFamilyState{{
+					EventFamily:     "tool_call",
+					State:           StateCannotVerify,
+					RetentionMode:   RetentionDigestOnly,
+					Reconstructable: true,
+					CapAnnotation:   "digest-only evidence",
+				}}
+			},
+		},
+		{
+			name: "event cap annotation",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "redacted"
+				run.AdapterEvents[2].RetentionMode = RetentionNotAssessed
+				run.AdapterEvents[2].ReconstructableClaimed = true
+				run.AdapterEvents[2].CapAnnotation = "payload redacted"
+			},
+		},
+		{
+			name: "sufficient captured event",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "captured"
+				run.AdapterEvents[2].RetentionMode = RetentionSanitizedExcerpt
+				run.AdapterEvents[2].ReconstructableClaimed = true
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			run := validInput().Run
+			tt.mutate(&run)
+			condition := overclaimCondition(run)
+			if condition.State != StatePass || condition.ReasonCode != "capture_depth_not_overclaimed" {
+				t.Fatalf("condition = %+v", condition)
+			}
+		})
+	}
+}
+
 func TestBlock19CommittedFixturesHaveAdapterCaptureShape(t *testing.T) {
 	fixtureDir := filepath.Join("..", "..", "examples", "block19-adapter-capture")
 	cases := block19FixtureCases()

@@ -373,17 +373,42 @@ func redactionMetadataCondition(run RunEvidence) Condition {
 
 func overclaimCondition(run RunEvidence) Condition {
 	for _, summary := range run.EventFamilySummaries {
-		insufficient := summary.State == StateMissingTelemetry || summary.State == StateUnsupported || summary.State == StateNotIntegrated || summary.State == StateNotAssessed || summary.State == StateCannotVerify || summary.State == StateRetentionLimited || summary.RetentionMode == RetentionDigestOnly || summary.RetentionMode == RetentionNotAssessed
-		if summary.Reconstructable && insufficient && summary.CapAnnotation == "" {
+		if eventFamilyOverclaims(summary) {
 			return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "capture-depth output claims reconstruction without sufficient evidence", "Emit a visible capture-depth cap for insufficient evidence.")
 		}
 	}
 	for _, event := range run.AdapterEvents {
-		if event.ReconstructableClaimed && (event.CaptureState != "captured" || event.RetentionMode == RetentionDigestOnly || event.RetentionMode == RetentionNotAssessed) && event.CapAnnotation == "" {
+		if adapterEventOverclaims(event) {
 			return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "adapter event claims reconstruction beyond captured and retained evidence", "Emit a visible cap annotation or lower the claim.")
 		}
 	}
 	return pass("capture_depth_not_overclaimed", "capture_depth_not_overclaimed", "capture-depth output does not exceed available evidence")
+}
+
+func eventFamilyOverclaims(summary EventFamilyState) bool {
+	return summary.Reconstructable &&
+		eventFamilyInsufficient(summary) &&
+		summary.CapAnnotation == ""
+}
+
+func eventFamilyInsufficient(summary EventFamilyState) bool {
+	switch summary.State {
+	case StateMissingTelemetry, StateUnsupported, StateNotIntegrated, StateNotAssessed, StateCannotVerify, StateRetentionLimited:
+		return true
+	}
+	return summary.RetentionMode == RetentionDigestOnly || summary.RetentionMode == RetentionNotAssessed
+}
+
+func adapterEventOverclaims(event AdapterEvent) bool {
+	return event.ReconstructableClaimed &&
+		adapterEventInsufficient(event) &&
+		event.CapAnnotation == ""
+}
+
+func adapterEventInsufficient(event AdapterEvent) bool {
+	return event.CaptureState != "captured" ||
+		event.RetentionMode == RetentionDigestOnly ||
+		event.RetentionMode == RetentionNotAssessed
 }
 
 func topLevel(conditions []Condition) string {
