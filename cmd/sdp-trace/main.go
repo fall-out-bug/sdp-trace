@@ -1524,19 +1524,29 @@ func runCIArtifactAssessPreview(opts *flagSet, stdout io.Writer) int {
 func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 	opts := &flagSet{name: "assess explain"}
 	opts.setString("assessment-result", "")
-	if err := opts.parse(args); err != nil {
+	path, err := parseAssessExplainArgs(opts, args)
+	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
+	return explainAssessmentResult(path, stdout, stderr)
+}
+
+func parseAssessExplainArgs(opts *flagSet, args []string) (string, error) {
+	if err := opts.parse(args); err != nil {
+		return "", err
+	}
 	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "assess explain accepts only flags")
-		return exitUsage
+		return "", errors.New("assess explain accepts only flags")
 	}
 	path := opts.stringValue("assessment-result")
 	if path == "" {
-		fmt.Fprintln(stderr, "assess explain requires --assessment-result <file>")
-		return exitUsage
+		return "", errors.New("assess explain requires --assessment-result <file>")
 	}
+	return path, nil
+}
+
+func explainAssessmentResult(path string, stdout, stderr io.Writer) int {
 	var envelope struct {
 		SchemaVersion   string `json:"schema_version"`
 		SelectedProfile string `json:"selected_profile"`
@@ -1545,45 +1555,36 @@ func runAssessExplain(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	switch envelope.SchemaVersion {
-	case adaptercapture.SchemaVersion:
-		var result adaptercapture.AssessmentResult
-		if err := readJSONFile(path, &result); err != nil {
-			fmt.Fprintln(stderr, err)
-			return exitCannotVerify
-		}
-		return explainAdapterCaptureAssessment(result, stdout)
-	case managed.SchemaVersion:
-		var result managed.AssessmentResult
-		if err := readJSONFile(path, &result); err != nil {
-			fmt.Fprintln(stderr, err)
-			return exitCannotVerify
-		}
-		return explainManagedAssessment(result, stdout)
-	case forensic.SchemaVersion:
-		var result forensic.AssessmentResult
-		if err := readJSONFile(path, &result); err != nil {
-			fmt.Fprintln(stderr, err)
-			return exitCannotVerify
-		}
-		return explainForensicAssessment(result, stdout)
-	case ciartifact.SchemaVersion:
-		var result ciartifact.ObservationResult
-		if err := readJSONFile(path, &result); err != nil {
-			fmt.Fprintln(stderr, err)
-			return exitCannotVerify
-		}
-		return explainCIArtifactObservation(result, stdout)
-	case authority.ResultSchemaVersion:
-		var result authority.Result
-		if err := readJSONFile(path, &result); err != nil {
-			fmt.Fprintln(stderr, err)
-			return exitCannotVerify
-		}
-		return explainAuthorityEvaluation(result, stdout)
-	default:
-		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", envelope.SchemaVersion)
+	return dispatchAssessmentExplanation(path, envelope.SchemaVersion, stdout, stderr)
+}
+
+func dispatchAssessmentExplanation(path, schemaVersion string, stdout, stderr io.Writer) int {
+	handler, ok := assessmentExplainHandlers[schemaVersion]
+	if !ok {
+		fmt.Fprintf(stderr, "unsupported assessment-result schema_version: %s\n", schemaVersion)
 		return exitCannotVerify
+	}
+	return handler(path, stdout, stderr)
+}
+
+type assessmentExplainHandler func(string, io.Writer, io.Writer) int
+
+var assessmentExplainHandlers = map[string]assessmentExplainHandler{
+	adaptercapture.SchemaVersion:  explainTypedAssessment[adaptercapture.AssessmentResult](explainAdapterCaptureAssessment),
+	managed.SchemaVersion:         explainTypedAssessment[managed.AssessmentResult](explainManagedAssessment),
+	forensic.SchemaVersion:        explainTypedAssessment[forensic.AssessmentResult](explainForensicAssessment),
+	ciartifact.SchemaVersion:      explainTypedAssessment[ciartifact.ObservationResult](explainCIArtifactObservation),
+	authority.ResultSchemaVersion: explainTypedAssessment[authority.Result](explainAuthorityEvaluation),
+}
+
+func explainTypedAssessment[T any](explain func(T, io.Writer) int) assessmentExplainHandler {
+	return func(path string, stdout, stderr io.Writer) int {
+		var result T
+		if err := readJSONFile(path, &result); err != nil {
+			fmt.Fprintln(stderr, err)
+			return exitCannotVerify
+		}
+		return explain(result, stdout)
 	}
 }
 

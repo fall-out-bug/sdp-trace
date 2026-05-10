@@ -1085,6 +1085,31 @@ func TestManagedAssessPassesAndExplains(t *testing.T) {
 	}
 }
 
+func TestAssessExplainUsageAndUnsupportedSchema(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if exit := runAssessExplain(nil, &out, &errOut); exit != exitUsage {
+		t.Fatalf("missing result exit = %d", exit)
+	}
+	if !strings.Contains(errOut.String(), "requires --assessment-result") {
+		t.Fatalf("missing usage error: %s", errOut.String())
+	}
+
+	root := t.TempDir()
+	path := filepath.Join(root, "unknown.json")
+	if err := os.WriteFile(path, []byte(`{"schema_version":"unknown"}`), 0o644); err != nil {
+		t.Fatalf("write unknown schema: %v", err)
+	}
+	out.Reset()
+	errOut.Reset()
+	if exit := runAssessExplain([]string{"--assessment-result", path}, &out, &errOut); exit != exitCannotVerify {
+		t.Fatalf("unknown schema exit = %d", exit)
+	}
+	if !strings.Contains(errOut.String(), "unsupported assessment-result schema_version: unknown") {
+		t.Fatalf("missing unsupported schema error: %s", errOut.String())
+	}
+}
+
 func TestManagedAssessRejectsPostHocPolicyAndWitnessMismatch(t *testing.T) {
 	root := t.TempDir()
 	paths := writeManagedFixtureInputs(t, root)
