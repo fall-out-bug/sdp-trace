@@ -31,6 +31,10 @@
 | `go test ./... -coverprofile=/tmp/sdp-trace-continue-cover.out` | pass | Total coverage: 71.5%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
+| `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
+| `/Users/fall_out_bug/go/bin/staticcheck ./...` | pass | Staticcheck 2026.1 / v0.7.0, no findings. |
+| `rg --files -g '*.go' \| xargs /Users/fall_out_bug/go/bin/gopls check` | pass | `gopls` v0.21.1 LSP diagnostics across all Go files. |
+| `/Users/fall_out_bug/go/bin/govulncheck ./...` | pass | Rebuilt with Go 1.26.3 as govulncheck v1.3.0; vulnerability DB updated 2026-05-07; no vulnerabilities found. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
 | `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-continue-cover-func.txt -gocyclo /tmp/sdp-trace-continue-gocyclo.txt -threshold 5` | fail_assessed_gap | 373 functions exceed strict CRAP threshold 5; top high-risk functions improved, but strict repo-wide CRAP remains open. |
