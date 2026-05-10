@@ -384,21 +384,36 @@ func eventGroupCondition(input Input, id, group string) Condition {
 	if len(required) == 0 {
 		return pass(id, "condition_pass", "no required events for group")
 	}
+	scopes := acceptableScopesForGroup(input, group)
 	for _, eventType := range required {
-		if !eventObserved(input.Run.ObservedEvents, eventType, acceptableScopesForGroup(input, group)) {
-			reasonPrefix := groupReasonPrefix(group)
-			if suppressed, valid, satisfies := suppressionForGroup(input, group); suppressed {
-				if valid && satisfies {
-					return pass(id, reasonPrefix+"_event_suppressed_by_policy", "required "+group+" event is suppressed by policy for this profile")
-				}
-				if valid {
-					return Condition{ID: id, State: StateSuppressed, ReasonCode: reasonPrefix + "_event_suppressed", Reason: "required " + group + " event is suppressed but does not satisfy the managed profile", NextAction: "Capture the required " + group + " event or authorize satisfying suppression in pre-run policy."}
-				}
-			}
-			return Condition{ID: id, State: StateMissingTelemetry, ReasonCode: reasonPrefix + "_event_missing", Reason: "required " + group + " event is missing", NextAction: "Run through a managed boundary that emits required " + group + " events."}
+		if eventObserved(input.Run.ObservedEvents, eventType, scopes) {
+			continue
 		}
+		return missingEventGroupCondition(input, id, group)
 	}
 	return pass(id, "condition_pass", "required "+group+" events are observed")
+}
+
+func missingEventGroupCondition(input Input, id, group string) Condition {
+	reasonPrefix := groupReasonPrefix(group)
+	if condition, ok := suppressedEventGroupCondition(input, id, group, reasonPrefix); ok {
+		return condition
+	}
+	return Condition{ID: id, State: StateMissingTelemetry, ReasonCode: reasonPrefix + "_event_missing", Reason: "required " + group + " event is missing", NextAction: "Run through a managed boundary that emits required " + group + " events."}
+}
+
+func suppressedEventGroupCondition(input Input, id, group, reasonPrefix string) (Condition, bool) {
+	suppressed, valid, satisfies := suppressionForGroup(input, group)
+	if !suppressed {
+		return Condition{}, false
+	}
+	if valid && satisfies {
+		return pass(id, reasonPrefix+"_event_suppressed_by_policy", "required "+group+" event is suppressed by policy for this profile"), true
+	}
+	if valid {
+		return Condition{ID: id, State: StateSuppressed, ReasonCode: reasonPrefix + "_event_suppressed", Reason: "required " + group + " event is suppressed but does not satisfy the managed profile", NextAction: "Capture the required " + group + " event or authorize satisfying suppression in pre-run policy."}, true
+	}
+	return Condition{}, false
 }
 
 func testProvenanceCondition(input Input) Condition {

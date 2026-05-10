@@ -43,6 +43,35 @@ const (
 
 var cliStdin io.Reader = os.Stdin
 
+type commandHandler func(context.Context, []string, io.Writer, io.Writer) int
+
+var commandHandlers = map[string]commandHandler{
+	"wrap":              runWrap,
+	"run":               runWrappedCommand,
+	"dry-run":           runDryRun,
+	"preview":           runPreview,
+	"doctor":            runDoctor,
+	"install":           runInstall,
+	"interaction":       runInteraction,
+	"observe":           runObserveCommand,
+	"harness":           runHarnessCommand,
+	"envelope":          runEnvelope,
+	"verify":            runVerify,
+	"explain":           runExplain,
+	"query":             runQuery,
+	"query-pack":        runQueryPack,
+	"export":            runExport,
+	"report":            runReport,
+	"gate":              runGate,
+	"assess":            runAssess,
+	"override":          runOverride,
+	"checkpoint":        runCheckpoint,
+	"witness":           runWitness,
+	"validate-fixtures": runValidateFixtures,
+	"release-proof":     runReleaseProof,
+	"pr-review":         runPRReview,
+}
+
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
@@ -54,62 +83,22 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	cmd := args[0]
 	cmdArgs := args[1:]
-	ctx := context.Background()
 
-	switch cmd {
-	case "wrap":
-		return runWrap(ctx, cmdArgs, stdout, stderr)
-	case "run":
-		return runWrappedCommand(ctx, cmdArgs, stdout, stderr)
-	case "dry-run":
-		return runDryRun(ctx, cmdArgs, stdout, stderr)
-	case "preview":
-		return runPreview(ctx, cmdArgs, stdout, stderr)
-	case "doctor":
-		return runDoctor(ctx, cmdArgs, stdout, stderr)
-	case "install":
-		return runInstall(ctx, cmdArgs, stdout, stderr)
-	case "interaction":
-		return runInteraction(ctx, cmdArgs, stdout, stderr)
-	case "observe":
-		return runObserve(cmdArgs, stdout, stderr)
-	case "harness":
-		return runHarness(cmdArgs, stdout, stderr)
-	case "envelope":
-		return runEnvelope(ctx, cmdArgs, stdout, stderr)
-	case "verify":
-		return runVerify(ctx, cmdArgs, stdout, stderr)
-	case "explain":
-		return runExplain(ctx, cmdArgs, stdout, stderr)
-	case "query":
-		return runQuery(ctx, cmdArgs, stdout, stderr)
-	case "query-pack":
-		return runQueryPack(ctx, cmdArgs, stdout, stderr)
-	case "export":
-		return runExport(ctx, cmdArgs, stdout, stderr)
-	case "report":
-		return runReport(ctx, cmdArgs, stdout, stderr)
-	case "gate":
-		return runGate(ctx, cmdArgs, stdout, stderr)
-	case "assess":
-		return runAssess(ctx, cmdArgs, stdout, stderr)
-	case "override":
-		return runOverride(ctx, cmdArgs, stdout, stderr)
-	case "checkpoint":
-		return runCheckpoint(ctx, cmdArgs, stdout, stderr)
-	case "witness":
-		return runWitness(ctx, cmdArgs, stdout, stderr)
-	case "validate-fixtures":
-		return runValidateFixtures(ctx, cmdArgs, stdout, stderr)
-	case "release-proof":
-		return runReleaseProof(ctx, cmdArgs, stdout, stderr)
-	case "pr-review":
-		return runPRReview(ctx, cmdArgs, stdout, stderr)
-	default:
+	handler, ok := commandHandlers[cmd]
+	if !ok {
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
 		return 1
 	}
+	return handler(context.Background(), cmdArgs, stdout, stderr)
+}
+
+func runObserveCommand(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runObserve(args, stdout, stderr)
+}
+
+func runHarnessCommand(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runHarness(args, stdout, stderr)
 }
 
 func runObserve(args []string, stdout, stderr io.Writer) int {
