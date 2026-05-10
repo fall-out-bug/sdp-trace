@@ -545,6 +545,29 @@ func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	}
 }
 
+func TestSafeID(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		out  string
+	}{
+		{name: "normalizes-case-and-space-trims", in: "  Review_Run-01 ", out: "review_run-01"},
+		{name: "replaces-invalid-characters", in: "a@b c", out: "a-b-c"},
+		{name: "retains-safe-punctuation", in: "a-b.c_1", out: "a-b.c_1"},
+		{name: "trims-unsafe-boundaries", in: "---item.", out: "item"},
+		{name: "unicode-to-dash-and-default", in: "π_Т-9", out: "_--9"},
+		{name: "all-invalid-becomes-item", in: " !!! ... \n", out: "item"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := safeID(tc.in); got != tc.out {
+				t.Fatalf("safeID(%q) = %q, want %q", tc.in, got, tc.out)
+			}
+		})
+	}
+}
+
 func TestPRReviewFakeRunnerHelper(t *testing.T) {
 	if os.Getenv("GO_WANT_PR_REVIEW_HELPER_PROCESS") != "1" {
 		return

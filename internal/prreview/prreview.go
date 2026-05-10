@@ -1363,19 +1363,20 @@ func normalizedExt(path string) string {
 
 func safeID(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
-	var b strings.Builder
-	for _, r := range value {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' {
-			b.WriteRune(r)
-		} else {
-			b.WriteByte('-')
-		}
-	}
-	out := strings.Trim(b.String(), "-.")
+	out := strings.Trim(strings.Map(safeIDMapper, value), "-.")
 	if out == "" {
 		return "item"
 	}
 	return out
+}
+
+const safeIDAllowedChars = "abcdefghijklmnopqrstuvwxyz0123456789_.-"
+
+func safeIDMapper(r rune) rune {
+	if r <= 127 && strings.IndexByte(safeIDAllowedChars, byte(r)) >= 0 {
+		return r
+	}
+	return '-'
 }
 
 func defaultString(value, fallback string) string {

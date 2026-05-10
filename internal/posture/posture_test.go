@@ -318,6 +318,37 @@ func TestBuildRejectsUnsupportedDigestManifestSchema(t *testing.T) {
 	}
 }
 
+func TestUnsafeOutput(t *testing.T) {
+	cases := []struct {
+		name   string
+		value  string
+		unsafe bool
+	}{
+		{"safe value", "repository-a", false},
+		{"https url", "https://provider.example", true},
+		{"http url", "http://provider.example", true},
+		{"secret marker", "contains secret", true},
+		{"email", "user@example.com", true},
+		{"slash path", "path/to/file", true},
+		{"windows path", "path\\to\\file", true},
+		{"token", "api-token", true},
+		{"credential", "api credential", true},
+		{"credential and token exact", "credential_or_token", false},
+		{"token with exception", "Credential_OR_Token", false},
+		{"mixed case token", "A Token Value", true},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Helper()
+			if got := unsafeOutput(tc.value); got != tc.unsafe {
+				t.Fatalf("unsafeOutput(%q)=%t expected %t", tc.value, got, tc.unsafe)
+			}
+		})
+	}
+}
+
 func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)

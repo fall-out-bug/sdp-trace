@@ -974,16 +974,45 @@ func safeLabel(value string) bool {
 	return !unsafeLabel(value)
 }
 
+var unsafeOutputKeywords = []string{
+	"http://",
+	"https://",
+	"secret",
+	"@",
+}
+
 func unsafeOutput(value string) bool {
 	lower := strings.ToLower(value)
-	return strings.Contains(lower, "http://") ||
-		strings.Contains(lower, "https://") ||
-		strings.Contains(lower, "secret") ||
-		(strings.Contains(lower, "token") && !strings.Contains(lower, "credential_or_token")) ||
-		(strings.Contains(lower, "credential") && !strings.Contains(lower, "credential_or_token")) ||
-		strings.Contains(lower, "@") ||
-		strings.Contains(value, "/") ||
-		strings.Contains(value, "\\")
+	if hasUnsafeOutputKeyword(lower) {
+		return true
+	}
+	if hasUnsafeTokenOrCredential(lower) {
+		return true
+	}
+	if hasUnsafePath(value) {
+		return true
+	}
+	return false
+}
+
+func hasUnsafeOutputKeyword(value string) bool {
+	for _, keyword := range unsafeOutputKeywords {
+		if strings.Contains(value, keyword) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasUnsafeTokenOrCredential(value string) bool {
+	if strings.Contains(value, "credential_or_token") {
+		return false
+	}
+	return strings.Contains(value, "token") || strings.Contains(value, "credential")
+}
+
+func hasUnsafePath(value string) bool {
+	return strings.Contains(value, "/") || strings.Contains(value, "\\")
 }
 
 func unsafeLabel(value string) bool {

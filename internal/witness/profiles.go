@@ -857,14 +857,21 @@ func privateKeyInput(path string) bool {
 }
 
 func loadCustomerPublicKey(opts ProfileOptions) (ed25519.PublicKey, error) {
-	path := opts.CustomerPKIPublicKey
-	if path == "" {
-		path = opts.CustomerPKIPublicCert
-	}
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(customerPKIPublicKeyPath(opts))
 	if err != nil {
 		return nil, err
 	}
+	return parseCustomerPublicKeyPEM(raw)
+}
+
+func customerPKIPublicKeyPath(opts ProfileOptions) string {
+	if opts.CustomerPKIPublicKey == "" {
+		return opts.CustomerPKIPublicCert
+	}
+	return opts.CustomerPKIPublicKey
+}
+
+func parseCustomerPublicKeyPEM(raw []byte) (ed25519.PublicKey, error) {
 	if containsSecretLike(raw) {
 		return nil, errors.New("private key input rejected")
 	}
@@ -873,16 +880,25 @@ func loadCustomerPublicKey(opts ProfileOptions) (ed25519.PublicKey, error) {
 		return nil, errors.New("public key or certificate PEM is required")
 	}
 	if block.Type == "CERTIFICATE" {
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		if key, ok := cert.PublicKey.(ed25519.PublicKey); ok {
-			return key, nil
-		}
+		return parseCertificatePublicKey(block.Bytes)
+	}
+	return parsePKIXPublicKey(block.Bytes)
+}
+
+func parseCertificatePublicKey(raw []byte) (ed25519.PublicKey, error) {
+	cert, err := x509.ParseCertificate(raw)
+	if err != nil {
+		return nil, err
+	}
+	key, ok := cert.PublicKey.(ed25519.PublicKey)
+	if !ok {
 		return nil, errors.New("certificate must contain ed25519 public key")
 	}
-	key, err := x509.ParsePKIXPublicKey(block.Bytes)
+	return key, nil
+}
+
+func parsePKIXPublicKey(raw []byte) (ed25519.PublicKey, error) {
+	key, err := x509.ParsePKIXPublicKey(raw)
 	if err != nil {
 		return nil, err
 	}

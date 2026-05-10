@@ -1305,27 +1305,58 @@ func findStringByKey(value any, keys ...string) string {
 	return findStringByKeyIn(value, wanted)
 }
 
-func findStringByKeyIn(value any, wanted map[string]bool) string {
+func findByKeyIn[T any](value any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	var zero T
 	switch v := value.(type) {
 	case map[string]any:
-		for key, child := range v {
-			if wanted[strings.ToLower(key)] {
-				if s, ok := child.(string); ok && strings.TrimSpace(s) != "" {
-					return s
-				}
-			}
-			if s := findStringByKeyIn(child, wanted); s != "" {
-				return s
-			}
-		}
+		return findByKeyInMap(v, wanted, match)
 	case []any:
-		for _, child := range v {
-			if s := findStringByKeyIn(child, wanted); s != "" {
-				return s
-			}
+		return findByKeyInSlice(v, wanted, match)
+	}
+	return zero, false
+}
+
+func findByKeyInMap[T any](value map[string]any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	var zero T
+	for key, child := range value {
+		if found, ok := matchWantedKey(key, child, wanted, match); ok {
+			return found, true
+		}
+		if found, ok := findByKeyIn(child, wanted, match); ok {
+			return found, true
 		}
 	}
-	return ""
+	return zero, false
+}
+
+func matchWantedKey[T any](key string, value any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	var zero T
+	if !wanted[strings.ToLower(key)] {
+		return zero, false
+	}
+	return match(value)
+}
+
+func findByKeyInSlice[T any](value []any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	var zero T
+	for _, child := range value {
+		if found, ok := findByKeyIn(child, wanted, match); ok {
+			return found, true
+		}
+	}
+	return zero, false
+}
+
+func findStringByKeyIn(value any, wanted map[string]bool) string {
+	matchingString := func(value any) (string, bool) {
+		s, ok := value.(string)
+		return s, ok && strings.TrimSpace(s) != ""
+	}
+	s, ok := findByKeyIn(value, wanted, matchingString)
+	if !ok {
+		return ""
+	}
+	return s
 }
 
 func findTimestamp(raw map[string]any) string {
@@ -1353,29 +1384,17 @@ func findNumberByKey(value any, keys ...string) (float64, bool) {
 }
 
 func findNumberByKeyIn(value any, wanted map[string]bool) (float64, bool) {
-	switch v := value.(type) {
-	case map[string]any:
-		for key, child := range v {
-			if wanted[strings.ToLower(key)] {
-				switch n := child.(type) {
-				case float64:
-					return n, true
-				case int:
-					return float64(n), true
-				}
-			}
-			if n, ok := findNumberByKeyIn(child, wanted); ok {
-				return n, true
-			}
-		}
-	case []any:
-		for _, child := range v {
-			if n, ok := findNumberByKeyIn(child, wanted); ok {
-				return n, true
-			}
+	matchNumber := func(value any) (float64, bool) {
+		switch n := value.(type) {
+		case float64:
+			return n, true
+		case int:
+			return float64(n), true
+		default:
+			return 0, false
 		}
 	}
-	return 0, false
+	return findByKeyIn(value, wanted, matchNumber)
 }
 
 func unixMillisTimestamp(value float64) string {

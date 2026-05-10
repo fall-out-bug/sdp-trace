@@ -224,6 +224,120 @@ func TestFindUnsafeRawEventAtReasonCodes(t *testing.T) {
 	}
 }
 
+func TestFindStringByKeyIn(t *testing.T) {
+	tests := []struct {
+		name   string
+		value  any
+		wanted map[string]bool
+		want   string
+	}{
+		{
+			name:   "direct hit",
+			value:  map[string]any{"name": "agent"},
+			wanted: map[string]bool{"name": true},
+			want:   "agent",
+		},
+		{
+			name:   "skip empty string and continue in list",
+			value:  []any{map[string]any{"name": "   "}, map[string]any{"name": "agent"}},
+			wanted: map[string]bool{"name": true},
+			want:   "agent",
+		},
+		{
+			name:   "nested map lookup",
+			value:  []any{map[string]any{"meta": map[string]any{"name": "agent"}}},
+			wanted: map[string]bool{"name": true},
+			want:   "agent",
+		},
+		{
+			name:   "case-insensitive key match",
+			value:  map[string]any{"Display": "Agent"},
+			wanted: map[string]bool{"display": true},
+			want:   "Agent",
+		},
+		{
+			name:   "not found",
+			value:  map[string]any{"note": "noop"},
+			wanted: map[string]bool{"name": true},
+			want:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := findStringByKeyIn(tt.value, tt.wanted)
+			if got != tt.want {
+				t.Fatalf("findStringByKeyIn() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFindNumberByKeyIn(t *testing.T) {
+	tests := []struct {
+		name   string
+		value  any
+		wanted map[string]bool
+		want   float64
+		ok     bool
+	}{
+		{
+			name:   "float64 direct",
+			value:  map[string]any{"count": 42.5},
+			wanted: map[string]bool{"count": true},
+			want:   42.5,
+			ok:     true,
+		},
+		{
+			name:   "int direct",
+			value:  map[string]any{"count": int(7)},
+			wanted: map[string]bool{"count": true},
+			want:   7,
+			ok:     true,
+		},
+		{
+			name:   "skip non-number and continue in list",
+			value:  []any{map[string]any{"count": "ignore"}, map[string]any{"count": int(9)}},
+			wanted: map[string]bool{"count": true},
+			want:   9,
+			ok:     true,
+		},
+		{
+			name:   "nested map lookup",
+			value:  map[string]any{"meta": map[string]any{"count": 3.14}},
+			wanted: map[string]bool{"count": true},
+			want:   3.14,
+			ok:     true,
+		},
+		{
+			name:   "case-insensitive key match",
+			value:  map[string]any{"Count": 8},
+			wanted: map[string]bool{"count": true},
+			want:   8,
+			ok:     true,
+		},
+		{
+			name:   "not found",
+			value:  map[string]any{"meta": "noop"},
+			wanted: map[string]bool{"count": true},
+			want:   0,
+			ok:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := findNumberByKeyIn(tt.value, tt.wanted)
+			if ok != tt.ok {
+				t.Fatalf("findNumberByKeyIn() ok = %t, want %t", ok, tt.ok)
+			}
+			if ok && got != tt.want {
+				t.Fatalf("findNumberByKeyIn() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNormalizeOpenCodeRawLineClassifiesFamilies(t *testing.T) {
 	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
 	raw := map[string]any{

@@ -1,12 +1,14 @@
 package witness
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -645,6 +647,41 @@ func TestCustomerPKIPassesWithSignedFreshnessEvidence(t *testing.T) {
 	}
 }
 
+func TestLoadCustomerPublicKeyFromPublicPEM(t *testing.T) {
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	dir := t.TempDir()
+	publicKeyPath := writePublicKey(t, dir, publicKey)
+	loaded, err := loadCustomerPublicKey(ProfileOptions{
+		CustomerPKIPublicKey: publicKeyPath,
+	})
+	if err != nil {
+		t.Fatalf("loadCustomerPublicKey: %v", err)
+	}
+	if !bytes.Equal(loaded, publicKey) {
+		t.Fatalf("public key mismatch")
+	}
+}
+
+func TestLoadCustomerPublicKeyFromX509Certificate(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	certPath := writeX509Certificate(t, t.TempDir(), publicKey, privateKey)
+	loaded, err := loadCustomerPublicKey(ProfileOptions{
+		CustomerPKIPublicCert: certPath,
+	})
+	if err != nil {
+		t.Fatalf("loadCustomerPublicKey: %v", err)
+	}
+	if !bytes.Equal(loaded, publicKey) {
+		t.Fatalf("public key mismatch")
+	}
+}
+
 func TestCustomerPKIRejectsPrivateKeyInput(t *testing.T) {
 	root := writeRunRootWithID(t, "run-1")
 	dir := t.TempDir()
@@ -1047,6 +1084,30 @@ func writePublicKey(t *testing.T, dir string, publicKey ed25519.PublicKey) strin
 	raw := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
 	if err := os.WriteFile(path, raw, 0o644); err != nil {
 		t.Fatalf("write public key: %v", err)
+	}
+	return path
+}
+
+func writeX509Certificate(t *testing.T, dir string, publicKey ed25519.PublicKey, privateKey ed25519.PrivateKey) string {
+	t.Helper()
+	now := time.Now().UTC()
+	template := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		NotBefore:             now.Add(-time.Minute),
+		NotAfter:              now.Add(time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		BasicConstraintsValid: true,
+		SignatureAlgorithm:    x509.PureEd25519,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey, privateKey)
+	if err != nil {
+		t.Fatalf("create certificate: %v", err)
+	}
+	path := filepath.Join(dir, "public-cert.pem")
+	raw := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatalf("write certificate: %v", err)
 	}
 	return path
 }
