@@ -2288,35 +2288,53 @@ func policyAllowsSigner(policy checkpoint.TrustedCheckpointPolicy, signed checkp
 }
 
 func witnessMatchesProtectedInput(witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) bool {
-	if witnessSummary.Kind != "github-actions" || witnessSummary.Status != demo.GatePass || witnessSummary.TrustScope != "ci_witnessed" {
+	if !witnessHasProtectedTrust(witnessSummary) || !witnessSourceMatches(witnessSummary, expected) {
 		return false
 	}
-	if expected.Repository != "" && witnessSummary.Source.Repository != expected.Repository {
+	return witnessArtifactsMatch(witnessSummary.RunArtifacts, expected.RunArtifacts)
+}
+
+func witnessArtifactsMatch(runArtifacts, expectedRunArtifacts []demo.WitnessArtifactDigest) bool {
+	expectedArtifacts := expectedArtifactDigests(expectedRunArtifacts)
+	if len(runArtifacts) != len(expectedArtifacts) {
 		return false
 	}
-	if expected.Ref != "" && witnessSummary.Source.Ref != expected.Ref {
-		return false
-	}
-	if expected.CommitSHA != "" && witnessSummary.Source.CommitSHA != expected.CommitSHA {
-		return false
-	}
-	if expected.RunID != "" && witnessSummary.CIIdentity.RunID != expected.RunID {
-		return false
-	}
-	expectedArtifacts := map[string]string{}
-	for _, artifact := range expected.RunArtifacts {
-		expectedArtifacts[artifact.Path] = artifact.SHA256
-	}
-	if len(expectedArtifacts) > 0 && len(witnessSummary.RunArtifacts) == 0 {
-		return false
-	}
-	for _, artifact := range witnessSummary.RunArtifacts {
-		if expectedArtifacts[artifact.Path] != artifact.SHA256 {
+	for _, artifact := range runArtifacts {
+		if !witnessArtifactMatchesExpectation(artifact, expectedArtifacts) {
 			return false
 		}
-		delete(expectedArtifacts, artifact.Path)
 	}
-	return len(expectedArtifacts) == 0
+	return true
+}
+
+func expectedArtifactDigests(expectedRunArtifacts []demo.WitnessArtifactDigest) map[string]string {
+	expectedArtifacts := map[string]string{}
+	for _, artifact := range expectedRunArtifacts {
+		expectedArtifacts[artifact.Path] = artifact.SHA256
+	}
+	return expectedArtifacts
+}
+
+func witnessArtifactMatchesExpectation(artifact demo.WitnessArtifactDigest, expectedArtifacts map[string]string) bool {
+	expectedSHA, ok := expectedArtifacts[artifact.Path]
+	return ok && expectedSHA == artifact.SHA256
+}
+
+func witnessHasProtectedTrust(witnessSummary demo.WitnessSummary) bool {
+	return witnessSummary.Kind == "github-actions" &&
+		witnessSummary.Status == demo.GatePass &&
+		witnessSummary.TrustScope == "ci_witnessed"
+}
+
+func witnessSourceMatches(witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) bool {
+	return optionalStringMatches(expected.Repository, witnessSummary.Source.Repository) &&
+		optionalStringMatches(expected.Ref, witnessSummary.Source.Ref) &&
+		optionalStringMatches(expected.CommitSHA, witnessSummary.Source.CommitSHA) &&
+		optionalStringMatches(expected.RunID, witnessSummary.CIIdentity.RunID)
+}
+
+func optionalStringMatches(expected, actual string) bool {
+	return expected == "" || actual == expected
 }
 
 func demoWitnessExpectation(target string) (demo.WitnessExpectation, error) {

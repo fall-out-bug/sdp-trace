@@ -1778,6 +1778,83 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 	}
 }
 
+func TestWitnessMatchesProtectedInput(t *testing.T) {
+	witnessSummary := demo.WitnessSummary{
+		Kind:       "github-actions",
+		Status:     demo.GatePass,
+		TrustScope: "ci_witnessed",
+		Source: demo.WitnessSourceIdentity{
+			Repository: "org/repo",
+			Ref:        "refs/heads/main",
+			CommitSHA:  "abc123",
+		},
+		CIIdentity: demo.WitnessCIIdentity{RunID: "run-1"},
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+	expected := demo.WitnessExpectation{
+		Repository: "org/repo",
+		Ref:        "refs/heads/main",
+		CommitSHA:  "abc123",
+		RunID:      "run-1",
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+	cases := []struct {
+		name   string
+		mutate func(*demo.WitnessSummary, *demo.WitnessExpectation)
+		want   bool
+	}{
+		{name: "match", want: true},
+		{name: "trust", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.TrustScope = "local"
+		}},
+		{name: "repository", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.Source.Repository = "other/repo"
+		}},
+		{name: "ref", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.Source.Ref = "refs/heads/feature"
+		}},
+		{name: "commit", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.Source.CommitSHA = "def456"
+		}},
+		{name: "run", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.CIIdentity.RunID = "run-2"
+		}},
+		{name: "missing expected artifact", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			expectation.RunArtifacts = append(expectation.RunArtifacts, demo.WitnessArtifactDigest{Path: "002/run.json", SHA256: "sha256-b"})
+		}},
+		{name: "mismatched artifact", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.RunArtifacts[0].SHA256 = "sha256-b"
+		}},
+		{name: "empty artifact expectation keeps existing behavior", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			expectation.RunArtifacts = nil
+		}},
+		{name: "empty artifact expectation and empty witness artifacts match", mutate: func(summary *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			summary.RunArtifacts = nil
+			expectation.RunArtifacts = nil
+		}, want: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			summary := witnessSummary
+			summary.RunArtifacts = append([]demo.WitnessArtifactDigest(nil), witnessSummary.RunArtifacts...)
+			expectation := expected
+			expectation.RunArtifacts = append([]demo.WitnessArtifactDigest(nil), expected.RunArtifacts...)
+			if tc.mutate != nil {
+				tc.mutate(&summary, &expectation)
+			}
+			if got := witnessMatchesProtectedInput(summary, expectation); got != tc.want {
+				t.Fatalf("match = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestOverrideRequestAppendsFlightRecorderEvent(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	runDir := filepath.Join(t.TempDir(), "run")
