@@ -226,41 +226,11 @@ func Relay(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stde
 
 func ImportTranscript(opts ImportOptions) (Trace, error) {
 	opts = normalizeImport(opts)
-	if opts.Source != SourcePreclassifiedTranscript {
-		return Trace{}, errors.New("interaction import-transcript requires --source preclassified-transcript-import")
-	}
-	if err := validateSafeID("task_id", opts.TaskID); err != nil {
+	if err := validateImportOptions(opts); err != nil {
 		return Trace{}, err
 	}
-	if strings.TrimSpace(opts.EventsJSONL) == "" {
-		return Trace{}, errors.New("interaction import-transcript requires --events-jsonl")
-	}
-	events, err := readJSONLEvents(opts.EventsJSONL)
+	events, err := importTranscriptEvents(opts)
 	if err != nil {
-		return Trace{}, err
-	}
-	if len(events) == 0 {
-		return Trace{}, errors.New("interaction import-transcript requires at least one event")
-	}
-	for i := range events {
-		if events[i].TaskID != opts.TaskID {
-			return Trace{}, fmt.Errorf("event task_id %q does not match import task_id", events[i].TaskID)
-		}
-		if events[i].Source.SourceType == SourceAgentReported {
-			return Trace{}, errors.New("agent-reported interaction is not accepted as event evidence")
-		}
-		if events[i].Source.SourceType != "" && events[i].Source.SourceType != SourcePreclassifiedTranscript {
-			return Trace{}, fmt.Errorf("unsupported source_type %q", events[i].Source.SourceType)
-		}
-		events[i].Source.SourceType = SourcePreclassifiedTranscript
-		if opts.SourceRef != "" {
-			events[i].Source.SourceRef = opts.SourceRef
-		}
-		if err := ValidateEvent(events[i]); err != nil {
-			return Trace{}, err
-		}
-	}
-	if err := validateOrdering(events); err != nil {
 		return Trace{}, err
 	}
 	trace := NewTrace(opts.TaskID, SourcePreclassifiedTranscript, events, opts.Now)
@@ -268,6 +238,73 @@ func ImportTranscript(opts ImportOptions) (Trace, error) {
 		return Trace{}, err
 	}
 	return trace, nil
+}
+
+func validateImportOptions(opts ImportOptions) error {
+	if opts.Source != SourcePreclassifiedTranscript {
+		return errors.New("interaction import-transcript requires --source preclassified-transcript-import")
+	}
+	if err := validateSafeID("task_id", opts.TaskID); err != nil {
+		return err
+	}
+	if strings.TrimSpace(opts.EventsJSONL) == "" {
+		return errors.New("interaction import-transcript requires --events-jsonl")
+	}
+	return nil
+}
+
+func importTranscriptEvents(opts ImportOptions) ([]Event, error) {
+	events, err := readJSONLEvents(opts.EventsJSONL)
+	if err != nil {
+		return nil, err
+	}
+	if err := normalizeTranscriptEvents(events, opts); err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+func normalizeTranscriptEvents(events []Event, opts ImportOptions) error {
+	if len(events) == 0 {
+		return errors.New("interaction import-transcript requires at least one event")
+	}
+	for i := range events {
+		if err := normalizeTranscriptEvent(&events[i], opts); err != nil {
+			return err
+		}
+	}
+	return validateOrdering(events)
+}
+
+func normalizeTranscriptEvent(event *Event, opts ImportOptions) error {
+	if err := validateTranscriptEventTask(*event, opts); err != nil {
+		return err
+	}
+	if err := validateTranscriptEventSource(*event); err != nil {
+		return err
+	}
+	event.Source.SourceType = SourcePreclassifiedTranscript
+	if opts.SourceRef != "" {
+		event.Source.SourceRef = opts.SourceRef
+	}
+	return ValidateEvent(*event)
+}
+
+func validateTranscriptEventTask(event Event, opts ImportOptions) error {
+	if event.TaskID != opts.TaskID {
+		return fmt.Errorf("event task_id %q does not match import task_id", event.TaskID)
+	}
+	return nil
+}
+
+func validateTranscriptEventSource(event Event) error {
+	if event.Source.SourceType == SourceAgentReported {
+		return errors.New("agent-reported interaction is not accepted as event evidence")
+	}
+	if event.Source.SourceType != "" && event.Source.SourceType != SourcePreclassifiedTranscript {
+		return fmt.Errorf("unsupported source_type %q", event.Source.SourceType)
+	}
+	return nil
 }
 
 func NewObservedEvent(opts RelayOptions, body []byte, sequence int) (Event, error) {

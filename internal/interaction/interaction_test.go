@@ -122,6 +122,38 @@ func TestImportTranscriptRejectsAgentReportedAndNonMonotonicOrdering(t *testing.
 	}
 }
 
+func TestValidateImportOptions(t *testing.T) {
+	valid := ImportOptions{
+		TaskID:      "task-1",
+		Source:      SourcePreclassifiedTranscript,
+		EventsJSONL: "events.jsonl",
+	}
+	for name, mutate := range map[string]func(*ImportOptions){
+		"source": func(opts *ImportOptions) {
+			opts.Source = SourceObservedControlChannel
+		},
+		"task": func(opts *ImportOptions) {
+			opts.TaskID = "../task"
+		},
+		"events": func(opts *ImportOptions) {
+			opts.EventsJSONL = " "
+		},
+		"valid": func(opts *ImportOptions) {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			opts := valid
+			mutate(&opts)
+			err := validateImportOptions(opts)
+			if name == "valid" && err != nil {
+				t.Fatalf("valid options rejected: %v", err)
+			}
+			if name != "valid" && err == nil {
+				t.Fatalf("expected invalid options to be rejected")
+			}
+		})
+	}
+}
+
 func TestImportTranscriptSuccessSummarizesCatalogMetrics(t *testing.T) {
 	dir := t.TempDir()
 	eventsPath := filepath.Join(dir, "events.jsonl")
