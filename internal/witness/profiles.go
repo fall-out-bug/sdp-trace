@@ -737,6 +737,10 @@ func runIDsFromRoot(runsRoot string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return runIDsFromDirs(runDirs)
+}
+
+func runIDsFromDirs(runDirs []string) ([]string, error) {
 	runIDs := make([]string, 0, len(runDirs))
 	for _, runDir := range runDirs {
 		runID, ok, err := nonEmptyRunIDFromDir(runDir)
@@ -838,9 +842,16 @@ func unsafeInputPath(path string) bool {
 }
 
 func unsafeInputPathText(path, lower string) bool {
-	return strings.TrimSpace(path) == "" ||
-		strings.Contains(path, "\x00") ||
-		strings.Contains(lower, "://") ||
+	return emptyOrNULPath(path) ||
+		unsafeLowerInputPathText(lower)
+}
+
+func emptyOrNULPath(path string) bool {
+	return strings.TrimSpace(path) == "" || strings.Contains(path, "\x00")
+}
+
+func unsafeLowerInputPathText(lower string) bool {
+	return strings.Contains(lower, "://") ||
 		strings.Contains(lower, "..") ||
 		strings.Contains(lower, "private.key")
 }

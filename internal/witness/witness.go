@@ -455,9 +455,16 @@ func appendStringItem(parts []string, item any) []string {
 }
 
 func claimsMatchEnvironment(claims OIDCClaims, env map[string]string) bool {
-	return claims.Issuer == githubOIDCIssuer &&
-		claims.Audience == "sdp-trace" &&
-		claims.Repository == env["GITHUB_REPOSITORY"] &&
+	return claimsTrustContextMatches(claims) &&
+		claimsGitContextMatches(claims, env)
+}
+
+func claimsTrustContextMatches(claims OIDCClaims) bool {
+	return claims.Issuer == githubOIDCIssuer && claims.Audience == "sdp-trace"
+}
+
+func claimsGitContextMatches(claims OIDCClaims, env map[string]string) bool {
+	return claims.Repository == env["GITHUB_REPOSITORY"] &&
 		claims.Ref == env["GITHUB_REF"] &&
 		claims.SHA == env["GITHUB_SHA"]
 }

@@ -314,16 +314,23 @@ func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) r
 }
 
 func ingestRepositoryChecks(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) repositoryIngest {
-	if invalidRepositoryLabels(repo) {
-		return refusedInput("unsafe_label", "cannot_verify_input", "", false)
-	}
-	if invalidRepositoryInputPaths(repo) {
-		return refusedInput("malformed_input", "cannot_verify_input", "", false)
+	if refused, ok := refusedRepositoryInput(repo); ok {
+		return refused
 	}
 	if hasCutoff && isStale(repo.InputObservedAt, cutoff) {
 		return refusedInput("stale_input", "stale_input", "", true)
 	}
 	return repositoryIngest{trusted: true}
+}
+
+func refusedRepositoryInput(repo RepositoryWindow) (repositoryIngest, bool) {
+	if invalidRepositoryLabels(repo) {
+		return refusedInput("unsafe_label", "cannot_verify_input", "", false), true
+	}
+	if invalidRepositoryInputPaths(repo) {
+		return refusedInput("malformed_input", "cannot_verify_input", "", false), true
+	}
+	return repositoryIngest{}, false
 }
 
 func invalidRepositoryLabels(repo RepositoryWindow) bool {
@@ -1097,9 +1104,13 @@ func applyMetricCount(counts *metricCount, def metricDef, row query.QueryPackRow
 	if metricNotAssessed(def, row, hasSignal) {
 		counts.notAssessed++
 	}
-	if def.source == "posture_signal" && !hasSignal {
+	if missingPostureSignalMetric(def, hasSignal) {
 		counts.sourceFieldState = "not_assessed"
 	}
+}
+
+func missingPostureSignalMetric(def metricDef, hasSignal bool) bool {
+	return def.source == "posture_signal" && !hasSignal
 }
 
 func metricMatches(metricID string, row query.QueryPackRow, signal PostureSignal, hasSignal bool) bool {
@@ -1253,7 +1264,7 @@ func dimensionKey(repo RepositoryWindow, keys []string) (string, map[string]stri
 }
 
 func validateRepoLabels(repo RepositoryWindow) error {
-	if !safeLabel(repo.InputID) || !safeLabel(repo.TimeWindow) {
+	if unsafeInputLabel(repo) {
 		return fmt.Errorf("unsafe label")
 	}
 	labels := map[string]string{
@@ -1269,6 +1280,10 @@ func validateRepoLabels(repo RepositoryWindow) error {
 		}
 	}
 	return nil
+}
+
+func unsafeInputLabel(repo RepositoryWindow) bool {
+	return !safeLabel(repo.InputID) || !safeLabel(repo.TimeWindow)
 }
 
 func safeLabel(value string) bool {

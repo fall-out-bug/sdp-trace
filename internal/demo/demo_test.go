@@ -124,11 +124,49 @@ func TestCRAPHelperEdges(t *testing.T) {
 	if _, ok := payloadAnyInt(json.Number("bad")); ok {
 		t.Fatalf("bad json number parsed")
 	}
+	if got, ok := payloadAnyInt(7); !ok || got != 7 {
+		t.Fatalf("int payload = %d ok=%t", got, ok)
+	}
+	if got, ok := payloadAnyInt(7.9); !ok || got != 7 {
+		t.Fatalf("float payload = %d ok=%t", got, ok)
+	}
+	if _, ok := payloadAnyInt("7"); ok {
+		t.Fatalf("string payload parsed as int")
+	}
 	if got := stringItems([]any{"a", 7, "b"}); strings.Join(got, ",") != "a,b" {
 		t.Fatalf("stringItems = %v", got)
 	}
 	if condition := protectedCIWitnessCondition(ProtectedGateInput{}); condition.State != GateCannotVerify {
 		t.Fatalf("missing witness condition = %+v", condition)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{
+		Witness: &WitnessSummary{
+			Source:     WitnessSourceIdentity{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "wrong"},
+			CIIdentity: WitnessCIIdentity{RunID: "run"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha", RunID: "run"},
+	}); condition.State != GateFail || condition.ReasonCode != "ci_witness_mismatch" {
+		t.Fatalf("mismatch witness condition = %+v", condition)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{
+		Witness: &WitnessSummary{
+			Source: WitnessSourceIdentity{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha", RunID: "run"},
+	}); condition.State != GateCannotVerify || condition.ReasonCode != "ci_witness_incomplete" {
+		t.Fatalf("incomplete witness condition = %+v", condition)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{
+		Witness: &WitnessSummary{
+			Source:     WitnessSourceIdentity{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha"},
+			CIIdentity: WitnessCIIdentity{RunID: "run"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha", RunID: "run"},
+	}); condition.State != GatePass || condition.ReasonCode != "ci_witness_bound" {
+		t.Fatalf("passing witness condition = %+v", condition)
+	}
+	if got := applyOptionalWitness(GateResult{CIWitnessGate: GateCannotVerify}, "", []string{"witness.json"}); got.CIWitnessGate != GateCannotVerify || len(got.Reasons) == 0 {
+		t.Fatalf("invalid target witness result = %+v", got)
 	}
 }
 

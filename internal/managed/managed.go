@@ -480,7 +480,7 @@ func missingManagedWitnessCondition(run RunEvidence, witness Witness) (Condition
 	switch {
 	case witness.WitnessID == "":
 		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness evidence is required", "Supply managed witness evidence bound to the run."), true
-	case witness.Status != StatePass || witness.FreshnessState != StatePass:
+	case missingManagedWitnessPassState(witness):
 		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness is missing pass/freshness state", "Supply fresh managed witness evidence."), true
 	case missingWitnessArtifacts(run, witness):
 		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness artifact binding is required", "Supply managed witness evidence with output artifact digests."), true
@@ -489,24 +489,42 @@ func missingManagedWitnessCondition(run RunEvidence, witness Witness) (Condition
 	}
 }
 
+func missingManagedWitnessPassState(witness Witness) bool {
+	return witness.Status != StatePass || witness.FreshnessState != StatePass
+}
+
 func missingWitnessArtifacts(run RunEvidence, witness Witness) bool {
 	return len(run.OutputArtifacts) == 0 || len(witness.ArtifactDigests) == 0
 }
 
 func managedWitnessMismatches(input Input) bool {
 	boundary := input.Run.ManagedBoundaryEnrolled
-	return boundary == nil ||
-		!witnessMatchesRun(input.Witness, input.Run) ||
+	if boundary == nil {
+		return true
+	}
+	return managedWitnessBindingMismatch(input, *boundary)
+}
+
+func managedWitnessBindingMismatch(input Input, boundary ManagedBoundaryEnrolled) bool {
+	return !witnessMatchesRun(input.Witness, input.Run) ||
 		!witnessMatchesAuthority(input.Witness, input.Policy, input.Registry) ||
-		!witnessMatchesEvents(input.Witness, input.Run, *boundary) ||
+		!witnessMatchesEvents(input.Witness, input.Run, boundary) ||
 		!artifactsMatch(input.Run.OutputArtifacts, input.Witness.ArtifactDigests)
 }
 
 func witnessMatchesRun(witness Witness, run RunEvidence) bool {
+	return witnessRunIdentityMatches(witness, run) &&
+		witnessRunTraceMatches(witness, run)
+}
+
+func witnessRunIdentityMatches(witness Witness, run RunEvidence) bool {
 	return witness.RunID == run.RunID &&
 		witness.RunNonce == run.RunNonce &&
-		witness.SourceCommit == run.SourceCommit &&
-		witness.ChainHead == run.ChainHead &&
+		witness.SourceCommit == run.SourceCommit
+}
+
+func witnessRunTraceMatches(witness Witness, run RunEvidence) bool {
+	return witness.ChainHead == run.ChainHead &&
 		witness.EventCount == run.EventCount
 }
 
@@ -757,13 +775,17 @@ func nextActions(conditions []Condition) []string {
 	out := []string{}
 	seen := map[string]bool{}
 	for _, condition := range ordered {
-		if condition.State == StatePass || condition.NextAction == "" || seen[condition.NextAction] {
+		if skipNextAction(condition, seen) {
 			continue
 		}
 		seen[condition.NextAction] = true
 		out = append(out, condition.NextAction)
 	}
 	return out
+}
+
+func skipNextAction(condition Condition, seen map[string]bool) bool {
+	return condition.State == StatePass || condition.NextAction == "" || seen[condition.NextAction]
 }
 
 func orderConditions(conditions []Condition) []Condition {

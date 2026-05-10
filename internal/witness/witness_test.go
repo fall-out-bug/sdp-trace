@@ -79,6 +79,30 @@ func TestCRAPHelperEdges(t *testing.T) {
 	if strings.Join(runIDs, ",") != "run-1,run-2" {
 		t.Fatalf("runIDs = %v", runIDs)
 	}
+	emptyIDDir := filepath.Join(t.TempDir(), "empty-id")
+	if err := os.MkdirAll(emptyIDDir, 0o755); err != nil {
+		t.Fatalf("mkdir empty-id: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(emptyIDDir, "run.json"), []byte(`{"id":""}`), 0o644); err != nil {
+		t.Fatalf("write empty run: %v", err)
+	}
+	runIDs, err = runIDsFromDirs([]string{emptyIDDir})
+	if err != nil {
+		t.Fatalf("empty run id: %v", err)
+	}
+	if len(runIDs) != 0 {
+		t.Fatalf("empty run id included: %v", runIDs)
+	}
+	badRunDir := filepath.Join(t.TempDir(), "bad-run")
+	if err := os.MkdirAll(badRunDir, 0o755); err != nil {
+		t.Fatalf("mkdir bad-run: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(badRunDir, "run.json"), []byte(`{`), 0o644); err != nil {
+		t.Fatalf("write bad run: %v", err)
+	}
+	if _, err := runIDsFromDirs([]string{badRunDir}); err == nil {
+		t.Fatalf("malformed run.json accepted")
+	}
 }
 
 func TestMissingCustomerPKIInputsIncludesKeyChoice(t *testing.T) {

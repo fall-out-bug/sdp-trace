@@ -650,20 +650,23 @@ func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
 		return missingCIWitnessCondition()
 	}
 	state, reasons := witnessBindingState(*input.Witness, input.WitnessExpectation)
-	code := "ci_witness_bound"
-	next := ""
-	reason := "CI witness source and artifact bindings match protected profile input"
-	if state != GatePass {
-		reason = strings.Join(reasons, "; ")
-		if state == GateFail {
-			code = "ci_witness_mismatch"
-			next = "Fix the CI witness source or artifact binding mismatch."
-		} else {
-			code = "ci_witness_incomplete"
-			next = "Supply complete CI witness source and artifact bindings."
-		}
-	}
+	code, reason, next := protectedCIWitnessFields(state, reasons)
 	return ProtectedCondition{ID: "ci_witness_bound", State: state, ReasonCode: code, Reason: reason, NextAction: next}
+}
+
+func protectedCIWitnessFields(state string, reasons []string) (string, string, string) {
+	if state == GatePass {
+		return "ci_witness_bound", "CI witness source and artifact bindings match protected profile input", ""
+	}
+	return protectedCIWitnessNonPassFields(state, reasons)
+}
+
+func protectedCIWitnessNonPassFields(state string, reasons []string) (string, string, string) {
+	reason := strings.Join(reasons, "; ")
+	if state == GateFail {
+		return "ci_witness_mismatch", reason, "Fix the CI witness source or artifact binding mismatch."
+	}
+	return "ci_witness_incomplete", reason, "Supply complete CI witness source and artifact bindings."
 }
 
 func missingCIWitnessCondition() ProtectedCondition {
@@ -1220,25 +1223,33 @@ func gateMode(contract trace.Contract) string {
 }
 
 func gateConditions(result GateResult) []GateCondition {
-	requiredRunsState := GatePass
-	requiredEvidenceState := GatePass
-	for _, run := range result.RequiredRuns {
-		if run.State != GatePass {
-			requiredRunsState = worseGateState(requiredRunsState, run.State)
-		}
-	}
-	for _, id := range result.RequiredEvidence {
-		if !containsString(result.ObservedEvidence, id) {
-			requiredEvidenceState = GateFail
-			break
-		}
-	}
+	requiredRunsState := requiredRunsGateState(result.RequiredRuns)
+	requiredEvidenceState := requiredEvidenceGateState(result.RequiredEvidence, result.ObservedEvidence)
 	return []GateCondition{
 		{ID: "all_required_runs_present", State: requiredRunsState, Reason: "required run observations are evaluated from contract declarations"},
 		{ID: "all_required_evidence_observed", State: requiredEvidenceState, Reason: "contract evidence ids are matched against observed run events"},
 		{ID: "ci_witness_bound_when_required", State: result.CIWitnessGate, Reason: "CI witness binding is advisory in Block 14"},
 		{ID: "audit_grade_external_witness_present", State: result.AuditGradeGate, Reason: "external witness profile is not implemented in Block 14"},
 	}
+}
+
+func requiredRunsGateState(requiredRuns []RequiredRunResult) string {
+	state := GatePass
+	for _, run := range requiredRuns {
+		if run.State != GatePass {
+			state = worseGateState(state, run.State)
+		}
+	}
+	return state
+}
+
+func requiredEvidenceGateState(requiredEvidence, observedEvidence []string) string {
+	for _, id := range requiredEvidence {
+		if !containsString(observedEvidence, id) {
+			return GateFail
+		}
+	}
+	return GatePass
 }
 
 func applyWitness(result GateResult, witnessPath string) GateResult {
@@ -1341,6 +1352,10 @@ func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (stri
 			return state, reasons
 		}
 	}
+	return missingWitnessArtifactState(expectedArtifacts, seenArtifacts)
+}
+
+func missingWitnessArtifactState(expectedArtifacts map[string]string, seenArtifacts map[string]bool) (string, []string) {
 	for path := range expectedArtifacts {
 		if !seenArtifacts[path] {
 			return GateCannotVerify, []string{fmt.Sprintf("ci witness artifact %s is missing from witness", path)}
@@ -1547,11 +1562,15 @@ func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
 func observedEvidenceKinds(rows []RunRow) map[string]bool {
 	observed := map[string]bool{}
 	for _, row := range rows {
-		if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
+		if rowHasObservedEvidenceKind(row) {
 			observed[row.Kind] = true
 		}
 	}
 	return observed
+}
+
+func rowHasObservedEvidenceKind(row RunRow) bool {
+	return row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved
 }
 
 func buildTimeline(rows []RunRow) string {
