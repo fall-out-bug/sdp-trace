@@ -18,7 +18,7 @@
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
 | Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `cmd/sdp-trace.gateExitCode`, `cmd/sdp-trace.runAssessExplain`, `cmd/sdp-trace.witnessMatchesProtectedInput`, `cmd/sdp-trace.runGateExplain`, `cmd/sdp-trace.runValidateFixtures`, `cmd/sdp-trace.runPRReviewCheck`, `cmd/sdp-trace.runWitness`, `cmd/sdp-trace.(*flagSet).parse`, `cmd/sdp-trace.runQueryPack`, `cmd/sdp-trace.runProtectedGate`, `cmd/sdp-trace.runAssess`, `internal/adaptercapture.runBindingCondition`, `internal/adaptercapture.overclaimCondition`, `internal/authority.evaluateAction`, `internal/authority.validateEnvelope`, `internal/ciartifact.evaluateFamily`, `internal/ciartifact.safeIdentityToken`, `internal/harnessobs.Observe`, `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/harnessobs.safeOutDir`, `internal/harnessobs.findUnsafeRawEventAt`, `internal/harnessobs.findUnsafeAt`, `internal/harnessobs.validateEvent`, `internal/harnessobs.normalizeRawEvents`, `internal/harnessobs.shellFields`, `internal/harnessobs.safeParentDir`, `internal/harnessobs.Validate`, `internal/harnessobs.safeExistingDir`, `internal/harnessobs.safeExistingFile`, `internal/harnessobs.validateProfile`, `internal/managed.witnessCondition`, `internal/managed.capabilityCondition`, `internal/posture.Build`, `internal/posture.validateMetricRowShape`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ImportTranscript`, `internal/interaction.ValidateEvent`, `internal/interaction.SummarizeTrace`, `internal/contract.(ExpectedEvidenceContract).Validate`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/prreview.validateProfile`, `internal/prreview.citationResolvable`, `internal/recorder.Run`, `internal/recorder.runCommand`, `internal/repoobserver.writeTarget`, `internal/verifier.VerifyRun`, `internal/verifier.verifyChain`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, `internal/witness.validateCIEnvelopeStates`, `internal/witness.validateCustomerPKIAuthority`, `internal/witness.BuildCIEnvelopeProfile`, `internal/query.safeToken`, `internal/forensic.rawReferenceCondition`, `internal/forensic.policyCondition`, `internal/forensic.prewriteCondition`, `internal/demo.EvaluateGate`, `internal/demo.witnessBindingState`, and `internal/telemetry.unsafeValue` were decomposed below 15. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `cmd/sdp-trace` (71.7%), `authority` (89.0%), `adaptercapture` (84.3%), `ciartifact` (92.9%), `contract` (89.1%), `demo` (74.4%), `forensic` (90.4%), `harnessobs` (80.5%), `interaction` (69.7%), `managed` (88.9%), `posture` (89.1%), `prreview` (78.0%), `query` (92.0%), `repoobserver` (71.7%), `trace` (62.2%), `verifier` (83.4%), and `witness` (78.2%) were improved. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `cmd/sdp-trace` (71.7%), `authority` (89.0%), `adaptercapture` (84.3%), `checkpoint` (77.2%), `ciartifact` (92.9%), `contract` (89.1%), `demo` (79.9%), `forensic` (90.4%), `harnessobs` (80.5%), `interaction` (69.7%), `managed` (88.9%), `posture` (89.4%), `prreview` (79.6%), `query` (92.0%), `repoobserver` (71.7%), `trace` (62.2%), `verifier` (83.4%), and `witness` (78.2%) were improved. |
 
 ## Command Evidence
 
@@ -28,7 +28,7 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-batch9-full.out` | pass | Total coverage: 77.7%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-batch10-full.out` | pass | Total coverage: 78.4%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
@@ -64,7 +64,7 @@
 | `gocyclo -over 14 internal/ciartifact/ciartifact.go` | pass | `internal/ciartifact.evaluateFamily` was decomposed below 15; no production ciartifact function exceeds 14. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-batch9-full-func.txt -gocyclo /tmp/sdp-trace-batch9-full-gocyclo.txt -threshold 5` | fail_assessed_gap | 336 functions exceed strict CRAP threshold 5; `internal/witness.loadCustomerPublicKey`, `internal/prreview.safeID`, `internal/posture.unsafeOutput`, `internal/harnessobs.findStringByKeyIn`, `internal/harnessobs.findNumberByKeyIn`, and their extracted helpers are now below threshold, but the repo-wide strict target remains open. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-batch10-full-func.txt -gocyclo /tmp/sdp-trace-batch10-full-gocyclo.txt -threshold 5` | fail_assessed_gap | 329 functions exceed strict CRAP threshold 5; `internal/prreview.RunReview`, `internal/posture.verifyDigestManifest`, `internal/demo.overrideRequestsFromEvents`, `internal/checkpoint.applyPolicy`, and their extracted helpers are now below threshold, but the repo-wide strict target remains open. |
 
 ## Coverage Delta
 
@@ -76,10 +76,10 @@ Baseline from intake:
 | `internal/export` | 0.0% | 83.3% |
 | `internal/policy` | 0.0% | 71.7% |
 | `internal/trace` | 2.9% | 62.2% |
-| `internal/posture` | 72.4% | 89.1% |
+| `internal/posture` | 72.4% | 89.4% |
 | `internal/harnessobs` | 42.7% | 80.5% |
 | `internal/verifier` | 51.1% | 83.4% |
-| total | 64.0% | 77.7% |
+| total | 64.0% | 78.4% |
 
 ## CRAP Baseline Summary
 
@@ -99,8 +99,8 @@ Top current CRAP/complexity findings:
 | Function | Cyclo | Coverage | CRAP | State |
 |---|---:|---:|---:|---|
 | `cmd/sdp-trace.run` | 29 | 91.2% | 29.57 | assessed_gap |
-| `internal/prreview.RunReview` | 10 | 73.9% | 11.78 | assessed_gap |
-| `internal/posture.verifyDigestManifest` | 10 | 77.3% | 11.17 | assessed_gap |
+| `internal/posture.validateMovementRow` | 10 | 66.7% | 13.69 | assessed_gap |
+| `internal/posture.validateExportCollections` | 10 | 57.1% | 17.90 | assessed_gap |
 
 ## Ratchet
 
@@ -115,12 +115,12 @@ Immediate ratchet now enforced or measurable:
 Next decomposition candidates before stronger MVP-readiness claim:
 
 1. `cmd/sdp-trace.run`
-2. `internal/prreview.RunReview`
-3. `internal/posture.verifyDigestManifest`
-4. `internal/posture.validateMovementRow`
-5. `internal/posture.validateExportCollections`
-6. `internal/demo.overrideRequestsFromEvents`
-7. `internal/checkpoint.applyPolicy`
+2. `internal/posture.validateMovementRow`
+3. `internal/posture.validateExportCollections`
+4. `internal/posture.validateExportRows`
+5. `internal/posture.ingestRepository`
+6. `internal/forensic.validateRawReference`
+7. `internal/demo.evaluateRequiredRuns`
 
 ## External Evidence Boundary
 
@@ -185,6 +185,7 @@ this draft PR must not be treated as approved to merge.
 | Batch 7-9 code/correctness review | `zai/glm-5.1` | APPROVE | Review found no blocking findings. Minor mutable `sourceStateMap` concern accepted and fixed by localizing the map inside `mapSourceState`; whitespace-trim note recorded as non-blocking safe behavior. |
 | Batch 7-9 trace/evidence review | `kimi-coding/k2p6` | APPROVE | Review approved ledger honesty: repo-wide strict CRAP remains `assessed_gap`, command evidence is cited consistently, and merge approval remains `not_assessed`. |
 | Batch 7-9 requirements-vs-implementation review | `openrouter/qwen/qwen3.6-plus` | FALSE_POSITIVE | Reviewer reported a `runQueryPack` fall-through regression. Full-file check shows `runQueryPack` returns `runQueryPackBuild(args, stderr)`, and `go test ./cmd/sdp-trace -run TestQueryPack -count=1` passed; finding rejected. |
+| PR review/posture/demo/checkpoint batch | `gpt-5.3-codex-spark` implementation subagents | IMPLEMENTED | Spark workers decomposed `internal/prreview.RunReview`, `internal/posture.verifyDigestManifest`, `internal/demo.overrideRequestsFromEvents`, and `internal/checkpoint.applyPolicy`; parent ported the posture patch into the correct worktree after the worker edited the base checkout, reduced checkpoint/demo extracted helpers below strict CRAP target, reran focused package tests, and recorded batch CRAP/coverage evidence. Full PR-level review remains pending for the next larger integration slice. |
 
 Unusable attempts:
 

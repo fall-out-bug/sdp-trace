@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -11,6 +12,63 @@ import (
 	"testing"
 	"time"
 )
+
+func TestVerifyDigestManifest(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+
+	actual, err := verifyDigestManifest(digestManifest, queryPack)
+	if err != nil {
+		t.Fatalf("verifyDigestManifest: %v", err)
+	}
+
+	payload, err := os.ReadFile(queryPack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(payload)
+	want := hex.EncodeToString(sum[:])
+	if actual != want {
+		t.Fatalf("digest = %s, want %s", actual, want)
+	}
+}
+
+func TestVerifyDigestManifestMissingQueryPackArtifact(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+	var digest DigestManifest
+	readJSONFixture(t, digestManifest, &digest)
+	digest.Artifacts = nil
+	writeJSON(t, digestManifest, digest)
+
+	_, err := verifyDigestManifest(digestManifest, queryPack)
+	if !errors.Is(err, errMissingRequired) {
+		t.Fatalf("expected errMissingRequired, got %v", err)
+	}
+}
+
+func TestVerifyDigestManifestRejectsMismatchedQueryPackPath(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+	var digest DigestManifest
+	readJSONFixture(t, digestManifest, &digest)
+	digest.Artifacts[0].Path = "other-query-pack.json"
+	writeJSON(t, digestManifest, digest)
+
+	_, err := verifyDigestManifest(digestManifest, queryPack)
+	if !errors.Is(err, errUnsafePath) {
+		t.Fatalf("expected errUnsafePath, got %v", err)
+	}
+}
 
 func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 	root := t.TempDir()

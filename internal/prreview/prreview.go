@@ -430,35 +430,60 @@ func RunReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *
 	if err := validateProfile(profile); err != nil {
 		return RunSet{}, nil, err
 	}
+	opts = normalizeRunOptions(opts)
+	if opts.Preview {
+		return RunSet{}, preview(packet, profile), nil
+	}
+	return runReview(packet, profile, opts)
+}
+
+func normalizeRunOptions(opts RunOptions) RunOptions {
 	if opts.Now.IsZero() {
 		opts.Now = time.Now().UTC()
 	}
 	if opts.WorkDir == "" {
 		opts.WorkDir = "."
 	}
-	if opts.Preview {
-		return RunSet{}, preview(packet, profile), nil
-	}
-	if err := ensureNewDir(opts.OutDir); err != nil {
+	return opts
+}
+
+func runReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *RunPreview, error) {
+	rawDir, err := prepareRunDirectories(opts.OutDir)
+	if err != nil {
 		return RunSet{}, nil, err
 	}
-	rawDir := filepath.Join(opts.OutDir, "raw")
-	if err := os.MkdirAll(rawDir, 0o755); err != nil {
+	results, err := runReviewRoles(packet, profile.Roles, opts, rawDir)
+	if err != nil {
 		return RunSet{}, nil, err
-	}
-	results := make([]ReviewerResult, 0, len(profile.Roles))
-	for _, role := range profile.Roles {
-		result, err := runRole(packet, role, opts, rawDir)
-		if err != nil {
-			return RunSet{}, nil, err
-		}
-		results = append(results, result)
 	}
 	runSet := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packet.PacketDigest, Results: results}
 	if err := WriteJSON(filepath.Join(opts.OutDir, "results.json"), runSet); err != nil {
 		return RunSet{}, nil, err
 	}
 	return runSet, nil, nil
+}
+
+func prepareRunDirectories(outDir string) (string, error) {
+	if err := ensureNewDir(outDir); err != nil {
+		return "", err
+	}
+	rawDir := filepath.Join(outDir, "raw")
+	if err := os.MkdirAll(rawDir, 0o755); err != nil {
+		return "", err
+	}
+	return rawDir, nil
+}
+
+func runReviewRoles(packet Packet, roles []ReviewRole, opts RunOptions, rawDir string) ([]ReviewerResult, error) {
+	results := make([]ReviewerResult, 0, len(roles))
+	for _, role := range roles {
+		result, err := runRole(packet, role, opts, rawDir)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
 }
 
 func SynthesizeLedger(packet Packet, runs RunSet, existing *Ledger) Ledger {

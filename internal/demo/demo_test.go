@@ -457,6 +457,126 @@ func TestProtectedGateValidOverrideDoesNotUpgradeFailure(t *testing.T) {
 	}
 }
 
+func TestOverrideRequestsFromEvents(t *testing.T) {
+	contract := trace.Contract{
+		RequiredRuns: []trace.RequiredRun{
+			{ID: "known-run"},
+		},
+		RequiredEvidence: []trace.EvidenceRequirement{
+			{ID: "known-evidence"},
+		},
+	}
+	t.Run("builds only override events and sorts by created_at and id", func(t *testing.T) {
+		events := []trace.Event{
+			{
+				EventType: trace.EventCommandStarted,
+				EventPayload: map[string]any{
+					"override_id": "not-used",
+				},
+			},
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "b",
+					"producer":     "policy",
+					"origin":       "policy-service",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-2",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+				},
+			},
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "a",
+					"producer":     "policy",
+					"origin":       "policy-service",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-1",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+				},
+			},
+		}
+
+		got := overrideRequestsFromEvents(events, contract)
+		if len(got) != 2 {
+			t.Fatalf("got %d overrides", len(got))
+		}
+		if got[0].OverrideID != "a" || got[1].OverrideID != "b" {
+			t.Fatalf("sorting order mismatch: %+v", got)
+		}
+		if got[0].State != GatePass || got[1].State != GatePass {
+			t.Fatalf("expected pass state, got %+v", got)
+		}
+	})
+
+	t.Run("marks missing required fields as cannot_verify", func(t *testing.T) {
+		events := []trace.Event{
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "override-missing-origin",
+					"producer":     "policy",
+					"origin":       "",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-1",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+				},
+			},
+		}
+
+		got := overrideRequestsFromEvents(events, contract)
+		if len(got) != 1 {
+			t.Fatalf("got %d overrides", len(got))
+		}
+		if got[0].State != GateCannotVerify || got[0].Reason != "override request missing origin" {
+			t.Fatalf("unexpected override result: %+v", got[0])
+		}
+	})
+
+	t.Run("uses unknown reference reason when references are not in contract", func(t *testing.T) {
+		events := []trace.Event{
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "override-unknown-reference",
+					"producer":     "policy",
+					"origin":       "policy-service",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-1",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+					"affected_required_runs": []string{
+						"known-run",
+						"missing-run",
+					},
+					"affected_evidence": []string{
+						"missing-evidence",
+					},
+				},
+			},
+		}
+
+		got := overrideRequestsFromEvents(events, contract)
+		if len(got) != 1 {
+			t.Fatalf("got %d overrides", len(got))
+		}
+		if got[0].State != GateCannotVerify {
+			t.Fatalf("expected cannot_verify state, got %s", got[0].State)
+		}
+		if got[0].Reason != "override request references unknown evidence missing-evidence" {
+			t.Fatalf("unexpected reason: %s", got[0].Reason)
+		}
+	})
+}
+
 func TestProtectedGateRequiresWitnessRunIDBinding(t *testing.T) {
 	state, reasons := witnessBindingState(WitnessSummary{
 		Kind:        "github-actions",

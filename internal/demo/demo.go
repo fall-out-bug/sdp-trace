@@ -1197,25 +1197,8 @@ func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) [
 			State:      GatePass,
 			CreatedAt:  payloadString(event, "created_at"),
 		}
-		for _, field := range []string{"override_id", "producer", "origin", "requested_by", "reason", "source_ref", "scope", "created_at"} {
-			if strings.TrimSpace(payloadString(event, field)) == "" {
-				request.State = GateCannotVerify
-				request.Reason = fmt.Sprintf("override request missing %s", field)
-				break
-			}
-		}
-		for _, id := range payloadStringSlice(event, "affected_required_runs") {
-			if !contractHasRequiredRun(contract, id) {
-				request.State = GateCannotVerify
-				request.Reason = fmt.Sprintf("override request references unknown required run %s", id)
-			}
-		}
-		for _, id := range payloadStringSlice(event, "affected_evidence") {
-			if !contractHasEvidence(contract, id) {
-				request.State = GateCannotVerify
-				request.Reason = fmt.Sprintf("override request references unknown evidence %s", id)
-			}
-		}
+		request.State, request.Reason = overrideRequestFieldState(event)
+		request.State, request.Reason = overrideRequestReferenceState(event, contract, request.State, request.Reason)
 		requests = append(requests, request)
 	}
 	sort.SliceStable(requests, func(i, j int) bool {
@@ -1225,6 +1208,40 @@ func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) [
 		return requests[i].OverrideID < requests[j].OverrideID
 	})
 	return requests
+}
+
+func overrideRequestFieldState(event trace.Event) (string, string) {
+	for _, field := range []string{"override_id", "producer", "origin", "requested_by", "reason", "source_ref", "scope", "created_at"} {
+		if strings.TrimSpace(payloadString(event, field)) == "" {
+			return GateCannotVerify, fmt.Sprintf("override request missing %s", field)
+		}
+	}
+	return GatePass, ""
+}
+
+func overrideRequestReferenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+	state, reason = overrideRequestRequiredRunState(event, contract, state, reason)
+	return overrideRequestEvidenceState(event, contract, state, reason)
+}
+
+func overrideRequestRequiredRunState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+	for _, id := range payloadStringSlice(event, "affected_required_runs") {
+		if !contractHasRequiredRun(contract, id) {
+			state = GateCannotVerify
+			reason = fmt.Sprintf("override request references unknown required run %s", id)
+		}
+	}
+	return state, reason
+}
+
+func overrideRequestEvidenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+	for _, id := range payloadStringSlice(event, "affected_evidence") {
+		if !contractHasEvidence(contract, id) {
+			state = GateCannotVerify
+			reason = fmt.Sprintf("override request references unknown evidence %s", id)
+		}
+	}
+	return state, reason
 }
 
 func payloadStringSlice(event trace.Event, key string) []string {

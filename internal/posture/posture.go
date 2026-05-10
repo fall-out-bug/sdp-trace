@@ -684,36 +684,72 @@ func readSignals(path string) (map[string]PostureSignal, error) {
 }
 
 func verifyDigestManifest(manifestPath, queryPackPath string) (string, error) {
-	var manifest DigestManifest
-	data, err := os.ReadFile(manifestPath)
+	manifest, err := readDigestManifest(manifestPath)
 	if err != nil {
 		return "", err
 	}
-	if err := json.Unmarshal(data, &manifest); err != nil {
+
+	expected, err := digestForQueryPackFromManifest(manifest, queryPackPath)
+	if err != nil {
 		return "", err
 	}
-	if manifest.SchemaVersion != DigestManifestSchemaVersion {
-		return "", fmt.Errorf("unsupported digest manifest schema")
+
+	actual, err := fileSHA256Hex(queryPackPath)
+	if err != nil {
+		return "", err
 	}
+
+	return actual, checkDigestMatch(expected, actual)
+}
+
+func checkDigestMatch(expected, actual string) error {
+	if expected != actual {
+		return errDigestMismatch
+	}
+	return nil
+}
+
+func readDigestManifest(path string) (DigestManifest, error) {
+	var manifest DigestManifest
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return manifest, err
+	}
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return manifest, err
+	}
+	if manifest.SchemaVersion != DigestManifestSchemaVersion {
+		return manifest, fmt.Errorf("unsupported digest manifest schema")
+	}
+
+	return manifest, nil
+}
+
+func digestForQueryPackFromManifest(manifest DigestManifest, queryPackPath string) (string, error) {
+	filename := filepathBase(queryPackPath)
 	for _, artifact := range manifest.Artifacts {
 		if artifact.Role != "query_pack_result" {
 			continue
 		}
-		if unsafeSelectionPath(artifact.Path) || artifact.Path != filepathBase(queryPackPath) {
+		if !digestArtifactMatchesPath(artifact.Path, filename) {
 			return "", errUnsafePath
 		}
-		payload, err := os.ReadFile(queryPackPath)
-		if err != nil {
-			return "", err
-		}
-		sum := sha256.Sum256(payload)
-		actual := hex.EncodeToString(sum[:])
-		if artifact.SHA256 != actual {
-			return "", errDigestMismatch
-		}
-		return actual, nil
+		return artifact.SHA256, nil
 	}
 	return "", errMissingRequired
+}
+
+func digestArtifactMatchesPath(artifactPath, filename string) bool {
+	return !unsafeSelectionPath(artifactPath) && artifactPath == filename
+}
+
+func fileSHA256Hex(path string) (string, error) {
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:]), nil
 }
 
 var (

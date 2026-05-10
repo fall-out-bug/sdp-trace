@@ -518,6 +518,48 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	}
 }
 
+func TestRunReviewPreviewReturnsPreviewOnly(t *testing.T) {
+	root := t.TempDir()
+	packet := Packet{PacketDigest: "sha256:" + sixtyFour("v"), SchemaVersion: SchemaVersionPacket}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "preview",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{
+			{
+				RoleID:         "code",
+				Plane:          PlaneCodeCorrectness,
+				Runner:         RunnerManualExternal,
+				RequestedModel: "not_assessed",
+				TimeoutSeconds: 120,
+			},
+		},
+	}
+	outDir := filepath.Join(root, "unused")
+	runSet, preview, err := RunReview(packet, profile, RunOptions{OutDir: outDir, Preview: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if preview == nil {
+		t.Fatal("expected preview response")
+	}
+	if runSet.SchemaVersion != "" || len(runSet.Results) != 0 {
+		t.Fatalf("preview mode should not produce run-set: %+v", runSet)
+	}
+	if preview.SchemaVersion != SchemaVersionRunSet {
+		t.Fatalf("preview schema = %q", preview.SchemaVersion)
+	}
+	if preview.PacketDigest != packet.PacketDigest {
+		t.Fatalf("preview packet digest = %q want %q", preview.PacketDigest, packet.PacketDigest)
+	}
+	if len(preview.Roles) != 1 {
+		t.Fatalf("preview roles = %d want 1", len(preview.Roles))
+	}
+	if _, err := os.Stat(outDir); !os.IsNotExist(err) {
+		t.Fatalf("preview should not create output directory, got stat err=%v", err)
+	}
+}
+
 func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	root := t.TempDir()
 	packetDigest := "sha256:" + sixtyFour("9")

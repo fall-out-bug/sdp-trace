@@ -400,49 +400,86 @@ func compareBindings(result *VerificationResult, expected, actual Payload) {
 }
 
 func applyPolicy(result *VerificationResult, checkpoint SignedCheckpoint, policy *TrustedCheckpointPolicy) {
+	applyPolicySignedAuthority(result, checkpoint, policy)
+}
+
+func applyPolicySignedAuthority(result *VerificationResult, checkpoint SignedCheckpoint, policy *TrustedCheckpointPolicy) {
 	if policy == nil {
 		result.SignerAuthorityState = StateNotAssessed
 		result.Reasons = append(result.Reasons, "checkpoint signer authority policy is not assessed")
 		return
 	}
-	for _, signer := range policy.AllowedSigners {
-		if signer.SignerID != checkpoint.Signer.SignerID {
-			continue
-		}
-		if signer.PublicKey == "" {
-			result.SignerAuthorityState = StateCannotVerify
-			result.Reasons = append(result.Reasons, "checkpoint signer policy missing public key binding")
-			return
-		}
-		if signer.PublicKey != checkpoint.Signature.PublicKey {
-			result.SignerAuthorityState = StateFail
-			result.Reasons = append(result.Reasons, "checkpoint signer public key does not match policy")
-			return
-		}
-		if signer.Authority != checkpoint.Signer.Authority {
-			result.SignerAuthorityState = StateFail
-			result.Reasons = append(result.Reasons, "checkpoint signer authority does not match policy")
-			return
-		}
-		switch signer.Authority {
-		case AuthorityLocalDevelopment:
-			result.SignerAuthorityState = StatePass
-			result.TrustScope = TrustScopeLocalSigned
-		case AuthorityCIIsolatedJob:
-			result.SignerAuthorityState = StateCannotVerify
-			result.TrustScope = TrustScopeLocalSigned
-			result.Reasons = append(result.Reasons, "ci isolated signer authority requires CI binding context")
-		case AuthorityExternalWitness:
-			result.SignerAuthorityState = StateNotIntegrated
-			result.Reasons = append(result.Reasons, "external witness checkpoint authority is not integrated in Block 15")
-		default:
-			result.SignerAuthorityState = StateCannotVerify
-			result.Reasons = append(result.Reasons, "checkpoint signer authority is unknown")
-		}
+
+	signer, found := findAllowedSigner(policy.AllowedSigners, checkpoint.Signer.SignerID)
+	if !found {
+		result.SignerAuthorityState = StateFail
+		result.Reasons = append(result.Reasons, "checkpoint signer is not allowed by policy")
 		return
 	}
-	result.SignerAuthorityState = StateFail
-	result.Reasons = append(result.Reasons, "checkpoint signer is not allowed by policy")
+	if !applySignerBindingPolicy(result, signer, checkpoint) {
+		return
+	}
+	applySignerAuthorityPolicy(result, signer.Authority)
+}
+
+func applySignerBindingPolicy(result *VerificationResult, signer TrustedSigner, checkpoint SignedCheckpoint) bool {
+	if signer.PublicKey == "" {
+		result.SignerAuthorityState = StateCannotVerify
+		result.Reasons = append(result.Reasons, "checkpoint signer policy missing public key binding")
+		return false
+	}
+	if signer.PublicKey != checkpoint.Signature.PublicKey {
+		result.SignerAuthorityState = StateFail
+		result.Reasons = append(result.Reasons, "checkpoint signer public key does not match policy")
+		return false
+	}
+	if signer.Authority != checkpoint.Signer.Authority {
+		result.SignerAuthorityState = StateFail
+		result.Reasons = append(result.Reasons, "checkpoint signer authority does not match policy")
+		return false
+	}
+	return true
+}
+
+func findAllowedSigner(signers []TrustedSigner, signerID string) (TrustedSigner, bool) {
+	for _, signer := range signers {
+		if signer.SignerID == signerID {
+			return signer, true
+		}
+	}
+	return TrustedSigner{}, false
+}
+
+func applySignerAuthorityPolicy(result *VerificationResult, authority string) {
+	state := signerAuthorityState[authority]
+	if state == "" {
+		result.SignerAuthorityState = StateCannotVerify
+		result.Reasons = append(result.Reasons, "checkpoint signer authority is unknown")
+		return
+	}
+	result.SignerAuthorityState = state
+	if reason := signerAuthorityReason[authority]; reason != "" {
+		result.Reasons = append(result.Reasons, reason)
+	}
+	if scope := signerAuthorityTrustScope[authority]; scope != "" {
+		result.TrustScope = scope
+	}
+}
+
+var signerAuthorityState = map[string]string{
+	AuthorityLocalDevelopment: StatePass,
+	AuthorityCIIsolatedJob:    StateCannotVerify,
+	AuthorityExternalWitness:  StateNotIntegrated,
+}
+
+var signerAuthorityReason = map[string]string{
+	AuthorityCIIsolatedJob:   "ci isolated signer authority requires CI binding context",
+	AuthorityExternalWitness: "external witness checkpoint authority is not integrated in Block 15",
+}
+
+var signerAuthorityTrustScope = map[string]string{
+	AuthorityLocalDevelopment: TrustScopeLocalSigned,
+	AuthorityCIIsolatedJob:    TrustScopeLocalSigned,
 }
 
 func mergeSetVerification(result *VerificationResult, checkpointResult VerificationResult) {

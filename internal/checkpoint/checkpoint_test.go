@@ -222,6 +222,106 @@ func TestPolicyWithoutPublicKeyCannotVerifySignerAuthority(t *testing.T) {
 	}
 }
 
+func TestPolicyPublicKeyMismatchFailsSignerAuthority(t *testing.T) {
+	runDir := recordRun(t, "checkpoint-run", "task-1")
+	key := GenerateKeyForTest(t, "local-dev")
+	cp, err := Create(runDir, CreateOptions{CheckpointID: "checkpoint-001", SignerID: "local-dev", Key: key})
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherKey := GenerateKeyForTest(t, "local-dev")
+	policy := TrustedCheckpointPolicy{
+		SchemaVersion: PolicySchemaVersion,
+		PolicyID:      "test-policy",
+		AllowedSigners: []TrustedSigner{
+			{SignerID: "local-dev", Authority: AuthorityLocalDevelopment, PublicKey: otherKey.PublicKey},
+		},
+	}
+
+	result := Verify(runDir, cp, &policy)
+	if result.SignerAuthorityState != StateFail {
+		t.Fatalf("signer authority = %s reasons=%v", result.SignerAuthorityState, result.Reasons)
+	}
+}
+
+func TestPolicyAuthorityMismatchFailsSignerAuthority(t *testing.T) {
+	runDir := recordRun(t, "checkpoint-run", "task-1")
+	key := GenerateKeyForTest(t, "local-dev")
+	cp, err := Create(runDir, CreateOptions{CheckpointID: "checkpoint-001", SignerID: "local-dev", Key: key})
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy := TrustedCheckpointPolicy{
+		SchemaVersion: PolicySchemaVersion,
+		PolicyID:      "test-policy",
+		AllowedSigners: []TrustedSigner{
+			{SignerID: "local-dev", Authority: AuthorityCIIsolatedJob, PublicKey: cp.Signature.PublicKey},
+		},
+	}
+
+	result := Verify(runDir, cp, &policy)
+	if result.SignerAuthorityState != StateFail {
+		t.Fatalf("signer authority = %s reasons=%v", result.SignerAuthorityState, result.Reasons)
+	}
+}
+
+func TestPolicyAllowsLocalSignerAsPass(t *testing.T) {
+	runDir := recordRun(t, "checkpoint-run", "task-1")
+	key := GenerateKeyForTest(t, "local-dev")
+	cp, err := Create(runDir, CreateOptions{CheckpointID: "checkpoint-001", SignerID: "local-dev", Key: key})
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy := TrustedCheckpointPolicy{
+		SchemaVersion: PolicySchemaVersion,
+		PolicyID:      "test-policy",
+		AllowedSigners: []TrustedSigner{
+			{
+				SignerID:  "local-dev",
+				Authority: AuthorityLocalDevelopment,
+				PublicKey: cp.Signature.PublicKey,
+			},
+		},
+	}
+
+	result := Verify(runDir, cp, &policy)
+	if result.SignerAuthorityState != StatePass {
+		t.Fatalf("signer authority = %s", result.SignerAuthorityState)
+	}
+	if result.TrustScope != TrustScopeLocalSigned {
+		t.Fatalf("trust scope = %s", result.TrustScope)
+	}
+}
+
+func TestPolicyUnknownAuthorityCannotVerifySignerAuthority(t *testing.T) {
+	runDir := recordRun(t, "checkpoint-run", "task-1")
+	key := GenerateKeyForTest(t, "local-dev")
+	cp, err := Create(runDir, CreateOptions{CheckpointID: "checkpoint-001", SignerID: "local-dev", Key: key})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cp.Signer.Authority = "mystery-authority"
+	policy := TrustedCheckpointPolicy{
+		SchemaVersion: PolicySchemaVersion,
+		PolicyID:      "test-policy",
+		AllowedSigners: []TrustedSigner{
+			{
+				SignerID:  "local-dev",
+				Authority: "mystery-authority",
+				PublicKey: cp.Signature.PublicKey,
+			},
+		},
+	}
+
+	result := Verify(runDir, cp, &policy)
+	if result.SignerAuthorityState != StateCannotVerify {
+		t.Fatalf("signer authority = %s", result.SignerAuthorityState)
+	}
+	if result.Result != StateCannotVerify {
+		t.Fatalf("result = %s reasons=%v", result.Result, result.Reasons)
+	}
+}
+
 func TestCheckpointJSONRoundTripDoesNotContainSensitiveCommandOutput(t *testing.T) {
 	runDir := recordRunWithOutput(t, "checkpoint-run", "task-1", "SECRET_TOKEN_SHOULD_NOT_APPEAR")
 	key := GenerateKeyForTest(t, "local-dev")
