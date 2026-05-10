@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -49,78 +50,103 @@ func normalizeJSONValue(value any) (any, error) {
 func writeCanonicalJSON(buf *bytes.Buffer, value any) error {
 	switch typed := value.(type) {
 	case map[string]any:
-		keys := make([]string, 0, len(typed))
-		for key := range typed {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		buf.WriteByte('{')
-		for i, key := range keys {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			writeJSONString(buf, key)
-			buf.WriteByte(':')
-			if err := writeCanonicalJSON(buf, typed[key]); err != nil {
-				return err
-			}
-		}
-		buf.WriteByte('}')
+		return writeCanonicalMap(buf, typed)
 	case []any:
-		buf.WriteByte('[')
-		for i, item := range typed {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			if err := writeCanonicalJSON(buf, item); err != nil {
-				return err
-			}
-		}
-		buf.WriteByte(']')
-	case string:
-		writeJSONString(buf, typed)
-	case json.Number:
-		writeJSONNumber(buf, typed)
-	case float64:
-		writeJSONNumber(buf, trimFloatToJSON(typed))
-	case float32:
-		writeJSONNumber(buf, trimFloatToJSON(float64(typed)))
-	case int:
-		writeJSONInteger(buf, int64(typed))
-	case int64:
-		writeJSONInteger(buf, typed)
-	case uint64:
-		buf.WriteString(strconv.FormatUint(typed, 10))
-	case int32:
-		writeJSONInteger(buf, int64(typed))
-	case uint32:
-		writeJSONInteger(buf, int64(typed))
-	case int16:
-		writeJSONInteger(buf, int64(typed))
-	case uint16:
-		writeJSONInteger(buf, int64(typed))
-	case int8:
-		writeJSONInteger(buf, int64(typed))
-	case uint8:
-		writeJSONInteger(buf, int64(typed))
-	case bool:
-		if typed {
-			buf.WriteString("true")
-		} else {
-			buf.WriteString("false")
-		}
-	case nil:
-		buf.WriteString("null")
+		return writeCanonicalList(buf, typed)
 	default:
-		raw, err := json.Marshal(typed)
-		if err != nil {
-			return err
+		return writeCanonicalScalar(buf, typed)
+	}
+}
+
+func writeCanonicalMap(buf *bytes.Buffer, value map[string]any) error {
+	keys := make([]string, 0, len(value))
+	for key := range value {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	buf.WriteByte('{')
+	for i, key := range keys {
+		if i > 0 {
+			buf.WriteByte(',')
 		}
-		if _, err := buf.Write(raw); err != nil {
+		writeJSONString(buf, key)
+		buf.WriteByte(':')
+		if err := writeCanonicalJSON(buf, value[key]); err != nil {
 			return err
 		}
 	}
+	buf.WriteByte('}')
 	return nil
+}
+
+func writeCanonicalList(buf *bytes.Buffer, value []any) error {
+	buf.WriteByte('[')
+	for i, item := range value {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		if err := writeCanonicalJSON(buf, item); err != nil {
+			return err
+		}
+	}
+	buf.WriteByte(']')
+	return nil
+}
+
+func writeCanonicalScalar(buf *bytes.Buffer, value any) error {
+	switch typed := value.(type) {
+	case string:
+		writeJSONString(buf, typed)
+	case bool:
+		writeJSONBool(buf, typed)
+	case nil:
+		buf.WriteString("null")
+	default:
+		if writeNumericScalar(buf, typed) {
+			return nil
+		}
+		return writeJSONFallback(buf, typed)
+	}
+	return nil
+}
+
+func writeNumericScalar(buf *bytes.Buffer, value any) bool {
+	if number, ok := value.(json.Number); ok {
+		writeJSONNumber(buf, number)
+		return true
+	}
+	reflected := reflect.ValueOf(value)
+	if !reflected.IsValid() {
+		return false
+	}
+	switch reflected.Kind() {
+	case reflect.Float32, reflect.Float64:
+		writeJSONNumber(buf, trimFloatToJSON(reflected.Convert(reflect.TypeOf(float64(0))).Float()))
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		writeJSONInteger(buf, reflected.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		buf.WriteString(strconv.FormatUint(reflected.Uint(), 10))
+	default:
+		return false
+	}
+	return true
+}
+
+func writeJSONBool(buf *bytes.Buffer, value bool) {
+	if value {
+		buf.WriteString("true")
+		return
+	}
+	buf.WriteString("false")
+}
+
+func writeJSONFallback(buf *bytes.Buffer, value any) error {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	_, err = buf.Write(raw)
+	return err
 }
 
 func writeJSONString(buffer *bytes.Buffer, value string) {

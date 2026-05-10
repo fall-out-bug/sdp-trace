@@ -43,13 +43,14 @@ const (
 )
 
 var (
-	safeIDPattern       = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
-	safeFileIDPattern   = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
-	sha256Pattern       = regexp.MustCompile(`^[a-f0-9]{64}$`)
-	base64TokenPattern  = regexp.MustCompile(`(?i)^[A-Za-z0-9+/_-]{43,}={0,2}$`)
-	providerTokenPrefix = regexp.MustCompile(`(?i)(sk-[A-Za-z0-9_-]{16,}|xox[baprs]-[A-Za-z0-9-]{16,}|gh[pousr]_[A-Za-z0-9_]{20,})`)
-	privatePathPattern  = regexp.MustCompile(`(^|[\s"'])/(Users|home|private|var|tmp)/[^\s"']+`)
-	rawFieldNames       = map[string]bool{
+	errSessionSourceUnavailable = errors.New("session source unavailable")
+	safeIDPattern               = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
+	safeFileIDPattern           = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
+	sha256Pattern               = regexp.MustCompile(`^[a-f0-9]{64}$`)
+	base64TokenPattern          = regexp.MustCompile(`(?i)^[A-Za-z0-9+/_-]{43,}={0,2}$`)
+	providerTokenPrefix         = regexp.MustCompile(`(?i)(sk-[A-Za-z0-9_-]{16,}|xox[baprs]-[A-Za-z0-9-]{16,}|gh[pousr]_[A-Za-z0-9_]{20,})`)
+	privatePathPattern          = regexp.MustCompile(`(^|[\s"'])/(Users|home|private|var|tmp)/[^\s"']+`)
+	rawFieldNames               = map[string]bool{
 		"raw_prompt":         true,
 		"prompt":             true,
 		"raw_model_response": true,
@@ -325,112 +326,200 @@ func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
 }
 
 func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return SessionRun{}, Run{}, errors.New("observe collect requires --profile")
-	}
-	if strings.TrimSpace(opts.RunDir) == "" {
-		return SessionRun{}, Run{}, errors.New("observe collect requires --run")
-	}
-	profilePath, err := safeExistingFile(opts.ProfilePath)
+	ctx, err := prepareSessionCollection(opts)
 	if err != nil {
-		return SessionRun{}, Run{}, fmt.Errorf("unsafe profile path: %w", err)
+		return SessionRun{}, Run{}, err
 	}
-	runDir, err := safeExistingDir(opts.RunDir)
+	sourcePath, err := resolveSessionEventSource(&ctx)
 	if err != nil {
-		return SessionRun{}, Run{}, fmt.Errorf("unsafe run path: %w", err)
+		if !errors.Is(err, errSessionSourceUnavailable) {
+			return SessionRun{}, Run{}, err
+		}
+		return markSessionSourceUnavailable(ctx)
+	}
+	return collectSessionSource(ctx, sourcePath)
+}
+
+type sessionCollectionContext struct {
+	profilePath        string
+	runDir             string
+	now                time.Time
+	profile            SessionProfile
+	session            SessionRun
+	harnessProfile     Profile
+	harnessProfilePath string
+}
+
+func prepareSessionCollection(opts SessionCollectOptions) (sessionCollectionContext, error) {
+	profilePath, runDir, err := validateSessionCollectOptions(opts)
+	if err != nil {
+		return sessionCollectionContext{}, err
 	}
 	profile, err := LoadSessionProfile(profilePath)
 	if err != nil {
-		return SessionRun{}, Run{}, err
+		return sessionCollectionContext{}, err
 	}
 	session, err := LoadSessionRun(filepath.Join(runDir, "session.json"))
 	if err != nil {
-		return SessionRun{}, Run{}, err
+		return sessionCollectionContext{}, err
 	}
 	if session.ProfileID != profile.ProfileID {
-		return SessionRun{}, Run{}, errors.New("session profile mismatch")
+		return sessionCollectionContext{}, errors.New("session profile mismatch")
 	}
+	harnessProfilePath, harnessProfile, err := loadHarnessProfile(profilePath, profile)
+	if err != nil {
+		return sessionCollectionContext{}, err
+	}
+	now := opts.Now
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	return sessionCollectionContext{
+		profilePath:        profilePath,
+		runDir:             runDir,
+		now:                now,
+		profile:            profile,
+		session:            session,
+		harnessProfile:     harnessProfile,
+		harnessProfilePath: harnessProfilePath,
+	}, nil
+}
+
+func validateSessionCollectOptions(opts SessionCollectOptions) (string, string, error) {
+	if strings.TrimSpace(opts.ProfilePath) == "" {
+		return "", "", errors.New("observe collect requires --profile")
+	}
+	if strings.TrimSpace(opts.RunDir) == "" {
+		return "", "", errors.New("observe collect requires --run")
+	}
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+	runDir, err := safeExistingDir(opts.RunDir)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe run path: %w", err)
+	}
+	return profilePath, runDir, nil
+}
+
+func loadHarnessProfile(profilePath string, profile SessionProfile) (string, Profile, error) {
 	harnessProfilePath, err := safeProfileRelativeFile(profilePath, profile.HarnessProfilePath)
 	if err != nil {
-		return SessionRun{}, Run{}, fmt.Errorf("unsafe harness profile path: %w", err)
+		return "", Profile{}, fmt.Errorf("unsafe harness profile path: %w", err)
 	}
 	harnessProfile, err := LoadProfile(harnessProfilePath)
 	if err != nil {
+		return "", Profile{}, err
+	}
+	return harnessProfilePath, harnessProfile, nil
+}
+
+func resolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	if err == nil {
+		return sourcePath, nil
+	}
+	if ctx.profile.RawEventFormat == "" {
+		return "", errSessionSourceUnavailable
+	}
+	if normalizeErr := normalizeSessionRawEvents(ctx); normalizeErr != nil {
+		return "", normalizeErr
+	}
+	sourcePath, err = safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	if err != nil {
+		return "", errSessionSourceUnavailable
+	}
+	return sourcePath, nil
+}
+
+func normalizeSessionRawEvents(ctx *sessionCollectionContext) error {
+	rawPath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.RawEventSourcePath)
+	if err != nil {
+		return fmt.Errorf("raw_event_source_path invalid: %w", err)
+	}
+	normalizedPath, err := safeProfileRelativeOutFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	if err != nil {
+		return err
+	}
+	if err := normalizeRawEvents(ctx.profile.RawEventFormat, rawPath, normalizedPath, sessionCommandFacts(ctx.session), ctx.now); err != nil {
+		return err
+	}
+	ctx.session.NormalizedDigest = digestFile(normalizedPath)
+	return nil
+}
+
+func markSessionSourceUnavailable(ctx sessionCollectionContext) (SessionRun, Run, error) {
+	session := ctx.session
+	session.CollectionState = StateCannotVerify
+	session.CollectionReason = "source_unavailable"
+	session.EndTime = ctx.now.Format(time.RFC3339)
+	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
 		return SessionRun{}, Run{}, err
 	}
-	if opts.Now.IsZero() {
-		opts.Now = time.Now().UTC()
-	}
-	sourcePath, err := safeProfileRelativeFile(profilePath, profile.EventSourcePath)
-	if err != nil {
-		if profile.RawEventFormat != "" {
-			rawPath, rawErr := safeProfileRelativeFile(profilePath, profile.RawEventSourcePath)
-			if rawErr != nil {
-				return SessionRun{}, Run{}, fmt.Errorf("raw_event_source_path invalid: %w", rawErr)
-			}
-			normalizedPath, outErr := safeProfileRelativeOutFile(profilePath, profile.EventSourcePath)
-			if outErr != nil {
-				return SessionRun{}, Run{}, outErr
-			}
-			if normalizeErr := normalizeRawEvents(profile.RawEventFormat, rawPath, normalizedPath, sessionCommandFacts(session), opts.Now); normalizeErr != nil {
-				return SessionRun{}, Run{}, normalizeErr
-			}
-			session.NormalizedDigest = digestFile(normalizedPath)
-		}
-		sourcePath, err = safeProfileRelativeFile(profilePath, profile.EventSourcePath)
-		if err != nil {
-			session.CollectionState = StateCannotVerify
-			session.CollectionReason = "source_unavailable"
-			session.EndTime = opts.Now.Format(time.RFC3339)
-			if writeErr := writeJSON(filepath.Join(runDir, "session.json"), session); writeErr != nil {
-				return SessionRun{}, Run{}, writeErr
-			}
-			return session, Run{
-				SchemaVersion:      RunSchemaVersion,
-				ProfileID:          harnessProfile.ProfileID,
-				HarnessFamily:      harnessProfile.HarnessFamily,
-				EventSchemaVersion: harnessProfile.EventSchemaVersion,
-				SourcePath:         filepath.Base(profile.EventSourcePath),
-				EventCount:         0,
-				CreatedAt:          opts.Now.Format(time.RFC3339),
-			}, nil
-		}
-	}
-	observedDir := filepath.Join(runDir, "observed")
+	return session, Run{
+		SchemaVersion:      RunSchemaVersion,
+		ProfileID:          ctx.harnessProfile.ProfileID,
+		HarnessFamily:      ctx.harnessProfile.HarnessFamily,
+		EventSchemaVersion: ctx.harnessProfile.EventSchemaVersion,
+		SourcePath:         filepath.Base(ctx.profile.EventSourcePath),
+		EventCount:         0,
+		CreatedAt:          ctx.now.Format(time.RFC3339),
+	}, nil
+}
+
+func collectSessionSource(ctx sessionCollectionContext, sourcePath string) (SessionRun, Run, error) {
+	observedDir := filepath.Join(ctx.runDir, "observed")
 	if err := os.MkdirAll(observedDir, 0o755); err != nil {
 		return SessionRun{}, Run{}, err
 	}
-	events, sourceDigest, err := readEventsFromPath(harnessProfilePath, sourcePath)
+	events, sourceDigest, err := readEventsFromPath(ctx.harnessProfilePath, sourcePath)
 	if err != nil {
 		return SessionRun{}, Run{}, err
 	}
+	if err := writeObservedEvents(observedDir, events); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	observed := observedRun(ctx, sourcePath, sourceDigest, events)
+	if err := writeJSON(filepath.Join(observedDir, "run.json"), observed); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	return finalizeCollectedSession(ctx, observedDir, observed)
+}
+
+func writeObservedEvents(observedDir string, events []Event) error {
 	for _, event := range events {
 		if err := writeJSON(filepath.Join(observedDir, "events", event.EventID+".json"), event); err != nil {
-			return SessionRun{}, Run{}, err
+			return err
 		}
 	}
-	observed := Run{
+	return nil
+}
+
+func observedRun(ctx sessionCollectionContext, sourcePath, sourceDigest string, events []Event) Run {
+	return Run{
 		SchemaVersion:      RunSchemaVersion,
-		ProfileID:          harnessProfile.ProfileID,
-		HarnessFamily:      harnessProfile.HarnessFamily,
-		EventSchemaVersion: harnessProfile.EventSchemaVersion,
+		ProfileID:          ctx.harnessProfile.ProfileID,
+		HarnessFamily:      ctx.harnessProfile.HarnessFamily,
+		EventSchemaVersion: ctx.harnessProfile.EventSchemaVersion,
 		SourcePath:         filepath.Base(sourcePath),
 		SourceDigest:       sourceDigest,
 		EventCount:         len(events),
 		EventRefs:          eventRefs(events),
-		CreatedAt:          opts.Now.Format(time.RFC3339),
+		CreatedAt:          ctx.now.Format(time.RFC3339),
 	}
-	if err := writeJSON(filepath.Join(observedDir, "run.json"), observed); err != nil {
-		return SessionRun{}, Run{}, err
-	}
+}
+
+func finalizeCollectedSession(ctx sessionCollectionContext, observedDir string, observed Run) (SessionRun, Run, error) {
+	session := ctx.session
 	session.ObservedRunDir = filepath.ToSlash("observed")
 	session.OutputDigest = digestFile(filepath.Join(observedDir, "run.json"))
 	session.CollectionState = StatePass
 	session.CollectionReason = "source_collected"
 	if session.EndTime == "" {
-		session.EndTime = opts.Now.Format(time.RFC3339)
+		session.EndTime = ctx.now.Format(time.RFC3339)
 	}
-	if err := writeJSON(filepath.Join(runDir, "session.json"), session); err != nil {
+	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
 		return SessionRun{}, Run{}, err
 	}
 	return session, observed, nil
@@ -563,48 +652,94 @@ func LoadSessionProfile(path string) (SessionProfile, error) {
 	if err := json.Unmarshal(data, &profile); err != nil {
 		return SessionProfile{}, err
 	}
+	if err := validateSessionProfile(&profile); err != nil {
+		return SessionProfile{}, err
+	}
+	return profile, nil
+}
+
+func validateSessionProfile(profile *SessionProfile) error {
 	if profile.SchemaVersion != SessionProfileSchemaVersion {
-		return SessionProfile{}, fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
+		return fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
 	}
 	if !safeIDPattern.MatchString(profile.ProfileID) {
-		return SessionProfile{}, errors.New("unsafe session profile_id")
+		return errors.New("unsafe session profile_id")
 	}
+	if err := validateSessionProfilePaths(*profile); err != nil {
+		return err
+	}
+	if err := normalizeSessionStreamCapture(profile); err != nil {
+		return err
+	}
+	return validateSessionSetupActions(profile.SetupActions)
+}
+
+func validateSessionProfilePaths(profile SessionProfile) error {
+	if err := validateRequiredSessionPaths(profile); err != nil {
+		return err
+	}
+	return validateRawEventConfig(profile)
+}
+
+func validateRequiredSessionPaths(profile SessionProfile) error {
 	if strings.TrimSpace(profile.HarnessProfilePath) == "" {
-		return SessionProfile{}, errors.New("session profile requires harness_profile_path")
+		return errors.New("session profile requires harness_profile_path")
 	}
 	if strings.TrimSpace(profile.EventSourcePath) == "" {
-		return SessionProfile{}, errors.New("session profile requires event_source_path")
+		return errors.New("session profile requires event_source_path")
 	}
+	return nil
+}
+
+func validateRawEventConfig(profile SessionProfile) error {
 	if profile.RawEventFormat != "" && profile.RawEventFormat != OpenCodeJSONLRawFormat {
-		return SessionProfile{}, errors.New("unsupported raw_event_format")
+		return errors.New("unsupported raw_event_format")
 	}
 	if profile.RawEventFormat != "" && strings.TrimSpace(profile.RawEventSourcePath) == "" {
-		return SessionProfile{}, errors.New("raw_event_source_path required for raw_event_format")
+		return errors.New("raw_event_source_path required for raw_event_format")
 	}
 	if profile.RawEventFormat == "" && strings.TrimSpace(profile.RawEventSourcePath) != "" {
-		return SessionProfile{}, errors.New("raw_event_format required for raw_event_source_path")
+		return errors.New("raw_event_format required for raw_event_source_path")
 	}
+	return nil
+}
+
+func normalizeSessionStreamCapture(profile *SessionProfile) error {
 	if profile.StreamCapture == "" {
 		profile.StreamCapture = "disabled"
 	}
-	if profile.StreamCapture != "disabled" && profile.StreamCapture != ContentDigestOnly && profile.StreamCapture != ContentRetainedSafe {
-		return SessionProfile{}, errors.New("unsupported stream_capture")
+	switch profile.StreamCapture {
+	case "disabled":
+		return nil
+	case ContentDigestOnly, ContentRetainedSafe:
+		return errors.New("stream_capture mode not implemented")
+	default:
+		return errors.New("unsupported stream_capture")
 	}
-	if profile.StreamCapture != "disabled" {
-		return SessionProfile{}, errors.New("stream_capture mode not implemented")
+}
+
+func validateSessionSetupActions(actions []SessionSetupAction) error {
+	if len(actions) > 3 {
+		return errors.New("too many setup actions")
 	}
-	for _, action := range profile.SetupActions {
-		if !safeIDPattern.MatchString(action.ID) {
-			return SessionProfile{}, errors.New("unsafe setup action id")
+	for _, action := range actions {
+		if err := validateSessionSetupAction(action); err != nil {
+			return err
 		}
-		if action.Kind != "init" && action.Kind != "profile" && action.Kind != "wrapper" && action.Kind != "hook" {
-			return SessionProfile{}, errors.New("unsupported setup action kind")
-		}
 	}
-	if len(profile.SetupActions) > 3 {
-		return SessionProfile{}, errors.New("too many setup actions")
+	return nil
+}
+
+func validateSessionSetupAction(action SessionSetupAction) error {
+	if !safeIDPattern.MatchString(action.ID) {
+		return errors.New("unsafe setup action id")
 	}
-	return profile, nil
+	switch action.Kind {
+	case "init", "profile", "wrapper", "hook":
+		return nil
+	default:
+		return errors.New("unsupported setup action kind")
+	}
 }
 
 func LoadSessionRun(path string) (SessionRun, error) {

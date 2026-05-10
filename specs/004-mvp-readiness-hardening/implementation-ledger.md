@@ -17,8 +17,8 @@
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
-| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine` was decomposed below 15, with older workflow/path validators still above threshold. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `harnessobs` and `verifier` were improved; `trace` remains below a durable MVP floor. |
+| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, and `internal/trace.writeCanonicalJSON` were decomposed below 15. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `harnessobs`, `trace`, and `verifier` were improved. |
 
 ## Command Evidence
 
@@ -28,12 +28,12 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-pleasant-cover.out` | pass | Total coverage: 69.3%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-continue-cover.out` | pass | Total coverage: 71.5%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-pleasant-cover-func.txt -gocyclo /tmp/sdp-trace-pleasant-gocyclo.txt -threshold 5` | fail_assessed_gap | 371 functions exceed strict CRAP threshold 5. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-continue-cover-func.txt -gocyclo /tmp/sdp-trace-continue-gocyclo.txt -threshold 5` | fail_assessed_gap | 373 functions exceed strict CRAP threshold 5; top high-risk functions improved, but strict repo-wide CRAP remains open. |
 
 ## Coverage Delta
 
@@ -44,11 +44,11 @@ Baseline from intake:
 | `internal/contract` | 0.0% | 68.1% |
 | `internal/export` | 0.0% | 83.3% |
 | `internal/policy` | 0.0% | 71.7% |
-| `internal/trace` | 2.9% | 51.8% |
+| `internal/trace` | 2.9% | 61.1% |
 | `internal/posture` | 72.4% | 86.1% |
-| `internal/harnessobs` | 42.7% | 50.0% |
+| `internal/harnessobs` | 42.7% | 65.0% |
 | `internal/verifier` | 51.1% | 71.0% |
-| total | 64.0% | 69.3% |
+| total | 64.0% | 71.5% |
 
 ## CRAP Baseline Summary
 
@@ -67,12 +67,11 @@ Top current CRAP/complexity findings:
 
 | Function | Cyclo | Coverage | CRAP | State |
 |---|---:|---:|---:|---|
-| `internal/harnessobs.LoadSessionProfile` | 26 | 0.0% | 702.00 | assessed_gap |
-| `internal/harnessobs.CollectSession` | 25 | 0.0% | 650.00 | assessed_gap |
 | `internal/harnessobs.findUnsafeRawEventAt` | 21 | 0.0% | 462.00 | assessed_gap |
-| `internal/trace.writeCanonicalJSON` | 28 | 36.4% | 229.69 | assessed_gap |
 | `internal/interaction.ValidateEvent` | 33 | 47.1% | 194.21 | assessed_gap |
 | `internal/harnessobs.safeOutDir` | 23 | 48.8% | 94.00 | assessed_gap |
+| `internal/harnessobs.findUnsafeAt` | 20 | 56.0% | 54.07 | assessed_gap |
+| `internal/harnessobs.validateEvent` | 20 | 55.6% | 55.01 | assessed_gap |
 | `internal/posture.Build` | 19 | 85.3% | 20.15 | assessed_gap |
 
 ## Ratchet
@@ -87,11 +86,11 @@ Immediate ratchet now enforced or measurable:
 
 Next decomposition candidates before stronger MVP-readiness claim:
 
-1. `internal/harnessobs.LoadSessionProfile`
-2. `internal/harnessobs.CollectSession`
-3. `internal/trace.writeCanonicalJSON`
-4. `internal/interaction.ValidateEvent`
-5. `internal/harnessobs.safeOutDir`
+1. `internal/interaction.ValidateEvent`
+2. `internal/harnessobs.safeOutDir`
+3. `internal/harnessobs.findUnsafeRawEventAt`
+4. `internal/harnessobs.findUnsafeAt`
+5. `internal/harnessobs.validateEvent`
 
 ## External Evidence Boundary
 
@@ -106,6 +105,7 @@ this draft PR must not be treated as approved to merge.
 | Trust/evidence | `openrouter/qwen/qwen3.6-plus` | APPROVE | Low note to verify removed `pr-review packet` flags against live parsing; accepted as already verified by global help and stale-flag search. |
 | Requirements-vs-implementation | `minimax/MiniMax-M2.7` | APPROVE | No required fixes. Reviewer confirmed completed tasks are honestly marked and remaining harnessobs/verifier/PR/CI work remains open. |
 | Focused PR-level follow-up | `zai/glm-5.1` | APPROVE | Low test-adequacy note accepted and fixed: harnessobs family test now asserts the exact family set. |
+| Continued CRAP reduction follow-up | `openrouter/deepseek/deepseek-v4-pro` | APPROVE | Prior findings fixed: trace canonical JSON tests added, unsafe raw hard-error and source-unavailable paths covered, observed run contents asserted, and extra normalization write removed. |
 
 Unusable attempts:
 

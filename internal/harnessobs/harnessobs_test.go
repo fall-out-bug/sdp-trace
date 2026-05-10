@@ -142,6 +142,228 @@ func TestNormalizeOpenCodeRawLineUsesDefaultActorAndTime(t *testing.T) {
 	}
 }
 
+func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	path := "session-profile.json"
+	profile := SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		SetupActions: []SessionSetupAction{{
+			ID:       "init",
+			Kind:     "init",
+			Required: true,
+		}},
+	}
+	writeJSONFixture(t, path, profile)
+
+	loaded, err := LoadSessionProfile(path)
+	if err != nil {
+		t.Fatalf("LoadSessionProfile() error = %v", err)
+	}
+	if loaded.StreamCapture != "disabled" {
+		t.Fatalf("StreamCapture = %s, want disabled", loaded.StreamCapture)
+	}
+
+	profile.RawEventFormat = OpenCodeJSONLRawFormat
+	profile.RawEventSourcePath = ""
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "raw_event_source_path required") {
+		t.Fatalf("LoadSessionProfile() raw config error = %v", err)
+	}
+}
+
+func TestLoadSessionProfileRejectsUnsafeSetupAction(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	path := "session-profile.json"
+	writeJSONFixture(t, path, SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		SetupActions: []SessionSetupAction{{
+			ID:   "../init",
+			Kind: "init",
+		}},
+	})
+
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsafe setup action id") {
+		t.Fatalf("LoadSessionProfile() error = %v, want unsafe setup action id", err)
+	}
+}
+
+func TestCollectSessionWritesObservedRun(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeEvents(t, dir, []map[string]any{eventMap("e1", "harness")})
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+	})
+	runDir := filepath.Join(dir, "session-run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(runDir, "session.json"), SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		CreatedAt:          "2026-05-10T12:00:00Z",
+	})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	session, observed, err := CollectSession(SessionCollectOptions{
+		ProfilePath: "session-profile.json",
+		RunDir:      "session-run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("CollectSession() error = %v", err)
+	}
+	if session.CollectionState != StatePass || session.ObservedRunDir != "observed" {
+		t.Fatalf("session = %+v", session)
+	}
+	if observed.EventCount != 1 || len(observed.EventRefs) != 1 {
+		t.Fatalf("observed = %+v", observed)
+	}
+	var written Run
+	readJSONFixture(t, filepath.Join(dir, "session-run", "observed", "run.json"), &written)
+	if written.SchemaVersion != RunSchemaVersion ||
+		written.ProfileID != "generic-harness-v1" ||
+		written.HarnessFamily != "generic-harness" ||
+		written.EventSchemaVersion != EventSchemaVersion ||
+		written.SourcePath != "events.jsonl" ||
+		written.SourceDigest == "" ||
+		written.CreatedAt != "2026-05-10T12:00:00Z" {
+		t.Fatalf("written observed run = %+v", written)
+	}
+}
+
+func TestCollectSessionMarksMissingSourceUnavailable(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "missing-events.jsonl",
+	})
+	runDir := filepath.Join(dir, "session-run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(runDir, "session.json"), SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "missing-events.jsonl",
+		CreatedAt:          "2026-05-10T12:00:00Z",
+	})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	session, observed, err := CollectSession(SessionCollectOptions{
+		ProfilePath: "session-profile.json",
+		RunDir:      "session-run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("CollectSession() error = %v", err)
+	}
+	if session.CollectionState != StateCannotVerify || session.CollectionReason != "source_unavailable" {
+		t.Fatalf("session = %+v", session)
+	}
+	if observed.EventCount != 0 || observed.SourcePath != "missing-events.jsonl" {
+		t.Fatalf("observed = %+v", observed)
+	}
+}
+
+func TestCollectSessionPropagatesUnsafeRawSourcePath(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "../raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+	})
+	runDir := filepath.Join(dir, "session-run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(runDir, "session.json"), SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "../raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+		CreatedAt:          "2026-05-10T12:00:00Z",
+	})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	_, _, err := CollectSession(SessionCollectOptions{
+		ProfilePath: "session-profile.json",
+		RunDir:      "session-run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err == nil || !strings.Contains(err.Error(), "raw_event_source_path invalid") {
+		t.Fatalf("CollectSession() error = %v, want raw_event_source_path invalid", err)
+	}
+}
+
+func TestCollectSessionPropagatesUnsafeRawEventContent(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(`{"type":"tool_use","raw_prompt":"do secret work"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "opencode-raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+	})
+	runDir := filepath.Join(dir, "session-run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(runDir, "session.json"), SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "opencode-raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+		CreatedAt:          "2026-05-10T12:00:00Z",
+	})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	_, _, err := CollectSession(SessionCollectOptions{
+		ProfilePath: "session-profile.json",
+		RunDir:      "session-run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err == nil || !strings.Contains(err.Error(), "unsafe_input:raw_prompt:forbidden_raw_field") {
+		t.Fatalf("CollectSession() error = %v, want unsafe raw_prompt hard error", err)
+	}
+}
+
 func TestExtractCommandModel(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -377,6 +599,28 @@ func writeRawEvents(t *testing.T, dir string, events []map[string]any) {
 		lines = append(lines, marshalCompact(t, event))
 	}
 	if err := os.WriteFile(filepath.Join(dir, "events.jsonl"), []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeJSONFixture(t *testing.T, path string, value any) {
+	t.Helper()
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func readJSONFixture(t *testing.T, path string, target any) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, target); err != nil {
 		t.Fatal(err)
 	}
 }
