@@ -90,6 +90,32 @@ func TestGitHubActionsWitnessPassesWithCompleteIdentity(t *testing.T) {
 	}
 }
 
+func TestWriteGitHubActionsWritesWitnessRecord(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"id":"run"}`), 0o644); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+
+	outPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	record, err := WriteGitHubActions(outPath, root, "", map[string]string{})
+	if err != nil {
+		t.Fatalf("WriteGitHubActions: %v", err)
+	}
+	if record.Status != StatusCannotVerify {
+		t.Fatalf("status = %s", record.Status)
+	}
+	loaded, err := Load(outPath)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if loaded.Reason != ReasonMissingCIIdentity {
+		t.Fatalf("reason = %s", loaded.Reason)
+	}
+	if IsPassingCI(loaded) {
+		t.Fatalf("missing identity witness must not pass")
+	}
+}
+
 func TestGitHubActionsWitnessRequiresOIDCClaims(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"id":"run"}`), 0o644); err != nil {

@@ -214,19 +214,27 @@ func WriteReport(target, outDir, contractPath string) (ReportArtifacts, error) {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return ReportArtifacts{}, err
 	}
-	if err := writeJSON(filepath.Join(outDir, "summary.json"), artifacts.Summary); err != nil {
-		return ReportArtifacts{}, err
-	}
-	if err := writeJSON(filepath.Join(outDir, "evidence-table.json"), artifacts.EvidenceTable); err != nil {
-		return ReportArtifacts{}, err
-	}
-	if err := writeJSON(filepath.Join(outDir, "missing-telemetry.json"), artifacts.MissingTelemetry); err != nil {
-		return ReportArtifacts{}, err
-	}
-	if err := os.WriteFile(filepath.Join(outDir, "timeline.md"), []byte(artifacts.Timeline), 0o644); err != nil {
+	if err := writeReportArtifacts(outDir, artifacts); err != nil {
 		return ReportArtifacts{}, err
 	}
 	return artifacts, nil
+}
+
+func writeReportArtifacts(outDir string, artifacts ReportArtifacts) error {
+	writes := []struct {
+		name  string
+		value any
+	}{
+		{name: "summary.json", value: artifacts.Summary},
+		{name: "evidence-table.json", value: artifacts.EvidenceTable},
+		{name: "missing-telemetry.json", value: artifacts.MissingTelemetry},
+	}
+	for _, write := range writes {
+		if err := writeJSON(filepath.Join(outDir, write.name), write.value); err != nil {
+			return err
+		}
+	}
+	return os.WriteFile(filepath.Join(outDir, "timeline.md"), []byte(artifacts.Timeline), 0o644)
 }
 
 func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (GateResult, error) {
@@ -242,15 +250,7 @@ func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (Ga
 		return GateResult{}, err
 	}
 	result := EvaluateGate(rows, contract)
-	if len(witnessPaths) > 0 && strings.TrimSpace(witnessPaths[0]) != "" {
-		expected, err := witnessExpectationFromTarget(target)
-		if err != nil {
-			result.CIWitnessGate = GateCannotVerify
-			result.Reasons = append(result.Reasons, fmt.Sprintf("ci witness cannot verify current run artifacts: %v", err))
-		} else {
-			result = applyWitnessWithExpectation(result, witnessPaths[0], expected)
-		}
-	}
+	result = applyOptionalWitness(result, target, witnessPaths)
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return GateResult{}, err
 	}
@@ -258,6 +258,19 @@ func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (Ga
 		return GateResult{}, err
 	}
 	return result, nil
+}
+
+func applyOptionalWitness(result GateResult, target string, witnessPaths []string) GateResult {
+	if len(witnessPaths) == 0 || strings.TrimSpace(witnessPaths[0]) == "" {
+		return result
+	}
+	expected, err := witnessExpectationFromTarget(target)
+	if err != nil {
+		result.CIWitnessGate = GateCannotVerify
+		result.Reasons = append(result.Reasons, fmt.Sprintf("ci witness cannot verify current run artifacts: %v", err))
+		return result
+	}
+	return applyWitnessWithExpectation(result, witnessPaths[0], expected)
 }
 
 func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
@@ -729,26 +742,38 @@ func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
 			NextAction: "Supply a trusted-checkpoint policy for the protected signer.",
 		}
 	}
-	if input.Checkpoint.Result == checkpoint.StatePass &&
+	if protectedCheckpointCanUseWitness(input) {
+		return protectedWitnessTrustScopeCondition(input)
+	}
+	return protectedInsufficientTrustScopeCondition(input.Checkpoint.TrustScope)
+}
+
+func protectedCheckpointCanUseWitness(input ProtectedGateInput) bool {
+	return input.Checkpoint.Result == checkpoint.StatePass &&
 		input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned &&
 		input.Checkpoint.SignerAuthorityState == checkpoint.StatePass &&
-		input.Witness != nil {
-		witnessState, _ := witnessBindingState(*input.Witness, input.WitnessExpectation)
-		freshness := protectedWitnessFreshnessCondition(input)
-		if witnessState == GatePass && freshness.State == GatePass {
-			return ProtectedCondition{ID: "protected_trust_scope_satisfied", State: GatePass, ReasonCode: "protected_trust_scope_satisfied", Reason: "CI signed checkpoint and CI witness binding satisfy protected profile"}
-		}
-		state := worseProtectedState(witnessState, freshness.State)
-		return ProtectedCondition{
-			ID:         "protected_trust_scope_satisfied",
-			State:      state,
-			ReasonCode: "protected_trust_scope_not_satisfied",
-			Reason:     "CI signed checkpoint does not have passing CI witness binding and freshness",
-			NextAction: "Provide fresh CI witness binding for the selected run.",
-		}
+		input.Witness != nil
+}
+
+func protectedWitnessTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
+	witnessState, _ := witnessBindingState(*input.Witness, input.WitnessExpectation)
+	freshness := protectedWitnessFreshnessCondition(input)
+	if witnessState == GatePass && freshness.State == GatePass {
+		return ProtectedCondition{ID: "protected_trust_scope_satisfied", State: GatePass, ReasonCode: "protected_trust_scope_satisfied", Reason: "CI signed checkpoint and CI witness binding satisfy protected profile"}
 	}
+	state := worseProtectedState(witnessState, freshness.State)
+	return ProtectedCondition{
+		ID:         "protected_trust_scope_satisfied",
+		State:      state,
+		ReasonCode: "protected_trust_scope_not_satisfied",
+		Reason:     "CI signed checkpoint does not have passing CI witness binding and freshness",
+		NextAction: "Provide fresh CI witness binding for the selected run.",
+	}
+}
+
+func protectedInsufficientTrustScopeCondition(trustScope string) ProtectedCondition {
 	code := "protected_trust_scope_not_satisfied"
-	if input.Checkpoint.TrustScope == checkpoint.TrustScopeLocalSigned {
+	if trustScope == checkpoint.TrustScopeLocalSigned {
 		code = "local_signed_not_protected"
 	}
 	return ProtectedCondition{
@@ -955,11 +980,8 @@ func classify(events []trace.Event, requirements []trace.EvidenceRequirement) (s
 }
 
 func payloadString(event trace.Event, key string) string {
-	if event.EventPayload == nil {
-		return ""
-	}
-	value, ok := event.EventPayload[key]
-	if !ok || value == nil {
+	value := payloadValue(event, key)
+	if value == nil {
 		return ""
 	}
 	switch typed := value.(type) {
@@ -971,11 +993,8 @@ func payloadString(event trace.Event, key string) string {
 }
 
 func payloadInt(event trace.Event, key string) (int, bool) {
-	if event.EventPayload == nil {
-		return 0, false
-	}
-	value, ok := event.EventPayload[key]
-	if !ok || value == nil {
+	value := payloadValue(event, key)
+	if value == nil {
 		return 0, false
 	}
 	switch typed := value.(type) {
@@ -989,6 +1008,13 @@ func payloadInt(event trace.Event, key string) (int, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func payloadValue(event trace.Event, key string) any {
+	if event.EventPayload == nil {
+		return nil
+	}
+	return event.EventPayload[key]
 }
 
 func requiredEvidenceIDs(contract trace.Contract) []string {
@@ -1242,25 +1268,27 @@ func witnessExpectationFromTarget(target string) (WitnessExpectation, error) {
 	}
 	artifacts := make([]WitnessArtifactDigest, 0, len(runDirs))
 	for _, runDir := range runDirs {
-		digest, err := hashFile(filepath.Join(runDir, "run.json"))
+		artifact, err := witnessRunArtifactDigest(runDir)
 		if err != nil {
 			return WitnessExpectation{}, err
 		}
-		artifacts = append(artifacts, WitnessArtifactDigest{
-			Path:   filepath.ToSlash(filepath.Join(filepath.Base(runDir), "run.json")),
-			SHA256: digest,
-		})
+		artifacts = append(artifacts, artifact)
 	}
 	return WitnessExpectation{RunArtifacts: artifacts}, nil
 }
 
+func witnessRunArtifactDigest(runDir string) (WitnessArtifactDigest, error) {
+	digest, err := hashFile(filepath.Join(runDir, "run.json"))
+	return WitnessArtifactDigest{
+		Path:   filepath.ToSlash(filepath.Join(filepath.Base(runDir), "run.json")),
+		SHA256: digest,
+	}, err
+}
+
 func hashFile(path string) (string, error) {
 	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
 	sum := sha256.Sum256(data)
-	return hex.EncodeToString(sum[:]), nil
+	return hex.EncodeToString(sum[:]), err
 }
 
 func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) []OverrideRequest {
@@ -1322,24 +1350,28 @@ func overrideRequestEvidenceState(event trace.Event, contract trace.Contract, st
 }
 
 func payloadStringSlice(event trace.Event, key string) []string {
-	value, ok := event.EventPayload[key]
-	if !ok || value == nil {
+	value := payloadValue(event, key)
+	if value == nil {
 		return nil
 	}
 	switch typed := value.(type) {
 	case []string:
 		return typed
 	case []any:
-		values := make([]string, 0, len(typed))
-		for _, item := range typed {
-			if text, ok := item.(string); ok {
-				values = append(values, text)
-			}
-		}
-		return values
+		return stringItems(typed)
 	default:
 		return nil
 	}
+}
+
+func stringItems(items []any) []string {
+	values := make([]string, 0, len(items))
+	for _, item := range items {
+		if text, ok := item.(string); ok {
+			values = append(values, text)
+		}
+	}
+	return values
 }
 
 func contractHasRequiredRun(contract trace.Contract, id string) bool {
@@ -1392,12 +1424,7 @@ func containsString(values []string, target string) bool {
 }
 
 func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
-	observed := map[string]bool{}
-	for _, row := range rows {
-		if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
-			observed[row.Kind] = true
-		}
-	}
+	observed := observedEvidenceKinds(rows)
 	missing := make([]string, 0)
 	for _, requirement := range contract.RequiredEvidence {
 		if requirement.ID == "" || observed[requirement.ID] {
@@ -1406,6 +1433,16 @@ func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
 		missing = append(missing, requirement.ID)
 	}
 	return missing
+}
+
+func observedEvidenceKinds(rows []RunRow) map[string]bool {
+	observed := map[string]bool{}
+	for _, row := range rows {
+		if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
+			observed[row.Kind] = true
+		}
+	}
+	return observed
 }
 
 func buildTimeline(rows []RunRow) string {

@@ -40,6 +40,8 @@ const (
 	SessionProfileSchemaVersion = "harness-session-profile-v1"
 	SessionRunSchemaVersion     = "harness-session-run-v1"
 	OpenCodeJSONLRawFormat      = "opencode-jsonl-v1"
+
+	safeTokenRunes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.:-"
 )
 
 var (
@@ -645,27 +647,18 @@ func RunSession(opts SessionOptions) (SessionRun, Run, error) {
 	if err != nil {
 		return SessionRun{}, Run{}, err
 	}
-	start := time.Now().UTC()
-	cmd := exec.Command(opts.Command[0], opts.Command[1:]...)
-	cmd.Stdin = nil
-	cmd.Stdout = io.Discard
-	cmd.Stderr = io.Discard
-	session.CommandDigest = digestCommand(opts.Command)
-	session.CommandDigestState = StatePass
-	if model := extractCommandModel(opts.Command); model != "" {
-		session.CommandModel = model
-		session.CommandModelState = StatePass
-	}
-	session.StartTime = start.Format(time.RFC3339)
-	if err := cmd.Start(); err != nil {
+	cmd := discardedCommand(opts.Command)
+	setSessionProcessCommand(&session, opts.Command, time.Now().UTC())
+	if err := startSessionProcess(cmd, &session); err != nil {
 		return SessionRun{}, Run{}, err
 	}
-	session.ProcessID = cmd.Process.Pid
-	session.ProcessIDState = StatePass
 	waitErr := cmd.Wait()
 	end := time.Now().UTC()
-	session.EndTime = end.Format(time.RFC3339)
-	if err := writeJSON(filepath.Join(opts.OutDir, "session.json"), session); err != nil {
+	return collectFinishedSession(opts, session, waitErr, end)
+}
+
+func collectFinishedSession(opts SessionOptions, session SessionRun, waitErr error, end time.Time) (SessionRun, Run, error) {
+	if err := writeFinishedSession(opts.OutDir, &session, end); err != nil {
 		return SessionRun{}, Run{}, err
 	}
 	collected, observed, err := CollectSession(SessionCollectOptions{ProfilePath: opts.ProfilePath, RunDir: opts.OutDir, Now: end})
@@ -676,6 +669,38 @@ func RunSession(opts SessionOptions) (SessionRun, Run, error) {
 		return collected, observed, waitErr
 	}
 	return collected, observed, nil
+}
+
+func writeFinishedSession(outDir string, session *SessionRun, end time.Time) error {
+	session.EndTime = end.Format(time.RFC3339)
+	return writeJSON(filepath.Join(outDir, "session.json"), *session)
+}
+
+func discardedCommand(command []string) *exec.Cmd {
+	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Stdin = nil
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	return cmd
+}
+
+func setSessionProcessCommand(session *SessionRun, command []string, start time.Time) {
+	session.CommandDigest = digestCommand(command)
+	session.CommandDigestState = StatePass
+	if model := extractCommandModel(command); model != "" {
+		session.CommandModel = model
+		session.CommandModelState = StatePass
+	}
+	session.StartTime = start.Format(time.RFC3339)
+}
+
+func startSessionProcess(cmd *exec.Cmd, session *SessionRun) error {
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	session.ProcessID = cmd.Process.Pid
+	session.ProcessIDState = StatePass
+	return nil
 }
 
 func Validate(opts ValidateOptions) (Validation, error) {
@@ -847,16 +872,22 @@ func validateRequiredSessionPaths(profile SessionProfile) error {
 }
 
 func validateRawEventConfig(profile SessionProfile) error {
-	if profile.RawEventFormat != "" && profile.RawEventFormat != OpenCodeJSONLRawFormat {
+	hasFormat := profile.RawEventFormat != ""
+	hasSource := strings.TrimSpace(profile.RawEventSourcePath) != ""
+	if unsupportedRawEventFormat(profile.RawEventFormat) {
 		return errors.New("unsupported raw_event_format")
 	}
-	if profile.RawEventFormat != "" && strings.TrimSpace(profile.RawEventSourcePath) == "" {
+	if hasFormat && !hasSource {
 		return errors.New("raw_event_source_path required for raw_event_format")
 	}
-	if profile.RawEventFormat == "" && strings.TrimSpace(profile.RawEventSourcePath) != "" {
+	if !hasFormat && hasSource {
 		return errors.New("raw_event_format required for raw_event_source_path")
 	}
 	return nil
+}
+
+func unsupportedRawEventFormat(format string) bool {
+	return format != "" && format != OpenCodeJSONLRawFormat
 }
 
 func normalizeSessionStreamCapture(profile *SessionProfile) error {
@@ -1020,7 +1051,7 @@ func normalizedOpenCodeRawEvents(rawPath string, sessionFacts []Event, now time.
 }
 
 func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Event, error) {
-	if len(strings.TrimSpace(string(line))) == 0 {
+	if blankJSONLLine(line) {
 		return nil, nil
 	}
 	var raw map[string]any
@@ -1039,6 +1070,10 @@ func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Ev
 		events[i].SourceDigest = digestLine(data)
 	}
 	return events, nil
+}
+
+func blankJSONLLine(line []byte) bool {
+	return len(strings.TrimSpace(string(line))) == 0
 }
 
 func writeNormalizedEvents(outPath string, events []Event) error {
@@ -1216,18 +1251,9 @@ func rawSignals(value any) []string {
 func rawSignalsAt(parentKey string, value any) []string {
 	switch v := value.(type) {
 	case map[string]any:
-		parts := make([]string, 0, len(v)*2)
-		for key, child := range v {
-			parts = append(parts, strings.ToLower(key))
-			parts = append(parts, rawSignalsAt(key, child)...)
-		}
-		return parts
+		return rawMapSignals(v)
 	case []any:
-		parts := make([]string, 0, len(v))
-		for _, child := range v {
-			parts = append(parts, rawSignalsAt(parentKey, child)...)
-		}
-		return parts
+		return rawSliceSignals(parentKey, v)
 	case string:
 		if rawSignalValueKey(parentKey) {
 			return []string{strings.ToLower(v)}
@@ -1236,6 +1262,23 @@ func rawSignalsAt(parentKey string, value any) []string {
 	default:
 		return []string{strings.ToLower(fmt.Sprint(v))}
 	}
+}
+
+func rawMapSignals(values map[string]any) []string {
+	parts := make([]string, 0, len(values)*2)
+	for key, child := range values {
+		parts = append(parts, strings.ToLower(key))
+		parts = append(parts, rawSignalsAt(key, child)...)
+	}
+	return parts
+}
+
+func rawSliceSignals(parentKey string, values []any) []string {
+	parts := make([]string, 0, len(values))
+	for _, child := range values {
+		parts = append(parts, rawSignalsAt(parentKey, child)...)
+	}
+	return parts
 }
 
 func rawSignalValueKey(key string) bool {
@@ -1282,16 +1325,26 @@ func hasKey(value any, keys ...string) bool {
 func hasKeyIn(value any, wanted map[string]bool) bool {
 	switch v := value.(type) {
 	case map[string]any:
-		for key, child := range v {
-			if wanted[strings.ToLower(key)] || hasKeyIn(child, wanted) {
-				return true
-			}
-		}
+		return hasKeyInMap(v, wanted)
 	case []any:
-		for _, child := range v {
-			if hasKeyIn(child, wanted) {
-				return true
-			}
+		return hasKeyInSlice(v, wanted)
+	}
+	return false
+}
+
+func hasKeyInMap(values map[string]any, wanted map[string]bool) bool {
+	for key, child := range values {
+		if wanted[strings.ToLower(key)] || hasKeyIn(child, wanted) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasKeyInSlice(values []any, wanted map[string]bool) bool {
+	for _, child := range values {
+		if hasKeyIn(child, wanted) {
+			return true
 		}
 	}
 	return false
@@ -1361,18 +1414,33 @@ func findStringByKeyIn(value any, wanted map[string]bool) string {
 
 func findTimestamp(raw map[string]any) string {
 	for _, key := range []string{"time", "timestamp", "created_at", "observed_at"} {
-		if value := findStringByKey(raw, key); value != "" {
-			if parsed, err := time.Parse(time.RFC3339, value); err == nil {
-				return parsed.UTC().Format(time.RFC3339)
-			}
-		}
-		if value, ok := findNumberByKey(raw, key); ok {
-			if observedAt := unixMillisTimestamp(value); observedAt != "" {
-				return observedAt
-			}
+		if observedAt := timestampForKey(raw, key); observedAt != "" {
+			return observedAt
 		}
 	}
 	return ""
+}
+
+func timestampForKey(raw map[string]any, key string) string {
+	if observedAt := stringTimestampForKey(raw, key); observedAt != "" {
+		return observedAt
+	}
+	if value, ok := findNumberByKey(raw, key); ok {
+		return unixMillisTimestamp(value)
+	}
+	return ""
+}
+
+func stringTimestampForKey(raw map[string]any, key string) string {
+	value := findStringByKey(raw, key)
+	if value == "" {
+		return ""
+	}
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return ""
+	}
+	return parsed.UTC().Format(time.RFC3339)
 }
 
 func findNumberByKey(value any, keys ...string) (float64, bool) {
@@ -1423,10 +1491,9 @@ func nativeMutationTool(raw map[string]any) bool {
 func safeToken(value string) string {
 	var b strings.Builder
 	for _, r := range value {
-		switch {
-		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '_', r == '.', r == ':', r == '-':
+		if safeTokenRune(r) {
 			b.WriteRune(r)
-		default:
+		} else {
 			b.WriteByte('-')
 		}
 		if b.Len() >= 128 {
@@ -1438,6 +1505,10 @@ func safeToken(value string) string {
 		return "opencode"
 	}
 	return token
+}
+
+func safeTokenRune(r rune) bool {
+	return strings.ContainsRune(safeTokenRunes, r)
 }
 
 func LoadRun(dir string) (Run, []Event, error) {
@@ -1452,22 +1523,38 @@ func LoadRun(dir string) (Run, []Event, error) {
 	if run.SchemaVersion != RunSchemaVersion {
 		return Run{}, nil, fmt.Errorf("unsupported run schema_version: %s", run.SchemaVersion)
 	}
-	events := make([]Event, 0, len(run.EventRefs))
-	for _, ref := range run.EventRefs {
-		if !safeEventRef(ref) {
-			return Run{}, nil, fmt.Errorf("unsafe event ref: %s", ref)
-		}
-		data, err := os.ReadFile(filepath.Join(dir, ref))
+	events, err := loadRunEvents(dir, run.EventRefs)
+	if err != nil {
+		return Run{}, nil, err
+	}
+	return run, events, nil
+}
+
+func loadRunEvents(dir string, refs []string) ([]Event, error) {
+	events := make([]Event, 0, len(refs))
+	for _, ref := range refs {
+		event, err := loadRunEvent(dir, ref)
 		if err != nil {
-			return Run{}, nil, err
-		}
-		var event Event
-		if err := json.Unmarshal(data, &event); err != nil {
-			return Run{}, nil, err
+			return nil, err
 		}
 		events = append(events, event)
 	}
-	return run, events, nil
+	return events, nil
+}
+
+func loadRunEvent(dir, ref string) (Event, error) {
+	if !safeEventRef(ref) {
+		return Event{}, fmt.Errorf("unsafe event ref: %s", ref)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, ref))
+	if err != nil {
+		return Event{}, err
+	}
+	var event Event
+	if err := json.Unmarshal(data, &event); err != nil {
+		return Event{}, err
+	}
+	return event, nil
 }
 
 func Summarize(validation Validation) string {
@@ -1581,14 +1668,11 @@ func readEvents(profile Profile, sourcePath string) ([]Event, string, error) {
 		return nil, "", err
 	}
 	defer file.Close()
-	maxLine := profile.Limits.MaxLineBytes
-	if maxLine <= 0 {
-		maxLine = DefaultMaxLineBytes
-	}
-	maxEvents := profile.Limits.MaxEvents
-	if maxEvents <= 0 {
-		maxEvents = DefaultMaxEvents
-	}
+	maxLine, maxEvents := effectiveEventLimits(profile.Limits)
+	return scanEvents(profile, file, maxLine, maxEvents)
+}
+
+func scanEvents(profile Profile, file io.Reader, maxLine, maxEvents int) ([]Event, string, error) {
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), maxLine)
 	events := []Event{}
@@ -1597,23 +1681,44 @@ func readEvents(profile Profile, sourcePath string) ([]Event, string, error) {
 	for scanner.Scan() {
 		lineNo++
 		line := scanner.Bytes()
-		sourceHash.Write(line)
-		if len(strings.TrimSpace(string(line))) == 0 {
-			continue
-		}
-		if len(events) >= maxEvents {
-			return nil, "", fmt.Errorf("source line %d: event limit exceeded", lineNo)
-		}
-		event, err := parseEvent(profile, line, lineNo)
+		event, ok, err := readEventLine(profile, line, lineNo, len(events), maxEvents, sourceHash)
 		if err != nil {
 			return nil, "", err
 		}
-		events = append(events, event)
+		if ok {
+			events = append(events, event)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, "", err
 	}
 	return events, hex.EncodeToString(sourceHash.Sum(nil)), nil
+}
+
+func readEventLine(profile Profile, line []byte, lineNo, eventCount, maxEvents int, sourceHash io.Writer) (Event, bool, error) {
+	if _, err := sourceHash.Write(line); err != nil {
+		return Event{}, false, err
+	}
+	if blankJSONLLine(line) {
+		return Event{}, false, nil
+	}
+	if eventCount >= maxEvents {
+		return Event{}, false, fmt.Errorf("source line %d: event limit exceeded", lineNo)
+	}
+	event, err := parseEvent(profile, line, lineNo)
+	return event, err == nil, err
+}
+
+func effectiveEventLimits(limits Limits) (int, int) {
+	maxLine := limits.MaxLineBytes
+	if maxLine <= 0 {
+		maxLine = DefaultMaxLineBytes
+	}
+	maxEvents := limits.MaxEvents
+	if maxEvents <= 0 {
+		maxEvents = DefaultMaxEvents
+	}
+	return maxLine, maxEvents
 }
 
 func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
@@ -1664,31 +1769,41 @@ func validateEventIdentity(profile Profile, event Event) error {
 	if !safeIDPattern.MatchString(event.EventType) {
 		return errors.New("unsafe event_type")
 	}
-	if event.ObservedAt != "" {
-		if _, err := time.Parse(time.RFC3339, event.ObservedAt); err != nil {
-			return errors.New("invalid observed_at")
-		}
+	return validateObservedAt(event.ObservedAt)
+}
+
+func validateObservedAt(value string) error {
+	if value == "" {
+		return nil
+	}
+	if _, err := time.Parse(time.RFC3339, value); err != nil {
+		return errors.New("invalid observed_at")
 	}
 	return nil
 }
 
 func validateEventRefs(event Event) error {
-	if !safeRef(event.SourceRef) {
-		return errors.New("unsafe source_ref")
-	}
-	if !sha256Pattern.MatchString(event.SourceDigest) {
-		return errors.New("invalid source_digest")
-	}
-	if event.TaskRef != "" && !safeRef(event.TaskRef) {
-		return errors.New("unsafe task_ref")
-	}
-	if event.OperationRef != "" && !safeOperationRef(event.OperationRef) {
-		return errors.New("unsafe operation_ref")
-	}
-	if event.ActorRef != "" && !safeRef(event.ActorRef) {
-		return errors.New("unsafe actor_ref")
+	for _, check := range eventRefChecks(event) {
+		if !check.ok {
+			return errors.New(check.err)
+		}
 	}
 	return nil
+}
+
+type eventRefCheck struct {
+	ok  bool
+	err string
+}
+
+func eventRefChecks(event Event) []eventRefCheck {
+	return []eventRefCheck{
+		{safeRef(event.SourceRef), "unsafe source_ref"},
+		{sha256Pattern.MatchString(event.SourceDigest), "invalid source_digest"},
+		{event.TaskRef == "" || safeRef(event.TaskRef), "unsafe task_ref"},
+		{event.OperationRef == "" || safeOperationRef(event.OperationRef), "unsafe operation_ref"},
+		{event.ActorRef == "" || safeRef(event.ActorRef), "unsafe actor_ref"},
+	}
 }
 
 func validateEventContent(event Event) error {
@@ -1714,28 +1829,7 @@ func validUnavailableField(field UnavailableField) bool {
 }
 
 func evaluate(profile Profile, run Run, events []Event) Validation {
-	dimensions := []Dimension{}
-	counts := map[string]int{}
-	for _, event := range events {
-		counts[event.EventFamily]++
-	}
-	required := map[string]bool{}
-	for _, family := range profile.RequiredEventFamilies {
-		required[family] = true
-		dimensions = append(dimensions, dimension(family, true, counts[family]))
-	}
-	for _, family := range profile.OptionalEventFamilies {
-		if required[family] {
-			continue
-		}
-		dimensions = append(dimensions, dimension(family, false, counts[family]))
-	}
-	sort.Slice(dimensions, func(i, j int) bool {
-		if dimensions[i].Required != dimensions[j].Required {
-			return dimensions[i].Required
-		}
-		return dimensions[i].Family < dimensions[j].Family
-	})
+	dimensions := evaluationDimensions(profile, events)
 	state, reason := compose(dimensions)
 	if run.EventSchemaVersion != profile.EventSchemaVersion {
 		state, reason = StateCannotVerify, "schema_version_mismatch"
@@ -1753,6 +1847,51 @@ func evaluate(profile Profile, run Run, events []Event) Validation {
 	}
 	validation.ValidationDigest = validationDigest(validation)
 	return validation
+}
+
+func evaluationDimensions(profile Profile, events []Event) []Dimension {
+	counts := eventFamilyCounts(events)
+	dimensions, required := requiredDimensions(profile.RequiredEventFamilies, counts)
+	dimensions = append(dimensions, optionalDimensions(profile.OptionalEventFamilies, required, counts)...)
+	sortDimensions(dimensions)
+	return dimensions
+}
+
+func eventFamilyCounts(events []Event) map[string]int {
+	counts := map[string]int{}
+	for _, event := range events {
+		counts[event.EventFamily]++
+	}
+	return counts
+}
+
+func requiredDimensions(families []string, counts map[string]int) ([]Dimension, map[string]bool) {
+	required := map[string]bool{}
+	dimensions := make([]Dimension, 0, len(families))
+	for _, family := range families {
+		required[family] = true
+		dimensions = append(dimensions, dimension(family, true, counts[family]))
+	}
+	return dimensions, required
+}
+
+func optionalDimensions(families []string, required map[string]bool, counts map[string]int) []Dimension {
+	dimensions := []Dimension{}
+	for _, family := range families {
+		if !required[family] {
+			dimensions = append(dimensions, dimension(family, false, counts[family]))
+		}
+	}
+	return dimensions
+}
+
+func sortDimensions(dimensions []Dimension) {
+	sort.Slice(dimensions, func(i, j int) bool {
+		if dimensions[i].Required != dimensions[j].Required {
+			return dimensions[i].Required
+		}
+		return dimensions[i].Family < dimensions[j].Family
+	})
 }
 
 func dimension(family string, required bool, count int) Dimension {
@@ -1980,16 +2119,38 @@ func safeOutDir(path string) (string, error) {
 		return "", errors.New("out must be a relative local directory without traversal")
 	}
 	clean := filepath.Clean(path)
-	if _, err := os.Lstat(clean); err == nil {
+	exists, err := pathExistsForLstat(clean)
+	if err != nil {
+		return "", err
+	}
+	if exists {
 		return safeExistingOutDir(clean)
-	} else {
-		if parentEscapes, err := outParentEscapes(clean); err != nil {
-			return "", err
-		} else if parentEscapes {
-			return "", errors.New("out parent path escapes working directory")
-		}
+	}
+	if err := ensureOutParentInsideWorkingDirectory(clean); err != nil {
+		return "", err
 	}
 	return ensureOutDirEmptyOrMissing(clean)
+}
+
+func pathExistsForLstat(path string) (bool, error) {
+	if _, err := os.Lstat(path); err == nil {
+		return true, nil
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
+func ensureOutParentInsideWorkingDirectory(clean string) error {
+	parentEscapes, err := outParentEscapes(clean)
+	if err != nil {
+		return err
+	}
+	if parentEscapes {
+		return errors.New("out parent path escapes working directory")
+	}
+	return nil
 }
 
 func safeExistingOutDir(clean string) (string, error) {
@@ -2112,32 +2273,58 @@ func digestCommand(command []string) string {
 }
 
 func extractCommandModel(command []string) string {
-	if len(command) >= 3 && command[1] == "-c" {
-		base := filepath.Base(command[0])
-		if base == "sh" || base == "bash" {
-			if model := extractCommandModelArgs(shellFields(command[2])); model != "" {
-				return model
-			}
+	if shellCommand := shellCommandString(command); shellCommand != "" {
+		if model := extractCommandModelArgs(shellFields(shellCommand)); model != "" {
+			return model
 		}
 	}
 	return extractCommandModelArgs(command)
 }
 
+func shellCommandString(command []string) string {
+	if len(command) < 3 || command[1] != "-c" {
+		return ""
+	}
+	base := filepath.Base(command[0])
+	if base != "sh" && base != "bash" {
+		return ""
+	}
+	return command[2]
+}
+
 func extractCommandModelArgs(args []string) string {
 	for i, arg := range args {
-		if arg == "--model" || arg == "-m" {
-			if i+1 < len(args) {
-				return safeCommandModel(args[i+1])
-			}
-			return ""
-		}
-		for _, prefix := range []string{"--model=", "-m="} {
-			if strings.HasPrefix(arg, prefix) {
-				return safeCommandModel(strings.TrimPrefix(arg, prefix))
-			}
+		if model, matched := commandModelArg(args, i, arg); matched {
+			return model
 		}
 	}
 	return ""
+}
+
+func commandModelArg(args []string, i int, arg string) (string, bool) {
+	if arg == "--model" || arg == "-m" {
+		return nextCommandModelArg(args, i), true
+	}
+	if model, ok := prefixedCommandModelArg(arg); ok {
+		return model, true
+	}
+	return "", false
+}
+
+func nextCommandModelArg(args []string, i int) string {
+	if i+1 >= len(args) {
+		return ""
+	}
+	return safeCommandModel(args[i+1])
+}
+
+func prefixedCommandModelArg(arg string) (string, bool) {
+	for _, prefix := range []string{"--model=", "-m="} {
+		if strings.HasPrefix(arg, prefix) {
+			return safeCommandModel(strings.TrimPrefix(arg, prefix)), true
+		}
+	}
+	return "", false
 }
 
 // shellFields handles the shell field syntax needed to locate --model inside a
@@ -2233,7 +2420,7 @@ func shellFieldSeparator(r rune) bool {
 
 func safeCommandModel(model string) string {
 	model = strings.TrimSpace(model)
-	if model == "" || strings.Contains(model, "://") || strings.ContainsAny(model, " \t\n\r\"'`$\\") {
+	if model == "" || unsafeCommandModelChars(model) {
 		return ""
 	}
 	if strings.Contains(model, "../") || strings.HasPrefix(model, "/") {
@@ -2243,6 +2430,10 @@ func safeCommandModel(model string) string {
 		return ""
 	}
 	return model
+}
+
+func unsafeCommandModelChars(model string) bool {
+	return strings.Contains(model, "://") || strings.ContainsAny(model, " \t\n\r\"'`$\\")
 }
 
 func digestFile(path string) string {
@@ -2320,7 +2511,7 @@ func childPath(parent, key string) string {
 }
 
 func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, bool) {
-	if rawEvent && unretainedRawToolInputField(path, key, value) {
+	if skippableRawEventField(path, key, value, rawEvent) {
 		return "", true
 	}
 	if rawFieldNames[key] {
@@ -2329,10 +2520,13 @@ func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, b
 	if sensitiveFieldNames[key] {
 		return "sensitive_field", false
 	}
-	if rawEvent && unretainedRawBodyField(key) && !structuredRawBody(value) {
-		return "", true
-	}
 	return "", false
+}
+
+func skippableRawEventField(path, key string, value any, rawEvent bool) bool {
+	return rawEvent &&
+		(unretainedRawToolInputField(path, key, value) ||
+			(unretainedRawBodyField(key) && !structuredRawBody(value)))
 }
 
 func unretainedRawToolInputField(path, key string, value any) bool {
@@ -2380,19 +2574,25 @@ func findUnsafeStringAt(path, value string, rawEvent bool) (string, string) {
 	if strings.TrimSpace(value) == "" {
 		return "", ""
 	}
-	if !rawEvent && unsafePathValue(value) {
-		return path, "unsafe_path_or_private_path"
-	}
-	if unsafeURL(value) {
-		return path, "authenticated_url"
-	}
-	if providerTokenPrefix.MatchString(value) {
-		return path, "token_like_value"
-	}
-	if unsafeEncodedToken(path, value, rawEvent) {
-		return path, "token_like_value"
+	if reason := unsafeStringReason(path, value, rawEvent); reason != "" {
+		return path, reason
 	}
 	return "", ""
+}
+
+func unsafeStringReason(path, value string, rawEvent bool) string {
+	switch {
+	case !rawEvent && unsafePathValue(value):
+		return "unsafe_path_or_private_path"
+	case unsafeURL(value):
+		return "authenticated_url"
+	case providerTokenPrefix.MatchString(value):
+		return "token_like_value"
+	case unsafeEncodedToken(path, value, rawEvent):
+		return "token_like_value"
+	default:
+		return ""
+	}
 }
 
 func unsafePathValue(value string) bool {
@@ -2433,7 +2633,11 @@ func unsafeURL(raw string) bool {
 	if parsed.User != nil {
 		return true
 	}
-	for key := range parsed.Query() {
+	return queryHasAuthKey(parsed.Query())
+}
+
+func queryHasAuthKey(values url.Values) bool {
+	for key := range values {
 		if authQueryKeys[strings.ToLower(key)] {
 			return true
 		}

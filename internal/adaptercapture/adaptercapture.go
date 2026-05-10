@@ -330,10 +330,8 @@ func fileMutationCondition(run RunEvidence) Condition {
 
 func modelIdentityCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
-		if event.EventType == "model_call_observed" {
-			if event.ModelIdentityProvenance == "gateway_observed" && (!run.GatewayIntegrated || !run.GatewayEvidenceBound || event.IdentityBinding != IdentityBound) {
-				return fail("model_identity_not_overclaimed", "gateway_identity_overclaimed", "model identity is claimed as gateway-observed without bound gateway evidence", "Keep model identity harness_observed or bind gateway evidence.")
-			}
+		if modelIdentityOverclaimed(run, event) {
+			return fail("model_identity_not_overclaimed", "gateway_identity_overclaimed", "model identity is claimed as gateway-observed without bound gateway evidence", "Keep model identity harness_observed or bind gateway evidence.")
 		}
 	}
 	if !run.GatewayIntegrated {
@@ -342,27 +340,22 @@ func modelIdentityCondition(run RunEvidence) Condition {
 	return pass("model_identity_not_overclaimed", "model_identity_not_overclaimed", "model identity provenance stays within available gateway evidence")
 }
 
+func modelIdentityOverclaimed(run RunEvidence, event AdapterEvent) bool {
+	return event.EventType == "model_call_observed" &&
+		event.ModelIdentityProvenance == "gateway_observed" &&
+		!gatewayModelIdentityBound(run, event)
+}
+
+func gatewayModelIdentityBound(run RunEvidence, event AdapterEvent) bool {
+	return run.GatewayIntegrated && run.GatewayEvidenceBound && event.IdentityBinding == IdentityBound
+}
+
 func testProvenanceCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
 		if event.EventType != "test_observed" {
 			continue
 		}
-		switch event.TestProvenance {
-		case "ci_executed", "wrapper_executed":
-			return pass("test_provenance_not_overclaimed", "test_provenance_executed", "test evidence is bound to CI or wrapper execution")
-		case "agent_reported":
-			if event.ExecutedEvidenceClaimed {
-				return fail("test_provenance_not_overclaimed", "agent_reported_test_not_executed", "agent-reported tests are claimed as executed evidence", "Bind test evidence to CI or wrapper execution.")
-			}
-			return cannotVerify("test_provenance_not_overclaimed", "test_execution_unverified", "agent-reported test evidence is visible but non-executed", "Capture CI or wrapper-executed test evidence.")
-		case "harness_observed":
-			if event.ExecutedEvidenceClaimed {
-				return fail("test_provenance_not_overclaimed", "harness_observed_test_not_executed", "harness-observed test intent is claimed as executed evidence", "Bind test evidence to CI or wrapper execution.")
-			}
-			return cannotVerify("test_provenance_not_overclaimed", "test_execution_unverified", "harness-observed test evidence is correlation-only", "Capture CI or wrapper-executed test evidence.")
-		default:
-			return cannotVerify("test_provenance_not_overclaimed", "test_provenance_missing", "test provenance is missing or unverifiable", "Record ci_executed or wrapper_executed test provenance.")
-		}
+		return testProvenanceEventCondition(event)
 	}
 	if hasRequired(run, "test_observed") {
 		return Condition{ID: "test_provenance_not_overclaimed", State: StateMissingTelemetry, ReasonCode: "test_event_missing", Reason: "required test adapter event is missing", NextAction: "Capture test_observed adapter evidence."}
@@ -370,20 +363,46 @@ func testProvenanceCondition(run RunEvidence) Condition {
 	return pass("test_provenance_not_overclaimed", "test_provenance_not_required", "test provenance was not required")
 }
 
+func testProvenanceEventCondition(event AdapterEvent) Condition {
+	switch event.TestProvenance {
+	case "ci_executed", "wrapper_executed":
+		return pass("test_provenance_not_overclaimed", "test_provenance_executed", "test evidence is bound to CI or wrapper execution")
+	case "agent_reported":
+		return reportedTestCondition(event, "agent_reported_test_not_executed", "agent-reported tests are claimed as executed evidence", "agent-reported test evidence is visible but non-executed")
+	case "harness_observed":
+		return reportedTestCondition(event, "harness_observed_test_not_executed", "harness-observed test intent is claimed as executed evidence", "harness-observed test evidence is correlation-only")
+	default:
+		return cannotVerify("test_provenance_not_overclaimed", "test_provenance_missing", "test provenance is missing or unverifiable", "Record ci_executed or wrapper_executed test provenance.")
+	}
+}
+
+func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReason string) Condition {
+	if event.ExecutedEvidenceClaimed {
+		return fail("test_provenance_not_overclaimed", failCode, failReason, "Bind test evidence to CI or wrapper execution.")
+	}
+	return cannotVerify("test_provenance_not_overclaimed", "test_execution_unverified", cannotReason, "Capture CI or wrapper-executed test evidence.")
+}
+
 func providerRefsCondition(run RunEvidence) Condition {
 	for _, ref := range run.ProviderRefs {
-		if containsSecret(ref.SourceRef) || containsSecret(ref.ChangeRef) || containsSecret(ref.ReviewRef) {
+		if providerRefContainsSecret(ref) {
 			return fail("provider_refs_portable", "provider_ref_contains_secret", "provider-neutral reference contains credential-like material", "Persist canonical token-free provider references.")
 		}
 	}
 	for _, event := range run.AdapterEvents {
-		for _, ref := range event.ProviderRefs {
-			if containsSecret(ref) {
-				return fail("provider_refs_portable", "provider_ref_contains_secret", "event-level provider reference contains credential-like material", "Persist canonical token-free provider references.")
-			}
+		if eventProviderRefsContainSecret(event) {
+			return fail("provider_refs_portable", "provider_ref_contains_secret", "event-level provider reference contains credential-like material", "Persist canonical token-free provider references.")
 		}
 	}
 	return pass("provider_refs_portable", "provider_refs_portable", "provider references are portable and token-free")
+}
+
+func providerRefContainsSecret(ref ProviderRef) bool {
+	return containsSecret(ref.SourceRef) || containsSecret(ref.ChangeRef) || containsSecret(ref.ReviewRef)
+}
+
+func eventProviderRefsContainSecret(event AdapterEvent) bool {
+	return stringSliceContainsSecret(event.ProviderRefs)
 }
 
 func redactionMetadataCondition(run RunEvidence) Condition {

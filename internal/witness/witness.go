@@ -232,14 +232,15 @@ func WriteGitHubActions(outPath, runsRoot, reportDir string, env map[string]stri
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return Record{}, err
 	}
+	return record, writeRecord(outPath, record)
+}
+
+func writeRecord(outPath string, record Record) error {
 	data, err := json.MarshalIndent(record, "", "  ")
 	if err != nil {
-		return Record{}, err
+		return err
 	}
-	if err := os.WriteFile(outPath, append(data, '\n'), 0o644); err != nil {
-		return Record{}, err
-	}
-	return record, nil
+	return os.WriteFile(outPath, append(data, '\n'), 0o644)
 }
 
 func Load(path string) (Record, error) {
@@ -418,16 +419,20 @@ func audienceString(value any) string {
 	case string:
 		return typed
 	case []any:
-		parts := make([]string, 0, len(typed))
-		for _, item := range typed {
-			if text, ok := item.(string); ok {
-				parts = append(parts, text)
-			}
-		}
-		return strings.Join(parts, ",")
+		return strings.Join(audienceStringParts(typed), ",")
 	default:
 		return ""
 	}
+}
+
+func audienceStringParts(values []any) []string {
+	parts := make([]string, 0, len(values))
+	for _, item := range values {
+		if text, ok := item.(string); ok {
+			parts = append(parts, text)
+		}
+	}
+	return parts
 }
 
 func claimsMatchEnvironment(claims OIDCClaims, env map[string]string) bool {

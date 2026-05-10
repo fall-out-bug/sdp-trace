@@ -341,13 +341,16 @@ func targetRulesConflict(a, b TargetRule) bool {
 	if a.TargetPattern != b.TargetPattern {
 		return false
 	}
-	for _, event := range a.AllowedEvents {
-		if contains(b.DeniedEvents, event) {
-			return true
-		}
-	}
-	for _, event := range a.DeniedEvents {
-		if contains(b.AllowedEvents, event) {
+	return eventSetsConflict(a.AllowedEvents, a.DeniedEvents, b.AllowedEvents, b.DeniedEvents)
+}
+
+func eventSetsConflict(aAllowed, aDenied, bAllowed, bDenied []string) bool {
+	return eventSetIntersects(aAllowed, bDenied) || eventSetIntersects(aDenied, bAllowed)
+}
+
+func eventSetIntersects(left, right []string) bool {
+	for _, event := range left {
+		if contains(right, event) {
 			return true
 		}
 	}
@@ -462,44 +465,48 @@ type matchResult struct {
 }
 
 func matchDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
-	state := StateNotAssessed
-	reason := "no_applicable_authority_rule"
-	ruleRef := ""
-	var matchedTargetState string
-	if contains(env.AllowedEvents, action.EventType) {
-		state = StateWithinAuthority
-		reason = "event_allowed"
-		ruleRef = "allowed_events"
-	}
-	if contains(env.DeniedEvents, action.EventType) {
-		state = StateOutsideAuthority
-		reason = "event_denied"
-		ruleRef = "denied_events"
-	}
+	result := topLevelDecision(env, action)
+	matchedTargetState := ""
 	for _, rule := range env.TargetRules {
-		if !targetMatches(rule.TargetPattern, action.Target) {
+		next, targetState, ok := targetRuleDecision(rule, action)
+		if !ok {
 			continue
 		}
-		if contains(rule.AllowedEvents, action.EventType) {
-			if matchedTargetState == StateOutsideAuthority {
-				return matchResult{state: StateCannotVerify, reasonCode: "overlapping_target_rules_conflict", ruleRef: ruleRef + "," + rule.RuleID}
-			}
-			matchedTargetState = StateWithinAuthority
-			state = StateWithinAuthority
-			reason = "target_event_allowed"
-			ruleRef = rule.RuleID
+		if targetStatesConflict(matchedTargetState, targetState) {
+			return matchResult{state: StateCannotVerify, reasonCode: "overlapping_target_rules_conflict", ruleRef: result.ruleRef + "," + rule.RuleID}
 		}
-		if contains(rule.DeniedEvents, action.EventType) {
-			if matchedTargetState == StateWithinAuthority {
-				return matchResult{state: StateCannotVerify, reasonCode: "overlapping_target_rules_conflict", ruleRef: ruleRef + "," + rule.RuleID}
-			}
-			matchedTargetState = StateOutsideAuthority
-			state = StateOutsideAuthority
-			reason = "target_event_denied"
-			ruleRef = rule.RuleID
-		}
+		matchedTargetState = targetState
+		result = next
 	}
-	return matchResult{state: state, reasonCode: reason, ruleRef: ruleRef}
+	return result
+}
+
+func topLevelDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
+	if contains(env.DeniedEvents, action.EventType) {
+		return matchResult{state: StateOutsideAuthority, reasonCode: "event_denied", ruleRef: "denied_events"}
+	}
+	if contains(env.AllowedEvents, action.EventType) {
+		return matchResult{state: StateWithinAuthority, reasonCode: "event_allowed", ruleRef: "allowed_events"}
+	}
+	return matchResult{state: StateNotAssessed, reasonCode: "no_applicable_authority_rule"}
+}
+
+func targetRuleDecision(rule TargetRule, action ObservedAction) (matchResult, string, bool) {
+	if !targetMatches(rule.TargetPattern, action.Target) {
+		return matchResult{}, "", false
+	}
+	if contains(rule.DeniedEvents, action.EventType) {
+		return matchResult{state: StateOutsideAuthority, reasonCode: "target_event_denied", ruleRef: rule.RuleID}, StateOutsideAuthority, true
+	}
+	if contains(rule.AllowedEvents, action.EventType) {
+		return matchResult{state: StateWithinAuthority, reasonCode: "target_event_allowed", ruleRef: rule.RuleID}, StateWithinAuthority, true
+	}
+	return matchResult{}, "", false
+}
+
+func targetStatesConflict(previous, next string) bool {
+	return (previous == StateOutsideAuthority && next == StateWithinAuthority) ||
+		(previous == StateWithinAuthority && next == StateOutsideAuthority)
 }
 
 func targetMatches(pattern, target string) bool {
@@ -519,10 +526,7 @@ func targetMatches(pattern, target string) bool {
 
 func approvalReason(env AuthorityEnvelope, action ObservedAction, ruleRef string, resolution map[string]string) string {
 	for _, req := range env.ApprovalRequirements {
-		if req.EventType != "" && req.EventType != action.EventType {
-			continue
-		}
-		if req.TargetRuleRef != "" && req.TargetRuleRef != ruleRef {
+		if !approvalRequirementApplies(req, action, ruleRef) {
 			continue
 		}
 		if strings.TrimSpace(req.ApprovalEvidenceRef) == "" {
@@ -533,6 +537,11 @@ func approvalReason(env AuthorityEnvelope, action ObservedAction, ruleRef string
 		}
 	}
 	return ""
+}
+
+func approvalRequirementApplies(req ApprovalRequirement, action ObservedAction, ruleRef string) bool {
+	return (req.EventType == "" || req.EventType == action.EventType) &&
+		(req.TargetRuleRef == "" || req.TargetRuleRef == ruleRef)
 }
 
 func evaluateBindings(inputs []EvidenceBindingInput, actions []ObservedAction) []EvidenceBinding {

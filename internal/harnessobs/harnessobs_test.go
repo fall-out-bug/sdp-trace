@@ -338,6 +338,30 @@ func TestFindNumberByKeyIn(t *testing.T) {
 	}
 }
 
+func TestEffectiveEventLimitsDefaultsAndOverrides(t *testing.T) {
+	maxLine, maxEvents := effectiveEventLimits(Limits{})
+	if maxLine != DefaultMaxLineBytes || maxEvents != DefaultMaxEvents {
+		t.Fatalf("effectiveEventLimits(defaults) = %d/%d, want %d/%d", maxLine, maxEvents, DefaultMaxLineBytes, DefaultMaxEvents)
+	}
+
+	maxLine, maxEvents = effectiveEventLimits(Limits{MaxLineBytes: 32, MaxEvents: 7})
+	if maxLine != 32 || maxEvents != 7 {
+		t.Fatalf("effectiveEventLimits(overrides) = %d/%d, want 32/7", maxLine, maxEvents)
+	}
+}
+
+func TestTimestampForKeyPrefersRFC3339ThenUnix(t *testing.T) {
+	got := timestampForKey(map[string]any{"timestamp": "2026-05-10T15:00:00+03:00"}, "timestamp")
+	if got != "2026-05-10T12:00:00Z" {
+		t.Fatalf("timestampForKey(RFC3339) = %s, want UTC normalized value", got)
+	}
+
+	got = timestampForKey(map[string]any{"timestamp": float64(1_746_878_400_000)}, "timestamp")
+	if got != "2025-05-10T12:00:00Z" {
+		t.Fatalf("timestampForKey(unix ms) = %s, want 2025-05-10T12:00:00Z", got)
+	}
+}
+
 func TestNormalizeOpenCodeRawLineClassifiesFamilies(t *testing.T) {
 	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
 	raw := map[string]any{

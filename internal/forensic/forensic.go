@@ -401,19 +401,38 @@ func prewriteRuleRefsMissing(event EventRetention) bool {
 
 func unresolvedCondition(input Input) Condition {
 	for _, event := range input.Run.Events {
-		if event.RedactionUnresolved {
-			return fail("redaction_unresolved_visible", "redaction_unresolved", "unresolved redaction is visible and blocks forensic retention", "Resolve redaction or lower the forensic claim.")
-		}
-		if event.RedactionAction == RedactionActionWithhold {
-			if event.Withholding == nil || event.Withholding.Authority.ActorID == "" || event.Withholding.ReasonCode == "" || event.Withholding.Justification == "" {
-				return cannotVerify("redaction_unresolved_visible", "withholding_audit_missing", "withholding lacks required audit evidence", "Record withholding authority, requestor when different, reason, and justification.")
-			}
-			if event.Withholding.Authority.VerificationState != AuthorityVerified {
-				return cannotVerify("redaction_unresolved_visible", "withholding_authority_unverifiable", "withholding authority is not provenance or accountability verified", "Record verified withholding authority evidence.")
-			}
+		if condition, ok := unresolvedConditionForEvent(event); ok {
+			return condition
 		}
 	}
 	return pass("redaction_unresolved_visible", "redaction_resolved", "redaction states are resolved or explicitly non-blocking")
+}
+
+func unresolvedConditionForEvent(event EventRetention) (Condition, bool) {
+	if event.RedactionUnresolved {
+		return fail("redaction_unresolved_visible", "redaction_unresolved", "unresolved redaction is visible and blocks forensic retention", "Resolve redaction or lower the forensic claim."), true
+	}
+	if event.RedactionAction != RedactionActionWithhold {
+		return Condition{}, false
+	}
+	return withholdingCondition(event.Withholding)
+}
+
+func withholdingCondition(withholding *Withholding) (Condition, bool) {
+	if withholdingAuditMissing(withholding) {
+		return cannotVerify("redaction_unresolved_visible", "withholding_audit_missing", "withholding lacks required audit evidence", "Record withholding authority, requestor when different, reason, and justification."), true
+	}
+	if withholding.Authority.VerificationState != AuthorityVerified {
+		return cannotVerify("redaction_unresolved_visible", "withholding_authority_unverifiable", "withholding authority is not provenance or accountability verified", "Record verified withholding authority evidence."), true
+	}
+	return Condition{}, false
+}
+
+func withholdingAuditMissing(withholding *Withholding) bool {
+	return withholding == nil ||
+		withholding.Authority.ActorID == "" ||
+		withholding.ReasonCode == "" ||
+		withholding.Justification == ""
 }
 
 func retentionModeCondition(input Input) Condition {
@@ -435,20 +454,38 @@ func criticalEvidenceCondition(input Input) Condition {
 		if !critical[event.EventType] && event.ForensicImportance != "critical" {
 			continue
 		}
-		switch event.RetentionMode {
-		case RetentionModeSanitizedExcerpt:
-			continue
-		case RetentionModeEncryptedRawRef, RetentionModeExternalArtifactRef:
-			if event.RawReference == nil {
-				return cannotVerify("critical_evidence_reconstructable", "raw_reference_missing", "critical raw reference evidence is missing", "Bind critical evidence to encrypted or external raw reference metadata.")
-			}
-		case RetentionModeDigestOnly:
-			return failWithCap("critical_evidence_reconstructable", "critical_evidence_digest_only", "critical evidence is digest-only and not reconstructable", RetentionModeDigestOnly, "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families.")
-		case RetentionModeNotAssessed:
-			return failWithCap("critical_evidence_reconstructable", "critical_evidence_not_assessed", "critical evidence retention is not assessed", RetentionModeNotAssessed, "Capture critical evidence or keep forensic retention open.")
+		if condition, ok := criticalEvidenceConditionForEvent(event); ok {
+			return condition
 		}
 	}
 	return pass("critical_evidence_reconstructable", "critical_evidence_reconstructable", "critical event families have reconstructable retention")
+}
+
+func criticalEvidenceConditionForEvent(event EventRetention) (Condition, bool) {
+	if event.RetentionMode == RetentionModeSanitizedExcerpt {
+		return Condition{}, false
+	}
+	if criticalRetentionNeedsRawReference(event.RetentionMode) {
+		return missingCriticalRawReferenceCondition(event)
+	}
+	if event.RetentionMode == RetentionModeDigestOnly {
+		return failWithCap("critical_evidence_reconstructable", "critical_evidence_digest_only", "critical evidence is digest-only and not reconstructable", RetentionModeDigestOnly, "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families."), true
+	}
+	if event.RetentionMode == RetentionModeNotAssessed {
+		return failWithCap("critical_evidence_reconstructable", "critical_evidence_not_assessed", "critical evidence retention is not assessed", RetentionModeNotAssessed, "Capture critical evidence or keep forensic retention open."), true
+	}
+	return Condition{}, false
+}
+
+func criticalRetentionNeedsRawReference(mode string) bool {
+	return mode == RetentionModeEncryptedRawRef || mode == RetentionModeExternalArtifactRef
+}
+
+func missingCriticalRawReferenceCondition(event EventRetention) (Condition, bool) {
+	if event.RawReference != nil {
+		return Condition{}, false
+	}
+	return cannotVerify("critical_evidence_reconstructable", "raw_reference_missing", "critical raw reference evidence is missing", "Bind critical evidence to encrypted or external raw reference metadata."), true
 }
 
 func rawReferenceCondition(input Input) Condition {

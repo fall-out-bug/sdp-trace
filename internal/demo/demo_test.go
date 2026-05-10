@@ -68,6 +68,37 @@ func TestReportAndGatePassForObservedDemoRuns(t *testing.T) {
 	}
 }
 
+func TestPreviewWitnessBindingMatchesRunArtifacts(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
+
+	expected, err := witnessExpectationFromTarget(root)
+	if err != nil {
+		t.Fatalf("witnessExpectationFromTarget: %v", err)
+	}
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	witnessPayload, err := json.Marshal(WitnessSummary{
+		Status:       "pass",
+		TrustScope:   "ci_witnessed",
+		RunArtifacts: expected.RunArtifacts,
+	})
+	if err != nil {
+		t.Fatalf("marshal witness: %v", err)
+	}
+	if err := os.WriteFile(witnessPath, witnessPayload, 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	ok, reasons := PreviewWitnessBinding(witnessPath, root)
+	if !ok {
+		t.Fatalf("preview ok = false reasons=%v", reasons)
+	}
+	if len(reasons) != 0 {
+		t.Fatalf("reasons = %v", reasons)
+	}
+}
+
 func TestReportAcceptsSingleRunDirectory(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	runDir := filepath.Join(t.TempDir(), "single-run")

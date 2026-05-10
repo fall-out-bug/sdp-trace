@@ -410,16 +410,20 @@ func evaluateSafety(input OutputSafetyInput) OutputSafetyResult {
 }
 
 func topLevel(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, requiredCount int, identityCannotVerify bool) string {
-	if anyFamilyState(families, StateFail) || index.Result == StateFail || safety.State == StateFail {
+	if artifactAssessmentHasState(families, index, safety, StateFail) {
 		return StateFail
 	}
-	if identityCannotVerify || anyFamilyState(families, StateCannotVerify) || index.Result == StateCannotVerify || safety.State == StateCannotVerify {
+	if identityCannotVerify || artifactAssessmentHasState(families, index, safety, StateCannotVerify) {
 		return StateCannotVerify
 	}
 	if requiredCount == 0 {
 		return StateNotAssessed
 	}
 	return StatePass
+}
+
+func artifactAssessmentHasState(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, state string) bool {
+	return anyFamilyState(families, state) || index.Result == state || safety.State == state
 }
 
 func anyFamilyState(families []FamilyObservation, state string) bool {
@@ -434,20 +438,24 @@ func anyFamilyState(families []FamilyObservation, state string) bool {
 func reasons(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
 	set := map[string]bool{}
 	for _, family := range families {
-		if family.FamilyState != StatePass && family.FamilyState != StateNotAssessed {
+		if familyReasonVisible(family.FamilyState) {
 			set[family.ReasonCode+": "+family.Reason] = true
 		}
 	}
-	if index.Result != StatePass && index.Result != StateNotAssessed {
+	if familyReasonVisible(index.Result) {
 		set[index.ReasonCode+": "+index.Reason] = true
 	}
-	if safety.State != StatePass && safety.State != StateNotAssessed {
+	if familyReasonVisible(safety.State) {
 		set[safety.ReasonCode+": "+safety.Reason] = true
 	}
 	if identityCannotVerify {
 		set["unsafe_identity_metadata: selected source or run identity contained unsafe or unsupported metadata"] = true
 	}
 	return sortedKeys(set)
+}
+
+func familyReasonVisible(state string) bool {
+	return state != StatePass && state != StateNotAssessed
 }
 
 func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
@@ -457,17 +465,20 @@ func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety
 			set[family.NextAction] = true
 		}
 	}
-	switch index.Result {
-	case StateFail, StateCannotVerify:
+	if resultNeedsAction(index.Result) {
 		set["Regenerate or supply a verifier-readable artifact index."] = true
 	}
-	if safety.State == StateFail || safety.State == StateCannotVerify {
+	if resultNeedsAction(safety.State) {
 		set["Use the recorded safety ruleset id to remove unsafe artifact output before rerun."] = true
 	}
 	if identityCannotVerify {
 		set["Provide safe source and run identity metadata before using this observation as CI-backed proof."] = true
 	}
 	return sortedKeys(set)
+}
+
+func resultNeedsAction(state string) bool {
+	return state == StateFail || state == StateCannotVerify
 }
 
 func bindingSummary(families []FamilyObservation) BindingSummary {
@@ -749,12 +760,15 @@ func safeHex(value string, length int) bool {
 		return false
 	}
 	for _, r := range value {
-		if ('0' <= r && r <= '9') || ('a' <= r && r <= 'f') || ('A' <= r && r <= 'F') {
-			continue
+		if !isHexRune(r) {
+			return false
 		}
-		return false
 	}
 	return true
+}
+
+func isHexRune(r rune) bool {
+	return strings.ContainsRune("0123456789abcdefABCDEF", r)
 }
 
 func safeClasses(input []string) []string {

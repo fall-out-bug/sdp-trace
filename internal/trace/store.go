@@ -202,30 +202,12 @@ func validateRunDirectoryState(manifest RunManifest, events []Event, requireChai
 
 // readRunEvents loads and sorts every *.json file in events/.
 func readRunEvents(eventsDir string, entries []fs.DirEntry) ([]Event, error) {
-	jsonFiles := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-		jsonFiles = append(jsonFiles, filepath.Join(eventsDir, entry.Name()))
-	}
-	sort.Strings(jsonFiles)
-
+	jsonFiles := eventJSONFiles(eventsDir, entries)
 	events := make([]Event, 0, len(jsonFiles))
 	for _, path := range jsonFiles {
-		payload, err := os.ReadFile(path)
+		event, err := readRunEvent(path)
 		if err != nil {
 			return nil, err
-		}
-		var event Event
-		if err := json.Unmarshal(payload, &event); err != nil {
-			return nil, err
-		}
-		if err := event.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid event %q: %w", path, err)
 		}
 		events = append(events, event)
 	}
@@ -234,28 +216,73 @@ func readRunEvents(eventsDir string, entries []fs.DirEntry) ([]Event, error) {
 
 // ValidateEventChain checks that hashes and prev-event links are consistent.
 func ValidateEventChain(events []Event) error {
-	if len(events) == 0 {
-		return nil
-	}
 	prevEventHash := NullEventHash
 	for i, event := range events {
-		computed, err := event.WithComputedEventHash()
-		if err != nil {
-			return fmt.Errorf("event %d (%s) hash generation failed: %w", i, event.EventID, err)
-		}
-		if event.EventHash != computed.EventHash {
-			return fmt.Errorf("event %d (%s) event_hash mismatch: expected %s got %s", i, event.EventID, computed.EventHash, event.EventHash)
-		}
-		if err := event.VerifyPayloadDigest(); err != nil {
-			return fmt.Errorf("event %d (%s) payload_digest invalid: %w", i, event.EventID, err)
-		}
-		if event.Sequence != i {
-			return fmt.Errorf("event %d has non-zero-based sequence %d", i, event.Sequence)
-		}
-		if event.PrevEventHash != prevEventHash {
-			return fmt.Errorf("event %d (%s) prev_event_hash expected %s", i, event.EventID, prevEventHash)
+		if err := validateChainEvent(i, event, prevEventHash); err != nil {
+			return err
 		}
 		prevEventHash = event.EventHash
+	}
+	return nil
+}
+
+func eventJSONFiles(eventsDir string, entries []fs.DirEntry) []string {
+	jsonFiles := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if isEventJSON(entry) {
+			jsonFiles = append(jsonFiles, filepath.Join(eventsDir, entry.Name()))
+		}
+	}
+	sort.Strings(jsonFiles)
+	return jsonFiles
+}
+
+func isEventJSON(entry fs.DirEntry) bool {
+	return !entry.IsDir() && filepath.Ext(entry.Name()) == ".json"
+}
+
+func readRunEvent(path string) (Event, error) {
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		return Event{}, err
+	}
+	var event Event
+	if err := json.Unmarshal(payload, &event); err != nil {
+		return Event{}, err
+	}
+	if err := event.Validate(); err != nil {
+		return Event{}, fmt.Errorf("invalid event %q: %w", path, err)
+	}
+	return event, nil
+}
+
+func validateChainEvent(index int, event Event, prevEventHash string) error {
+	computed, err := event.WithComputedEventHash()
+	if err != nil {
+		return fmt.Errorf("event %d (%s) hash generation failed: %w", index, event.EventID, err)
+	}
+	if err := validateEventHash(index, event, computed.EventHash); err != nil {
+		return err
+	}
+	if err := event.VerifyPayloadDigest(); err != nil {
+		return fmt.Errorf("event %d (%s) payload_digest invalid: %w", index, event.EventID, err)
+	}
+	return validateEventPosition(index, event, prevEventHash)
+}
+
+func validateEventHash(index int, event Event, computedHash string) error {
+	if event.EventHash != computedHash {
+		return fmt.Errorf("event %d (%s) event_hash mismatch: expected %s got %s", index, event.EventID, computedHash, event.EventHash)
+	}
+	return nil
+}
+
+func validateEventPosition(index int, event Event, prevEventHash string) error {
+	if event.Sequence != index {
+		return fmt.Errorf("event %d has non-zero-based sequence %d", index, event.Sequence)
+	}
+	if event.PrevEventHash != prevEventHash {
+		return fmt.Errorf("event %d (%s) prev_event_hash expected %s", index, event.EventID, prevEventHash)
 	}
 	return nil
 }

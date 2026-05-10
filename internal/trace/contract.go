@@ -8,7 +8,6 @@ import (
 
 // LoadContract returns a parsed contract from path.
 func LoadContract(path string) (Contract, error) {
-	var contract Contract
 	if path == "" {
 		return DefaultContract, nil
 	}
@@ -16,12 +15,24 @@ func LoadContract(path string) (Contract, error) {
 	if err != nil {
 		return Contract{}, err
 	}
-	_ = data
+	contract, err := parseContract(data)
+	if err != nil {
+		return Contract{}, err
+	}
+	return contract.withDefaults(path), nil
+}
+
+func parseContract(data []byte) (Contract, error) {
 	// Keep parsing logic intentionally light for first milestone; full schema
 	// validation is handled in phase-8 schema migration work.
+	var contract Contract
 	if err := json.Unmarshal(data, &contract); err != nil {
 		return Contract{}, err
 	}
+	return contract, nil
+}
+
+func (contract Contract) withDefaults(path string) Contract {
 	if contract.ContractID == "" {
 		contract.ContractID = filepath.Base(path)
 	}
@@ -31,7 +42,7 @@ func LoadContract(path string) (Contract, error) {
 	if len(contract.RequiredEvents) == 0 {
 		contract.RequiredEvents = append([]string(nil), DefaultContract.RequiredEvents...)
 	}
-	return contract, nil
+	return contract
 }
 
 // GenerateMissingEvidenceTable emits expected/observed rows for a contract.

@@ -120,19 +120,12 @@ type RunManifest struct {
 
 // Validate checks required manifest fields for shared verifier paths.
 func (manifest RunManifest) Validate() error {
-	if strings.TrimSpace(manifest.SchemaVersion) == "" {
-		return errors.New("run manifest missing schema_version")
-	}
-	if strings.TrimSpace(manifest.RunID) == "" {
-		return errors.New("run manifest missing run_id")
-	}
-	if manifest.EventCount < 0 {
-		return errors.New("run manifest event_count must be >= 0")
-	}
-	if strings.TrimSpace(manifest.ContractID) == "" {
-		return errors.New("run manifest missing contract_id")
-	}
-	return nil
+	return firstValidationError(
+		requiredString(manifest.SchemaVersion, "run manifest missing schema_version"),
+		requiredString(manifest.RunID, "run manifest missing run_id"),
+		nonNegative(manifest.EventCount, "run manifest event_count must be >= 0"),
+		requiredString(manifest.ContractID, "run manifest missing contract_id"),
+	)
 }
 
 // Event captures one append-only record in a run.
@@ -161,21 +154,8 @@ type Canonicalization struct {
 
 // EnsureDefaults populates event defaults used during hashing and writing.
 func (event Event) EnsureDefaults() Event {
-	if event.SchemaVersion == "" {
-		event.SchemaVersion = SchemaVersion
-	}
-	if event.HashAlgorithm == "" {
-		event.HashAlgorithm = HashAlgSHA256
-	}
-	if event.Canonicalization.Algorithm == "" {
-		event.Canonicalization.Algorithm = CanonicalSchemaAlgo
-	}
-	if event.Canonicalization.Version == "" {
-		event.Canonicalization.Version = CanonicalAlgoVersion
-	}
-	if event.PrevEventHash == "" {
-		event.PrevEventHash = NullEventHash
-	}
+	event = event.withDefaultIdentityFields()
+	event = event.withDefaultCanonicalFields()
 	if synced, err := event.syncPayloadRepresentation(); err == nil {
 		event = synced
 	}
@@ -184,26 +164,11 @@ func (event Event) EnsureDefaults() Event {
 
 // Validate checks local invariants before persistence and replay.
 func (event Event) Validate() error {
-	if strings.TrimSpace(event.SchemaVersion) == "" {
-		return errors.New("missing schema_version")
+	if err := event.validateRequiredFields(); err != nil {
+		return err
 	}
-	if strings.TrimSpace(event.RunID) == "" {
-		return errors.New("missing run_id")
-	}
-	if strings.TrimSpace(event.EventID) == "" {
-		return errors.New("missing event_id")
-	}
-	if strings.TrimSpace(event.Timestamp) == "" {
-		return errors.New("missing timestamp")
-	}
-	if strings.TrimSpace(event.EventHash) == "" {
-		return errors.New("missing event_hash")
-	}
-	if event.Sequence < 0 {
-		return fmt.Errorf("invalid sequence %d", event.Sequence)
-	}
-	if event.HashAlgorithm != "" && event.HashAlgorithm != HashAlgSHA256 {
-		return fmt.Errorf("unsupported hash_algorithm %s", event.HashAlgorithm)
+	if err := event.validateHashAlgorithm(); err != nil {
+		return err
 	}
 	_, err := event.syncPayloadRepresentation()
 	return err
@@ -262,24 +227,104 @@ func (event Event) VerifyPayloadDigest() error {
 func (event Event) syncPayloadRepresentation() (Event, error) {
 	switch {
 	case len(event.Payload) > 0:
-		if event.EventPayload == nil {
-			var decoded map[string]any
-			if err := json.Unmarshal(event.Payload, &decoded); err != nil {
-				return Event{}, fmt.Errorf("invalid payload: %w", err)
-			}
-			event.EventPayload = decoded
-		}
-		return event, nil
+		return event.withDecodedEventPayload()
 	case event.EventPayload != nil:
-		payload, err := json.Marshal(event.EventPayload)
-		if err != nil {
-			return Event{}, err
-		}
-		event.Payload = payload
-		return event, nil
+		return event.withEncodedPayload()
 	default:
 		return event, nil
 	}
+}
+
+func (event Event) withDecodedEventPayload() (Event, error) {
+	if event.EventPayload != nil {
+		return event, nil
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(event.Payload, &decoded); err != nil {
+		return Event{}, fmt.Errorf("invalid payload: %w", err)
+	}
+	event.EventPayload = decoded
+	return event, nil
+}
+
+func (event Event) withEncodedPayload() (Event, error) {
+	payload, err := json.Marshal(event.EventPayload)
+	if err != nil {
+		return Event{}, err
+	}
+	event.Payload = payload
+	return event, nil
+}
+
+func (event Event) withDefaultIdentityFields() Event {
+	if event.SchemaVersion == "" {
+		event.SchemaVersion = SchemaVersion
+	}
+	if event.HashAlgorithm == "" {
+		event.HashAlgorithm = HashAlgSHA256
+	}
+	if event.PrevEventHash == "" {
+		event.PrevEventHash = NullEventHash
+	}
+	return event
+}
+
+func (event Event) withDefaultCanonicalFields() Event {
+	if event.Canonicalization.Algorithm == "" {
+		event.Canonicalization.Algorithm = CanonicalSchemaAlgo
+	}
+	if event.Canonicalization.Version == "" {
+		event.Canonicalization.Version = CanonicalAlgoVersion
+	}
+	return event
+}
+
+func (event Event) validateRequiredFields() error {
+	return firstValidationError(
+		requiredString(event.SchemaVersion, "missing schema_version"),
+		requiredString(event.RunID, "missing run_id"),
+		requiredString(event.EventID, "missing event_id"),
+		requiredString(event.Timestamp, "missing timestamp"),
+		requiredString(event.EventHash, "missing event_hash"),
+		validSequence(event.Sequence),
+	)
+}
+
+func (event Event) validateHashAlgorithm() error {
+	if event.HashAlgorithm != "" && event.HashAlgorithm != HashAlgSHA256 {
+		return fmt.Errorf("unsupported hash_algorithm %s", event.HashAlgorithm)
+	}
+	return nil
+}
+
+func firstValidationError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func requiredString(value, message string) error {
+	if strings.TrimSpace(value) == "" {
+		return errors.New(message)
+	}
+	return nil
+}
+
+func nonNegative(value int, message string) error {
+	if value < 0 {
+		return errors.New(message)
+	}
+	return nil
+}
+
+func validSequence(sequence int) error {
+	if sequence < 0 {
+		return fmt.Errorf("invalid sequence %d", sequence)
+	}
+	return nil
 }
 
 // RecordedCommandPayload stores common command lifecycle metadata.

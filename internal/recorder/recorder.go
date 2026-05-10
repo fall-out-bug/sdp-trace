@@ -228,10 +228,10 @@ func resolveContract(contractPath string, useDefault bool) (trace.Contract, erro
 
 func ensureFreshOutputDir(runDir string) error {
 	entries, err := os.ReadDir(runDir)
+	if os.IsNotExist(err) {
+		return nil
+	}
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
 		return err
 	}
 	if len(entries) > 0 {
@@ -417,7 +417,7 @@ func waitCommand(ctx context.Context, cmd *exec.Cmd) (int, string) {
 }
 
 func processSignal(processState *os.ProcessState) string {
-	if processState == nil || processState.Exited() {
+	if noProcessSignal(processState) {
 		return ""
 	}
 	status, ok := processState.Sys().(syscall.WaitStatus)
@@ -425,6 +425,10 @@ func processSignal(processState *os.ProcessState) string {
 		return ""
 	}
 	return status.Signal().String()
+}
+
+func noProcessSignal(processState *os.ProcessState) bool {
+	return processState == nil || processState.Exited()
 }
 
 func eventFilename(sequence int, eventType trace.EventType) string {

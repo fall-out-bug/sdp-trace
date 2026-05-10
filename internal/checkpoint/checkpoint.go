@@ -137,13 +137,7 @@ func GenerateKeyPair(signerID string) (KeyPair, error) {
 }
 
 func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
-	if strings.TrimSpace(options.CheckpointID) == "" {
-		return SignedCheckpoint{}, errors.New("checkpoint_id is required")
-	}
-	if strings.TrimSpace(options.SignerID) == "" {
-		return SignedCheckpoint{}, errors.New("signer_id is required")
-	}
-	if err := validateSequenceLink(options.Sequence, options.PreviousCheckpointDigest); err != nil {
+	if err := validateCreateOptions(options); err != nil {
 		return SignedCheckpoint{}, err
 	}
 	privateKey, err := decodePrivateKey(options.Key)
@@ -190,6 +184,16 @@ func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
 			KeyIsolation: KeyIsolationNotAssessed,
 		},
 	}, nil
+}
+
+func validateCreateOptions(options CreateOptions) error {
+	if strings.TrimSpace(options.CheckpointID) == "" {
+		return errors.New("checkpoint_id is required")
+	}
+	if strings.TrimSpace(options.SignerID) == "" {
+		return errors.New("signer_id is required")
+	}
+	return validateSequenceLink(options.Sequence, options.PreviousCheckpointDigest)
 }
 
 func BuildPayload(runDir, previousCheckpointDigest string) (Payload, error) {
@@ -381,22 +385,49 @@ func verifySignature(checkpoint SignedCheckpoint) bool {
 }
 
 func compareBindings(result *VerificationResult, expected, actual Payload) {
-	if actual.RunID != expected.RunID {
-		result.RunBindingState = StateFail
-		result.Reasons = append(result.Reasons, fmt.Sprintf("run_id mismatch: expected %s got %s", expected.RunID, actual.RunID))
+	compareRunBinding(result, expected, actual)
+	compareChainBinding(result, expected, actual)
+	compareSourceBinding(result, expected, actual)
+	compareNonceBinding(result, expected, actual)
+}
+
+func compareRunBinding(result *VerificationResult, expected, actual Payload) {
+	if actual.RunID == expected.RunID {
+		return
 	}
-	if actual.EventChainHead != expected.EventChainHead || actual.EventCount != expected.EventCount {
-		result.ChainBindingState = StateFail
-		result.Reasons = append(result.Reasons, "event chain binding does not match selected run")
+	result.RunBindingState = StateFail
+	result.Reasons = append(result.Reasons, fmt.Sprintf("run_id mismatch: expected %s got %s", expected.RunID, actual.RunID))
+}
+
+func compareChainBinding(result *VerificationResult, expected, actual Payload) {
+	if actual.EventChainHead == expected.EventChainHead && actual.EventCount == expected.EventCount {
+		return
 	}
-	if actual.SourceSnapshotDigest != expected.SourceSnapshotDigest || actual.SourceSnapshotState != expected.SourceSnapshotState || actual.TaskHash != expected.TaskHash || actual.ContractDigest != expected.ContractDigest {
-		result.SourceBindingState = StateFail
-		result.Reasons = append(result.Reasons, "source, task, or contract binding does not match selected run")
+	result.ChainBindingState = StateFail
+	result.Reasons = append(result.Reasons, "event chain binding does not match selected run")
+}
+
+func compareSourceBinding(result *VerificationResult, expected, actual Payload) {
+	if sourceBindingMatches(expected, actual) {
+		return
 	}
-	if actual.RunNonce != expected.RunNonce {
-		result.NonceBindingState = StateFail
-		result.Reasons = append(result.Reasons, "run nonce binding does not match selected run")
+	result.SourceBindingState = StateFail
+	result.Reasons = append(result.Reasons, "source, task, or contract binding does not match selected run")
+}
+
+func sourceBindingMatches(expected, actual Payload) bool {
+	return actual.SourceSnapshotDigest == expected.SourceSnapshotDigest &&
+		actual.SourceSnapshotState == expected.SourceSnapshotState &&
+		actual.TaskHash == expected.TaskHash &&
+		actual.ContractDigest == expected.ContractDigest
+}
+
+func compareNonceBinding(result *VerificationResult, expected, actual Payload) {
+	if actual.RunNonce == expected.RunNonce {
+		return
 	}
+	result.NonceBindingState = StateFail
+	result.Reasons = append(result.Reasons, "run nonce binding does not match selected run")
 }
 
 func applyPolicy(result *VerificationResult, checkpoint SignedCheckpoint, policy *TrustedCheckpointPolicy) {
@@ -521,19 +552,23 @@ func finalize(result *VerificationResult) {
 		result.SignerAuthorityState,
 	}
 	result.Result = StatePass
+	if hasVerificationState(states, StateFail) {
+		result.Result = StateFail
+		result.TrustScope = TrustScopeUntrustedShape
+		return
+	}
+	if hasVerificationState(states, StateCannotVerify) {
+		result.Result = StateCannotVerify
+	}
+}
+
+func hasVerificationState(states []string, target string) bool {
 	for _, state := range states {
-		if state == StateFail {
-			result.Result = StateFail
-			result.TrustScope = TrustScopeUntrustedShape
-			return
+		if state == target {
+			return true
 		}
 	}
-	for _, state := range states {
-		if state == StateCannotVerify {
-			result.Result = StateCannotVerify
-			return
-		}
-	}
+	return false
 }
 
 func validateEnvelope(checkpoint SignedCheckpoint) error {

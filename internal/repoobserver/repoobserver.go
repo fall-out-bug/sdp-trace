@@ -145,13 +145,9 @@ func Doctor(opts Options) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
-	if opts.RepositoryID == "" {
-		config, err := LoadConfig(opts.RepoRoot)
-		if err == nil && config.RepositoryID != "" {
-			opts.RepositoryID = config.RepositoryID
-		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return Status{}, err
-		}
+	opts, err = withConfiguredRepositoryID(opts)
+	if err != nil {
+		return Status{}, err
 	}
 	return buildStatus(opts, false)
 }
@@ -202,61 +198,46 @@ func LoadConfig(repoRoot string) (Config, error) {
 	if err := json.Unmarshal(data, &config); err != nil {
 		return Config{}, fmt.Errorf("%s: .sdp-trace/config.json is malformed", ReasonUnsafeOutputRefused)
 	}
-	if config.Profile != "" && config.Profile != ProfileGithubActionsGitHooksV1 {
-		return Config{}, fmt.Errorf("%s: unsupported repo observer profile in .sdp-trace/config.json", ReasonUnsafeOutputRefused)
-	}
-	if config.RepositoryID != "" && !safeIDPattern.MatchString(config.RepositoryID) {
-		return Config{}, fmt.Errorf("%s: repository id in .sdp-trace/config.json must match [A-Za-z0-9_.-]+", ReasonUnsafeOutputRefused)
-	}
-	return config, nil
+	return validateConfig(config)
 }
 
 func HumanTable(status Status) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Profile: %s\n", status.Profile)
-	fmt.Fprintf(&b, "Repository: %s\n", status.RepositoryID)
-	fmt.Fprintf(&b, "Install state: %s\n", status.InstallState)
-	fmt.Fprintf(&b, "Proof state: %s\n\n", status.ProofState)
-	b.WriteString("Surface | Install state | Proof state | Trust scope | Evidence source | Next action\n")
-	b.WriteString("--- | --- | --- | --- | --- | ---\n")
-	for _, surface := range status.Surfaces {
-		action := surface.NextAction
-		if action == "" {
-			action = "-"
-		}
-		fmt.Fprintf(&b, "%s | %s | %s | %s | %s | %s\n",
-			surface.SurfaceID,
-			surface.InstallState,
-			surface.ProofState,
-			surface.TrustScope,
-			surface.EvidenceSource,
-			action,
-		)
-	}
-	if len(status.ForceDiffSummary) > 0 {
-		b.WriteString("\nForce diff summary\n")
-		for _, item := range status.ForceDiffSummary {
-			fmt.Fprintf(&b, "- %s: %s", item.Path, item.Action)
-			if item.Before != "" || item.After != "" {
-				fmt.Fprintf(&b, " [%s -> %s]", item.Before, item.After)
-			}
-			if item.Backup != "" {
-				fmt.Fprintf(&b, " (backup: %s)", item.Backup)
-			}
-			b.WriteString("\n")
-		}
-	}
+	writeHumanTableHeader(&b, status)
+	writeHumanTableSurfaces(&b, status.Surfaces)
+	writeHumanTableDiffSummary(&b, status.ForceDiffSummary)
 	b.WriteString("\nNote: core.hooksPath is local checkout configuration and is not committed into the repository.\n")
 	return b.String()
 }
 
 func normalizeOptions(opts Options) (Options, error) {
+	opts = withDefaultProfile(opts)
+	if err := validateProfile(opts.Profile); err != nil {
+		return Options{}, err
+	}
+	opts, err := withAbsoluteRepoRoot(opts)
+	if err != nil {
+		return Options{}, err
+	}
+	opts = withDefaultNow(opts)
+	return opts, validateRepositoryID(opts.RepositoryID, "repository id must match [A-Za-z0-9_.-]+")
+}
+
+func withDefaultProfile(opts Options) Options {
 	if strings.TrimSpace(opts.Profile) == "" {
 		opts.Profile = ProfileGithubActionsGitHooksV1
 	}
-	if opts.Profile != ProfileGithubActionsGitHooksV1 {
-		return Options{}, fmt.Errorf("repo observer requires --profile %s", ProfileGithubActionsGitHooksV1)
+	return opts
+}
+
+func validateProfile(profile string) error {
+	if profile != ProfileGithubActionsGitHooksV1 {
+		return fmt.Errorf("repo observer requires --profile %s", ProfileGithubActionsGitHooksV1)
 	}
+	return nil
+}
+
+func withAbsoluteRepoRoot(opts Options) (Options, error) {
 	if strings.TrimSpace(opts.RepoRoot) == "" {
 		root, err := repoRoot(".")
 		if err != nil {
@@ -269,13 +250,96 @@ func normalizeOptions(opts Options) (Options, error) {
 		return Options{}, err
 	}
 	opts.RepoRoot = abs
+	return opts, nil
+}
+
+func withDefaultNow(opts Options) Options {
 	if opts.Now.IsZero() {
 		opts.Now = time.Now().UTC()
 	}
-	if opts.RepositoryID != "" && !safeIDPattern.MatchString(opts.RepositoryID) {
-		return Options{}, fmt.Errorf("%s: repository id must match [A-Za-z0-9_.-]+", ReasonUnsafeOutputRefused)
+	return opts
+}
+
+func withConfiguredRepositoryID(opts Options) (Options, error) {
+	if opts.RepositoryID != "" {
+		return opts, nil
+	}
+	config, err := LoadConfig(opts.RepoRoot)
+	if errors.Is(err, os.ErrNotExist) {
+		return opts, nil
+	}
+	if err != nil {
+		return Options{}, err
+	}
+	if config.RepositoryID != "" {
+		opts.RepositoryID = config.RepositoryID
 	}
 	return opts, nil
+}
+
+func validateConfig(config Config) (Config, error) {
+	if config.Profile != "" && config.Profile != ProfileGithubActionsGitHooksV1 {
+		return Config{}, fmt.Errorf("%s: unsupported repo observer profile in .sdp-trace/config.json", ReasonUnsafeOutputRefused)
+	}
+	return config, validateRepositoryID(config.RepositoryID, "repository id in .sdp-trace/config.json must match [A-Za-z0-9_.-]+")
+}
+
+func validateRepositoryID(repositoryID, message string) error {
+	if repositoryID != "" && !safeIDPattern.MatchString(repositoryID) {
+		return fmt.Errorf("%s: %s", ReasonUnsafeOutputRefused, message)
+	}
+	return nil
+}
+
+func writeHumanTableHeader(b *strings.Builder, status Status) {
+	fmt.Fprintf(b, "Profile: %s\n", status.Profile)
+	fmt.Fprintf(b, "Repository: %s\n", status.RepositoryID)
+	fmt.Fprintf(b, "Install state: %s\n", status.InstallState)
+	fmt.Fprintf(b, "Proof state: %s\n\n", status.ProofState)
+	b.WriteString("Surface | Install state | Proof state | Trust scope | Evidence source | Next action\n")
+	b.WriteString("--- | --- | --- | --- | --- | ---\n")
+}
+
+func writeHumanTableSurfaces(b *strings.Builder, surfaces []Surface) {
+	for _, surface := range surfaces {
+		writeHumanTableSurface(b, surface)
+	}
+}
+
+func writeHumanTableSurface(b *strings.Builder, surface Surface) {
+	action := surface.NextAction
+	if action == "" {
+		action = "-"
+	}
+	fmt.Fprintf(b, "%s | %s | %s | %s | %s | %s\n",
+		surface.SurfaceID,
+		surface.InstallState,
+		surface.ProofState,
+		surface.TrustScope,
+		surface.EvidenceSource,
+		action,
+	)
+}
+
+func writeHumanTableDiffSummary(b *strings.Builder, summary []DiffSummary) {
+	if len(summary) == 0 {
+		return
+	}
+	b.WriteString("\nForce diff summary\n")
+	for _, item := range summary {
+		writeHumanTableDiffItem(b, item)
+	}
+}
+
+func writeHumanTableDiffItem(b *strings.Builder, item DiffSummary) {
+	fmt.Fprintf(b, "- %s: %s", item.Path, item.Action)
+	if item.Before != "" || item.After != "" {
+		fmt.Fprintf(b, " [%s -> %s]", item.Before, item.After)
+	}
+	if item.Backup != "" {
+		fmt.Fprintf(b, " (backup: %s)", item.Backup)
+	}
+	b.WriteString("\n")
 }
 
 func buildStatus(opts Options, installPreview bool) (Status, error) {
@@ -464,14 +528,9 @@ func aggregateProofState(surfaces []Surface) string {
 	}
 	state := StatePass
 	for _, s := range surfaces {
-		if s.ProofState == StateCannotVerify {
-			return StateCannotVerify
-		}
-		if s.ProofState == StateFail {
-			state = StateFail
-		}
-		if s.ProofState == StateNotAssessed && state == StatePass {
-			state = StateNotAssessed
+		state = combineProofState(state, s.ProofState)
+		if state == StateCannotVerify {
+			return state
 		}
 	}
 	return state
@@ -480,20 +539,44 @@ func aggregateProofState(surfaces []Surface) string {
 func gapsFor(surfaces []Surface) []Gap {
 	gaps := make([]Gap, 0)
 	for _, s := range surfaces {
-		if s.InstallState == StatePass && s.ProofState == StatePass {
+		gap, ok := gapForSurface(s)
+		if !ok {
 			continue
 		}
-		if s.InstallState == StateNotAssessed && s.ProofState == StateNotAssessed && s.SurfaceID == SurfaceAgentPrompt {
-			gaps = append(gaps, Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: "agent prompt cooperation is not repository setup proof"})
-			continue
-		}
-		detail := s.NextAction
-		if detail == "" {
-			detail = s.ReasonCode
-		}
-		gaps = append(gaps, Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: detail})
+		gaps = append(gaps, gap)
 	}
 	return gaps
+}
+
+func combineProofState(current, next string) string {
+	switch next {
+	case StateCannotVerify:
+		return StateCannotVerify
+	case StateFail:
+		return StateFail
+	case StateNotAssessed:
+		if current == StatePass {
+			return StateNotAssessed
+		}
+	}
+	return current
+}
+
+func gapForSurface(s Surface) (Gap, bool) {
+	if s.InstallState == StatePass && s.ProofState == StatePass {
+		return Gap{}, false
+	}
+	if s.InstallState == StateNotAssessed && s.ProofState == StateNotAssessed && s.SurfaceID == SurfaceAgentPrompt {
+		return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: "agent prompt cooperation is not repository setup proof"}, true
+	}
+	return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: gapDetail(s)}, true
+}
+
+func gapDetail(s Surface) string {
+	if s.NextAction != "" {
+		return s.NextAction
+	}
+	return s.ReasonCode
 }
 
 func nextActionsFor(surfaces []Surface) []NextAction {
