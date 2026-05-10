@@ -188,6 +188,75 @@ func TestEnvelopeSummaryCountsRefsAndRejectsUnsafeRunRef(t *testing.T) {
 	}
 }
 
+func TestValidateEventRejectsInvalidFields(t *testing.T) {
+	cases := []struct {
+		name    string
+		mutate  func(*Event)
+		wantErr string
+	}{
+		{
+			name: "friction class mismatch",
+			mutate: func(event *Event) {
+				event.FrictionClass = "none"
+			},
+			wantErr: "does not match event_type",
+		},
+		{
+			name: "missing retained content reason",
+			mutate: func(event *Event) {
+				event.ContentRef = ""
+				event.NotRetainedReason = ""
+			},
+			wantErr: "without content_ref requires not_retained_reason",
+		},
+		{
+			name: "unsupported source type",
+			mutate: func(event *Event) {
+				event.Source.SourceType = "agent-memory"
+			},
+			wantErr: "unsupported source_type",
+		},
+		{
+			name: "unsafe source id",
+			mutate: func(event *Event) {
+				event.SourceID = "../transcript"
+			},
+			wantErr: "source_id must match",
+		},
+		{
+			name: "invalid reference ref",
+			mutate: func(event *Event) {
+				event.ReferenceRefs = []string{"/tmp/local-proof"}
+			},
+			wantErr: "unsupported reference_ref",
+		},
+		{
+			name: "invalid llm linkage state",
+			mutate: func(event *Event) {
+				event.LLMRefs = []LLMRef{{LinkageState: "passed"}}
+			},
+			wantErr: "unsupported llm linkage_state",
+		},
+		{
+			name: "negative source sequence",
+			mutate: func(event *Event) {
+				event.SourceSequence = -1
+			},
+			wantErr: "source_sequence must be non-negative",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			event := validImportedEvent("ix-1", 1)
+			tc.mutate(&event)
+			err := ValidateEvent(event)
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("ValidateEvent() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
 func validImportedEvent(id string, sequence int) Event {
 	body := []byte("Please fix stale evidence.\n")
 	sum := sha256Hex(body)

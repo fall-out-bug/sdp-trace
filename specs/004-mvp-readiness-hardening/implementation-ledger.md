@@ -17,8 +17,8 @@
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
-| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, and `internal/trace.writeCanonicalJSON` were decomposed below 15. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `harnessobs`, `trace`, and `verifier` were improved. |
+| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/trace.writeCanonicalJSON`, and `internal/interaction.ValidateEvent` were decomposed below 15. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `harnessobs`, `interaction` (67.3%), `trace`, and `verifier` were improved. |
 
 ## Command Evidence
 
@@ -28,16 +28,17 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-continue-cover.out` | pass | Total coverage: 71.5%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-interaction-cover.out` | pass | Total coverage: 71.6%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
 | `/Users/fall_out_bug/go/bin/staticcheck ./...` | pass | Staticcheck 2026.1 / v0.7.0, no findings. |
 | `rg --files -g '*.go' \| xargs /Users/fall_out_bug/go/bin/gopls check` | pass | `gopls` v0.21.1 LSP diagnostics across all Go files. |
 | `/Users/fall_out_bug/go/bin/govulncheck ./...` | pass | Rebuilt with Go 1.26.3 as govulncheck v1.3.0; vulnerability DB updated 2026-05-07; no vulnerabilities found. |
+| `gocyclo -over 15 internal/interaction/interaction.go` | pass | `internal/interaction.ValidateEvent` decomposition removed production complexity findings in the interaction file. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-continue-cover-func.txt -gocyclo /tmp/sdp-trace-continue-gocyclo.txt -threshold 5` | fail_assessed_gap | 373 functions exceed strict CRAP threshold 5; top high-risk functions improved, but strict repo-wide CRAP remains open. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-interaction-cover-func.txt -gocyclo /tmp/sdp-trace-interaction-gocyclo.txt -threshold 5` | fail_assessed_gap | 377 functions exceed strict CRAP threshold 5; `internal/interaction.ValidateEvent` was removed from the top offenders, but its small extracted helpers still exceed CRAP 5 at current coverage, so strict repo-wide CRAP remains open. |
 
 ## Coverage Delta
 
@@ -71,12 +72,14 @@ Top current CRAP/complexity findings:
 
 | Function | Cyclo | Coverage | CRAP | State |
 |---|---:|---:|---:|---|
-| `internal/harnessobs.findUnsafeRawEventAt` | 21 | 0.0% | 462.00 | assessed_gap |
-| `internal/interaction.ValidateEvent` | 33 | 47.1% | 194.21 | assessed_gap |
+| `internal/prreview.Validate` | 33 | 95.1% | 33.13 | assessed_gap |
+| `cmd/sdp-trace.run` | 29 | 91.2% | 29.57 | assessed_gap |
+| `internal/witness.BuildCustomerPKI` | 25 | 63.9% | 54.40 | assessed_gap |
+| `internal/forensic.rawReferenceCondition` | 24 | 73.7% | 34.48 | assessed_gap |
+| `internal/prreview.runRole` | 23 | 70.6% | 36.44 | assessed_gap |
 | `internal/harnessobs.safeOutDir` | 23 | 48.8% | 94.00 | assessed_gap |
 | `internal/harnessobs.findUnsafeAt` | 20 | 56.0% | 54.07 | assessed_gap |
 | `internal/harnessobs.validateEvent` | 20 | 55.6% | 55.01 | assessed_gap |
-| `internal/posture.Build` | 19 | 85.3% | 20.15 | assessed_gap |
 
 ## Ratchet
 
@@ -90,11 +93,12 @@ Immediate ratchet now enforced or measurable:
 
 Next decomposition candidates before stronger MVP-readiness claim:
 
-1. `internal/interaction.ValidateEvent`
-2. `internal/harnessobs.safeOutDir`
-3. `internal/harnessobs.findUnsafeRawEventAt`
-4. `internal/harnessobs.findUnsafeAt`
-5. `internal/harnessobs.validateEvent`
+1. `internal/prreview.Validate`
+2. `cmd/sdp-trace.run`
+3. `internal/witness.BuildCustomerPKI`
+4. `internal/forensic.rawReferenceCondition`
+5. `internal/prreview.runRole`
+6. `internal/harnessobs.safeOutDir`
 
 ## External Evidence Boundary
 
@@ -110,6 +114,7 @@ this draft PR must not be treated as approved to merge.
 | Requirements-vs-implementation | `minimax/MiniMax-M2.7` | APPROVE | No required fixes. Reviewer confirmed completed tasks are honestly marked and remaining harnessobs/verifier/PR/CI work remains open. |
 | Focused PR-level follow-up | `zai/glm-5.1` | APPROVE | Low test-adequacy note accepted and fixed: harnessobs family test now asserts the exact family set. |
 | Continued CRAP reduction follow-up | `openrouter/deepseek/deepseek-v4-pro` | APPROVE | Prior findings fixed: trace canonical JSON tests added, unsafe raw hard-error and source-unavailable paths covered, observed run contents asserted, and extra normalization write removed. |
+| Interaction validator refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Minor source-validation coverage note accepted and fixed; CRAP count explanation accepted and added. Minor LLM ordering note rejected as false positive: LLM refs remain in `validateEventRefs` after catalog/source/content/timing validation. |
 
 Unusable attempts:
 

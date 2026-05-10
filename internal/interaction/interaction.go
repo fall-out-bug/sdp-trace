@@ -366,6 +366,25 @@ func NewTrace(taskID, sourceType string, events []Event, now time.Time) Trace {
 }
 
 func ValidateEvent(event Event) error {
+	if err := validateEventIdentity(event); err != nil {
+		return err
+	}
+	if err := validateEventCatalog(event); err != nil {
+		return err
+	}
+	if err := validateEventSource(event); err != nil {
+		return err
+	}
+	if err := validateEventContent(event); err != nil {
+		return err
+	}
+	if err := validateEventTiming(event); err != nil {
+		return err
+	}
+	return validateEventRefs(event)
+}
+
+func validateEventIdentity(event Event) error {
 	if event.SchemaVersion != SchemaVersion {
 		return errors.New("interaction event has unsupported schema_version")
 	}
@@ -385,6 +404,10 @@ func ValidateEvent(event Event) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func validateEventCatalog(event Event) error {
 	if !validEventType(event.EventType) {
 		return fmt.Errorf("unsupported event_type %q", event.EventType)
 	}
@@ -395,12 +418,6 @@ func ValidateEvent(event Event) error {
 		return fmt.Errorf("unsupported actor_type %q", event.Actor.ActorType)
 	}
 	if err := validateSafeID("actor.id", event.Actor.ID); err != nil {
-		return err
-	}
-	if !validSourceType(event.Source.SourceType) {
-		return fmt.Errorf("unsupported source_type %q", event.Source.SourceType)
-	}
-	if err := validateSafeID("source_id", event.SourceID); err != nil {
 		return err
 	}
 	if !validRetention(event.Retention) {
@@ -415,6 +432,20 @@ func ValidateEvent(event Event) error {
 	if !validEventState(event.State) {
 		return fmt.Errorf("unsupported state %q", event.State)
 	}
+	return nil
+}
+
+func validateEventSource(event Event) error {
+	if !validSourceType(event.Source.SourceType) {
+		return fmt.Errorf("unsupported source_type %q", event.Source.SourceType)
+	}
+	if err := validateSafeID("source_id", event.SourceID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateEventContent(event Event) error {
 	if event.DigestAlgorithm != DigestAlgorithmSHA256 || !sha256Pattern.MatchString(event.ContentDigest) {
 		return errors.New("interaction event requires sha256 content digest")
 	}
@@ -424,6 +455,10 @@ func ValidateEvent(event Event) error {
 	if event.ContentRef == "" && event.NotRetainedReason == "" {
 		return errors.New("interaction event without content_ref requires not_retained_reason")
 	}
+	return nil
+}
+
+func validateEventTiming(event Event) error {
 	if _, err := time.Parse(time.RFC3339, event.ObservedAt); err != nil {
 		return errors.New("observed_at must be RFC3339")
 	}
@@ -433,6 +468,10 @@ func ValidateEvent(event Event) error {
 	if event.SourceSequence < 0 {
 		return errors.New("source_sequence must be non-negative")
 	}
+	return nil
+}
+
+func validateEventRefs(event Event) error {
 	for _, ref := range event.ReferenceRefs {
 		if !validReference(ref) {
 			return fmt.Errorf("unsupported reference_ref %q", ref)
