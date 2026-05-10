@@ -137,14 +137,8 @@ func GenerateKeyPair(signerID string) (KeyPair, error) {
 }
 
 func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
-	if err := validateCreateOptions(options); err != nil {
-		return SignedCheckpoint{}, err
-	}
-	privateKey, err := decodePrivateKey(options.Key)
+	privateKey, err := validatedPrivateKey(options)
 	if err != nil {
-		return SignedCheckpoint{}, err
-	}
-	if err := validateKeyPair(options.Key, privateKey); err != nil {
 		return SignedCheckpoint{}, err
 	}
 	payload, err := BuildPayload(runDir, options.PreviousCheckpointDigest)
@@ -156,10 +150,7 @@ func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
 		return SignedCheckpoint{}, err
 	}
 	signature := ed25519.Sign(privateKey, canonical)
-	publicKey := options.Key.PublicKey
-	if publicKey == "" {
-		publicKey = base64.StdEncoding.EncodeToString(privateKey.Public().(ed25519.PublicKey))
-	}
+	publicKey := publicKeyForCheckpoint(options.Key.PublicKey, privateKey)
 	return SignedCheckpoint{
 		SchemaVersion: CheckpointSchemaVersion,
 		CheckpointID:  options.CheckpointID,
@@ -186,6 +177,24 @@ func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
 	}, nil
 }
 
+func publicKeyForCheckpoint(configured string, privateKey ed25519.PrivateKey) string {
+	if configured != "" {
+		return configured
+	}
+	return base64.StdEncoding.EncodeToString(privateKey.Public().(ed25519.PublicKey))
+}
+
+func validatedPrivateKey(options CreateOptions) (ed25519.PrivateKey, error) {
+	if err := validateCreateOptions(options); err != nil {
+		return nil, err
+	}
+	privateKey, err := decodePrivateKey(options.Key)
+	if err != nil {
+		return nil, err
+	}
+	return privateKey, validateKeyPair(options.Key, privateKey)
+}
+
 func validateCreateOptions(options CreateOptions) error {
 	if strings.TrimSpace(options.CheckpointID) == "" {
 		return errors.New("checkpoint_id is required")
@@ -197,17 +206,8 @@ func validateCreateOptions(options CreateOptions) error {
 }
 
 func BuildPayload(runDir, previousCheckpointDigest string) (Payload, error) {
-	artifact, err := trace.OpenRunArtifact(runDir)
+	artifact, err := validatedRunArtifact(runDir)
 	if err != nil {
-		return Payload{}, err
-	}
-	if err := artifact.Manifest.Validate(); err != nil {
-		return Payload{}, err
-	}
-	if artifact.Manifest.EventCount != len(artifact.Events) {
-		return Payload{}, fmt.Errorf("event_count mismatch: run.json=%d files=%d", artifact.Manifest.EventCount, len(artifact.Events))
-	}
-	if err := trace.ValidateEventChain(artifact.Events); err != nil {
 		return Payload{}, err
 	}
 	chainHead := artifact.Manifest.EventChainHead
@@ -236,48 +236,77 @@ func BuildPayload(runDir, previousCheckpointDigest string) (Payload, error) {
 	}, nil
 }
 
+func validatedRunArtifact(runDir string) (trace.RunArtifact, error) {
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		return trace.RunArtifact{}, err
+	}
+	if err := artifact.Manifest.Validate(); err != nil {
+		return trace.RunArtifact{}, err
+	}
+	if artifact.Manifest.EventCount != len(artifact.Events) {
+		return trace.RunArtifact{}, fmt.Errorf("event_count mismatch: run.json=%d files=%d", artifact.Manifest.EventCount, len(artifact.Events))
+	}
+	return artifact, trace.ValidateEventChain(artifact.Events)
+}
+
 func Verify(runDir string, checkpoint SignedCheckpoint, policy *TrustedCheckpointPolicy) VerificationResult {
 	result := baseResult(checkpoint)
 	if err := validateEnvelope(checkpoint); err != nil {
-		result.Result = StateFail
-		result.TrustScope = TrustScopeUntrustedShape
-		result.Reasons = append(result.Reasons, err.Error())
+		failShape(&result, err.Error())
 		return result
 	}
 	if err := validateSequenceLink(checkpoint.Sequence, checkpoint.Payload.PreviousCheckpointDigest); err != nil {
-		result.Result = StateFail
-		result.TrustScope = TrustScopeUntrustedShape
 		result.SequenceState = StateFail
-		result.Reasons = append(result.Reasons, err.Error())
+		failShape(&result, err.Error())
 		return result
 	}
 	expected, err := BuildPayload(runDir, checkpoint.Payload.PreviousCheckpointDigest)
 	if err != nil {
-		result.Result = StateCannotVerify
-		result.Reasons = append(result.Reasons, err.Error())
+		cannotVerify(&result, err.Error())
 		return result
 	}
-	if digest, ok := verifyPayloadDigest(checkpoint); ok {
-		if checkpoint.PayloadDigest == digest {
-			result.PayloadDigestState = StatePass
-		} else {
-			result.PayloadDigestState = StateFail
-			result.Reasons = append(result.Reasons, "checkpoint payload_digest does not match canonical payload")
-		}
-	} else {
-		result.PayloadDigestState = StateCannotVerify
-		result.Reasons = append(result.Reasons, "checkpoint payload cannot be canonicalized")
-	}
-	if verifySignature(checkpoint) {
-		result.SignatureState = StatePass
-	} else {
-		result.SignatureState = StateFail
-		result.Reasons = append(result.Reasons, "checkpoint signature is invalid")
-	}
+	applyPayloadDigestState(&result, checkpoint)
+	applySignatureState(&result, checkpoint)
 	compareBindings(&result, expected, checkpoint.Payload)
 	applyPolicy(&result, checkpoint, policy)
 	finalize(&result)
 	return result
+}
+
+func failShape(result *VerificationResult, reason string) {
+	result.Result = StateFail
+	result.TrustScope = TrustScopeUntrustedShape
+	result.Reasons = append(result.Reasons, reason)
+}
+
+func cannotVerify(result *VerificationResult, reason string) {
+	result.Result = StateCannotVerify
+	result.Reasons = append(result.Reasons, reason)
+}
+
+func applyPayloadDigestState(result *VerificationResult, checkpoint SignedCheckpoint) {
+	digest, ok := verifyPayloadDigest(checkpoint)
+	if !ok {
+		result.PayloadDigestState = StateCannotVerify
+		result.Reasons = append(result.Reasons, "checkpoint payload cannot be canonicalized")
+		return
+	}
+	if checkpoint.PayloadDigest == digest {
+		result.PayloadDigestState = StatePass
+		return
+	}
+	result.PayloadDigestState = StateFail
+	result.Reasons = append(result.Reasons, "checkpoint payload_digest does not match canonical payload")
+}
+
+func applySignatureState(result *VerificationResult, checkpoint SignedCheckpoint) {
+	if verifySignature(checkpoint) {
+		result.SignatureState = StatePass
+		return
+	}
+	result.SignatureState = StateFail
+	result.Reasons = append(result.Reasons, "checkpoint signature is invalid")
 }
 
 func VerifySet(runDir string, checkpoints []SignedCheckpoint, policy *TrustedCheckpointPolicy) VerificationResult {
@@ -299,42 +328,79 @@ func VerifySet(runDir string, checkpoints []SignedCheckpoint, policy *TrustedChe
 	runID := checkpoints[0].RunID
 	previousDigest := ""
 	for i, cp := range checkpoints {
-		checkpointResult := Verify(runDir, cp, policy)
-		mergeSetVerification(&result, checkpointResult)
-		if checkpointResult.Result == StateFail {
-			result.Result = StateFail
-			result.SequenceState = worseState(result.SequenceState, StateFail)
-			result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s failed verification", cp.CheckpointID))
-			return result
-		}
-		if checkpointResult.Result == StateCannotVerify {
-			result.Result = StateCannotVerify
-			result.SequenceState = worseState(result.SequenceState, StateCannotVerify)
-			result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s cannot verify", cp.CheckpointID))
-			return result
-		}
-		if cp.RunID != runID {
-			result.Result = StateFail
-			result.RunBindingState = StateFail
-			result.SequenceState = StateFail
-			result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s belongs to run %s, expected %s", cp.CheckpointID, cp.RunID, runID))
-			return result
-		}
-		if cp.Sequence != i {
-			result.Result = StateFail
-			result.SequenceState = StateFail
-			result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint sequence expected %d got %d", i, cp.Sequence))
-			return result
-		}
-		if cp.Payload.PreviousCheckpointDigest != previousDigest {
-			result.Result = StateFail
-			result.SequenceState = StateFail
-			result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s previous digest does not match prior checkpoint", cp.CheckpointID))
+		if stop := verifySetCheckpoint(&result, runDir, cp, policy, setLinkExpectation{runID: runID, sequence: i, previousDigest: previousDigest}); stop {
 			return result
 		}
 		previousDigest = cp.PayloadDigest
 	}
 	return result
+}
+
+type setLinkExpectation struct {
+	runID          string
+	sequence       int
+	previousDigest string
+}
+
+func verifySetCheckpoint(result *VerificationResult, runDir string, cp SignedCheckpoint, policy *TrustedCheckpointPolicy, expected setLinkExpectation) bool {
+	checkpointResult := Verify(runDir, cp, policy)
+	mergeSetVerification(result, checkpointResult)
+	if checkpointResult.Result == StateFail || checkpointResult.Result == StateCannotVerify {
+		applySetCheckpointResult(result, cp, checkpointResult.Result)
+		return true
+	}
+	return applySetLinkChecks(result, cp, expected)
+}
+
+func applySetCheckpointResult(result *VerificationResult, cp SignedCheckpoint, state string) {
+	result.Result = state
+	result.SequenceState = worseState(result.SequenceState, state)
+	if state == StateFail {
+		result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s failed verification", cp.CheckpointID))
+		return
+	}
+	result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s cannot verify", cp.CheckpointID))
+}
+
+func applySetLinkChecks(result *VerificationResult, cp SignedCheckpoint, expected setLinkExpectation) bool {
+	if setRunMismatch(result, cp, expected.runID) {
+		return true
+	}
+	if setSequenceMismatch(result, cp, expected.sequence) {
+		return true
+	}
+	return setPreviousDigestMismatch(result, cp, expected.previousDigest)
+}
+
+func setRunMismatch(result *VerificationResult, cp SignedCheckpoint, runID string) bool {
+	if cp.RunID == runID {
+		return false
+	}
+	result.Result = StateFail
+	result.RunBindingState = StateFail
+	result.SequenceState = StateFail
+	result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s belongs to run %s, expected %s", cp.CheckpointID, cp.RunID, runID))
+	return true
+}
+
+func setSequenceMismatch(result *VerificationResult, cp SignedCheckpoint, sequence int) bool {
+	if cp.Sequence == sequence {
+		return false
+	}
+	result.Result = StateFail
+	result.SequenceState = StateFail
+	result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint sequence expected %d got %d", sequence, cp.Sequence))
+	return true
+}
+
+func setPreviousDigestMismatch(result *VerificationResult, cp SignedCheckpoint, previousDigest string) bool {
+	if cp.Payload.PreviousCheckpointDigest != previousDigest {
+		result.Result = StateFail
+		result.SequenceState = StateFail
+		result.Reasons = append(result.Reasons, fmt.Sprintf("checkpoint %s previous digest does not match prior checkpoint", cp.CheckpointID))
+		return true
+	}
+	return false
 }
 
 func baseResult(checkpoint SignedCheckpoint) VerificationResult {
@@ -369,12 +435,8 @@ func verifySignature(checkpoint SignedCheckpoint) bool {
 	if checkpoint.Signature.Algorithm != SignatureAlgorithmEd25519 {
 		return false
 	}
-	publicKey, err := base64.StdEncoding.DecodeString(checkpoint.Signature.PublicKey)
-	if err != nil || len(publicKey) != ed25519.PublicKeySize {
-		return false
-	}
-	signature, err := base64.StdEncoding.DecodeString(checkpoint.Signature.Signature)
-	if err != nil || len(signature) != ed25519.SignatureSize {
+	publicKey, signature, ok := decodeSignature(checkpoint.Signature)
+	if !ok {
 		return false
 	}
 	canonical, err := trace.CanonicalJSON(checkpoint.Payload)
@@ -382,6 +444,20 @@ func verifySignature(checkpoint SignedCheckpoint) bool {
 		return false
 	}
 	return ed25519.Verify(ed25519.PublicKey(publicKey), canonical, signature)
+}
+
+func decodeSignature(signature Signature) ([]byte, []byte, bool) {
+	publicKey, publicOK := decodeSizedBase64(signature.PublicKey, ed25519.PublicKeySize)
+	decodedSignature, signatureOK := decodeSizedBase64(signature.Signature, ed25519.SignatureSize)
+	if !publicOK || !signatureOK {
+		return nil, nil, false
+	}
+	return publicKey, decodedSignature, true
+}
+
+func decodeSizedBase64(value string, size int) ([]byte, bool) {
+	decoded, err := base64.StdEncoding.DecodeString(value)
+	return decoded, err == nil && len(decoded) == size
 }
 
 func compareBindings(result *VerificationResult, expected, actual Payload) {
@@ -572,17 +648,33 @@ func hasVerificationState(states []string, target string) bool {
 }
 
 func validateEnvelope(checkpoint SignedCheckpoint) error {
-	if checkpoint.SchemaVersion != CheckpointSchemaVersion {
-		return fmt.Errorf("unsupported checkpoint schema_version %s", checkpoint.SchemaVersion)
+	return firstError(
+		validateEnvelopeField(checkpoint.SchemaVersion == CheckpointSchemaVersion, "unsupported checkpoint schema_version %s", checkpoint.SchemaVersion),
+		validateEnvelopeField(checkpoint.Profile == ProfileEd25519Detached, "unsupported checkpoint profile %s", checkpoint.Profile),
+		validateEnvelopeField(checkpoint.HashAlgorithm == HashAlgorithmSHA256, "unsupported checkpoint hash_algorithm %s", checkpoint.HashAlgorithm),
+		validateCanonicalization(checkpoint.Canonical),
+	)
+}
+
+func validateEnvelopeField(ok bool, format, value string) error {
+	if ok {
+		return nil
 	}
-	if checkpoint.Profile != ProfileEd25519Detached {
-		return fmt.Errorf("unsupported checkpoint profile %s", checkpoint.Profile)
+	return fmt.Errorf(format, value)
+}
+
+func validateCanonicalization(canonical trace.Canonicalization) error {
+	if canonical.Algorithm == trace.CanonicalSchemaAlgo && canonical.Version == trace.CanonicalAlgoVersion {
+		return nil
 	}
-	if checkpoint.HashAlgorithm != HashAlgorithmSHA256 {
-		return fmt.Errorf("unsupported checkpoint hash_algorithm %s", checkpoint.HashAlgorithm)
-	}
-	if checkpoint.Canonical.Algorithm != trace.CanonicalSchemaAlgo || checkpoint.Canonical.Version != trace.CanonicalAlgoVersion {
-		return errors.New("unsupported checkpoint canonicalization")
+	return errors.New("unsupported checkpoint canonicalization")
+}
+
+func firstError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -616,11 +708,22 @@ func validateSequenceLink(sequence int, previousDigest string) error {
 	if sequence < 0 {
 		return errors.New("checkpoint sequence must be >= 0")
 	}
-	if sequence == 0 && previousDigest != "" {
-		return errors.New("sequence 0 checkpoint must not declare previous_checkpoint_digest")
+	return validatePreviousDigestForSequence(sequence, previousDigest)
+}
+
+func validatePreviousDigestForSequence(sequence int, previousDigest string) error {
+	if sequence == 0 {
+		return validateGenesisPreviousDigest(previousDigest)
 	}
-	if sequence > 0 && previousDigest == "" {
+	if previousDigest == "" {
 		return errors.New("sequence > 0 checkpoint requires previous_checkpoint_digest")
+	}
+	return nil
+}
+
+func validateGenesisPreviousDigest(previousDigest string) error {
+	if previousDigest != "" {
+		return errors.New("sequence 0 checkpoint must not declare previous_checkpoint_digest")
 	}
 	return nil
 }
@@ -629,16 +732,24 @@ func validateKeyPair(key KeyPair, privateKey ed25519.PrivateKey) error {
 	if key.PublicKey == "" {
 		return nil
 	}
-	decoded, err := base64.StdEncoding.DecodeString(key.PublicKey)
+	decoded, err := decodePublicKey(key.PublicKey)
 	if err != nil {
 		return err
-	}
-	if len(decoded) != ed25519.PublicKeySize {
-		return fmt.Errorf("ed25519 public key length = %d", len(decoded))
 	}
 	derived := privateKey.Public().(ed25519.PublicKey)
 	if string(decoded) != string(derived) {
 		return errors.New("private key does not match public key")
 	}
 	return nil
+}
+
+func decodePublicKey(value string) ([]byte, error) {
+	decoded, err := base64.StdEncoding.DecodeString(value)
+	if err != nil {
+		return nil, err
+	}
+	if len(decoded) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("ed25519 public key length = %d", len(decoded))
+	}
+	return decoded, nil
 }

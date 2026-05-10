@@ -613,3 +613,18 @@ func conditionByID(conditions []Condition, id string) Condition {
 	}
 	return Condition{}
 }
+
+func TestCriticalEventsAppliesCompleteDowngrade(t *testing.T) {
+	input := validInput()
+	input.Policy.NonCriticalEventFamilyReasons = []CriticalityDowngrade{
+		{EventType: "command_finished", Reason: "covered elsewhere", AuthorityID: "human:security-owner"},
+		{EventType: "run_closed", Reason: "missing authority"},
+	}
+	critical := criticalEvents(input)
+	if critical["command_finished"] {
+		t.Fatalf("complete downgrade did not remove command_finished")
+	}
+	if !critical["run_closed"] {
+		t.Fatalf("incomplete downgrade removed run_closed")
+	}
+}

@@ -78,17 +78,33 @@ func LoadPolicy(path string) (AuthorityPolicy, error) {
 
 // Validate checks policy invariants required before verifier use.
 func (policy AuthorityPolicy) Validate() error {
-	if policy.SchemaVersion == "" {
-		return fmt.Errorf("schema_version is required")
+	return firstPolicyError(
+		requiredString(policy.SchemaVersion, "schema_version is required"),
+		requiredString(policy.PolicyID, "policy_id is required"),
+		requiredList(policy.AllowedSigners, "at least one allowed signer is required"),
+		requiredList(policy.AllowedWitnessProfiles, "at least one allowed witness profile is required"),
+	)
+}
+
+func requiredString(value, message string) error {
+	if value != "" {
+		return nil
 	}
-	if policy.PolicyID == "" {
-		return fmt.Errorf("policy_id is required")
+	return fmt.Errorf(message)
+}
+
+func requiredList[T any](values []T, message string) error {
+	if len(values) > 0 {
+		return nil
 	}
-	if len(policy.AllowedSigners) == 0 {
-		return fmt.Errorf("at least one allowed signer is required")
-	}
-	if len(policy.AllowedWitnessProfiles) == 0 {
-		return fmt.Errorf("at least one allowed witness profile is required")
+	return fmt.Errorf(message)
+}
+
+func firstPolicyError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -101,57 +117,52 @@ func NewAuthorityPolicyValidator(policy AuthorityPolicy) AuthorityPolicyValidato
 // CanAdapterEmit checks whether an adapter id can emit a given event type.
 func (v AuthorityPolicyValidator) CanAdapterEmit(adapterID string, eventType trace.EventType) bool {
 	for _, adapter := range v.policy.AllowedAdapters {
-		if adapter.AdapterID != adapterID {
-			continue
-		}
-		for _, allowedType := range adapter.AllowedEventTypes {
-			if allowedType == string(eventType) && adapter.AllowedByPolicy {
-				return true
-			}
+		if adapterCanEmit(adapter, adapterID, string(eventType)) {
+			return true
 		}
 	}
 	return false
+}
+
+func adapterCanEmit(adapter AdapterAuthorityEntry, adapterID, eventType string) bool {
+	return adapter.AdapterID == adapterID &&
+		adapter.AllowedByPolicy &&
+		stringInList(adapter.AllowedEventTypes, eventType)
 }
 
 // SignerAllowed checks whether a signer/profile tuple is permitted.
 func (v AuthorityPolicyValidator) SignerAllowed(signerID string, profileID string) bool {
 	for _, signer := range v.policy.AllowedSigners {
-		if signer.SignerID != signerID {
-			continue
-		}
-		if !signer.ScopeAllowed("signer") {
-			continue
-		}
-		if signer.ProfileID == profileID {
+		if signerAllowedForProfile(signer, signerID, profileID) {
 			return true
 		}
 	}
 	return false
+}
+
+func signerAllowedForProfile(signer SignerAuthorityEntry, signerID, profileID string) bool {
+	return signer.SignerID == signerID &&
+		signer.ScopeAllowed("signer") &&
+		signer.ProfileID == profileID
 }
 
 // WitnessProfileAllowed checks whether witness profile is trusted by policy.
 func (v AuthorityPolicyValidator) WitnessProfileAllowed(profileID string) bool {
-	for _, profile := range v.policy.AllowedWitnessProfiles {
-		if profile == profileID {
-			return true
-		}
-	}
-	return false
+	return stringInList(v.policy.AllowedWitnessProfiles, profileID)
 }
 
 // IsDemonstrationProfile marks a local-only profile as not production-grade.
 func (v AuthorityPolicyValidator) IsDemonstrationProfile(profileID string) bool {
-	for _, profile := range v.policy.DemonstrationProfiles {
-		if profile == profileID {
-			return true
-		}
-	}
-	return false
+	return stringInList(v.policy.DemonstrationProfiles, profileID)
 }
 
 func (signer SignerAuthorityEntry) ScopeAllowed(scope string) bool {
-	for _, item := range signer.AllowedScopes {
-		if item == scope {
+	return stringInList(signer.AllowedScopes, scope)
+}
+
+func stringInList(values []string, needle string) bool {
+	for _, value := range values {
+		if value == needle {
 			return true
 		}
 	}

@@ -214,6 +214,15 @@ func requirements(input []FamilyRequirement) map[string]FamilyRequirement {
 }
 
 func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) []FamilyObservation {
+	observed := observedFamilies(inputs)
+	out, seen := requiredFamilyObservations(reqs, observed)
+	for _, family := range extraFamilies(observed, seen) {
+		out = append(out, evaluateFamily(FamilyRequirement{Family: family}, observed[family], false))
+	}
+	return out
+}
+
+func observedFamilies(inputs []FamilyInput) map[string]FamilyInput {
 	observed := map[string]FamilyInput{}
 	for _, input := range inputs {
 		input.Family = canonicalFamily(input.Family)
@@ -225,6 +234,10 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 		input.BindingState = safeBindingState(input.BindingState)
 		observed[input.Family] = input
 	}
+	return observed
+}
+
+func requiredFamilyObservations(reqs map[string]FamilyRequirement, observed map[string]FamilyInput) ([]FamilyObservation, map[string]bool) {
 	seen := map[string]bool{}
 	out := make([]FamilyObservation, 0, len(reqs)+len(observed))
 	for _, family := range familyOrder {
@@ -233,6 +246,10 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 			seen[family] = true
 		}
 	}
+	return out, seen
+}
+
+func extraFamilies(observed map[string]FamilyInput, seen map[string]bool) []string {
 	var extra []string
 	for family := range observed {
 		if !seen[family] {
@@ -240,10 +257,7 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 		}
 	}
 	sort.Strings(extra)
-	for _, family := range extra {
-		out = append(out, evaluateFamily(FamilyRequirement{Family: family}, observed[family], false))
-	}
-	return out
+	return extra
 }
 
 func evaluateFamily(req FamilyRequirement, input FamilyInput, required bool) FamilyObservation {
@@ -355,71 +369,54 @@ func setFamilyResult(result *FamilyObservation, outcome familyOutcome) {
 
 func evaluateIndex(input ArtifactIndexInput) ArtifactIndexResult {
 	state := defaultString(input.State, IndexNotAssessed)
-	result := ArtifactIndexResult{State: state, Result: StateNotAssessed, ReasonCode: "artifact_index_not_assessed", Reason: "artifact index was outside selected profile scope"}
-	switch state {
-	case IndexValid:
-		result.Result = StatePass
-		result.ReasonCode = "artifact_index_valid"
-		result.Reason = "artifact index is present and valid"
-	case IndexSelfReference:
-		result.Result = StateFail
-		result.ReasonCode = "artifact_index_self_reference"
-		result.Reason = "artifact index includes itself as an indexed entry"
-	case IndexDigestMismatch:
-		result.Result = StateFail
-		result.ReasonCode = "artifact_digest_mismatch"
-		result.Reason = "artifact digest contradicts selected artifact metadata"
-	case IndexMissing:
-		result.Result = StateCannotVerify
-		result.ReasonCode = "artifact_index_missing"
-		result.Reason = "required artifact index is missing"
-	case IndexUnverifiable:
-		result.Result = StateCannotVerify
-		result.ReasonCode = "artifact_index_unverifiable"
-		result.Reason = "artifact index could not be verified"
-	case IndexNotAssessed:
-	default:
-		result.State = IndexUnverifiable
-		result.Result = StateCannotVerify
-		result.ReasonCode = "artifact_index_unverifiable"
-		result.Reason = "artifact index state is unrecognized under selected profile"
+	if outcome, ok := indexOutcomes[state]; ok {
+		return ArtifactIndexResult{State: state, Result: outcome.state, ReasonCode: outcome.code, Reason: outcome.reason}
 	}
-	return result
+	outcome := indexOutcomes[IndexUnverifiable]
+	return ArtifactIndexResult{State: IndexUnverifiable, Result: outcome.state, ReasonCode: outcome.code, Reason: "artifact index state is unrecognized under selected profile"}
+}
+
+var indexOutcomes = map[string]familyOutcome{
+	IndexValid:          {StatePass, "artifact_index_valid", "artifact index is present and valid", ""},
+	IndexSelfReference:  {StateFail, "artifact_index_self_reference", "artifact index includes itself as an indexed entry", ""},
+	IndexDigestMismatch: {StateFail, "artifact_digest_mismatch", "artifact digest contradicts selected artifact metadata", ""},
+	IndexMissing:        {StateCannotVerify, "artifact_index_missing", "required artifact index is missing", ""},
+	IndexUnverifiable:   {StateCannotVerify, "artifact_index_unverifiable", "artifact index could not be verified", ""},
+	IndexNotAssessed:    {StateNotAssessed, "artifact_index_not_assessed", "artifact index was outside selected profile scope", ""},
 }
 
 func evaluateSafety(input OutputSafetyInput) OutputSafetyResult {
 	state := defaultString(input.State, StateNotAssessed)
-	out := OutputSafetyResult{State: state, UnsafeClasses: safeClasses(input.UnsafeClasses), ReasonCode: "output_safety_not_assessed", Reason: "output safety was outside selected profile scope"}
-	switch state {
-	case StatePass:
-		out.ReasonCode = "output_safety_pass"
-		out.Reason = "observation output safety classes are absent"
-	case StateFail:
-		out.ReasonCode = "unsafe_artifact_output"
-		out.Reason = "observation detected forbidden output-safety classes"
-	case StateCannotVerify:
-		out.ReasonCode = "output_safety_cannot_verify"
-		out.Reason = "observation output safety could not be verified"
-	case StateNotAssessed:
-	default:
-		out.State = StateCannotVerify
-		out.ReasonCode = "output_safety_cannot_verify"
-		out.Reason = "observation output safety state is unrecognized under selected profile"
+	outcome, ok := safetyOutcomes[state]
+	if !ok {
+		state = StateCannotVerify
+		outcome = familyOutcome{StateCannotVerify, "output_safety_cannot_verify", "observation output safety state is unrecognized under selected profile", ""}
 	}
-	return out
+	return OutputSafetyResult{State: state, UnsafeClasses: safeClasses(input.UnsafeClasses), ReasonCode: outcome.code, Reason: outcome.reason}
+}
+
+var safetyOutcomes = map[string]familyOutcome{
+	StatePass:         {StatePass, "output_safety_pass", "observation output safety classes are absent", ""},
+	StateFail:         {StateFail, "unsafe_artifact_output", "observation detected forbidden output-safety classes", ""},
+	StateCannotVerify: {StateCannotVerify, "output_safety_cannot_verify", "observation output safety could not be verified", ""},
+	StateNotAssessed:  {StateNotAssessed, "output_safety_not_assessed", "output safety was outside selected profile scope", ""},
 }
 
 func topLevel(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, requiredCount int, identityCannotVerify bool) string {
 	if artifactAssessmentHasState(families, index, safety, StateFail) {
 		return StateFail
 	}
-	if identityCannotVerify || artifactAssessmentHasState(families, index, safety, StateCannotVerify) {
+	if identityOrArtifactCannotVerify(identityCannotVerify, families, index, safety) {
 		return StateCannotVerify
 	}
 	if requiredCount == 0 {
 		return StateNotAssessed
 	}
 	return StatePass
+}
+
+func identityOrArtifactCannotVerify(identityCannotVerify bool, families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult) bool {
+	return identityCannotVerify || artifactAssessmentHasState(families, index, safety, StateCannotVerify)
 }
 
 func artifactAssessmentHasState(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, state string) bool {
@@ -437,21 +434,29 @@ func anyFamilyState(families []FamilyObservation, state string) bool {
 
 func reasons(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
 	set := map[string]bool{}
+	addFamilyReasons(set, families)
+	addVisibleReason(set, index.Result, index.ReasonCode, index.Reason)
+	addVisibleReason(set, safety.State, safety.ReasonCode, safety.Reason)
+	addIdentityReason(set, identityCannotVerify)
+	return sortedKeys(set)
+}
+
+func addFamilyReasons(set map[string]bool, families []FamilyObservation) {
 	for _, family := range families {
-		if familyReasonVisible(family.FamilyState) {
-			set[family.ReasonCode+": "+family.Reason] = true
-		}
+		addVisibleReason(set, family.FamilyState, family.ReasonCode, family.Reason)
 	}
-	if familyReasonVisible(index.Result) {
-		set[index.ReasonCode+": "+index.Reason] = true
+}
+
+func addVisibleReason(set map[string]bool, state, code, reason string) {
+	if familyReasonVisible(state) {
+		set[code+": "+reason] = true
 	}
-	if familyReasonVisible(safety.State) {
-		set[safety.ReasonCode+": "+safety.Reason] = true
-	}
+}
+
+func addIdentityReason(set map[string]bool, identityCannotVerify bool) {
 	if identityCannotVerify {
 		set["unsafe_identity_metadata: selected source or run identity contained unsafe or unsupported metadata"] = true
 	}
-	return sortedKeys(set)
 }
 
 func familyReasonVisible(state string) bool {
@@ -460,21 +465,23 @@ func familyReasonVisible(state string) bool {
 
 func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
 	set := map[string]bool{}
-	for _, family := range families {
-		if family.NextAction != "" {
-			set[family.NextAction] = true
-		}
-	}
-	if resultNeedsAction(index.Result) {
-		set["Regenerate or supply a verifier-readable artifact index."] = true
-	}
-	if resultNeedsAction(safety.State) {
-		set["Use the recorded safety ruleset id to remove unsafe artifact output before rerun."] = true
-	}
-	if identityCannotVerify {
-		set["Provide safe source and run identity metadata before using this observation as CI-backed proof."] = true
-	}
+	addFamilyActions(set, families)
+	addConditionalAction(set, resultNeedsAction(index.Result), "Regenerate or supply a verifier-readable artifact index.")
+	addConditionalAction(set, resultNeedsAction(safety.State), "Use the recorded safety ruleset id to remove unsafe artifact output before rerun.")
+	addConditionalAction(set, identityCannotVerify, "Provide safe source and run identity metadata before using this observation as CI-backed proof.")
 	return sortedKeys(set)
+}
+
+func addFamilyActions(set map[string]bool, families []FamilyObservation) {
+	for _, family := range families {
+		addConditionalAction(set, family.NextAction != "", family.NextAction)
+	}
+}
+
+func addConditionalAction(set map[string]bool, include bool, action string) {
+	if include {
+		set[action] = true
+	}
 }
 
 func resultNeedsAction(state string) bool {
@@ -489,13 +496,16 @@ func bindingSummary(families []FamilyObservation) BindingSummary {
 			continue
 		}
 		sourceRun = worseBinding(sourceRun, family.BindingState)
-		if family.RequiredProducer == ProducerCIUploaded && family.ProducerScope != ProducerCIUploaded {
-			producer = worseBinding(producer, BindingMismatch)
-		} else {
-			producer = worseBinding(producer, BindingMatched)
-		}
+		producer = worseBinding(producer, producerBindingState(family))
 	}
 	return BindingSummary{SourceBindingState: sourceRun, RunBindingState: sourceRun, ProducerBindingState: producer}
+}
+
+func producerBindingState(family FamilyObservation) string {
+	if family.RequiredProducer == ProducerCIUploaded && family.ProducerScope != ProducerCIUploaded {
+		return BindingMismatch
+	}
+	return BindingMatched
 }
 
 func worseBinding(current, candidate string) string {
@@ -506,18 +516,17 @@ func worseBinding(current, candidate string) string {
 }
 
 func bindingRank(state string) int {
-	switch state {
-	case BindingMismatch:
-		return 5
-	case BindingAbsent:
-		return 4
-	case BindingUnverifiable:
-		return 3
-	case BindingMatched:
-		return 2
-	default:
-		return 1
+	if rank, ok := bindingRanks[state]; ok {
+		return rank
 	}
+	return 1
+}
+
+var bindingRanks = map[string]int{
+	BindingMismatch:     5,
+	BindingAbsent:       4,
+	BindingUnverifiable: 3,
+	BindingMatched:      2,
 }
 
 func aggregateProducerScope(families []FamilyObservation) string {
@@ -642,24 +651,21 @@ func safeBindingState(value string) string {
 }
 
 func sanitizeSource(input SourceIdentity) (SourceIdentity, bool) {
-	out := SourceIdentity{}
-	ok := true
-	if safeIdentityToken(input.Repository, "/._-") {
-		out.Repository = input.Repository
-	} else if input.Repository != "" {
-		ok = false
+	repository, repositoryOK := sanitizeSourceField(input.Repository, func(value string) bool { return safeIdentityToken(value, "/._-") })
+	ref, refOK := sanitizeSourceField(input.Ref, safeRef)
+	commitSHA, commitOK := sanitizeSourceField(input.CommitSHA, safeCommitSHA)
+	return SourceIdentity{Repository: repository, Ref: ref, CommitSHA: commitSHA}, allTrue(repositoryOK, refOK, commitOK)
+}
+
+func sanitizeSourceField(value string, valid func(string) bool) (string, bool) {
+	if value == "" || valid(value) {
+		return value, true
 	}
-	if safeRef(input.Ref) {
-		out.Ref = input.Ref
-	} else if input.Ref != "" {
-		ok = false
-	}
-	if safeHex(input.CommitSHA, 40) || safeHex(input.CommitSHA, 64) {
-		out.CommitSHA = input.CommitSHA
-	} else if input.CommitSHA != "" {
-		ok = false
-	}
-	return out, ok
+	return "", false
+}
+
+func safeCommitSHA(value string) bool {
+	return safeHex(value, 40) || safeHex(value, 64)
 }
 
 func sanitizeRun(input RunIdentity) (RunIdentity, bool) {
@@ -693,10 +699,17 @@ func safeRef(value string) bool {
 	if value == "" {
 		return true
 	}
-	if !(strings.HasPrefix(value, "refs/heads/") || strings.HasPrefix(value, "refs/tags/") || strings.HasPrefix(value, "refs/pull/") || strings.HasPrefix(value, "refs/merge-requests/")) {
+	if !safeRefPrefix(value) {
 		return false
 	}
 	return safeIdentityToken(value, "/._-")
+}
+
+func safeRefPrefix(value string) bool {
+	return strings.HasPrefix(value, "refs/heads/") ||
+		strings.HasPrefix(value, "refs/tags/") ||
+		strings.HasPrefix(value, "refs/pull/") ||
+		strings.HasPrefix(value, "refs/merge-requests/")
 }
 
 func safeIdentityToken(value, extra string) bool {

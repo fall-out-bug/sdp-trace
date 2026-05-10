@@ -42,6 +42,34 @@ func TestEvaluateGitOnlyKeepsAttributionNotAssessed(t *testing.T) {
 	}
 }
 
+func TestWritePersistsResultJSON(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "authority-result.json")
+	result := Evaluate(validPackage())
+	if err := Write(path, result); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	var decoded Result
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if decoded.SchemaVersion != ResultSchemaVersion {
+		t.Fatalf("schema_version = %s", decoded.SchemaVersion)
+	}
+}
+
+func TestTargetMatchesNonRecursivePattern(t *testing.T) {
+	if !targetMatches("src/*.go", "src/main.go") {
+		t.Fatalf("expected non-recursive target match")
+	}
+	if targetMatches("src/*.go", "src/nested/main.go") {
+		t.Fatalf("did not expect non-recursive target match")
+	}
+}
+
 func TestEvaluateMissingApprovalEvidenceIsOutsideAuthority(t *testing.T) {
 	pkg := validPackage()
 	pkg.AuthorityEnvelopes[0].TargetRules[0].DeniedEvents = nil

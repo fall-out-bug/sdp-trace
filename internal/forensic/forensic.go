@@ -438,43 +438,64 @@ func withholdingAuditMissing(withholding *Withholding) bool {
 func retentionModeCondition(input Input) Condition {
 	allowed := allowedRetentionModes(input.Policy)
 	for _, event := range input.Run.Events {
-		if !validRetentionMode(event.RetentionMode) {
-			return fail("retention_mode_declared", "invalid_retention_mode", "event declares a non-FR-054 retention mode", "Use digest_only, sanitized_excerpt, encrypted_raw_ref, external_artifact_ref, or not_assessed.")
-		}
-		if len(allowed) > 0 && !allowed[event.RetentionMode] {
-			return fail("retention_mode_declared", "retention_mode_not_policy_allowed", "event retention mode is not allowed by the selected redaction policy", "Use a retention mode allowed by the selected policy.")
+		if condition, ok := retentionModeConditionForEvent(event, allowed); ok {
+			return condition
 		}
 	}
 	return pass("retention_mode_declared", "retention_mode_declared", "events declare FR-054 retention modes")
 }
 
+func retentionModeConditionForEvent(event EventRetention, allowed map[string]bool) (Condition, bool) {
+	if !validRetentionMode(event.RetentionMode) {
+		return fail("retention_mode_declared", "invalid_retention_mode", "event declares a non-FR-054 retention mode", "Use digest_only, sanitized_excerpt, encrypted_raw_ref, external_artifact_ref, or not_assessed."), true
+	}
+	if len(allowed) > 0 && !allowed[event.RetentionMode] {
+		return fail("retention_mode_declared", "retention_mode_not_policy_allowed", "event retention mode is not allowed by the selected redaction policy", "Use a retention mode allowed by the selected policy."), true
+	}
+	return Condition{}, false
+}
+
 func criticalEvidenceCondition(input Input) Condition {
 	critical := criticalEvents(input)
 	for _, event := range input.Run.Events {
-		if !critical[event.EventType] && event.ForensicImportance != "critical" {
-			continue
-		}
-		if condition, ok := criticalEvidenceConditionForEvent(event); ok {
+		if condition, ok := criticalEvidenceConditionForEvent(event, critical); ok {
 			return condition
 		}
 	}
 	return pass("critical_evidence_reconstructable", "critical_evidence_reconstructable", "critical event families have reconstructable retention")
 }
 
-func criticalEvidenceConditionForEvent(event EventRetention) (Condition, bool) {
+func criticalEvidenceConditionForEvent(event EventRetention, critical map[string]bool) (Condition, bool) {
+	if !criticalEvent(critical, event) {
+		return Condition{}, false
+	}
+	return criticalRetentionCondition(event)
+}
+
+func criticalEvent(critical map[string]bool, event EventRetention) bool {
+	return critical[event.EventType] || event.ForensicImportance == "critical"
+}
+
+func criticalRetentionCondition(event EventRetention) (Condition, bool) {
 	if event.RetentionMode == RetentionModeSanitizedExcerpt {
 		return Condition{}, false
 	}
 	if criticalRetentionNeedsRawReference(event.RetentionMode) {
 		return missingCriticalRawReferenceCondition(event)
 	}
-	if event.RetentionMode == RetentionModeDigestOnly {
-		return failWithCap("critical_evidence_reconstructable", "critical_evidence_digest_only", "critical evidence is digest-only and not reconstructable", RetentionModeDigestOnly, "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families."), true
-	}
-	if event.RetentionMode == RetentionModeNotAssessed {
-		return failWithCap("critical_evidence_reconstructable", "critical_evidence_not_assessed", "critical evidence retention is not assessed", RetentionModeNotAssessed, "Capture critical evidence or keep forensic retention open."), true
+	return insufficientCriticalRetentionCondition(event.RetentionMode)
+}
+
+func insufficientCriticalRetentionCondition(mode string) (Condition, bool) {
+	if condition, ok := insufficientCriticalRetentionConditions[mode]; ok {
+		return condition, true
 	}
 	return Condition{}, false
+}
+
+var insufficientCriticalRetentionConditions = map[string]Condition{
+	RetentionModeDigestOnly:  failWithCap("critical_evidence_reconstructable", "critical_evidence_digest_only", "critical evidence is digest-only and not reconstructable", RetentionModeDigestOnly, "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families."),
+	RetentionModeNotAssessed: failWithCap("critical_evidence_reconstructable", "critical_evidence_not_assessed", "critical evidence retention is not assessed", RetentionModeNotAssessed, "Capture critical evidence or keep forensic retention open."),
 }
 
 func criticalRetentionNeedsRawReference(mode string) bool {
@@ -598,14 +619,19 @@ func retentionLifecycleUnverifiable(state string) bool {
 func overclaimCondition(input Input) Condition {
 	critical := criticalEvents(input)
 	for _, event := range input.Run.Events {
-		if !critical[event.EventType] && event.ForensicImportance != "critical" {
-			continue
-		}
-		if event.RetentionMode == RetentionModeDigestOnly || event.RetentionMode == RetentionModeNotAssessed {
+		if overclaimsForensicProfile(event, critical) {
 			return fail("forensic_profile_not_overclaimed", "forensic_profile_capped", "forensic retention output is capped by insufficient critical evidence", "Do not claim forensic reconstruction for digest-only or not-assessed critical evidence.")
 		}
 	}
 	return pass("forensic_profile_not_overclaimed", "forensic_profile_not_overclaimed", "forensic output does not exceed retained evidence")
+}
+
+func overclaimsForensicProfile(event EventRetention, critical map[string]bool) bool {
+	return criticalEvent(critical, event) && insufficientCriticalRetention(event.RetentionMode)
+}
+
+func insufficientCriticalRetention(mode string) bool {
+	return mode == RetentionModeDigestOnly || mode == RetentionModeNotAssessed
 }
 
 func profileSelectionCondition(input Input) Condition {
@@ -613,38 +639,80 @@ func profileSelectionCondition(input Input) Condition {
 	if selection.SelectedProfile == "" {
 		return Condition{ID: "profile_selection_accountable", State: StateNotAssessed, ReasonCode: "profile_selection_not_assessed", Reason: "profile selection accountability is not recorded", NextAction: "Record actor, profile, policy digest, and justification when policy requires it."}
 	}
-	if selection.SelectedProfile != ProfileForensicRetention || selection.RedactionPolicyDigest != input.Policy.PolicyDigest || selection.ActorID == "" || selection.Justification == "" || !selection.AuthorityVerified {
+	if !profileSelectionVerified(selection, input.Policy.PolicyDigest) {
 		return cannotVerify("profile_selection_accountable", "profile_selection_unverifiable", "forensic profile selection accountability cannot be verified", "Record accountable forensic profile selection evidence.")
 	}
 	return pass("profile_selection_accountable", "profile_selection_accountable", "forensic profile selection is accountable")
 }
 
+func profileSelectionVerified(selection ProfileSelection, policyDigest string) bool {
+	required := []bool{
+		selection.SelectedProfile == ProfileForensicRetention,
+		selection.RedactionPolicyDigest == policyDigest,
+		selection.ActorID != "",
+		selection.Justification != "",
+		selection.AuthorityVerified,
+	}
+	for _, ok := range required {
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func criticalEvents(input Input) map[string]bool {
 	out := map[string]bool{}
-	defaults := []string{
-		"command_started",
-		"command_finished",
-		"test_output_observed",
-		"file_mutation_observed",
-		"artifact_captured",
-		"model_identity_observed",
-		"harness_identity_observed",
-		"requirement_superseded",
-		"redaction_applied",
-		"run_closed",
-	}
-	for _, eventType := range defaults {
+	addCriticalDefaults(out)
+	addCriticalPolicyEvents(out, input.Policy.CriticalEventFamilies)
+	removeDowngradedEvents(out, input.Policy.NonCriticalEventFamilyReasons)
+	return out
+}
+
+func addCriticalDefaults(out map[string]bool) {
+	for _, eventType := range defaultCriticalEventTypes {
 		out[eventType] = true
 	}
-	for _, eventType := range input.Policy.CriticalEventFamilies {
+}
+
+var defaultCriticalEventTypes = []string{
+	"command_started",
+	"command_finished",
+	"test_output_observed",
+	"file_mutation_observed",
+	"artifact_captured",
+	"model_identity_observed",
+	"harness_identity_observed",
+	"requirement_superseded",
+	"redaction_applied",
+	"run_closed",
+}
+
+func addCriticalPolicyEvents(out map[string]bool, eventTypes []string) {
+	for _, eventType := range eventTypes {
 		out[eventType] = true
 	}
-	for _, downgrade := range input.Policy.NonCriticalEventFamilyReasons {
-		if downgrade.EventType != "" && downgrade.Reason != "" && downgrade.AuthorityID != "" {
+}
+
+func removeDowngradedEvents(out map[string]bool, downgrades []CriticalityDowngrade) {
+	for _, downgrade := range downgrades {
+		if criticalityDowngradeComplete(downgrade) {
 			delete(out, downgrade.EventType)
 		}
 	}
-	return out
+}
+
+func criticalityDowngradeComplete(downgrade CriticalityDowngrade) bool {
+	return allNonEmpty(downgrade.EventType, downgrade.Reason, downgrade.AuthorityID)
+}
+
+func allNonEmpty(values ...string) bool {
+	for _, value := range values {
+		if value == "" {
+			return false
+		}
+	}
+	return true
 }
 
 func validRetentionMode(mode string) bool {
@@ -680,11 +748,15 @@ func topLevel(conditions []Condition) string {
 		if condition.State == StateFail {
 			return StateFail
 		}
-		if condition.State == StateCannotVerify || condition.State == StateNotAssessed {
+		if conditionLimitsTopLevel(condition) {
 			highest = StateCannotVerify
 		}
 	}
 	return highest
+}
+
+func conditionLimitsTopLevel(condition Condition) bool {
+	return condition.State == StateCannotVerify || condition.State == StateNotAssessed
 }
 
 func reasons(conditions []Condition) []string {
@@ -701,9 +773,7 @@ func reasons(conditions []Condition) []string {
 func nextActions(conditions []Condition) []string {
 	set := map[string]bool{}
 	for _, condition := range conditions {
-		if condition.State != StatePass && condition.NextAction != "" {
-			set[condition.NextAction] = true
-		}
+		addNextAction(set, condition)
 	}
 	out := []string{}
 	for action := range set {
@@ -711,6 +781,12 @@ func nextActions(conditions []Condition) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func addNextAction(set map[string]bool, condition Condition) {
+	if condition.State != StatePass && condition.NextAction != "" {
+		set[condition.NextAction] = true
+	}
 }
 
 func pass(id, code, reason string) Condition {

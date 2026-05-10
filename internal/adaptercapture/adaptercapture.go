@@ -1,6 +1,9 @@
 package adaptercapture
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 const (
 	SchemaVersion = "block19-adapter-capture-assessment-v1"
@@ -230,18 +233,33 @@ func contractCorrelationKey(event AdapterEvent) string {
 
 func identityCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
-		if event.ProducerIdentity == "" || event.AdapterIdentity == "" {
-			return cannotVerify("adapter_identity_visible", "adapter_identity_missing", "adapter or producer identity is missing", "Record adapter and producer identity.")
-		}
-		if event.IdentityBinding != IdentitySelfAsserted && event.IdentityBinding != IdentityBound {
-			return cannotVerify("adapter_identity_visible", "adapter_identity_unclassified", "adapter identity binding state is not classified", "Classify adapter identity as self_asserted or bound.")
+		if condition, ok := identityConditionForEvent(event); ok {
+			return condition
 		}
 	}
 	return pass("adapter_identity_visible", "adapter_identity_visible", "adapter and producer identity are visible with binding classification")
 }
 
+func identityConditionForEvent(event AdapterEvent) (Condition, bool) {
+	if adapterIdentityMissing(event) {
+		return cannotVerify("adapter_identity_visible", "adapter_identity_missing", "adapter or producer identity is missing", "Record adapter and producer identity."), true
+	}
+	if !validIdentityBinding(event.IdentityBinding) {
+		return cannotVerify("adapter_identity_visible", "adapter_identity_unclassified", "adapter identity binding state is not classified", "Classify adapter identity as self_asserted or bound."), true
+	}
+	return Condition{}, false
+}
+
+func adapterIdentityMissing(event AdapterEvent) bool {
+	return event.ProducerIdentity == "" || event.AdapterIdentity == ""
+}
+
+func validIdentityBinding(binding string) bool {
+	return binding == IdentitySelfAsserted || binding == IdentityBound
+}
+
 func runBindingCondition(run RunEvidence) Condition {
-	if run.RunID == "" || run.RunNonce == "" {
+	if runIdentityMissing(run) {
 		return cannotVerify("run_binding_established", "run_binding_missing", "run id or nonce is missing", "Record run id and run nonce before assessing adapter capture.")
 	}
 	for _, event := range run.AdapterEvents {
@@ -252,27 +270,44 @@ func runBindingCondition(run RunEvidence) Condition {
 	return pass("run_binding_established", "run_binding_established", "adapter events are bound to run id, nonce, and chain or bundle context")
 }
 
+func runIdentityMissing(run RunEvidence) bool {
+	return run.RunID == "" || run.RunNonce == ""
+}
+
 func adapterEventRunBindingCondition(run RunEvidence, event AdapterEvent) Condition {
-	if event.RunID != run.RunID || event.RunNonce != run.RunNonce {
+	if adapterEventRunIdentityMismatch(run, event) {
 		return fail("run_binding_established", "run_binding_mismatch", "adapter event contradicts run id or nonce", "Use adapter events bound to the selected run.")
 	}
-	if event.BindingMode == BindingSameChain {
+	switch event.BindingMode {
+	case BindingSameChain:
 		return sameChainBindingCondition(run, event)
-	}
-	if event.BindingMode == BindingAdapterBundle {
+	case BindingAdapterBundle:
 		return adapterBundleBindingCondition(run, event)
+	default:
+		return cannotVerify("run_binding_established", "binding_mode_missing", "adapter event binding mode is missing or unsupported", "Use same_chain or adapter_bundle binding.")
 	}
-	return cannotVerify("run_binding_established", "binding_mode_missing", "adapter event binding mode is missing or unsupported", "Use same_chain or adapter_bundle binding.")
+}
+
+func adapterEventRunIdentityMismatch(run RunEvidence, event AdapterEvent) bool {
+	return event.RunID != run.RunID || event.RunNonce != run.RunNonce
 }
 
 func sameChainBindingCondition(run RunEvidence, event AdapterEvent) Condition {
-	if run.RunClosedSequence > 0 && event.Sequence > run.RunClosedSequence {
+	if eventAfterRunClosure(run, event.Sequence) {
 		return cannotVerify("run_binding_established", "late_adapter_event", "adapter event appears after run closure", "Do not use late adapter events to satisfy capture-depth assessment.")
 	}
-	if event.EventHash == "" || event.PrevEventHash == "" {
+	if sameChainDigestMissing(event) {
 		return cannotVerify("run_binding_established", "same_chain_digest_missing", "same-chain adapter event lacks hash linkage", "Record prev_event_hash and event_hash.")
 	}
 	return Condition{}
+}
+
+func eventAfterRunClosure(run RunEvidence, sequence int) bool {
+	return run.RunClosedSequence > 0 && sequence > run.RunClosedSequence
+}
+
+func sameChainDigestMissing(event AdapterEvent) bool {
+	return event.EventHash == "" || event.PrevEventHash == ""
 }
 
 func adapterBundleBindingCondition(run RunEvidence, event AdapterEvent) Condition {
@@ -296,15 +331,26 @@ func taskDriftCondition(run RunEvidence) Condition {
 	if !run.TaskDriftAssessed {
 		return Condition{ID: "task_drift_visible", State: StateNotAssessed, ReasonCode: "task_drift_not_assessed", Reason: "task drift assessment was not selected", NextAction: "Assess task locks and task_superseded events."}
 	}
-	for _, event := range run.AdapterEvents {
-		if event.EventType == "task_superseded" && event.ActorAttributionState == "" {
-			return cannotVerify("task_drift_visible", "task_supersession_actor_missing", "task supersession lacks actor attribution state", "Record actor attribution state and task digest refs.")
-		}
+	if taskSupersessionActorMissing(run.AdapterEvents) {
+		return cannotVerify("task_drift_visible", "task_supersession_actor_missing", "task supersession lacks actor attribution state", "Record actor attribution state and task digest refs.")
 	}
-	if run.TaskSupersessionCount == 0 {
+	return taskDriftPassCondition(run.TaskSupersessionCount)
+}
+
+func taskDriftPassCondition(supersessionCount int) Condition {
+	if supersessionCount == 0 {
 		return pass("task_drift_visible", "no_supersessions_observed", "task drift was assessed and no supersessions were observed")
 	}
 	return pass("task_drift_visible", "task_supersessions_visible", "task supersessions include visible attribution and digest evidence")
+}
+
+func taskSupersessionActorMissing(events []AdapterEvent) bool {
+	for _, event := range events {
+		if event.EventType == "task_superseded" && event.ActorAttributionState == "" {
+			return true
+		}
+	}
+	return false
 }
 
 func toolDepthCondition(run RunEvidence) Condition {
@@ -319,13 +365,15 @@ func toolDepthCondition(run RunEvidence) Condition {
 
 func fileMutationCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
-		if event.EventType == "file_mutation" {
-			if event.SourceBaseline == "" || event.RunID == "" {
-				return cannotVerify("file_mutation_correlated", "file_mutation_source_missing", "file mutation is not correlated with source baseline and run id", "Record source baseline and run id correlation for file mutation events.")
-			}
+		if fileMutationCorrelationMissing(event) {
+			return cannotVerify("file_mutation_correlated", "file_mutation_source_missing", "file mutation is not correlated with source baseline and run id", "Record source baseline and run id correlation for file mutation events.")
 		}
 	}
 	return pass("file_mutation_correlated", "file_mutation_correlated", "file mutation evidence is correlated with source baseline and run id")
+}
+
+func fileMutationCorrelationMissing(event AdapterEvent) bool {
+	return event.EventType == "file_mutation" && (event.SourceBaseline == "" || event.RunID == "")
 }
 
 func modelIdentityCondition(run RunEvidence) Condition {
@@ -351,10 +399,7 @@ func gatewayModelIdentityBound(run RunEvidence, event AdapterEvent) bool {
 }
 
 func testProvenanceCondition(run RunEvidence) Condition {
-	for _, event := range run.AdapterEvents {
-		if event.EventType != "test_observed" {
-			continue
-		}
+	if event, ok := firstEvent(run.AdapterEvents, "test_observed"); ok {
 		return testProvenanceEventCondition(event)
 	}
 	if hasRequired(run, "test_observed") {
@@ -363,10 +408,20 @@ func testProvenanceCondition(run RunEvidence) Condition {
 	return pass("test_provenance_not_overclaimed", "test_provenance_not_required", "test provenance was not required")
 }
 
+func firstEvent(events []AdapterEvent, eventType string) (AdapterEvent, bool) {
+	for _, event := range events {
+		if event.EventType == eventType {
+			return event, true
+		}
+	}
+	return AdapterEvent{}, false
+}
+
 func testProvenanceEventCondition(event AdapterEvent) Condition {
-	switch event.TestProvenance {
-	case "ci_executed", "wrapper_executed":
+	if testProvenanceExecuted(event.TestProvenance) {
 		return pass("test_provenance_not_overclaimed", "test_provenance_executed", "test evidence is bound to CI or wrapper execution")
+	}
+	switch event.TestProvenance {
 	case "agent_reported":
 		return reportedTestCondition(event, "agent_reported_test_not_executed", "agent-reported tests are claimed as executed evidence", "agent-reported test evidence is visible but non-executed")
 	case "harness_observed":
@@ -374,6 +429,10 @@ func testProvenanceEventCondition(event AdapterEvent) Condition {
 	default:
 		return cannotVerify("test_provenance_not_overclaimed", "test_provenance_missing", "test provenance is missing or unverifiable", "Record ci_executed or wrapper_executed test provenance.")
 	}
+}
+
+func testProvenanceExecuted(provenance string) bool {
+	return provenance == "ci_executed" || provenance == "wrapper_executed"
 }
 
 func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReason string) Condition {
@@ -384,17 +443,31 @@ func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReaso
 }
 
 func providerRefsCondition(run RunEvidence) Condition {
-	for _, ref := range run.ProviderRefs {
-		if providerRefContainsSecret(ref) {
-			return fail("provider_refs_portable", "provider_ref_contains_secret", "provider-neutral reference contains credential-like material", "Persist canonical token-free provider references.")
-		}
+	if providerRefsContainSecret(run.ProviderRefs) {
+		return fail("provider_refs_portable", "provider_ref_contains_secret", "provider-neutral reference contains credential-like material", "Persist canonical token-free provider references.")
 	}
-	for _, event := range run.AdapterEvents {
-		if eventProviderRefsContainSecret(event) {
-			return fail("provider_refs_portable", "provider_ref_contains_secret", "event-level provider reference contains credential-like material", "Persist canonical token-free provider references.")
-		}
+	if adapterEventsProviderRefsContainSecret(run.AdapterEvents) {
+		return fail("provider_refs_portable", "provider_ref_contains_secret", "event-level provider reference contains credential-like material", "Persist canonical token-free provider references.")
 	}
 	return pass("provider_refs_portable", "provider_refs_portable", "provider references are portable and token-free")
+}
+
+func providerRefsContainSecret(refs []ProviderRef) bool {
+	for _, ref := range refs {
+		if providerRefContainsSecret(ref) {
+			return true
+		}
+	}
+	return false
+}
+
+func adapterEventsProviderRefsContainSecret(events []AdapterEvent) bool {
+	for _, event := range events {
+		if eventProviderRefsContainSecret(event) {
+			return true
+		}
+	}
+	return false
 }
 
 func providerRefContainsSecret(ref ProviderRef) bool {
@@ -442,17 +515,31 @@ func hasInvalidRetentionMode(event AdapterEvent) bool {
 }
 
 func overclaimCondition(run RunEvidence) Condition {
-	for _, summary := range run.EventFamilySummaries {
-		if eventFamilyOverclaims(summary) {
-			return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "capture-depth output claims reconstruction without sufficient evidence", "Emit a visible capture-depth cap for insufficient evidence.")
-		}
+	if eventFamiliesOverclaim(run.EventFamilySummaries) {
+		return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "capture-depth output claims reconstruction without sufficient evidence", "Emit a visible capture-depth cap for insufficient evidence.")
 	}
-	for _, event := range run.AdapterEvents {
-		if adapterEventOverclaims(event) {
-			return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "adapter event claims reconstruction beyond captured and retained evidence", "Emit a visible cap annotation or lower the claim.")
-		}
+	if adapterEventsOverclaim(run.AdapterEvents) {
+		return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "adapter event claims reconstruction beyond captured and retained evidence", "Emit a visible cap annotation or lower the claim.")
 	}
 	return pass("capture_depth_not_overclaimed", "capture_depth_not_overclaimed", "capture-depth output does not exceed available evidence")
+}
+
+func eventFamiliesOverclaim(summaries []EventFamilyState) bool {
+	for _, summary := range summaries {
+		if eventFamilyOverclaims(summary) {
+			return true
+		}
+	}
+	return false
+}
+
+func adapterEventsOverclaim(events []AdapterEvent) bool {
+	for _, event := range events {
+		if adapterEventOverclaims(event) {
+			return true
+		}
+	}
+	return false
 }
 
 func eventFamilyOverclaims(summary EventFamilyState) bool {
@@ -509,9 +596,7 @@ func reasons(conditions []Condition) []string {
 func nextActions(conditions []Condition) []string {
 	set := map[string]bool{}
 	for _, condition := range conditions {
-		if condition.State != StatePass && condition.NextAction != "" {
-			set[condition.NextAction] = true
-		}
+		addNextAction(set, condition)
 	}
 	out := []string{}
 	for action := range set {
@@ -519,6 +604,12 @@ func nextActions(conditions []Condition) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func addNextAction(set map[string]bool, condition Condition) {
+	if condition.State != StatePass && condition.NextAction != "" {
+		set[condition.NextAction] = true
+	}
 }
 
 func hasRequired(run RunEvidence, eventType string) bool {
@@ -608,34 +699,7 @@ func stringSliceContainsSecret(values []string) bool {
 }
 
 func containsFold(value, needle string) bool {
-	if len(needle) == 0 {
-		return true
-	}
-	for i := 0; i+len(needle) <= len(value); i++ {
-		if equalFold(value[i:i+len(needle)], needle) {
-			return true
-		}
-	}
-	return false
-}
-
-func equalFold(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		ca, cb := a[i], b[i]
-		if 'A' <= ca && ca <= 'Z' {
-			ca += 'a' - 'A'
-		}
-		if 'A' <= cb && cb <= 'Z' {
-			cb += 'a' - 'A'
-		}
-		if ca != cb {
-			return false
-		}
-	}
-	return true
+	return strings.Contains(strings.ToLower(value), strings.ToLower(needle))
 }
 
 func pass(id, code, reason string) Condition {
@@ -712,8 +776,17 @@ func validEvent(id, eventType string, sequence int, runID, nonce, source, policy
 		ExecutedEvidenceClaimed: eventType == "test_observed",
 		ToolFamily:              "edit",
 	}
-	if eventType == "run_started" || eventType == "task_locked" || eventType == "run_closed" || eventType == "file_mutation" {
+	if digestOnlyValidEvent(eventType) {
 		event.RetentionMode = RetentionDigestOnly
 	}
 	return event
+}
+
+func digestOnlyValidEvent(eventType string) bool {
+	switch eventType {
+	case "run_started", "task_locked", "run_closed", "file_mutation":
+		return true
+	default:
+		return false
+	}
 }
