@@ -82,6 +82,122 @@ func TestObserveRejectsUnsafeRawPromptAndDoesNotWriteRun(t *testing.T) {
 	}
 }
 
+func TestFindUnsafeAtReasonCodes(t *testing.T) {
+	tests := []struct {
+		name       string
+		value      any
+		wantField  string
+		wantReason string
+	}{
+		{
+			name:       "raw field",
+			value:      map[string]any{"nested": map[string]any{"raw_prompt": "secret"}},
+			wantField:  "nested.raw_prompt",
+			wantReason: "forbidden_raw_field",
+		},
+		{
+			name:       "sensitive field",
+			value:      map[string]any{"authorization": "Bearer token"},
+			wantField:  "authorization",
+			wantReason: "sensitive_field",
+		},
+		{
+			name:       "unsafe path",
+			value:      map[string]any{"items": []any{"../secret.txt"}},
+			wantField:  "items[0]",
+			wantReason: "unsafe_path_or_private_path",
+		},
+		{
+			name:       "authenticated url",
+			value:      map[string]any{"url": "https://example.test/callback?token=secret"},
+			wantField:  "url",
+			wantReason: "authenticated_url",
+		},
+		{
+			name:       "token value",
+			value:      map[string]any{"value": "sk-abcdefghijklmnop"},
+			wantField:  "value",
+			wantReason: "token_like_value",
+		},
+		{
+			name:       "digest exemption",
+			value:      map[string]any{"source_digest": strings.Repeat("a", 64)},
+			wantField:  "",
+			wantReason: "",
+		},
+		{
+			name:       "empty string",
+			value:      "",
+			wantField:  "",
+			wantReason: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field, reason := findUnsafe(tt.value)
+			if field != tt.wantField || reason != tt.wantReason {
+				t.Fatalf("findUnsafe() = %q/%q, want %q/%q", field, reason, tt.wantField, tt.wantReason)
+			}
+		})
+	}
+}
+
+func TestFindUnsafeRawEventAtReasonCodes(t *testing.T) {
+	tests := []struct {
+		name       string
+		value      any
+		wantField  string
+		wantReason string
+	}{
+		{
+			name:       "raw prompt still forbidden outside retained tool input",
+			value:      map[string]any{"raw_prompt": "secret"},
+			wantField:  "raw_prompt",
+			wantReason: "forbidden_raw_field",
+		},
+		{
+			name:       "retained tool input prompt skipped",
+			value:      map[string]any{"part": map[string]any{"state": map[string]any{"input": map[string]any{"prompt": "secret"}}}},
+			wantField:  "",
+			wantReason: "",
+		},
+		{
+			name:       "unstructured body skipped",
+			value:      map[string]any{"message": map[string]any{"content": "raw model text"}},
+			wantField:  "",
+			wantReason: "",
+		},
+		{
+			name:       "structured body inspected",
+			value:      map[string]any{"message": map[string]any{"content": map[string]any{"access_token": "secret"}}},
+			wantField:  "message.content.access_token",
+			wantReason: "sensitive_field",
+		},
+		{
+			name:       "raw path token exemption",
+			value:      map[string]any{"file_path": strings.Repeat("A", 48)},
+			wantField:  "",
+			wantReason: "",
+		},
+		{
+			name:       "raw url still unsafe",
+			value:      map[string]any{"url": "https://example.test/callback?api_key=secret"},
+			wantField:  "url",
+			wantReason: "authenticated_url",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field, reason := findUnsafeRawEvent(tt.value)
+			if field != tt.wantField || reason != tt.wantReason {
+				t.Fatalf("findUnsafeRawEvent() = %q/%q, want %q/%q", field, reason, tt.wantField, tt.wantReason)
+			}
+		})
+	}
+}
+
 func TestNormalizeOpenCodeRawLineClassifiesFamilies(t *testing.T) {
 	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
 	raw := map[string]any{

@@ -1918,67 +1918,63 @@ func findUnsafeRawEvent(value any) (string, string) {
 }
 
 func findUnsafeRawEventAt(path string, value any) (string, string) {
+	return findUnsafeValueAt(path, value, true)
+}
+
+func findUnsafeAt(path string, value any) (string, string) {
+	return findUnsafeValueAt(path, value, false)
+}
+
+func findUnsafeValueAt(path string, value any, rawEvent bool) (string, string) {
 	switch v := value.(type) {
 	case map[string]any:
-		for key, child := range v {
-			childPath := key
-			if path != "" {
-				childPath = path + "." + key
-			}
-			keyLower := strings.ToLower(key)
-			if unretainedRawToolInputField(childPath, keyLower, child) {
-				continue
-			}
-			if rawFieldNames[keyLower] {
-				return childPath, "forbidden_raw_field"
-			}
-			if sensitiveFieldNames[keyLower] {
-				return childPath, "sensitive_field"
-			}
-			if unretainedRawBodyField(keyLower) && !structuredRawBody(child) {
-				continue
-			}
-			if field, reason := findUnsafeRawEventAt(childPath, child); field != "" {
-				return field, reason
-			}
-		}
+		return findUnsafeMapAt(path, v, rawEvent)
 	case []any:
-		for i, child := range v {
-			if field, reason := findUnsafeRawEventAt(fmt.Sprintf("%s[%d]", path, i), child); field != "" {
-				return field, reason
-			}
-		}
+		return findUnsafeSliceAt(path, v, rawEvent)
 	case string:
-		if strings.TrimSpace(v) == "" {
-			return "", ""
+		return findUnsafeStringAt(path, v, rawEvent)
+	}
+	return "", ""
+}
+
+func findUnsafeMapAt(path string, values map[string]any, rawEvent bool) (string, string) {
+	for key, child := range values {
+		childPath := childPath(path, key)
+		reason, skip := unsafeMapFieldReason(childPath, strings.ToLower(key), child, rawEvent)
+		if reason != "" {
+			return childPath, reason
 		}
-		if unsafeURL(v) {
-			return path, "authenticated_url"
+		if skip {
+			continue
 		}
-		if providerTokenPrefix.MatchString(v) {
-			return path, "token_like_value"
-		}
-		if !digestField(path) && !rawPathLikeField(path) && base64TokenPattern.MatchString(v) && !sha256Pattern.MatchString(v) {
-			return path, "token_like_value"
+		if field, reason := findUnsafeValueAt(childPath, child, rawEvent); field != "" {
+			return field, reason
 		}
 	}
 	return "", ""
 }
 
-func rawPathLikeField(path string) bool {
-	field := path
-	if idx := strings.LastIndex(field, "."); idx >= 0 {
-		field = field[idx+1:]
+func childPath(parent, key string) string {
+	if parent == "" {
+		return key
 	}
-	if idx := strings.LastIndex(field, "["); idx >= 0 {
-		field = field[:idx]
+	return parent + "." + key
+}
+
+func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, bool) {
+	if rawEvent && unretainedRawToolInputField(path, key, value) {
+		return "", true
 	}
-	switch strings.ToLower(field) {
-	case "path", "file", "filepath", "file_path", "dir", "directory", "cwd":
-		return true
-	default:
-		return false
+	if rawFieldNames[key] {
+		return "forbidden_raw_field", false
 	}
+	if sensitiveFieldNames[key] {
+		return "sensitive_field", false
+	}
+	if rawEvent && unretainedRawBodyField(key) && !structuredRawBody(value) {
+		return "", true
+	}
+	return "", false
 }
 
 func unretainedRawToolInputField(path, key string, value any) bool {
@@ -2013,48 +2009,62 @@ func structuredRawBody(value any) bool {
 	}
 }
 
-func findUnsafeAt(path string, value any) (string, string) {
-	switch v := value.(type) {
-	case map[string]any:
-		for key, child := range v {
-			childPath := key
-			if path != "" {
-				childPath = path + "." + key
-			}
-			if rawFieldNames[strings.ToLower(key)] {
-				return childPath, "forbidden_raw_field"
-			}
-			if sensitiveFieldNames[strings.ToLower(key)] {
-				return childPath, "sensitive_field"
-			}
-			if field, reason := findUnsafeAt(childPath, child); field != "" {
-				return field, reason
-			}
-		}
-	case []any:
-		for i, child := range v {
-			if field, reason := findUnsafeAt(fmt.Sprintf("%s[%d]", path, i), child); field != "" {
-				return field, reason
-			}
-		}
-	case string:
-		if strings.TrimSpace(v) == "" {
-			return "", ""
-		}
-		if privatePathPattern.MatchString(v) || strings.HasPrefix(v, "/") || strings.Contains(v, "../") {
-			return path, "unsafe_path_or_private_path"
-		}
-		if unsafeURL(v) {
-			return path, "authenticated_url"
-		}
-		if providerTokenPrefix.MatchString(v) {
-			return path, "token_like_value"
-		}
-		if !digestField(path) && base64TokenPattern.MatchString(v) && !sha256Pattern.MatchString(v) {
-			return path, "token_like_value"
+func findUnsafeSliceAt(path string, values []any, rawEvent bool) (string, string) {
+	for i, child := range values {
+		if field, reason := findUnsafeValueAt(fmt.Sprintf("%s[%d]", path, i), child, rawEvent); field != "" {
+			return field, reason
 		}
 	}
 	return "", ""
+}
+
+func findUnsafeStringAt(path, value string, rawEvent bool) (string, string) {
+	if strings.TrimSpace(value) == "" {
+		return "", ""
+	}
+	if !rawEvent && unsafePathValue(value) {
+		return path, "unsafe_path_or_private_path"
+	}
+	if unsafeURL(value) {
+		return path, "authenticated_url"
+	}
+	if providerTokenPrefix.MatchString(value) {
+		return path, "token_like_value"
+	}
+	if unsafeEncodedToken(path, value, rawEvent) {
+		return path, "token_like_value"
+	}
+	return "", ""
+}
+
+func unsafePathValue(value string) bool {
+	return privatePathPattern.MatchString(value) || strings.HasPrefix(value, "/") || strings.Contains(value, "../")
+}
+
+func unsafeEncodedToken(path, value string, rawEvent bool) bool {
+	if digestField(path) || sha256Pattern.MatchString(value) {
+		return false
+	}
+	if rawEvent && rawPathLikeField(path) {
+		return false
+	}
+	return base64TokenPattern.MatchString(value)
+}
+
+func rawPathLikeField(path string) bool {
+	field := path
+	if idx := strings.LastIndex(field, "."); idx >= 0 {
+		field = field[idx+1:]
+	}
+	if idx := strings.LastIndex(field, "["); idx >= 0 {
+		field = field[:idx]
+	}
+	switch strings.ToLower(field) {
+	case "path", "file", "filepath", "file_path", "dir", "directory", "cwd":
+		return true
+	default:
+		return false
+	}
 }
 
 func unsafeURL(raw string) bool {
