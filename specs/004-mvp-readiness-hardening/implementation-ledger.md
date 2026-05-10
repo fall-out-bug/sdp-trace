@@ -110,8 +110,11 @@ if PR-level review accepts the local gate shape.
 
 ## External Evidence Boundary
 
-GitHub CI `verify` passed on an older PR #37 head. Final-head GitHub CI and
-PR-level review remain `not_assessed` until the branch is pushed and checked.
+GitHub CI `verify` passed on PR #37 head
+`73cb78f30e5edf157ae1e0b1e5bc30d7b0ea95ff`
+([run 25640589077/job 75260219377](https://github.com/fall-out-bug/sdp-trace/actions/runs/25640589077/job/75260219377)).
+PR-level review planes are recorded below. Merge approval is user-delegated in
+the 2026-05-10 task thread.
 
 ## Implementation Pi Review
 
@@ -177,9 +180,18 @@ PR-level review remain `not_assessed` until the branch is pushed and checked.
 | Batch 10-11 code/correctness review | `zai/glm-5.1` | APPROVE_WITH_MINOR_FIXES | Review found no blocking findings. Minor digest mismatch return-value drift and required-run reason precedence drift were accepted and fixed with focused tests. |
 | Batch 10-11 trace/evidence review | `openrouter/qwen/qwen3.6-plus` | APPROVE | Review approved ledger honesty and evidence boundaries; non-blocking notes about focused review rows and package-specific coverage proof were recorded but did not change merge approval state. |
 | Batch 10-11 requirements-vs-implementation review | `minimax/MiniMax-M2.7` | APPROVE | Review found no blocking requirement, UX/DX, trust, or user-facing regressions; it confirmed strict CRAP remains `assessed_gap`. |
+| PR #37 code/correctness review | `openrouter/deepseek/deepseek-v4-pro` | APPROVE_WITH_MINOR_NOTES | Initial code reviewer received an unexpanded packet and was not counted. Replacement review approved with minor notes: CI was pending at review start, now fixed by final-head CI pass; dependency-coupling automation remains a future enhancement, with current internal import evidence recorded. |
+| PR #37 trace/evidence review | `openrouter/qwen/qwen3.6-plus` | APPROVE | Initial evidence review correctly rejected missing packet evidence and was not counted as approval. Focused re-review approved after final-head CI, CRAP/coverage/gocyclo/gocognit outputs, ledger state, and internal import evidence were supplied; prior `main.go` size as domain-leak proof was retracted as unsupported. |
+| PR #37 requirements-vs-implementation review | `openrouter/deepseek/deepseek-v4-pro` | APPROVE | Initial MiniMax review raised `main.go` size and missing-evidence concerns from the limited packet. Focused re-review approved after final evidence showed production CRAP <5, cyclomatic/cognitive <15, no internal-to-cmd imports, and ledger honesty. |
 
 Unusable attempts:
 
+- First PR #37 code/correctness review received an unexpanded packet literal;
+  not counted as evidence.
+- First PR #37 requirements-vs-implementation review hallucinated files outside
+  this repo (`internal/metrics/recorder.go`); not counted as evidence.
+- First PR #37 trace/evidence review only assessed missing packet evidence;
+  useful as a packet-quality finding, not counted as final approval.
 - `openrouter/deepseek/deepseek-v4-pro` evidence review returned empty output;
   not counted as evidence.
 - First `minimax/MiniMax-M2.7` requirements review did not receive usable diff
