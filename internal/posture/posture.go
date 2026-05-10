@@ -202,96 +202,134 @@ type aggregateGroup struct {
 }
 
 func Build(selectionPath string, now time.Time) (ExportResult, error) {
-	selection, err := readSelection(selectionPath)
+	input, err := prepareBuildInput(selectionPath, now)
 	if err != nil {
 		return ExportResult{}, err
 	}
+	inputs, refusals, groups := ingestRepositories(input.selection, input.activeKeys, input.cutoff, input.hasCutoff)
+	metricRows := buildMetrics(groups)
+	movementRows, summary := buildMovements(metricRows, input.selection.CurrentWindow, input.selection.PreviousWindow)
+	return buildExportResult(selectionPath, now, input, inputs, metricRows, movementRows, summary, refusals), nil
+}
+
+type buildInput struct {
+	selection  SelectionManifest
+	activeKeys []string
+	cutoff     time.Time
+	hasCutoff  bool
+	handoff    map[string]string
+}
+
+func prepareBuildInput(selectionPath string, now time.Time) (buildInput, error) {
+	selection, err := readSelection(selectionPath)
+	if err != nil {
+		return buildInput{}, err
+	}
 	if err := validateSelection(selection); err != nil {
-		return ExportResult{}, err
+		return buildInput{}, err
 	}
 	activeKeys := groupingKeys(selection.GroupingSetID)
 	if len(activeKeys) == 0 {
-		return ExportResult{}, fmt.Errorf("unsupported grouping set")
+		return buildInput{}, fmt.Errorf("unsupported grouping set")
 	}
 	cutoff, hasCutoff, err := parseFreshnessBoundary(selection.FreshnessBoundary, now)
 	if err != nil {
-		return ExportResult{}, err
+		return buildInput{}, err
 	}
-
-	inputs := []InputSelection{}
-	refusals := []RefusalRow{}
-	groups := map[string]*aggregateGroup{}
-	refusalCounter := 0
 	handoff := selection.Handoff
 	if handoff == nil {
 		handoff = map[string]string{}
 	}
 	if !safeHandoff(handoff) {
-		return ExportResult{}, fmt.Errorf("unsafe handoff")
+		return buildInput{}, fmt.Errorf("unsafe handoff")
 	}
-	for _, repo := range selection.Repositories {
-		if err := validateRepoLabels(repo); err != nil {
-			refusalCounter++
-			refusals = append(refusals, refusal(refusalCounter, repo, "unsafe_label", "cannot_verify_input"))
-			continue
-		}
-		if err := validateInputPaths(repo); err != nil {
-			refusalCounter++
-			refusals = append(refusals, refusal(refusalCounter, repo, "malformed_input", "cannot_verify_input"))
-			continue
-		}
-		if hasCutoff && isStale(repo.InputObservedAt, cutoff) {
-			refusalCounter++
-			refusals = append(refusals, refusal(refusalCounter, repo, "stale_input", "stale_input"))
-			inputs = append(inputs, inputSelection(repo, "", "stale_input"))
-			continue
-		}
-		digest, err := verifyDigestManifest(repo.ArtifactDigestManifest, repo.QueryPackResult)
-		if err != nil {
-			refusalCounter++
-			refusals = append(refusals, refusal(refusalCounter, repo, reasonForDigestErr(err), trustForDigestErr(err)))
-			inputs = append(inputs, inputSelection(repo, "", trustForDigestErr(err)))
-			continue
-		}
-		result, err := readQueryPack(repo.QueryPackResult)
-		if err != nil || result.SchemaVersion != query.QueryPackSchemaVersion || result.QueryPackID != query.QueryPackForensicsBasic {
-			refusalCounter++
-			refusals = append(refusals, refusal(refusalCounter, repo, "malformed_input", "cannot_verify_input"))
-			inputs = append(inputs, inputSelection(repo, digest, "cannot_verify_input"))
-			continue
-		}
-		signals, err := readSignals(repo.PostureSignalManifest)
-		if err != nil {
-			refusalCounter++
-			refusals = append(refusals, refusal(refusalCounter, repo, "malformed_input", "cannot_verify_input"))
-			inputs = append(inputs, inputSelection(repo, digest, "cannot_verify_input"))
-			continue
-		}
-		inputs = append(inputs, inputSelection(repo, digest, "trusted_input"))
-		key, dims := dimensionKey(repo, activeKeys)
-		groupKey := repo.TimeWindow + "|" + key
-		group := groups[groupKey]
-		if group == nil {
-			group = &aggregateGroup{
-				dimensions:   dims,
-				dimensionKey: key,
-				window:       repo.TimeWindow,
-				trustStates:  map[string]int{},
-				signals:      map[string]PostureSignal{},
-			}
-			groups[groupKey] = group
-		}
-		group.rows = append(group.rows, flattenRows(result)...)
-		group.inputRefs = append(group.inputRefs, repo.InputID)
-		group.digests = append(group.digests, digest)
-		group.trustStates["trusted_input"]++
-		for rowRef, signal := range signals {
-			group.signals[rowRef] = signal
-		}
-	}
+	return buildInput{selection: selection, activeKeys: activeKeys, cutoff: cutoff, hasCutoff: hasCutoff, handoff: handoff}, nil
+}
 
-	metricRows := buildMetrics(groups)
-	movementRows, summary := buildMovements(metricRows, selection.CurrentWindow, selection.PreviousWindow)
+func ingestRepositories(selection SelectionManifest, activeKeys []string, cutoff time.Time, hasCutoff bool) ([]InputSelection, []RefusalRow, map[string]*aggregateGroup) {
+	inputs := []InputSelection{}
+	refusals := []RefusalRow{}
+	groups := map[string]*aggregateGroup{}
+	refusalCounter := 0
+	for _, repo := range selection.Repositories {
+		ingested := ingestRepository(repo, cutoff, hasCutoff)
+		if !ingested.trusted {
+			refusalCounter++
+			refusals = append(refusals, refusal(refusalCounter, repo, ingested.refusalReason, ingested.inputTrustState))
+			if ingested.recordSelection {
+				inputs = append(inputs, inputSelection(repo, ingested.digest, ingested.inputTrustState))
+			}
+			continue
+		}
+		inputs = append(inputs, inputSelection(repo, ingested.digest, "trusted_input"))
+		addTrustedRepositoryGroup(groups, repo, activeKeys, ingested.result, ingested.signals, ingested.digest)
+	}
+	return inputs, refusals, groups
+}
+
+type repositoryIngest struct {
+	trusted         bool
+	recordSelection bool
+	digest          string
+	refusalReason   string
+	inputTrustState string
+	result          query.QueryPackResult
+	signals         map[string]PostureSignal
+}
+
+func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) repositoryIngest {
+	if err := validateRepoLabels(repo); err != nil {
+		return refusedInput("unsafe_label", "cannot_verify_input", "", false)
+	}
+	if err := validateInputPaths(repo); err != nil {
+		return refusedInput("malformed_input", "cannot_verify_input", "", false)
+	}
+	if hasCutoff && isStale(repo.InputObservedAt, cutoff) {
+		return refusedInput("stale_input", "stale_input", "", true)
+	}
+	digest, err := verifyDigestManifest(repo.ArtifactDigestManifest, repo.QueryPackResult)
+	if err != nil {
+		return refusedInput(reasonForDigestErr(err), trustForDigestErr(err), "", true)
+	}
+	result, err := readQueryPack(repo.QueryPackResult)
+	if err != nil || result.SchemaVersion != query.QueryPackSchemaVersion || result.QueryPackID != query.QueryPackForensicsBasic {
+		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
+	}
+	signals, err := readSignals(repo.PostureSignalManifest)
+	if err != nil {
+		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
+	}
+	return repositoryIngest{trusted: true, digest: digest, result: result, signals: signals}
+}
+
+func refusedInput(reason, trustState, digest string, recordSelection bool) repositoryIngest {
+	return repositoryIngest{refusalReason: reason, inputTrustState: trustState, digest: digest, recordSelection: recordSelection}
+}
+
+func addTrustedRepositoryGroup(groups map[string]*aggregateGroup, repo RepositoryWindow, activeKeys []string, result query.QueryPackResult, signals map[string]PostureSignal, digest string) {
+	key, dims := dimensionKey(repo, activeKeys)
+	groupKey := repo.TimeWindow + "|" + key
+	group := groups[groupKey]
+	if group == nil {
+		group = &aggregateGroup{
+			dimensions:   dims,
+			dimensionKey: key,
+			window:       repo.TimeWindow,
+			trustStates:  map[string]int{},
+			signals:      map[string]PostureSignal{},
+		}
+		groups[groupKey] = group
+	}
+	group.rows = append(group.rows, flattenRows(result)...)
+	group.inputRefs = append(group.inputRefs, repo.InputID)
+	group.digests = append(group.digests, digest)
+	group.trustStates["trusted_input"]++
+	for rowRef, signal := range signals {
+		group.signals[rowRef] = signal
+	}
+}
+
+func buildExportResult(selectionPath string, now time.Time, input buildInput, inputs []InputSelection, metricRows []MetricRow, movementRows []MovementRow, summary MovementSummary, refusals []RefusalRow) ExportResult {
 	return ExportResult{
 		SchemaVersion:        SchemaVersion,
 		ExportProfileID:      ProfileID,
@@ -299,18 +337,18 @@ func Build(selectionPath string, now time.Time) (ExportResult, error) {
 		ExportID:             deterministicExportID(selectionPath, metricRows, refusals),
 		Producer:             "sdp-trace",
 		GeneratedAt:          now.UTC().Format(time.RFC3339),
-		GroupingSetID:        selection.GroupingSetID,
-		ActiveGroupingKeys:   activeKeys,
+		GroupingSetID:        input.selection.GroupingSetID,
+		ActiveGroupingKeys:   input.activeKeys,
 		InputSelection:       inputs,
 		MetricRows:           metricRows,
 		MovementRows:         movementRows,
 		MovementSummary:      summary,
 		RefusalRows:          refusals,
-		Handoff:              handoff,
+		Handoff:              input.handoff,
 		OutputSafety: OutputSafety{
 			VerifiedAbsentSensitiveClasses: SensitiveClasses(),
 		},
-	}, nil
+	}
 }
 
 func Explain(result ExportResult) (string, error) {
