@@ -296,34 +296,67 @@ func missingGitHubOIDC(env map[string]string) []string {
 }
 
 func FetchGitHubOIDCToken(env map[string]string) (string, error) {
-	requestURL, err := url.Parse(env["ACTIONS_ID_TOKEN_REQUEST_URL"])
+	token, err := fetchGitHubOIDCToken(
+		http.DefaultClient,
+		env["ACTIONS_ID_TOKEN_REQUEST_URL"],
+		env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"],
+	)
 	if err != nil {
 		return "", err
 	}
-	if !strings.HasSuffix(requestURL.Host, "actions.githubusercontent.com") {
-		return "", fmt.Errorf("unexpected oidc request host: %s", requestURL.Host)
+	return token, nil
+}
+
+func fetchGitHubOIDCToken(httpClient *http.Client, requestURL, requestToken string) (string, error) {
+	req, err := buildOIDCTokenRequest(requestURL, requestToken)
+	if err != nil {
+		return "", err
 	}
-	query := requestURL.Query()
+	body, err := executeOIDCTokenRequest(httpClient, req)
+	if err != nil {
+		return "", err
+	}
+	return parseOIDCTokenResponse(body)
+}
+
+func buildOIDCTokenRequest(requestURL, requestToken string) (*http.Request, error) {
+	parsed, err := url.Parse(requestURL)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasSuffix(parsed.Host, "actions.githubusercontent.com") {
+		return nil, fmt.Errorf("unexpected oidc request host: %s", parsed.Host)
+	}
+	query := parsed.Query()
 	query.Set("audience", "sdp-trace")
-	requestURL.RawQuery = query.Encode()
-	req, err := http.NewRequest(http.MethodGet, requestURL.String(), nil)
+	parsed.RawQuery = query.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, parsed.String(), nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	req.Header.Set("Authorization", "bearer "+env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"])
+	req.Header.Set("Authorization", "bearer "+requestToken)
 	req.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	return req, nil
+}
+
+func executeOIDCTokenRequest(httpClient *http.Client, req *http.Request) ([]byte, error) {
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("oidc token request returned %s", resp.Status)
+		return nil, fmt.Errorf("oidc token request returned %s", resp.Status)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	return body, nil
+}
+
+func parseOIDCTokenResponse(body []byte) (string, error) {
 	var payload struct {
 		Value string `json:"value"`
 	}

@@ -169,6 +169,95 @@ func TestInvalidRelativeTarget(t *testing.T) {
 	}
 }
 
+func TestUpdateGitignoreCreatesMissingFile(t *testing.T) {
+	repo := initRepo(t)
+	summary, err := updateGitignore(Options{RepoRoot: repo})
+	if err != nil {
+		t.Fatalf("update gitignore: %v", err)
+	}
+	if len(summary) != 0 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	data, err := os.ReadFile(filepath.Join(repo, ".gitignore"))
+	if err != nil {
+		t.Fatalf("read gitignore: %v", err)
+	}
+	if string(data) != gitignoreBlock {
+		t.Fatalf("gitignore content mismatch:\n%s", string(data))
+	}
+}
+
+func TestUpdateGitignorePreservesExistingBlock(t *testing.T) {
+	repo := initRepo(t)
+	path := filepath.Join(repo, ".gitignore")
+	writeFileForTest(t, path, gitignoreBlock)
+	summary, err := updateGitignore(Options{RepoRoot: repo})
+	if err != nil {
+		t.Fatalf("update gitignore: %v", err)
+	}
+	if len(summary) != 0 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read gitignore: %v", err)
+	}
+	if string(data) != gitignoreBlock {
+		t.Fatalf("gitignore changed:\n%s", string(data))
+	}
+}
+
+func TestUpdateGitignoreConflictingBlockRequiresForce(t *testing.T) {
+	repo := initRepo(t)
+	path := filepath.Join(repo, ".gitignore")
+	legacy := "# sdp-trace begin\nlegacy\n# sdp-trace end\n"
+	writeFileForTest(t, path, legacy)
+	_, err := updateGitignore(Options{RepoRoot: repo})
+	if err == nil || !strings.Contains(err.Error(), ReasonManualStepRequired) {
+		t.Fatalf("expected manual-step requirement, got: %v", err)
+	}
+	summary, err := updateGitignore(Options{RepoRoot: repo, Force: true})
+	if err != nil {
+		t.Fatalf("update gitignore (force): %v", err)
+	}
+	if len(summary) != 1 {
+		t.Fatalf("expected one summary, got %d", len(summary))
+	}
+	if got, want := summary[0].Path, ".gitignore"; got != want {
+		t.Fatalf("summary path = %s, want %s", got, want)
+	}
+	if _, err := os.Stat(filepath.Join(repo, ".gitignore.bak")); err != nil {
+		t.Fatalf("missing backup: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read gitignore: %v", err)
+	}
+	if !strings.Contains(string(data), ".sdp-trace/ci/") {
+		t.Fatalf("expected replaced marker block, got:\n%s", string(data))
+	}
+}
+
+func TestUpdateGitignoreAppendsBlockWithSpacing(t *testing.T) {
+	repo := initRepo(t)
+	path := filepath.Join(repo, ".gitignore")
+	writeFileForTest(t, path, "existing")
+	summary, err := updateGitignore(Options{RepoRoot: repo})
+	if err != nil {
+		t.Fatalf("update gitignore: %v", err)
+	}
+	if len(summary) != 0 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read gitignore: %v", err)
+	}
+	if string(data) != "existing\n"+gitignoreBlock {
+		t.Fatalf("gitignore append mismatch:\n%s", string(data))
+	}
+}
+
 func TestWriteTargetChmodsExistingExecutable(t *testing.T) {
 	repo := initRepo(t)
 	path := filepath.Join(repo, ".githooks", "pre-commit")

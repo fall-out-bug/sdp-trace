@@ -474,29 +474,23 @@ func queryShortName(queryName string) string {
 	return strings.TrimPrefix(queryName, "forensics-")
 }
 
+var sourceStateMap = map[string]string{
+	"pass":                   RowStatePresent,
+	"":                       RowStateCannotVerify,
+	"fail":                   RowStateIssueObserved,
+	RowStateCannotVerify:     RowStateCannotVerify,
+	RowStateNotAssessed:      RowStateNotAssessed,
+	RowStateMissingTelemetry: RowStateMissingTelemetry,
+	RowStateUnsupported:      RowStateUnsupported,
+	RowStateNotIntegrated:    RowStateNotIntegrated,
+	RowStateRetentionLimited: RowStateRetentionLimited,
+}
+
 func mapSourceState(state string) string {
-	switch state {
-	case "pass":
-		return RowStatePresent
-	case "":
-		return RowStateCannotVerify
-	case "fail":
-		return RowStateIssueObserved
-	case RowStateCannotVerify:
-		return RowStateCannotVerify
-	case RowStateNotAssessed:
-		return RowStateNotAssessed
-	case RowStateMissingTelemetry:
-		return RowStateMissingTelemetry
-	case RowStateUnsupported:
-		return RowStateUnsupported
-	case RowStateNotIntegrated:
-		return RowStateNotIntegrated
-	case RowStateRetentionLimited:
-		return RowStateRetentionLimited
-	default:
-		return RowStateCannotVerify
+	if mapped, ok := sourceStateMap[state]; ok {
+		return mapped
 	}
+	return RowStateCannotVerify
 }
 
 func familyForEvent(eventType string) string {

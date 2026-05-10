@@ -61,6 +61,9 @@ const (
 	SurfaceRepositoryIdentity          = "repository_identity"
 	SurfaceConfig                      = "sdp_trace_config"
 	SurfaceGitignore                   = "sdp_trace_gitignore"
+	gitignoreBeginMarker               = "# sdp-trace begin"
+	gitignoreEndMarker                 = "# sdp-trace end"
+	gitignoreBlock                     = "# sdp-trace begin\n.sdp-trace/hooks/\n.sdp-trace/ci/\n.sdp-trace/install-diff.txt\n# sdp-trace end\n"
 )
 
 var safeIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
@@ -512,6 +515,19 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 	if err := ensureNoUnsafeHooksPath(opts); err != nil {
 		return nil, err
 	}
+	summaries, err := writeInstallTargets(opts)
+	if err != nil {
+		return summaries, err
+	}
+	summary, err := updateGitignore(opts)
+	if err != nil {
+		return summaries, err
+	}
+	summaries = append(summaries, summary...)
+	return appendHooksPathSummary(opts, summaries)
+}
+
+func writeInstallTargets(opts Options) ([]DiffSummary, error) {
 	repoID := opts.RepositoryID
 	if repoID == "" {
 		repoID = derivedRepositoryID(opts.RepoRoot)
@@ -524,13 +540,12 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 		}
 		summaries = append(summaries, summary...)
 	}
-	summary, err := updateGitignore(opts)
-	if err != nil {
-		return summaries, err
-	}
-	summaries = append(summaries, summary...)
+	return summaries, nil
+}
+
+func appendHooksPathSummary(opts Options, summaries []DiffSummary) ([]DiffSummary, error) {
 	previousHooksPath := strings.TrimSpace(gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath"))
-	if opts.Force && previousHooksPath != "" && previousHooksPath != ".githooks" {
+	if opts.Force && isDifferentHooksPath(previousHooksPath) {
 		summaries = append(summaries, DiffSummary{
 			Path:    "git_config:core.hooksPath",
 			Action:  "overwrite_hooks_path",
@@ -543,6 +558,10 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 		return summaries, err
 	}
 	return summaries, nil
+}
+
+func isDifferentHooksPath(path string) bool {
+	return path != "" && path != ".githooks"
 }
 
 func ensureNoUnsafeHooksPath(opts Options) error {
@@ -641,43 +660,60 @@ func writeNewTarget(path string, data []byte, mode os.FileMode) ([]DiffSummary, 
 
 func updateGitignore(opts Options) ([]DiffSummary, error) {
 	path := filepath.Join(opts.RepoRoot, ".gitignore")
-	block := "# sdp-trace begin\n.sdp-trace/hooks/\n.sdp-trace/ci/\n.sdp-trace/install-diff.txt\n# sdp-trace end\n"
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, os.WriteFile(path, []byte(block), 0o644)
+		return nil, os.WriteFile(path, []byte(gitignoreBlock), 0o644)
 	}
 	if err != nil {
 		return nil, err
 	}
 	text := string(data)
-	start := strings.Index(text, "# sdp-trace begin")
-	end := strings.Index(text, "# sdp-trace end")
-	if start >= 0 && end >= start {
-		end += len("# sdp-trace end")
-		current := text[start:end]
-		if current == strings.TrimSuffix(block, "\n") {
-			return nil, nil
-		}
-		if !opts.Force {
-			return nil, fmt.Errorf("%s: .gitignore sdp-trace block differs; use --force after reviewing safe diff", ReasonManualStepRequired)
-		}
-		if err := os.WriteFile(path+".bak", data, 0o644); err != nil {
-			return nil, fmt.Errorf("%s: backup failed for .gitignore", ReasonUnsafeOutputRefused)
-		}
-		next := text[:start] + strings.TrimSuffix(block, "\n") + text[end:]
-		return []DiffSummary{{
-			Path:    ".gitignore",
-			Action:  "replace_sdp_trace_block",
-			Before:  contentSummary(data),
-			After:   contentSummary([]byte(next)),
-			Summary: "replace marked sdp-trace gitignore block using safe byte and line counts",
-			Backup:  ".gitignore.bak",
-		}}, os.WriteFile(path, []byte(next), 0o644)
+	start, end := locateGitignoreBlock(text)
+	if start >= 0 {
+		return updateSdpTraceGitignoreBlock(opts, path, text, data, start, end)
 	}
+	return appendGitignoreMarker(path, text)
+}
+
+func locateGitignoreBlock(text string) (int, int) {
+	start := strings.Index(text, gitignoreBeginMarker)
+	if start < 0 {
+		return -1, -1
+	}
+	end := strings.Index(text, gitignoreEndMarker)
+	if end < start {
+		return -1, -1
+	}
+	return start, end + len(gitignoreEndMarker)
+}
+
+func updateSdpTraceGitignoreBlock(opts Options, path, text string, data []byte, start, end int) ([]DiffSummary, error) {
+	current := text[start:end]
+	if current == strings.TrimSuffix(gitignoreBlock, "\n") {
+		return nil, nil
+	}
+	if !opts.Force {
+		return nil, fmt.Errorf("%s: .gitignore sdp-trace block differs; use --force after reviewing safe diff", ReasonManualStepRequired)
+	}
+	if err := os.WriteFile(path+".bak", data, 0o644); err != nil {
+		return nil, fmt.Errorf("%s: backup failed for .gitignore", ReasonUnsafeOutputRefused)
+	}
+	next := text[:start] + strings.TrimSuffix(gitignoreBlock, "\n") + text[end:]
+	return []DiffSummary{{
+		Path:    ".gitignore",
+		Action:  "replace_sdp_trace_block",
+		Before:  contentSummary(data),
+		After:   contentSummary([]byte(next)),
+		Summary: "replace marked sdp-trace gitignore block using safe byte and line counts",
+		Backup:  ".gitignore.bak",
+	}}, os.WriteFile(path, []byte(next), 0o644)
+}
+
+func appendGitignoreMarker(path, text string) ([]DiffSummary, error) {
 	if strings.TrimSpace(text) != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
-	text += block
+	text += gitignoreBlock
 	return nil, os.WriteFile(path, []byte(text), 0o644)
 }
 

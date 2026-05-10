@@ -7,6 +7,25 @@ import (
 	"time"
 )
 
+func mustNewTestEvent(t *testing.T, runID string, sequence int, eventType EventType, prevHash string) Event {
+	t.Helper()
+	event := Event{
+		SchemaVersion: SchemaVersion,
+		RunID:         runID,
+		EventID:       string(eventType),
+		Sequence:      sequence,
+		EventType:     eventType,
+		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
+		PrevEventHash: prevHash,
+		EventPayload:  map[string]any{"state": eventType},
+	}
+	computed, err := event.WithComputedEventHash()
+	if err != nil {
+		t.Fatalf("compute event hash: %v", err)
+	}
+	return computed
+}
+
 func TestRunLayoutWritesAndValidatesEventChain(t *testing.T) {
 	runDir := t.TempDir()
 	layout, err := NewRunLayout(runDir)
@@ -46,6 +65,76 @@ func TestRunLayoutWritesAndValidatesEventChain(t *testing.T) {
 	}
 	if _, err := OpenRunArtifact(runDir); err != nil {
 		t.Fatalf("open run artifact: %v", err)
+	}
+}
+
+func TestValidateRunDirectoryChecksEventCountAndChainHead(t *testing.T) {
+	runDir := t.TempDir()
+	layout, err := NewRunLayout(runDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	validEvent := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	mismatchedEvent := mustNewTestEvent(t, "run-a", 0, EventRunClosed, NullEventHash)
+	manifest := RunManifest{
+		SchemaVersion:   SchemaVersion,
+		RunID:           "run-a",
+		RecorderVersion: RecorderVersion,
+		ContractID:      DefaultContract.ContractID,
+		EventCount:      1,
+		EventChainHead:  validEvent.EventHash,
+	}
+	if err := layout.WriteRun(manifest); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+	if err := layout.WriteEvent(validEvent); err != nil {
+		t.Fatalf("write event: %v", err)
+	}
+	manifest.EventCount = 2
+	if err := layout.WriteRun(manifest); err != nil {
+		t.Fatalf("write malformed run: %v", err)
+	}
+	if err := ValidateRunDirectory(runDir, true); err == nil {
+		t.Fatal("expected event_count mismatch")
+	}
+
+	manifest.EventCount = 1
+	manifest.EventChainHead = mismatchedEvent.EventHash
+	if err := layout.WriteRun(manifest); err != nil {
+		t.Fatalf("write malformed chain head run: %v", err)
+	}
+	if err := ValidateRunDirectory(runDir, true); err == nil {
+		t.Fatal("expected chain head mismatch")
+	}
+}
+
+func TestValidateRunDirectorySkipsEventChainCheckWhenDisabled(t *testing.T) {
+	runDir := t.TempDir()
+	layout, err := NewRunLayout(runDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstEvent := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	secondEvent := mustNewTestEvent(t, "run-a", 1, EventRunClosed, "sha256:bad")
+	manifest := RunManifest{
+		SchemaVersion:   SchemaVersion,
+		RunID:           "run-a",
+		RecorderVersion: RecorderVersion,
+		ContractID:      DefaultContract.ContractID,
+		EventCount:      2,
+		EventChainHead:  secondEvent.EventHash,
+	}
+	if err := layout.WriteRun(manifest); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+	if err := layout.WriteEvent(firstEvent); err != nil {
+		t.Fatalf("write first event: %v", err)
+	}
+	if err := layout.WriteEvent(secondEvent); err != nil {
+		t.Fatalf("write second event: %v", err)
+	}
+	if err := ValidateRunDirectory(runDir, false); err != nil {
+		t.Fatalf("expected invalid chain not to be validated: %v", err)
 	}
 }
 

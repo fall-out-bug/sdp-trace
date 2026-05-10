@@ -3,8 +3,11 @@ package witness
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -139,4 +142,123 @@ func fakeOIDCToken(t *testing.T, claims map[string]any) string {
 	}
 	return base64.RawURLEncoding.EncodeToString(header) + "." +
 		base64.RawURLEncoding.EncodeToString(payload) + "."
+}
+
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func TestFetchGitHubOIDCTokenSuccess(t *testing.T) {
+	env := map[string]string{
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://token.actions.githubusercontent.com/token?audience=old",
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
+	}
+	oldClient := http.DefaultClient
+	requested := false
+	http.DefaultClient = &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			requested = true
+			if req.Method != http.MethodGet {
+				t.Fatalf("method = %s", req.Method)
+			}
+			if got := req.URL.Query().Get("audience"); got != "sdp-trace" {
+				t.Fatalf("audience = %s", got)
+			}
+			if got := req.Header.Get("Authorization"); got != "bearer request-token" {
+				t.Fatalf("authorization = %q", got)
+			}
+			if got := req.Header.Get("Accept"); got != "application/json" {
+				t.Fatalf("accept = %q", got)
+			}
+			return &http.Response{
+				Status:     "200 OK",
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"value":"github-oidc-token"}`)),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+	t.Cleanup(func() { http.DefaultClient = oldClient })
+
+	token, err := FetchGitHubOIDCToken(env)
+	if err != nil {
+		t.Fatalf("FetchGitHubOIDCToken: %v", err)
+	}
+	if !requested {
+		t.Fatalf("token endpoint was not requested")
+	}
+	if token != "github-oidc-token" {
+		t.Fatalf("token = %q", token)
+	}
+}
+
+func TestFetchGitHubOIDCTokenInvalidRequestHost(t *testing.T) {
+	_, err := FetchGitHubOIDCToken(map[string]string{
+		"ACTIONS_ID_TOKEN_REQUEST_URL": "https://malicious.example/token",
+	})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "unexpected oidc request host: malicious.example") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestFetchGitHubOIDCTokenMalformedRequestURL(t *testing.T) {
+	_, err := FetchGitHubOIDCToken(map[string]string{
+		"ACTIONS_ID_TOKEN_REQUEST_URL": "://bad-url",
+	})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestFetchGitHubOIDCTokenNonSuccessResponse(t *testing.T) {
+	env := map[string]string{
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://token.actions.githubusercontent.com/token",
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
+	}
+	oldClient := http.DefaultClient
+	http.DefaultClient = &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Status:     "500 Internal Server Error",
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(strings.NewReader(`{}`)),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+	t.Cleanup(func() { http.DefaultClient = oldClient })
+
+	_, err := FetchGitHubOIDCToken(env)
+	if err == nil || !strings.Contains(err.Error(), "oidc token request returned 500") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestFetchGitHubOIDCTokenEmptyValue(t *testing.T) {
+	env := map[string]string{
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://token.actions.githubusercontent.com/token",
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
+	}
+	oldClient := http.DefaultClient
+	http.DefaultClient = &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Status:     "200 OK",
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{}`)),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+	t.Cleanup(func() { http.DefaultClient = oldClient })
+
+	_, err := FetchGitHubOIDCToken(env)
+	if err == nil || !strings.Contains(err.Error(), "oidc token response missing value") {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
