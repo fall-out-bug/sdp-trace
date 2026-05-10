@@ -186,6 +186,21 @@ func writeJSONPayload(stdout, stderr io.Writer, value any, message string) bool 
 	return true
 }
 
+func writeJSONPayloadUnchecked(stdout io.Writer, value any) {
+	payload, _ := json.MarshalIndent(value, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+}
+
+func requireNamedValues(values map[string]string, stderr io.Writer, messagePrefix string) bool {
+	for flag, value := range values {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "%s requires %s\n", messagePrefix, flag)
+			return false
+		}
+	}
+	return true
+}
+
 func harnessStateExitCode(state string) int {
 	switch state {
 	case harnessobs.StatePass:
@@ -216,20 +231,9 @@ func runHarness(args []string, stdout, stderr io.Writer) int {
 }
 
 func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "harness observe"}
-	opts.setString("profile", "")
-	opts.setString("source", "")
-	opts.setString("out", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	if !requireOnlyFlags(opts, stderr, "harness observe accepts only flags", []requiredCLIFlag{
-		{"profile", "harness observe requires --profile"},
-		{"source", "harness observe requires --source"},
-		{"out", "harness observe requires --out"},
-	}) {
-		return exitUsage
+	opts, code, ok := parseHarnessObserveArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	run, err := harnessobs.Observe(harnessobs.ObserveOptions{
 		ProfilePath: opts.stringValue("profile"),
@@ -246,20 +250,29 @@ func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-func runObserveSetup(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "observe setup"}
+func parseHarnessObserveArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "harness observe"}
 	opts.setString("profile", "")
+	opts.setString("source", "")
 	opts.setString("out", "")
-	opts.setString("command", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
-	if !requireOnlyFlags(opts, stderr, "observe setup accepts only flags", []requiredCLIFlag{
-		{"profile", "observe setup requires --profile"},
-		{"out", "observe setup requires --out"},
+	if !requireOnlyFlags(opts, stderr, "harness observe accepts only flags", []requiredCLIFlag{
+		{"profile", "harness observe requires --profile"},
+		{"source", "harness observe requires --source"},
+		{"out", "harness observe requires --out"},
 	}) {
-		return exitUsage
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
+}
+
+func runObserveSetup(args []string, stdout, stderr io.Writer) int {
+	opts, code, ok := parseObserveSetupArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	session, err := harnessobs.SetupSession(harnessobs.SessionSetupOptions{
 		ProfilePath: opts.stringValue("profile"),
@@ -276,19 +289,28 @@ func runObserveSetup(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-func runObserveCollect(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "observe collect"}
+func parseObserveSetupArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "observe setup"}
 	opts.setString("profile", "")
-	opts.setString("run", "")
+	opts.setString("out", "")
+	opts.setString("command", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
-	if !requireOnlyFlags(opts, stderr, "observe collect accepts only flags", []requiredCLIFlag{
-		{"profile", "observe collect requires --profile"},
-		{"run", "observe collect requires --run"},
+	if !requireOnlyFlags(opts, stderr, "observe setup accepts only flags", []requiredCLIFlag{
+		{"profile", "observe setup requires --profile"},
+		{"out", "observe setup requires --out"},
 	}) {
-		return exitUsage
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
+}
+
+func runObserveCollect(args []string, stdout, stderr io.Writer) int {
+	opts, code, ok := parseObserveCollectArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	session, observed, err := harnessobs.CollectSession(harnessobs.SessionCollectOptions{
 		ProfilePath: opts.stringValue("profile"),
@@ -298,13 +320,38 @@ func runObserveCollect(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
+	if !writeObserveRunPayload(stdout, stderr, session, observed, "marshal observe collect") {
+		return exitCannotVerify
+	}
+	return observeCollectExitCode(session)
+}
+
+func parseObserveCollectArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "observe collect"}
+	opts.setString("profile", "")
+	opts.setString("run", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	if !requireOnlyFlags(opts, stderr, "observe collect accepts only flags", []requiredCLIFlag{
+		{"profile", "observe collect requires --profile"},
+		{"run", "observe collect requires --run"},
+	}) {
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
+}
+
+func writeObserveRunPayload(stdout, stderr io.Writer, session harnessobs.SessionRun, observed harnessobs.Run, message string) bool {
 	payload := struct {
 		Session harnessobs.SessionRun `json:"session"`
 		Run     harnessobs.Run        `json:"run"`
 	}{Session: session, Run: observed}
-	if !writeJSONPayload(stdout, stderr, payload, "marshal observe collect") {
-		return exitCannotVerify
-	}
+	return writeJSONPayload(stdout, stderr, payload, message)
+}
+
+func observeCollectExitCode(session harnessobs.SessionRun) int {
 	if session.CollectionState == harnessobs.StateCannotVerify {
 		return exitCannotVerify
 	}
@@ -312,22 +359,9 @@ func runObserveCollect(args []string, stdout, stderr io.Writer) int {
 }
 
 func runObserveSession(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "observe session"}
-	opts.setString("profile", "")
-	opts.setString("out", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	if !requireRequiredFlags(opts, stderr, []requiredCLIFlag{
-		{"profile", "observe session requires --profile"},
-		{"out", "observe session requires --out"},
-	}) {
-		return exitUsage
-	}
-	if len(opts.rest()) == 0 {
-		fmt.Fprintln(stderr, "observe session requires command after --")
-		return exitUsage
+	opts, code, ok := parseObserveSessionArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	session, observed, err := harnessobs.RunSession(harnessobs.SessionOptions{
 		ProfilePath: opts.stringValue("profile"),
@@ -338,14 +372,31 @@ func runObserveSession(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload := struct {
-		Session harnessobs.SessionRun `json:"session"`
-		Run     harnessobs.Run        `json:"run"`
-	}{Session: session, Run: observed}
-	if !writeJSONPayload(stdout, stderr, payload, "marshal observe session") {
+	if !writeObserveRunPayload(stdout, stderr, session, observed, "marshal observe session") {
 		return exitCannotVerify
 	}
 	return 0
+}
+
+func parseObserveSessionArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "observe session"}
+	opts.setString("profile", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	if !requireRequiredFlags(opts, stderr, []requiredCLIFlag{
+		{"profile", "observe session requires --profile"},
+		{"out", "observe session requires --out"},
+	}) {
+		return nil, exitUsage, false
+	}
+	if len(opts.rest()) == 0 {
+		fmt.Fprintln(stderr, "observe session requires command after --")
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
 }
 
 func runHarnessValidate(args []string, stdout, stderr io.Writer) int {
@@ -1052,44 +1103,25 @@ func runInteraction(ctx context.Context, args []string, stdout, stderr io.Writer
 		fmt.Fprintln(stderr, "interaction requires relay, import-transcript, or summarize")
 		return exitUsage
 	}
-	switch args[0] {
-	case "relay":
-		return runInteractionRelay(ctx, args[1:], stdout, stderr)
-	case "import-transcript":
-		return runInteractionImportTranscript(args[1:], stdout, stderr)
-	case "summarize":
-		return runInteractionSummarize(args[1:], stdout, stderr)
-	default:
+	handlers := map[string]func([]string, io.Writer, io.Writer) int{
+		"relay": func(args []string, stdout, stderr io.Writer) int {
+			return runInteractionRelay(ctx, args, stdout, stderr)
+		},
+		"import-transcript": runInteractionImportTranscript,
+		"summarize":         runInteractionSummarize,
+	}
+	handler, ok := handlers[args[0]]
+	if !ok {
 		fmt.Fprintf(stderr, "unknown interaction command: %s\n", args[0])
 		return exitUsage
 	}
+	return handler(args[1:], stdout, stderr)
 }
 
 func runInteractionRelay(ctx context.Context, args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "interaction relay"}
-	opts.setString("task-id", "")
-	opts.setString("actor-type", "human_user")
-	opts.setString("actor-id", "")
-	opts.setString("target", "agent")
-	opts.setString("event-type", "corrective_feedback")
-	opts.setString("operation-id", "")
-	opts.setString("stage-id", "")
-	opts.setString("out", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("task-id")) == "" {
-		fmt.Fprintln(stderr, "interaction relay requires --task-id")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("out")) == "" {
-		fmt.Fprintln(stderr, "interaction relay requires --out")
-		return exitUsage
-	}
-	if len(opts.rest()) == 0 {
-		fmt.Fprintln(stderr, "interaction relay requires forward command after --")
-		return exitUsage
+	opts, code, ok := parseInteractionRelayArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	_, exitCode, err := interaction.Relay(ctx, interaction.RelayOptions{
 		TaskID:      opts.stringValue("task-id"),
@@ -1107,6 +1139,47 @@ func runInteractionRelay(ctx context.Context, args []string, stdout, stderr io.W
 		return exitCannotVerify
 	}
 	return exitCode
+}
+
+func parseInteractionRelayArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "interaction relay"}
+	opts.setString("task-id", "")
+	opts.setString("actor-type", "human_user")
+	opts.setString("actor-id", "")
+	opts.setString("target", "agent")
+	opts.setString("event-type", "corrective_feedback")
+	opts.setString("operation-id", "")
+	opts.setString("stage-id", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	if !requireRequiredFlags(opts, stderr, []requiredCLIFlag{
+		{"task-id", "interaction relay requires --task-id"},
+		{"out", "interaction relay requires --out"},
+	}) {
+		return nil, exitUsage, false
+	}
+	if !requireRest(opts, stderr, "interaction relay requires forward command after --") {
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
+}
+
+func requireRest(opts *flagSet, stderr io.Writer, message string) bool {
+	if len(opts.rest()) != 0 {
+		return true
+	}
+	fmt.Fprintln(stderr, message)
+	return false
+}
+
+func requireOnlyFlagsCode(opts *flagSet, stderr io.Writer, restMessage string, required []requiredCLIFlag) (int, bool) {
+	if !requireOnlyFlags(opts, stderr, restMessage, required) {
+		return exitUsage, false
+	}
+	return 0, true
 }
 
 func runInteractionImportTranscript(args []string, stdout, stderr io.Writer) int {
@@ -1162,14 +1235,11 @@ func runInteractionSummarize(args []string, stdout, stderr io.Writer) int {
 		return exitCannotVerify
 	}
 	summary := interaction.SummarizeTrace(trace)
-	if strings.TrimSpace(opts.stringValue("out")) != "" {
-		if err := writeJSONFile(opts.stringValue("out"), summary); err != nil {
-			fmt.Fprintln(stderr, err)
-			return 1
-		}
+	if err := writeOptionalJSONFile(opts.stringValue("out"), summary); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
 	}
-	payload, _ := json.MarshalIndent(summary, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, summary)
 	return 0
 }
 
@@ -1200,15 +1270,19 @@ func runEnvelope(_ context.Context, args []string, stdout, stderr io.Writer) int
 		return exitCannotVerify
 	}
 	summary := interaction.SummarizeEnvelope(envelope)
-	if strings.TrimSpace(opts.stringValue("out")) != "" {
-		if err := writeJSONFile(opts.stringValue("out"), summary); err != nil {
-			fmt.Fprintln(stderr, err)
-			return 1
-		}
+	if err := writeOptionalJSONFile(opts.stringValue("out"), summary); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
 	}
-	payload, _ := json.MarshalIndent(summary, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, summary)
 	return 0
+}
+
+func writeOptionalJSONFile(path string, value any) error {
+	if strings.TrimSpace(path) == "" {
+		return nil
+	}
+	return writeJSONFile(path, value)
 }
 
 func parseEnvelopeSummarizeArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
@@ -1223,15 +1297,10 @@ func parseEnvelopeSummarizeArgs(args []string, stderr io.Writer) (*flagSet, int,
 		fmt.Fprintln(stderr, err)
 		return nil, exitUsage, false
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "envelope summarize accepts only flags")
-		return nil, exitUsage, false
-	}
-	if strings.TrimSpace(opts.stringValue("envelope")) == "" {
-		fmt.Fprintln(stderr, "envelope summarize requires --envelope")
-		return nil, exitUsage, false
-	}
-	return opts, 0, true
+	code, ok := requireOnlyFlagsCode(opts, stderr, "envelope summarize accepts only flags", []requiredCLIFlag{
+		{"envelope", "envelope summarize requires --envelope"},
+	})
+	return opts, code, ok
 }
 
 func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -1300,15 +1369,11 @@ func assessHandlers() map[string]assessHandler {
 }
 
 func runAdapterCaptureAssess(opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
+	if !requireNamedValues(map[string]string{
 		"--out": opts.stringValue("out"),
 		"--run": opts.stringValue("run"),
-	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "adapter capture assess requires %s\n", flag)
-			return exitUsage
-		}
+	}, stderr, "adapter capture assess") {
+		return exitUsage
 	}
 	input, err := loadAdapterCaptureInput(opts)
 	if err != nil {
@@ -1320,24 +1385,19 @@ func runAdapterCaptureAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, result)
 	return adapterCaptureExitCode(result)
 }
 
 func runManagedAssess(opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
+	if !requireNamedValues(map[string]string{
 		"--out":              opts.stringValue("out"),
 		"--run":              opts.stringValue("run"),
 		"--adapter-registry": opts.stringValue("adapter-registry"),
 		"--managed-policy":   opts.stringValue("managed-policy"),
 		"--managed-witness":  opts.stringValue("managed-witness"),
-	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "managed assess requires %s\n", flag)
-			return exitUsage
-		}
+	}, stderr, "managed assess") {
+		return exitUsage
 	}
 	input, err := loadManagedInput(opts)
 	if err != nil {
@@ -1349,22 +1409,17 @@ func runManagedAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, result)
 	return managedExitCode(result)
 }
 
 func runForensicAssess(opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
+	if !requireNamedValues(map[string]string{
 		"--out":              opts.stringValue("out"),
 		"--run":              opts.stringValue("run"),
 		"--redaction-policy": opts.stringValue("redaction-policy"),
-	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "forensic assess requires %s\n", flag)
-			return exitUsage
-		}
+	}, stderr, "forensic assess") {
+		return exitUsage
 	}
 	input, err := loadForensicInput(opts)
 	if err != nil {
@@ -1376,21 +1431,16 @@ func runForensicAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, result)
 	return forensicExitCode(result)
 }
 
 func runCIArtifactAssess(opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
+	if !requireNamedValues(map[string]string{
 		"--out":               opts.stringValue("out"),
 		"--artifact-manifest": opts.stringValue("artifact-manifest"),
-	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "ci artifact observation assess requires %s\n", flag)
-			return exitUsage
-		}
+	}, stderr, "ci artifact observation assess") {
+		return exitUsage
 	}
 	var manifest ciartifact.Manifest
 	if err := readJSONFile(opts.stringValue("artifact-manifest"), &manifest); err != nil {
@@ -1402,8 +1452,7 @@ func runCIArtifactAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, result)
 	return ciArtifactExitCode(result)
 }
 
@@ -1412,20 +1461,8 @@ func loadManagedInput(opts *flagSet) (managed.Input, error) {
 	if err != nil {
 		return managed.Input{}, err
 	}
-	var policy managed.Policy
-	if err := readJSONFile(opts.stringValue("managed-policy"), &policy); err != nil {
-		return managed.Input{}, err
-	}
-	var registry managed.Registry
-	if err := readJSONFile(opts.stringValue("adapter-registry"), &registry); err != nil {
-		return managed.Input{}, err
-	}
-	var runEvidence managed.RunEvidence
-	if err := readJSONFile(filepath.Join(opts.stringValue("run"), "run.json"), &runEvidence); err != nil {
-		return managed.Input{}, err
-	}
-	var witness managed.Witness
-	if err := readJSONFile(opts.stringValue("managed-witness"), &witness); err != nil {
+	policy, registry, runEvidence, witness, err := loadManagedJSONInputs(opts)
+	if err != nil {
 		return managed.Input{}, err
 	}
 	return managed.Input{
@@ -1435,6 +1472,34 @@ func loadManagedInput(opts *flagSet) (managed.Input, error) {
 		Run:      runEvidence,
 		Witness:  witness,
 	}, nil
+}
+
+func loadManagedJSONInputs(opts *flagSet) (managed.Policy, managed.Registry, managed.RunEvidence, managed.Witness, error) {
+	var policy managed.Policy
+	if err := readJSONFile(opts.stringValue("managed-policy"), &policy); err != nil {
+		return managed.Policy{}, managed.Registry{}, managed.RunEvidence{}, managed.Witness{}, err
+	}
+	registry, runEvidence, witness, err := readManagedJSONInputs(opts)
+	if err != nil {
+		return managed.Policy{}, managed.Registry{}, managed.RunEvidence{}, managed.Witness{}, err
+	}
+	return policy, registry, runEvidence, witness, nil
+}
+
+func readManagedJSONInputs(opts *flagSet) (managed.Registry, managed.RunEvidence, managed.Witness, error) {
+	var registry managed.Registry
+	if err := readJSONFile(opts.stringValue("adapter-registry"), &registry); err != nil {
+		return managed.Registry{}, managed.RunEvidence{}, managed.Witness{}, err
+	}
+	var runEvidence managed.RunEvidence
+	if err := readJSONFile(filepath.Join(opts.stringValue("run"), "run.json"), &runEvidence); err != nil {
+		return managed.Registry{}, managed.RunEvidence{}, managed.Witness{}, err
+	}
+	var witness managed.Witness
+	if err := readJSONFile(opts.stringValue("managed-witness"), &witness); err != nil {
+		return managed.Registry{}, managed.RunEvidence{}, managed.Witness{}, err
+	}
+	return registry, runEvidence, witness, nil
 }
 
 func loadForensicInput(opts *flagSet) (forensic.Input, error) {
@@ -1513,15 +1578,11 @@ func assessPreviewHandlers() map[string]assessPreviewHandler {
 }
 
 func runAuthorityAssess(opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
+	if !requireNamedValues(map[string]string{
 		"--out":               opts.stringValue("out"),
 		"--authority-package": opts.stringValue("authority-package"),
-	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "authority-envelope assess requires %s\n", flag)
-			return exitUsage
-		}
+	}, stderr, "authority-envelope assess") {
+		return exitUsage
 	}
 	pkg, err := authority.ReadPackage(opts.stringValue("authority-package"))
 	if err != nil {
@@ -1533,8 +1594,7 @@ func runAuthorityAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeJSONPayloadUnchecked(stdout, result)
 	return authorityExitCode(result)
 }
 
@@ -1877,7 +1937,15 @@ func explainAuthorityEvaluation(result authority.Result, stdout io.Writer) int {
 	fmt.Fprintf(stdout, "Selected profile: %s\n", result.SelectedProfile)
 	fmt.Fprintf(stdout, "Authority evaluation: %s\n", result.AuthorityEvaluationState)
 	fmt.Fprintf(stdout, "Selected policy: %s\n", result.SelectedPolicyID)
-	for _, eval := range result.Evaluations {
+	explainAuthorityActionEvaluations(result.Evaluations, stdout)
+	explainAuthorityBindingEvaluations(result.BindingEvaluations, stdout)
+	explainReasons(result.Reasons, stdout)
+	explainNextActions(result.NextActions, stdout)
+	return 0
+}
+
+func explainAuthorityActionEvaluations(evaluations []authority.AuthorityEvaluation, stdout io.Writer) {
+	for _, eval := range evaluations {
 		fmt.Fprintf(stdout, "Observed action %s: %s (%s)\n", eval.EventID, eval.State, eval.ReasonCode)
 		fmt.Fprintf(stdout, "  Actor attribution: %s\n", eval.ActorAttribution)
 		fmt.Fprintf(stdout, "  Tool attribution: %s\n", eval.ToolAttribution)
@@ -1886,16 +1954,12 @@ func explainAuthorityEvaluation(result authority.Result, stdout io.Writer) int {
 			fmt.Fprintf(stdout, "  Matched rule: %s\n", eval.MatchedRuleRef)
 		}
 	}
-	for _, binding := range result.BindingEvaluations {
+}
+
+func explainAuthorityBindingEvaluations(bindings []authority.EvidenceBinding, stdout io.Writer) {
+	for _, binding := range bindings {
 		fmt.Fprintf(stdout, "Binding %s: %s (%s)\n", binding.BindingID, binding.BindingState, binding.ReasonCode)
 	}
-	for _, reason := range result.Reasons {
-		fmt.Fprintf(stdout, "Reason: %s\n", reason)
-	}
-	for _, action := range result.NextActions {
-		fmt.Fprintf(stdout, "Next action: %s\n", action)
-	}
-	return 0
 }
 
 func managedInputStatus(path string) string {
@@ -2108,36 +2172,52 @@ func parseCheckpointCreateArgs(args []string, stderr io.Writer) (*flagSet, int, 
 }
 
 func runCheckpointVerify(args []string, stdout, stderr io.Writer) int {
+	opts, code, ok := parseCheckpointVerifyArgs(args, stderr)
+	if !ok {
+		return code
+	}
+	signed, policy, code, ok := loadCheckpointVerifyInputs(opts, stderr)
+	if !ok {
+		return code
+	}
+	result := checkpoint.Verify(opts.stringValue("run"), signed, policy)
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return checkpointVerifyExitCode(result.Result)
+}
+
+func parseCheckpointVerifyArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
 	opts := &flagSet{name: "checkpoint verify"}
 	opts.setString("run", "")
 	opts.setString("checkpoint", "")
 	opts.setString("policy", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "checkpoint verify accepts only flags")
-		return exitUsage
+		return nil, exitUsage, false
 	}
 	if err := requireCheckpointVerifyInputs(opts); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
+	return opts, 0, true
+}
+
+func loadCheckpointVerifyInputs(opts *flagSet, stderr io.Writer) (checkpoint.SignedCheckpoint, *checkpoint.TrustedCheckpointPolicy, int, bool) {
 	var signed checkpoint.SignedCheckpoint
 	if err := readJSONFile(opts.stringValue("checkpoint"), &signed); err != nil {
 		fmt.Fprintln(stderr, err)
-		return 1
+		return checkpoint.SignedCheckpoint{}, nil, 1, false
 	}
 	policy, err := readCheckpointPolicy(opts.stringValue("policy"))
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return 1
+		return checkpoint.SignedCheckpoint{}, nil, 1, false
 	}
-	result := checkpoint.Verify(opts.stringValue("run"), signed, policy)
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
-	return checkpointVerifyExitCode(result.Result)
+	return signed, policy, 0, true
 }
 
 func readCheckpointPolicy(path string) (*checkpoint.TrustedCheckpointPolicy, error) {
@@ -2524,20 +2604,9 @@ type protectedGatePreviewReport struct {
 }
 
 func runGatePreview(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "gate preview"}
-	opts.setString("contract", "")
-	opts.setString("witness", "")
-	opts.setString("profile", "")
-	opts.setString("checkpoint", "")
-	opts.setString("checkpoint-policy", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	targets := opts.rest()
-	if len(targets) != 1 {
-		fmt.Fprintln(stderr, "gate preview requires <runs-root-or-run-dir>")
-		return exitUsage
+	opts, targets, code, ok := parseGatePreviewArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	if opts.stringValue("profile") == demo.GateProfileProtected {
 		return runProtectedGatePreview(opts, stdout)
@@ -2547,6 +2616,32 @@ func runGatePreview(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
+	report := buildGatePreviewReport(contract, opts.stringValue("witness"), targets[0])
+	payload, _ := json.MarshalIndent(report, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return 0
+}
+
+func parseGatePreviewArgs(args []string, stderr io.Writer) (*flagSet, []string, int, bool) {
+	opts := &flagSet{name: "gate preview"}
+	opts.setString("contract", "")
+	opts.setString("witness", "")
+	opts.setString("profile", "")
+	opts.setString("checkpoint", "")
+	opts.setString("checkpoint-policy", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, nil, exitUsage, false
+	}
+	targets := opts.rest()
+	if len(targets) != 1 {
+		fmt.Fprintln(stderr, "gate preview requires <runs-root-or-run-dir>")
+		return nil, nil, exitUsage, false
+	}
+	return opts, targets, 0, true
+}
+
+func buildGatePreviewReport(contract trace.Contract, witnessPath, target string) gatePreviewReport {
 	report := gatePreviewReport{
 		Command:          "gate preview",
 		GateMode:         previewGateMode(contract),
@@ -2555,14 +2650,10 @@ func runGatePreview(args []string, stdout, stderr io.Writer) int {
 		RequiredEvidence: requiredEvidenceIDsForCLI(contract),
 		Claim:            "preview is read-only and does not claim the gate will pass",
 	}
-	witnessPath := opts.stringValue("witness")
 	if witnessPath != "" {
-		report.WitnessInspectable, report.WitnessMismatches = demo.PreviewWitnessBinding(witnessPath, targets[0])
+		report.WitnessInspectable, report.WitnessMismatches = demo.PreviewWitnessBinding(witnessPath, target)
 	}
-	payload, _ := json.MarshalIndent(report, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
-	_ = targets[0]
-	return 0
+	return report
 }
 
 func runProtectedGatePreview(opts *flagSet, stdout io.Writer) int {
@@ -2601,16 +2692,7 @@ func protectedRunDir(target string) (string, error) {
 }
 
 func protectedCheckpointVerification(result checkpoint.VerificationResult, signed checkpoint.SignedCheckpoint, policy checkpoint.TrustedCheckpointPolicy, witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) checkpoint.VerificationResult {
-	if result.Result == checkpoint.StateFail {
-		return result
-	}
-	if signed.Signer.Authority != checkpoint.AuthorityCIIsolatedJob {
-		return result
-	}
-	if !policyAllowsSigner(policy, signed) {
-		return result
-	}
-	if !witnessMatchesProtectedInput(witnessSummary, expected) {
+	if !canGrantProtectedCheckpointTrust(result, signed, policy, witnessSummary, expected) {
 		return result
 	}
 	result.SignerAuthorityState = checkpoint.StatePass
@@ -2619,15 +2701,26 @@ func protectedCheckpointVerification(result checkpoint.VerificationResult, signe
 	return result
 }
 
+func canGrantProtectedCheckpointTrust(result checkpoint.VerificationResult, signed checkpoint.SignedCheckpoint, policy checkpoint.TrustedCheckpointPolicy, witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) bool {
+	return result.Result != checkpoint.StateFail &&
+		signed.Signer.Authority == checkpoint.AuthorityCIIsolatedJob &&
+		policyAllowsSigner(policy, signed) &&
+		witnessMatchesProtectedInput(witnessSummary, expected)
+}
+
 func policyAllowsSigner(policy checkpoint.TrustedCheckpointPolicy, signed checkpoint.SignedCheckpoint) bool {
 	for _, signer := range policy.AllowedSigners {
-		if signer.SignerID == signed.Signer.SignerID &&
-			signer.Authority == signed.Signer.Authority &&
-			signer.PublicKey == signed.Signature.PublicKey {
+		if signerMatchesCheckpoint(signer, signed) {
 			return true
 		}
 	}
 	return false
+}
+
+func signerMatchesCheckpoint(signer checkpoint.TrustedSigner, signed checkpoint.SignedCheckpoint) bool {
+	return signer.SignerID == signed.Signer.SignerID &&
+		signer.Authority == signed.Signer.Authority &&
+		signer.PublicKey == signed.Signature.PublicKey
 }
 
 func witnessMatchesProtectedInput(witnessSummary demo.WitnessSummary, expected demo.WitnessExpectation) bool {
@@ -2685,26 +2778,47 @@ func demoWitnessExpectation(target string) (demo.WitnessExpectation, error) {
 	if err != nil {
 		return demo.WitnessExpectation{}, err
 	}
+	runID, artifacts, err := demoWitnessArtifacts(runDirs)
+	if err != nil {
+		return demo.WitnessExpectation{}, err
+	}
+	return demo.WitnessExpectation{RunID: runID, RunArtifacts: artifacts}, nil
+}
+
+func demoWitnessArtifacts(runDirs []string) (string, []demo.WitnessArtifactDigest, error) {
 	artifacts := make([]demo.WitnessArtifactDigest, 0, len(runDirs))
 	runID := ""
 	for _, runDir := range runDirs {
-		artifact, err := trace.OpenRunArtifact(runDir)
+		artifactRunID, digest, err := demoWitnessArtifact(runDir)
 		if err != nil {
-			return demo.WitnessExpectation{}, err
+			return "", nil, err
 		}
-		if runID == "" {
-			runID = artifact.Manifest.RunID
-		}
-		digest, err := sha256File(runDir, "run.json")
-		if err != nil {
-			return demo.WitnessExpectation{}, err
-		}
+		runID = firstNonEmpty(runID, artifactRunID)
 		artifacts = append(artifacts, demo.WitnessArtifactDigest{
 			Path:   filepath.ToSlash(filepath.Join(filepath.Base(runDir), "run.json")),
 			SHA256: digest,
 		})
 	}
-	return demo.WitnessExpectation{RunID: runID, RunArtifacts: artifacts}, nil
+	return runID, artifacts, nil
+}
+
+func demoWitnessArtifact(runDir string) (string, string, error) {
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		return "", "", err
+	}
+	digest, err := sha256File(runDir, "run.json")
+	if err != nil {
+		return "", "", err
+	}
+	return artifact.Manifest.RunID, digest, nil
+}
+
+func firstNonEmpty(current, next string) string {
+	if current != "" {
+		return current
+	}
+	return next
 }
 
 func sha256File(dir, name string) (string, error) {
@@ -2722,12 +2836,16 @@ func protectedInputStatus(path string) string {
 	}
 	var value any
 	if err := readJSONFile(path, &value); err != nil {
-		if os.IsNotExist(err) || errors.Is(err, os.ErrPermission) {
-			return "present_unreadable"
-		}
-		return "present_malformed"
+		return protectedInputErrorStatus(err)
 	}
 	return "present_readable"
+}
+
+func protectedInputErrorStatus(err error) string {
+	if os.IsNotExist(err) || errors.Is(err, os.ErrPermission) {
+		return "present_unreadable"
+	}
+	return "present_malformed"
 }
 
 func protectedPreviewActions(inputs map[string]string) []string {
@@ -3242,20 +3360,27 @@ func parseWrappedCommandArgs(args []string, stderr io.Writer) (*flagSet, []strin
 		return nil, nil, exitUsage, false
 	}
 	command := opts.rest()
+	if !requireWrappedCommandArgs(opts, command, stderr) {
+		return nil, nil, exitUsage, false
+	}
+	return opts, command, 0, true
+}
+
+func requireWrappedCommandArgs(opts *flagSet, command []string, stderr io.Writer) bool {
 	if len(command) == 0 {
 		fmt.Fprintln(stderr, "run requires a command")
-		return nil, nil, exitUsage, false
+		return false
 	}
 	useDefault := opts.boolValue("use-default-contract")
 	if opts.stringValue("task") == "" {
 		fmt.Fprintln(stderr, "run requires --task")
-		return nil, nil, exitUsage, false
+		return false
 	}
 	if opts.stringValue("contract") == "" && !useDefault {
 		fmt.Fprintln(stderr, "run requires --contract unless --use-default-contract is set")
-		return nil, nil, exitUsage, false
+		return false
 	}
-	return opts, command, 0, true
+	return true
 }
 
 func runDryRun(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -3743,21 +3868,9 @@ func exportSubcommandIs(args []string, subcommand string) bool {
 }
 
 func runTelemetryExport(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "export telemetry"}
-	opts.setString("profile", "")
-	opts.setString("cross-repo-posture", "")
-	opts.setString("out", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "export telemetry accepts only flags")
-		return exitUsage
-	}
-	if err := requireTelemetryExportInputs(opts); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
+	opts, code, ok := parseTelemetryExportArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	rendered, err := renderTelemetryExport(opts.stringValue("cross-repo-posture"))
 	if err != nil {
@@ -3769,6 +3882,26 @@ func runTelemetryExport(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+func parseTelemetryExportArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "export telemetry"}
+	opts.setString("profile", "")
+	opts.setString("cross-repo-posture", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "export telemetry accepts only flags")
+		return nil, exitUsage, false
+	}
+	if err := requireTelemetryExportInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
 }
 
 func renderTelemetryExport(posturePath string) (string, error) {
@@ -3808,22 +3941,9 @@ func requireTelemetryExportInputs(opts *flagSet) error {
 }
 
 func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
-	opts := &flagSet{name: "export cross-repo-posture"}
-	opts.setString("profile", "")
-	opts.setString("selection", "")
-	opts.setString("out", "")
-	opts.setBool("validate-only", false)
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "export cross-repo-posture accepts only flags")
-		return exitUsage
-	}
-	if err := requireCrossRepoPostureInputs(opts); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
+	opts, code, ok := parseCrossRepoPostureExportArgs(args, stderr)
+	if !ok {
+		return code
 	}
 	result, err := posture.Build(opts.stringValue("selection"), time.Now())
 	if err != nil {
@@ -3832,6 +3952,27 @@ func runCrossRepoPostureExport(args []string, stdout, stderr io.Writer) int {
 	}
 	_ = stdout
 	return writeCrossRepoPostureExport(opts, result, stderr)
+}
+
+func parseCrossRepoPostureExportArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
+	opts := &flagSet{name: "export cross-repo-posture"}
+	opts.setString("profile", "")
+	opts.setString("selection", "")
+	opts.setString("out", "")
+	opts.setBool("validate-only", false)
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	if len(opts.rest()) != 0 {
+		fmt.Fprintln(stderr, "export cross-repo-posture accepts only flags")
+		return nil, exitUsage, false
+	}
+	if err := requireCrossRepoPostureInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
 }
 
 func writeCrossRepoPostureExport(opts *flagSet, result posture.ExportResult, stderr io.Writer) int {
@@ -4241,7 +4382,15 @@ func ciWitnessPrerequisiteCheck(env map[string]string) doctorCheck {
 }
 
 func missingCIWitnessFields(env map[string]string) []string {
-	required := []string{
+	missing := missingEnvFields(env, requiredCIWitnessEnvFields())
+	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
+		missing = append(missing, "GITHUB_ACTIONS=true")
+	}
+	return missing
+}
+
+func requiredCIWitnessEnvFields() []string {
+	return []string{
 		"ACTIONS_ID_TOKEN_REQUEST_TOKEN",
 		"ACTIONS_ID_TOKEN_REQUEST_URL",
 		"GITHUB_ACTIONS",
@@ -4255,14 +4404,14 @@ func missingCIWitnessFields(env map[string]string) []string {
 		"GITHUB_SHA",
 		"GITHUB_WORKFLOW",
 	}
+}
+
+func missingEnvFields(env map[string]string, required []string) []string {
 	missing := make([]string, 0)
 	for _, key := range required {
 		if strings.TrimSpace(env[key]) == "" {
 			missing = append(missing, key)
 		}
-	}
-	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
-		missing = append(missing, "GITHUB_ACTIONS=true")
 	}
 	return missing
 }
