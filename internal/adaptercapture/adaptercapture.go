@@ -215,29 +215,51 @@ func runBindingCondition(run RunEvidence) Condition {
 		return cannotVerify("run_binding_established", "run_binding_missing", "run id or nonce is missing", "Record run id and run nonce before assessing adapter capture.")
 	}
 	for _, event := range run.AdapterEvents {
-		if event.RunID != run.RunID || event.RunNonce != run.RunNonce {
-			return fail("run_binding_established", "run_binding_mismatch", "adapter event contradicts run id or nonce", "Use adapter events bound to the selected run.")
-		}
-		if run.RunClosedSequence > 0 && event.BindingMode == BindingSameChain && event.Sequence > run.RunClosedSequence {
-			return cannotVerify("run_binding_established", "late_adapter_event", "adapter event appears after run closure", "Do not use late adapter events to satisfy capture-depth assessment.")
-		}
-		switch event.BindingMode {
-		case BindingSameChain:
-			if event.EventHash == "" || event.PrevEventHash == "" {
-				return cannotVerify("run_binding_established", "same_chain_digest_missing", "same-chain adapter event lacks hash linkage", "Record prev_event_hash and event_hash.")
-			}
-		case BindingAdapterBundle:
-			if run.AdapterBundle == nil || event.AdapterBundleHeadDigest == "" || event.AdapterBundleHeadDigest != run.AdapterBundle.HeadDigest || event.AdapterBundleID != run.AdapterBundle.BundleID {
-				return cannotVerify("run_binding_established", "adapter_bundle_unbound", "adapter bundle is not bound to the selected run", "Bind the adapter bundle head digest into the run artifact.")
-			}
-			if run.RunClosedSequence > 0 && run.AdapterBundle.ReferencedSequence > run.RunClosedSequence {
-				return cannotVerify("run_binding_established", "late_adapter_bundle", "adapter bundle was first referenced after run closure", "Reference adapter bundles before run closure.")
-			}
-		default:
-			return cannotVerify("run_binding_established", "binding_mode_missing", "adapter event binding mode is missing or unsupported", "Use same_chain or adapter_bundle binding.")
+		if condition := adapterEventRunBindingCondition(run, event); condition.ID != "" {
+			return condition
 		}
 	}
 	return pass("run_binding_established", "run_binding_established", "adapter events are bound to run id, nonce, and chain or bundle context")
+}
+
+func adapterEventRunBindingCondition(run RunEvidence, event AdapterEvent) Condition {
+	if event.RunID != run.RunID || event.RunNonce != run.RunNonce {
+		return fail("run_binding_established", "run_binding_mismatch", "adapter event contradicts run id or nonce", "Use adapter events bound to the selected run.")
+	}
+	if event.BindingMode == BindingSameChain {
+		return sameChainBindingCondition(run, event)
+	}
+	if event.BindingMode == BindingAdapterBundle {
+		return adapterBundleBindingCondition(run, event)
+	}
+	return cannotVerify("run_binding_established", "binding_mode_missing", "adapter event binding mode is missing or unsupported", "Use same_chain or adapter_bundle binding.")
+}
+
+func sameChainBindingCondition(run RunEvidence, event AdapterEvent) Condition {
+	if run.RunClosedSequence > 0 && event.Sequence > run.RunClosedSequence {
+		return cannotVerify("run_binding_established", "late_adapter_event", "adapter event appears after run closure", "Do not use late adapter events to satisfy capture-depth assessment.")
+	}
+	if event.EventHash == "" || event.PrevEventHash == "" {
+		return cannotVerify("run_binding_established", "same_chain_digest_missing", "same-chain adapter event lacks hash linkage", "Record prev_event_hash and event_hash.")
+	}
+	return Condition{}
+}
+
+func adapterBundleBindingCondition(run RunEvidence, event AdapterEvent) Condition {
+	if adapterBundleUnbound(run.AdapterBundle, event) {
+		return cannotVerify("run_binding_established", "adapter_bundle_unbound", "adapter bundle is not bound to the selected run", "Bind the adapter bundle head digest into the run artifact.")
+	}
+	if run.RunClosedSequence > 0 && run.AdapterBundle.ReferencedSequence > run.RunClosedSequence {
+		return cannotVerify("run_binding_established", "late_adapter_bundle", "adapter bundle was first referenced after run closure", "Reference adapter bundles before run closure.")
+	}
+	return Condition{}
+}
+
+func adapterBundleUnbound(bundle *AdapterBundle, event AdapterEvent) bool {
+	return bundle == nil ||
+		event.AdapterBundleHeadDigest == "" ||
+		event.AdapterBundleHeadDigest != bundle.HeadDigest ||
+		event.AdapterBundleID != bundle.BundleID
 }
 
 func taskDriftCondition(run RunEvidence) Condition {

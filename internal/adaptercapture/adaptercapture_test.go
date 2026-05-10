@@ -63,6 +63,87 @@ func TestEvaluateCannotVerifyLateAdapterEvent(t *testing.T) {
 	}
 }
 
+func TestRunBindingConditionRejectsInvalidBindings(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RunEvidence)
+		state  string
+		reason string
+	}{
+		{
+			name:   "missing run identity",
+			mutate: func(run *RunEvidence) { run.RunID = "" },
+			state:  StateCannotVerify,
+			reason: "run_binding_missing",
+		},
+		{
+			name:   "event mismatch",
+			mutate: func(run *RunEvidence) { run.AdapterEvents[0].RunNonce = "other" },
+			state:  StateFail,
+			reason: "run_binding_mismatch",
+		},
+		{
+			name:   "late same-chain event",
+			mutate: func(run *RunEvidence) { run.AdapterEvents[0].Sequence = run.RunClosedSequence + 1 },
+			state:  StateCannotVerify,
+			reason: "late_adapter_event",
+		},
+		{
+			name: "same-chain digest missing",
+			mutate: func(run *RunEvidence) {
+				run.RunClosedSequence = 0
+				run.AdapterEvents[0].EventHash = ""
+			},
+			state:  StateCannotVerify,
+			reason: "same_chain_digest_missing",
+		},
+		{
+			name: "bundle unbound",
+			mutate: func(run *RunEvidence) {
+				input := Input{Run: *run}
+				useAdapterBundleBinding(&input)
+				*run = input.Run
+				run.AdapterEvents[0].BindingMode = BindingAdapterBundle
+				run.AdapterEvents[0].AdapterBundleHeadDigest = "wrong"
+				run.AdapterEvents[0].AdapterBundleID = run.AdapterBundle.BundleID
+			},
+			state:  StateCannotVerify,
+			reason: "adapter_bundle_unbound",
+		},
+		{
+			name: "late bundle",
+			mutate: func(run *RunEvidence) {
+				input := Input{Run: *run}
+				useAdapterBundleBinding(&input)
+				*run = input.Run
+				run.AdapterEvents[0].BindingMode = BindingAdapterBundle
+				run.AdapterEvents[0].AdapterBundleHeadDigest = run.AdapterBundle.HeadDigest
+				run.AdapterEvents[0].AdapterBundleID = run.AdapterBundle.BundleID
+				run.AdapterBundle.ReferencedSequence = run.RunClosedSequence + 1
+			},
+			state:  StateCannotVerify,
+			reason: "late_adapter_bundle",
+		},
+		{
+			name:   "missing binding mode",
+			mutate: func(run *RunEvidence) { run.AdapterEvents[0].BindingMode = "" },
+			state:  StateCannotVerify,
+			reason: "binding_mode_missing",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			run := validInput().Run
+			tt.mutate(&run)
+			condition := runBindingCondition(run)
+			if condition.State != tt.state || condition.ReasonCode != tt.reason {
+				t.Fatalf("condition = %+v, want %s/%s", condition, tt.state, tt.reason)
+			}
+		})
+	}
+}
+
 func TestEvaluateFailsUnsafeAdapterMetadata(t *testing.T) {
 	input := validInput()
 	input.Run.AdapterEvents[0].SensitiveMetadataPersisted = true
