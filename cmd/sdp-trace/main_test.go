@@ -1679,6 +1679,47 @@ func TestGateExitCodeChecksRequiredRunStatesDirectly(t *testing.T) {
 	}
 }
 
+func TestGateExitCodeAggregatesNonProtectedStates(t *testing.T) {
+	cases := []struct {
+		name string
+		edit func(*demo.GateResult)
+		want int
+	}{
+		{name: "pass", want: 0},
+		{name: "local fail", edit: func(result *demo.GateResult) {
+			result.LocalGate = demo.GateFail
+		}, want: 1},
+		{name: "ci missing telemetry", edit: func(result *demo.GateResult) {
+			result.CIWitnessGate = demo.GateMissingTelemetry
+		}, want: 1},
+		{name: "audit cannot verify", edit: func(result *demo.GateResult) {
+			result.AuditGradeGate = demo.GateCannotVerify
+		}, want: exitCannotVerify},
+		{name: "fail takes precedence over cannot verify", edit: func(result *demo.GateResult) {
+			result.LocalGate = demo.GateFail
+			result.AuditGradeGate = demo.GateCannotVerify
+		}, want: 1},
+		{name: "required run cannot verify", edit: func(result *demo.GateResult) {
+			result.RequiredRuns = []demo.RequiredRunResult{{ID: "verification_run", State: demo.GateCannotVerify}}
+		}, want: exitCannotVerify},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := demo.GateResult{
+				LocalGate:      demo.GatePass,
+				CIWitnessGate:  demo.GatePass,
+				AuditGradeGate: demo.GatePass,
+			}
+			if tc.edit != nil {
+				tc.edit(&result)
+			}
+			if got := gateExitCode(result); got != tc.want {
+				t.Fatalf("exit code = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 	cases := []struct {
 		name          string
@@ -1688,6 +1729,8 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 		{name: "pass", protectedGate: demo.GatePass, want: 0},
 		{name: "fail", protectedGate: demo.GateFail, want: 1},
 		{name: "cannot_verify", protectedGate: demo.GateCannotVerify, want: exitCannotVerify},
+		{name: "unknown falls through to component fail", protectedGate: "", want: 1},
+		{name: "unknown falls through to component pass", protectedGate: "unexpected", want: 0},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1697,6 +1740,11 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 				LocalGate:       demo.GateFail,
 				CIWitnessGate:   demo.GateFail,
 				AuditGradeGate:  demo.GateFail,
+			}
+			if tc.protectedGate == "unexpected" {
+				result.LocalGate = demo.GatePass
+				result.CIWitnessGate = demo.GatePass
+				result.AuditGradeGate = demo.GatePass
 			}
 			if got := gateExitCode(result); got != tc.want {
 				t.Fatalf("exit code = %d, want %d", got, tc.want)

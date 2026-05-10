@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -2516,37 +2517,55 @@ func requiredEvidenceIDsForCLI(contract trace.Contract) []string {
 }
 
 func gateExitCode(result demo.GateResult) int {
-	if result.SelectedProfile == demo.GateProfileProtected {
-		switch result.ProtectedGate {
-		case demo.GatePass:
-			return 0
-		case demo.GateFail:
-			return 1
-		case demo.GateCannotVerify, demo.GateNotAssessed:
-			return exitCannotVerify
-		}
+	if code, ok := protectedGateExitCode(result); ok {
+		return code
 	}
+	return gateStateExitCode(gateExitStates(result))
+}
+
+func protectedGateExitCode(result demo.GateResult) (int, bool) {
+	if result.SelectedProfile != demo.GateProfileProtected {
+		return 0, false
+	}
+	code, ok := protectedGateExitCodes[result.ProtectedGate]
+	if !ok {
+		return 0, false
+	}
+	return code, true
+}
+
+var protectedGateExitCodes = map[string]int{
+	demo.GatePass:         0,
+	demo.GateFail:         1,
+	demo.GateCannotVerify: exitCannotVerify,
+	demo.GateNotAssessed:  exitCannotVerify,
+}
+
+func gateExitStates(result demo.GateResult) []string {
+	states := []string{result.LocalGate, result.CIWitnessGate, result.AuditGradeGate}
 	for _, requiredRun := range result.RequiredRuns {
-		if requiredRun.State == demo.GateFail || requiredRun.State == demo.GateMissingTelemetry {
-			return 1
-		}
+		states = append(states, requiredRun.State)
 	}
-	for _, state := range []string{result.LocalGate, result.CIWitnessGate, result.AuditGradeGate} {
-		if state == demo.GateFail || state == demo.GateMissingTelemetry {
-			return 1
-		}
+	return states
+}
+
+func gateStateExitCode(states []string) int {
+	if hasGateState(states, demo.GateFail, demo.GateMissingTelemetry) {
+		return 1
 	}
-	for _, requiredRun := range result.RequiredRuns {
-		if requiredRun.State == demo.GateCannotVerify {
-			return exitCannotVerify
-		}
-	}
-	for _, state := range []string{result.LocalGate, result.CIWitnessGate, result.AuditGradeGate} {
-		if state == demo.GateCannotVerify {
-			return exitCannotVerify
-		}
+	if hasGateState(states, demo.GateCannotVerify) {
+		return exitCannotVerify
 	}
 	return 0
+}
+
+func hasGateState(states []string, targets ...string) bool {
+	for _, state := range states {
+		if slices.Contains(targets, state) {
+			return true
+		}
+	}
+	return false
 }
 
 func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int {
