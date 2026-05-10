@@ -357,7 +357,16 @@ func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
 }
 
 func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
-	result := GateResult{
+	result := newGateResult(rows, contract)
+	observedEvidence := applyRunRows(&result, rows)
+	applyRequiredRuns(&result, rows, contract)
+	applyRequiredEvidence(&result, contract, observedEvidence)
+	finalizeGateResult(&result)
+	return result
+}
+
+func newGateResult(rows []RunRow, contract trace.Contract) GateResult {
+	return GateResult{
 		SchemaVersion:        GateSchemaVersion,
 		GeneratedAt:          time.Now().UTC().Format(time.RFC3339),
 		LocalGate:            GatePass,
@@ -376,36 +385,66 @@ func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
 		OverrideRequests:     []OverrideRequest{},
 		Runs:                 rows,
 	}
+}
+
+func applyRunRows(result *GateResult, rows []RunRow) map[string]bool {
 	observedEvidence := map[string]bool{}
 	for _, row := range rows {
-		result.OverrideRequests = append(result.OverrideRequests, row.OverrideRequests...)
-		if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
-			observedEvidence[row.Kind] = true
-		}
-		if row.Result != trace.VerdictObserved {
-			result.LocalGate = GateFail
-			result.Reasons = append(result.Reasons, fmt.Sprintf("%s result is %s, expected observed", row.Name, row.Result))
-		}
-		if row.ClosureState != trace.ClosureStateCompleted {
-			result.LocalGate = GateFail
-			result.Reasons = append(result.Reasons, fmt.Sprintf("%s closure_state is %s", row.Name, row.ClosureState))
-		}
+		applyRunRow(result, observedEvidence, row)
 	}
+	return observedEvidence
+}
+
+func applyRunRow(result *GateResult, observedEvidence map[string]bool, row RunRow) {
+	result.OverrideRequests = append(result.OverrideRequests, row.OverrideRequests...)
+	markObservedEvidence(observedEvidence, row)
+	applyRowResult(result, row)
+	applyRowClosure(result, row)
+}
+
+func markObservedEvidence(observedEvidence map[string]bool, row RunRow) {
+	if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
+		observedEvidence[row.Kind] = true
+	}
+}
+
+func applyRowResult(result *GateResult, row RunRow) {
+	if row.Result != trace.VerdictObserved {
+		result.LocalGate = GateFail
+		result.Reasons = append(result.Reasons, fmt.Sprintf("%s result is %s, expected observed", row.Name, row.Result))
+	}
+}
+
+func applyRowClosure(result *GateResult, row RunRow) {
+	if row.ClosureState != trace.ClosureStateCompleted {
+		result.LocalGate = GateFail
+		result.Reasons = append(result.Reasons, fmt.Sprintf("%s closure_state is %s", row.Name, row.ClosureState))
+	}
+}
+
+func applyRequiredRuns(result *GateResult, rows []RunRow, contract trace.Contract) {
 	result.RequiredRuns = evaluateRequiredRuns(rows, contract)
 	for _, requiredRun := range result.RequiredRuns {
-		switch requiredRun.State {
-		case GateMissingTelemetry:
-			result.LocalGate = worseGateState(result.LocalGate, GateFail)
-			result.Reasons = append(result.Reasons, requiredRun.Reasons...)
-			result.NextActions = append(result.NextActions, fmt.Sprintf("Run required wrapper %s through sdp-trace before evaluating advisory gate.", requiredRun.WrapperName))
-		case GateCannotVerify:
-			result.LocalGate = worseGateState(result.LocalGate, GateCannotVerify)
-			result.Reasons = append(result.Reasons, requiredRun.Reasons...)
-		case GateFail:
-			result.LocalGate = worseGateState(result.LocalGate, GateFail)
-			result.Reasons = append(result.Reasons, requiredRun.Reasons...)
-		}
+		applyRequiredRun(result, requiredRun)
 	}
+}
+
+func applyRequiredRun(result *GateResult, requiredRun RequiredRunResult) {
+	switch requiredRun.State {
+	case GateMissingTelemetry:
+		result.LocalGate = worseGateState(result.LocalGate, GateFail)
+		result.Reasons = append(result.Reasons, requiredRun.Reasons...)
+		result.NextActions = append(result.NextActions, fmt.Sprintf("Run required wrapper %s through sdp-trace before evaluating advisory gate.", requiredRun.WrapperName))
+	case GateCannotVerify:
+		result.LocalGate = worseGateState(result.LocalGate, GateCannotVerify)
+		result.Reasons = append(result.Reasons, requiredRun.Reasons...)
+	case GateFail:
+		result.LocalGate = worseGateState(result.LocalGate, GateFail)
+		result.Reasons = append(result.Reasons, requiredRun.Reasons...)
+	}
+}
+
+func applyRequiredEvidence(result *GateResult, contract trace.Contract, observedEvidence map[string]bool) {
 	for _, requirement := range contract.RequiredEvidence {
 		if observedEvidence[requirement.ID] {
 			result.ObservedEvidence = append(result.ObservedEvidence, requirement.ID)
@@ -414,14 +453,16 @@ func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
 		result.LocalGate = GateFail
 		result.Reasons = append(result.Reasons, fmt.Sprintf("missing locally observed contract evidence %s", requirement.ID))
 	}
-	result.GateConditions = gateConditions(result)
+}
+
+func finalizeGateResult(result *GateResult) {
+	result.GateConditions = gateConditions(*result)
 	if len(result.Reasons) == 0 {
 		result.Reasons = append(result.Reasons, "local contract evidence is complete for the local gate")
 	}
 	result.Reasons = append(result.Reasons, "audit-grade release gate cannot verify without CI/OIDC witness and external witness checkpoint")
 	sort.Strings(result.Reasons)
 	sort.Strings(result.NextActions)
-	return result
 }
 
 func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input ProtectedGateInput) GateResult {
