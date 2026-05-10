@@ -236,19 +236,31 @@ func allowedLabelName(value string) bool {
 
 func unsafeValue(value string) bool {
 	lower := strings.ToLower(value)
-	return strings.Contains(lower, "http://") ||
-		strings.Contains(lower, "https://") ||
-		strings.Contains(lower, "secret") ||
-		strings.Contains(lower, "token") ||
-		strings.Contains(lower, "credential") ||
-		strings.Contains(lower, "password") ||
-		strings.Contains(lower, "bearer") ||
-		strings.Contains(lower, "api_key") ||
-		strings.Contains(lower, "access_key") ||
-		strings.Contains(lower, "private") ||
-		strings.Contains(value, "@") ||
-		strings.Contains(value, "/") ||
-		strings.Contains(value, "\\")
+	return containsAnyMarker(lower, unsafeLowerMarkers) || containsAnyMarker(value, unsafeRawMarkers)
+}
+
+var unsafeLowerMarkers = []string{
+	"http://",
+	"https://",
+	"secret",
+	"token",
+	"credential",
+	"password",
+	"bearer",
+	"api_key",
+	"access_key",
+	"private",
+}
+
+var unsafeRawMarkers = []string{"@", "/", "\\"}
+
+func containsAnyMarker(value string, markers []string) bool {
+	for _, marker := range markers {
+		if strings.Contains(value, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func sortSeries(series []Series) {

@@ -80,11 +80,19 @@ func TestRenderPrometheusTextDoesNotLetDimensionsOverrideDimensionKey(t *testing
 
 func TestRenderPrometheusTextRejectsUnsafeLabelsWithoutPartialOutput(t *testing.T) {
 	for _, value := range []string{
+		"http://example.test",
 		"https://example.test/private",
+		"secret",
+		"token",
+		"credential",
+		"password",
 		"api_key",
 		"access_key",
 		"bearer",
 		"private",
+		"user@example.test",
+		"owner/repo",
+		`owner\repo`,
 	} {
 		result := validResult()
 		result.MetricRows[0].Dimensions["repo"] = value
