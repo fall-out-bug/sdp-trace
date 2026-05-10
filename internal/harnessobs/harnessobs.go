@@ -633,57 +633,100 @@ func RunSession(opts SessionOptions) (SessionRun, Run, error) {
 }
 
 func Validate(opts ValidateOptions) (Validation, error) {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return Validation{}, errors.New("harness validate requires --profile")
-	}
-	if strings.TrimSpace(opts.RunDir) == "" {
-		return Validation{}, errors.New("harness validate requires --run")
-	}
-	profilePath, err := safeExistingFile(opts.ProfilePath)
+	profilePath, runDir, outPath, err := validateValidateInputs(opts)
 	if err != nil {
-		return Validation{}, fmt.Errorf("unsafe profile path: %w", err)
-	}
-	runDir, err := safeExistingDir(opts.RunDir)
-	if err != nil {
-		return Validation{}, fmt.Errorf("unsafe run path: %w", err)
-	}
-	outPath := ""
-	if opts.OutPath != "" {
-		outPath, err = safeOutFile(opts.OutPath)
-		if err != nil {
-			return Validation{}, fmt.Errorf("unsafe out path: %w", err)
-		}
+		return Validation{}, err
 	}
 	profile, err := LoadProfile(profilePath)
 	if err != nil {
 		return Validation{}, err
 	}
-	run, events, err := LoadRun(runDir)
-	if err != nil {
-		validation := Validation{
-			SchemaVersion:      ValidationSchemaVersion,
-			ProfileID:          profile.ProfileID,
-			HarnessFamily:      profile.HarnessFamily,
-			EventSchemaVersion: profile.EventSchemaVersion,
-			ValidationState:    StateCannotVerify,
-			ReasonCode:         "source_unavailable",
-			NonAuthority:       nonAuthority(),
-		}
-		validation.ValidationDigest = validationDigest(validation)
-		if opts.OutPath != "" {
-			if err := writeJSON(outPath, validation); err != nil {
-				return Validation{}, err
-			}
-		}
-		return validation, nil
-	}
-	validation := evaluate(profile, run, events)
-	if opts.OutPath != "" {
-		if err := writeJSON(outPath, validation); err != nil {
-			return Validation{}, err
-		}
+	validation := evaluationFromRun(profile, runDir)
+	if err := writeValidationIfRequested(outPath, validation); err != nil {
+		return Validation{}, err
 	}
 	return validation, nil
+}
+
+func validateValidateInputs(opts ValidateOptions) (string, string, string, error) {
+	if err := requireValidateOptions(opts); err != nil {
+		return "", "", "", err
+	}
+	return resolveValidateInputs(opts)
+}
+
+func requireValidateOptions(opts ValidateOptions) error {
+	if strings.TrimSpace(opts.ProfilePath) == "" {
+		return errors.New("harness validate requires --profile")
+	}
+	if strings.TrimSpace(opts.RunDir) == "" {
+		return errors.New("harness validate requires --run")
+	}
+	return nil
+}
+
+func resolveValidateInputs(opts ValidateOptions) (string, string, string, error) {
+	profilePath, runDir, err := resolveValidateSourcePaths(opts)
+	if err != nil {
+		return "", "", "", err
+	}
+	outPath, err := resolveValidateOutPath(opts.OutPath)
+	if err != nil {
+		return "", "", "", err
+	}
+	return profilePath, runDir, outPath, nil
+}
+
+func resolveValidateSourcePaths(opts ValidateOptions) (string, string, error) {
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+	runDir, err := safeExistingDir(opts.RunDir)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe run path: %w", err)
+	}
+	return profilePath, runDir, nil
+}
+
+func resolveValidateOutPath(outPath string) (string, error) {
+	if outPath == "" {
+		return "", nil
+	}
+	safeOut, err := safeOutFile(outPath)
+	if err != nil {
+		return "", fmt.Errorf("unsafe out path: %w", err)
+	}
+	return safeOut, nil
+}
+
+func evaluationFromRun(profile Profile, runDir string) Validation {
+	run, events, err := LoadRun(runDir)
+	if err != nil {
+		return fallbackSourceUnavailable(profile)
+	}
+	return evaluate(profile, run, events)
+}
+
+func fallbackSourceUnavailable(profile Profile) Validation {
+	validation := Validation{
+		SchemaVersion:      ValidationSchemaVersion,
+		ProfileID:          profile.ProfileID,
+		HarnessFamily:      profile.HarnessFamily,
+		EventSchemaVersion: profile.EventSchemaVersion,
+		ValidationState:    StateCannotVerify,
+		ReasonCode:         "source_unavailable",
+		NonAuthority:       nonAuthority(),
+	}
+	validation.ValidationDigest = validationDigest(validation)
+	return validation
+}
+
+func writeValidationIfRequested(outPath string, validation Validation) error {
+	if outPath == "" {
+		return nil
+	}
+	return writeJSON(outPath, validation)
 }
 
 func LoadProfile(path string) (Profile, error) {
@@ -1653,71 +1696,78 @@ func rank(state string) int {
 }
 
 func safeExistingFile(path string) (string, error) {
+	return safeExistingPath(path, existingPathSpec{
+		traversalError: "path must be relative local file without traversal",
+		requireDir:     false,
+		typeError:      "path must be a file",
+	})
+}
+
+func safeExistingDir(path string) (string, error) {
+	return safeExistingPath(path, existingPathSpec{
+		traversalError: "path must be relative local directory without traversal",
+		requireDir:     true,
+		typeError:      "path must be a directory",
+	})
+}
+
+type existingPathSpec struct {
+	traversalError string
+	requireDir     bool
+	typeError      string
+}
+
+func safeExistingPath(path string, spec existingPathSpec) (string, error) {
+	cleanPath, err := sanitizeExistingPath(path, spec.traversalError)
+	if err != nil {
+		return "", err
+	}
+	abs, err := resolveExistingAbsolutePath(cleanPath)
+	if err != nil {
+		return "", err
+	}
+	rel, err := relativeWorkingDirectoryPath(abs)
+	if err != nil {
+		return "", err
+	}
+	return rel, ensureExpectedPathType(abs, spec)
+}
+
+func resolveExistingAbsolutePath(path string) (string, error) {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return "", err
+	}
+	return absolutePath(resolved)
+}
+
+func sanitizeExistingPath(path, traversalError string) (string, error) {
 	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
-		return "", errors.New("path must be relative local file without traversal")
+		return "", errors.New(traversalError)
 	}
-	clean := filepath.Clean(path)
-	resolved, err := filepath.EvalSymlinks(clean)
+	return filepath.Clean(path), nil
+}
+
+func relativeWorkingDirectoryPath(abs string) (string, error) {
+	rel, err := relativePathFromWorkingDirectory(abs)
 	if err != nil {
 		return "", err
 	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	abs, err := filepath.Abs(resolved)
-	if err != nil {
-		return "", err
-	}
-	rel, err := filepath.Rel(cwd, abs)
-	if err != nil {
-		return "", err
-	}
-	if strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
+	if pathEscapesWorkingDirectory(rel) {
 		return "", errors.New("path escapes working directory")
-	}
-	info, err := os.Stat(abs)
-	if err != nil {
-		return "", err
-	}
-	if info.IsDir() {
-		return "", errors.New("path must be a file")
 	}
 	return rel, nil
 }
 
-func safeExistingDir(path string) (string, error) {
-	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
-		return "", errors.New("path must be relative local directory without traversal")
-	}
-	clean := filepath.Clean(path)
-	resolved, err := filepath.EvalSymlinks(clean)
+func ensureExpectedPathType(path string, spec existingPathSpec) error {
+	info, err := os.Stat(path)
 	if err != nil {
-		return "", err
+		return err
 	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
+	if info.IsDir() == spec.requireDir {
+		return nil
 	}
-	abs, err := filepath.Abs(resolved)
-	if err != nil {
-		return "", err
-	}
-	rel, err := filepath.Rel(cwd, abs)
-	if err != nil {
-		return "", err
-	}
-	if strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
-		return "", errors.New("path escapes working directory")
-	}
-	info, err := os.Stat(abs)
-	if err != nil {
-		return "", err
-	}
-	if !info.IsDir() {
-		return "", errors.New("path must be a directory")
-	}
-	return rel, nil
+	return errors.New(spec.typeError)
 }
 
 func safeOutFile(path string) (string, error) {

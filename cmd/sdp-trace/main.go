@@ -3966,60 +3966,105 @@ func (f *flagSet) setBool(key string, defaultValue bool) {
 func (f *flagSet) parse(args []string) error {
 	rest := make([]string, 0)
 	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if arg == "--" {
-			rest = append(rest, args[i+1:]...)
-			break
+		done, err := f.consumeArg(args, &i, &rest)
+		if err != nil {
+			return err
 		}
-		if strings.HasPrefix(arg, "--") {
-			parts := strings.SplitN(strings.TrimPrefix(arg, "--"), "=", 2)
-			key := parts[0]
-			_, knownString := f.data[key]
-			_, knownBool := f.bools[key]
-			if !knownString && !knownBool {
-				return fmt.Errorf("unknown flag --%s", key)
-			}
-			switch len(parts) {
-			case 1:
-				switch {
-				case knownBool:
-					if i+1 < len(args) && isBoolLiteral(args[i+1]) {
-						f.bools[key] = parseBoolLiteral(args[i+1])
-						i++
-					} else {
-						f.bools[key] = true
-					}
-				default:
-					if i+1 >= len(args) {
-						return fmt.Errorf("flag --%s requires value", key)
-					}
-					val := args[i+1]
-					if strings.HasPrefix(val, "--") {
-						return fmt.Errorf("flag --%s requires value", key)
-					}
-					i++
-					f.data[key] = val
-				}
-			case 2:
-				if _, ok := f.bools[key]; ok {
-					lower := strings.ToLower(parts[1])
-					if lower == "false" || lower == "0" {
-						f.bools[key] = false
-					} else if lower == "true" || lower == "1" || lower == "" {
-						f.bools[key] = true
-					} else {
-						return fmt.Errorf("invalid boolean value for --%s: %s", key, parts[1])
-					}
-					continue
-				}
-				f.data[key] = parts[1]
-			default:
-			}
-			continue
+		if done {
+			f.args = rest
+			return nil
 		}
-		rest = append(rest, arg)
 	}
 	f.args = rest
+	return nil
+}
+
+func (f *flagSet) consumeArg(args []string, idx *int, rest *[]string) (bool, error) {
+	arg := args[*idx]
+	if arg == "--" {
+		*rest = append(*rest, args[*idx+1:]...)
+		return true, nil
+	}
+	if !strings.HasPrefix(arg, "--") {
+		*rest = append(*rest, arg)
+		return false, nil
+	}
+	flag, flagValue, hasValue := splitFlag(arg)
+	return false, f.consumeFlag(flag, flagValue, hasValue, args, idx)
+}
+
+func splitFlag(arg string) (string, string, bool) {
+	parts := strings.SplitN(strings.TrimPrefix(arg, "--"), "=", 2)
+	if len(parts) == 1 {
+		return parts[0], "", false
+	}
+	return parts[0], parts[1], true
+}
+
+func (f *flagSet) consumeFlag(flag string, flagValue string, hasValue bool, args []string, idx *int) error {
+	isString, isBool := f.isKnownFlag(flag)
+	if !isString && !isBool {
+		return fmt.Errorf("unknown flag --%s", flag)
+	}
+	if hasValue {
+		return f.consumeValue(flag, flagValue, isBool)
+	}
+	return f.consumeNoEqualsValue(flag, args, idx, isBool)
+}
+
+func (f *flagSet) isKnownFlag(flag string) (bool, bool) {
+	_, isString := f.data[flag]
+	_, isBool := f.bools[flag]
+	return isString, isBool
+}
+func (f *flagSet) consumeValue(flag, flagValue string, isBool bool) error {
+	if !isBool {
+		f.data[flag] = flagValue
+		return nil
+	}
+	return f.consumeBoolValue(flag, flagValue)
+}
+
+func (f *flagSet) consumeNoEqualsValue(flag string, args []string, idx *int, isBool bool) error {
+	if !isBool {
+		return f.consumeStringFromNext(flag, args, idx)
+	}
+	nextIdx := *idx + 1
+	if !isBoolValueAt(args, nextIdx) {
+		f.bools[flag] = true
+		return nil
+	}
+	*idx = nextIdx
+	return f.consumeBoolValue(flag, args[*idx])
+}
+
+func (f *flagSet) consumeStringFromNext(flag string, args []string, idx *int) error {
+	nextIdx := *idx + 1
+	if nextIdx >= len(args) {
+		return fmt.Errorf("flag --%s requires value", flag)
+	}
+	value := args[nextIdx]
+	if strings.HasPrefix(value, "--") {
+		return fmt.Errorf("flag --%s requires value", flag)
+	}
+	*idx = nextIdx
+	f.data[flag] = value
+	return nil
+}
+
+func isBoolValueAt(args []string, idx int) bool {
+	return idx < len(args) && isBoolLiteral(args[idx])
+}
+
+func (f *flagSet) consumeBoolValue(flag, flagValue string) error {
+	switch strings.ToLower(flagValue) {
+	case "false", "0":
+		f.bools[flag] = false
+	case "true", "1", "":
+		f.bools[flag] = true
+	default:
+		return fmt.Errorf("invalid boolean value for --%s: %s", flag, flagValue)
+	}
 	return nil
 }
 
@@ -4048,9 +4093,4 @@ func isHelp(args []string) bool {
 func isBoolLiteral(value string) bool {
 	lower := strings.ToLower(value)
 	return lower == "true" || lower == "false" || lower == "1" || lower == "0"
-}
-
-func parseBoolLiteral(value string) bool {
-	lower := strings.ToLower(value)
-	return lower == "true" || lower == "1"
 }

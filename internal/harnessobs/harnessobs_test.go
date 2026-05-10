@@ -686,6 +686,95 @@ func TestValidateWritesCannotVerifyOutForMissingRun(t *testing.T) {
 	}
 }
 
+func TestValidateWritesOutPathWhenPasses(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeEvents(t, dir, []map[string]any{eventMap("e1", "harness")})
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	run, err := Observe(ObserveOptions{
+		ProfilePath: "profile.json",
+		SourcePath:  "events.jsonl",
+		OutDir:      "run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("Observe() error = %v", err)
+	}
+	if run.EventCount != 1 {
+		t.Fatalf("run.EventCount = %d, want 1", run.EventCount)
+	}
+
+	validation, err := Validate(ValidateOptions{
+		ProfilePath: "profile.json",
+		RunDir:      "run",
+		OutPath:     "validation.json",
+	})
+	if err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if validation.ValidationState != StatePass {
+		t.Fatalf("ValidationState = %s, want pass", validation.ValidationState)
+	}
+	if _, err := os.Stat("validation.json"); err != nil {
+		t.Fatalf("validation out not written: %v", err)
+	}
+
+	var onDisk Validation
+	raw, err := os.ReadFile("validation.json")
+	if err != nil {
+		t.Fatalf("os.ReadFile(validation.json) error = %v", err)
+	}
+	if err := json.Unmarshal(raw, &onDisk); err != nil {
+		t.Fatalf("json.Unmarshal(validation.json) error = %v", err)
+	}
+	if onDisk.ValidationState != StatePass || onDisk.ReasonCode != "all_required_dimensions_observed" {
+		t.Fatalf("on-disk validation = %+v", onDisk)
+	}
+}
+
+func TestValidateCannotVerifyWhenRunFileInvalid(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	runDir := filepath.Join(dir, "run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(runDir, "run.json"), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	validation, err := Validate(ValidateOptions{
+		ProfilePath: "profile.json",
+		RunDir:      "run",
+		OutPath:     "validation.json",
+	})
+	if err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if validation.ValidationState != StateCannotVerify {
+		t.Fatalf("ValidationState = %s, want cannot_verify", validation.ValidationState)
+	}
+	if validation.ReasonCode != "source_unavailable" {
+		t.Fatalf("ReasonCode = %s, want source_unavailable", validation.ReasonCode)
+	}
+	var onDisk Validation
+	raw, err := os.ReadFile("validation.json")
+	if err != nil {
+		t.Fatalf("os.ReadFile(validation.json) error = %v", err)
+	}
+	if err := json.Unmarshal(raw, &onDisk); err != nil {
+		t.Fatalf("json.Unmarshal(validation.json) error = %v", err)
+	}
+	if onDisk.ValidationState != StateCannotVerify || onDisk.ReasonCode != "source_unavailable" {
+		t.Fatalf("on-disk validation = %+v", onDisk)
+	}
+}
+
 func TestLoadRunRejectsUnsafeEventRefs(t *testing.T) {
 	dir := t.TempDir()
 	run := Run{
@@ -851,6 +940,106 @@ func TestSafeExistingOutDir(t *testing.T) {
 	}
 	if _, err := safeExistingOutDir("escape-link"); err == nil || !strings.Contains(err.Error(), "out path escapes") {
 		t.Fatalf("safeExistingOutDir() error = %v, want escape", err)
+	}
+}
+
+func TestSafeExistingFilePathValidation(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	if err := os.WriteFile("events.jsonl", []byte("record\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir("run", 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := safeExistingFile("events.jsonl"); err != nil {
+		t.Fatalf("safeExistingFile(\"events.jsonl\") error = %v", err)
+	}
+	if _, err := safeExistingFile("../events.jsonl"); err == nil || !strings.Contains(err.Error(), "path must be relative local file without traversal") {
+		t.Fatalf("safeExistingFile(\"../events.jsonl\") error = %v", err)
+	}
+	if _, err := safeExistingFile("https://example.com/file"); err == nil || !strings.Contains(err.Error(), "path must be relative local file without traversal") {
+		t.Fatalf("safeExistingFile(url) error = %v", err)
+	}
+	if _, err := safeExistingFile("run"); err == nil || !strings.Contains(err.Error(), "path must be a file") {
+		t.Fatalf("safeExistingFile(directory) error = %v", err)
+	}
+	if err := os.WriteFile("safe-target", []byte("record\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("safe-target", "safe-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	got, err := safeExistingFile("safe-link")
+	if err != nil {
+		t.Fatalf("safeExistingFile(safe-link) error = %v", err)
+	}
+	if got != "safe-target" {
+		t.Fatalf("safeExistingFile(safe-link) = %q, want safe-target", got)
+	}
+
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "outside.jsonl"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(outside, "outside.jsonl"), "escape-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if _, err := safeExistingFile("escape-link"); err == nil || !strings.Contains(err.Error(), "path escapes working directory") {
+		t.Fatalf("safeExistingFile(escape-link) error = %v", err)
+	}
+}
+
+func TestSafeExistingDirPathValidation(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	if err := os.Mkdir("events", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := safeExistingDir("events"); err != nil {
+		t.Fatalf("safeExistingDir(\"events\") error = %v", err)
+	}
+	if _, err := safeExistingDir("../events"); err == nil || !strings.Contains(err.Error(), "path must be relative local directory without traversal") {
+		t.Fatalf("safeExistingDir(\"../events\") error = %v", err)
+	}
+	if _, err := safeExistingDir("https://example.com/dir"); err == nil || !strings.Contains(err.Error(), "path must be relative local directory without traversal") {
+		t.Fatalf("safeExistingDir(url) error = %v", err)
+	}
+	if err := os.WriteFile("events.jsonl", []byte("record\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := safeExistingDir("events.jsonl"); err == nil || !strings.Contains(err.Error(), "path must be a directory") {
+		t.Fatalf("safeExistingDir(file) error = %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join("events", "note.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("events", "safe-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	got, err := safeExistingDir("safe-link")
+	if err != nil {
+		t.Fatalf("safeExistingDir(safe-link) error = %v", err)
+	}
+	if got != "events" {
+		t.Fatalf("safeExistingDir(safe-link) = %q, want events", got)
+	}
+
+	outside := t.TempDir()
+	if err := os.Mkdir(filepath.Join(outside, "outside-dir"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(outside, "outside-dir"), "escape-link-dir"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if _, err := safeExistingDir("escape-link-dir"); err == nil || !strings.Contains(err.Error(), "path escapes working directory") {
+		t.Fatalf("safeExistingDir(escape-link-dir) error = %v", err)
 	}
 }
 
