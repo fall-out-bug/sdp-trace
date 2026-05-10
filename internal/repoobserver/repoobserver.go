@@ -554,44 +554,85 @@ func ensureNoUnsafeHooksPath(opts Options) error {
 }
 
 func writeTarget(opts Options, target targetFile) ([]DiffSummary, error) {
-	path := filepath.Clean(filepath.Join(opts.RepoRoot, target.path))
-	rel, relErr := filepath.Rel(opts.RepoRoot, path)
-	if relErr != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || filepath.IsAbs(rel) {
-		return nil, fmt.Errorf("%s: target outside repository", ReasonUnsafeOutputRefused)
+	path, err := safeTargetPath(opts, target)
+	if err != nil {
+		return nil, err
 	}
-	mode := os.FileMode(0o644)
-	if target.executable {
-		mode = 0o755
-	}
+	mode := targetMode(target)
 	data := []byte(target.content)
 	if existing, err := os.ReadFile(path); err == nil {
-		if string(existing) == target.content {
-			if target.executable {
-				return nil, os.Chmod(path, mode)
-			}
-			return nil, nil
-		}
-		if !opts.Force {
-			return nil, fmt.Errorf("%s: %s exists and differs; use --force after reviewing safe diff", ReasonManualStepRequired, target.path)
-		}
-		if err := os.WriteFile(path+".bak", existing, 0o644); err != nil {
-			return nil, fmt.Errorf("%s: backup failed for %s", ReasonUnsafeOutputRefused, target.path)
-		}
-		summary := DiffSummary{
-			Path:    target.path,
-			Action:  "overwrite_existing_file",
-			Before:  contentSummary(existing),
-			After:   contentSummary(data),
-			Summary: "replace generated file content using safe byte and line counts",
-			Backup:  target.path + ".bak",
-		}
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			return nil, err
-		}
-		return []DiffSummary{summary}, os.WriteFile(path, data, mode)
+		return writeExistingTarget(opts, target, path, mode, existing, data)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
+	return writeNewTarget(path, data, mode)
+}
+
+func safeTargetPath(opts Options, target targetFile) (string, error) {
+	path := filepath.Clean(filepath.Join(opts.RepoRoot, target.path))
+	rel, relErr := filepath.Rel(opts.RepoRoot, path)
+	if targetPathEscapes(rel, relErr) {
+		return "", fmt.Errorf("%s: target outside repository", ReasonUnsafeOutputRefused)
+	}
+	return path, nil
+}
+
+func targetPathEscapes(rel string, relErr error) bool {
+	if relErr != nil {
+		return true
+	}
+	return invalidRelativeTarget(rel)
+}
+
+func invalidRelativeTarget(rel string) bool {
+	if rel == "." || rel == ".." {
+		return true
+	}
+	if filepath.IsAbs(rel) {
+		return true
+	}
+	return strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
+func targetMode(target targetFile) os.FileMode {
+	if target.executable {
+		return 0o755
+	}
+	return 0o644
+}
+
+func writeExistingTarget(opts Options, target targetFile, path string, mode os.FileMode, existing, data []byte) ([]DiffSummary, error) {
+	if string(existing) == target.content {
+		if target.executable {
+			return nil, os.Chmod(path, mode)
+		}
+		return nil, nil
+	}
+	if !opts.Force {
+		return nil, fmt.Errorf("%s: %s exists and differs; use --force after reviewing safe diff", ReasonManualStepRequired, target.path)
+	}
+	return overwriteTarget(target, path, mode, existing, data)
+}
+
+func overwriteTarget(target targetFile, path string, mode os.FileMode, existing, data []byte) ([]DiffSummary, error) {
+	if err := os.WriteFile(path+".bak", existing, 0o644); err != nil {
+		return nil, fmt.Errorf("%s: backup failed for %s", ReasonUnsafeOutputRefused, target.path)
+	}
+	summary := DiffSummary{
+		Path:    target.path,
+		Action:  "overwrite_existing_file",
+		Before:  contentSummary(existing),
+		After:   contentSummary(data),
+		Summary: "replace generated file content using safe byte and line counts",
+		Backup:  target.path + ".bak",
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, err
+	}
+	return []DiffSummary{summary}, os.WriteFile(path, data, mode)
+}
+
+func writeNewTarget(path string, data []byte, mode os.FileMode) ([]DiffSummary, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
 	}

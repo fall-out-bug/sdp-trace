@@ -133,6 +133,69 @@ func TestInstallForceProducesSafeDiffSummary(t *testing.T) {
 	}
 }
 
+func TestWriteTargetRejectsUnsafeTarget(t *testing.T) {
+	repo := initRepo(t)
+	_, err := writeTarget(Options{RepoRoot: repo}, targetFile{
+		path:    "../outside",
+		content: "unsafe\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), ReasonUnsafeOutputRefused) {
+		t.Fatalf("expected unsafe output refusal, got %v", err)
+	}
+}
+
+func TestInvalidRelativeTarget(t *testing.T) {
+	tests := []struct {
+		rel  string
+		want bool
+	}{
+		{rel: ".", want: true},
+		{rel: "..", want: true},
+		{rel: ".." + string(os.PathSeparator) + "outside", want: true},
+		{rel: filepath.Join("nested", "file"), want: false},
+	}
+	if filepath.IsAbs(os.TempDir()) {
+		tests = append(tests, struct {
+			rel  string
+			want bool
+		}{rel: os.TempDir(), want: true})
+	}
+	for _, tt := range tests {
+		t.Run(tt.rel, func(t *testing.T) {
+			if got := invalidRelativeTarget(tt.rel); got != tt.want {
+				t.Fatalf("invalidRelativeTarget(%q) = %v, want %v", tt.rel, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestWriteTargetChmodsExistingExecutable(t *testing.T) {
+	repo := initRepo(t)
+	path := filepath.Join(repo, ".githooks", "pre-commit")
+	writeFileForTest(t, path, "#!/usr/bin/env bash\n")
+	if err := os.Chmod(path, 0o644); err != nil {
+		t.Fatalf("chmod setup: %v", err)
+	}
+	summary, err := writeTarget(Options{RepoRoot: repo}, targetFile{
+		path:       ".githooks/pre-commit",
+		content:    "#!/usr/bin/env bash\n",
+		executable: true,
+	})
+	if err != nil {
+		t.Fatalf("write target: %v", err)
+	}
+	if len(summary) != 0 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat target: %v", err)
+	}
+	if info.Mode().Perm() != 0o755 {
+		t.Fatalf("mode = %o, want 755", info.Mode().Perm())
+	}
+}
+
 func TestInstallRefusesHooksPathMismatchWithoutForce(t *testing.T) {
 	repo := initRepo(t)
 	runGitForTest(t, repo, "config", "core.hooksPath", "custom-hooks")
