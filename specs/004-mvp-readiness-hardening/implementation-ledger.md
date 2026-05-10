@@ -17,8 +17,8 @@
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
-| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `cmd/sdp-trace.gateExitCode`, `cmd/sdp-trace.runAssessExplain`, `cmd/sdp-trace.witnessMatchesProtectedInput`, `internal/adaptercapture.runBindingCondition`, `internal/adaptercapture.overclaimCondition`, `internal/authority.evaluateAction`, `internal/authority.validateEnvelope`, `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/harnessobs.safeOutDir`, `internal/harnessobs.findUnsafeRawEventAt`, `internal/harnessobs.findUnsafeAt`, `internal/harnessobs.validateEvent`, `internal/harnessobs.normalizeRawEvents`, `internal/harnessobs.shellFields`, `internal/managed.witnessCondition`, `internal/posture.Build`, `internal/posture.validateMetricRowShape`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ImportTranscript`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/recorder.Run`, `internal/recorder.runCommand`, `internal/repoobserver.writeTarget`, `internal/verifier.VerifyRun`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, `internal/forensic.rawReferenceCondition`, and `internal/demo.witnessBindingState` were decomposed below 15. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `authority` (88.5%), `adaptercapture` (84.3%), `demo` (73.8%), `forensic` (84.0%), `harnessobs` (71.3%), `interaction` (69.1%), `managed` (88.1%), `posture` (88.7%), `prreview` (73.9%), `repoobserver` (68.7%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
+| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `cmd/sdp-trace.gateExitCode`, `cmd/sdp-trace.runAssessExplain`, `cmd/sdp-trace.witnessMatchesProtectedInput`, `internal/adaptercapture.runBindingCondition`, `internal/adaptercapture.overclaimCondition`, `internal/authority.evaluateAction`, `internal/authority.validateEnvelope`, `internal/ciartifact.evaluateFamily`, `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/harnessobs.safeOutDir`, `internal/harnessobs.findUnsafeRawEventAt`, `internal/harnessobs.findUnsafeAt`, `internal/harnessobs.validateEvent`, `internal/harnessobs.normalizeRawEvents`, `internal/harnessobs.shellFields`, `internal/managed.witnessCondition`, `internal/posture.Build`, `internal/posture.validateMetricRowShape`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ImportTranscript`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/recorder.Run`, `internal/recorder.runCommand`, `internal/repoobserver.writeTarget`, `internal/verifier.VerifyRun`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, `internal/forensic.rawReferenceCondition`, and `internal/demo.witnessBindingState` were decomposed below 15. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `authority` (88.5%), `adaptercapture` (84.3%), `ciartifact` (90.1%), `demo` (73.8%), `forensic` (84.0%), `harnessobs` (71.3%), `interaction` (69.1%), `managed` (88.1%), `posture` (88.7%), `prreview` (73.9%), `repoobserver` (68.7%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
 
 ## Command Evidence
 
@@ -28,7 +28,7 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-recorder-command-full.out` | pass | Total coverage: 74.0%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-ciartifact-family-full.out` | pass | Total coverage: 74.1%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
@@ -55,9 +55,10 @@
 | `gocyclo -over 14 cmd/sdp-trace/main.go` | assessed_gap | `cmd/sdp-trace.runAssessExplain` was decomposed below 15; other CLI functions remain above 14. |
 | `gocyclo -over 14 cmd/sdp-trace/main.go` | assessed_gap | `cmd/sdp-trace.witnessMatchesProtectedInput` was decomposed below 15; other CLI functions remain above 14. |
 | `gocyclo -over 14 internal/recorder/recorder.go` | pass | `internal/recorder.Run` was decomposed below 15; no production recorder function exceeds 14. |
+| `gocyclo -over 14 internal/ciartifact/ciartifact.go` | pass | `internal/ciartifact.evaluateFamily` was decomposed below 15; no production ciartifact function exceeds 14. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-recorder-command-full-func.txt -gocyclo /tmp/sdp-trace-recorder-command-full-gocyclo.txt -threshold 5` | fail_assessed_gap | 382 functions exceed strict CRAP threshold 5; `internal/recorder.runCommand` is now below threshold and no `internal/recorder` functions exceed strict CRAP threshold 5, but the repo-wide strict target remains open. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-ciartifact-family-full-func.txt -gocyclo /tmp/sdp-trace-ciartifact-family-full-gocyclo.txt -threshold 5` | fail_assessed_gap | 381 functions exceed strict CRAP threshold 5; `internal/ciartifact.evaluateFamily` is now below threshold and no `internal/ciartifact` functions exceed strict CRAP threshold 5, but the repo-wide strict target remains open. |
 
 ## Coverage Delta
 
@@ -72,7 +73,7 @@ Baseline from intake:
 | `internal/posture` | 72.4% | 87.8% |
 | `internal/harnessobs` | 42.7% | 71.3% |
 | `internal/verifier` | 51.1% | 71.0% |
-| total | 64.0% | 74.0% |
+| total | 64.0% | 74.1% |
 
 ## CRAP Baseline Summary
 
@@ -93,7 +94,7 @@ Top current CRAP/complexity findings:
 |---|---:|---:|---:|---|
 | `cmd/sdp-trace.run` | 29 | 91.2% | 29.57 | assessed_gap |
 | `cmd/sdp-trace.(*flagSet).parse` | 19 | 74.4% | 25.06 | assessed_gap |
-| `internal/ciartifact.evaluateFamily` | 18 | 73.5% | 24.03 | assessed_gap |
+| `cmd/sdp-trace.runGateExplain` | 18 | 77.1% | 21.89 | assessed_gap |
 
 ## Ratchet
 
@@ -109,11 +110,11 @@ Next decomposition candidates before stronger MVP-readiness claim:
 
 1. `cmd/sdp-trace.run`
 2. `cmd/sdp-trace.(*flagSet).parse`
-3. `internal/ciartifact.evaluateFamily`
-4. `cmd/sdp-trace.runGateExplain`
-5. `internal/harnessobs.Observe`
-6. `internal/forensic.policyCondition`
-7. `internal/demo.EvaluateGate`
+3. `cmd/sdp-trace.runGateExplain`
+4. `internal/harnessobs.Observe`
+5. `internal/forensic.policyCondition`
+6. `internal/demo.EvaluateGate`
+7. `cmd/sdp-trace.runValidateFixtures`
 
 ## External Evidence Boundary
 
@@ -157,6 +158,7 @@ this draft PR must not be treated as approved to merge.
 | Protected witness match refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Source/trust/artifact matching equivalence approved. Reviewer low notes accepted with explicit empty/empty artifact coverage and existence-safe path/hash lookup. |
 | Recorder run pipeline refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Final review approved execution-order and payload equivalence for output dir setup, contract validation, manifest write, env assignment, event sequence, command timing, closure/finalize, and returned result. |
 | Recorder command runner refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Focused retry approved behavior equivalence for command start/wait, stdout/stderr tee hashing, non-zero exit preservation, signal/context semantics, and ledger honesty. Minor signal-driven exit coverage note remains advisory because existing semantics were preserved and focused tests cover output hashes, start failure, and non-zero exit. |
+| CI artifact family refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Final review approved access-to-producer-to-binding precedence, default/unknown fallthrough, byte-identical reason/action text, CRAP reduction, coverage bump, and ledger honesty. Prior minor readability notes were accepted before the final review. |
 
 Unusable attempts:
 

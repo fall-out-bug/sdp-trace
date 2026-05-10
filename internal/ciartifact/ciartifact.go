@@ -247,20 +247,47 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 }
 
 func evaluateFamily(req FamilyRequirement, input FamilyInput, required bool) FamilyObservation {
+	producer := safeProducerScope(input.ProducerScope)
+	access := familyAccessState(input)
+	binding := familyBindingState(input)
+	result := initialFamilyObservation(req, input, required, producer, access, binding)
+	if !required {
+		return result
+	}
+	result.FamilyState = StatePass
+	result.ReasonCode = "family_observed"
+	result.Reason = "required artifact family was observed with selected proof level"
+	result.NextAction = ""
+	if applyAccessResult(&result, access) {
+		return result
+	}
+	if applyRequiredProducerResult(&result, req.RequiredProducerScope, producer) {
+		return result
+	}
+	applyBindingResult(&result, binding)
+	return result
+}
+
+func familyAccessState(input FamilyInput) string {
+	if input.ArtifactAccessState == "" {
+		return AccessAbsent
+	}
+	return safeAccessState(input.ArtifactAccessState)
+}
+
+func familyBindingState(input FamilyInput) string {
+	if input.BindingState == "" {
+		return BindingAbsent
+	}
+	return safeBindingState(input.BindingState)
+}
+
+func initialFamilyObservation(req FamilyRequirement, input FamilyInput, required bool, producer, access, binding string) FamilyObservation {
 	family := req.Family
 	if family == "" {
 		family = input.Family
 	}
-	producer := safeProducerScope(input.ProducerScope)
-	access := AccessAbsent
-	if input.ArtifactAccessState != "" {
-		access = safeAccessState(input.ArtifactAccessState)
-	}
-	binding := BindingAbsent
-	if input.BindingState != "" {
-		binding = safeBindingState(input.BindingState)
-	}
-	result := FamilyObservation{
+	return FamilyObservation{
 		Family:              family,
 		Required:            required,
 		RequiredProducer:    req.RequiredProducerScope,
@@ -271,78 +298,59 @@ func evaluateFamily(req FamilyRequirement, input FamilyInput, required bool) Fam
 		ReasonCode:          "family_not_selected",
 		Reason:              "artifact family was outside the selected profile scope",
 	}
-	if !required {
-		return result
+}
+
+type familyOutcome struct {
+	state  string
+	code   string
+	reason string
+	action string
+}
+
+var accessResults = map[string]familyOutcome{
+	AccessUnsafe:       {StateFail, "unsafe_artifact_output", "artifact family matched a forbidden output-safety class", "Remove unsafe artifact content and regenerate the observation."},
+	AccessAbsent:       {StateCannotVerify, "family_absent_in_ci_bundle", "required artifact family is absent from the selected CI bundle", "Upload the required artifact family or mark it outside profile scope."},
+	AccessPartial:      {StateCannotVerify, "family_partial_in_ci_bundle", "required artifact family is only partially present", "Upload every required artifact for the selected family."},
+	AccessExpired:      {StateCannotVerify, "artifact_expired_before_inspection", "artifact family expired before inspection", "Regenerate CI artifacts or preserve them in an accepted external store."},
+	AccessInaccessible: {StateCannotVerify, "artifact_inaccessible", "artifact family could not be accessed under the selected profile", "Provide accessible artifact evidence or mark access not assessed."},
+	AccessMalformed:    {StateCannotVerify, "artifact_malformed", "artifact family metadata is malformed", "Fix artifact metadata and rerun observation."},
+	AccessCannotVerify: {StateCannotVerify, "artifact_access_cannot_verify", "artifact family access could not be verified", "Provide verifier-readable artifact access metadata."},
+}
+
+var bindingResults = map[string]familyOutcome{
+	BindingMismatch:     {StateFail, "source_run_binding_mismatch", "artifact family binding contradicts the selected source or run", "Regenerate artifact evidence for the selected source and run."},
+	BindingAbsent:       {StateCannotVerify, "source_run_binding_missing", "artifact family lacks selected source or run binding", "Record source and run binding for the selected artifact family."},
+	BindingUnverifiable: {StateCannotVerify, "external_artifact_ref_unverifiable", "artifact family binding is unverifiable under the selected profile", "Provide digest-checkable artifact binding evidence."},
+}
+
+func applyAccessResult(result *FamilyObservation, access string) bool {
+	if outcome, ok := accessResults[access]; ok {
+		setFamilyResult(result, outcome)
 	}
-	result.FamilyState = StatePass
-	result.ReasonCode = "family_observed"
-	result.Reason = "required artifact family was observed with selected proof level"
-	result.NextAction = ""
-	switch access {
-	case AccessUnsafe:
-		result.FamilyState = StateFail
-		result.ReasonCode = "unsafe_artifact_output"
-		result.Reason = "artifact family matched a forbidden output-safety class"
-		result.NextAction = "Remove unsafe artifact content and regenerate the observation."
-	case AccessAbsent:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "family_absent_in_ci_bundle"
-		result.Reason = "required artifact family is absent from the selected CI bundle"
-		result.NextAction = "Upload the required artifact family or mark it outside profile scope."
-	case AccessPartial:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "family_partial_in_ci_bundle"
-		result.Reason = "required artifact family is only partially present"
-		result.NextAction = "Upload every required artifact for the selected family."
-	case AccessExpired:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "artifact_expired_before_inspection"
-		result.Reason = "artifact family expired before inspection"
-		result.NextAction = "Regenerate CI artifacts or preserve them in an accepted external store."
-	case AccessInaccessible:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "artifact_inaccessible"
-		result.Reason = "artifact family could not be accessed under the selected profile"
-		result.NextAction = "Provide accessible artifact evidence or mark access not assessed."
-	case AccessMalformed:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "artifact_malformed"
-		result.Reason = "artifact family metadata is malformed"
-		result.NextAction = "Fix artifact metadata and rerun observation."
-	case AccessCannotVerify:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "artifact_access_cannot_verify"
-		result.Reason = "artifact family access could not be verified"
-		result.NextAction = "Provide verifier-readable artifact access metadata."
+	return result.FamilyState != StatePass
+}
+
+func applyRequiredProducerResult(result *FamilyObservation, requiredProducer, producer string) bool {
+	requiresCIUploaded := requiredProducer == ProducerCIUploaded
+	producerIsCIUploaded := producer == ProducerCIUploaded
+	if !requiresCIUploaded || producerIsCIUploaded {
+		return false
 	}
-	if result.FamilyState != StatePass {
-		return result
+	setFamilyResult(result, familyOutcome{StateCannotVerify, lowerAuthorityReason(producer), "artifact family was observed below the selected CI-uploaded proof level", "Provide CI-uploaded artifact evidence for the selected family."})
+	return true
+}
+
+func applyBindingResult(result *FamilyObservation, binding string) {
+	if outcome, ok := bindingResults[binding]; ok {
+		setFamilyResult(result, outcome)
 	}
-	if req.RequiredProducerScope == ProducerCIUploaded && producer != ProducerCIUploaded {
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = lowerAuthorityReason(producer)
-		result.Reason = "artifact family was observed below the selected CI-uploaded proof level"
-		result.NextAction = "Provide CI-uploaded artifact evidence for the selected family."
-		return result
-	}
-	switch binding {
-	case BindingMismatch:
-		result.FamilyState = StateFail
-		result.ReasonCode = "source_run_binding_mismatch"
-		result.Reason = "artifact family binding contradicts the selected source or run"
-		result.NextAction = "Regenerate artifact evidence for the selected source and run."
-	case BindingAbsent:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "source_run_binding_missing"
-		result.Reason = "artifact family lacks selected source or run binding"
-		result.NextAction = "Record source and run binding for the selected artifact family."
-	case BindingUnverifiable:
-		result.FamilyState = StateCannotVerify
-		result.ReasonCode = "external_artifact_ref_unverifiable"
-		result.Reason = "artifact family binding is unverifiable under the selected profile"
-		result.NextAction = "Provide digest-checkable artifact binding evidence."
-	}
-	return result
+}
+
+func setFamilyResult(result *FamilyObservation, outcome familyOutcome) {
+	result.FamilyState = outcome.state
+	result.ReasonCode = outcome.code
+	result.Reason = outcome.reason
+	result.NextAction = outcome.action
 }
 
 func evaluateIndex(input ArtifactIndexInput) ArtifactIndexResult {

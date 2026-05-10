@@ -175,6 +175,58 @@ func TestEvaluateManifestMutationRegressions(t *testing.T) {
 	}
 }
 
+func TestEvaluateFamilyPreservesPrecedence(t *testing.T) {
+	for name, tc := range map[string]struct {
+		req        FamilyRequirement
+		input      FamilyInput
+		required   bool
+		wantState  string
+		wantReason string
+	}{
+		"not-required-extra-family-remains-not-assessed": {
+			input:      FamilyInput{Family: "extra", ProducerScope: ProducerCIUploaded, ArtifactAccessState: AccessPresent, BindingState: BindingMatched},
+			required:   false,
+			wantState:  StateNotAssessed,
+			wantReason: "family_not_selected",
+		},
+		"unsafe-access-preempts-producer-and-binding": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCheckedIn, ArtifactAccessState: AccessUnsafe, BindingState: BindingMismatch},
+			required:   true,
+			wantState:  StateFail,
+			wantReason: "unsafe_artifact_output",
+		},
+		"producer-authority-preempts-binding": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCheckedIn, ArtifactAccessState: AccessPresent, BindingState: BindingMismatch},
+			required:   true,
+			wantState:  StateCannotVerify,
+			wantReason: "checked_in_claim_contradicts_ci_artifacts",
+		},
+		"binding-mismatch-fails-after-access-and-producer-pass": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCIUploaded, ArtifactAccessState: AccessPresent, BindingState: BindingMismatch},
+			required:   true,
+			wantState:  StateFail,
+			wantReason: "source_run_binding_mismatch",
+		},
+		"observed-family-passes": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCIUploaded, ArtifactAccessState: AccessPresent, BindingState: BindingMatched},
+			required:   true,
+			wantState:  StatePass,
+			wantReason: "family_observed",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := evaluateFamily(tc.req, tc.input, tc.required)
+			if result.FamilyState != tc.wantState || result.ReasonCode != tc.wantReason {
+				t.Fatalf("family result = %+v, want state=%s reason=%s", result, tc.wantState, tc.wantReason)
+			}
+		})
+	}
+}
+
 func TestEvaluateDefaultsIndexAndSafetyToNotAssessed(t *testing.T) {
 	manifest := validManifest()
 	manifest.ArtifactIndex = ArtifactIndexInput{}
