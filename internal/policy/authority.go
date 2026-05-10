@@ -2,7 +2,7 @@ package policy
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"os"
 
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
@@ -90,14 +90,14 @@ func requiredString(value, message string) error {
 	if value != "" {
 		return nil
 	}
-	return fmt.Errorf(message)
+	return errors.New(message)
 }
 
 func requiredList[T any](values []T, message string) error {
 	if len(values) > 0 {
 		return nil
 	}
-	return fmt.Errorf(message)
+	return errors.New(message)
 }
 
 func firstPolicyError(errs ...error) error {
