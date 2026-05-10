@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fall_out_bug/sdp-trace/internal/query"
 )
 
 func TestVerifyDigestManifest(t *testing.T) {
@@ -88,6 +90,103 @@ func TestVerifyDigestManifestMismatchReturnsNoDigest(t *testing.T) {
 	if actual != "" {
 		t.Fatalf("expected empty digest on mismatch, got %q", actual)
 	}
+}
+
+func TestIngestRepository(t *testing.T) {
+	t.Run("trusted", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		digest := writeDigest(t, queryPack)
+		signals := writeSignals(t, ".", "current-signals.json", "timeline.0001", "ci_witnessed", "override_present")
+		repo := selectionRepo("current", "2026-w02", queryPack, digest, signals)
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if !result.trusted {
+			t.Fatalf("unexpected refusal: %+v", result)
+		}
+		if result.digest == "" {
+			t.Fatalf("expected digest")
+		}
+		if result.result.SchemaVersion != query.QueryPackSchemaVersion {
+			t.Fatalf("unexpected schema_version: %q", result.result.SchemaVersion)
+		}
+	})
+
+	t.Run("unsafe label", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "")
+		repo.Repo = "https://provider.example/private"
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if result.trusted || result.refusalReason != "unsafe_label" || result.inputTrustState != "cannot_verify_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if result.recordSelection {
+			t.Fatalf("expected recordSelection false")
+		}
+	})
+
+	t.Run("stale input", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "")
+		repo.InputObservedAt = "2025-12-31T00:00:00Z"
+
+		result := ingestRepository(repo, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC), true)
+		if result.trusted || result.refusalReason != "stale_input" || result.inputTrustState != "stale_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if !result.recordSelection {
+			t.Fatalf("expected recordSelection true")
+		}
+	})
+
+	t.Run("unsupported query pack", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		var payload map[string]any
+		readJSONFixture(t, queryPack, &payload)
+		payload["schema_version"] = "future"
+		writeJSON(t, queryPack, payload)
+		digest := writeDigest(t, queryPack)
+		repo := selectionRepo("current", "2026-w02", queryPack, digest, "")
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if result.trusted || result.refusalReason != "malformed_input" || result.inputTrustState != "cannot_verify_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if result.digest == "" {
+			t.Fatalf("expected digest on malformed query pack")
+		}
+	})
+
+	t.Run("malformed signals", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "malformed-signals.json")
+		if err := os.WriteFile(repo.PostureSignalManifest, []byte("{invalid json"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if result.trusted || result.refusalReason != "malformed_input" || result.inputTrustState != "cannot_verify_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if result.digest == "" {
+			t.Fatalf("expected digest on malformed signals")
+		}
+	})
 }
 
 func TestBuildAggregatesMovementAndRefusals(t *testing.T) {

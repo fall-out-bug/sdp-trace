@@ -74,8 +74,25 @@ func RenderPrometheus(result posture.ExportResult) (string, error) {
 }
 
 func BuildSeries(result posture.ExportResult) ([]Series, error) {
-	var series []Series
-	for _, row := range result.MetricRows {
+	metricSeries, err := buildMetricSeries(result.MetricRows)
+	if err != nil {
+		return nil, err
+	}
+	movementSeries, err := buildMovementSeries(result.MovementRows)
+	if err != nil {
+		return nil, err
+	}
+	series := make([]Series, 0, len(metricSeries)+len(movementSeries)+len(result.RefusalRows)+len(result.InputSelection))
+	series = append(series, metricSeries...)
+	series = append(series, movementSeries...)
+	series = append(series, aggregateRefusals(result.RefusalRows)...)
+	series = append(series, aggregateInputs(result.InputSelection)...)
+	return finalizeSeries(series)
+}
+
+func buildMetricSeries(rows []posture.MetricRow) ([]Series, error) {
+	series := make([]Series, 0, len(rows)*3)
+	for _, row := range rows {
 		base, err := metricLabels(row)
 		if err != nil {
 			return nil, err
@@ -86,7 +103,12 @@ func BuildSeries(result posture.ExportResult) ([]Series, error) {
 			gauge("sdp_trace_posture_metric_not_assessed", "Posture metric not assessed row count from sdp-trace evidence posture export.", base, float64(row.NotAssessedCount)),
 		)
 	}
-	for _, row := range result.MovementRows {
+	return series, nil
+}
+
+func buildMovementSeries(rows []posture.MovementRow) ([]Series, error) {
+	series := make([]Series, 0, len(rows)*4)
+	for _, row := range rows {
 		base, err := movementLabels(row)
 		if err != nil {
 			return nil, err
@@ -98,8 +120,10 @@ func BuildSeries(result posture.ExportResult) ([]Series, error) {
 			gauge("sdp_trace_posture_movement_comparable", "Posture movement comparability fact from sdp-trace evidence posture export.", base, comparableValue(row.Comparable)),
 		)
 	}
-	series = append(series, aggregateRefusals(result.RefusalRows)...)
-	series = append(series, aggregateInputs(result.InputSelection)...)
+	return series, nil
+}
+
+func finalizeSeries(series []Series) ([]Series, error) {
 	for _, item := range series {
 		if err := validateLabels(item.Labels); err != nil {
 			return nil, err

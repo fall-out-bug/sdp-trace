@@ -196,6 +196,86 @@ func TestWriteVerifierArtifactsWritesAuditConditionally(t *testing.T) {
 	}
 }
 
+func TestLoadRunEventsFiltersAndSortsEvents(t *testing.T) {
+	runDir := t.TempDir()
+	eventsDir := filepath.Join(runDir, "events")
+	if err := os.MkdirAll(eventsDir, 0o755); err != nil {
+		t.Fatalf("mkdir events: %v", err)
+	}
+
+	files := map[string]string{
+		"000002-command_started.json":     `{"event_id":"second"}`,
+		"000001-recorder_attached.json":   `{"event_id":"first"}`,
+		"000004-run_closed.json":          `{"event_id":"fourth"}`,
+		"000003-command_finished.json":    `{"event_id":"third"}`,
+		"00000x-bad-sequence.json":        `{"event_id":"bad-suffix"}`,
+		"notes.txt":                       `{"event_id":"should-skip"}`,
+		"000005-command_started-not-json": "garbage",
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(eventsDir, name), []byte(body), 0o644); err != nil {
+			t.Fatalf("write event fixture %s: %v", name, err)
+		}
+	}
+
+	events, err := loadRunEvents(runDir)
+	if err != nil {
+		t.Fatalf("loadRunEvents: %v", err)
+	}
+	if got, want := len(events), 4; got != want {
+		t.Fatalf("expected %d events, got %d", want, got)
+	}
+	got := []string{}
+	for _, event := range events {
+		got = append(got, event.EventID)
+	}
+	want := []string{"first", "second", "third", "fourth"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("expected events %v, got %v", want, got)
+	}
+}
+
+func TestLoadRunEventsReturnsNoEventFilesForEmptyDirectory(t *testing.T) {
+	runDir := t.TempDir()
+	eventsDir := filepath.Join(runDir, "events")
+	if err := os.MkdirAll(eventsDir, 0o755); err != nil {
+		t.Fatalf("mkdir events: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(eventsDir, "notes.txt"), []byte("not-json"), 0o644); err != nil {
+		t.Fatalf("write notes: %v", err)
+	}
+
+	_, err := loadRunEvents(runDir)
+	if err == nil || err.Error() != "no event files" {
+		t.Fatalf("expected no event files error, got %v", err)
+	}
+}
+
+func TestLoadRunEventsReturnsParseErrorForInvalidJSON(t *testing.T) {
+	runDir := t.TempDir()
+	eventsDir := filepath.Join(runDir, "events")
+	if err := os.MkdirAll(eventsDir, 0o755); err != nil {
+		t.Fatalf("mkdir events: %v", err)
+	}
+	path := filepath.Join(eventsDir, "000001-command_started.json")
+	if err := os.WriteFile(path, []byte("{bad-json"), 0o644); err != nil {
+		t.Fatalf("write malformed event: %v", err)
+	}
+
+	_, err := loadRunEvents(runDir)
+	if err == nil || !strings.Contains(err.Error(), "invalid event 000001-command_started.json") {
+		t.Fatalf("expected invalid event error, got %v", err)
+	}
+}
+
+func TestLoadRunEventsRequiresEventsDirectory(t *testing.T) {
+	runDir := t.TempDir()
+	_, err := loadRunEvents(runDir)
+	if err == nil || !strings.Contains(err.Error(), "events directory missing:") {
+		t.Fatalf("expected events directory missing error, got %v", err)
+	}
+}
+
 func runAndCapture(t *testing.T, command []string, useDefault bool, contract string) string {
 	t.Helper()
 	echo := mustFindCommand(t, "echo")

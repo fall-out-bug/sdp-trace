@@ -278,6 +278,14 @@ type repositoryIngest struct {
 }
 
 func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) repositoryIngest {
+	checked := ingestRepositoryChecks(repo, cutoff, hasCutoff)
+	if !checked.trusted {
+		return checked
+	}
+	return ingestRepositoryArtifacts(repo)
+}
+
+func ingestRepositoryChecks(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) repositoryIngest {
 	if err := validateRepoLabels(repo); err != nil {
 		return refusedInput("unsafe_label", "cannot_verify_input", "", false)
 	}
@@ -287,12 +295,19 @@ func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) r
 	if hasCutoff && isStale(repo.InputObservedAt, cutoff) {
 		return refusedInput("stale_input", "stale_input", "", true)
 	}
+	return repositoryIngest{trusted: true}
+}
+
+func ingestRepositoryArtifacts(repo RepositoryWindow) repositoryIngest {
 	digest, err := verifyDigestManifest(repo.ArtifactDigestManifest, repo.QueryPackResult)
 	if err != nil {
 		return refusedInput(reasonForDigestErr(err), trustForDigestErr(err), "", true)
 	}
 	result, err := readQueryPack(repo.QueryPackResult)
-	if err != nil || result.SchemaVersion != query.QueryPackSchemaVersion || result.QueryPackID != query.QueryPackForensicsBasic {
+	if err != nil {
+		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
+	}
+	if !isSupportedQueryPack(result) {
 		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
 	}
 	signals, err := readSignals(repo.PostureSignalManifest)
@@ -300,6 +315,10 @@ func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) r
 		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
 	}
 	return repositoryIngest{trusted: true, digest: digest, result: result, signals: signals}
+}
+
+func isSupportedQueryPack(result query.QueryPackResult) bool {
+	return result.SchemaVersion == query.QueryPackSchemaVersion && result.QueryPackID == query.QueryPackForensicsBasic
 }
 
 func refusedInput(reason, trustState, digest string, recordSelection bool) repositoryIngest {

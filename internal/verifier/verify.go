@@ -178,38 +178,64 @@ func mustMarshalJSON(value any) []byte {
 }
 
 func loadRunEvents(runDir string) ([]trace.Event, error) {
-	files, err := os.ReadDir(filepath.Join(runDir, "events"))
+	eventDir := filepath.Join(runDir, "events")
+	eventFiles, err := loadRunEventFiles(eventDir)
 	if err != nil {
 		return nil, fmt.Errorf("events directory missing: %w", err)
 	}
+	sort.Strings(eventFiles)
+	return parseRunEventFiles(eventFiles)
+}
+
+func loadRunEventFiles(eventDir string) ([]string, error) {
+	files, err := os.ReadDir(eventDir)
+	if err != nil {
+		return nil, err
+	}
+
 	eventFiles := make([]string, 0, len(files))
 	for _, entry := range files {
-		if entry.IsDir() {
+		if !isValidEventFile(entry) {
 			continue
 		}
-		name := entry.Name()
-		if !strings.HasSuffix(name, ".json") {
-			continue
-		}
-		_, err := trace.EventSeqFromFilename(name)
-		if err != nil {
-			continue
-		}
-		eventFiles = append(eventFiles, filepath.Join(runDir, "events", name))
+		eventFiles = append(eventFiles, filepath.Join(eventDir, entry.Name()))
 	}
+	return eventFiles, nil
+}
+
+func isValidEventFile(entry os.DirEntry) bool {
+	if entry.IsDir() {
+		return false
+	}
+	name := entry.Name()
+	if !strings.HasSuffix(name, ".json") {
+		return false
+	}
+	_, err := trace.EventSeqFromFilename(name)
+	return err == nil
+}
+
+func parseRunEventFiles(eventFiles []string) ([]trace.Event, error) {
 	if len(eventFiles) == 0 {
 		return nil, errors.New("no event files")
 	}
-	sort.Strings(eventFiles)
 	events := make([]trace.Event, 0, len(eventFiles))
 	for _, path := range eventFiles {
-		var event trace.Event
-		if err := trace.ReadJSON(context.Background(), path, &event); err != nil {
+		event, err := parseRunEvent(path)
+		if err != nil {
 			return nil, fmt.Errorf("invalid event %s: %w", filepath.Base(path), err)
 		}
 		events = append(events, event)
 	}
 	return events, nil
+}
+
+func parseRunEvent(path string) (trace.Event, error) {
+	var event trace.Event
+	if err := trace.ReadJSON(context.Background(), path, &event); err != nil {
+		return trace.Event{}, err
+	}
+	return event, nil
 }
 
 func verifyChain(events []trace.Event, expectedHead string) (bool, string) {
