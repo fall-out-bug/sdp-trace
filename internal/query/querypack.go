@@ -474,20 +474,19 @@ func queryShortName(queryName string) string {
 	return strings.TrimPrefix(queryName, "forensics-")
 }
 
-var sourceStateMap = map[string]string{
-	"pass":                   RowStatePresent,
-	"":                       RowStateCannotVerify,
-	"fail":                   RowStateIssueObserved,
-	RowStateCannotVerify:     RowStateCannotVerify,
-	RowStateNotAssessed:      RowStateNotAssessed,
-	RowStateMissingTelemetry: RowStateMissingTelemetry,
-	RowStateUnsupported:      RowStateUnsupported,
-	RowStateNotIntegrated:    RowStateNotIntegrated,
-	RowStateRetentionLimited: RowStateRetentionLimited,
-}
-
 func mapSourceState(state string) string {
-	if mapped, ok := sourceStateMap[state]; ok {
+	sourceStates := map[string]string{
+		"pass":                   RowStatePresent,
+		"":                       RowStateCannotVerify,
+		"fail":                   RowStateIssueObserved,
+		RowStateCannotVerify:     RowStateCannotVerify,
+		RowStateNotAssessed:      RowStateNotAssessed,
+		RowStateMissingTelemetry: RowStateMissingTelemetry,
+		RowStateUnsupported:      RowStateUnsupported,
+		RowStateNotIntegrated:    RowStateNotIntegrated,
+		RowStateRetentionLimited: RowStateRetentionLimited,
+	}
+	if mapped, ok := sourceStates[state]; ok {
 		return mapped
 	}
 	return RowStateCannotVerify
