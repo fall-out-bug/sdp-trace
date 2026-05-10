@@ -78,20 +78,25 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
-	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+	if topLevelHelp(args) {
 		printUsage(stdout)
 		return 0
 	}
-	cmd := args[0]
-	cmdArgs := args[1:]
+	return dispatchCommand(args[0], args[1:], stdout, stderr)
+}
 
+func topLevelHelp(args []string) bool {
+	return len(args) == 0 || isHelpArg(args[0])
+}
+
+func dispatchCommand(cmd string, args []string, stdout, stderr io.Writer) int {
 	handler, ok := commandHandlers[cmd]
 	if !ok {
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		printUsage(stderr)
 		return 1
 	}
-	return handler(context.Background(), cmdArgs, stdout, stderr)
+	return handler(context.Background(), args, stdout, stderr)
 }
 
 func runObserveCommand(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -107,16 +112,24 @@ func runSubcommand(args []string, stdout, stderr io.Writer, label, usage string,
 		fmt.Fprintln(stderr, usage)
 		return exitUsage
 	}
-	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+	if isHelpArg(args[0]) {
 		fmt.Fprintf(stdout, "Usage: sdp-trace %s\n", label)
 		return 0
 	}
-	handler, ok := handlers[args[0]]
+	return dispatchSubcommand(args[0], args[1:], stdout, stderr, label, handlers)
+}
+
+func dispatchSubcommand(cmd string, args []string, stdout, stderr io.Writer, label string, handlers map[string]subcommandHandler) int {
+	handler, ok := handlers[cmd]
 	if !ok {
-		fmt.Fprintf(stderr, "unknown %s command: %s\n", subcommandName(label), args[0])
+		fmt.Fprintf(stderr, "unknown %s command: %s\n", subcommandName(label), cmd)
 		return exitUsage
 	}
-	return handler(args[1:], stdout, stderr)
+	return handler(args, stdout, stderr)
+}
+
+func isHelpArg(arg string) bool {
+	return arg == "help" || arg == "--help" || arg == "-h"
 }
 
 func subcommandName(label string) string {
