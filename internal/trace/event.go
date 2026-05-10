@@ -99,25 +99,32 @@ func writeCanonicalList(buf *bytes.Buffer, value []any) error {
 }
 
 func writeCanonicalScalar(buf *bytes.Buffer, value any) error {
+	return writeCanonicalScalarValue(buf, value)
+}
+
+func writeCanonicalScalarValue(buf *bytes.Buffer, value any) error {
 	switch typed := value.(type) {
 	case string:
 		writeJSONString(buf, typed)
 	case bool:
-		return writeCanonicalBool(buf, typed)
+		writeJSONBool(buf, typed)
 	case nil:
-		buf.WriteString("null")
+		writeJSONNull(buf)
 	default:
-		if writeNumericScalar(buf, typed) {
-			return nil
-		}
-		return writeJSONFallback(buf, typed)
+		return writeCanonicalFallbackScalar(buf, typed)
 	}
 	return nil
 }
 
-func writeCanonicalBool(buf *bytes.Buffer, value bool) error {
-	writeJSONBool(buf, value)
-	return nil
+func writeJSONNull(buf *bytes.Buffer) {
+	buf.WriteString("null")
+}
+
+func writeCanonicalFallbackScalar(buf *bytes.Buffer, value any) error {
+	if writeNumericScalar(buf, value) {
+		return nil
+	}
+	return writeJSONFallback(buf, value)
 }
 
 func invalidFloat(value float64) bool {

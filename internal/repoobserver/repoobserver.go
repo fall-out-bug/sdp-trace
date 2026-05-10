@@ -595,20 +595,29 @@ func gapsFor(surfaces []Surface) []Gap {
 }
 
 func combineProofState(current, next string) string {
-	switch next {
-	case StateCannotVerify:
-		return StateCannotVerify
-	case StateFail:
-		return StateFail
-	case StateNotAssessed:
-		return combineNotAssessedProofState(current)
-	default:
-		return current
-	}
+	return combinedProofState(current, next)
 }
 
-func combineNotAssessedProofState(current string) string {
-	if current == StatePass {
+func combinedProofState(current, next string) string {
+	if proofStateDominates(next) {
+		return StateCannotVerify
+	}
+	if proofStateFails(next) {
+		return StateFail
+	}
+	return combineNonFailingProofState(current, next)
+}
+
+func proofStateDominates(state string) bool {
+	return state == StateCannotVerify
+}
+
+func proofStateFails(state string) bool {
+	return state == StateFail
+}
+
+func combineNonFailingProofState(current, next string) string {
+	if current == StatePass && next == StateNotAssessed {
 		return StateNotAssessed
 	}
 	return current

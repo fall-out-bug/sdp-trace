@@ -987,25 +987,37 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 }
 
 func completeRoleResult(result ReviewerResult, role ReviewRole, packet Packet, workDir string, baseline *workingTreeBaseline, output []byte, timedOut bool, runErr error) ReviewerResult {
-	if timedOut {
-		result.Status = StatusTimedOut
-		result.Reason = "runner_timed_out"
-		return result
-	}
-	if applyRunnerError(&result, runErr) != nil {
-		return result
-	}
-	if emptyReviewerOutput(output) {
-		result.Status = StatusEmptyOutput
-		result.Reason = "runner_empty_output"
-		return result
+	if completed, ok := completeUnparsedRoleResult(result, output, timedOut, runErr); ok {
+		return completed
 	}
 	parsed, err := parseReviewerOutput(result, role, packet, output)
-	if err != nil {
-		parsed.Status = StatusParseFailed
-		parsed.Reason = "runner_output_parse_failed"
+	return completeParsedRoleResult(markRoleParseFailure(parsed, err), role, workDir, baseline)
+}
+
+func completeUnparsedRoleResult(result ReviewerResult, output []byte, timedOut bool, runErr error) (ReviewerResult, bool) {
+	switch {
+	case timedOut:
+		result.Status = StatusTimedOut
+		result.Reason = "runner_timed_out"
+		return result, true
+	case applyRunnerError(&result, runErr) != nil:
+		return result, true
+	case emptyReviewerOutput(output):
+		result.Status = StatusEmptyOutput
+		result.Reason = "runner_empty_output"
+		return result, true
+	default:
+		return result, false
 	}
-	return completeParsedRoleResult(parsed, role, workDir, baseline)
+}
+
+func markRoleParseFailure(result ReviewerResult, err error) ReviewerResult {
+	if err == nil {
+		return result
+	}
+	result.Status = StatusParseFailed
+	result.Reason = "runner_output_parse_failed"
+	return result
 }
 
 func completeParsedRoleResult(parsed ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) ReviewerResult {
