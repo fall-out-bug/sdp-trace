@@ -153,50 +153,15 @@ func BuildGitHubActionsWithFetcher(runsRoot, reportDir string, env map[string]st
 		Actor:      env["GITHUB_ACTOR"],
 	}
 
-	runArtifacts, err := hashRunArtifacts(runsRoot)
-	if err != nil {
+	if err := hydrateGitHubArtifacts(&record, runsRoot, reportDir); err != nil {
 		return Record{}, err
 	}
-	record.RunArtifacts = runArtifacts
-	if reportDir != "" {
-		reportArtifacts, err := hashReportArtifacts(reportDir)
-		if err != nil {
-			return Record{}, err
-		}
-		record.ReportArtifacts = reportArtifacts
-	}
-
-	missing := missingGitHubIdentity(env)
-	if len(missing) > 0 {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingCIIdentity)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceSameJob)
-		record.MissingIdentityFields = missing
+	if record, blocked := handleGitHubIdentityChecks(record, env); blocked {
 		return record, nil
 	}
-	oidcMissing := missingGitHubOIDC(env)
-	if len(oidcMissing) > 0 {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingCIOIDC)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
-		record.MissingIdentityFields = oidcMissing
+	if record, blocked := handleGitHubOIDCChecks(record, env, fetcher); blocked {
 		return record, nil
 	}
-	token, err := fetcher(env)
-	if err != nil {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonInvalidCIOIDC)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
-		return record, nil
-	}
-	claims, err := parseOIDCClaims(token)
-	if err != nil || !claimsMatchEnvironment(claims, env) {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonInvalidCIOIDC)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
-		return record, nil
-	}
-	record.OIDC = &claims
 	record.Status = StatusPass
 	record.TrustScope = TrustScopeCIWitnessed
 	record.EstablishedTrustScope = TrustScopeCIWitnessed
@@ -204,6 +169,55 @@ func BuildGitHubActionsWithFetcher(runsRoot, reportDir string, env map[string]st
 	record.ReasonCodes = []string{ReasonCIIdentityPresent}
 	record.ProfileStates = defaultProfileStates(statePass, independenceCIJob)
 	return record, nil
+}
+
+func hydrateGitHubArtifacts(record *Record, runsRoot, reportDir string) error {
+	runArtifacts, err := hashRunArtifacts(runsRoot)
+	if err != nil {
+		return err
+	}
+	record.RunArtifacts = runArtifacts
+	if reportDir != "" {
+		reportArtifacts, err := hashReportArtifacts(reportDir)
+		if err != nil {
+			return err
+		}
+		record.ReportArtifacts = reportArtifacts
+	}
+	return nil
+}
+
+func handleGitHubIdentityChecks(record Record, env map[string]string) (Record, bool) {
+	missing := missingGitHubIdentity(env)
+	if len(missing) > 0 {
+		return applyGitHubFailure(record, ReasonMissingCIIdentity, independenceSameJob, missing), true
+	}
+	oidcMissing := missingGitHubOIDC(env)
+	if len(oidcMissing) > 0 {
+		return applyGitHubFailure(record, ReasonMissingCIOIDC, independenceCIJob, oidcMissing), true
+	}
+	return record, false
+}
+
+func handleGitHubOIDCChecks(record Record, env map[string]string, fetcher TokenFetcher) (Record, bool) {
+	token, err := fetcher(env)
+	if err != nil {
+		return applyGitHubFailure(record, ReasonInvalidCIOIDC, independenceCIJob, nil), true
+	}
+	claims, err := parseOIDCClaims(token)
+	if err != nil || !claimsMatchEnvironment(claims, env) {
+		return applyGitHubFailure(record, ReasonInvalidCIOIDC, independenceCIJob, nil), true
+	}
+	record.OIDC = &claims
+	return record, false
+}
+
+func applyGitHubFailure(record Record, reason, independence string, missing []string) Record {
+	applyProfileState(&record, StatusCannotVerify, stateCannotVerify, reason)
+	record.TrustScope = TrustScopeLocalObserved
+	record.ProfileStates = defaultProfileStates(stateCannotVerify, independence)
+	record.MissingIdentityFields = missing
+	return record
 }
 
 func WriteGitHubActions(outPath, runsRoot, reportDir string, env map[string]string) (Record, error) {

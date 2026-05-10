@@ -3,6 +3,7 @@ package witness
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -110,6 +111,58 @@ func TestGitHubActionsWitnessRequiresOIDCClaims(t *testing.T) {
 	}
 	if len(record.MissingIdentityFields) == 0 {
 		t.Fatalf("missing oidc fields not recorded")
+	}
+}
+
+func TestGitHubActionsWitnessOIDCFetcherErrorCannotVerify(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"id":"run"}`), 0o644); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+
+	record, err := BuildGitHubActionsWithFetcher(root, "", completeGitHubEnv(), func(map[string]string) (string, error) {
+		return "", errors.New("oidc broker failed")
+	})
+	if err != nil {
+		t.Fatalf("BuildGitHubActions: %v", err)
+	}
+	if record.Status != StatusCannotVerify {
+		t.Fatalf("status = %s", record.Status)
+	}
+	if record.Reason != ReasonInvalidCIOIDC {
+		t.Fatalf("reason = %s", record.Reason)
+	}
+	if record.TrustScope != TrustScopeLocalObserved {
+		t.Fatalf("trust_scope = %s", record.TrustScope)
+	}
+}
+
+func TestGitHubActionsWitnessMismatchedOIDCClaimsCannotVerify(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"id":"run"}`), 0o644); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+
+	record, err := BuildGitHubActionsWithFetcher(root, "", completeGitHubEnv(), func(map[string]string) (string, error) {
+		return fakeOIDCToken(t, map[string]any{
+			"iss":        githubOIDCIssuer,
+			"aud":        "sdp-trace",
+			"repository": "org/other",
+			"ref":        "refs/heads/main",
+			"sha":        "abc123",
+		}), nil
+	})
+	if err != nil {
+		t.Fatalf("BuildGitHubActions: %v", err)
+	}
+	if record.Status != StatusCannotVerify {
+		t.Fatalf("status = %s", record.Status)
+	}
+	if record.Reason != ReasonInvalidCIOIDC {
+		t.Fatalf("reason = %s", record.Reason)
+	}
+	if record.TrustScope != TrustScopeLocalObserved {
+		t.Fatalf("trust_scope = %s", record.TrustScope)
 	}
 }
 
