@@ -17,8 +17,8 @@
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
 | CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
-| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/adaptercapture.runBindingCondition`, `internal/adaptercapture.overclaimCondition`, `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/harnessobs.safeOutDir`, `internal/harnessobs.findUnsafeRawEventAt`, `internal/harnessobs.findUnsafeAt`, `internal/harnessobs.validateEvent`, `internal/harnessobs.normalizeRawEvents`, `internal/harnessobs.shellFields`, `internal/posture.Build`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, `internal/forensic.rawReferenceCondition`, and `internal/demo.witnessBindingState` were decomposed below 15. |
-| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `adaptercapture` (83.4%), `demo` (73.8%), `forensic` (84.0%), `harnessobs` (71.3%), `interaction` (67.3%), `posture` (87.8%), `prreview` (73.9%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
+| Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; `internal/adaptercapture.runBindingCondition`, `internal/adaptercapture.overclaimCondition`, `internal/harnessobs.normalizeOpenCodeRawLine`, `internal/harnessobs.LoadSessionProfile`, `internal/harnessobs.CollectSession`, `internal/harnessobs.safeOutDir`, `internal/harnessobs.findUnsafeRawEventAt`, `internal/harnessobs.findUnsafeAt`, `internal/harnessobs.validateEvent`, `internal/harnessobs.normalizeRawEvents`, `internal/harnessobs.shellFields`, `internal/managed.witnessCondition`, `internal/posture.Build`, `internal/trace.writeCanonicalJSON`, `internal/interaction.ValidateEvent`, `internal/prreview.Validate`, `internal/prreview.runRole`, `internal/prreview.BuildPacket`, `internal/witness.BuildCustomerPKI`, `internal/witness.validateCIEnvelope`, `internal/forensic.rawReferenceCondition`, and `internal/demo.witnessBindingState` were decomposed below 15. |
+| Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `adaptercapture` (84.3%), `demo` (73.8%), `forensic` (84.0%), `harnessobs` (71.3%), `interaction` (67.3%), `managed` (88.1%), `posture` (87.8%), `prreview` (73.9%), `trace`, `verifier`, and `witness` (71.2%) were improved. |
 
 ## Command Evidence
 
@@ -28,7 +28,7 @@
 | `go run ./cmd/sdp-trace pr-review --help` | fail_expected | CLI does not support nested `--help`; global help is the current source of command contracts. |
 | `go run ./cmd/sdp-trace pr-review packet --help` | fail_expected | CLI reports `unknown flag --help`; docs were compared against global help. |
 | `rg -n -- '--context\|--verification\|This example will show\|controlled-pilot ready\|sidecar trust substrate' README.md docs examples` | pass_absent | Command exits 1 because no matches remain. |
-| `go test ./... -coverprofile=/tmp/sdp-trace-adaptercapture-overclaim-full.out` | pass | Total coverage: 73.1%. |
+| `go test ./... -coverprofile=/tmp/sdp-trace-managed-witness-full.out` | pass | Total coverage: 73.1%. |
 | `go test ./tools/crapcheck -cover` | pass | Tool coverage: 50.6%. |
 | `golangci-lint run ./...` | pass | No findings after fixes. |
 | `go vet ./...` | pass | Modern Go suspicious-construct sweep. |
@@ -42,10 +42,11 @@
 | `gocyclo -over 15 internal/harnessobs/harnessobs.go` | pass | All production harness observation functions are now below 15. |
 | `gocyclo -over 15 internal/demo/demo.go` | pass | `internal/demo.witnessBindingState` was decomposed below 15; no production demo function exceeds 15. |
 | `gocyclo -over 15 internal/posture/posture.go` | pass | `internal/posture.Build` was decomposed below 15; no production posture function exceeds 15. |
-| `gocyclo -over 15 internal/adaptercapture/adaptercapture.go` | fail_assessed_gap | `internal/adaptercapture.runBindingCondition` was decomposed below 15; remaining production adaptercapture offender is `overclaimCondition`. |
+| `gocyclo -over 15 internal/adaptercapture/adaptercapture.go` | pass | `internal/adaptercapture.runBindingCondition` and `internal/adaptercapture.overclaimCondition` were decomposed below 15; no production adaptercapture function exceeds 15. |
+| `gocyclo -over 15 internal/managed/managed.go` | pass | `internal/managed.witnessCondition` was decomposed below 15; no production managed-harness function exceeds 15. |
 | `gocyclo -over 15 .` | fail_assessed_gap | Existing production and test functions exceed 15. |
 | `gocognit -over 20 .` | fail_assessed_gap | Existing production and test functions exceed 20. |
-| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-adaptercapture-overclaim-full-func.txt -gocyclo /tmp/sdp-trace-adaptercapture-overclaim-full-gocyclo.txt -threshold 5` | fail_assessed_gap | 390 functions exceed strict CRAP threshold 5; `internal/adaptercapture.overclaimCondition` was removed from the over-15 offender list, but the repo-wide strict target remains open. |
+| `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-managed-witness-full-func.txt -gocyclo /tmp/sdp-trace-managed-witness-full-gocyclo.txt -threshold 5` | fail_assessed_gap | 390 functions exceed strict CRAP threshold 5; `internal/managed.witnessCondition` was removed from the over-15 offender list, but extracted helpers keep the repo-wide strict target open. |
 
 ## Coverage Delta
 
@@ -100,7 +101,7 @@ Next decomposition candidates before stronger MVP-readiness claim:
 3. `internal/recorder.Run`
 4. `internal/ciartifact.evaluateFamily`
 5. `cmd/sdp-trace.runGateExplain`
-6. `internal/managed.witnessCondition`
+6. `internal/authority.evaluateAction`
 
 ## External Evidence Boundary
 
@@ -132,6 +133,7 @@ this draft PR must not be treated as approved to merge.
 | Posture Build refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Trust-state/refusal equivalence approved: unsafe labels, malformed paths, stale inputs, digest failures, malformed query packs, malformed signal manifests, trusted grouping, and export fields preserve prior behavior. |
 | Adapter run-binding refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Run-binding equivalence approved: run id/nonce mismatch remains `fail`, and missing binding, late same-chain events, missing same-chain hashes, unbound bundles, late bundles, and unsupported binding modes remain `cannot_verify` with unchanged reason codes. |
 | Adapter overclaim refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Capture-depth overclaim equivalence approved: reconstructable claims without sufficient evidence and without cap annotation still fail with `capture_depth_overclaimed`; positive cap/sufficient-evidence paths were also covered after review. |
+| Managed witness refactor follow-up | `openrouter/qwen/qwen3.6-plus` | APPROVE | Witness-binding equivalence approved. Reviewer noted a possible missing `WitnessID` guard, rejected as false positive after checking the guard remains at function entry and focused tests pass. |
 
 Unusable attempts:
 

@@ -396,24 +396,44 @@ func witnessCondition(input Input) Condition {
 	if witness.Status != StatePass || witness.FreshnessState != StatePass {
 		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness is missing pass/freshness state", "Supply fresh managed witness evidence.")
 	}
-	if len(input.Run.OutputArtifacts) == 0 || len(witness.ArtifactDigests) == 0 {
+	if missingWitnessArtifacts(input.Run, witness) {
 		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness artifact binding is required", "Supply managed witness evidence with output artifact digests.")
 	}
-	boundary := input.Run.ManagedBoundaryEnrolled
-	if boundary == nil ||
-		witness.RunID != input.Run.RunID ||
-		witness.RunNonce != input.Run.RunNonce ||
-		witness.SourceCommit != input.Run.SourceCommit ||
-		witness.ManagedPolicyDigest != input.Policy.PolicyProvenance.Digest ||
-		witness.AdapterRegistryDigest != input.Registry.Provenance.Digest ||
-		witness.EnrollmentEventDigest != boundary.EventDigest ||
-		witness.LaunchEventDigest != input.Run.ChildLaunch.EventDigest ||
-		witness.ChainHead != input.Run.ChainHead ||
-		witness.EventCount != input.Run.EventCount ||
-		!artifactsMatch(input.Run.OutputArtifacts, witness.ArtifactDigests) {
+	if managedWitnessMismatches(input) {
 		return fail("managed_witness_bound", "managed_witness_mismatch", "managed witness does not bind the selected run, policy, registry, chain, or artifacts", "Regenerate managed witness evidence for the selected run.")
 	}
 	return pass("managed_witness_bound", "managed_witness_bound", "managed witness binds source, run, policy, registry, chain, and artifacts")
+}
+
+func missingWitnessArtifacts(run RunEvidence, witness Witness) bool {
+	return len(run.OutputArtifacts) == 0 || len(witness.ArtifactDigests) == 0
+}
+
+func managedWitnessMismatches(input Input) bool {
+	boundary := input.Run.ManagedBoundaryEnrolled
+	return boundary == nil ||
+		!witnessMatchesRun(input.Witness, input.Run) ||
+		!witnessMatchesAuthority(input.Witness, input.Policy, input.Registry) ||
+		!witnessMatchesEvents(input.Witness, input.Run, *boundary) ||
+		!artifactsMatch(input.Run.OutputArtifacts, input.Witness.ArtifactDigests)
+}
+
+func witnessMatchesRun(witness Witness, run RunEvidence) bool {
+	return witness.RunID == run.RunID &&
+		witness.RunNonce == run.RunNonce &&
+		witness.SourceCommit == run.SourceCommit &&
+		witness.ChainHead == run.ChainHead &&
+		witness.EventCount == run.EventCount
+}
+
+func witnessMatchesAuthority(witness Witness, policy Policy, registry Registry) bool {
+	return witness.ManagedPolicyDigest == policy.PolicyProvenance.Digest &&
+		witness.AdapterRegistryDigest == registry.Provenance.Digest
+}
+
+func witnessMatchesEvents(witness Witness, run RunEvidence, boundary ManagedBoundaryEnrolled) bool {
+	return witness.EnrollmentEventDigest == boundary.EventDigest &&
+		witness.LaunchEventDigest == run.ChildLaunch.EventDigest
 }
 
 func overrideCondition(input Input) Condition {
