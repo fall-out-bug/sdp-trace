@@ -453,87 +453,19 @@ func SynthesizeLedger(packet Packet, runs RunSet, existing *Ledger) Ledger {
 }
 
 func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) Validation {
-	required := map[string]bool{}
 	roleByID := map[string]ReviewRole{}
-	for _, plane := range profile.RequiredPlanes {
-		if plane != "" {
-			required[plane] = true
-		}
-	}
 	for _, role := range profile.Roles {
 		roleByID[role.RoleID] = role
 	}
-	planeResults := make([]PlaneResult, 0, len(required))
+
+	required := requiredPlaneSet(profile.RequiredPlanes)
 	reasons := []string{}
 	nextActions := []string{}
-	usableCount := 0
-	cannotVerify := false
-	if runs.PacketDigest != packet.PacketDigest || ledger.PacketDigest != packet.PacketDigest {
-		cannotVerify = true
-		reasons = append(reasons, "packet_digest_mismatch")
-		nextActions = append(nextActions, "Create a new packet and rerun review for the current head.")
-	}
-	for _, result := range runs.Results {
-		if result.PacketDigest != packet.PacketDigest {
-			cannotVerify = true
-			reasons = append(reasons, "result_packet_digest_mismatch:"+safeID(result.ReviewRunID))
-			nextActions = append(nextActions, "Discard stale reviewer results and rerun review for the current packet.")
-		}
-	}
-	for plane := range required {
-		best := PlaneResult{Plane: plane, Status: StateNotAssessed, Usable: false, Reason: "required_plane_not_assessed", NextAction: "Run or import a reviewer result for this plane."}
-		for _, result := range runs.Results {
-			if result.Plane != plane {
-				continue
-			}
-			best = planeResult(result)
-			if best.Usable && modelMismatchWithoutFallback(roleByID[result.RoleID], result) {
-				best.Usable = false
-				best.Status = StatusCannotVerify
-				best.Reason = "model_identity_mismatch"
-				best.NextAction = "Rerun the reviewer or record fallback provenance for the observed model."
-			}
-			if best.Usable {
-				usableCount++
-			}
-			break
-		}
-		if best.Status == CoverageCannotVerify || best.Status == StatusTimedOut || best.Status == StatusEmptyOutput || best.Status == StatusOffTask || best.Status == StatusParseFailed || best.Status == StatusCannotVerify {
-			cannotVerify = true
-		}
-		if best.Reason != "" {
-			reasons = append(reasons, fmt.Sprintf("%s:%s", plane, best.Status))
-		}
-		if best.NextAction != "" && !best.Usable {
-			nextActions = append(nextActions, best.NextAction)
-		}
-		planeResults = append(planeResults, best)
-	}
-	sort.Slice(planeResults, func(i, j int) bool { return planeResults[i].Plane < planeResults[j].Plane })
-	unresolved := false
-	safeFindings := make([]LedgerFinding, 0, len(ledger.Findings))
-	for _, finding := range ledger.Findings {
-		finding.Summary = safeText(finding.Summary)
-		if (finding.Severity == SeverityCritical || finding.Severity == SeverityMajor) && finding.Disposition == DispositionUnresolvedReviewBlocker {
-			unresolved = true
-		}
-		if !citationResolvable(packet, finding.Citation) {
-			cannotVerify = true
-			reasons = append(reasons, "finding_citation_cannot_verify")
-		}
-		safeFindings = append(safeFindings, finding)
-	}
-	state := CoverageSatisfied
-	switch {
-	case cannotVerify:
-		state = CoverageCannotVerify
-	case len(required) == 0 || usableCount == 0:
-		state = CoverageNotAssessed
-	case usableCount < len(required):
-		state = CoveragePartial
-	case unresolved:
-		state = CoverageUnresolved
-	}
+	cannotVerify := appendDigestValidation(packet, runs, ledger, &reasons, &nextActions)
+	planeResults, usableCount, planesCannotVerify := validateRequiredPlanes(required, roleByID, runs, &reasons, &nextActions)
+	safeFindings, unresolved, findingsCannotVerify := validateLedgerFindings(packet, ledger, &reasons)
+	state := reviewCoverageState(required, usableCount, cannotVerify || planesCannotVerify || findingsCannotVerify, unresolved)
+
 	return Validation{
 		SchemaVersion:       SchemaVersionValidation,
 		PacketDigest:        packet.PacketDigest,
@@ -547,6 +479,120 @@ func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) 
 		Findings:            safeFindings,
 		Reasons:             uniqueStrings(reasons),
 		NextActions:         uniqueStrings(nextActions),
+	}
+}
+
+func requiredPlaneSet(planes []string) map[string]bool {
+	required := map[string]bool{}
+	for _, plane := range planes {
+		if plane != "" {
+			required[plane] = true
+		}
+	}
+	return required
+}
+
+func appendDigestValidation(packet Packet, runs RunSet, ledger Ledger, reasons, nextActions *[]string) bool {
+	cannotVerify := false
+	if runs.PacketDigest != packet.PacketDigest || ledger.PacketDigest != packet.PacketDigest {
+		cannotVerify = true
+		*reasons = append(*reasons, "packet_digest_mismatch")
+		*nextActions = append(*nextActions, "Create a new packet and rerun review for the current head.")
+	}
+	for _, result := range runs.Results {
+		if result.PacketDigest != packet.PacketDigest {
+			cannotVerify = true
+			*reasons = append(*reasons, "result_packet_digest_mismatch:"+safeID(result.ReviewRunID))
+			*nextActions = append(*nextActions, "Discard stale reviewer results and rerun review for the current packet.")
+		}
+	}
+	return cannotVerify
+}
+
+func validateRequiredPlanes(required map[string]bool, roleByID map[string]ReviewRole, runs RunSet, reasons, nextActions *[]string) ([]PlaneResult, int, bool) {
+	planeResults := make([]PlaneResult, 0, len(required))
+	usableCount := 0
+	cannotVerify := false
+	for plane := range required {
+		best := bestPlaneResult(plane, roleByID, runs)
+		if best.Usable {
+			usableCount++
+		}
+		if planeCannotVerify(best.Status) {
+			cannotVerify = true
+		}
+		if best.Reason != "" {
+			*reasons = append(*reasons, fmt.Sprintf("%s:%s", plane, best.Status))
+		}
+		if best.NextAction != "" && !best.Usable {
+			*nextActions = append(*nextActions, best.NextAction)
+		}
+		planeResults = append(planeResults, best)
+	}
+	sort.Slice(planeResults, func(i, j int) bool { return planeResults[i].Plane < planeResults[j].Plane })
+	return planeResults, usableCount, cannotVerify
+}
+
+func bestPlaneResult(plane string, roleByID map[string]ReviewRole, runs RunSet) PlaneResult {
+	best := PlaneResult{Plane: plane, Status: StateNotAssessed, Usable: false, Reason: "required_plane_not_assessed", NextAction: "Run or import a reviewer result for this plane."}
+	for _, result := range runs.Results {
+		if result.Plane != plane {
+			continue
+		}
+		best = planeResult(result)
+		if best.Usable && modelMismatchWithoutFallback(roleByID[result.RoleID], result) {
+			best.Usable = false
+			best.Status = StatusCannotVerify
+			best.Reason = "model_identity_mismatch"
+			best.NextAction = "Rerun the reviewer or record fallback provenance for the observed model."
+		}
+		break
+	}
+	return best
+}
+
+func planeCannotVerify(status string) bool {
+	switch status {
+	// StatusCannotVerify and CoverageCannotVerify currently share the same
+	// wire value. Plane results carry reviewer statuses, so use the status
+	// constant here and keep coverage-state selection in reviewCoverageState.
+	case StatusCannotVerify, StatusTimedOut, StatusEmptyOutput, StatusOffTask, StatusParseFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+func validateLedgerFindings(packet Packet, ledger Ledger, reasons *[]string) ([]LedgerFinding, bool, bool) {
+	unresolved := false
+	cannotVerify := false
+	safeFindings := make([]LedgerFinding, 0, len(ledger.Findings))
+	for _, finding := range ledger.Findings {
+		finding.Summary = safeText(finding.Summary)
+		if (finding.Severity == SeverityCritical || finding.Severity == SeverityMajor) && finding.Disposition == DispositionUnresolvedReviewBlocker {
+			unresolved = true
+		}
+		if !citationResolvable(packet, finding.Citation) {
+			cannotVerify = true
+			*reasons = append(*reasons, "finding_citation_cannot_verify")
+		}
+		safeFindings = append(safeFindings, finding)
+	}
+	return safeFindings, unresolved, cannotVerify
+}
+
+func reviewCoverageState(required map[string]bool, usableCount int, cannotVerify, unresolved bool) string {
+	switch {
+	case cannotVerify:
+		return CoverageCannotVerify
+	case len(required) == 0 || usableCount == 0:
+		return CoverageNotAssessed
+	case usableCount < len(required):
+		return CoveragePartial
+	case unresolved:
+		return CoverageUnresolved
+	default:
+		return CoverageSatisfied
 	}
 }
 
