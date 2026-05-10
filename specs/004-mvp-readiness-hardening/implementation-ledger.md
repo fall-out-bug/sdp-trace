@@ -14,7 +14,7 @@
 | Russian docs parity | deferred_scope | Russian command reference routes command contract to English canonical section until full bilingual parity is implemented. |
 | Placeholder examples | pass_local | Placeholder/evidence-boundary labels added to first-class example READMEs. |
 | Lint | pass_local | `golangci-lint run ./...` exited 0 after authority and telemetry fixes. |
-| CI lint enforcement | pass_pending_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v8` at `v1.62.0`. GitHub CI is not yet observed for this branch. |
+| CI lint enforcement | pass_ci | `.github/workflows/ci.yml` now runs `go test ./... -coverprofile=coverage.out` and `golangci-lint-action@v6` at `v1.62.0`. GitHub CI `verify` passed on PR #37. |
 | CRAP < 5 | assessed_gap | Strict CRAP threshold is not satisfied by existing production code; `tools/crapcheck` computes the baseline and exits non-zero at threshold 5. |
 | Complexity over 15 | assessed_gap | Existing production functions remain above `gocyclo -over 15`; top hotspot is `internal/harnessobs.normalizeOpenCodeRawLine` at 37. |
 | Coverage hardening | pass_partial | MVP-critical zero-coverage packages `contract`, `export`, and `policy` now have focused tests; `trace` improved but remains below a durable MVP floor. |
@@ -95,9 +95,8 @@ Next decomposition candidates before stronger MVP-readiness claim:
 
 ## External Evidence Boundary
 
-GitHub CI, PR-level review, and named reviewer sign-off are not yet available in
-this worktree. They remain `not_assessed` until a PR exists and live checks are
-observed.
+GitHub CI `verify` passed on PR #37. Merge approval remains `not_assessed`;
+this draft PR must not be treated as approved to merge.
 
 ## Implementation Pi Review
 
