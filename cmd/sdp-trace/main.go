@@ -363,6 +363,17 @@ func runObserveSession(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return code
 	}
+	session, observed, code, ok := collectObservedSession(opts, stderr)
+	if !ok {
+		return code
+	}
+	if !writeObserveRunPayload(stdout, stderr, session, observed, "marshal observe session") {
+		return exitCannotVerify
+	}
+	return 0
+}
+
+func collectObservedSession(opts *flagSet, stderr io.Writer) (harnessobs.SessionRun, harnessobs.Run, int, bool) {
 	session, observed, err := harnessobs.RunSession(harnessobs.SessionOptions{
 		ProfilePath: opts.stringValue("profile"),
 		OutDir:      opts.stringValue("out"),
@@ -370,12 +381,9 @@ func runObserveSession(args []string, stdout, stderr io.Writer) int {
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+		return harnessobs.SessionRun{}, harnessobs.Run{}, exitCannotVerify, false
 	}
-	if !writeObserveRunPayload(stdout, stderr, session, observed, "marshal observe session") {
-		return exitCannotVerify
-	}
-	return 0
+	return session, observed, 0, true
 }
 
 func parseObserveSessionArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
@@ -478,6 +486,20 @@ func runPRReview(_ context.Context, args []string, stdout, stderr io.Writer) int
 }
 
 func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
+	opts, code, ok := parsePRReviewPacketArgs(args, stderr)
+	if !ok {
+		return code
+	}
+	packet, err := buildPRReviewPacket(opts, args)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	writeIndentedPayload(stdout, packet)
+	return 0
+}
+
+func parsePRReviewPacketArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
 	opts := &flagSet{name: "pr-review packet"}
 	opts.setString("out", "")
 	opts.setString("repo-id", "")
@@ -492,16 +514,20 @@ func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
 	opts.setString("created-by", "sdp-trace-cli")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
 	if rejectRest(opts, stderr, "pr-review packet accepts only flags") {
-		return exitUsage
+		return nil, exitUsage, false
 	}
 	if err := requirePRReviewPacketInputs(opts); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
-	packet, err := prreview.BuildPacket(prreview.PacketOptions{
+	return opts, 0, true
+}
+
+func buildPRReviewPacket(opts *flagSet, args []string) (prreview.Packet, error) {
+	return prreview.BuildPacket(prreview.PacketOptions{
 		OutDir:            opts.stringValue("out"),
 		RepoID:            opts.stringValue("repo-id"),
 		ChangeRef:         opts.stringValue("change-ref"),
@@ -514,12 +540,6 @@ func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
 		CIState:           opts.stringValue("ci-state"),
 		CreatedBy:         opts.stringValue("created-by"),
 	})
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	writeIndentedPayload(stdout, packet)
-	return 0
 }
 
 func runPRReviewRun(args []string, stdout, stderr io.Writer) int {
@@ -527,26 +547,29 @@ func runPRReviewRun(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return code
 	}
-	packet, profile, ok := readPRReviewPacketAndProfile(opts, stderr)
-	if !ok {
-		return exitCannotVerify
-	}
-	if err := requireDirectory(opts.stringValue("work-dir")); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	runs, preview, err := prreview.RunReview(packet, profile, prreview.RunOptions{
-		OutDir:         opts.stringValue("out"),
-		AllowedRunners: allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
-		Preview:        opts.boolValue("preview"),
-		WorkDir:        opts.stringValue("work-dir"),
-	})
+	runs, preview, err := executePRReviewRun(opts, args)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
 	writePRReviewRunOutput(stdout, runs, preview)
 	return 0
+}
+
+func executePRReviewRun(opts *flagSet, args []string) (prreview.RunSet, *prreview.RunPreview, error) {
+	packet, profile, err := readPRReviewPacketAndProfileValues(opts)
+	if err != nil {
+		return prreview.RunSet{}, nil, err
+	}
+	if err := requireDirectory(opts.stringValue("work-dir")); err != nil {
+		return prreview.RunSet{}, nil, err
+	}
+	return prreview.RunReview(packet, profile, prreview.RunOptions{
+		OutDir:         opts.stringValue("out"),
+		AllowedRunners: allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
+		Preview:        opts.boolValue("preview"),
+		WorkDir:        opts.stringValue("work-dir"),
+	})
 }
 
 func writePRReviewRunOutput(stdout io.Writer, runs prreview.RunSet, preview *prreview.RunPreview) {
@@ -640,6 +663,10 @@ func readOptionalPRReviewLedger(path string) (*prreview.Ledger, error) {
 	if path == "" {
 		return nil, nil
 	}
+	return readExistingPRReviewLedger(path)
+}
+
+func readExistingPRReviewLedger(path string) (*prreview.Ledger, error) {
 	ledger, err := prreview.ReadLedger(path)
 	if err != nil {
 		return nil, err
@@ -706,19 +733,24 @@ func readPRReviewValidationInputs(opts *flagSet) (prReviewValidationInputs, erro
 	if err != nil {
 		return prReviewValidationInputs{}, err
 	}
-	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
-	if err != nil {
-		return prReviewValidationInputs{}, err
-	}
-	runs, err := prreview.ReadRunSet(opts.stringValue("runs"))
-	if err != nil {
-		return prReviewValidationInputs{}, err
-	}
-	ledger, err := prreview.ReadLedger(opts.stringValue("ledger"))
+	profile, runs, ledger, err := readPRReviewValidationArtifacts(opts)
 	if err != nil {
 		return prReviewValidationInputs{}, err
 	}
 	return prReviewValidationInputs{packet: packet, profile: profile, runs: runs, ledger: ledger}, nil
+}
+
+func readPRReviewValidationArtifacts(opts *flagSet) (prreview.ReviewProfile, prreview.RunSet, prreview.Ledger, error) {
+	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
+	if err != nil {
+		return prreview.ReviewProfile{}, prreview.RunSet{}, prreview.Ledger{}, err
+	}
+	runs, err := prreview.ReadRunSet(opts.stringValue("runs"))
+	if err != nil {
+		return prreview.ReviewProfile{}, prreview.RunSet{}, prreview.Ledger{}, err
+	}
+	ledger, err := prreview.ReadLedger(opts.stringValue("ledger"))
+	return profile, runs, ledger, err
 }
 
 func runPRReviewSummarize(args []string, stdout, stderr io.Writer) int {
@@ -726,12 +758,7 @@ func runPRReviewSummarize(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return code
 	}
-	validation, err := prreview.ReadValidation(opts.stringValue("validation"))
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	ledger, err := prreview.ReadLedger(opts.stringValue("ledger"))
+	validation, ledger, err := readPRReviewSummaryInputs(opts)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
@@ -744,10 +771,23 @@ func runPRReviewSummarize(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
+func readPRReviewSummaryInputs(opts *flagSet) (prreview.Validation, prreview.Ledger, error) {
+	validation, err := prreview.ReadValidation(opts.stringValue("validation"))
+	if err != nil {
+		return prreview.Validation{}, prreview.Ledger{}, err
+	}
+	ledger, err := prreview.ReadLedger(opts.stringValue("ledger"))
+	return validation, ledger, err
+}
+
 func writeOptionalPRReviewSummary(path, summary string, stderr io.Writer) (int, bool) {
 	if path == "" {
 		return 0, true
 	}
+	return writePRReviewSummaryFile(path, summary, stderr)
+}
+
+func writePRReviewSummaryFile(path, summary string, stderr io.Writer) (int, bool) {
 	if err := refuseExistingFile(path); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitUsage, false
@@ -990,17 +1030,24 @@ func reviewValidationExitCode(validation prreview.Validation) int {
 }
 
 func readPRReviewPacketAndProfile(opts *flagSet, stderr io.Writer) (prreview.Packet, prreview.ReviewProfile, bool) {
-	packet, err := prreview.ReadPacket(opts.stringValue("packet"))
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return prreview.Packet{}, prreview.ReviewProfile{}, false
-	}
-	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
+	packet, profile, err := readPRReviewPacketAndProfileValues(opts)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return prreview.Packet{}, prreview.ReviewProfile{}, false
 	}
 	return packet, profile, true
+}
+
+func readPRReviewPacketAndProfileValues(opts *flagSet) (prreview.Packet, prreview.ReviewProfile, error) {
+	packet, err := prreview.ReadPacket(opts.stringValue("packet"))
+	if err != nil {
+		return prreview.Packet{}, prreview.ReviewProfile{}, err
+	}
+	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
+	if err != nil {
+		return prreview.Packet{}, prreview.ReviewProfile{}, err
+	}
+	return packet, profile, nil
 }
 
 func repeatedFlagValues(args []string, key, parsedFallback string) []string {
@@ -1029,14 +1076,22 @@ func appendRepeatedFlagValue(values []string, args []string, i int, key, prefix 
 func allowedRunnerSet(values []string) map[string]bool {
 	allowed := map[string]bool{}
 	for _, value := range values {
-		for _, item := range strings.Split(value, ",") {
-			item = strings.TrimSpace(item)
-			if item != "" {
-				allowed[item] = true
-			}
-		}
+		addAllowedRunnerItems(allowed, value)
 	}
 	return allowed
+}
+
+func addAllowedRunnerItems(allowed map[string]bool, value string) {
+	for _, item := range strings.Split(value, ",") {
+		addAllowedRunnerItem(allowed, item)
+	}
+}
+
+func addAllowedRunnerItem(allowed map[string]bool, item string) {
+	item = strings.TrimSpace(item)
+	if item != "" {
+		allowed[item] = true
+	}
 }
 
 func runReleaseProof(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -1059,6 +1114,10 @@ func evaluateAndWriteReleaseProof(opts *flagSet, stderr io.Writer) (releaseproof
 		fmt.Fprintln(stderr, err)
 		return releaseproof.Verification{}, exitCannotVerify, false
 	}
+	return writeReleaseProofResult(repoRoot, opts, stderr)
+}
+
+func writeReleaseProofResult(repoRoot string, opts *flagSet, stderr io.Writer) (releaseproof.Verification, int, bool) {
 	result, err := releaseproof.Evaluate(repoRoot, opts.stringValue("manifest"), time.Now())
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -1187,20 +1246,27 @@ func runInteractionImportTranscript(args []string, stdout, stderr io.Writer) int
 	if !ok {
 		return code
 	}
-	trace, err := interaction.ImportTranscript(interaction.ImportOptions{
+	trace, err := importTranscriptFromOptions(opts)
+	return writeImportedTranscript(trace, err, stdout, stderr)
+}
+
+func writeImportedTranscript(trace interaction.Trace, err error, stdout, stderr io.Writer) int {
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	writeJSONPayloadUnchecked(stdout, trace)
+	return 0
+}
+
+func importTranscriptFromOptions(opts *flagSet) (interaction.Trace, error) {
+	return interaction.ImportTranscript(interaction.ImportOptions{
 		TaskID:      opts.stringValue("task-id"),
 		Source:      opts.stringValue("source"),
 		SourceRef:   opts.stringValue("source-ref"),
 		EventsJSONL: opts.stringValue("events-jsonl"),
 		Out:         opts.stringValue("out"),
 	})
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	payload, _ := json.MarshalIndent(trace, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
-	return 0
 }
 
 func parseInteractionImportTranscriptArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
@@ -1448,6 +1514,10 @@ func runCIArtifactAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		return exitUsage
 	}
 	result := ciartifact.Evaluate(manifest)
+	return writeCIArtifactAssessment(opts, result, stdout, stderr)
+}
+
+func writeCIArtifactAssessment(opts *flagSet, result ciartifact.ObservationResult, stdout, stderr io.Writer) int {
 	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
@@ -1590,6 +1660,10 @@ func runAuthorityAssess(opts *flagSet, stdout, stderr io.Writer) int {
 		return exitCannotVerify
 	}
 	result := authority.Evaluate(pkg)
+	return writeAuthorityAssessment(opts, result, stdout, stderr)
+}
+
+func writeAuthorityAssessment(opts *flagSet, result authority.Result, stdout, stderr io.Writer) int {
 	if err := authority.Write(opts.stringValue("out"), result); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
@@ -1861,10 +1935,7 @@ func explainAdapterCaptureAssessment(result adaptercapture.AssessmentResult, std
 	fmt.Fprintf(stdout, "Adapter capture assessment: %s\n", result.AdapterCaptureAssessment)
 	fmt.Fprintf(stdout, "Trust scope: %s\n", result.TrustScope)
 	for _, condition := range result.AdapterCaptureConditions {
-		fmt.Fprintf(stdout, "Adapter condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
-		if condition.CappedToRetentionMode != "" {
-			fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
-		}
+		explainAdapterCaptureCondition(condition, stdout)
 	}
 	for _, reason := range result.Reasons {
 		fmt.Fprintf(stdout, "Reason: %s\n", reason)
@@ -1873,6 +1944,13 @@ func explainAdapterCaptureAssessment(result adaptercapture.AssessmentResult, std
 		fmt.Fprintf(stdout, "Next action: %s\n", action)
 	}
 	return 0
+}
+
+func explainAdapterCaptureCondition(condition adaptercapture.Condition, stdout io.Writer) {
+	fmt.Fprintf(stdout, "Adapter condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+	if condition.CappedToRetentionMode != "" {
+		fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
+	}
 }
 
 func explainManagedAssessment(result managed.AssessmentResult, stdout io.Writer) int {
@@ -1896,10 +1974,7 @@ func explainForensicAssessment(result forensic.AssessmentResult, stdout io.Write
 	fmt.Fprintf(stdout, "Forensic retention assessment: %s\n", result.ForensicRetentionAssessment)
 	fmt.Fprintf(stdout, "Trust scope: %s\n", result.TrustScope)
 	for _, condition := range result.ForensicConditions {
-		fmt.Fprintf(stdout, "Forensic condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
-		if condition.CappedToRetentionMode != "" {
-			fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
-		}
+		explainForensicCondition(condition, stdout)
 	}
 	for _, reason := range result.Reasons {
 		fmt.Fprintf(stdout, "Reason: %s\n", reason)
@@ -1908,6 +1983,13 @@ func explainForensicAssessment(result forensic.AssessmentResult, stdout io.Write
 		fmt.Fprintf(stdout, "Next action: %s\n", action)
 	}
 	return 0
+}
+
+func explainForensicCondition(condition forensic.Condition, stdout io.Writer) {
+	fmt.Fprintf(stdout, "Forensic condition %s: %s (%s)\n", condition.ID, condition.State, condition.ReasonCode)
+	if condition.CappedToRetentionMode != "" {
+		fmt.Fprintf(stdout, "Capped to retention mode: %s\n", condition.CappedToRetentionMode)
+	}
 }
 
 func explainCIArtifactObservation(result ciartifact.ObservationResult, stdout io.Writer) int {
@@ -2107,19 +2189,34 @@ func authorityExitCode(result authority.Result) int {
 }
 
 func runCheckpoint(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	command, rest, ok := checkpointCommand(args, stderr)
+	if !ok {
+		return exitUsage
+	}
+	switch command {
+	case "create":
+		return runCheckpointCreate(rest, stdout, stderr)
+	case "verify":
+		return runCheckpointVerify(rest, stdout, stderr)
+	default:
+		return exitUsage
+	}
+}
+
+func checkpointCommand(args []string, stderr io.Writer) (string, []string, bool) {
 	if len(args) == 0 {
 		fmt.Fprintln(stderr, "checkpoint requires create or verify")
-		return exitUsage
+		return "", nil, false
 	}
-	switch args[0] {
-	case "create":
-		return runCheckpointCreate(args[1:], stdout, stderr)
-	case "verify":
-		return runCheckpointVerify(args[1:], stdout, stderr)
-	default:
+	return knownCheckpointCommand(args[0], args[1:], stderr)
+}
+
+func knownCheckpointCommand(command string, rest []string, stderr io.Writer) (string, []string, bool) {
+	if command != "create" && command != "verify" {
 		fmt.Fprintln(stderr, "checkpoint requires create or verify")
-		return exitUsage
+		return "", nil, false
 	}
+	return command, rest, true
 }
 
 func runCheckpointCreate(args []string, stdout, stderr io.Writer) int {
@@ -2127,11 +2224,24 @@ func runCheckpointCreate(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return code
 	}
+	created, code, ok := createCheckpointFromOptions(opts, stderr)
+	if !ok {
+		return code
+	}
+	fmt.Fprintf(stdout, "checkpoint: %s\n", created.CheckpointID)
+	return 0
+}
+
+func createCheckpointFromOptions(opts *flagSet, stderr io.Writer) (checkpoint.SignedCheckpoint, int, bool) {
 	var key checkpoint.KeyPair
 	if err := readJSONFile(opts.stringValue("private-key"), &key); err != nil {
 		fmt.Fprintln(stderr, err)
-		return 1
+		return checkpoint.SignedCheckpoint{}, 1, false
 	}
+	return createAndWriteCheckpoint(opts, key, stderr)
+}
+
+func createAndWriteCheckpoint(opts *flagSet, key checkpoint.KeyPair, stderr io.Writer) (checkpoint.SignedCheckpoint, int, bool) {
 	created, err := checkpoint.Create(opts.stringValue("run"), checkpoint.CreateOptions{
 		CheckpointID: opts.stringValue("id"),
 		SignerID:     opts.stringValue("signer-id"),
@@ -2139,14 +2249,13 @@ func runCheckpointCreate(args []string, stdout, stderr io.Writer) int {
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return 1
+		return checkpoint.SignedCheckpoint{}, 1, false
 	}
 	if err := writeJSONFile(opts.stringValue("out"), created); err != nil {
 		fmt.Fprintln(stderr, err)
-		return 1
+		return checkpoint.SignedCheckpoint{}, 1, false
 	}
-	fmt.Fprintf(stdout, "checkpoint: %s\n", created.CheckpointID)
-	return 0
+	return created, 0, true
 }
 
 func parseCheckpointCreateArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
@@ -2890,10 +2999,18 @@ func runOverride(_ context.Context, args []string, stdout, stderr io.Writer) int
 }
 
 func parseOverrideRequestArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
-	if len(args) == 0 || args[0] != "request" {
+	if !isOverrideRequest(args) {
 		fmt.Fprintln(stderr, "override requires request")
 		return nil, exitUsage, false
 	}
+	return parseOverrideRequestFlags(args[1:], stderr)
+}
+
+func isOverrideRequest(args []string) bool {
+	return len(args) != 0 && args[0] == "request"
+}
+
+func parseOverrideRequestFlags(args []string, stderr io.Writer) (*flagSet, int, bool) {
 	opts := &flagSet{name: "override request"}
 	opts.setString("out", "")
 	opts.setString("id", "")
@@ -2902,7 +3019,7 @@ func parseOverrideRequestArgs(args []string, stderr io.Writer) (*flagSet, int, b
 	opts.setString("source-ref", "")
 	opts.setString("scope", "")
 	opts.setString("external-reference", "")
-	if err := opts.parse(args[1:]); err != nil {
+	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
 		return nil, exitUsage, false
 	}
@@ -2914,21 +3031,31 @@ func parseOverrideRequestArgs(args []string, stderr io.Writer) (*flagSet, int, b
 }
 
 func requireOverrideRequestArgs(opts *flagSet, stderr io.Writer) (*flagSet, int, bool) {
-	required := map[string]string{
-		"--out":        opts.stringValue("out"),
-		"--id":         opts.stringValue("id"),
-		"--by":         opts.stringValue("by"),
-		"--reason":     opts.stringValue("reason"),
-		"--source-ref": opts.stringValue("source-ref"),
-		"--scope":      opts.stringValue("scope"),
-	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "override request requires %s\n", flag)
-			return nil, exitUsage, false
-		}
+	if missing := missingOverrideRequestFlag(opts); missing != "" {
+		fmt.Fprintf(stderr, "override request requires %s\n", missing)
+		return nil, exitUsage, false
 	}
 	return opts, 0, true
+}
+
+func missingOverrideRequestFlag(opts *flagSet) string {
+	required := []struct {
+		flag  string
+		value string
+	}{
+		{"--out", opts.stringValue("out")},
+		{"--id", opts.stringValue("id")},
+		{"--by", opts.stringValue("by")},
+		{"--reason", opts.stringValue("reason")},
+		{"--source-ref", opts.stringValue("source-ref")},
+		{"--scope", opts.stringValue("scope")},
+	}
+	for _, item := range required {
+		if strings.TrimSpace(item.value) == "" {
+			return item.flag
+		}
+	}
+	return ""
 }
 
 func readJSONFile(path string, dst any) error {
@@ -2961,6 +3088,10 @@ func writeTextFileAtomic(path, value string) error {
 	}
 	tmpName := tmp.Name()
 	defer os.Remove(tmpName)
+	return finishAtomicTextWrite(tmp, tmpName, path, value)
+}
+
+func finishAtomicTextWrite(tmp *os.File, tmpName, path, value string) error {
 	if err := writeAndCloseTempText(tmp, value); err != nil {
 		return err
 	}
@@ -3303,9 +3434,8 @@ func runWrap(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if err := opts.parse(args); err != nil {
 		return exitUsage
 	}
-	command := opts.rest()
-	if len(command) == 0 {
-		fmt.Fprintln(stderr, "wrap requires a command")
+	command, ok := wrapCommand(opts, stderr)
+	if !ok {
 		return exitUsage
 	}
 	res, err := recorder.Run(ctx, recorder.RecorderOptions{
@@ -3315,6 +3445,19 @@ func runWrap(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		OutputDir:          opts.stringValue("output-dir"),
 		Command:            command,
 	})
+	return writeRunResult(res, err, stdout, stderr)
+}
+
+func wrapCommand(opts *flagSet, stderr io.Writer) ([]string, bool) {
+	command := opts.rest()
+	if len(command) == 0 {
+		fmt.Fprintln(stderr, "wrap requires a command")
+		return nil, false
+	}
+	return command, true
+}
+
+func writeRunResult(res recorder.RecorderResult, err error, stdout, stderr io.Writer) int {
 	if err != nil {
 		fmt.Fprintln(stderr, err.Error())
 		return 1
@@ -3332,6 +3475,10 @@ func runWrappedCommand(ctx context.Context, args []string, stdout, stderr io.Wri
 	if !ok {
 		return code
 	}
+	return runTaskRecorder(ctx, opts, command, stdout, stderr)
+}
+
+func runTaskRecorder(ctx context.Context, opts *flagSet, command []string, stdout, stderr io.Writer) int {
 	useDefault := opts.boolValue("use-default-contract")
 	res, err := recorder.Run(ctx, recorder.RecorderOptions{
 		Task:               opts.stringValue("task"),
@@ -3341,12 +3488,7 @@ func runWrappedCommand(ctx context.Context, args []string, stdout, stderr io.Wri
 		OutputDir:          opts.stringValue("output-dir"),
 		Command:            command,
 	})
-	if err != nil {
-		fmt.Fprintln(stderr, err.Error())
-		return 1
-	}
-	fmt.Fprintf(stdout, "run_dir: %s\n", res.RunDir)
-	return res.ExitCode
+	return writeRunResult(res, err, stdout, stderr)
 }
 
 func parseWrappedCommandArgs(args []string, stderr io.Writer) (*flagSet, []string, int, bool) {
@@ -3498,6 +3640,10 @@ func runRepoObserverDoctor(opts *flagSet, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
+	return writeRepoObserverDoctor(opts, status, stdout, stderr)
+}
+
+func writeRepoObserverDoctor(opts *flagSet, status repoobserver.Status, stdout, stderr io.Writer) int {
 	if err := repoobserver.WriteJSON(opts.stringValue("out"), status); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
@@ -3571,6 +3717,10 @@ func parseInstallRepoObserverArgs(args []string, stdout, stderr io.Writer) (*fla
 		fmt.Fprintln(stderr, err)
 		return nil, exitUsage, false
 	}
+	return requireInstallRepoObserverFlags(opts, stderr)
+}
+
+func requireInstallRepoObserverFlags(opts *flagSet, stderr io.Writer) (*flagSet, int, bool) {
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "install repo-observer accepts only flags")
 		return nil, exitUsage, false
@@ -3635,11 +3785,16 @@ func parseVerifyArgs(args []string, stderr io.Writer) (string, int, bool) {
 		return "", exitUsage, false
 	}
 	runDir := args[0]
-	if info, err := os.Stat(runDir); err != nil || !info.IsDir() {
+	if !existingDirectory(runDir) {
 		fmt.Fprintf(stderr, "run directory does not exist: %s\n", runDir)
 		return "", exitCannotVerify, false
 	}
 	return runDir, 0, true
+}
+
+func existingDirectory(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
 
 func verifierResultExitCode(result trace.VerifierVerdict) int {
@@ -3692,17 +3847,25 @@ func runQuery(_ context.Context, args []string, stdout, stderr io.Writer) int {
 
 func runNamedQuery(queryName, runDir string, stderr io.Writer) ([]byte, int, bool) {
 	if queryName == query.QueryCaptureDepth {
-		payload, err := query.CaptureDepth(runDir)
-		if err != nil {
-			fmt.Fprintln(stderr, err)
-			return nil, exitCannotVerify, false
-		}
-		return payload, 0, true
+		return captureDepthQuery(runDir, stderr)
 	}
 	if queryName != query.QueryMissingEvidence {
 		fmt.Fprintf(stderr, "unsupported query: %s\n", queryName)
 		return nil, exitUsage, false
 	}
+	return missingEvidenceQuery(runDir, stderr)
+}
+
+func captureDepthQuery(runDir string, stderr io.Writer) ([]byte, int, bool) {
+	payload, err := query.CaptureDepth(runDir)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitCannotVerify, false
+	}
+	return payload, 0, true
+}
+
+func missingEvidenceQuery(runDir string, stderr io.Writer) ([]byte, int, bool) {
 	payload, err := query.MissingEvidence(runDir)
 	if err != nil {
 		fmt.Fprintln(stderr, err)

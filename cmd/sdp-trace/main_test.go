@@ -2843,3 +2843,71 @@ func readTestJSON(t *testing.T, path string, value any) {
 		t.Fatalf("unmarshal json %s: %v", path, err)
 	}
 }
+
+func TestCLITailHelpersCoverErrorBranches(t *testing.T) {
+	var errOut bytes.Buffer
+	dir := t.TempDir()
+
+	allowed := allowedRunnerSet([]string{"qwen, kimi", "  "})
+	if !allowed["qwen"] || !allowed["kimi"] || allowed[""] {
+		t.Fatalf("allowedRunnerSet = %+v", allowed)
+	}
+
+	if _, err := readExistingPRReviewLedger(filepath.Join(dir, "missing-ledger.json")); err == nil {
+		t.Fatalf("missing ledger should fail")
+	}
+	if _, _, ok := readPRReviewPacketAndProfile(&flagSet{}, &errOut); ok {
+		t.Fatalf("missing packet/profile should fail")
+	}
+	if code, ok := writePRReviewSummaryFile(dir, "summary", &errOut); ok || code != exitUsage {
+		t.Fatalf("summary dir write code=%d ok=%v", code, ok)
+	}
+
+	for _, verdict := range []trace.VerifierVerdict{
+		trace.VerdictObserved,
+		trace.VerdictNotAssessed,
+		trace.VerdictFail,
+		trace.VerdictCannotVerify,
+		"unknown",
+	} {
+		_ = verifierResultExitCode(verdict)
+	}
+
+	if previewGateMode(trace.Contract{RequiredRuns: []trace.RequiredRun{{Profile: demo.GateModeAdvisoryCI}}}) != demo.GateModeAdvisoryCI {
+		t.Fatalf("advisory gate mode not selected")
+	}
+	if previewGateMode(trace.Contract{RequiredRuns: []trace.RequiredRun{{Profile: demo.GateModeProtectedFuture}}}) != demo.GateModeProtectedFuture {
+		t.Fatalf("protected future gate mode not selected")
+	}
+
+	if err := refuseExistingFile(dir); err == nil || !strings.Contains(err.Error(), "directory") {
+		t.Fatalf("directory refusal = %v", err)
+	}
+	if err := refuseExistingFile(filepath.Join(dir, "new-file")); err != nil {
+		t.Fatalf("new file refusal = %v", err)
+	}
+
+	if _, code, ok := parseObserveSessionArgs([]string{"--profile", "p", "--out", "o"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("observe session without command code=%d ok=%v", code, ok)
+	}
+	errOut.Reset()
+	if _, code, ok := parseCheckpointVerifyArgs([]string{"--run", "r", "--checkpoint", "c", "extra"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("checkpoint verify rest code=%d ok=%v", code, ok)
+	}
+	errOut.Reset()
+	if _, code, ok := parseCrossRepoPostureExplainArgs([]string{"extra"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("posture explain rest code=%d ok=%v", code, ok)
+	}
+	errOut.Reset()
+	if _, code, ok := readCrossRepoPostureExplainResult(filepath.Join(dir, "missing.json"), &errOut); ok || code != exitCannotVerify {
+		t.Fatalf("posture explain missing code=%d ok=%v", code, ok)
+	}
+
+	var out bytes.Buffer
+	if code := writeImportedTranscript(interaction.Trace{SchemaVersion: interaction.SchemaVersion}, nil, &out, &errOut); code != 0 {
+		t.Fatalf("writeImportedTranscript success code=%d", code)
+	}
+	if code := writeImportedTranscript(interaction.Trace{}, os.ErrNotExist, &out, &errOut); code != exitCannotVerify {
+		t.Fatalf("writeImportedTranscript error code=%d", code)
+	}
+}
