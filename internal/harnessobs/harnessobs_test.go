@@ -512,6 +512,53 @@ func TestExtractCommandModel(t *testing.T) {
 	}
 }
 
+func TestShellFieldsControlledSyntax(t *testing.T) {
+	tests := []struct {
+		name    string
+		command string
+		want    []string
+	}{
+		{
+			name:    "plain whitespace",
+			command: "opencode run --model minimax/MiniMax-M2.7",
+			want:    []string{"opencode", "run", "--model", "minimax/MiniMax-M2.7"},
+		},
+		{
+			name:    "quoted prompt",
+			command: `opencode run 'please ignore --model fake' --model minimax/MiniMax-M2.7`,
+			want:    []string{"opencode", "run", "please ignore --model fake", "--model", "minimax/MiniMax-M2.7"},
+		},
+		{
+			name:    "double quoted prompt",
+			command: `opencode run "hello world" --model=minimax/MiniMax-M2.7`,
+			want:    []string{"opencode", "run", "hello world", "--model=minimax/MiniMax-M2.7"},
+		},
+		{
+			name:    "backslash preserved",
+			command: `opencode run --model "model\name"`,
+			want:    []string{"opencode", "run", "--model", `model\name`},
+		},
+		{
+			name:    "line continuation removed",
+			command: "opencode run \\\n--model minimax/MiniMax-M2.7",
+			want:    []string{"opencode", "run", "--model", "minimax/MiniMax-M2.7"},
+		},
+		{
+			name:    "trailing escape preserved",
+			command: `opencode run --model model\`,
+			want:    []string{"opencode", "run", "--model", `model\`},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := shellFields(tt.command); !equalStrings(got, tt.want) {
+				t.Fatalf("shellFields() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestObserveRejectsDigestMismatch(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
@@ -959,6 +1006,18 @@ func digestForTest(line string) string {
 	}
 	sum := sha256.Sum256(canonical)
 	return hex.EncodeToString(sum[:])
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func chdir(t *testing.T, dir string) func() {

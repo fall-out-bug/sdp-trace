@@ -1876,52 +1876,91 @@ func extractCommandModelArgs(args []string) string {
 // controlled sh -c wrapper. It is not a general shell parser; model values still
 // have to pass safeCommandModel before they become retained facts.
 func shellFields(command string) []string {
-	var fields []string
-	var b strings.Builder
-	var quote rune
-	escaped := false
+	scanner := shellFieldScanner{}
 	for _, r := range command {
-		if escaped {
-			if r == '\n' {
-				escaped = false
-				continue
-			}
-			b.WriteRune('\\')
-			b.WriteRune(r)
-			escaped = false
-			continue
-		}
-		if quote != '\'' && r == '\\' {
-			escaped = true
-			continue
-		}
-		if quote != 0 {
-			if r == quote {
-				quote = 0
-				continue
-			}
-			b.WriteRune(r)
-			continue
-		}
-		switch {
-		case r == '\'' || r == '"':
-			quote = r
-		case r == ' ' || r == '\t' || r == '\n' || r == '\r':
-			if b.Len() > 0 {
-				fields = append(fields, b.String())
-				b.Reset()
-			}
-		default:
-			b.WriteRune(r)
-		}
+		scanner.scan(r)
 	}
-	if escaped {
-		b.WriteRune('\\')
+	return scanner.finish()
+}
+
+type shellFieldScanner struct {
+	fields  []string
+	current strings.Builder
+	quote   rune
+	escaped bool
+}
+
+func (scanner *shellFieldScanner) scan(r rune) {
+	if scanner.consumeEscaped(r) {
+		return
 	}
-	if b.Len() > 0 {
-		fields = append(fields, b.String())
+	if scanner.startsEscape(r) {
+		scanner.escaped = true
+		return
 	}
-	return fields
+	if scanner.consumeQuoted(r) {
+		return
+	}
+	scanner.consumeUnquoted(r)
+}
+
+func (scanner *shellFieldScanner) consumeEscaped(r rune) bool {
+	if !scanner.escaped {
+		return false
+	}
+	if r != '\n' {
+		scanner.current.WriteRune('\\')
+		scanner.current.WriteRune(r)
+	}
+	scanner.escaped = false
+	return true
+}
+
+func (scanner *shellFieldScanner) startsEscape(r rune) bool {
+	return scanner.quote != '\'' && r == '\\'
+}
+
+func (scanner *shellFieldScanner) consumeQuoted(r rune) bool {
+	if scanner.quote == 0 {
+		return false
+	}
+	if r == scanner.quote {
+		scanner.quote = 0
+		return true
+	}
+	scanner.current.WriteRune(r)
+	return true
+}
+
+func (scanner *shellFieldScanner) consumeUnquoted(r rune) {
+	switch {
+	case r == '\'' || r == '"':
+		scanner.quote = r
+	case shellFieldSeparator(r):
+		scanner.flush()
+	default:
+		scanner.current.WriteRune(r)
+	}
+}
+
+func (scanner *shellFieldScanner) finish() []string {
+	if scanner.escaped {
+		scanner.current.WriteRune('\\')
+	}
+	scanner.flush()
+	return scanner.fields
+}
+
+func (scanner *shellFieldScanner) flush() {
+	if scanner.current.Len() == 0 {
+		return
+	}
+	scanner.fields = append(scanner.fields, scanner.current.String())
+	scanner.current.Reset()
+}
+
+func shellFieldSeparator(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
 
 func safeCommandModel(model string) string {
