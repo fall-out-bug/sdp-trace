@@ -70,6 +70,26 @@ func TestVerifyDigestManifestRejectsMismatchedQueryPackPath(t *testing.T) {
 	}
 }
 
+func TestVerifyDigestManifestMismatchReturnsNoDigest(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+	var digest DigestManifest
+	readJSONFixture(t, digestManifest, &digest)
+	digest.Artifacts[0].SHA256 = strings.Repeat("0", 64)
+	writeJSON(t, digestManifest, digest)
+
+	actual, err := verifyDigestManifest(digestManifest, queryPack)
+	if !errors.Is(err, errDigestMismatch) {
+		t.Fatalf("expected errDigestMismatch, got %v", err)
+	}
+	if actual != "" {
+		t.Fatalf("expected empty digest on mismatch, got %q", actual)
+	}
+}
+
 func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)

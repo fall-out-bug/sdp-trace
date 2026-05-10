@@ -227,6 +227,29 @@ func TestEvaluateRequiredRunsRequiresAllEvidenceEntries(t *testing.T) {
 	}
 }
 
+func TestEvaluateRequiredRunsPreservesMissingEvidenceReasonPrecedence(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredRuns = []trace.RequiredRun{
+		{
+			ID:               "agent_session",
+			WrapperName:      "agent-session",
+			RequiredEvidence: []string{"agent_session_observed"},
+		},
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "agent-session", RunID: "run-1", WrapperName: "agent-session", Kind: "wrong_kind", Result: "fail", ClosureState: "open"},
+	}, contract)
+
+	required := findRequiredRun(t, gate.RequiredRuns, "agent_session")
+	if required.State != GateCannotVerify {
+		t.Fatalf("expected cannot_verify state, got %s", required.State)
+	}
+	if required.Reasons[0] != "required run agent_session missing evidence agent_session_observed" {
+		t.Fatalf("unexpected reason = %v", required.Reasons)
+	}
+}
+
 func TestProtectedFutureRequiredRunCannotVerify(t *testing.T) {
 	contract := traceContractForTest()
 	contract.RequiredEvidence = nil

@@ -1023,7 +1023,7 @@ func matchRequiredRun(row RunRow, required trace.RequiredRun, result RequiredRun
 	result.State = GatePass
 	result.Reasons = []string{fmt.Sprintf("required run %s matched wrapper %s", required.ID, required.WrapperName)}
 	if row.Result != trace.VerdictObserved || row.ClosureState != trace.ClosureStateCompleted {
-		return cannotVerifyRequiredRun(result, required.ID, row.Name)
+		result = cannotVerifyRequiredRun(result, required.ID, row.Name)
 	}
 	if evidenceID, ok := missingEvidenceID(row, required.RequiredEvidence); ok {
 		return cannotVerifyRequiredRunEvidence(result, required.ID, evidenceID)

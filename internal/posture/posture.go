@@ -712,7 +712,10 @@ func verifyDigestManifest(manifestPath, queryPackPath string) (string, error) {
 		return "", err
 	}
 
-	return actual, checkDigestMatch(expected, actual)
+	if err := checkDigestMatch(expected, actual); err != nil {
+		return "", err
+	}
+	return actual, nil
 }
 
 func checkDigestMatch(expected, actual string) error {
