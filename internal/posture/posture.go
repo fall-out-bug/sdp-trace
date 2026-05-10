@@ -506,13 +506,26 @@ func validateMetricTrustSummary(summary map[string]int) error {
 }
 
 func validateMovementRow(row MovementRow) error {
-	if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
-		row.DimensionKey == "" || row.CurrentValue < 0 || row.PreviousValue < 0 ||
-		!validComparisonBasis(row.ComparisonBasis) ||
-		(!row.Comparable && row.NonComparableReason != "non_comparable_missing_window") {
+	if malformedMovementRow(row) {
 		return fmt.Errorf("malformed posture export movement_row")
 	}
 	return nil
+}
+
+func malformedMovementRow(row MovementRow) bool {
+	return malformedMovementIdentity(row) || malformedMovementValues(row) || malformedMovementComparison(row)
+}
+
+func malformedMovementIdentity(row MovementRow) bool {
+	return row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer || row.DimensionKey == ""
+}
+
+func malformedMovementValues(row MovementRow) bool {
+	return row.CurrentValue < 0 || row.PreviousValue < 0
+}
+
+func malformedMovementComparison(row MovementRow) bool {
+	return !validComparisonBasis(row.ComparisonBasis) || (!row.Comparable && row.NonComparableReason != "non_comparable_missing_window")
 }
 
 func validateMovementSummary(summary MovementSummary) error {

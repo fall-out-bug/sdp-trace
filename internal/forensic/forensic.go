@@ -465,26 +465,65 @@ func rawReferenceCondition(input Input) Condition {
 }
 
 func validateRawReference(ref *RawReference) (Condition, bool) {
-	if ref.Digest.Algorithm != "sha256" || len(ref.Digest.Value) != 64 {
-		return fail("raw_reference_bound", "weak_digest", "raw reference digest is weak, unknown, or malformed", "Use SHA-256 or stronger digest binding for raw references."), false
-	}
-	if ref.ReferenceType != RetentionModeEncryptedRawRef && ref.ReferenceType != RetentionModeExternalArtifactRef {
-		return fail("raw_reference_bound", "raw_reference_type_invalid", "raw reference type is not an accepted FR-054 raw reference mode", "Use encrypted_raw_ref or external_artifact_ref."), false
-	}
-	if ref.ReferenceURI == "" {
-		return cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference."), false
-	}
-	if rawReferenceAccessUnverifiable(ref) {
-		return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time."), false
-	}
-	if ref.AccessStateLastVerified == "" {
-		return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment."), false
-	}
-	if encryptedKeyCustodyUnverifiable(ref) {
-		return cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state."), false
-	}
-	if retentionLifecycleUnverifiable(ref.RetentionLifecycle.State) {
-		return cannotVerify("raw_reference_bound", "retention_lifecycle_unverifiable", "raw reference retention lifecycle is not active", "Record active retention lifecycle evidence."), false
+	condition, ok := rawReferenceValidationFailure(ref)
+	return condition, ok
+}
+
+type rawReferenceValidationRule struct {
+	invalid   func(*RawReference) bool
+	condition Condition
+}
+
+var rawReferenceValidationRules = []rawReferenceValidationRule{
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.Digest.Algorithm != "sha256" || len(ref.Digest.Value) != 64
+		},
+		condition: fail("raw_reference_bound", "weak_digest", "raw reference digest is weak, unknown, or malformed", "Use SHA-256 or stronger digest binding for raw references."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.ReferenceType != RetentionModeEncryptedRawRef && ref.ReferenceType != RetentionModeExternalArtifactRef
+		},
+		condition: fail("raw_reference_bound", "raw_reference_type_invalid", "raw reference type is not an accepted FR-054 raw reference mode", "Use encrypted_raw_ref or external_artifact_ref."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.ReferenceURI == ""
+		},
+		condition: cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return rawReferenceAccessUnverifiable(ref)
+		},
+		condition: cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.AccessStateLastVerified == ""
+		},
+		condition: cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return encryptedKeyCustodyUnverifiable(ref)
+		},
+		condition: cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return retentionLifecycleUnverifiable(ref.RetentionLifecycle.State)
+		},
+		condition: cannotVerify("raw_reference_bound", "retention_lifecycle_unverifiable", "raw reference retention lifecycle is not active", "Record active retention lifecycle evidence."),
+	},
+}
+
+func rawReferenceValidationFailure(ref *RawReference) (Condition, bool) {
+	for _, rule := range rawReferenceValidationRules {
+		if rule.invalid(ref) {
+			return rule.condition, false
+		}
 	}
 	return Condition{}, true
 }

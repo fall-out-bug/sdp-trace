@@ -975,45 +975,94 @@ func requiredEvidenceIDs(contract trace.Contract) []string {
 
 func evaluateRequiredRuns(rows []RunRow, contract trace.Contract) []RequiredRunResult {
 	results := make([]RequiredRunResult, 0, len(contract.RequiredRuns))
+	rowsByWrapper := firstRowByWrapper(rows)
 	for _, required := range contract.RequiredRuns {
-		profile := required.Profile
-		if profile == "" {
-			profile = GateModeObservation
+		profile := runProfile(required.Profile)
+		result := requiredRunResultTemplate(required, profile)
+		if row, ok := rowsByWrapper[required.WrapperName]; ok {
+			result = matchRequiredRun(row, required, result)
 		}
-		result := RequiredRunResult{
-			ID:          required.ID,
-			WrapperName: required.WrapperName,
-			Profile:     profile,
-			State:       GateMissingTelemetry,
-			Reasons:     []string{fmt.Sprintf("required run %s with wrapper %s is missing", required.ID, required.WrapperName)},
-		}
-		for _, row := range rows {
-			if row.WrapperName != required.WrapperName {
-				continue
-			}
-			result.MatchedRunID = row.RunID
-			result.State = GatePass
-			result.Reasons = []string{fmt.Sprintf("required run %s matched wrapper %s", required.ID, required.WrapperName)}
-			if row.Result != trace.VerdictObserved || row.ClosureState != trace.ClosureStateCompleted {
-				result.State = GateCannotVerify
-				result.Reasons = []string{fmt.Sprintf("required run %s cannot verify from run %s", required.ID, row.Name)}
-			}
-			for _, evidenceID := range required.RequiredEvidence {
-				if row.Kind != evidenceID {
-					result.State = GateCannotVerify
-					result.Reasons = []string{fmt.Sprintf("required run %s missing evidence %s", required.ID, evidenceID)}
-					break
-				}
-			}
-			break
-		}
-		if profile == GateModeProtectedFuture {
-			result.State = GateCannotVerify
-			result.Reasons = []string{fmt.Sprintf("required run %s requests protected_future profile, which cannot verify before signed checkpoint evidence exists", required.ID)}
-		}
+		result = applyProtectedFutureConstraint(result, required.ID)
 		results = append(results, result)
 	}
 	return results
+}
+
+func requiredRunResultTemplate(required trace.RequiredRun, profile string) RequiredRunResult {
+	return RequiredRunResult{
+		ID:          required.ID,
+		WrapperName: required.WrapperName,
+		Profile:     profile,
+		State:       GateMissingTelemetry,
+		Reasons: []string{
+			fmt.Sprintf("required run %s with wrapper %s is missing", required.ID, required.WrapperName),
+		},
+	}
+}
+
+func firstRowByWrapper(rows []RunRow) map[string]RunRow {
+	matches := make(map[string]RunRow, len(rows))
+	for _, row := range rows {
+		if _, ok := matches[row.WrapperName]; ok {
+			continue
+		}
+		matches[row.WrapperName] = row
+	}
+	return matches
+}
+
+func runProfile(profile string) string {
+	if profile == "" {
+		return GateModeObservation
+	}
+	return profile
+}
+
+func matchRequiredRun(row RunRow, required trace.RequiredRun, result RequiredRunResult) RequiredRunResult {
+	result.MatchedRunID = row.RunID
+	result.State = GatePass
+	result.Reasons = []string{fmt.Sprintf("required run %s matched wrapper %s", required.ID, required.WrapperName)}
+	if row.Result != trace.VerdictObserved || row.ClosureState != trace.ClosureStateCompleted {
+		return cannotVerifyRequiredRun(result, required.ID, row.Name)
+	}
+	if evidenceID, ok := missingEvidenceID(row, required.RequiredEvidence); ok {
+		return cannotVerifyRequiredRunEvidence(result, required.ID, evidenceID)
+	}
+	return result
+}
+
+func missingEvidenceID(row RunRow, requiredEvidence []string) (string, bool) {
+	for _, evidenceID := range requiredEvidence {
+		if row.Kind != evidenceID {
+			return evidenceID, true
+		}
+	}
+	return "", false
+}
+
+func cannotVerifyRequiredRunEvidence(result RequiredRunResult, requiredID, evidenceID string) RequiredRunResult {
+	result.State = GateCannotVerify
+	result.Reasons = []string{fmt.Sprintf("required run %s missing evidence %s", requiredID, evidenceID)}
+	return result
+}
+
+func cannotVerifyRequiredRun(result RequiredRunResult, requiredID, runName string) RequiredRunResult {
+	result.State = GateCannotVerify
+	result.Reasons = []string{fmt.Sprintf("required run %s cannot verify from run %s", requiredID, runName)}
+	return result
+}
+
+func applyProtectedFutureConstraint(result RequiredRunResult, requiredID string) RequiredRunResult {
+	if result.Profile != GateModeProtectedFuture {
+		return result
+	}
+	return cannotVerifyRequiredRunReason(result, requiredID, "requests protected_future profile, which cannot verify before signed checkpoint evidence exists")
+}
+
+func cannotVerifyRequiredRunReason(result RequiredRunResult, requiredID, reason string) RequiredRunResult {
+	result.State = GateCannotVerify
+	result.Reasons = []string{fmt.Sprintf("required run %s %s", requiredID, reason)}
+	return result
 }
 
 func gateMode(contract trace.Contract) string {

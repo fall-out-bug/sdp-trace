@@ -358,17 +358,38 @@ func providerRefsCondition(run RunEvidence) Condition {
 
 func redactionMetadataCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
-		if event.SensitiveMetadataPersisted || containsSecret(event.GatewayEvidenceRef) || stringSliceContainsSecret(event.ProviderRefs) {
-			return fail("redaction_metadata_consistent", "forbidden_adapter_metadata_persisted", "adapter metadata contains forbidden raw or credential-like material", "Redact adapter metadata before persistence.")
-		}
-		if sensitiveEvent(event.EventType) && (event.RedactionPolicyDigest == "" || event.RetentionMode == "") {
-			return cannotVerify("redaction_metadata_consistent", "redaction_metadata_missing", "sensitive adapter event lacks redaction policy or retention metadata", "Record Block 18 redaction policy and retention mode metadata.")
-		}
-		if event.RetentionMode != "" && !validRetentionMode(event.RetentionMode) {
-			return fail("redaction_metadata_consistent", "invalid_retention_mode", "adapter event declares a non-FR-054 retention mode", "Use FR-054 retention modes.")
+		if condition := redactionMetadataConditionForEvent(event); condition.State != "" {
+			return condition
 		}
 	}
 	return pass("redaction_metadata_consistent", "redaction_metadata_consistent", "sensitive adapter fields carry safe redaction and retention metadata")
+}
+
+func redactionMetadataConditionForEvent(event AdapterEvent) Condition {
+	if hasForbiddenRedactionMetadata(event) {
+		return fail("redaction_metadata_consistent", "forbidden_adapter_metadata_persisted", "adapter metadata contains forbidden raw or credential-like material", "Redact adapter metadata before persistence.")
+	}
+	if missingRequiredRedactionMetadata(event) {
+		return cannotVerify("redaction_metadata_consistent", "redaction_metadata_missing", "sensitive adapter event lacks redaction policy or retention metadata", "Record Block 18 redaction policy and retention mode metadata.")
+	}
+	if hasInvalidRetentionMode(event) {
+		return fail("redaction_metadata_consistent", "invalid_retention_mode", "adapter event declares a non-FR-054 retention mode", "Use FR-054 retention modes.")
+	}
+	return Condition{}
+}
+
+func hasForbiddenRedactionMetadata(event AdapterEvent) bool {
+	return event.SensitiveMetadataPersisted ||
+		containsSecret(event.GatewayEvidenceRef) ||
+		stringSliceContainsSecret(event.ProviderRefs)
+}
+
+func missingRequiredRedactionMetadata(event AdapterEvent) bool {
+	return sensitiveEvent(event.EventType) && (event.RedactionPolicyDigest == "" || event.RetentionMode == "")
+}
+
+func hasInvalidRetentionMode(event AdapterEvent) bool {
+	return event.RetentionMode != "" && !validRetentionMode(event.RetentionMode)
 }
 
 func overclaimCondition(run RunEvidence) Condition {

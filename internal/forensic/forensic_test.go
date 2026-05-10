@@ -101,6 +101,78 @@ func TestEvaluateRawReferenceReasonCodes(t *testing.T) {
 	}
 }
 
+func TestValidateRawReferenceRules(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RawReference)
+		wantOk bool
+		want   string
+	}{
+		{
+			name:   "weak digest",
+			mutate: func(ref *RawReference) { ref.Digest.Algorithm = "md5" },
+			wantOk: false,
+			want:   "weak_digest",
+		},
+		{
+			name:   "invalid reference type",
+			mutate: func(ref *RawReference) { ref.ReferenceType = RetentionModeDigestOnly },
+			wantOk: false,
+			want:   "raw_reference_type_invalid",
+		},
+		{
+			name: "access unverified before timestamp",
+			mutate: func(ref *RawReference) {
+				ref.AccessState = AccessStateRestricted
+				ref.AccessStateLastVerified = ""
+			},
+			wantOk: false,
+			want:   "access_unverifiable",
+		},
+		{
+			name: "key custody unverifiable",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeEncryptedRawRef
+				ref.KeyCustodyState = KeyCustodyUnknown
+				ref.AccessState = AccessStateVerifiedAvailable
+			},
+			wantOk: false,
+			want:   "key_custody_unverifiable",
+		},
+		{
+			name: "lifecycle not active",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeEncryptedRawRef
+				ref.KeyCustodyState = KeyCustodyEscrowed
+				ref.AccessState = AccessStateVerifiedAvailable
+				ref.RetentionLifecycle.State = RetentionLifecycleExpired
+			},
+			wantOk: false,
+			want:   "retention_lifecycle_unverifiable",
+		},
+		{
+			name:   "valid reference passes",
+			mutate: func(*RawReference) {},
+			wantOk: true,
+			want:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ref := *validInput().Run.Events[1].RawReference
+			tt.mutate(&ref)
+			condition, ok := validateRawReference(&ref)
+			if ok != tt.wantOk {
+				t.Fatalf("ok=%v, want %v", ok, tt.wantOk)
+			}
+			if !ok && condition.ReasonCode != tt.want {
+				t.Fatalf("reason=%s, want=%s", condition.ReasonCode, tt.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateFailsWeakDigestAndCannotVerifySelfClaimedAuthority(t *testing.T) {
 	input := validInput()
 	input.Run.Events[1].RawReference.Digest.Algorithm = "sha1"

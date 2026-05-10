@@ -159,6 +159,38 @@ func TestEvaluateFailsUnsafeAdapterMetadata(t *testing.T) {
 	}
 }
 
+func TestEvaluateCannotVerifySensitiveEventMissingRedactionMetadata(t *testing.T) {
+	input := validInput()
+	for i := range input.Run.AdapterEvents {
+		if input.Run.AdapterEvents[i].EventType == "tool_call" {
+			input.Run.AdapterEvents[i].RedactionPolicyDigest = ""
+			input.Run.AdapterEvents[i].RetentionMode = ""
+			break
+		}
+	}
+	result := Evaluate(input)
+	if result.AdapterCaptureAssessment != StateCannotVerify {
+		t.Fatalf("assessment = %s reasons=%v", result.AdapterCaptureAssessment, result.Reasons)
+	}
+	condition := conditionByID(result.AdapterCaptureConditions, "redaction_metadata_consistent")
+	if condition.State != StateCannotVerify || condition.ReasonCode != "redaction_metadata_missing" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestEvaluateFailsOnInvalidRetentionMode(t *testing.T) {
+	input := validInput()
+	input.Run.AdapterEvents[0].RetentionMode = "bad-mode"
+	result := Evaluate(input)
+	if result.AdapterCaptureAssessment != StateFail {
+		t.Fatalf("assessment = %s reasons=%v", result.AdapterCaptureAssessment, result.Reasons)
+	}
+	condition := conditionByID(result.AdapterCaptureConditions, "redaction_metadata_consistent")
+	if condition.State != StateFail || condition.ReasonCode != "invalid_retention_mode" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
 func TestEvaluateCannotVerifyFileMutationWithoutSourceCorrelation(t *testing.T) {
 	input := validInput()
 	for i := range input.Run.AdapterEvents {

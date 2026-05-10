@@ -519,6 +519,9 @@ func TestValidateExportResultRejectsMalformedNestedRows(t *testing.T) {
 		"movement-summary": func(result *ExportResult) {
 			result.MovementSummary.NonComparableReason["unknown"] = 1
 		},
+		"movement-row": func(result *ExportResult) {
+			result.MovementRows[0].CurrentValue = -1
+		},
 		"refusal-reason": func(result *ExportResult) {
 			result.RefusalRows[0].RefusalReason = "ok"
 		},
@@ -528,6 +531,45 @@ func TestValidateExportResultRejectsMalformedNestedRows(t *testing.T) {
 			mutate(&result)
 			if err := ValidateExportResult(result); err == nil {
 				t.Fatalf("expected malformed %s to be rejected", name)
+			}
+		})
+	}
+}
+
+func TestValidateMovementRowRejectsMalformedRows(t *testing.T) {
+	base := validExportResult().MovementRows[0]
+	for name, mutate := range map[string]func(*MovementRow){
+		"identity": func(row *MovementRow) {
+			row.ID = ""
+		},
+		"metric-id": func(row *MovementRow) {
+			row.MetricID = "unknown"
+		},
+		"version": func(row *MovementRow) {
+			row.MetricVersion = "old"
+		},
+		"dimension-key": func(row *MovementRow) {
+			row.DimensionKey = ""
+		},
+		"current-value": func(row *MovementRow) {
+			row.CurrentValue = -1
+		},
+		"previous-value": func(row *MovementRow) {
+			row.PreviousValue = -1
+		},
+		"comparison-basis": func(row *MovementRow) {
+			row.ComparisonBasis = "unsupported"
+		},
+		"non-comparable-reason": func(row *MovementRow) {
+			row.Comparable = false
+			row.NonComparableReason = "output_safety_violation"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			row := base
+			mutate(&row)
+			if err := validateMovementRow(row); err == nil || err.Error() != "malformed posture export movement_row" {
+				t.Fatalf("error = %v, want malformed posture export movement_row", err)
 			}
 		})
 	}
