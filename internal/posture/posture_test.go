@@ -556,6 +556,28 @@ func TestValidateExportResultRejectsMalformedNestedRows(t *testing.T) {
 	}
 }
 
+func TestValidateExportResultRejectsMalformedCollections(t *testing.T) {
+	for name, mutate := range map[string]func(*ExportResult){
+		"grouping": func(result *ExportResult) {
+			result.GroupingSetID = "unknown"
+		},
+		"missing-collection": func(result *ExportResult) {
+			result.Handoff = nil
+		},
+		"output-safety": func(result *ExportResult) {
+			result.OutputSafety.VerifiedAbsentSensitiveClasses = nil
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := validExportResult()
+			mutate(&result)
+			if err := ValidateExportResult(result); err == nil {
+				t.Fatalf("expected malformed %s to be rejected", name)
+			}
+		})
+	}
+}
+
 func TestValidateMovementRowRejectsMalformedRows(t *testing.T) {
 	base := validExportResult().MovementRows[0]
 	for name, mutate := range map[string]func(*MovementRow){

@@ -256,6 +256,28 @@ func TestEvaluateCannotVerifyConflictingCorrelationKeys(t *testing.T) {
 	}
 }
 
+func TestContractConditionRejectsMalformedEvent(t *testing.T) {
+	run := validInput().Run
+	run.AdapterEvents[0].ProducerIdentity = ""
+	condition := contractCondition(run)
+	if condition.State != StateFail || condition.ReasonCode != "adapter_event_malformed" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestContractConditionAllowsSameCorrelationAcrossEventTypes(t *testing.T) {
+	run := validInput().Run
+	correlated := run.AdapterEvents[2]
+	correlated.EventType = "command_started"
+	correlated.EventID = "evt-command-alt"
+	correlated.Sequence = 9
+	run.AdapterEvents = append(run.AdapterEvents, correlated)
+	condition := contractCondition(run)
+	if condition.State != StatePass {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
 func TestEvaluateAllowsDuplicateEmptyCorrelationRefs(t *testing.T) {
 	input := validInput()
 	input.Run.AdapterEvents[2].CorrelationRef = ""

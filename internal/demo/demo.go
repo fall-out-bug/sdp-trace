@@ -289,35 +289,63 @@ func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
 }
 
 func DiscoverRunDirs(root string) ([]string, error) {
-	info, err := os.Stat(root)
+	runDirs, err := discoverRunDirsUnder(root)
 	if err != nil {
 		return nil, err
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("not a directory: %s", root)
-	}
-	if _, err := os.Stat(filepath.Join(root, "run.json")); err == nil {
-		return []string{root}, nil
-	}
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return nil, err
-	}
-	runDirs := make([]string, 0)
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		path := filepath.Join(root, entry.Name())
-		if _, err := os.Stat(filepath.Join(path, "run.json")); err == nil {
-			runDirs = append(runDirs, path)
-		}
 	}
 	sort.Strings(runDirs)
 	if len(runDirs) == 0 {
 		return nil, errors.New("no run directories found")
 	}
 	return runDirs, nil
+}
+
+func discoverRunDirsUnder(root string) ([]string, error) {
+	if err := ensureRunRootDir(root); err != nil {
+		return nil, err
+	}
+	if hasRunManifest(root) {
+		return []string{root}, nil
+	}
+	return collectRunDirs(root)
+}
+
+func collectRunDirs(root string) ([]string, error) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return nil, err
+	}
+	runDirs := make([]string, 0)
+	for _, entry := range entries {
+		path := filepath.Join(root, entry.Name())
+		if isRunDirCandidate(entry, path) {
+			runDirs = append(runDirs, path)
+		}
+	}
+	return runDirs, nil
+}
+
+func ensureRunRootDir(root string) error {
+	info, err := os.Stat(root)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("not a directory: %s", root)
+	}
+	return nil
+}
+
+func isRunDirCandidate(entry os.DirEntry, path string) bool {
+	if !entry.IsDir() {
+		return false
+	}
+	return hasRunManifest(path)
+}
+
+func hasRunManifest(path string) bool {
+	_, err := os.Stat(filepath.Join(path, "run.json"))
+	return err == nil
 }
 
 func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {

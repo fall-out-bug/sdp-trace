@@ -82,6 +82,77 @@ func TestReportAcceptsSingleRunDirectory(t *testing.T) {
 	}
 }
 
+func TestDiscoverRunDirsReturnsRootRunDirectoryWhenRunManifestExists(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"run_id":"root-run"}`), 0o644); err != nil {
+		t.Fatalf("write run manifest: %v", err)
+	}
+	dirs, err := DiscoverRunDirs(root)
+	if err != nil {
+		t.Fatalf("DiscoverRunDirs: %v", err)
+	}
+	if len(dirs) != 1 || dirs[0] != root {
+		t.Fatalf("expected only root run dir, got %v", dirs)
+	}
+}
+
+func TestDiscoverRunDirsFindsRunSubdirectoriesInSortedOrder(t *testing.T) {
+	root := t.TempDir()
+	makeRunDir := func(name string) string {
+		path := filepath.Join(root, name)
+		if err := os.MkdirAll(path, 0o755); err != nil {
+			t.Fatalf("create dir %s: %v", name, err)
+		}
+		if err := os.WriteFile(filepath.Join(path, "run.json"), []byte(`{"run_id":"`+name+`"}`), 0o644); err != nil {
+			t.Fatalf("write manifest in %s: %v", name, err)
+		}
+		return path
+	}
+	makeRunDir("z-run")
+	makeRunDir("a-run")
+	if err := os.WriteFile(filepath.Join(root, "ignored.txt"), []byte("ignore"), 0o644); err != nil {
+		t.Fatalf("write ignored file: %v", err)
+	}
+	dirs, err := DiscoverRunDirs(root)
+	if err != nil {
+		t.Fatalf("DiscoverRunDirs: %v", err)
+	}
+	if len(dirs) != 2 || dirs[0] != filepath.Join(root, "a-run") || dirs[1] != filepath.Join(root, "z-run") {
+		t.Fatalf("expected sorted run dirs, got %v", dirs)
+	}
+}
+
+func TestDiscoverRunDirsReturnsNoRunDirectoriesError(t *testing.T) {
+	root := t.TempDir()
+	if _, err := os.Stat(filepath.Join(root, "run.json")); err == nil {
+		t.Fatalf("run manifest should not exist in empty root")
+	}
+	if err := os.Mkdir(filepath.Join(root, "not-a-run"), 0o755); err != nil {
+		t.Fatalf("create directory without manifest: %v", err)
+	}
+	_, err := DiscoverRunDirs(root)
+	if err == nil {
+		t.Fatalf("expected no run directories found")
+	}
+	if err.Error() != "no run directories found" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestDiscoverRunDirsRejectsNonDirectory(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "not-dir")
+	if err := os.WriteFile(path, []byte("hi"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	_, err := DiscoverRunDirs(path)
+	if err == nil {
+		t.Fatalf("expected not-a-directory error")
+	}
+	if !strings.Contains(err.Error(), "not a directory") {
+		t.Fatalf("expected directory error, got: %v", err)
+	}
+}
+
 func TestGateFailsForTamperedRun(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()

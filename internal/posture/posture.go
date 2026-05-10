@@ -402,25 +402,53 @@ func validateExportHeader(result ExportResult) error {
 }
 
 func validateExportRows(result ExportResult) error {
-	for _, item := range result.InputSelection {
-		if err := validateInputSelectionRow(item); err != nil {
+	return firstError(
+		validateInputSelectionRows(result.InputSelection),
+		validateMetricRows(result.MetricRows),
+		validateMovementRows(result.MovementRows),
+		validateMovementSummary(result.MovementSummary),
+		validateRefusalRows(result.RefusalRows),
+	)
+}
+
+func firstError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
 			return err
 		}
 	}
-	for _, row := range result.MetricRows {
+	return nil
+}
+
+func validateInputSelectionRows(rows []InputSelection) error {
+	for _, row := range rows {
+		if err := validateInputSelectionRow(row); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateMetricRows(rows []MetricRow) error {
+	for _, row := range rows {
 		if err := validateMetricRow(row); err != nil {
 			return err
 		}
 	}
-	for _, row := range result.MovementRows {
+	return nil
+}
+
+func validateMovementRows(rows []MovementRow) error {
+	for _, row := range rows {
 		if err := validateMovementRow(row); err != nil {
 			return err
 		}
 	}
-	if err := validateMovementSummary(result.MovementSummary); err != nil {
-		return err
-	}
-	for _, row := range result.RefusalRows {
+	return nil
+}
+
+func validateRefusalRows(rows []RefusalRow) error {
+	for _, row := range rows {
 		if err := validateRefusalRow(row); err != nil {
 			return err
 		}
@@ -429,17 +457,40 @@ func validateExportRows(result ExportResult) error {
 }
 
 func validateExportCollections(result ExportResult) error {
-	if len(groupingKeys(result.GroupingSetID)) == 0 || len(result.ActiveGroupingKeys) < 2 {
+	if !validExportGrouping(result.GroupingSetID, result.ActiveGroupingKeys) {
 		return fmt.Errorf("malformed posture export grouping")
 	}
-	if result.InputSelection == nil || result.MetricRows == nil || result.MovementRows == nil ||
-		result.RefusalRows == nil || result.Handoff == nil || result.MovementSummary.NonComparableReason == nil {
+	if !hasRequiredCollections(result) {
 		return fmt.Errorf("malformed posture export missing required collection")
 	}
-	if len(result.OutputSafety.VerifiedAbsentSensitiveClasses) == 0 {
+	if !hasOutputSafety(result.OutputSafety.VerifiedAbsentSensitiveClasses) {
 		return fmt.Errorf("malformed posture export output_safety")
 	}
 	return nil
+}
+
+func validExportGrouping(groupingSet string, keys []string) bool {
+	return len(groupingKeys(groupingSet)) > 0 && len(keys) >= 2
+}
+
+func hasRequiredCollections(result ExportResult) bool {
+	for _, present := range []bool{
+		result.InputSelection != nil,
+		result.MetricRows != nil,
+		result.MovementRows != nil,
+		result.RefusalRows != nil,
+		result.Handoff != nil,
+		result.MovementSummary.NonComparableReason != nil,
+	} {
+		if !present {
+			return false
+		}
+	}
+	return true
+}
+
+func hasOutputSafety(classes []string) bool {
+	return len(classes) > 0
 }
 
 func validateInputSelectionRow(item InputSelection) error {

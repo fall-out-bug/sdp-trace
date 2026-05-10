@@ -184,18 +184,48 @@ func contractCondition(run RunEvidence) Condition {
 	if len(run.AdapterEvents) == 0 {
 		return cannotVerify("adapter_event_contract_valid", "adapter_events_missing", "adapter event evidence is missing", "Supply same-chain adapter events or an adapter bundle.")
 	}
+	return contractConditionFromEvents(run.AdapterEvents)
+}
+
+func contractConditionFromEvents(events []AdapterEvent) Condition {
 	seen := map[string]bool{}
-	for _, event := range run.AdapterEvents {
-		if event.EventID == "" || event.EventType == "" || event.ProducerIdentity == "" || event.AdapterIdentity == "" || event.EventPayloadDigest == "" {
+	for _, event := range events {
+		if adapterEventIsMalformed(event) {
 			return fail("adapter_event_contract_valid", "adapter_event_malformed", "adapter event is missing required contract fields", "Emit schema-valid adapter events with producer, adapter, type, and digest fields.")
 		}
-		key := event.EventType + "\x00" + event.CorrelationRef
-		if seen[key] && event.CorrelationRef != "" {
+		if hasDuplicateCorrelationKey(seen, event) {
 			return cannotVerify("adapter_event_contract_valid", "conflicting_adapter_events", "multiple adapter events share a correlation key", "Deduplicate adapter events or make conflicts explicit.")
 		}
-		seen[key] = true
 	}
 	return pass("adapter_event_contract_valid", "adapter_event_contract_valid", "adapter events match required contract fields")
+}
+
+func adapterEventIsMalformed(event AdapterEvent) bool {
+	return missingAdapterEventIdentity(event) || missingAdapterEventPayload(event)
+}
+
+func missingAdapterEventIdentity(event AdapterEvent) bool {
+	return event.EventID == "" || event.EventType == "" || event.ProducerIdentity == "" || event.AdapterIdentity == ""
+}
+
+func missingAdapterEventPayload(event AdapterEvent) bool {
+	return event.EventPayloadDigest == ""
+}
+
+func hasDuplicateCorrelationKey(seen map[string]bool, event AdapterEvent) bool {
+	if event.CorrelationRef == "" {
+		return false
+	}
+	key := contractCorrelationKey(event)
+	if seen[key] {
+		return true
+	}
+	seen[key] = true
+	return false
+}
+
+func contractCorrelationKey(event AdapterEvent) string {
+	return event.EventType + "\x00" + event.CorrelationRef
 }
 
 func identityCondition(run RunEvidence) Condition {

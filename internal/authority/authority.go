@@ -41,8 +41,13 @@ var (
 		"harness_tool_call": true,
 		"gateway_request":   true,
 	}
-	evidenceRefPattern = regexp.MustCompile(`^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$`)
-	unsafeRefPattern   = regexp.MustCompile(`(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)`)
+	evidenceRefPattern           = regexp.MustCompile(`^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$`)
+	unsafeRefPattern             = regexp.MustCompile(`(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)`)
+	evidenceRefResolutionReasons = map[string]string{
+		"inaccessible": "evidence_ref_inaccessible",
+		"malformed":    "evidence_ref_malformed",
+		"stale":        "evidence_ref_stale",
+	}
 )
 
 var aggregateStatePriority = map[string]int{
@@ -615,22 +620,32 @@ func evidenceRefsReason(refs []string, resolution map[string]string) string {
 		return "evidence_ref_missing"
 	}
 	for _, ref := range refs {
-		if unsafeRefPattern.MatchString(ref) || !evidenceRefPattern.MatchString(ref) {
-			return "evidence_ref_malformed"
-		}
-		switch resolution[ref] {
-		case "inaccessible":
-			return "evidence_ref_inaccessible"
-		case "malformed":
-			return "evidence_ref_malformed"
-		case "stale":
-			return "evidence_ref_stale"
-		}
-		if strings.HasPrefix(ref, "external:") && resolution[ref] != "resolved" {
-			return "external_evidence_unresolved"
+		if reason := evidenceRefReason(ref, resolution[ref]); reason != "" {
+			return reason
 		}
 	}
 	return ""
+}
+
+func evidenceRefReason(ref string, resolution string) string {
+	if malformedEvidenceRef(ref) {
+		return "evidence_ref_malformed"
+	}
+	if reason, ok := evidenceRefResolutionReasons[resolution]; ok {
+		return reason
+	}
+	if unresolvedExternalEvidenceRef(ref, resolution) {
+		return "external_evidence_unresolved"
+	}
+	return ""
+}
+
+func malformedEvidenceRef(ref string) bool {
+	return unsafeRefPattern.MatchString(ref) || !evidenceRefPattern.MatchString(ref)
+}
+
+func unresolvedExternalEvidenceRef(ref string, resolution string) bool {
+	return strings.HasPrefix(ref, "external:") && resolution != "resolved"
 }
 
 func aggregateState(evaluations []AuthorityEvaluation, envState string) string {

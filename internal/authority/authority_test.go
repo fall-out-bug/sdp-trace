@@ -379,6 +379,89 @@ func TestEvaluateExternalAndStaleEvidenceCannotVerify(t *testing.T) {
 	}
 }
 
+func TestEvidenceRefsReason(t *testing.T) {
+	tests := []struct {
+		name       string
+		refs       []string
+		resolution map[string]string
+		want       string
+	}{
+		{
+			name: "missing refs",
+			want: "evidence_ref_missing",
+		},
+		{
+			name: "malformed syntax",
+			refs: []string{"not-a-ref"},
+			want: "evidence_ref_malformed",
+		},
+		{
+			name: "unsafe reference token",
+			refs: []string{"file:access_token=bad"},
+			want: "evidence_ref_malformed",
+		},
+		{
+			name:       "inaccessible ref",
+			refs:       []string{"file:evidence/git-diff.json"},
+			resolution: map[string]string{"file:evidence/git-diff.json": "inaccessible"},
+			want:       "evidence_ref_inaccessible",
+		},
+		{
+			name: "malformed resolution marker",
+			refs: []string{"file:evidence/git-diff.json"},
+			resolution: map[string]string{
+				"file:evidence/git-diff.json": "malformed",
+			},
+			want: "evidence_ref_malformed",
+		},
+		{
+			name: "stale ref",
+			refs: []string{"file:evidence/git-diff.json"},
+			resolution: map[string]string{
+				"file:evidence/git-diff.json": "stale",
+			},
+			want: "evidence_ref_stale",
+		},
+		{
+			name: "external unresolved",
+			refs: []string{"external:ticket-1"},
+			want: "external_evidence_unresolved",
+		},
+		{
+			name: "external resolved",
+			refs: []string{"external:ticket-1"},
+			resolution: map[string]string{
+				"external:ticket-1": "resolved",
+			},
+			want: "",
+		},
+		{
+			name: "first invalid reference wins",
+			refs: []string{"file:evidence/git-diff.json", "external:ticket-1"},
+			resolution: map[string]string{
+				"file:evidence/git-diff.json": "inaccessible",
+				"external:ticket-1":           "resolved",
+			},
+			want: "evidence_ref_inaccessible",
+		},
+		{
+			name: "external unresolved wins after malformed",
+			refs: []string{"file:ref with space", "external:ticket-1"},
+			resolution: map[string]string{
+				"external:ticket-1": "resolved",
+			},
+			want: "evidence_ref_malformed",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := evidenceRefsReason(tt.refs, tt.resolution); got != tt.want {
+				t.Fatalf("evidenceRefsReason() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateActionReasonOrdering(t *testing.T) {
 	pkg := validPackage()
 	env := pkg.AuthorityEnvelopes[0]
