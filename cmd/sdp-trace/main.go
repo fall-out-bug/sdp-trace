@@ -640,6 +640,22 @@ func runPRReviewSummarize(args []string, stdout, stderr io.Writer) int {
 }
 
 func runPRReviewCheck(args []string, stdout, stderr io.Writer) int {
+	opts, code, ok := parsePRReviewCheckArgs(args, stderr)
+	if !ok {
+		return code
+	}
+	packet, profile, code, ok := preparePRReviewCheck(opts, args, stderr)
+	if !ok {
+		return code
+	}
+	runs, preview, code, ok := executePRReviewCheck(packet, profile, opts, args, stderr)
+	if !ok {
+		return code
+	}
+	return finishPRReviewCheck(opts.stringValue("out"), packet, profile, runs, preview, stdout, stderr)
+}
+
+func parsePRReviewCheckArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
 	opts := &flagSet{name: "pr-review check"}
 	opts.setString("out", "")
 	opts.setString("repo-id", "")
@@ -658,21 +674,29 @@ func runPRReviewCheck(args []string, stdout, stderr io.Writer) int {
 	opts.setBool("preview", false)
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, exitUsage, false
 	}
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "pr-review check accepts only flags")
-		return exitUsage
+		return nil, exitUsage, false
 	}
+	if err := requirePRReviewCheckInputs(opts); err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, exitUsage, false
+	}
+	return opts, 0, true
+}
+
+func requirePRReviewCheckInputs(opts *flagSet) error {
 	outDir := opts.stringValue("out")
 	if strings.TrimSpace(outDir) == "" {
-		fmt.Fprintln(stderr, "pr-review check requires --out")
-		return exitUsage
+		return errors.New("pr-review check requires --out")
 	}
-	if err := requirePRReviewPacketInputs(opts); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
+	return requirePRReviewPacketInputs(opts)
+}
+
+func preparePRReviewCheck(opts *flagSet, args []string, stderr io.Writer) (prreview.Packet, prreview.ReviewProfile, int, bool) {
+	outDir := opts.stringValue("out")
 	packet, err := prreview.BuildPacket(prreview.PacketOptions{
 		OutDir:            filepath.Join(outDir, "packet"),
 		RepoID:            opts.stringValue("repo-id"),
@@ -688,17 +712,22 @@ func runPRReviewCheck(args []string, stdout, stderr io.Writer) int {
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+		return prreview.Packet{}, prreview.ReviewProfile{}, exitCannotVerify, false
 	}
 	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+		return prreview.Packet{}, prreview.ReviewProfile{}, exitCannotVerify, false
 	}
 	if err := requireDirectory(opts.stringValue("work-dir")); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+		return prreview.Packet{}, prreview.ReviewProfile{}, exitCannotVerify, false
 	}
+	return packet, profile, 0, true
+}
+
+func executePRReviewCheck(packet prreview.Packet, profile prreview.ReviewProfile, opts *flagSet, args []string, stderr io.Writer) (prreview.RunSet, *prreview.RunPreview, int, bool) {
+	outDir := opts.stringValue("out")
 	runs, preview, err := prreview.RunReview(packet, profile, prreview.RunOptions{
 		OutDir:         filepath.Join(outDir, "runs"),
 		AllowedRunners: allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
@@ -707,32 +736,64 @@ func runPRReviewCheck(args []string, stdout, stderr io.Writer) int {
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+		return prreview.RunSet{}, nil, exitCannotVerify, false
 	}
-	if preview != nil {
-		payload, _ := json.MarshalIndent(preview, "", "  ")
-		fmt.Fprintf(stdout, "%s\n", payload)
+	return runs, preview, 0, true
+}
+
+func finishPRReviewCheck(outDir string, packet prreview.Packet, profile prreview.ReviewProfile, runs prreview.RunSet, preview *prreview.RunPreview, stdout, stderr io.Writer) int {
+	if writePRReviewCheckPreview(stdout, preview) {
 		return 0
 	}
-	if err := prreview.WriteJSON(filepath.Join(outDir, "runs", "results.json"), runs); err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+	ledger, validation, code, ok := writePRReviewCheckArtifacts(outDir, packet, profile, runs, stderr)
+	if !ok {
+		return code
+	}
+	fmt.Fprint(stdout, prreview.Summarize(validation, ledger))
+	return reviewValidationExit(validation)
+}
+
+func writePRReviewCheckPreview(stdout io.Writer, preview *prreview.RunPreview) bool {
+	if preview == nil {
+		return false
+	}
+	writeIndentedPayload(stdout, preview)
+	return true
+}
+
+func writePRReviewCheckArtifacts(outDir string, packet prreview.Packet, profile prreview.ReviewProfile, runs prreview.RunSet, stderr io.Writer) (prreview.Ledger, prreview.Validation, int, bool) {
+	if !writePRReviewJSON(filepath.Join(outDir, "runs", "results.json"), runs, stderr) {
+		return prreview.Ledger{}, prreview.Validation{}, 1, false
 	}
 	ledger := prreview.SynthesizeLedger(packet, runs, nil)
 	validation := prreview.Validate(packet, profile, runs, ledger)
-	if err := prreview.WriteJSON(filepath.Join(outDir, "ledger.json"), ledger); err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+	if !writePRReviewJSON(filepath.Join(outDir, "ledger.json"), ledger, stderr) {
+		return prreview.Ledger{}, prreview.Validation{}, 1, false
 	}
-	if err := prreview.WriteJSON(filepath.Join(outDir, "validation.json"), validation); err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+	if !writePRReviewJSON(filepath.Join(outDir, "validation.json"), validation, stderr) {
+		return prreview.Ledger{}, prreview.Validation{}, 1, false
 	}
-	fmt.Fprint(stdout, prreview.Summarize(validation, ledger))
+	return ledger, validation, 0, true
+}
+
+func writePRReviewJSON(path string, value any, stderr io.Writer) bool {
+	if err := prreview.WriteJSON(path, value); err != nil {
+		fmt.Fprintln(stderr, err)
+		return false
+	}
+	return true
+}
+
+func reviewValidationExit(validation prreview.Validation) int {
 	if reviewValidationExitCode(validation) != 0 {
 		return exitCannotVerify
 	}
 	return 0
+}
+
+func writeIndentedPayload(stdout io.Writer, value any) {
+	payload, _ := json.MarshalIndent(value, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
 }
 
 func requirePRReviewPacketInputs(opts *flagSet) error {

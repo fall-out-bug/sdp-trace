@@ -206,6 +206,120 @@ func TestPRReviewCheckWritesRunProvenance(t *testing.T) {
 	}
 }
 
+func TestPRReviewCheckPreviewDoesNotWriteArtifacts(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
+	profilePath := writePRReviewCheckProfile(t, root)
+	outDir := filepath.Join(root, "review")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run(prReviewCheckArgs(outDir, diffPath, profilePath, "--preview"), &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("check preview exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"schema_version": "block30-pr-review-runs-v1"`) {
+		t.Fatalf("preview output missing run schema: %s", out.String())
+	}
+	for _, path := range []string{
+		filepath.Join(outDir, "runs", "results.json"),
+		filepath.Join(outDir, "ledger.json"),
+		filepath.Join(outDir, "validation.json"),
+	} {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("preview wrote artifact %s: %v", path, err)
+		}
+	}
+}
+
+func TestPRReviewCheckRequiresOutAndPacketInputs(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
+	profilePath := writePRReviewCheckProfile(t, root)
+	for name, tc := range map[string]struct {
+		args    []string
+		wantErr string
+	}{
+		"missing-out": {
+			args: []string{
+				"pr-review", "check",
+				"--repo-id", "demo_repo",
+				"--change-ref", "pr-123",
+				"--base", strings.Repeat("a", 40),
+				"--head", strings.Repeat("b", 40),
+				"--diff", diffPath,
+				"--profile", profilePath,
+			},
+			wantErr: "pr-review check requires --out",
+		},
+		"missing-diff": {
+			args: []string{
+				"pr-review", "check",
+				"--out", filepath.Join(root, "review-missing-diff"),
+				"--repo-id", "demo_repo",
+				"--change-ref", "pr-123",
+				"--base", strings.Repeat("a", 40),
+				"--head", strings.Repeat("b", 40),
+				"--profile", profilePath,
+			},
+			wantErr: "pr-review packet requires --diff",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(tc.args, &out, &errOut)
+			if exit != exitUsage || !strings.Contains(errOut.String(), tc.wantErr) {
+				t.Fatalf("check exit=%d err=%s out=%s want %q", exit, errOut.String(), out.String(), tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestPRReviewCheckRejectsMissingOrFileWorkDir(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
+	profilePath := writePRReviewCheckProfile(t, root)
+	fileWorkDir := writeFileStringForPRReviewTest(t, root, "work-file", "not a dir\n")
+	for name, workDir := range map[string]string{
+		"missing-work-dir": filepath.Join(root, "missing"),
+		"file-work-dir":    fileWorkDir,
+	} {
+		t.Run(name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			args := prReviewCheckArgs(filepath.Join(root, "review-"+name), diffPath, profilePath, "--work-dir", workDir)
+			exit := run(args, &out, &errOut)
+			if exit != exitCannotVerify || !strings.Contains(errOut.String(), "work-dir") {
+				t.Fatalf("check exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+			}
+		})
+	}
+}
+
+func writePRReviewCheckProfile(t *testing.T, root string) string {
+	t.Helper()
+	return writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
+		"schema_version":  "block30-pr-review-profile-v1",
+		"profile_id":      "default",
+		"required_planes": []string{"code_correctness"},
+		"roles":           []map[string]any{{"role_id": "code", "plane": "code_correctness", "runner": "manual_external", "requested_model": "not_assessed"}},
+	})
+}
+
+func prReviewCheckArgs(outDir, diffPath, profilePath string, extra ...string) []string {
+	args := []string{
+		"pr-review", "check",
+		"--out", outDir,
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", diffPath,
+		"--profile", profilePath,
+	}
+	return append(args, extra...)
+}
+
 func writeFileStringForPRReviewTest(t *testing.T, root, name, content string) string {
 	t.Helper()
 	if err := os.MkdirAll(root, 0o755); err != nil {
