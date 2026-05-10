@@ -482,6 +482,80 @@ func TestProtectedGateRequiresWitnessRunIDBinding(t *testing.T) {
 	}
 }
 
+func TestWitnessBindingStateRejectsInvalidBindings(t *testing.T) {
+	tests := []struct {
+		name     string
+		record   WitnessSummary
+		expected WitnessExpectation
+		state    string
+		reason   string
+	}{
+		{
+			name:     "missing repository",
+			expected: WitnessExpectation{Repository: "org/repo"},
+			state:    GateCannotVerify,
+			reason:   "ci witness repository binding is missing",
+		},
+		{
+			name:     "mismatched ref",
+			record:   WitnessSummary{Source: WitnessSourceIdentity{Ref: "refs/heads/feature"}},
+			expected: WitnessExpectation{Ref: "refs/heads/main"},
+			state:    GateFail,
+			reason:   "ci witness ref mismatch: expected refs/heads/main got refs/heads/feature",
+		},
+		{
+			name:     "missing commit",
+			expected: WitnessExpectation{CommitSHA: "abc123"},
+			state:    GateCannotVerify,
+			reason:   "ci witness commit binding is missing",
+		},
+		{
+			name: "unknown artifact",
+			record: WitnessSummary{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "unexpected/run.json",
+				SHA256: "digest",
+			}}},
+			expected: WitnessExpectation{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "expected/run.json",
+				SHA256: "digest",
+			}}},
+			state:  GateCannotVerify,
+			reason: "ci witness artifact unexpected/run.json is not present in current gate input",
+		},
+		{
+			name: "artifact digest mismatch",
+			record: WitnessSummary{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "run/run.json",
+				SHA256: "actual",
+			}}},
+			expected: WitnessExpectation{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "run/run.json",
+				SHA256: "expected",
+			}}},
+			state:  GateFail,
+			reason: "ci witness artifact digest mismatch for run/run.json",
+		},
+		{
+			name: "missing artifact",
+			expected: WitnessExpectation{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "run/run.json",
+				SHA256: "expected",
+			}}},
+			state:  GateCannotVerify,
+			reason: "ci witness artifact run/run.json is missing from witness",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			state, reasons := witnessBindingState(tt.record, tt.expected)
+			if state != tt.state || !contains(reasons, tt.reason) {
+				t.Fatalf("state=%s reasons=%v", state, reasons)
+			}
+		})
+	}
+}
+
 func TestProtectedGateReasonsUseSeverityBeforeConditionOrder(t *testing.T) {
 	contract := traceContractForTest()
 	rows := []RunRow{

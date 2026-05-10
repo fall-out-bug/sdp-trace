@@ -1057,36 +1057,49 @@ func loadWitnessSummary(path string) (WitnessSummary, error) {
 }
 
 func witnessBindingState(record WitnessSummary, expected WitnessExpectation) (string, []string) {
-	if expected.Repository != "" && record.Source.Repository == "" {
-		return GateCannotVerify, []string{"ci witness repository binding is missing"}
+	for _, binding := range witnessScalarBindings(record, expected) {
+		if state, reasons := validateWitnessScalarBinding(binding); state != GatePass {
+			return state, reasons
+		}
 	}
-	if expected.Repository != "" && record.Source.Repository != expected.Repository {
-		return GateFail, []string{fmt.Sprintf("ci witness repository mismatch: expected %s got %s", expected.Repository, record.Source.Repository)}
+	return witnessArtifactBindingState(record.RunArtifacts, expected.RunArtifacts)
+}
+
+type witnessScalarBinding struct {
+	label    string
+	expected string
+	actual   string
+}
+
+func witnessScalarBindings(record WitnessSummary, expected WitnessExpectation) []witnessScalarBinding {
+	return []witnessScalarBinding{
+		{label: "repository", expected: expected.Repository, actual: record.Source.Repository},
+		{label: "ref", expected: expected.Ref, actual: record.Source.Ref},
+		{label: "commit", expected: expected.CommitSHA, actual: record.Source.CommitSHA},
+		{label: "run id", expected: expected.RunID, actual: record.CIIdentity.RunID},
 	}
-	if expected.Ref != "" && record.Source.Ref == "" {
-		return GateCannotVerify, []string{"ci witness ref binding is missing"}
+}
+
+func validateWitnessScalarBinding(binding witnessScalarBinding) (string, []string) {
+	if binding.expected == "" {
+		return GatePass, nil
 	}
-	if expected.Ref != "" && record.Source.Ref != expected.Ref {
-		return GateFail, []string{fmt.Sprintf("ci witness ref mismatch: expected %s got %s", expected.Ref, record.Source.Ref)}
+	if binding.actual == "" {
+		return GateCannotVerify, []string{fmt.Sprintf("ci witness %s binding is missing", binding.label)}
 	}
-	if expected.CommitSHA != "" && record.Source.CommitSHA == "" {
-		return GateCannotVerify, []string{"ci witness commit binding is missing"}
+	if binding.actual != binding.expected {
+		return GateFail, []string{fmt.Sprintf("ci witness %s mismatch: expected %s got %s", binding.label, binding.expected, binding.actual)}
 	}
-	if expected.CommitSHA != "" && record.Source.CommitSHA != expected.CommitSHA {
-		return GateFail, []string{fmt.Sprintf("ci witness commit mismatch: expected %s got %s", expected.CommitSHA, record.Source.CommitSHA)}
-	}
-	if expected.RunID != "" && record.CIIdentity.RunID == "" {
-		return GateCannotVerify, []string{"ci witness run id binding is missing"}
-	}
-	if expected.RunID != "" && record.CIIdentity.RunID != expected.RunID {
-		return GateFail, []string{fmt.Sprintf("ci witness run id mismatch: expected %s got %s", expected.RunID, record.CIIdentity.RunID)}
-	}
+	return GatePass, nil
+}
+
+func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (string, []string) {
 	expectedArtifacts := map[string]string{}
-	for _, artifact := range expected.RunArtifacts {
+	for _, artifact := range expected {
 		expectedArtifacts[artifact.Path] = artifact.SHA256
 	}
 	seenArtifacts := map[string]bool{}
-	for _, artifact := range record.RunArtifacts {
+	for _, artifact := range actual {
 		seenArtifacts[artifact.Path] = true
 		expectedDigest, ok := expectedArtifacts[artifact.Path]
 		if !ok {
