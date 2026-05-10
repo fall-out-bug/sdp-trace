@@ -262,39 +262,53 @@ func IsPassingCI(record Record) bool {
 }
 
 func EnvironmentFromOS() map[string]string {
+	return environmentFromEntries(os.Environ())
+}
+
+func environmentFromEntries(entries []string) map[string]string {
 	env := map[string]string{}
-	for _, entry := range os.Environ() {
-		key, value, ok := strings.Cut(entry, "=")
-		if ok {
-			env[key] = value
-		}
+	for _, entry := range entries {
+		addEnvironmentEntry(env, entry)
 	}
 	return env
 }
 
-func missingGitHubIdentity(env map[string]string) []string {
-	required := []string{
-		"GITHUB_ACTIONS",
-		"GITHUB_SHA",
-		"GITHUB_RUN_ID",
-		"GITHUB_RUN_ATTEMPT",
-		"GITHUB_WORKFLOW",
-		"GITHUB_JOB",
-		"GITHUB_ACTOR",
-		"GITHUB_REPOSITORY",
-		"GITHUB_REF",
-		"GITHUB_SERVER_URL",
+func addEnvironmentEntry(env map[string]string, entry string) {
+	key, value, ok := strings.Cut(entry, "=")
+	if ok {
+		env[key] = value
 	}
+}
+
+func missingGitHubIdentity(env map[string]string) []string {
+	missing := missingEnvKeys(env, githubIdentityEnvKeys)
+	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
+		missing = append(missing, "GITHUB_ACTIONS=true")
+	}
+	sort.Strings(missing)
+	return missing
+}
+
+var githubIdentityEnvKeys = []string{
+	"GITHUB_ACTIONS",
+	"GITHUB_SHA",
+	"GITHUB_RUN_ID",
+	"GITHUB_RUN_ATTEMPT",
+	"GITHUB_WORKFLOW",
+	"GITHUB_JOB",
+	"GITHUB_ACTOR",
+	"GITHUB_REPOSITORY",
+	"GITHUB_REF",
+	"GITHUB_SERVER_URL",
+}
+
+func missingEnvKeys(env map[string]string, required []string) []string {
 	missing := make([]string, 0)
 	for _, key := range required {
 		if strings.TrimSpace(env[key]) == "" {
 			missing = append(missing, key)
 		}
 	}
-	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
-		missing = append(missing, "GITHUB_ACTIONS=true")
-	}
-	sort.Strings(missing)
 	return missing
 }
 
@@ -361,14 +375,14 @@ func executeOIDCTokenRequest(httpClient *http.Client, req *http.Request) ([]byte
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if !successHTTPStatus(resp.StatusCode) {
 		return nil, fmt.Errorf("oidc token request returned %s", resp.Status)
 	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
+	return io.ReadAll(resp.Body)
+}
+
+func successHTTPStatus(statusCode int) bool {
+	return statusCode >= 200 && statusCode < 300
 }
 
 func parseOIDCTokenResponse(body []byte) (string, error) {
@@ -419,18 +433,23 @@ func audienceString(value any) string {
 	case string:
 		return typed
 	case []any:
-		return strings.Join(audienceStringParts(typed), ",")
+		return strings.Join(stringItems(typed), ",")
 	default:
 		return ""
 	}
 }
 
-func audienceStringParts(values []any) []string {
+func stringItems(values []any) []string {
 	parts := make([]string, 0, len(values))
 	for _, item := range values {
-		if text, ok := item.(string); ok {
-			parts = append(parts, text)
-		}
+		parts = appendStringItem(parts, item)
+	}
+	return parts
+}
+
+func appendStringItem(parts []string, item any) []string {
+	if text, ok := item.(string); ok {
+		return append(parts, text)
 	}
 	return parts
 }
@@ -467,28 +486,37 @@ func hashReportArtifacts(reportDir string) ([]ArtifactDigest, error) {
 	if err != nil {
 		return nil, err
 	}
+	return hashReportArtifactEntries(reportDir, entries)
+}
+
+func hashReportArtifactEntries(reportDir string, entries []os.DirEntry) ([]ArtifactDigest, error) {
 	artifacts := make([]ArtifactDigest, 0)
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if skipReportArtifactEntry(entry) {
 			continue
 		}
-		if entry.Name() == "ci-witness.json" {
-			continue
-		}
-		path := filepath.Join(reportDir, entry.Name())
-		digest, err := hashFile(path)
+		artifact, err := hashReportArtifact(reportDir, entry.Name())
 		if err != nil {
 			return nil, err
 		}
-		artifacts = append(artifacts, ArtifactDigest{
-			Path:   filepath.ToSlash(entry.Name()),
-			SHA256: digest,
-		})
+		artifacts = append(artifacts, artifact)
 	}
 	sort.Slice(artifacts, func(i, j int) bool {
 		return artifacts[i].Path < artifacts[j].Path
 	})
 	return artifacts, nil
+}
+
+func skipReportArtifactEntry(entry os.DirEntry) bool {
+	return entry.IsDir() || entry.Name() == "ci-witness.json"
+}
+
+func hashReportArtifact(reportDir, name string) (ArtifactDigest, error) {
+	digest, err := hashFile(filepath.Join(reportDir, name))
+	if err != nil {
+		return ArtifactDigest{}, err
+	}
+	return ArtifactDigest{Path: filepath.ToSlash(name), SHA256: digest}, nil
 }
 
 func hashFile(path string) (string, error) {

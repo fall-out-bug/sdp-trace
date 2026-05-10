@@ -343,6 +343,10 @@ func renderLabels(labels map[string]string) string {
 		return ""
 	}
 	sort.Strings(keys)
+	return renderSortedLabels(labels, keys)
+}
+
+func renderSortedLabels(labels map[string]string, keys []string) string {
 	var out strings.Builder
 	out.WriteByte('{')
 	for i, key := range keys {

@@ -202,22 +202,34 @@ func WriteReport(target, outDir, contractPath string) (ReportArtifacts, error) {
 	if strings.TrimSpace(outDir) == "" {
 		return ReportArtifacts{}, errors.New("report requires --out <dir>")
 	}
-	contract, err := trace.LoadContract(contractPath)
-	if err != nil {
-		return ReportArtifacts{}, err
-	}
-	rows, err := VerifiedRows(target, contract)
+	rows, contract, err := verifiedRowsForContract(target, contractPath)
 	if err != nil {
 		return ReportArtifacts{}, err
 	}
 	artifacts := BuildReport(rows, contract)
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return ReportArtifacts{}, err
-	}
-	if err := writeReportArtifacts(outDir, artifacts); err != nil {
+	if err := persistReportArtifacts(outDir, artifacts); err != nil {
 		return ReportArtifacts{}, err
 	}
 	return artifacts, nil
+}
+
+func persistReportArtifacts(outDir string, artifacts ReportArtifacts) error {
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return err
+	}
+	return writeReportArtifacts(outDir, artifacts)
+}
+
+func verifiedRowsForContract(target, contractPath string) ([]RunRow, trace.Contract, error) {
+	contract, err := trace.LoadContract(contractPath)
+	if err != nil {
+		return nil, trace.Contract{}, err
+	}
+	rows, err := VerifiedRows(target, contract)
+	if err != nil {
+		return nil, trace.Contract{}, err
+	}
+	return rows, contract, nil
 }
 
 func writeReportArtifacts(outDir string, artifacts ReportArtifacts) error {
@@ -241,27 +253,28 @@ func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (Ga
 	if strings.TrimSpace(outPath) == "" {
 		return GateResult{}, errors.New("gate requires --out <file>")
 	}
-	contract, err := trace.LoadContract(contractPath)
-	if err != nil {
-		return GateResult{}, err
-	}
-	rows, err := VerifiedRows(target, contract)
+	rows, contract, err := verifiedRowsForContract(target, contractPath)
 	if err != nil {
 		return GateResult{}, err
 	}
 	result := EvaluateGate(rows, contract)
 	result = applyOptionalWitness(result, target, witnessPaths)
-	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
-		return GateResult{}, err
-	}
-	if err := writeJSON(outPath, result); err != nil {
+	if err := persistGateResult(outPath, result); err != nil {
 		return GateResult{}, err
 	}
 	return result, nil
 }
 
+func persistGateResult(outPath string, result GateResult) error {
+	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+		return err
+	}
+	return writeJSON(outPath, result)
+}
+
 func applyOptionalWitness(result GateResult, target string, witnessPaths []string) GateResult {
-	if len(witnessPaths) == 0 || strings.TrimSpace(witnessPaths[0]) == "" {
+	witnessPath, ok := firstWitnessPath(witnessPaths)
+	if !ok {
 		return result
 	}
 	expected, err := witnessExpectationFromTarget(target)
@@ -270,7 +283,14 @@ func applyOptionalWitness(result GateResult, target string, witnessPaths []strin
 		result.Reasons = append(result.Reasons, fmt.Sprintf("ci witness cannot verify current run artifacts: %v", err))
 		return result
 	}
-	return applyWitnessWithExpectation(result, witnessPaths[0], expected)
+	return applyWitnessWithExpectation(result, witnessPath, expected)
+}
+
+func firstWitnessPath(witnessPaths []string) (string, bool) {
+	if len(witnessPaths) == 0 || strings.TrimSpace(witnessPaths[0]) == "" {
+		return "", false
+	}
+	return witnessPaths[0], true
 }
 
 func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
@@ -280,25 +300,32 @@ func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
 	}
 	rows := make([]RunRow, 0, len(runDirs))
 	for _, runDir := range runDirs {
-		result, table, audit, verifyErr := verifier.VerifyRun(runDir)
-		if verifyErr != nil && result.Reason == "" {
-			result.Reason = verifyErr.Error()
-		}
-		if err := verifier.WriteVerifierArtifacts(runDir, result, table, audit); err != nil {
-			result = trace.VerifierResult{
-				RunID:         result.RunID,
-				RunDir:        runDir,
-				Result:        trace.VerdictCannotVerify,
-				TrustScope:    trace.TrustScopeLocalObserved,
-				Completeness:  trace.CompletenessUnknown,
-				Replayability: trace.ReplayabilityNone,
-				Reason:        fmt.Sprintf("failed writing verifier artifacts: %v", err),
-			}
-		}
-		row := rowFromRun(runDir, result, contract)
-		rows = append(rows, row)
+		rows = append(rows, verifiedRow(runDir, contract))
 	}
 	return rows, nil
+}
+
+func verifiedRow(runDir string, contract trace.Contract) RunRow {
+	result, table, audit, verifyErr := verifier.VerifyRun(runDir)
+	if verifyErr != nil && result.Reason == "" {
+		result.Reason = verifyErr.Error()
+	}
+	if err := verifier.WriteVerifierArtifacts(runDir, result, table, audit); err != nil {
+		result = verifierArtifactWriteFailure(runDir, result.RunID, err)
+	}
+	return rowFromRun(runDir, result, contract)
+}
+
+func verifierArtifactWriteFailure(runDir, runID string, err error) trace.VerifierResult {
+	return trace.VerifierResult{
+		RunID:         runID,
+		RunDir:        runDir,
+		Result:        trace.VerdictCannotVerify,
+		TrustScope:    trace.TrustScopeLocalObserved,
+		Completeness:  trace.CompletenessUnknown,
+		Replayability: trace.ReplayabilityNone,
+		Reason:        fmt.Sprintf("failed writing verifier artifacts: %v", err),
+	}
 }
 
 func DiscoverRunDirs(root string) ([]string, error) {
@@ -370,18 +397,7 @@ func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
 		AuditGradeReason: "local observed evidence has no CI/OIDC witness or external witness checkpoint",
 		Runs:             rows,
 	}
-	for _, row := range rows {
-		switch row.Result {
-		case trace.VerdictObserved:
-			summary.ObservedCount++
-		case trace.VerdictFail:
-			summary.FailedCount++
-		case trace.VerdictCannotVerify:
-			summary.CannotVerifyCount++
-		case trace.VerdictNotAssessed:
-			summary.NotAssessedCount++
-		}
-	}
+	summary.applyRunVerdictCounts(rows)
 	return ReportArtifacts{
 		Summary:       summary,
 		EvidenceTable: EvidenceTable{Runs: rows},
@@ -395,6 +411,26 @@ func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
 		},
 		Timeline: buildTimeline(rows),
 	}
+}
+
+func (summary *Summary) applyRunVerdictCounts(rows []RunRow) {
+	for _, row := range rows {
+		summary.applyRunVerdictCount(row.Result)
+	}
+}
+
+func (summary *Summary) applyRunVerdictCount(verdict trace.VerifierVerdict) {
+	counter := runVerdictCounters[verdict]
+	if counter != nil {
+		counter(summary)
+	}
+}
+
+var runVerdictCounters = map[trace.VerifierVerdict]func(*Summary){
+	trace.VerdictObserved:     func(summary *Summary) { summary.ObservedCount++ },
+	trace.VerdictFail:         func(summary *Summary) { summary.FailedCount++ },
+	trace.VerdictCannotVerify: func(summary *Summary) { summary.CannotVerifyCount++ },
+	trace.VerdictNotAssessed:  func(summary *Summary) { summary.NotAssessedCount++ },
 }
 
 func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
@@ -538,19 +574,29 @@ func protectedCIWitnessGate(input ProtectedGateInput) string {
 }
 
 func protectedTrustCap(input ProtectedGateInput, ciWitnessGate string) string {
-	if input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned {
-		return checkpoint.TrustScopeCISigned
+	if trustCap := protectedCheckpointTrustCap(input.Checkpoint.TrustScope); trustCap != "" {
+		return trustCap
 	}
-	if input.Checkpoint.TrustScope == checkpoint.TrustScopeLocalSigned {
-		return checkpoint.TrustScopeLocalSigned
-	}
+	return nonCheckpointProtectedTrustCap(input.Checkpoint.TrustScope, ciWitnessGate)
+}
+
+func nonCheckpointProtectedTrustCap(checkpointTrustScope, ciWitnessGate string) string {
 	if ciWitnessGate == GatePass {
 		return "ci_witnessed"
 	}
-	if input.Checkpoint.TrustScope != "" {
-		return input.Checkpoint.TrustScope
+	if checkpointTrustScope != "" {
+		return checkpointTrustScope
 	}
 	return string(trace.TrustScopeLocalObserved)
+}
+
+func protectedCheckpointTrustCap(trustScope string) string {
+	for _, candidate := range []string{checkpoint.TrustScopeCISigned, checkpoint.TrustScopeLocalSigned} {
+		if trustScope == candidate {
+			return candidate
+		}
+	}
+	return ""
 }
 
 func protectedConditions(result GateResult, input ProtectedGateInput) []ProtectedCondition {
@@ -601,13 +647,7 @@ func protectedConditionFromGateCondition(conditions []GateCondition, id string) 
 
 func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
 	if input.Witness == nil {
-		return ProtectedCondition{
-			ID:         "ci_witness_bound",
-			State:      GateCannotVerify,
-			ReasonCode: "missing_ci_witness",
-			Reason:     "CI witness evidence is required for protected profile",
-			NextAction: "Supply a CI witness bound to the selected run.",
-		}
+		return missingCIWitnessCondition()
 	}
 	state, reasons := witnessBindingState(*input.Witness, input.WitnessExpectation)
 	code := "ci_witness_bound"
@@ -626,23 +666,41 @@ func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
 	return ProtectedCondition{ID: "ci_witness_bound", State: state, ReasonCode: code, Reason: reason, NextAction: next}
 }
 
+func missingCIWitnessCondition() ProtectedCondition {
+	return ProtectedCondition{
+		ID:         "ci_witness_bound",
+		State:      GateCannotVerify,
+		ReasonCode: "missing_ci_witness",
+		Reason:     "CI witness evidence is required for protected profile",
+		NextAction: "Supply a CI witness bound to the selected run.",
+	}
+}
+
 func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondition {
-	if input.Witness == nil || strings.TrimSpace(input.Witness.GeneratedAt) == "" {
+	generatedAt, ok := protectedWitnessGeneratedAt(input.Witness)
+	if !ok {
 		return witnessFreshnessCannotVerify("missing_witness_freshness", "CI witness generated_at is required for protected freshness evaluation", "Supply CI witness evidence with generated_at freshness data.")
 	}
-	generatedAt, err := time.Parse(time.RFC3339, input.Witness.GeneratedAt)
+	return protectedWitnessFreshnessAt(generatedAt, input.Now)
+}
+
+func protectedWitnessGeneratedAt(witness *WitnessSummary) (string, bool) {
+	if witness == nil || strings.TrimSpace(witness.GeneratedAt) == "" {
+		return "", false
+	}
+	return witness.GeneratedAt, true
+}
+
+func protectedWitnessFreshnessAt(generatedAtText string, now time.Time) ProtectedCondition {
+	generatedAt, err := time.Parse(time.RFC3339, generatedAtText)
 	if err != nil {
 		return witnessFreshnessCannotVerify("invalid_witness_freshness", "CI witness generated_at cannot be parsed", "Regenerate CI witness evidence with an RFC3339 generated_at timestamp.")
 	}
-	now := input.Now
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
-	if generatedAt.After(now.Add(5 * time.Minute)) {
-		return witnessFreshnessFail("witness_from_future", "CI witness generated_at is after the verifier time window", "Regenerate CI witness evidence in the selected CI run.")
-	}
-	if now.Sub(generatedAt) > 24*time.Hour {
-		return witnessFreshnessFail("stale_witness", "CI witness generated_at is outside the protected freshness window", "Regenerate CI witness evidence for the selected run.")
+	if condition, ok := invalidWitnessFreshnessCondition(generatedAt, now); ok {
+		return condition
 	}
 	return ProtectedCondition{
 		ID:         "witness_freshness_valid",
@@ -650,6 +708,16 @@ func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondi
 		ReasonCode: "witness_fresh",
 		Reason:     "CI witness freshness is within the protected profile window",
 	}
+}
+
+func invalidWitnessFreshnessCondition(generatedAt, now time.Time) (ProtectedCondition, bool) {
+	if generatedAt.After(now.Add(5 * time.Minute)) {
+		return witnessFreshnessFail("witness_from_future", "CI witness generated_at is after the verifier time window", "Regenerate CI witness evidence in the selected CI run."), true
+	}
+	if now.Sub(generatedAt) > 24*time.Hour {
+		return witnessFreshnessFail("stale_witness", "CI witness generated_at is outside the protected freshness window", "Regenerate CI witness evidence for the selected run."), true
+	}
+	return ProtectedCondition{}, false
 }
 
 func witnessFreshnessCannotVerify(code, reason, next string) ProtectedCondition {
@@ -806,18 +874,19 @@ func protectedOverrideCondition(overrides []OverrideRequest) ProtectedCondition 
 }
 
 func mapCheckpointState(state string) string {
-	switch state {
-	case checkpoint.StatePass:
-		return GatePass
-	case checkpoint.StateFail:
-		return GateFail
-	case checkpoint.StateCannotVerify, checkpoint.StateNotIntegrated:
-		return GateCannotVerify
-	case checkpoint.StateNotAssessed, "":
-		return GateNotAssessed
-	default:
-		return GateCannotVerify
+	if mapped, ok := checkpointGateStates[state]; ok {
+		return mapped
 	}
+	return GateCannotVerify
+}
+
+var checkpointGateStates = map[string]string{
+	checkpoint.StatePass:          GatePass,
+	checkpoint.StateFail:          GateFail,
+	checkpoint.StateCannotVerify:  GateCannotVerify,
+	checkpoint.StateNotIntegrated: GateCannotVerify,
+	checkpoint.StateNotAssessed:   GateNotAssessed,
+	"":                            GateNotAssessed,
 }
 
 func worseProtectedState(current, next string) string {
@@ -1007,17 +1076,25 @@ func payloadInt(event trace.Event, key string) (int, bool) {
 	if value == nil {
 		return 0, false
 	}
+	return payloadAnyInt(value)
+}
+
+func payloadAnyInt(value any) (int, bool) {
 	switch typed := value.(type) {
 	case int:
 		return typed, true
 	case float64:
 		return int(typed), true
 	case json.Number:
-		i, err := typed.Int64()
-		return int(i), err == nil
+		return jsonNumberInt(typed)
 	default:
 		return 0, false
 	}
+}
+
+func jsonNumberInt(value json.Number) (int, bool) {
+	i, err := value.Int64()
+	return int(i), err == nil
 }
 
 func payloadValue(event trace.Event, key string) any {
@@ -1397,9 +1474,14 @@ func payloadStringSlice(event trace.Event, key string) []string {
 func stringItems(items []any) []string {
 	values := make([]string, 0, len(items))
 	for _, item := range items {
-		if text, ok := item.(string); ok {
-			values = append(values, text)
-		}
+		values = appendStringItem(values, item)
+	}
+	return values
+}
+
+func appendStringItem(values []string, item any) []string {
+	if text, ok := item.(string); ok {
+		return append(values, text)
 	}
 	return values
 }
@@ -1430,18 +1512,15 @@ func worseGateState(current, next string) string {
 }
 
 func gateSeverity(state string) int {
-	switch state {
-	case GateFail, GateMissingTelemetry:
-		return 4
-	case GateCannotVerify:
-		return 3
-	case GateNotAssessed:
-		return 2
-	case GatePass:
-		return 1
-	default:
-		return 0
-	}
+	return gateSeverityByState[state]
+}
+
+var gateSeverityByState = map[string]int{
+	GateFail:             4,
+	GateMissingTelemetry: 4,
+	GateCannotVerify:     3,
+	GateNotAssessed:      2,
+	GatePass:             1,
 }
 
 func containsString(values []string, target string) bool {

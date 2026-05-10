@@ -234,6 +234,10 @@ func prepareBuildInput(selectionPath string, now time.Time) (buildInput, error) 
 	if err != nil {
 		return buildInput{}, err
 	}
+	return prepareBuildSelectionInput(selectionPath, now, selection)
+}
+
+func prepareBuildSelectionInput(selectionPath string, now time.Time, selection SelectionManifest) (buildInput, error) {
 	activeKeys, err := validateBuildSelection(selection)
 	if err != nil {
 		return buildInput{}, err
@@ -310,16 +314,24 @@ func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) r
 }
 
 func ingestRepositoryChecks(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) repositoryIngest {
-	if err := validateRepoLabels(repo); err != nil {
+	if invalidRepositoryLabels(repo) {
 		return refusedInput("unsafe_label", "cannot_verify_input", "", false)
 	}
-	if err := validateInputPaths(repo); err != nil {
+	if invalidRepositoryInputPaths(repo) {
 		return refusedInput("malformed_input", "cannot_verify_input", "", false)
 	}
 	if hasCutoff && isStale(repo.InputObservedAt, cutoff) {
 		return refusedInput("stale_input", "stale_input", "", true)
 	}
 	return repositoryIngest{trusted: true}
+}
+
+func invalidRepositoryLabels(repo RepositoryWindow) bool {
+	return validateRepoLabels(repo) != nil
+}
+
+func invalidRepositoryInputPaths(repo RepositoryWindow) bool {
+	return validateInputPaths(repo) != nil
 }
 
 func ingestRepositoryArtifacts(repo RepositoryWindow) repositoryIngest {
@@ -331,6 +343,10 @@ func ingestRepositoryArtifacts(repo RepositoryWindow) repositoryIngest {
 	if err != nil {
 		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
 	}
+	return ingestSupportedRepositoryArtifacts(repo, digest, result)
+}
+
+func ingestSupportedRepositoryArtifacts(repo RepositoryWindow, digest string, result query.QueryPackResult) repositoryIngest {
 	if !isSupportedQueryPack(result) {
 		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
 	}
@@ -396,27 +412,57 @@ func buildExportResult(selectionPath string, now time.Time, input buildInput, in
 
 func Explain(result ExportResult) (string, error) {
 	var lines []string
-	lines = append(lines, "schema_version="+result.SchemaVersion)
-	lines = append(lines, "export_profile_id="+result.ExportProfileID)
-	lines = append(lines, "grouping_set_id="+result.GroupingSetID)
+	lines = append(lines, explainHeaderLines(result)...)
 	lines = append(lines, fmt.Sprintf("movement_summary comparable=%d non_comparable=%d", result.MovementSummary.ComparableCount, result.MovementSummary.NonComparableCount))
-	for _, row := range result.RefusalRows {
-		lines = append(lines, fmt.Sprintf("refusal %s input=%s reason=%s state=%s", row.ID, row.InputID, row.RefusalReason, row.InputTrustState))
-	}
-	for _, row := range result.MetricRows {
-		lines = append(lines, fmt.Sprintf("metric %s %s numerator=%d denominator=%d window=%s dimension_key=%s not_assessed_count=%d", row.ID, row.MetricID, row.Numerator, row.Denominator, row.TimeWindow, row.DimensionKey, row.NotAssessedCount))
-	}
-	for _, row := range result.MovementRows {
-		lines = append(lines, fmt.Sprintf("movement %s %s current=%d previous=%d delta=%d comparable=%t reason=%s", row.ID, row.MetricID, row.CurrentValue, row.PreviousValue, row.Delta, row.Comparable, row.NonComparableReason))
-	}
-	for _, class := range result.OutputSafety.VerifiedAbsentSensitiveClasses {
-		lines = append(lines, "output_safety absent="+class)
-	}
+	lines = append(lines, explainRefusalLines(result.RefusalRows)...)
+	lines = append(lines, explainMetricLines(result.MetricRows)...)
+	lines = append(lines, explainMovementLines(result.MovementRows)...)
+	lines = append(lines, explainOutputSafetyLines(result.OutputSafety.VerifiedAbsentSensitiveClasses)...)
 	rendered := strings.Join(lines, "\n") + "\n"
 	if unsafeOutput(rendered) {
 		return "", fmt.Errorf("output_safety_violation")
 	}
 	return rendered, nil
+}
+
+func explainHeaderLines(result ExportResult) []string {
+	return []string{
+		"schema_version=" + result.SchemaVersion,
+		"export_profile_id=" + result.ExportProfileID,
+		"grouping_set_id=" + result.GroupingSetID,
+	}
+}
+
+func explainRefusalLines(rows []RefusalRow) []string {
+	lines := make([]string, 0, len(rows))
+	for _, row := range rows {
+		lines = append(lines, fmt.Sprintf("refusal %s input=%s reason=%s state=%s", row.ID, row.InputID, row.RefusalReason, row.InputTrustState))
+	}
+	return lines
+}
+
+func explainMetricLines(rows []MetricRow) []string {
+	lines := make([]string, 0, len(rows))
+	for _, row := range rows {
+		lines = append(lines, fmt.Sprintf("metric %s %s numerator=%d denominator=%d window=%s dimension_key=%s not_assessed_count=%d", row.ID, row.MetricID, row.Numerator, row.Denominator, row.TimeWindow, row.DimensionKey, row.NotAssessedCount))
+	}
+	return lines
+}
+
+func explainMovementLines(rows []MovementRow) []string {
+	lines := make([]string, 0, len(rows))
+	for _, row := range rows {
+		lines = append(lines, fmt.Sprintf("movement %s %s current=%d previous=%d delta=%d comparable=%t reason=%s", row.ID, row.MetricID, row.CurrentValue, row.PreviousValue, row.Delta, row.Comparable, row.NonComparableReason))
+	}
+	return lines
+}
+
+func explainOutputSafetyLines(classes []string) []string {
+	lines := make([]string, 0, len(classes))
+	for _, class := range classes {
+		lines = append(lines, "output_safety absent="+class)
+	}
+	return lines
 }
 
 func ValidateExportResult(result ExportResult) error {
@@ -436,7 +482,11 @@ func validateExportHeader(result ExportResult) error {
 	if malformedExportHeader(result) {
 		return fmt.Errorf("malformed posture export")
 	}
-	if _, err := time.Parse(time.RFC3339, result.GeneratedAt); err != nil {
+	return validateExportGeneratedAt(result.GeneratedAt)
+}
+
+func validateExportGeneratedAt(generatedAt string) error {
+	if _, err := time.Parse(time.RFC3339, generatedAt); err != nil {
 		return fmt.Errorf("malformed posture export generated_at")
 	}
 	return nil
@@ -545,11 +595,18 @@ func hasOutputSafety(classes []string) bool {
 }
 
 func validateInputSelectionRow(item InputSelection) error {
-	if !safeLabel(item.InputID) || !safeLabel(item.Repository) || !safeLabel(item.TimeWindow) ||
-		item.PathRedactedID == "" || !validInputTrustState(item.InputTrustState) {
+	if malformedInputSelectionRow(item) {
 		return fmt.Errorf("malformed posture export input_selection")
 	}
 	return nil
+}
+
+func malformedInputSelectionRow(item InputSelection) bool {
+	return !safeLabel(item.InputID) || !safeLabel(item.Repository) || !safeLabel(item.TimeWindow) || missingInputSelectionFields(item)
+}
+
+func missingInputSelectionFields(item InputSelection) bool {
+	return item.PathRedactedID == "" || !validInputTrustState(item.InputTrustState)
 }
 
 func validateMetricRow(row MetricRow) error {
@@ -634,12 +691,19 @@ func validateMovementSummary(summary MovementSummary) error {
 	if summary.ComparableCount < 0 || summary.NonComparableCount < 0 {
 		return fmt.Errorf("malformed posture export movement_summary")
 	}
-	for reason, count := range summary.NonComparableReason {
-		if reason != "non_comparable_missing_window" || count < 0 {
-			return fmt.Errorf("malformed posture export movement_summary")
-		}
+	if malformedMovementSummaryReasons(summary.NonComparableReason) {
+		return fmt.Errorf("malformed posture export movement_summary")
 	}
 	return nil
+}
+
+func malformedMovementSummaryReasons(reasons map[string]int) bool {
+	for reason, count := range reasons {
+		if reason != "non_comparable_missing_window" || count < 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func validateRefusalRow(row RefusalRow) error {
@@ -650,11 +714,19 @@ func validateRefusalRow(row RefusalRow) error {
 }
 
 func malformedRefusalRow(row RefusalRow) bool {
-	return row.ID == "" ||
-		!safeLabel(row.InputID) ||
-		!validRefusalReason(row.RefusalReason) ||
-		!validInputTrustState(row.InputTrustState) ||
-		(row.TimeWindow != "" && !safeLabel(row.TimeWindow))
+	return missingRefusalIdentity(row) || malformedRefusalState(row) || malformedOptionalRefusalWindow(row)
+}
+
+func missingRefusalIdentity(row RefusalRow) bool {
+	return row.ID == "" || !safeLabel(row.InputID)
+}
+
+func malformedRefusalState(row RefusalRow) bool {
+	return !validRefusalReason(row.RefusalReason) || !validInputTrustState(row.InputTrustState)
+}
+
+func malformedOptionalRefusalWindow(row RefusalRow) bool {
+	return row.TimeWindow != "" && !safeLabel(row.TimeWindow)
 }
 
 func SensitiveClasses() []string {
@@ -762,13 +834,21 @@ func validateSelectionHeader(selection SelectionManifest) error {
 	if selection.SchemaVersion != SelectionSchemaVersion {
 		return fmt.Errorf("unsupported selection schema")
 	}
-	if selection.ProfileID != ProfileID {
+	return validateSelectionProfile(selection)
+}
+
+func validateSelectionProfile(selection SelectionManifest) error {
+	switch {
+	case selection.ProfileID != ProfileID:
 		return fmt.Errorf("unsupported profile")
-	}
-	if selection.ProfileVersion != "" && selection.ProfileVersion != ProfileVer {
+	case unsupportedSelectionProfileVersion(selection.ProfileVersion):
 		return fmt.Errorf("unsupported profile version")
 	}
 	return nil
+}
+
+func unsupportedSelectionProfileVersion(version string) bool {
+	return version != "" && version != ProfileVer
 }
 
 func validateSelectionGrouping(selection SelectionManifest) error {
@@ -801,19 +881,31 @@ func readSignals(path string) (map[string]PostureSignal, error) {
 	if strings.TrimSpace(path) == "" {
 		return map[string]PostureSignal{}, nil
 	}
-	var manifest SignalManifest
-	data, err := os.ReadFile(path)
+	manifest, err := readSignalManifest(path)
 	if err != nil {
 		return nil, err
 	}
+	return validatedSignals(manifest.Signals)
+}
+
+func readSignalManifest(path string) (SignalManifest, error) {
+	var manifest SignalManifest
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return manifest, err
+	}
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, err
+		return manifest, err
 	}
 	if manifest.SchemaVersion != SignalManifestSchemaVersion {
-		return nil, fmt.Errorf("unsupported signal manifest schema")
+		return manifest, fmt.Errorf("unsupported signal manifest schema")
 	}
+	return manifest, nil
+}
+
+func validatedSignals(signals []PostureSignal) (map[string]PostureSignal, error) {
 	out := map[string]PostureSignal{}
-	for _, signal := range manifest.Signals {
+	for _, signal := range signals {
 		if unsafeSignal(signal) {
 			return nil, fmt.Errorf("unsafe signal")
 		}
@@ -841,7 +933,10 @@ func verifyDigestManifest(manifestPath, queryPackPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return checkedDigest(actual, expected)
+}
 
+func checkedDigest(actual, expected string) (string, error) {
 	if err := checkDigestMatch(expected, actual); err != nil {
 		return "", err
 	}
@@ -957,21 +1052,7 @@ func buildMetrics(groups map[string]*aggregateGroup) []MetricRow {
 }
 
 func metricForGroup(counter int, def metricDef, group *aggregateGroup) MetricRow {
-	numerator := 0
-	notAssessed := 0
-	sourceFieldState := "present"
-	for _, row := range group.rows {
-		signal, hasSignal := group.signals[row.ID]
-		if metricMatches(def.id, row, signal, hasSignal) {
-			numerator++
-		}
-		if metricNotAssessed(def, row, hasSignal) {
-			notAssessed++
-		}
-		if def.source == "posture_signal" && !hasSignal {
-			sourceFieldState = "not_assessed"
-		}
-	}
+	counts := metricCounts(def, group)
 	sourceRefs := append([]string(nil), group.inputRefs...)
 	sort.Strings(sourceRefs)
 	digests := append([]string(nil), group.digests...)
@@ -980,7 +1061,7 @@ func metricForGroup(counter int, def metricDef, group *aggregateGroup) MetricRow
 		ID:                      fmt.Sprintf("metric.%04d", counter),
 		MetricID:                def.id,
 		MetricVersion:           def.version,
-		Numerator:               numerator,
+		Numerator:               counts.numerator,
 		Denominator:             len(group.rows),
 		Unit:                    "rows",
 		TimeWindow:              group.window,
@@ -988,9 +1069,36 @@ func metricForGroup(counter int, def metricDef, group *aggregateGroup) MetricRow
 		DimensionKey:            group.dimensionKey,
 		SourceInputRefs:         sourceRefs,
 		SourceArtifactDigestSet: digestSetHash(digests),
-		SourceFieldState:        sourceFieldState,
-		NotAssessedCount:        notAssessed,
+		SourceFieldState:        counts.sourceFieldState,
+		NotAssessedCount:        counts.notAssessed,
 		InputTrustStateSummary:  copyTrust(group.trustStates),
+	}
+}
+
+type metricCount struct {
+	numerator        int
+	notAssessed      int
+	sourceFieldState string
+}
+
+func metricCounts(def metricDef, group *aggregateGroup) metricCount {
+	counts := metricCount{sourceFieldState: "present"}
+	for _, row := range group.rows {
+		signal, hasSignal := group.signals[row.ID]
+		applyMetricCount(&counts, def, row, signal, hasSignal)
+	}
+	return counts
+}
+
+func applyMetricCount(counts *metricCount, def metricDef, row query.QueryPackRow, signal PostureSignal, hasSignal bool) {
+	if metricMatches(def.id, row, signal, hasSignal) {
+		counts.numerator++
+	}
+	if metricNotAssessed(def, row, hasSignal) {
+		counts.notAssessed++
+	}
+	if def.source == "posture_signal" && !hasSignal {
+		counts.sourceFieldState = "not_assessed"
 	}
 }
 
@@ -998,13 +1106,18 @@ func metricMatches(metricID string, row query.QueryPackRow, signal PostureSignal
 	if expectedState, ok := rowStateMetrics[metricID]; ok {
 		return row.EvidenceState == expectedState
 	}
+	return nonRowStateMetricMatches(metricID, row, signal, hasSignal)
+}
+
+func nonRowStateMetricMatches(metricID string, row query.QueryPackRow, signal PostureSignal, hasSignal bool) bool {
 	if metricID == "unsupported_observer_rows" {
-		return row.EvidenceState == query.RowStateUnsupported || (hasSignal && signal.ObserverState == "unsupported")
+		return unsupportedObserverMetricMatches(row, signal, hasSignal)
 	}
-	if !hasSignal {
-		return false
-	}
-	return signalMetricMatches(metricID, signal)
+	return hasSignal && signalMetricMatches(metricID, signal)
+}
+
+func unsupportedObserverMetricMatches(row query.QueryPackRow, signal PostureSignal, hasSignal bool) bool {
+	return row.EvidenceState == query.RowStateUnsupported || (hasSignal && signal.ObserverState == "unsupported")
 }
 
 func signalMetricMatches(metricID string, signal PostureSignal) bool {
@@ -1021,38 +1134,52 @@ func metricNotAssessed(def metricDef, row query.QueryPackRow, hasSignal bool) bo
 
 func buildMovements(metrics []MetricRow, currentWindow, previousWindow string) ([]MovementRow, MovementSummary) {
 	byKey := metricsByMovementKey(metrics)
-	keys := make([]string, 0, len(byKey))
-	for key := range byKey {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := sortedMovementKeys(byKey)
 	var rows []MovementRow
 	summary := MovementSummary{NonComparableReason: map[string]int{}}
 	for i, key := range keys {
-		parts := strings.Split(key, "|")
-		current, hasCurrent := byKey[key][currentWindow]
-		previous, hasPrevious := byKey[key][previousWindow]
-		row := MovementRow{
-			ID:              fmt.Sprintf("movement.%04d", i+1),
-			MetricID:        parts[0],
-			MetricVersion:   parts[1],
-			DimensionKey:    parts[2],
-			ComparisonBasis: "same_profile_metric_dimension_window",
-			Comparable:      hasCurrent && hasPrevious,
-		}
-		if hasCurrent {
-			row.CurrentMetricRowRef = current.ID
-			row.CurrentValue = current.Numerator
-		}
-		if hasPrevious {
-			row.PreviousMetricRowRef = previous.ID
-			row.PreviousValue = previous.Numerator
-		}
-		row.Delta = row.CurrentValue - row.PreviousValue
+		row := movementRowForKey(i+1, key, byKey[key], currentWindow, previousWindow)
 		summarizeMovement(&summary, &row)
 		rows = append(rows, row)
 	}
 	return rows, summary
+}
+
+func sortedMovementKeys(metrics map[string]map[string]MetricRow) []string {
+	keys := make([]string, 0, len(metrics))
+	for key := range metrics {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func movementRowForKey(index int, key string, rowsByWindow map[string]MetricRow, currentWindow, previousWindow string) MovementRow {
+	parts := strings.Split(key, "|")
+	current, hasCurrent := rowsByWindow[currentWindow]
+	previous, hasPrevious := rowsByWindow[previousWindow]
+	row := MovementRow{
+		ID:              fmt.Sprintf("movement.%04d", index),
+		MetricID:        parts[0],
+		MetricVersion:   parts[1],
+		DimensionKey:    parts[2],
+		ComparisonBasis: "same_profile_metric_dimension_window",
+		Comparable:      hasCurrent && hasPrevious,
+	}
+	applyMovementWindowValues(&row, current, hasCurrent, previous, hasPrevious)
+	return row
+}
+
+func applyMovementWindowValues(row *MovementRow, current MetricRow, hasCurrent bool, previous MetricRow, hasPrevious bool) {
+	if hasCurrent {
+		row.CurrentMetricRowRef = current.ID
+		row.CurrentValue = current.Numerator
+	}
+	if hasPrevious {
+		row.PreviousMetricRowRef = previous.ID
+		row.PreviousValue = previous.Numerator
+	}
+	row.Delta = row.CurrentValue - row.PreviousValue
 }
 
 func metricsByMovementKey(metrics []MetricRow) map[string]map[string]MetricRow {

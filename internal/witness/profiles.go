@@ -101,22 +101,36 @@ func WriteProfile(kind, outPath, runsRoot, reportDir string, opts ProfileOptions
 	if strings.TrimSpace(outPath) == "" {
 		return Record{}, errors.New("witness requires --out <file>")
 	}
+	record, err := buildProfileForWrite(kind, runsRoot, reportDir, opts)
+	if err != nil {
+		return Record{}, err
+	}
+	if err := writeProfileRecord(outPath, record); err != nil {
+		return Record{}, err
+	}
+	return record, nil
+}
+
+func buildProfileForWrite(kind, runsRoot, reportDir string, opts ProfileOptions) (Record, error) {
 	record, err := BuildProfile(kind, runsRoot, reportDir, opts)
 	if err != nil {
 		return Record{}, err
 	}
+	return finalizeRecordForWrite(record), nil
+}
+
+func writeProfileRecord(outPath string, record Record) error {
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
-		return Record{}, err
+		return err
 	}
-	record = finalizeRecordForWrite(record)
 	data, err := json.MarshalIndent(record, "", "  ")
 	if err != nil {
-		return Record{}, err
+		return err
 	}
 	if err := os.WriteFile(outPath, append(data, '\n'), 0o644); err != nil {
-		return Record{}, err
+		return err
 	}
-	return record, nil
+	return nil
 }
 
 func BuildProfile(kind, runsRoot, reportDir string, opts ProfileOptions) (Record, error) {
@@ -255,14 +269,7 @@ func BuildCustomerPKI(runsRoot, reportDir string, opts ProfileOptions) (Record, 
 	states := customerPKIPassStates(policy)
 	record.ProfileStates = states
 
-	if !validateCustomerPKIAuthority(&record, states, publicKey, policy, freshness) {
-		return record, nil
-	}
-	if !validateCustomerPKIFreshness(&record, states, runsRoot, opts.CustomerPKIPayloadDigest, freshness) {
-		return record, nil
-	}
-	if !verifyFreshnessSignature(publicKey, freshness) {
-		customerPKIFail(&record, states, "freshness", ReasonSignerMismatch)
+	if !validateCustomerPKIRecord(&record, states, publicKey, policy, freshness, runsRoot, opts.CustomerPKIPayloadDigest) {
 		return record, nil
 	}
 	record.Status = StatusPass
@@ -270,6 +277,20 @@ func BuildCustomerPKI(runsRoot, reportDir string, opts ProfileOptions) (Record, 
 	record.EstablishedTrustScope = TrustScopeExternal
 	record.Reason = ReasonProfileVerified
 	return record, nil
+}
+
+func validateCustomerPKIRecord(record *Record, states *ProfileStates, publicKey ed25519.PublicKey, policy CustomerPKIAuthorityPolicy, freshness CustomerPKIFreshnessEvidence, runsRoot, payloadDigest string) bool {
+	if !validateCustomerPKIAuthority(record, states, publicKey, policy, freshness) {
+		return false
+	}
+	if !validateCustomerPKIFreshness(record, states, runsRoot, payloadDigest, freshness) {
+		return false
+	}
+	if !verifyFreshnessSignature(publicKey, freshness) {
+		customerPKIFail(record, states, "freshness", ReasonSignerMismatch)
+		return false
+	}
+	return true
 }
 
 func newCustomerPKIRecord(runsRoot, reportDir string) (Record, error) {
@@ -294,9 +315,8 @@ func newCustomerPKIRecord(runsRoot, reportDir string) (Record, error) {
 }
 
 func loadCustomerPKIInputs(record *Record, opts ProfileOptions) (ed25519.PublicKey, CustomerPKIAuthorityPolicy, CustomerPKIFreshnessEvidence, bool) {
-	requiredMissing := missingCustomerPKIInputs(opts)
-	if len(requiredMissing) > 0 {
-		record.MissingIdentityFields = requiredMissing
+	if missing := missingCustomerPKIInputs(opts); len(missing) > 0 {
+		record.MissingIdentityFields = missing
 		customerPKICannotVerify(record, ReasonMissingIdentity)
 		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
@@ -304,22 +324,31 @@ func loadCustomerPKIInputs(record *Record, opts ProfileOptions) (ed25519.PublicK
 		customerPKIInputFail(record, ReasonPrivateKeyInput)
 		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
+	return loadCustomerPKISafeInputs(record, opts)
+}
+
+func loadCustomerPKISafeInputs(record *Record, opts ProfileOptions) (ed25519.PublicKey, CustomerPKIAuthorityPolicy, CustomerPKIFreshnessEvidence, bool) {
 	publicKey, err := loadCustomerPublicKey(opts)
 	if err != nil {
 		customerPKICannotVerify(record, ReasonMalformedInput)
 		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
+	policy, freshness, ok := loadCustomerPKIJSONInputs(record, opts)
+	return publicKey, policy, freshness, ok
+}
+
+func loadCustomerPKIJSONInputs(record *Record, opts ProfileOptions) (CustomerPKIAuthorityPolicy, CustomerPKIFreshnessEvidence, bool) {
 	var policy CustomerPKIAuthorityPolicy
 	if err := readSafeJSON(opts.CustomerPKIAuthorityPolicy, &policy); err != nil {
 		customerPKICannotVerify(record, ReasonPolicyMissing)
-		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
+		return CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
 	var freshness CustomerPKIFreshnessEvidence
 	if err := readSafeJSON(opts.CustomerPKIFreshness, &freshness); err != nil {
 		customerPKICannotVerify(record, ReasonMissingFreshness)
-		return nil, CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
+		return CustomerPKIAuthorityPolicy{}, CustomerPKIFreshnessEvidence{}, false
 	}
-	return publicKey, policy, freshness, true
+	return policy, freshness, true
 }
 
 func customerPKICannotVerify(record *Record, reason string) {
@@ -436,7 +465,7 @@ func customerPKIRevoked(policy CustomerPKIAuthorityPolicy) bool {
 }
 
 func validateCustomerPKIFreshness(record *Record, states *ProfileStates, runsRoot, payloadDigest string, freshness CustomerPKIFreshnessEvidence) bool {
-	if payloadDigest != freshness.PayloadDigest || !strongDigest(freshness.PayloadDigest) {
+	if invalidFreshnessPayloadDigest(payloadDigest, freshness.PayloadDigest) {
 		customerPKIFail(record, states, "artifact", ReasonArtifactMismatch)
 		return false
 	}
@@ -451,22 +480,29 @@ func validateCustomerPKIFreshness(record *Record, states *ProfileStates, runsRoo
 	return true
 }
 
+func invalidFreshnessPayloadDigest(expected, actual string) bool {
+	return expected != actual || !strongDigest(actual)
+}
+
 func customerPKIFail(record *Record, states *ProfileStates, field, reason string) {
-	switch field {
-	case "artifact":
-		states.ArtifactBindingState = stateFail
-	case "freshness":
-		states.FreshnessState = stateFail
-	case "policy":
-		states.PolicyBindingState = stateFail
-	case "run":
-		states.RunBindingState = stateFail
-	case "signer":
-		states.SignerAuthorityState = stateFail
-	default:
-		states.IdentityState = stateFail
-	}
+	failCustomerPKIState(states, field)
 	applyProfileState(record, StatusFail, stateFail, reason)
+}
+
+func failCustomerPKIState(states *ProfileStates, field string) {
+	setter := customerPKIStateSetters[field]
+	if setter == nil {
+		setter = func(states *ProfileStates) { states.IdentityState = stateFail }
+	}
+	setter(states)
+}
+
+var customerPKIStateSetters = map[string]func(*ProfileStates){
+	"artifact":  func(states *ProfileStates) { states.ArtifactBindingState = stateFail },
+	"freshness": func(states *ProfileStates) { states.FreshnessState = stateFail },
+	"policy":    func(states *ProfileStates) { states.PolicyBindingState = stateFail },
+	"run":       func(states *ProfileStates) { states.RunBindingState = stateFail },
+	"signer":    func(states *ProfileStates) { states.SignerAuthorityState = stateFail },
 }
 
 type profileDecision struct {
@@ -479,16 +515,27 @@ func validateCIEnvelope(kind string, envelope EnvelopeInput, current []ArtifactD
 	if envelope.ProfileID != kind+"-v1" {
 		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonUnsupported}
 	}
-	if missingEnvelopeIdentity(envelope) {
-		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity}
+	if state := validateCIEnvelopeIdentity(envelope); state.reason != "" {
+		return state
 	}
 	if state := validateCIEnvelopeStates(envelope.ProfileStates); state.reason != "" {
 		return state
 	}
-	if len(envelope.RunArtifacts) == 0 {
+	return validateCIEnvelopeArtifacts(envelope.RunArtifacts, current)
+}
+
+func validateCIEnvelopeIdentity(envelope EnvelopeInput) profileDecision {
+	if missingEnvelopeIdentity(envelope) {
+		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingIdentity}
+	}
+	return profileDecision{}
+}
+
+func validateCIEnvelopeArtifacts(runArtifacts, current []ArtifactDigest) profileDecision {
+	if len(runArtifacts) == 0 {
 		return profileDecision{StatusCannotVerify, stateCannotVerify, ReasonMissingArtifact}
 	}
-	if !artifactSetsMatch(envelope.RunArtifacts, current) {
+	if !artifactSetsMatch(runArtifacts, current) {
 		return profileDecision{StatusFail, stateFail, ReasonArtifactMismatch}
 	}
 	return profileDecision{}
@@ -648,16 +695,21 @@ func artifactSetsMatch(expected, current []ArtifactDigest) bool {
 	if len(expected) != len(current) {
 		return false
 	}
-	byPath := map[string]string{}
-	for _, artifact := range current {
-		byPath[artifact.Path] = artifact.SHA256
-	}
+	byPath := artifactDigestsByPath(current)
 	for _, artifact := range expected {
 		if byPath[artifact.Path] != artifact.SHA256 {
 			return false
 		}
 	}
 	return true
+}
+
+func artifactDigestsByPath(artifacts []ArtifactDigest) map[string]string {
+	byPath := map[string]string{}
+	for _, artifact := range artifacts {
+		byPath[artifact.Path] = artifact.SHA256
+	}
+	return byPath
 }
 
 func runIDMatches(runsRoot, witnessRunID string) bool {
@@ -668,6 +720,10 @@ func runIDMatches(runsRoot, witnessRunID string) bool {
 	if err != nil || len(runIDs) == 0 {
 		return false
 	}
+	return containsRunID(runIDs, witnessRunID)
+}
+
+func containsRunID(runIDs []string, witnessRunID string) bool {
 	for _, runID := range runIDs {
 		if runID == witnessRunID {
 			return true
@@ -683,15 +739,23 @@ func runIDsFromRoot(runsRoot string) ([]string, error) {
 	}
 	runIDs := make([]string, 0, len(runDirs))
 	for _, runDir := range runDirs {
-		runID, err := runIDFromDir(runDir)
+		runID, ok, err := nonEmptyRunIDFromDir(runDir)
 		if err != nil {
 			return nil, err
 		}
-		if runID != "" {
+		if ok {
 			runIDs = append(runIDs, runID)
 		}
 	}
 	return runIDs, nil
+}
+
+func nonEmptyRunIDFromDir(runDir string) (string, bool, error) {
+	runID, err := runIDFromDir(runDir)
+	if err != nil {
+		return "", false, err
+	}
+	return runID, runID != "", nil
 }
 
 func runIDFromDir(runDir string) (string, error) {
@@ -727,21 +791,28 @@ func ambientCIEnvPresent(kind string) bool {
 
 func missingCustomerPKIInputs(opts ProfileOptions) []string {
 	missing := []string{}
-	required := map[string]string{
-		"--customer-pki-authority-policy":   opts.CustomerPKIAuthorityPolicy,
-		"--customer-pki-payload-digest":     opts.CustomerPKIPayloadDigest,
-		"--customer-pki-freshness-evidence": opts.CustomerPKIFreshness,
-	}
-	for name, value := range required {
+	for name, value := range requiredCustomerPKIInputs(opts) {
 		if strings.TrimSpace(value) == "" {
 			missing = append(missing, name)
 		}
 	}
+	return appendMissingCustomerPKIKeyInput(missing, opts)
+}
+
+func appendMissingCustomerPKIKeyInput(missing []string, opts ProfileOptions) []string {
 	if strings.TrimSpace(opts.CustomerPKIPublicCert) == "" && strings.TrimSpace(opts.CustomerPKIPublicKey) == "" {
 		missing = append(missing, "--customer-pki-public-cert|--customer-pki-public-key")
 	}
 	sort.Strings(missing)
 	return missing
+}
+
+func requiredCustomerPKIInputs(opts ProfileOptions) map[string]string {
+	return map[string]string{
+		"--customer-pki-authority-policy":   opts.CustomerPKIAuthorityPolicy,
+		"--customer-pki-payload-digest":     opts.CustomerPKIPayloadDigest,
+		"--customer-pki-freshness-evidence": opts.CustomerPKIFreshness,
+	}
 }
 
 func readSafeJSON(path string, target any) error {
@@ -838,6 +909,13 @@ func jwtCandidate(field string) bool {
 }
 
 func unsafeEnvelopeFields(envelope EnvelopeInput) bool {
+	if unsafeEnvelopeScalarFields(envelope) {
+		return true
+	}
+	return unsafeEnvelopeArtifactFields(envelope)
+}
+
+func unsafeEnvelopeScalarFields(envelope EnvelopeInput) bool {
 	values := []string{
 		envelope.Source.Repository,
 		envelope.Source.Ref,
@@ -855,6 +933,10 @@ func unsafeEnvelopeFields(envelope EnvelopeInput) bool {
 			return true
 		}
 	}
+	return false
+}
+
+func unsafeEnvelopeArtifactFields(envelope EnvelopeInput) bool {
 	for _, artifact := range append(envelope.RunArtifacts, envelope.ReportArtifacts...) {
 		if unsafeOutputString(artifact.Path) || unsafeOutputString(artifact.SHA256) {
 			return true
@@ -963,10 +1045,14 @@ func freshnessCurrent(evidence CustomerPKIFreshnessEvidence, now time.Time) bool
 	if err != nil || issued.After(now.Add(time.Minute)) {
 		return false
 	}
-	if evidence.ValidUntil == "" {
+	return freshnessValidUntilCurrent(evidence.ValidUntil, now)
+}
+
+func freshnessValidUntilCurrent(validUntilText string, now time.Time) bool {
+	if validUntilText == "" {
 		return true
 	}
-	validUntil, err := time.Parse(time.RFC3339, evidence.ValidUntil)
+	validUntil, err := time.Parse(time.RFC3339, validUntilText)
 	return err == nil && !validUntil.Before(now)
 }
 

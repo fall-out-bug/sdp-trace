@@ -50,6 +50,62 @@ func TestGitHubActionsWitnessMissingIdentityCannotVerify(t *testing.T) {
 	}
 }
 
+func TestCRAPHelperEdges(t *testing.T) {
+	env := environmentFromEntries([]string{"A=1", "MALFORMED", "B=two=parts"})
+	if env["A"] != "1" || env["B"] != "two=parts" {
+		t.Fatalf("environmentFromEntries = %v", env)
+	}
+	if got := stringItems([]any{"sdp", 1, "trace"}); strings.Join(got, ",") != "sdp,trace" {
+		t.Fatalf("stringItems = %v", got)
+	}
+
+	root := t.TempDir()
+	for name, payload := range map[string]string{
+		"one": `{"run_id":"run-1"}`,
+		"two": `{"id":"run-2"}`,
+	} {
+		dir := filepath.Join(root, name)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("mkdir: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "run.json"), []byte(payload), 0o644); err != nil {
+			t.Fatalf("write run: %v", err)
+		}
+	}
+	runIDs, err := runIDsFromRoot(root)
+	if err != nil {
+		t.Fatalf("runIDsFromRoot: %v", err)
+	}
+	if strings.Join(runIDs, ",") != "run-1,run-2" {
+		t.Fatalf("runIDs = %v", runIDs)
+	}
+}
+
+func TestMissingCustomerPKIInputsIncludesKeyChoice(t *testing.T) {
+	missing := missingCustomerPKIInputs(ProfileOptions{})
+	if !testContainsString(missing, "--customer-pki-public-cert|--customer-pki-public-key") {
+		t.Fatalf("missing key choice not reported: %v", missing)
+	}
+	complete := missingCustomerPKIInputs(ProfileOptions{
+		CustomerPKIAuthorityPolicy: "policy.json",
+		CustomerPKIPayloadDigest:   strings.Repeat("a", 64),
+		CustomerPKIFreshness:       "freshness.json",
+		CustomerPKIPublicKey:       "key.pem",
+	})
+	if len(complete) != 0 {
+		t.Fatalf("complete inputs missing = %v", complete)
+	}
+}
+
+func testContainsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 func TestGitHubActionsWitnessPassesWithCompleteIdentity(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"id":"run"}`), 0o644); err != nil {

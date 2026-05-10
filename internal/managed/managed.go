@@ -418,6 +418,10 @@ func suppressedEventGroupCondition(input Input, id, group, reasonPrefix string) 
 	if !suppressed {
 		return Condition{}, false
 	}
+	return validSuppressedEventGroupCondition(id, group, reasonPrefix, valid, satisfies)
+}
+
+func validSuppressedEventGroupCondition(id, group, reasonPrefix string, valid, satisfies bool) (Condition, bool) {
 	if valid && satisfies {
 		return pass(id, reasonPrefix+"_event_suppressed_by_policy", "required "+group+" event is suppressed by policy for this profile"), true
 	}
@@ -463,19 +467,26 @@ func bypassCondition(input Input) Condition {
 
 func witnessCondition(input Input) Condition {
 	witness := input.Witness
-	if witness.WitnessID == "" {
-		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness evidence is required", "Supply managed witness evidence bound to the run.")
-	}
-	if witness.Status != StatePass || witness.FreshnessState != StatePass {
-		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness is missing pass/freshness state", "Supply fresh managed witness evidence.")
-	}
-	if missingWitnessArtifacts(input.Run, witness) {
-		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness artifact binding is required", "Supply managed witness evidence with output artifact digests.")
+	if condition, ok := missingManagedWitnessCondition(input.Run, witness); ok {
+		return condition
 	}
 	if managedWitnessMismatches(input) {
 		return fail("managed_witness_bound", "managed_witness_mismatch", "managed witness does not bind the selected run, policy, registry, chain, or artifacts", "Regenerate managed witness evidence for the selected run.")
 	}
 	return pass("managed_witness_bound", "managed_witness_bound", "managed witness binds source, run, policy, registry, chain, and artifacts")
+}
+
+func missingManagedWitnessCondition(run RunEvidence, witness Witness) (Condition, bool) {
+	switch {
+	case witness.WitnessID == "":
+		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness evidence is required", "Supply managed witness evidence bound to the run."), true
+	case witness.Status != StatePass || witness.FreshnessState != StatePass:
+		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness is missing pass/freshness state", "Supply fresh managed witness evidence."), true
+	case missingWitnessArtifacts(run, witness):
+		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness artifact binding is required", "Supply managed witness evidence with output artifact digests."), true
+	default:
+		return Condition{}, false
+	}
 }
 
 func missingWitnessArtifacts(run RunEvidence, witness Witness) bool {
@@ -551,8 +562,12 @@ func requiredEventTypes(input Input) []string {
 	if len(input.Contract.RequiredEventTypes) > 0 {
 		return input.Contract.RequiredEventTypes
 	}
+	return policyRequiredEventTypes(input.Policy)
+}
+
+func policyRequiredEventTypes(policy Policy) []string {
 	var out []string
-	for _, group := range input.Policy.RequiredEventGroups {
+	for _, group := range policy.RequiredEventGroups {
 		out = append(out, group.EventTypes...)
 	}
 	return out
@@ -585,17 +600,24 @@ func acceptableScopesForGroup(input Input, groupID string) []string {
 }
 
 func suppressionForGroup(input Input, groupID string) (bool, bool, bool) {
-	for _, suppressed := range input.Run.SuppressedEventGroups {
-		if suppressed.EventGroup != groupID {
-			continue
-		}
-		rule, ok := verifiedSuppressionRule(input.Policy, suppressed)
-		if !ok {
-			return true, false, false
-		}
-		return true, true, rule.SuppressionMaySatisfyProfile && suppressed.AuthorizedByPolicy
+	suppressed, ok := selectedSuppressedEventGroup(input.Run.SuppressedEventGroups, groupID)
+	if !ok {
+		return false, false, false
 	}
-	return false, false, false
+	rule, ok := verifiedSuppressionRule(input.Policy, suppressed)
+	if !ok {
+		return true, false, false
+	}
+	return true, true, rule.SuppressionMaySatisfyProfile && suppressed.AuthorizedByPolicy
+}
+
+func selectedSuppressedEventGroup(groups []SuppressedEventGroup, groupID string) (SuppressedEventGroup, bool) {
+	for _, suppressed := range groups {
+		if suppressed.EventGroup == groupID {
+			return suppressed, true
+		}
+	}
+	return SuppressedEventGroup{}, false
 }
 
 func verifiedSuppressionRule(policy Policy, suppressed SuppressedEventGroup) (SuppressionRule, bool) {
@@ -658,13 +680,20 @@ func artifactsMatch(expected, observed []ArtifactDigest) bool {
 		return false
 	}
 	want := artifactDigestsByPath(expected)
+	if !consumeMatchingArtifacts(want, observed) {
+		return false
+	}
+	return len(want) == 0
+}
+
+func consumeMatchingArtifacts(want map[string]string, observed []ArtifactDigest) bool {
 	for _, artifact := range observed {
 		if want[artifact.Path] != artifact.SHA256 {
 			return false
 		}
 		delete(want, artifact.Path)
 	}
-	return len(want) == 0
+	return true
 }
 
 func artifactDigestsByPath(artifacts []ArtifactDigest) map[string]string {

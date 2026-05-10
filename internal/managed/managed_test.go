@@ -19,6 +19,15 @@ func TestEvaluatePassesWithManagedBoundaryAndWitness(t *testing.T) {
 	}
 }
 
+func TestPolicyRequiredEventTypesFallback(t *testing.T) {
+	input := validInput()
+	input.Contract.RequiredEventTypes = nil
+	got := requiredEventTypes(input)
+	if len(got) == 0 {
+		t.Fatalf("requiredEventTypes fallback is empty")
+	}
+}
+
 func TestEvaluateFailsClosedForUnmanagedAndPostHocRuns(t *testing.T) {
 	tests := []struct {
 		name       string

@@ -99,6 +99,39 @@ func TestPreviewWitnessBindingMatchesRunArtifacts(t *testing.T) {
 	}
 }
 
+func TestCRAPHelperEdges(t *testing.T) {
+	if got := nonCheckpointProtectedTrustCap("", GateCannotVerify); got != string(trace.TrustScopeLocalObserved) {
+		t.Fatalf("default trust cap = %s", got)
+	}
+	if got := nonCheckpointProtectedTrustCap("custom_scope", GateCannotVerify); got != "custom_scope" {
+		t.Fatalf("checkpoint trust cap = %s", got)
+	}
+	if got := nonCheckpointProtectedTrustCap("", GatePass); got != "ci_witnessed" {
+		t.Fatalf("ci trust cap = %s", got)
+	}
+	if _, ok := firstWitnessPath(nil); ok {
+		t.Fatalf("nil witness path reported present")
+	}
+	if _, ok := firstWitnessPath([]string{" "}); ok {
+		t.Fatalf("blank witness path reported present")
+	}
+	if got, ok := firstWitnessPath([]string{"witness.json"}); !ok || got != "witness.json" {
+		t.Fatalf("witness path = %q ok=%t", got, ok)
+	}
+	if got, ok := payloadAnyInt(json.Number("42")); !ok || got != 42 {
+		t.Fatalf("json number int = %d ok=%t", got, ok)
+	}
+	if _, ok := payloadAnyInt(json.Number("bad")); ok {
+		t.Fatalf("bad json number parsed")
+	}
+	if got := stringItems([]any{"a", 7, "b"}); strings.Join(got, ",") != "a,b" {
+		t.Fatalf("stringItems = %v", got)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{}); condition.State != GateCannotVerify {
+		t.Fatalf("missing witness condition = %+v", condition)
+	}
+}
+
 func TestReportAcceptsSingleRunDirectory(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	runDir := filepath.Join(t.TempDir(), "single-run")
