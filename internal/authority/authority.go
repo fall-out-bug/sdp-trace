@@ -304,6 +304,18 @@ func targetRulesConflict(a, b TargetRule) bool {
 }
 
 func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) AuthorityEvaluation {
+	eval := newAuthorityEvaluation(evaluationID, selectedPolicyID, action, eventBindings)
+	eval.MissingAttributes = missingAttributes(eval)
+	if applyPreDecisionBlockers(&eval, env, envState, envReason, action, eventBindings, resolution) {
+		return eval
+	}
+	decision := matchDecision(env, action)
+	eval.MatchedRuleRef = decision.ruleRef
+	applyDecision(&eval, env, action, decision, resolution)
+	return eval
+}
+
+func newAuthorityEvaluation(evaluationID, selectedPolicyID string, action ObservedAction, eventBindings []EvidenceBinding) AuthorityEvaluation {
 	eval := AuthorityEvaluation{
 		EvaluationID:     evaluationID,
 		EventID:          action.EventID,
@@ -322,48 +334,62 @@ func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope
 	if hasVerifiedGatewayBinding(action, eventBindings) {
 		eval.ModelAttribution = AttributionVerified
 	}
-	eval.MissingAttributes = missingAttributes(eval)
+	return eval
+}
+
+func applyPreDecisionBlockers(eval *AuthorityEvaluation, env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) bool {
 	if envState != "" {
 		eval.State = envState
 		eval.ReasonCode = envReason
-		return eval
+		return true
 	}
 	if !validEventType(action.EventType) {
 		eval.State = StateCannotVerify
 		eval.ReasonCode = "unsupported_event_type"
-		return eval
+		return true
 	}
-	if action.TaskID == "" && env.AuthorityScope != "repository" {
-		eval.State = StateNotAssessed
-		eval.ReasonCode = "task_not_assessed"
-		return eval
+	if state, reason := preDecisionReason(env, action, eventBindings, resolution); reason != "" {
+		eval.State = state
+		eval.ReasonCode = reason
+		return true
 	}
-	if action.TaskID != "" && action.TaskID != env.TaskID && env.AuthorityScope != "repository" {
-		eval.State = StateNotAssessed
-		eval.ReasonCode = "task_outside_selected_envelope"
-		return eval
+	return false
+}
+
+func preDecisionReason(env AuthorityEnvelope, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) (string, string) {
+	if state, reason := taskScopeReason(env, action); reason != "" {
+		return state, reason
 	}
 	if reason := evidenceRefsReason(action.EvidenceRefs, resolution); reason != "" {
-		eval.State = StateCannotVerify
-		eval.ReasonCode = reason
-		return eval
+		return StateCannotVerify, reason
 	}
 	if bindingCannotVerify(eventBindings) {
-		eval.State = StateCannotVerify
-		eval.ReasonCode = "evidence_binding_cannot_verify"
-		return eval
+		return StateCannotVerify, "evidence_binding_cannot_verify"
 	}
-	decision := matchDecision(env, action)
-	eval.MatchedRuleRef = decision.ruleRef
+	return "", ""
+}
+
+func taskScopeReason(env AuthorityEnvelope, action ObservedAction) (string, string) {
+	if env.AuthorityScope == "repository" {
+		return "", ""
+	}
+	if action.TaskID == "" {
+		return StateNotAssessed, "task_not_assessed"
+	}
+	if action.TaskID != env.TaskID {
+		return StateNotAssessed, "task_outside_selected_envelope"
+	}
+	return "", ""
+}
+
+func applyDecision(eval *AuthorityEvaluation, env AuthorityEnvelope, action ObservedAction, decision matchResult, resolution map[string]string) {
 	if decision.state == StateCannotVerify {
-		eval.State = StateCannotVerify
-		eval.ReasonCode = decision.reasonCode
-		return eval
+		eval.State, eval.ReasonCode = StateCannotVerify, decision.reasonCode
+		return
 	}
 	if decision.state == StateNotAssessed {
-		eval.State = StateNotAssessed
-		eval.ReasonCode = "no_applicable_authority_rule"
-		return eval
+		eval.State, eval.ReasonCode = StateNotAssessed, "no_applicable_authority_rule"
+		return
 	}
 	if reason := approvalReason(env, action, decision.ruleRef, resolution); reason != "" {
 		if reason == "approval_evidence_missing" {
@@ -372,11 +398,10 @@ func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope
 			eval.State = StateCannotVerify
 		}
 		eval.ReasonCode = reason
-		return eval
+		return
 	}
 	eval.State = decision.state
 	eval.ReasonCode = decision.reasonCode
-	return eval
 }
 
 type matchResult struct {
