@@ -184,6 +184,119 @@ func TestImportTranscriptSuccessSummarizesCatalogMetrics(t *testing.T) {
 	}
 }
 
+func TestSummarizeTraceCountsCorrectionsAndReferences(t *testing.T) {
+	trace := Trace{
+		SchemaVersion:   SchemaVersion,
+		TaskID:          "task-1",
+		TraceID:         "trace-1",
+		AssessmentState: "assessed",
+		Events: []Event{
+			func() Event {
+				event := validImportedEvent("ix-0", 0)
+				event.EventType = "corrective_feedback"
+				event.FrictionClass = "correction"
+				event.State = StateUnreferenced
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-1", 1)
+				event.EventType = "task_assignment"
+				event.FrictionClass = "none"
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-2", 2)
+				event.EventType = "plan_rejected"
+				event.FrictionClass = "none"
+				event.State = StateReferenced
+				event.ReferenceRefs = []string{"evidence:plan"}
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-3", 3)
+				event.EventType = "corrective_feedback"
+				event.FrictionClass = "correction"
+				event.State = StateReferenced
+				event.ReferenceRefs = []string{"sdp://interaction/task-1/ix-3"}
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-4", 4)
+				event.EventType = "evidence_correction"
+				event.FrictionClass = "evidence"
+				event.State = StateUnreferenced
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-5", 5)
+				event.EventType = "clarification_request"
+				event.FrictionClass = "clarification"
+				event.State = StateReferenced
+				event.ReferenceRefs = []string{"evidence:clarification"}
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-6", 6)
+				event.EventType = "clarification_answer"
+				event.FrictionClass = "clarification"
+				event.State = StateUnreferenced
+				return event
+			}(),
+		},
+	}
+	summary := SummarizeTrace(trace)
+	if summary.FrictionCounts["correction"] != 2 {
+		t.Fatalf("friction count correction = %d", summary.FrictionCounts["correction"])
+	}
+	if summary.FrictionCounts["none"] != 2 {
+		t.Fatalf("friction count none = %d", summary.FrictionCounts["none"])
+	}
+	if summary.FrictionCounts["evidence"] != 1 {
+		t.Fatalf("friction count evidence = %d", summary.FrictionCounts["evidence"])
+	}
+	if summary.FrictionCounts["clarification"] != 2 {
+		t.Fatalf("friction count clarification = %d", summary.FrictionCounts["clarification"])
+	}
+	if summary.PlanRejectionCount != 1 {
+		t.Fatalf("plan rejection count = %d", summary.PlanRejectionCount)
+	}
+	if summary.ClarificationTurnCount != 2 {
+		t.Fatalf("clarification turn count = %d", summary.ClarificationTurnCount)
+	}
+	if summary.UnreferencedEventCount != 3 {
+		t.Fatalf("unreferenced count = %d", summary.UnreferencedEventCount)
+	}
+	if summary.CorrectionAfterTask != 2 {
+		t.Fatalf("correction-after-task count = %d", summary.CorrectionAfterTask)
+	}
+	if len(summary.NotAssessed) != 0 {
+		t.Fatalf("unexpected not_assessed entries: %v", summary.NotAssessed)
+	}
+}
+
+func TestSummarizeTracePreservesNotAssessedOrdering(t *testing.T) {
+	trace := Trace{
+		SchemaVersion:   SchemaVersion,
+		TaskID:          "task-1",
+		TraceID:         "trace-1",
+		AssessmentState: "assessed",
+		NotAssessed:     []string{"existing"},
+		Events: []Event{
+			validImportedEvent("ix-0", 0),
+		},
+	}
+	summary := SummarizeTrace(trace)
+	want := []string{"existing", "task_assignment event absent; post-assignment correction count is not assessed"}
+	if len(summary.NotAssessed) != len(want) {
+		t.Fatalf("not_assessed count = %d, want %d", len(summary.NotAssessed), len(want))
+	}
+	for i := range want {
+		if summary.NotAssessed[i] != want[i] {
+			t.Fatalf("not_assessed[%d] = %q, want %q", i, summary.NotAssessed[i], want[i])
+		}
+	}
+}
+
 func TestEnvelopeSummaryCountsRefsAndRejectsUnsafeRunRef(t *testing.T) {
 	envelope := Envelope{
 		SchemaVersion:   SchemaVersion,

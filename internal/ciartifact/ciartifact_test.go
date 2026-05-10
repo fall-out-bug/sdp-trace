@@ -269,6 +269,71 @@ func TestEvaluateSafeTokenLengthMatchesSchema(t *testing.T) {
 	}
 }
 
+func TestSafeIdentityToken(t *testing.T) {
+	cases := []struct {
+		name     string
+		value    string
+		extra    string
+		expected bool
+	}{
+		{
+			name:     "empty token passes",
+			value:    "",
+			extra:    "._:-",
+			expected: true,
+		},
+		{
+			name:     "max-length ascii token passes",
+			value:    strings.Repeat("a", 256),
+			extra:    "._:-",
+			expected: true,
+		},
+		{
+			name:     "over-length token fails",
+			value:    strings.Repeat("a", 257),
+			extra:    "._:-",
+			expected: false,
+		},
+		{
+			name:     "unsafe marker rejects token",
+			value:    "Bearer raw-secret-value",
+			extra:    "._:-",
+			expected: false,
+		},
+		{
+			name:     "slash disallowed without extra",
+			value:    "a/b",
+			extra:    "._:-",
+			expected: false,
+		},
+		{
+			name:     "slash allowed with extra",
+			value:    "org/repo",
+			extra:    "/",
+			expected: true,
+		},
+		{
+			name:     "path-prefix is unsafe",
+			value:    "/etc",
+			extra:    "/._-",
+			expected: false,
+		},
+		{
+			name:     "unicode is rejected",
+			value:    "repo-α",
+			extra:    "._:-",
+			expected: false,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := safeIdentityToken(tc.value, tc.extra); got != tc.expected {
+				t.Fatalf("safeIdentityToken(%q, %q) = %v, want %v", tc.value, tc.extra, got, tc.expected)
+			}
+		})
+	}
+}
+
 func TestFixtureMatrixScenarios(t *testing.T) {
 	matrixPath := filepath.Join("..", "..", "examples", "block26-ci-artifact-observation", "fixture-matrix.json")
 	data, err := os.ReadFile(matrixPath)

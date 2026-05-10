@@ -597,33 +597,12 @@ func ValidateTrace(trace Trace) error {
 }
 
 func SummarizeTrace(trace Trace) Summary {
-	counts := map[string]int{}
-	corrections := 0
-	planRejections := 0
-	clarifications := 0
-	assignmentObserved := false
-	unreferenced := 0
+	summary := newTraceSummaryCounter()
 	for _, event := range trace.Events {
-		counts[event.FrictionClass]++
-		switch event.EventType {
-		case "plan_rejected":
-			planRejections++
-		case "clarification_request", "clarification_answer":
-			clarifications++
-		}
-		if event.EventType == "task_assignment" {
-			assignmentObserved = true
-			continue
-		}
-		if len(event.ReferenceRefs) == 0 || event.State == StateUnreferenced {
-			unreferenced++
-		}
-		if assignmentObserved && (event.EventType == "corrective_feedback" || event.EventType == "boundary_violation" || event.EventType == "evidence_correction") {
-			corrections++
-		}
+		summarizeTraceEvent(event, summary)
 	}
 	notAssessed := append([]string{}, trace.NotAssessed...)
-	if !assignmentObserved {
+	if !summary.assignmentObserved {
 		notAssessed = append(notAssessed, "task_assignment event absent; post-assignment correction count is not assessed")
 	}
 	return Summary{
@@ -632,13 +611,71 @@ func SummarizeTrace(trace Trace) Summary {
 		TraceID:                trace.TraceID,
 		AssessmentState:        trace.AssessmentState,
 		EventCount:             len(trace.Events),
-		FrictionCounts:         counts,
-		CorrectionAfterTask:    corrections,
-		PlanRejectionCount:     planRejections,
-		ClarificationTurnCount: clarifications,
-		UnreferencedEventCount: unreferenced,
+		FrictionCounts:         summary.frictionCounts,
+		CorrectionAfterTask:    summary.correctionsAfterAssignment,
+		PlanRejectionCount:     summary.planRejectionCount,
+		ClarificationTurnCount: summary.clarificationCount,
+		UnreferencedEventCount: summary.unreferencedCount,
 		NotAssessed:            notAssessed,
 		CannotVerify:           trace.CannotVerify,
+	}
+}
+
+type traceSummaryCounter struct {
+	frictionCounts             map[string]int
+	correctionsAfterAssignment int
+	planRejectionCount         int
+	clarificationCount         int
+	unreferencedCount          int
+	assignmentObserved         bool
+}
+
+func newTraceSummaryCounter() *traceSummaryCounter {
+	return &traceSummaryCounter{
+		frictionCounts: make(map[string]int),
+	}
+}
+
+func summarizeTraceEvent(event Event, summary *traceSummaryCounter) {
+	summary.frictionCounts[event.FrictionClass]++
+	if event.EventType == "task_assignment" {
+		summary.assignmentObserved = true
+		return
+	}
+	summarizeTraceEventTypeCounters(event.EventType, summary)
+	summarizeTraceReferenceAndCorrection(event, summary)
+}
+
+func summarizeTraceEventTypeCounters(eventType string, summary *traceSummaryCounter) {
+	switch eventType {
+	case "plan_rejected":
+		summary.planRejectionCount++
+	case "clarification_request":
+		summary.clarificationCount++
+	case "clarification_answer":
+		summary.clarificationCount++
+	}
+}
+
+func summarizeTraceReferenceAndCorrection(event Event, summary *traceSummaryCounter) {
+	if eventIsUnreferenced(event) {
+		summary.unreferencedCount++
+	}
+	if summary.assignmentObserved && isPostAssignmentCorrection(event.EventType) {
+		summary.correctionsAfterAssignment++
+	}
+}
+
+func eventIsUnreferenced(event Event) bool {
+	return len(event.ReferenceRefs) == 0 || event.State == StateUnreferenced
+}
+
+func isPostAssignmentCorrection(eventType string) bool {
+	switch eventType {
+	case "corrective_feedback", "boundary_violation", "evidence_correction":
+		return true
+	default:
+		return false
 	}
 }
 

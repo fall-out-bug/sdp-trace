@@ -693,22 +693,37 @@ func safeRef(value string) bool {
 }
 
 func safeIdentityToken(value, extra string) bool {
-	if value == "" || len(value) > 256 {
-		return value == ""
+	if value == "" {
+		return true
+	}
+	if !safeIdentityTokenLength(value) {
+		return false
 	}
 	if unsafeIdentityValue(value) {
 		return false
 	}
+	return safeIdentityTokenCharacters(value, extra)
+}
+
+func safeIdentityTokenLength(value string) bool {
+	return len(value) <= 256
+}
+
+func safeIdentityTokenCharacters(value, extra string) bool {
 	for _, r := range value {
-		if ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z') || ('0' <= r && r <= '9') {
-			continue
+		if !safeIdentityTokenRune(r, extra) {
+			return false
 		}
-		if strings.ContainsRune(extra, r) {
-			continue
-		}
-		return false
 	}
 	return true
+}
+
+func safeIdentityTokenRune(r rune, extra string) bool {
+	return safeIdentityTokenAlnum(r) || strings.ContainsRune(extra, r)
+}
+
+func safeIdentityTokenAlnum(r rune) bool {
+	return strings.ContainsRune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", r)
 }
 
 func unsafeIdentityValue(value string) bool {
