@@ -117,6 +117,65 @@ func TestValidateProfileRejectsMalformedProfiles(t *testing.T) {
 	}
 }
 
+func TestCitationResolvableCharacterization(t *testing.T) {
+	packet := Packet{
+		DiffRef:          SafeRef{ID: "diff-ref"},
+		ContextRefs:      []SafeRef{{ID: "spec"}},
+		VerificationRefs: []SafeRef{{ID: "verify"}},
+	}
+	for name, tc := range map[string]struct {
+		citation Citation
+		want     bool
+	}{
+		"empty-citation": {
+			citation: Citation{},
+			want:     false,
+		},
+		"diff-ref-with-hunk": {
+			citation: Citation{ContextRefID: "diff-ref", DiffHunkID: "hunk-1"},
+			want:     true,
+		},
+		"diff-alias-with-digest": {
+			citation: Citation{ContextRefID: "diff", SourceDigest: "sha256:abc"},
+			want:     true,
+		},
+		"diff-ref-without-hunk-or-digest": {
+			citation: Citation{ContextRefID: "diff-ref"},
+			want:     false,
+		},
+		"context-ref-with-line": {
+			citation: Citation{ContextRefID: "spec", LineStart: 12},
+			want:     true,
+		},
+		"context-ref-without-location": {
+			citation: Citation{ContextRefID: "spec"},
+			want:     false,
+		},
+		"verification-ref-with-line": {
+			citation: Citation{ContextRefID: "verify", LineStart: 4},
+			want:     true,
+		},
+		"verification-ref-with-hunk-only": {
+			citation: Citation{ContextRefID: "verify", DiffHunkID: "hunk-1"},
+			want:     false,
+		},
+		"unknown-ref-with-digest": {
+			citation: Citation{ContextRefID: "unknown", SourceDigest: "sha256:abc"},
+			want:     true,
+		},
+		"digest-only": {
+			citation: Citation{SourceDigest: "sha256:abc"},
+			want:     true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := citationResolvable(packet, tc.citation); got != tc.want {
+				t.Fatalf("citationResolvable() = %v, want %v for %+v", got, tc.want, tc.citation)
+			}
+		})
+	}
+}
+
 func cloneReviewProfile(profile ReviewProfile) ReviewProfile {
 	profile.RequiredPlanes = append([]string(nil), profile.RequiredPlanes...)
 	profile.Roles = append([]ReviewRole(nil), profile.Roles...)

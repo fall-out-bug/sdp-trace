@@ -1220,23 +1220,70 @@ func safeSeverity(severity string) string {
 }
 
 func citationResolvable(packet Packet, citation Citation) bool {
-	if citation.ContextRefID == "" && citation.SourceDigest == "" {
+	if !citationHasAnchor(citation) {
 		return false
 	}
-	if citation.ContextRefID == packet.DiffRef.ID || citation.ContextRefID == "diff" {
-		return citation.DiffHunkID != "" || citation.SourceDigest != ""
-	}
-	for _, ref := range packet.ContextRefs {
-		if citation.ContextRefID == ref.ID {
-			return citation.DiffHunkID != "" || citation.SourceDigest != "" || citation.LineStart > 0
-		}
-	}
-	for _, ref := range packet.VerificationRefs {
-		if citation.ContextRefID == ref.ID {
-			return citation.SourceDigest != "" || citation.LineStart > 0
-		}
+	if resolvable, ok := citationRefResolvable(packet, citation); ok {
+		return resolvable
 	}
 	return citation.SourceDigest != ""
+}
+
+func citationHasAnchor(citation Citation) bool {
+	return citation.ContextRefID != "" || citation.SourceDigest != ""
+}
+
+func citationRefResolvable(packet Packet, citation Citation) (bool, bool) {
+	for _, resolver := range citationResolvers {
+		if resolver.matches(packet, citation) {
+			return resolver.resolvable(citation), true
+		}
+	}
+	return false, false
+}
+
+type citationResolver struct {
+	matches    func(Packet, Citation) bool
+	resolvable func(Citation) bool
+}
+
+var citationResolvers = []citationResolver{
+	{matches: citationMatchesDiff, resolvable: citationHasDiffLocation},
+	{matches: citationMatchesContext, resolvable: citationHasContextLocation},
+	{matches: citationMatchesVerification, resolvable: citationHasVerificationLocation},
+}
+
+func citationMatchesDiff(packet Packet, citation Citation) bool {
+	return citation.ContextRefID == packet.DiffRef.ID || citation.ContextRefID == "diff"
+}
+
+func citationMatchesContext(packet Packet, citation Citation) bool {
+	return safeRefIDExists(packet.ContextRefs, citation.ContextRefID)
+}
+
+func citationMatchesVerification(packet Packet, citation Citation) bool {
+	return safeRefIDExists(packet.VerificationRefs, citation.ContextRefID)
+}
+
+func safeRefIDExists(refs []SafeRef, id string) bool {
+	for _, ref := range refs {
+		if id == ref.ID {
+			return true
+		}
+	}
+	return false
+}
+
+func citationHasDiffLocation(citation Citation) bool {
+	return citation.DiffHunkID != "" || citation.SourceDigest != ""
+}
+
+func citationHasContextLocation(citation Citation) bool {
+	return citation.DiffHunkID != "" || citation.SourceDigest != "" || citation.LineStart > 0
+}
+
+func citationHasVerificationLocation(citation Citation) bool {
+	return citation.SourceDigest != "" || citation.LineStart > 0
 }
 
 func safeText(text string) string {
