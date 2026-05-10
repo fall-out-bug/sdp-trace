@@ -3,7 +3,8 @@
 **Date**: 2026-05-10
 **Worktree**: `/Users/fall_out_bug/projects/vibe_coding/sdp-trace-mvp-readiness-spec`
 **Branch**: `codex/mvp-readiness-spec`
-**Baseline commit**: `5f6706b398d6d68bb9a37be2dee4e6aec1037df3`
+**Intake baseline commit**: `5f6706b398d6d68bb9a37be2dee4e6aec1037df3`
+**Clean PR base**: `origin/main` at `a9ded8a246119e90b1f2ed57d71f72202dcf1ab8`
 
 ## Scope State
 
