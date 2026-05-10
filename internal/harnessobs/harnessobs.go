@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"net/url"
 	"os"
@@ -566,11 +567,16 @@ func normalizeAndResolveSessionEventSource(ctx *sessionCollectionContext) (strin
 	if normalizeErr := normalizeSessionRawEvents(ctx); normalizeErr != nil {
 		return "", normalizeErr
 	}
-	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
-	if err != nil {
+	sourcePath, ok := resolvedSessionEventSource(ctx)
+	if !ok {
 		return "", errSessionSourceUnavailable
 	}
 	return sourcePath, nil
+}
+
+func resolvedSessionEventSource(ctx *sessionCollectionContext) (string, bool) {
+	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	return sourcePath, err == nil
 }
 
 func normalizeSessionRawEvents(ctx *sessionCollectionContext) error {
@@ -853,19 +859,23 @@ func LoadSessionProfile(path string) (SessionProfile, error) {
 }
 
 func validateSessionProfile(profile *SessionProfile) error {
-	if profile.SchemaVersion != SessionProfileSchemaVersion {
-		return fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
-	}
-	if !safeIDPattern.MatchString(profile.ProfileID) {
-		return errors.New("unsafe session profile_id")
-	}
-	if err := validateSessionProfilePaths(*profile); err != nil {
+	if err := validateSessionProfileIdentity(*profile); err != nil {
 		return err
 	}
 	if err := normalizeSessionStreamCapture(profile); err != nil {
 		return err
 	}
 	return validateSessionSetupActions(profile.SetupActions)
+}
+
+func validateSessionProfileIdentity(profile SessionProfile) error {
+	if profile.SchemaVersion != SessionProfileSchemaVersion {
+		return fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
+	}
+	if !safeIDPattern.MatchString(profile.ProfileID) {
+		return errors.New("unsafe session profile_id")
+	}
+	return validateSessionProfilePaths(profile)
 }
 
 func validateSessionProfilePaths(profile SessionProfile) error {
@@ -1761,8 +1771,12 @@ func scanEvents(profile Profile, file io.Reader, maxLine, maxEvents int) ([]Even
 			events = append(events, event)
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, "", err
+	return scannedEvents(events, sourceHash, scanner.Err())
+}
+
+func scannedEvents(events []Event, sourceHash hash.Hash, scanErr error) ([]Event, string, error) {
+	if scanErr != nil {
+		return nil, "", scanErr
 	}
 	return events, hex.EncodeToString(sourceHash.Sum(nil)), nil
 }
@@ -1794,6 +1808,14 @@ func effectiveEventLimits(limits Limits) (int, int) {
 }
 
 func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
+	event, err := decodeSafeEventLine(line, lineNo)
+	if err != nil {
+		return Event{}, err
+	}
+	return event, validateParsedEvent(profile, event, line, lineNo)
+}
+
+func decodeSafeEventLine(line []byte, lineNo int) (Event, error) {
 	raw, err := decodeRawEventLine(line, lineNo)
 	if err != nil {
 		return Event{}, err
@@ -1801,14 +1823,7 @@ func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
 	if err := rejectUnsafeEvent(raw, lineNo); err != nil {
 		return Event{}, err
 	}
-	event, err := decodeEventLine(line, lineNo)
-	if err != nil {
-		return Event{}, err
-	}
-	if err := validateParsedEvent(profile, event, line, lineNo); err != nil {
-		return Event{}, err
-	}
-	return event, nil
+	return decodeEventLine(line, lineNo)
 }
 
 func decodeRawEventLine(line []byte, lineNo int) (map[string]any, error) {

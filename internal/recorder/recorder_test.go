@@ -95,6 +95,20 @@ func TestRunCommandReportsStartFailure(t *testing.T) {
 	}
 }
 
+func TestRunCommandReportsProcessSignal(t *testing.T) {
+	sh := mustFindShell(t)
+	writer := newTestRunWriter(t)
+
+	exitCode, signal := runCommand(context.Background(), []string{sh, "-c", "kill -TERM $$"}, os.Environ(), writer)
+
+	if exitCode != -1 {
+		t.Fatalf("exit code = %d, expected -1 for signaled process", exitCode)
+	}
+	if signal == "" {
+		t.Fatalf("signal = empty, want terminated signal")
+	}
+}
+
 func TestProcessSignalClassifiesExitSignals(t *testing.T) {
 	if got := processSignal(nil); got != "" {
 		t.Fatalf("nil process signal = %q", got)

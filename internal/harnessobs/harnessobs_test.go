@@ -835,6 +835,57 @@ func TestCollectSessionMarksMissingSourceUnavailable(t *testing.T) {
 	}
 }
 
+func TestCollectSessionNormalizesRawEventsWhenSourceIsMissing(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"tool"}, nil)
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(`{"type":"tool_use","model":"qwen","tool":"edit"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "opencode-raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+	})
+	runDir := filepath.Join(dir, "session-run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(runDir, "session.json"), SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "opencode-raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+		CommandModel:       "qwen",
+		CommandModelState:  StatePass,
+		CreatedAt:          "2026-05-10T12:00:00Z",
+	})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	session, observed, err := CollectSession(SessionCollectOptions{
+		ProfilePath: "session-profile.json",
+		RunDir:      "session-run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("CollectSession() error = %v", err)
+	}
+	if session.CollectionState != StatePass || session.NormalizedDigest == "" {
+		t.Fatalf("session = %+v, want normalized pass", session)
+	}
+	if observed.EventCount != 4 || observed.SourcePath != "normalized-events.jsonl" {
+		t.Fatalf("observed = %+v, want four normalized events", observed)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err != nil {
+		t.Fatalf("normalized source was not written: %v", err)
+	}
+}
+
 func TestCollectSessionPropagatesUnsafeRawSourcePath(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
