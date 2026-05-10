@@ -833,9 +833,17 @@ func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, n
 	if filepath.Clean(rawPath) == filepath.Clean(outPath) {
 		return errors.New("raw_event_source_path and event_source_path must be different files")
 	}
-	file, err := os.Open(rawPath)
+	events, err := normalizedOpenCodeRawEvents(rawPath, sessionFacts, now)
 	if err != nil {
 		return err
+	}
+	return writeNormalizedEvents(outPath, events)
+}
+
+func normalizedOpenCodeRawEvents(rawPath string, sessionFacts []Event, now time.Time) ([]Event, error) {
+	file, err := os.Open(rawPath)
+	if err != nil {
+		return nil, err
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
@@ -844,29 +852,41 @@ func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, n
 	events := append([]Event{}, sessionFacts...)
 	for scanner.Scan() {
 		lineNo++
-		line := scanner.Bytes()
-		if len(strings.TrimSpace(string(line))) == 0 {
-			continue
+		lineEvents, err := normalizeOpenCodeRawLineBytes(scanner.Bytes(), lineNo, now)
+		if err != nil {
+			return nil, err
 		}
-		var raw map[string]any
-		if err := json.Unmarshal(line, &raw); err != nil {
-			return fmt.Errorf("raw source line %d: malformed_jsonl", lineNo)
-		}
-		if unsafeField, reason := findUnsafeRawEvent(raw); unsafeField != "" {
-			return fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
-		}
-		for _, event := range normalizeOpenCodeRawLine(raw, lineNo, now) {
-			data, err := json.Marshal(event)
-			if err != nil {
-				return err
-			}
-			event.SourceDigest = digestLine(data)
-			events = append(events, event)
-		}
+		events = append(events, lineEvents...)
 	}
 	if err := scanner.Err(); err != nil {
-		return err
+		return nil, err
 	}
+	return events, nil
+}
+
+func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Event, error) {
+	if len(strings.TrimSpace(string(line))) == 0 {
+		return nil, nil
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(line, &raw); err != nil {
+		return nil, fmt.Errorf("raw source line %d: malformed_jsonl", lineNo)
+	}
+	if unsafeField, reason := findUnsafeRawEvent(raw); unsafeField != "" {
+		return nil, fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
+	}
+	events := normalizeOpenCodeRawLine(raw, lineNo, now)
+	for i := range events {
+		data, err := json.Marshal(events[i])
+		if err != nil {
+			return nil, err
+		}
+		events[i].SourceDigest = digestLine(data)
+	}
+	return events, nil
+}
+
+func writeNormalizedEvents(outPath string, events []Event) error {
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return err
 	}
