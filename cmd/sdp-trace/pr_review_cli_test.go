@@ -117,6 +117,21 @@ func TestPRReviewCLIRequiresPacketInputsAndReturnsNonZeroForUnresolved(t *testin
 	var errOut bytes.Buffer
 	exit := run([]string{
 		"pr-review", "packet",
+		"--out", filepath.Join(root, "packet-with-rest"),
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", filepath.Join(root, "missing.diff"),
+		"unexpected",
+	}, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "accepts only flags") {
+		t.Fatalf("packet rest exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"pr-review", "packet",
 		"--out", filepath.Join(root, "packet"),
 		"--repo-id", "demo_repo",
 		"--change-ref", "pr-123",
@@ -293,6 +308,43 @@ func TestPRReviewCheckRejectsMissingOrFileWorkDir(t *testing.T) {
 				t.Fatalf("check exit=%d err=%s out=%s", exit, errOut.String(), out.String())
 			}
 		})
+	}
+}
+
+func TestPRReviewRunPreviewUsesPacketAndProfile(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
+	profilePath := writePRReviewCheckProfile(t, root)
+	packetDir := filepath.Join(root, "packet")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"pr-review", "packet",
+		"--out", packetDir,
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", diffPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("packet exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"pr-review", "run",
+		"--packet", packetDir,
+		"--profile", profilePath,
+		"--out", filepath.Join(root, "runs"),
+		"--work-dir", root,
+		"--preview",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("run preview exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"schema_version": "block30-pr-review-runs-v1"`) {
+		t.Fatalf("preview output missing run schema: %s", out.String())
 	}
 }
 

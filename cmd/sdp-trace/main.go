@@ -139,6 +139,66 @@ func subcommandName(label string) string {
 	return label
 }
 
+func rejectRest(opts *flagSet, stderr io.Writer, message string) bool {
+	if len(opts.rest()) == 0 {
+		return false
+	}
+	fmt.Fprintln(stderr, message)
+	return true
+}
+
+func requireStringFlag(opts *flagSet, stderr io.Writer, flag, message string) bool {
+	if strings.TrimSpace(opts.stringValue(flag)) != "" {
+		return true
+	}
+	fmt.Fprintln(stderr, message)
+	return false
+}
+
+type requiredCLIFlag struct {
+	name    string
+	message string
+}
+
+func requireOnlyFlags(opts *flagSet, stderr io.Writer, restMessage string, required []requiredCLIFlag) bool {
+	if rejectRest(opts, stderr, restMessage) {
+		return false
+	}
+	return requireRequiredFlags(opts, stderr, required)
+}
+
+func requireRequiredFlags(opts *flagSet, stderr io.Writer, required []requiredCLIFlag) bool {
+	for _, flag := range required {
+		if !requireStringFlag(opts, stderr, flag.name, flag.message) {
+			return false
+		}
+	}
+	return true
+}
+
+func writeJSONPayload(stdout, stderr io.Writer, value any, message string) bool {
+	payload, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		fmt.Fprintf(stderr, "%s: %v\n", message, err)
+		return false
+	}
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return true
+}
+
+func harnessStateExitCode(state string) int {
+	switch state {
+	case harnessobs.StatePass:
+		return 0
+	case harnessobs.StateFail:
+		return 1
+	case harnessobs.StateNotAssessed, harnessobs.StateCannotVerify:
+		return exitCannotVerify
+	default:
+		return exitCannotVerify
+	}
+}
+
 func runObserve(args []string, stdout, stderr io.Writer) int {
 	return runSubcommand(args, stdout, stderr, "observe <setup|collect|session> [flags]", "observe requires setup, collect, or session", map[string]subcommandHandler{
 		"setup":   runObserveSetup,
@@ -164,20 +224,11 @@ func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "harness observe accepts only flags")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("profile")) == "" {
-		fmt.Fprintln(stderr, "harness observe requires --profile")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("source")) == "" {
-		fmt.Fprintln(stderr, "harness observe requires --source")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("out")) == "" {
-		fmt.Fprintln(stderr, "harness observe requires --out")
+	if !requireOnlyFlags(opts, stderr, "harness observe accepts only flags", []requiredCLIFlag{
+		{"profile", "harness observe requires --profile"},
+		{"source", "harness observe requires --source"},
+		{"out", "harness observe requires --out"},
+	}) {
 		return exitUsage
 	}
 	run, err := harnessobs.Observe(harnessobs.ObserveOptions{
@@ -189,12 +240,9 @@ func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload, err := json.MarshalIndent(run, "", "  ")
-	if err != nil {
-		fmt.Fprintf(stderr, "marshal harness run: %v\n", err)
+	if !writeJSONPayload(stdout, stderr, run, "marshal harness run") {
 		return exitCannotVerify
 	}
-	fmt.Fprintf(stdout, "%s\n", payload)
 	return 0
 }
 
@@ -207,16 +255,10 @@ func runObserveSetup(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "observe setup accepts only flags")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("profile")) == "" {
-		fmt.Fprintln(stderr, "observe setup requires --profile")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("out")) == "" {
-		fmt.Fprintln(stderr, "observe setup requires --out")
+	if !requireOnlyFlags(opts, stderr, "observe setup accepts only flags", []requiredCLIFlag{
+		{"profile", "observe setup requires --profile"},
+		{"out", "observe setup requires --out"},
+	}) {
 		return exitUsage
 	}
 	session, err := harnessobs.SetupSession(harnessobs.SessionSetupOptions{
@@ -228,12 +270,9 @@ func runObserveSetup(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload, err := json.MarshalIndent(session, "", "  ")
-	if err != nil {
-		fmt.Fprintf(stderr, "marshal observe setup: %v\n", err)
+	if !writeJSONPayload(stdout, stderr, session, "marshal observe setup") {
 		return exitCannotVerify
 	}
-	fmt.Fprintf(stdout, "%s\n", payload)
 	return 0
 }
 
@@ -245,16 +284,10 @@ func runObserveCollect(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "observe collect accepts only flags")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("profile")) == "" {
-		fmt.Fprintln(stderr, "observe collect requires --profile")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("run")) == "" {
-		fmt.Fprintln(stderr, "observe collect requires --run")
+	if !requireOnlyFlags(opts, stderr, "observe collect accepts only flags", []requiredCLIFlag{
+		{"profile", "observe collect requires --profile"},
+		{"run", "observe collect requires --run"},
+	}) {
 		return exitUsage
 	}
 	session, observed, err := harnessobs.CollectSession(harnessobs.SessionCollectOptions{
@@ -265,15 +298,13 @@ func runObserveCollect(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload, err := json.MarshalIndent(struct {
+	payload := struct {
 		Session harnessobs.SessionRun `json:"session"`
 		Run     harnessobs.Run        `json:"run"`
-	}{Session: session, Run: observed}, "", "  ")
-	if err != nil {
-		fmt.Fprintf(stderr, "marshal observe collect: %v\n", err)
+	}{Session: session, Run: observed}
+	if !writeJSONPayload(stdout, stderr, payload, "marshal observe collect") {
 		return exitCannotVerify
 	}
-	fmt.Fprintf(stdout, "%s\n", payload)
 	if session.CollectionState == harnessobs.StateCannotVerify {
 		return exitCannotVerify
 	}
@@ -288,12 +319,10 @@ func runObserveSession(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if strings.TrimSpace(opts.stringValue("profile")) == "" {
-		fmt.Fprintln(stderr, "observe session requires --profile")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("out")) == "" {
-		fmt.Fprintln(stderr, "observe session requires --out")
+	if !requireRequiredFlags(opts, stderr, []requiredCLIFlag{
+		{"profile", "observe session requires --profile"},
+		{"out", "observe session requires --out"},
+	}) {
 		return exitUsage
 	}
 	if len(opts.rest()) == 0 {
@@ -309,15 +338,13 @@ func runObserveSession(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload, err := json.MarshalIndent(struct {
+	payload := struct {
 		Session harnessobs.SessionRun `json:"session"`
 		Run     harnessobs.Run        `json:"run"`
-	}{Session: session, Run: observed}, "", "  ")
-	if err != nil {
-		fmt.Fprintf(stderr, "marshal observe session: %v\n", err)
+	}{Session: session, Run: observed}
+	if !writeJSONPayload(stdout, stderr, payload, "marshal observe session") {
 		return exitCannotVerify
 	}
-	fmt.Fprintf(stdout, "%s\n", payload)
 	return 0
 }
 
@@ -330,16 +357,10 @@ func runHarnessValidate(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "harness validate accepts only flags")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("profile")) == "" {
-		fmt.Fprintln(stderr, "harness validate requires --profile")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("run")) == "" {
-		fmt.Fprintln(stderr, "harness validate requires --run")
+	if !requireOnlyFlags(opts, stderr, "harness validate accepts only flags", []requiredCLIFlag{
+		{"profile", "harness validate requires --profile"},
+		{"run", "harness validate requires --run"},
+	}) {
 		return exitUsage
 	}
 	validation, err := harnessobs.Validate(harnessobs.ValidateOptions{
@@ -351,23 +372,14 @@ func runHarnessValidate(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload, err := json.MarshalIndent(validation, "", "  ")
-	if err != nil {
-		fmt.Fprintf(stderr, "marshal harness validation: %v\n", err)
+	if !writeJSONPayload(stdout, stderr, validation, "marshal harness validation") {
 		return exitCannotVerify
 	}
-	fmt.Fprintf(stdout, "%s\n", payload)
-	switch validation.ValidationState {
-	case harnessobs.StatePass:
-		return 0
-	case harnessobs.StateFail:
-		return 1
-	case harnessobs.StateNotAssessed, harnessobs.StateCannotVerify:
-		return exitCannotVerify
-	default:
+	code := harnessStateExitCode(validation.ValidationState)
+	if code == exitCannotVerify && validation.ValidationState != harnessobs.StateNotAssessed && validation.ValidationState != harnessobs.StateCannotVerify {
 		fmt.Fprintf(stderr, "unknown harness validation state: %s\n", validation.ValidationState)
-		return exitCannotVerify
 	}
+	return code
 }
 
 func runHarnessSummarize(args []string, stdout, stderr io.Writer) int {
@@ -377,12 +389,9 @@ func runHarnessSummarize(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "harness summarize accepts only flags")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("validation")) == "" {
-		fmt.Fprintln(stderr, "harness summarize requires --validation")
+	if !requireOnlyFlags(opts, stderr, "harness summarize accepts only flags", []requiredCLIFlag{
+		{"validation", "harness summarize requires --validation"},
+	}) {
 		return exitUsage
 	}
 	validation, err := harnessobs.LoadValidation(opts.stringValue("validation"))
@@ -422,8 +431,7 @@ func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "pr-review packet accepts only flags")
+	if rejectRest(opts, stderr, "pr-review packet accepts only flags") {
 		return exitUsage
 	}
 	if err := requirePRReviewPacketInputs(opts); err != nil {
@@ -447,8 +455,7 @@ func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	payload, _ := json.MarshalIndent(packet, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeIndentedPayload(stdout, packet)
 	return 0
 }
 
@@ -464,8 +471,7 @@ func runPRReviewRun(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "pr-review run accepts only flags")
+	if rejectRest(opts, stderr, "pr-review run accepts only flags") {
 		return exitUsage
 	}
 	packet, profile, ok := readPRReviewPacketAndProfile(opts, stderr)
@@ -486,13 +492,11 @@ func runPRReviewRun(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitCannotVerify
 	}
-	var payload []byte
 	if preview != nil {
-		payload, _ = json.MarshalIndent(preview, "", "  ")
-	} else {
-		payload, _ = json.MarshalIndent(runs, "", "  ")
+		writeIndentedPayload(stdout, preview)
+		return 0
 	}
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeIndentedPayload(stdout, runs)
 	return 0
 }
 
@@ -506,8 +510,7 @@ func runPRReviewSynthesize(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "pr-review synthesize accepts only flags")
+	if rejectRest(opts, stderr, "pr-review synthesize accepts only flags") {
 		return exitUsage
 	}
 	if err := requireOutputFile("pr-review synthesize", opts.stringValue("out")); err != nil {
@@ -538,8 +541,7 @@ func runPRReviewSynthesize(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(ledger, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeIndentedPayload(stdout, ledger)
 	return 0
 }
 
@@ -554,8 +556,7 @@ func runPRReviewValidate(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "pr-review validate accepts only flags")
+	if rejectRest(opts, stderr, "pr-review validate accepts only flags") {
 		return exitUsage
 	}
 	if err := requireOutputFile("pr-review validate", opts.stringValue("out")); err != nil {
@@ -581,8 +582,7 @@ func runPRReviewValidate(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(validation, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeIndentedPayload(stdout, validation)
 	if reviewValidationExitCode(validation) != 0 {
 		return exitCannotVerify
 	}
@@ -598,8 +598,7 @@ func runPRReviewSummarize(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return exitUsage
 	}
-	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "pr-review summarize accepts only flags")
+	if rejectRest(opts, stderr, "pr-review summarize accepts only flags") {
 		return exitUsage
 	}
 	validation, err := prreview.ReadValidation(opts.stringValue("validation"))

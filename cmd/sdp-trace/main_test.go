@@ -250,6 +250,23 @@ func shellQuoteForTest(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }
 
+func TestCLISmallHelpersCoverFallbackPaths(t *testing.T) {
+	if got := subcommandName("plain"); got != "plain" {
+		t.Fatalf("subcommandName without args = %q", got)
+	}
+	if got := harnessStateExitCode("unknown_state"); got != exitCannotVerify {
+		t.Fatalf("unknown harness state exit = %d", got)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if writeJSONPayload(&out, &errOut, func() {}, "marshal helper") {
+		t.Fatalf("function value should not marshal")
+	}
+	if !strings.Contains(errOut.String(), "marshal helper:") {
+		t.Fatalf("missing marshal error: %s", errOut.String())
+	}
+}
+
 func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {
 	repo := t.TempDir()
 	runGit(t, repo, "init")

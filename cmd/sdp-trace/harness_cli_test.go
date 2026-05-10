@@ -741,6 +741,20 @@ func TestHarnessCLIRequiresDocumentedFlags(t *testing.T) {
 
 	out.Reset()
 	errOut.Reset()
+	exit = run([]string{"harness", "observe", "--profile", "profile.json"}, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "requires --source") {
+		t.Fatalf("observe missing source exit=%d stderr=%s", exit, errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"observe", "setup", "--profile", "profile.json"}, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "requires --out") {
+		t.Fatalf("setup missing out exit=%d stderr=%s", exit, errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
 	exit = run([]string{"harness", "validate"}, &out, &errOut)
 	if exit != exitUsage || !strings.Contains(errOut.String(), "requires --profile") {
 		t.Fatalf("validate missing flags exit=%d stderr=%s", exit, errOut.String())
