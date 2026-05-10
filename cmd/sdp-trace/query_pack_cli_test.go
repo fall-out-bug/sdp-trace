@@ -80,6 +80,120 @@ func TestQueryPackWritesSafeArtifactAndExplain(t *testing.T) {
 	}
 }
 
+func TestQueryPackRequiresKnownPackAndFlagsOnly(t *testing.T) {
+	runDir := writeQueryPackCLIFixture(t)
+	outPath := filepath.Join(t.TempDir(), "query-pack-result.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	exit := run([]string{
+		"query-pack",
+		"--pack", "forensics-basic",
+		"--run", runDir,
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("unexpected exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), `error: unknown pack "forensics-basic"`) {
+		t.Fatalf("missing unknown pack error: %s", errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{
+		"query-pack",
+		"--pack", "forensics-basic-v1",
+		"--run", runDir,
+		"--out", outPath,
+		"extra-arg",
+	}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("unexpected exit: %d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "query-pack accepts only flags") {
+		t.Fatalf("missing extra args error: %s", errOut.String())
+	}
+}
+
+func TestQueryPackRejectsUnwritableOutputPath(t *testing.T) {
+	runDir := writeQueryPackCLIFixture(t)
+	outPath := t.TempDir()
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	exit := run([]string{
+		"query-pack",
+		"--pack", "forensics-basic-v1",
+		"--run", runDir,
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("unexpected exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "is a directory") {
+		t.Fatalf("missing write failure: %s", errOut.String())
+	}
+}
+
+func TestQueryPackMissingRunArtifactFallsBackToCannotVerifyRows(t *testing.T) {
+	outPath := filepath.Join(t.TempDir(), "query-pack-result.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	exit := run([]string{
+		"query-pack",
+		"--pack", "forensics-basic-v1",
+		"--run", t.TempDir(),
+		"--out", outPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("unexpected exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	payload, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read result: %v", err)
+	}
+	if !strings.Contains(string(payload), "\"block_09.run.malformed\"") {
+		t.Fatalf("expected malformed run rows: %s", string(payload))
+	}
+}
+
+func TestQueryPackExplainRequiresResultAndSchemaValidation(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	exit := run([]string{"query-pack", "explain"}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("unexpected exit: %d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "query-pack explain requires --result") {
+		t.Fatalf("missing explain missing-result error: %s", errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	invalidPath := filepath.Join(t.TempDir(), "invalid-result.json")
+	writeCLITestJSON(t, invalidPath, map[string]any{"schema_version": "wrong", "query_pack_id": "wrong"})
+	exit = run([]string{"query-pack", "explain", "--result", invalidPath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("unexpected exit: %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "unsupported query-pack result") {
+		t.Fatalf("missing unsupported-schema error: %s", errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run([]string{"query-pack", "explain", invalidPath, "--result", invalidPath}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("unexpected exit: %d err=%s", exit, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "query-pack explain accepts only flags") {
+		t.Fatalf("missing explain positional arg error: %s", errOut.String())
+	}
+}
+
 func writeQueryPackCLIFixture(t *testing.T) string {
 	t.Helper()
 	runDir := t.TempDir()

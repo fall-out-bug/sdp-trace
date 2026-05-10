@@ -1085,6 +1085,30 @@ func TestManagedAssessPassesAndExplains(t *testing.T) {
 	}
 }
 
+func TestAssessRequiresProfile(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"assess", "--out", filepath.Join(t.TempDir(), "assessment.json")}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("assess missing profile exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.TrimSpace(errOut.String()) != "assess requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope" {
+		t.Fatalf("assess missing profile error = %q", strings.TrimSpace(errOut.String()))
+	}
+}
+
+func TestAssessPreviewRequiresProfile(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"assess", "preview", "--out", filepath.Join(t.TempDir(), "assessment-preview.json")}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("assess preview missing profile exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.TrimSpace(errOut.String()) != "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope" {
+		t.Fatalf("assess preview missing profile error = %q", strings.TrimSpace(errOut.String()))
+	}
+}
+
 func TestAssessExplainUsageAndUnsupportedSchema(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -1231,6 +1255,97 @@ func TestProtectedGatePreviewRendersAbsentInputsWithoutWriting(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "gate-result.json")); !os.IsNotExist(err) {
 		t.Fatalf("protected preview wrote gate artifact")
+	}
+}
+
+func TestProtectedGateRequiresSingleRunDir(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "ok")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "ok")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	gatePath := filepath.Join(t.TempDir(), "protected-gate.json")
+	contractPath := writeGateContract(t, t.TempDir())
+	checkpointPath := filepath.Join(t.TempDir(), "checkpoint.json")
+	policyPath := filepath.Join(t.TempDir(), "policy.json")
+	witnessPath := filepath.Join(t.TempDir(), "witness.json")
+	writeJSONFileForTest(t, checkpointPath, checkpoint.SignedCheckpoint{})
+	writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{
+		SchemaVersion: checkpoint.PolicySchemaVersion,
+	})
+	writeJSONFileForTest(t, witnessPath, demo.WitnessSummary{})
+
+	exit := run([]string{
+		"gate",
+		"--profile", "protected",
+		"--out", gatePath,
+		"--checkpoint", checkpointPath,
+		"--checkpoint-policy", policyPath,
+		"--witness", witnessPath,
+		"--contract", contractPath,
+		root,
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("protected gate single-run exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "protected gate requires one selected run, got 2") {
+		t.Fatalf("protected gate missing multi-run error: %s", errOut.String())
+	}
+	if _, err := os.Stat(gatePath); !os.IsNotExist(err) {
+		t.Fatalf("protected gate wrote artifact despite multi-run error")
+	}
+}
+
+func TestLoadProtectedGateRowsRejectsInvalidContract(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "ok")
+	contractPath := filepath.Join(t.TempDir(), "contract.json")
+	if err := os.WriteFile(contractPath, []byte(`{`), 0o644); err != nil {
+		t.Fatalf("write contract: %v", err)
+	}
+	var errOut bytes.Buffer
+	_, _, _, code, ok := loadProtectedGateRows(root, contractPath, &errOut)
+	if ok {
+		t.Fatalf("invalid contract accepted ok=%v code=%d", ok, code)
+	}
+	if code != 1 {
+		t.Fatalf("invalid contract exit = %d", code)
+	}
+	if strings.TrimSpace(errOut.String()) == "" {
+		t.Fatalf("invalid contract error missing")
+	}
+}
+
+func TestLoadProtectedGateRowsRejectsInvalidTarget(t *testing.T) {
+	contractPath := writeGateContract(t, t.TempDir())
+	target := filepath.Join(t.TempDir(), "not-a-run-dir")
+	if err := os.WriteFile(target, []byte("not-json"), 0o644); err != nil {
+		t.Fatalf("write target file: %v", err)
+	}
+	var errOut bytes.Buffer
+	_, _, _, code, ok := loadProtectedGateRows(target, contractPath, &errOut)
+	if ok {
+		t.Fatalf("invalid target accepted ok=%v code=%d", ok, code)
+	}
+	if code != 1 {
+		t.Fatalf("invalid target exit = %d", code)
+	}
+	if !strings.Contains(errOut.String(), "not a directory") {
+		t.Fatalf("invalid target error mismatch: %s", errOut.String())
+	}
+}
+
+func TestLoadProtectedWitnessExpectationRejectsMissingRuns(t *testing.T) {
+	var errOut bytes.Buffer
+	_, _, ok := loadProtectedWitnessExpectation(t.TempDir(), &errOut)
+	if ok {
+		t.Fatalf("empty target reported ok")
+	}
+	if !strings.Contains(errOut.String(), "no run directories found") {
+		t.Fatalf("missing run directories error mismatch: %s", errOut.String())
 	}
 }
 

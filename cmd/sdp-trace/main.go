@@ -1119,14 +1119,36 @@ func runEnvelope(_ context.Context, args []string, stdout, stderr io.Writer) int
 }
 
 func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
-	if len(args) > 0 {
-		switch args[0] {
-		case "preview":
-			return runAssessPreview(args[1:], stdout, stderr)
-		case "explain":
-			return runAssessExplain(args[1:], stdout, stderr)
-		}
+	if code, ok := runAssessSubcommand(args, stdout, stderr); ok {
+		return code
 	}
+	opts, ok := parseAssessOptions(args, stderr)
+	if !ok {
+		return exitUsage
+	}
+	handler, ok := assessHandlers()[opts.stringValue("profile")]
+	if !ok {
+		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope")
+		return exitUsage
+	}
+	return handler(opts, stdout, stderr)
+}
+
+func runAssessSubcommand(args []string, stdout, stderr io.Writer) (int, bool) {
+	if len(args) == 0 {
+		return 0, false
+	}
+	switch args[0] {
+	case "preview":
+		return runAssessPreview(args[1:], stdout, stderr), true
+	case "explain":
+		return runAssessExplain(args[1:], stdout, stderr), true
+	default:
+		return 0, false
+	}
+}
+
+func parseAssessOptions(args []string, stderr io.Writer) (*flagSet, bool) {
 	opts := &flagSet{name: "assess"}
 	opts.setString("profile", "")
 	opts.setString("out", "")
@@ -1140,53 +1162,25 @@ func runAssess(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	opts.setString("authority-package", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, false
 	}
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "assess accepts only flags")
-		return exitUsage
+		return nil, false
 	}
-	switch opts.stringValue("profile") {
-	case "adapter-capture":
-		return runAdapterCaptureAssess(opts, stdout, stderr)
-	case "managed-harness":
-		return runManagedAssess(opts, stdout, stderr)
-	case "forensic-retention":
-		return runForensicAssess(opts, stdout, stderr)
-	case "ci-artifact-observation":
-		return runCIArtifactAssess(opts, stdout, stderr)
-	case "authority-envelope":
-		return runAuthorityAssess(opts, stdout, stderr)
-	default:
-		fmt.Fprintln(stderr, "assess requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope")
-		return exitUsage
-	}
+	return opts, true
 }
 
-func runAuthorityAssess(opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
-		"--out":               opts.stringValue("out"),
-		"--authority-package": opts.stringValue("authority-package"),
+type assessHandler func(*flagSet, io.Writer, io.Writer) int
+
+func assessHandlers() map[string]assessHandler {
+	return map[string]assessHandler{
+		"adapter-capture":         runAdapterCaptureAssess,
+		"managed-harness":         runManagedAssess,
+		"forensic-retention":      runForensicAssess,
+		"ci-artifact-observation": runCIArtifactAssess,
+		"authority-envelope":      runAuthorityAssess,
 	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "authority-envelope assess requires %s\n", flag)
-			return exitUsage
-		}
-	}
-	pkg, err := authority.ReadPackage(opts.stringValue("authority-package"))
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	result := authority.Evaluate(pkg)
-	if err := authority.Write(opts.stringValue("out"), result); err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
-	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
-	return authorityExitCode(result)
 }
 
 func runAdapterCaptureAssess(opts *flagSet, stdout, stderr io.Writer) int {
@@ -1356,6 +1350,19 @@ type managedPreviewReport struct {
 }
 
 func runAssessPreview(args []string, stdout, stderr io.Writer) int {
+	opts, ok := parseAssessPreviewOptions(args, stderr)
+	if !ok {
+		return exitUsage
+	}
+	handler, ok := assessPreviewHandlers()[opts.stringValue("profile")]
+	if !ok {
+		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope")
+		return exitUsage
+	}
+	return handler(opts, stdout)
+}
+
+func parseAssessPreviewOptions(args []string, stderr io.Writer) (*flagSet, bool) {
 	opts := &flagSet{name: "assess preview"}
 	opts.setString("profile", "")
 	opts.setString("out", "")
@@ -1368,27 +1375,51 @@ func runAssessPreview(args []string, stdout, stderr io.Writer) int {
 	opts.setString("authority-package", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, false
 	}
 	if len(opts.rest()) != 0 {
 		fmt.Fprintln(stderr, "assess preview accepts only flags")
-		return exitUsage
+		return nil, false
 	}
-	switch opts.stringValue("profile") {
-	case "adapter-capture":
-		return runAdapterCaptureAssessPreview(opts, stdout)
-	case "managed-harness":
-		return runManagedAssessPreview(opts, stdout)
-	case "forensic-retention":
-		return runForensicAssessPreview(opts, stdout)
-	case "ci-artifact-observation":
-		return runCIArtifactAssessPreview(opts, stdout)
-	case "authority-envelope":
-		return runAuthorityAssessPreview(opts, stdout)
-	default:
-		fmt.Fprintln(stderr, "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope")
-		return exitUsage
+	return opts, true
+}
+
+type assessPreviewHandler func(*flagSet, io.Writer) int
+
+func assessPreviewHandlers() map[string]assessPreviewHandler {
+	return map[string]assessPreviewHandler{
+		"adapter-capture":         runAdapterCaptureAssessPreview,
+		"managed-harness":         runManagedAssessPreview,
+		"forensic-retention":      runForensicAssessPreview,
+		"ci-artifact-observation": runCIArtifactAssessPreview,
+		"authority-envelope":      runAuthorityAssessPreview,
 	}
+}
+
+func runAuthorityAssess(opts *flagSet, stdout, stderr io.Writer) int {
+	required := map[string]string{
+		"--out":               opts.stringValue("out"),
+		"--authority-package": opts.stringValue("authority-package"),
+	}
+	for flag, value := range required {
+		if strings.TrimSpace(value) == "" {
+			fmt.Fprintf(stderr, "authority-envelope assess requires %s\n", flag)
+			return exitUsage
+		}
+	}
+	pkg, err := authority.ReadPackage(opts.stringValue("authority-package"))
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	result := authority.Evaluate(pkg)
+	if err := authority.Write(opts.stringValue("out"), result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	payload, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+	return authorityExitCode(result)
 }
 
 type adapterCapturePreviewReport struct {
@@ -2090,68 +2121,103 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 }
 
 func runProtectedGate(target, outPath string, opts *flagSet, stdout, stderr io.Writer) int {
-	required := map[string]string{
-		"--checkpoint":        opts.stringValue("checkpoint"),
-		"--checkpoint-policy": opts.stringValue("checkpoint-policy"),
-		"--witness":           opts.stringValue("witness"),
+	result, code := resolveProtectedGate(target, opts, stderr)
+	if code != 0 {
+		return code
 	}
-	for flag, value := range required {
-		if strings.TrimSpace(value) == "" {
-			fmt.Fprintf(stderr, "protected gate requires %s\n", flag)
-			return exitUsage
-		}
+	return writeProtectedGateResult(outPath, result, stdout, stderr)
+}
+
+func resolveProtectedGate(target string, opts *flagSet, stderr io.Writer) (demo.GateResult, int) {
+	signed, policy, witnessSummary, code, ok := readProtectedGateInputs(opts, stderr)
+	if !ok {
+		return demo.GateResult{}, code
 	}
-	var signed checkpoint.SignedCheckpoint
-	if err := readJSONFile(opts.stringValue("checkpoint"), &signed); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
+	contract, rows, runDir, code, ok := loadProtectedGateRows(target, opts.stringValue("contract"), stderr)
+	if !ok {
+		return demo.GateResult{}, code
 	}
-	var policy checkpoint.TrustedCheckpointPolicy
-	if err := readJSONFile(opts.stringValue("checkpoint-policy"), &policy); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
+	expected, code, ok := loadProtectedWitnessExpectation(target, stderr)
+	if !ok {
+		return demo.GateResult{}, code
 	}
-	var witnessSummary demo.WitnessSummary
-	if err := readJSONFile(opts.stringValue("witness"), &witnessSummary); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
-	}
-	contract, err := trace.LoadContract(opts.stringValue("contract"))
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
-	}
-	rows, err := demo.VerifiedRows(target, contract)
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
-	}
-	runDir, err := protectedRunDir(target)
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	checkpointResult := checkpoint.Verify(runDir, signed, &policy)
-	expected, err := demoWitnessExpectation(target)
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	checkpointResult = protectedCheckpointVerification(checkpointResult, signed, policy, witnessSummary, expected)
-	result := demo.EvaluateProtectedGate(rows, contract, demo.ProtectedGateInput{
+	checkpointResult := protectedCheckpointVerification(
+		checkpoint.Verify(runDir, signed, &policy),
+		signed,
+		policy,
+		witnessSummary,
+		expected,
+	)
+	return demo.EvaluateProtectedGate(rows, contract, demo.ProtectedGateInput{
 		Checkpoint:         checkpointResult,
 		PolicyProvided:     true,
 		Witness:            &witnessSummary,
 		WitnessExpectation: expected,
 		Now:                time.Now().UTC(),
-	})
-	if err := writeJSONFile(outPath, result); err != nil {
+	}), 0
+}
+
+func writeProtectedGateResult(path string, result demo.GateResult, stdout, stderr io.Writer) int {
+	if err := writeJSONFile(path, result); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	payload, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Fprintf(stdout, "%s\n", payload)
+	writeIndentedPayload(stdout, result)
 	return gateExitCode(result)
+}
+
+func readProtectedGateInputs(opts *flagSet, stderr io.Writer) (checkpoint.SignedCheckpoint, checkpoint.TrustedCheckpointPolicy, demo.WitnessSummary, int, bool) {
+	var signed checkpoint.SignedCheckpoint
+	var policy checkpoint.TrustedCheckpointPolicy
+	var witness demo.WitnessSummary
+	inputs := []struct {
+		flag  string
+		path  string
+		value any
+	}{
+		{"--checkpoint", opts.stringValue("checkpoint"), &signed},
+		{"--checkpoint-policy", opts.stringValue("checkpoint-policy"), &policy},
+		{"--witness", opts.stringValue("witness"), &witness},
+	}
+	for _, input := range inputs {
+		if strings.TrimSpace(input.path) == "" {
+			fmt.Fprintf(stderr, "protected gate requires %s\n", input.flag)
+			return checkpoint.SignedCheckpoint{}, checkpoint.TrustedCheckpointPolicy{}, demo.WitnessSummary{}, exitUsage, false
+		}
+		if err := readJSONFile(input.path, input.value); err != nil {
+			fmt.Fprintln(stderr, err)
+			return checkpoint.SignedCheckpoint{}, checkpoint.TrustedCheckpointPolicy{}, demo.WitnessSummary{}, exitUsage, false
+		}
+	}
+	return signed, policy, witness, 0, true
+}
+
+func loadProtectedGateRows(target, contractPath string, stderr io.Writer) (trace.Contract, []demo.RunRow, string, int, bool) {
+	contract, err := trace.LoadContract(contractPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return trace.Contract{}, nil, "", 1, false
+	}
+	rows, err := demo.VerifiedRows(target, contract)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return trace.Contract{}, nil, "", 1, false
+	}
+	runDir, err := protectedRunDir(target)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return trace.Contract{}, nil, "", exitCannotVerify, false
+	}
+	return contract, rows, runDir, 0, true
+}
+
+func loadProtectedWitnessExpectation(target string, stderr io.Writer) (demo.WitnessExpectation, int, bool) {
+	expected, err := demoWitnessExpectation(target)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return demo.WitnessExpectation{}, exitCannotVerify, false
+	}
+	return expected, 0, true
 }
 
 func runGateExplain(args []string, stdout, stderr io.Writer) int {
@@ -3257,73 +3323,134 @@ func runQueryPack(_ context.Context, args []string, stdout, stderr io.Writer) in
 	if len(args) > 0 && args[0] == "explain" {
 		return runQueryPackExplain(args[1:], stdout, stderr)
 	}
+	return runQueryPackBuild(args, stderr)
+}
+
+func runQueryPackBuild(args []string, stderr io.Writer) int {
+	opts, err := parseQueryPackArgs(args)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if err := validateQueryPackOptions(opts); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	code, err := writeQueryPackArtifact(opts)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return code
+	}
+	return 0
+}
+
+func writeQueryPackArtifact(opts *queryPackOptions) (int, error) {
+	result, err := query.ForensicsBasicPack(opts.runPath)
+	if err != nil {
+		return exitCannotVerify, err
+	}
+	if err := writeJSONFile(opts.outPath, result); err != nil {
+		return 1, err
+	}
+	return 0, nil
+}
+
+func runQueryPackExplain(args []string, stdout, stderr io.Writer) int {
+	opts, err := parseQueryPackExplainArgs(args)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	result, err := readQueryPackResult(opts.resultPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	if err := validateQueryPackExplainResult(result); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitCannotVerify
+	}
+	fmt.Fprint(stdout, query.ExplainForensicsPack(result))
+	return 0
+}
+
+type queryPackOptions struct {
+	pack    string
+	runPath string
+	outPath string
+}
+
+type queryPackExplainOptions struct {
+	resultPath string
+}
+
+func parseQueryPackArgs(args []string) (*queryPackOptions, error) {
 	opts := &flagSet{name: "query-pack"}
 	opts.setString("pack", "")
 	opts.setString("run", "")
 	opts.setString("out", "")
 	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, err
 	}
 	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "query-pack accepts only flags")
-		return exitUsage
+		return nil, fmt.Errorf("query-pack accepts only flags")
 	}
-	switch strings.TrimSpace(opts.stringValue("pack")) {
-	case "":
-		fmt.Fprintln(stderr, "error: ambiguous pack selection; --pack is required")
-		return exitUsage
-	case query.QueryPackForensicsBasic:
-	default:
-		fmt.Fprintf(stderr, "error: unknown pack %q\n", opts.stringValue("pack"))
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("run")) == "" {
-		fmt.Fprintln(stderr, "query-pack requires --run")
-		return exitUsage
-	}
-	if strings.TrimSpace(opts.stringValue("out")) == "" {
-		fmt.Fprintln(stderr, "query-pack requires --out")
-		return exitUsage
-	}
-	result, err := query.ForensicsBasicPack(opts.stringValue("run"))
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	if err := writeJSONFile(opts.stringValue("out"), result); err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
-	}
-	return 0
+	return &queryPackOptions{
+		pack:    strings.TrimSpace(opts.stringValue("pack")),
+		runPath: strings.TrimSpace(opts.stringValue("run")),
+		outPath: strings.TrimSpace(opts.stringValue("out")),
+	}, nil
 }
 
-func runQueryPackExplain(args []string, stdout, stderr io.Writer) int {
+func parseQueryPackExplainArgs(args []string) (*queryPackExplainOptions, error) {
 	opts := &flagSet{name: "query-pack explain"}
 	opts.setString("result", "")
 	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, err
 	}
 	if len(opts.rest()) != 0 {
-		fmt.Fprintln(stderr, "query-pack explain accepts only flags")
-		return exitUsage
+		return nil, fmt.Errorf("query-pack explain accepts only flags")
 	}
-	if strings.TrimSpace(opts.stringValue("result")) == "" {
-		fmt.Fprintln(stderr, "query-pack explain requires --result")
-		return exitUsage
+	resultPath := strings.TrimSpace(opts.stringValue("result"))
+	if resultPath == "" {
+		return nil, fmt.Errorf("query-pack explain requires --result")
 	}
+	return &queryPackExplainOptions{resultPath: resultPath}, nil
+}
+
+func validateQueryPackOptions(opts *queryPackOptions) error {
+	if opts.pack == "" {
+		return fmt.Errorf("error: ambiguous pack selection; --pack is required")
+	}
+	if opts.pack != query.QueryPackForensicsBasic {
+		return fmt.Errorf("error: unknown pack %q", opts.pack)
+	}
+	return requireQueryPackRequiredInputs(opts.runPath, opts.outPath)
+}
+
+func requireQueryPackRequiredInputs(runPath, outPath string) error {
+	if runPath == "" {
+		return fmt.Errorf("query-pack requires --run")
+	}
+	if outPath == "" {
+		return fmt.Errorf("query-pack requires --out")
+	}
+	return nil
+}
+
+func readQueryPackResult(path string) (query.QueryPackResult, error) {
 	var result query.QueryPackResult
-	if err := readJSONFile(opts.stringValue("result"), &result); err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
+	if err := readJSONFile(path, &result); err != nil {
+		return query.QueryPackResult{}, err
 	}
+	return result, nil
+}
+
+func validateQueryPackExplainResult(result query.QueryPackResult) error {
 	if result.SchemaVersion != query.QueryPackSchemaVersion || result.QueryPackID != query.QueryPackForensicsBasic {
-		fmt.Fprintln(stderr, "unsupported query-pack result")
-		return exitCannotVerify
+		return fmt.Errorf("unsupported query-pack result")
 	}
-	fmt.Fprint(stdout, query.ExplainForensicsPack(result))
-	return 0
+	return nil
 }
 
 func runExport(_ context.Context, args []string, stdout, stderr io.Writer) int {
