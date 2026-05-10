@@ -1,3 +1,7 @@
 # Claude Code Example
 
-This example will show how Claude Code work can emit evidence and decision records without requiring SDP Operator Mode.
+State: `placeholder`.
+
+This directory is not first-class MVP evidence. It is reserved for a future
+Claude Code fixture that may show evidence and decision records without
+requiring SDP Operator Mode.

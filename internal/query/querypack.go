@@ -168,52 +168,80 @@ func ForensicsBasicPack(runDir string) (QueryPackResult, error) {
 func ExplainForensicsPack(result QueryPackResult) string {
 	var lines []string
 	for _, queryName := range queryOrder {
-		rows := append([]QueryPackRow(nil), result.QueryRows[queryName]...)
-		sort.Slice(rows, func(i, j int) bool { return rows[i].ID < rows[j].ID })
+		rows := sortedQueryRows(result.QueryRows[queryName])
 		for _, row := range rows {
-			parts := []string{queryName, row.ID, row.EvidenceState, row.EvidenceFamily}
-			parts = append(parts, "source_ref="+row.SourceRef)
-			if row.SourceConditionID != "" {
-				parts = append(parts, "source_condition_id="+row.SourceConditionID)
-			}
-			if row.SourceConditionState != "" {
-				parts = append(parts, "source_condition_state="+row.SourceConditionState)
-			}
-			if row.Reconstructable != nil {
-				parts = append(parts, fmt.Sprintf("reconstructable=%t", *row.Reconstructable))
-			}
-			if row.EvidenceGap != "" {
-				parts = append(parts, "gap="+row.EvidenceGap)
-			}
-			lines = append(lines, strings.Join(parts, " "))
+			lines = append(lines, explainQueryRow(queryName, row))
 		}
 	}
 	return strings.Join(lines, "\n") + "\n"
 }
 
 func loadPackInputs(runDir string) (packInputs, error) {
-	runPath := filepath.Join(runDir, "run.json")
 	var run runArtifact
-	runArtifact, err := readPackArtifact(runPath, "run", "run", true, &run)
+	runArtifact, err := readPackArtifact(filepath.Join(runDir, "run.json"), "run", "run", true, &run)
 	if err != nil && runArtifact.Role == "" {
 		return packInputs{}, err
 	}
 	inputs := packInputs{run: run, runArtifact: runArtifact, runErr: err}
-	forensicPath := filepath.Join(runDir, "forensic-retention.assessment-result.json")
-	var forensic assessmentEnvelope
-	if artifact, present, err := readOptionalPackArtifact(forensicPath, "forensic_retention", "forensic_retention", false, &forensic); err != nil && artifact.Role == "" {
+	return loadOptionalPackInputs(runDir, inputs)
+}
+
+func sortedQueryRows(rows []QueryPackRow) []QueryPackRow {
+	sorted := append([]QueryPackRow(nil), rows...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID })
+	return sorted
+}
+
+func explainQueryRow(queryName string, row QueryPackRow) string {
+	parts := []string{queryName, row.ID, row.EvidenceState, row.EvidenceFamily}
+	parts = append(parts, "source_ref="+row.SourceRef)
+	parts = appendOptionalPart(parts, "source_condition_id", row.SourceConditionID)
+	parts = appendOptionalPart(parts, "source_condition_state", row.SourceConditionState)
+	if row.Reconstructable != nil {
+		parts = append(parts, fmt.Sprintf("reconstructable=%t", *row.Reconstructable))
+	}
+	parts = appendOptionalPart(parts, "gap", row.EvidenceGap)
+	return strings.Join(parts, " ")
+}
+
+func appendOptionalPart(parts []string, key, value string) []string {
+	if value == "" {
+		return parts
+	}
+	return append(parts, key+"="+value)
+}
+
+func loadOptionalPackInputs(runDir string, inputs packInputs) (packInputs, error) {
+	var err error
+	inputs, err = loadForensicInput(runDir, inputs)
+	if err != nil {
 		return packInputs{}, err
-	} else if present {
+	}
+	return loadAdapterInput(runDir, inputs)
+}
+
+func loadForensicInput(runDir string, inputs packInputs) (packInputs, error) {
+	var forensic assessmentEnvelope
+	artifact, present, err := readOptionalPackArtifact(filepath.Join(runDir, "forensic-retention.assessment-result.json"), "forensic_retention", "forensic_retention", false, &forensic)
+	if err != nil && artifact.Role == "" {
+		return packInputs{}, err
+	}
+	if present {
 		inputs.forensicPresent = true
 		inputs.forensicArtifact = &artifact
 		inputs.forensic = forensic
 		inputs.forensicErr = err
 	}
-	adapterPath := filepath.Join(runDir, "adapter-capture.assessment-result.json")
+	return inputs, nil
+}
+
+func loadAdapterInput(runDir string, inputs packInputs) (packInputs, error) {
 	var adapter assessmentEnvelope
-	if artifact, present, err := readOptionalPackArtifact(adapterPath, "adapter_capture", "adapter_capture", false, &adapter); err != nil && artifact.Role == "" {
+	artifact, present, err := readOptionalPackArtifact(filepath.Join(runDir, "adapter-capture.assessment-result.json"), "adapter_capture", "adapter_capture", false, &adapter)
+	if err != nil && artifact.Role == "" {
 		return packInputs{}, err
-	} else if present {
+	}
+	if present {
 		inputs.adapterPresent = true
 		inputs.adapterArtifact = &artifact
 		inputs.adapter = adapter
@@ -301,24 +329,34 @@ func (b *packBuilder) result() QueryPackResult {
 }
 
 func (b *packBuilder) addTimelineRows() {
+	b.addRunTimelineRows()
+	b.addOptionalTimelineRows()
+}
+
+func (b *packBuilder) addRunTimelineRows() {
 	if len(b.inputs.run.EventRefs) == 0 {
 		b.addRow(QueryForensicsTimeline, RowStatePresent, EvidenceFamilyRunChain, "block_09.run.run_id", "", "", "run_timeline_available", "")
-	} else {
-		for i, event := range b.inputs.run.EventRefs {
-			family := familyForEvent(event.EventType)
-			sourceRef := fmt.Sprintf("block_09.event.%s.e%04d", family, i+1)
-			b.addRow(QueryForensicsTimeline, RowStatePresent, family, sourceRef, "", "", "timeline_event_present", "")
-		}
+		return
 	}
-	if !b.inputs.forensicPresent {
-		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "", "", "missing_optional_block_18_forensic_retention_result", EvidenceFamilyRetention)
-	} else if b.inputs.forensicErr != nil {
-		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
+	for i, event := range b.inputs.run.EventRefs {
+		family := familyForEvent(event.EventType)
+		sourceRef := fmt.Sprintf("block_09.event.%s.e%04d", family, i+1)
+		b.addRow(QueryForensicsTimeline, RowStatePresent, family, sourceRef, "", "", "timeline_event_present", "")
 	}
-	if !b.inputs.adapterPresent {
-		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_optional_block_19_adapter_capture_result", EvidenceFamilyAdapterCapture)
-	} else if b.inputs.adapterErr != nil {
-		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
+}
+
+func (b *packBuilder) addOptionalTimelineRows() {
+	b.addOptionalTimelineRow(b.inputs.forensicPresent, b.inputs.forensicErr, EvidenceFamilyRetention, "block_18", "missing_optional_block_18_forensic_retention_result")
+	b.addOptionalTimelineRow(b.inputs.adapterPresent, b.inputs.adapterErr, EvidenceFamilyAdapterCapture, "block_19", "missing_optional_block_19_adapter_capture_result")
+}
+
+func (b *packBuilder) addOptionalTimelineRow(present bool, inputErr error, family, block, missingReason string) {
+	if !present {
+		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, family, block+".condition.missing", "", "", missingReason, family)
+		return
+	}
+	if inputErr != nil {
+		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, block+".condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }
 
@@ -361,25 +399,44 @@ func (b *packBuilder) addCaptureRows() {
 }
 
 func (b *packBuilder) addGapRows() {
-	keys := make([]string, 0, len(b.inputs.run.VerifierStates))
-	for key := range b.inputs.run.VerifierStates {
+	b.addVerifierGapRows()
+	b.addForensicGapRows()
+	b.addAdapterGapRows()
+}
+
+func (b *packBuilder) addVerifierGapRows() {
+	for _, key := range sortedVerifierStateKeys(b.inputs.run.VerifierStates) {
+		b.addVerifierGapRow(key, b.inputs.run.VerifierStates[key])
+	}
+}
+
+func sortedVerifierStateKeys(states map[string]verifierState) []string {
+	keys := make([]string, 0, len(states))
+	for key := range states {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	for _, key := range keys {
-		state := b.inputs.run.VerifierStates[key]
-		rowState := mapSourceState(state.State)
-		if rowState == RowStatePresent {
-			continue
-		}
-		family := familyForVerifierState(key)
-		b.addRow(QueryForensicsGaps, rowState, family, "block_09.run."+safeToken(key), "", "", safeToken(key), family)
+	return keys
+}
+
+func (b *packBuilder) addVerifierGapRow(key string, state verifierState) {
+	rowState := mapSourceState(state.State)
+	if rowState == RowStatePresent {
+		return
 	}
+	family := familyForVerifierState(key)
+	b.addRow(QueryForensicsGaps, rowState, family, "block_09.run."+safeToken(key), "", "", safeToken(key), family)
+}
+
+func (b *packBuilder) addForensicGapRows() {
 	if !b.inputs.forensicPresent {
 		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "", "", "missing_optional_block_18_forensic_retention_result", "retention")
 	} else if b.inputs.forensicErr != nil {
 		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
+}
+
+func (b *packBuilder) addAdapterGapRows() {
 	if !b.inputs.adapterPresent {
 		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_optional_block_19_adapter_capture_result", "adapter_capture")
 	} else if b.inputs.adapterErr != nil {
@@ -428,25 +485,36 @@ func (b *packBuilder) addReferencedClaim(source QueryPackRow) {
 func (b *packBuilder) rowFromCondition(queryName, family, sourceRef string, condition assessmentCondition) QueryPackRow {
 	state := mapSourceState(condition.State)
 	reason := condition.ReasonCode
-	gap := ""
-	if state != RowStatePresent && state != RowStateIssueObserved {
-		gap = family
-	}
-	reconstructable := (*bool)(nil)
-	if condition.State == RowStateRetentionLimited || condition.CappedToRetentionMode != "" {
-		falseValue := false
-		reconstructable = &falseValue
-	}
+	gap := gapForConditionState(state, family)
+	reconstructable := reconstructableForCondition(condition)
 	if condition.ID == "critical_evidence_reconstructable" && (condition.CappedToRetentionMode != "" || condition.ReasonCode == "critical_evidence_digest_only") {
 		state = RowStateRetentionLimited
 		reason = "digest_only_not_reconstructable"
-		falseValue := false
-		reconstructable = &falseValue
+		reconstructable = falsePointer()
 		gap = EvidenceFamilyRetention
 	}
 	row := b.newRow(queryName, state, family, sourceRef, condition.ID, condition.State, reason, gap)
 	row.Reconstructable = reconstructable
 	return row
+}
+
+func gapForConditionState(state, family string) string {
+	if state == RowStatePresent || state == RowStateIssueObserved {
+		return ""
+	}
+	return family
+}
+
+func reconstructableForCondition(condition assessmentCondition) *bool {
+	if condition.State == RowStateRetentionLimited || condition.CappedToRetentionMode != "" {
+		return falsePointer()
+	}
+	return nil
+}
+
+func falsePointer() *bool {
+	falseValue := false
+	return &falseValue
 }
 
 func (b *packBuilder) addRow(queryName, state, family, sourceRef, conditionID, conditionState, reasonCode, gap string) {
@@ -475,47 +543,25 @@ func queryShortName(queryName string) string {
 }
 
 func mapSourceState(state string) string {
-	switch state {
-	case "pass":
-		return RowStatePresent
-	case "":
-		return RowStateCannotVerify
-	case "fail":
-		return RowStateIssueObserved
-	case RowStateCannotVerify:
-		return RowStateCannotVerify
-	case RowStateNotAssessed:
-		return RowStateNotAssessed
-	case RowStateMissingTelemetry:
-		return RowStateMissingTelemetry
-	case RowStateUnsupported:
-		return RowStateUnsupported
-	case RowStateNotIntegrated:
-		return RowStateNotIntegrated
-	case RowStateRetentionLimited:
-		return RowStateRetentionLimited
-	default:
-		return RowStateCannotVerify
+	sourceStates := map[string]string{
+		"pass":                   RowStatePresent,
+		"":                       RowStateCannotVerify,
+		"fail":                   RowStateIssueObserved,
+		RowStateCannotVerify:     RowStateCannotVerify,
+		RowStateNotAssessed:      RowStateNotAssessed,
+		RowStateMissingTelemetry: RowStateMissingTelemetry,
+		RowStateUnsupported:      RowStateUnsupported,
+		RowStateNotIntegrated:    RowStateNotIntegrated,
+		RowStateRetentionLimited: RowStateRetentionLimited,
 	}
+	if mapped, ok := sourceStates[state]; ok {
+		return mapped
+	}
+	return RowStateCannotVerify
 }
 
 func familyForEvent(eventType string) string {
-	switch {
-	case strings.Contains(eventType, "supersed"):
-		return EvidenceFamilySupersession
-	case strings.Contains(eventType, "task"):
-		return EvidenceFamilyTask
-	case strings.Contains(eventType, "command"):
-		return EvidenceFamilyCommand
-	case strings.Contains(eventType, "file"):
-		return EvidenceFamilyFileMutations
-	case strings.Contains(eventType, "test"):
-		return EvidenceFamilyTest
-	case strings.Contains(eventType, "redaction"):
-		return EvidenceFamilyRedaction
-	default:
-		return EvidenceFamilyRunChain
-	}
+	return firstMatchingFamily(eventType, eventFamilyRules, EvidenceFamilyRunChain)
 }
 
 func familyForForensicCondition(id string) string {
@@ -543,38 +589,68 @@ func familyForAdapterCondition(id string) string {
 }
 
 func familyForVerifierState(id string) string {
-	switch {
-	case strings.Contains(id, "witness"):
-		return EvidenceFamilyWitness
-	case strings.Contains(id, "supersed"):
-		return EvidenceFamilySupersession
-	case strings.Contains(id, "task"):
-		return EvidenceFamilyTask
-	case strings.Contains(id, "command"):
-		return EvidenceFamilyCommand
-	case strings.Contains(id, "file"):
-		return EvidenceFamilyFileMutations
-	case strings.Contains(id, "test"):
-		return EvidenceFamilyTest
-	case strings.Contains(id, "redaction"):
-		return EvidenceFamilyRedaction
-	default:
-		return EvidenceFamilyRunChain
+	return firstMatchingFamily(id, verifierFamilyRules, EvidenceFamilyRunChain)
+}
+
+type familyRule struct {
+	token  string
+	family string
+}
+
+var eventFamilyRules = []familyRule{
+	{"supersed", EvidenceFamilySupersession},
+	{"task", EvidenceFamilyTask},
+	{"command", EvidenceFamilyCommand},
+	{"file", EvidenceFamilyFileMutations},
+	{"test", EvidenceFamilyTest},
+	{"redaction", EvidenceFamilyRedaction},
+}
+
+var verifierFamilyRules = []familyRule{
+	{"witness", EvidenceFamilyWitness},
+	{"supersed", EvidenceFamilySupersession},
+	{"task", EvidenceFamilyTask},
+	{"command", EvidenceFamilyCommand},
+	{"file", EvidenceFamilyFileMutations},
+	{"test", EvidenceFamilyTest},
+	{"redaction", EvidenceFamilyRedaction},
+}
+
+func firstMatchingFamily(value string, rules []familyRule, fallback string) string {
+	for _, rule := range rules {
+		if strings.Contains(value, rule.token) {
+			return rule.family
+		}
 	}
+	return fallback
 }
 
 func safeToken(value string) string {
-	var b strings.Builder
+	sanitized := sanitizeToken(value)
+	return tokenOrUnknown(sanitized)
+}
+
+const safeTokenAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+
+func sanitizeToken(value string) string {
+	var builder strings.Builder
 	for _, r := range value {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
-			b.WriteRune(r)
+		if isSafeTokenChar(r) {
+			builder.WriteRune(r)
 		}
 	}
-	out := b.String()
-	if out == "" {
+	return builder.String()
+}
+
+func isSafeTokenChar(r rune) bool {
+	return strings.ContainsRune(safeTokenAlphabet, r)
+}
+
+func tokenOrUnknown(value string) string {
+	if value == "" {
 		return "unknown"
 	}
-	return out
+	return value
 }
 
 func sensitiveClasses() []string {

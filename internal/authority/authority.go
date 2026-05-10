@@ -41,9 +41,28 @@ var (
 		"harness_tool_call": true,
 		"gateway_request":   true,
 	}
-	evidenceRefPattern = regexp.MustCompile(`^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$`)
-	unsafeRefPattern   = regexp.MustCompile(`(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)`)
+	evidenceRefPattern           = regexp.MustCompile(`^(file:[A-Za-z0-9_./:-]+|artifact:[A-Za-z0-9_.:-]+#[A-Za-z0-9_./#:-]+|git:[A-Fa-f0-9]{40,64}#[A-Za-z0-9_./:-]+|external:[A-Za-z0-9_.:-]+)$`)
+	unsafeRefPattern             = regexp.MustCompile(`(?i)(bearer |access_token=|oidc_token|BEGIN [A-Z ]*PRIVATE KEY|raw prompt|raw response|raw_job_log|private_artifact_url)`)
+	evidenceRefResolutionReasons = map[string]string{
+		"inaccessible": "evidence_ref_inaccessible",
+		"malformed":    "evidence_ref_malformed",
+		"stale":        "evidence_ref_stale",
+	}
 )
+
+var aggregateStatePriority = map[string]int{
+	StateCannotVerify:     3,
+	StateOutsideAuthority: 2,
+	StateWithinAuthority:  1,
+	StateNotAssessed:      0,
+}
+
+var aggregateStateByRank = []string{
+	StateNotAssessed,
+	StateWithinAuthority,
+	StateOutsideAuthority,
+	StateCannotVerify,
+}
 
 type Package struct {
 	SchemaVersion      string                 `json:"schema_version"`
@@ -215,69 +234,123 @@ func selectEnvelope(pkg Package) (AuthorityEnvelope, string, string) {
 	if selected == "" {
 		return AuthorityEnvelope{}, StateNotAssessed, "policy_not_selected"
 	}
+	matches := matchingEnvelopes(pkg.AuthorityEnvelopes, selected)
+	switch len(matches) {
+	case 0:
+		return AuthorityEnvelope{}, StateNotAssessed, "selected_policy_not_found"
+	case 1:
+		return selectedEnvelope(matches[0])
+	default:
+		return matches[0], StateCannotVerify, "selected_policy_ambiguous"
+	}
+}
+
+func matchingEnvelopes(envelopes []AuthorityEnvelope, selected string) []AuthorityEnvelope {
 	var matches []AuthorityEnvelope
-	for _, env := range pkg.AuthorityEnvelopes {
+	for _, env := range envelopes {
 		if env.PolicyID == selected {
 			matches = append(matches, env)
 		}
 	}
-	if len(matches) == 0 {
-		return AuthorityEnvelope{}, StateNotAssessed, "selected_policy_not_found"
+	return matches
+}
+
+func selectedEnvelope(env AuthorityEnvelope) (AuthorityEnvelope, string, string) {
+	if reason := validateEnvelope(env); reason != "" {
+		return env, StateCannotVerify, reason
 	}
-	if len(matches) > 1 {
-		return matches[0], StateCannotVerify, "selected_policy_ambiguous"
-	}
-	if reason := validateEnvelope(matches[0]); reason != "" {
-		return matches[0], StateCannotVerify, reason
-	}
-	return matches[0], "", ""
+	return env, "", ""
 }
 
 func validateEnvelope(env AuthorityEnvelope) string {
 	if env.PolicyID == "" || env.ActorRef == "" || env.TaskID == "" {
 		return "authority_envelope_malformed"
 	}
-	if reason := validateEventSet(env.AllowedEvents, env.DeniedEvents); reason != "" {
-		return reason
-	}
-	for _, rule := range env.TargetRules {
-		if rule.RuleID == "" || rule.TargetPattern == "" {
-			return "target_rule_malformed"
-		}
-		if reason := validateEventSet(rule.AllowedEvents, rule.DeniedEvents); reason != "" {
-			return "target_rule_conflict"
-		}
-		for _, event := range rule.AllowedEvents {
-			if contains(env.DeniedEvents, event) {
-				return "target_rule_conflicts_with_top_level"
-			}
-		}
-		for _, event := range rule.DeniedEvents {
-			if contains(env.AllowedEvents, event) {
-				return "target_rule_conflicts_with_top_level"
-			}
-		}
-	}
-	for i := range env.TargetRules {
-		for j := i + 1; j < len(env.TargetRules); j++ {
-			if targetRulesConflict(env.TargetRules[i], env.TargetRules[j]) {
-				return "overlapping_target_rules_conflict"
-			}
+	return firstReason(
+		validateEventSet(env.AllowedEvents, env.DeniedEvents),
+		validateTargetRules(env),
+		validateTargetRuleOverlap(env.TargetRules),
+	)
+}
+
+func firstReason(reasons ...string) string {
+	for _, reason := range reasons {
+		if reason != "" {
+			return reason
 		}
 	}
 	return ""
 }
 
+func validateTargetRules(env AuthorityEnvelope) string {
+	for _, rule := range env.TargetRules {
+		if reason := validateTargetRule(env, rule); reason != "" {
+			return reason
+		}
+	}
+	return ""
+}
+
+func validateTargetRule(env AuthorityEnvelope, rule TargetRule) string {
+	if targetRuleMalformed(rule) {
+		return "target_rule_malformed"
+	}
+	if validateEventSet(rule.AllowedEvents, rule.DeniedEvents) != "" {
+		return "target_rule_conflict"
+	}
+	if targetRuleConflictsWithTopLevel(env, rule) {
+		return "target_rule_conflicts_with_top_level"
+	}
+	return ""
+}
+
+func targetRuleMalformed(rule TargetRule) bool {
+	return rule.RuleID == "" || rule.TargetPattern == ""
+}
+
+func targetRuleConflictsWithTopLevel(env AuthorityEnvelope, rule TargetRule) bool {
+	return eventSetIntersects(rule.AllowedEvents, env.DeniedEvents) ||
+		eventSetIntersects(rule.DeniedEvents, env.AllowedEvents)
+}
+
+func validateTargetRuleOverlap(rules []TargetRule) string {
+	for i := range rules {
+		if targetRuleConflictsWithAny(rules[i], rules[i+1:]) {
+			return "overlapping_target_rules_conflict"
+		}
+	}
+	return ""
+}
+
+func targetRuleConflictsWithAny(rule TargetRule, others []TargetRule) bool {
+	for _, other := range others {
+		if targetRulesConflict(rule, other) {
+			return true
+		}
+	}
+	return false
+}
+
 func validateEventSet(allowed, denied []string) string {
-	for _, event := range append(append([]string{}, allowed...), denied...) {
+	return firstReason(
+		unsupportedEventReason(allowed),
+		unsupportedEventReason(denied),
+		allowDenyConflictReason(allowed, denied),
+	)
+}
+
+func unsupportedEventReason(events []string) string {
+	for _, event := range events {
 		if !validEventType(event) {
 			return "unsupported_event_type"
 		}
 	}
-	for _, event := range allowed {
-		if contains(denied, event) {
-			return "allow_deny_event_conflict"
-		}
+	return ""
+}
+
+func allowDenyConflictReason(allowed, denied []string) string {
+	if eventSetIntersects(allowed, denied) {
+		return "allow_deny_event_conflict"
 	}
 	return ""
 }
@@ -290,13 +363,16 @@ func targetRulesConflict(a, b TargetRule) bool {
 	if a.TargetPattern != b.TargetPattern {
 		return false
 	}
-	for _, event := range a.AllowedEvents {
-		if contains(b.DeniedEvents, event) {
-			return true
-		}
-	}
-	for _, event := range a.DeniedEvents {
-		if contains(b.AllowedEvents, event) {
+	return eventSetsConflict(a.AllowedEvents, a.DeniedEvents, b.AllowedEvents, b.DeniedEvents)
+}
+
+func eventSetsConflict(aAllowed, aDenied, bAllowed, bDenied []string) bool {
+	return eventSetIntersects(aAllowed, bDenied) || eventSetIntersects(aDenied, bAllowed)
+}
+
+func eventSetIntersects(left, right []string) bool {
+	for _, event := range left {
+		if contains(right, event) {
 			return true
 		}
 	}
@@ -304,6 +380,18 @@ func targetRulesConflict(a, b TargetRule) bool {
 }
 
 func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) AuthorityEvaluation {
+	eval := newAuthorityEvaluation(evaluationID, selectedPolicyID, action, eventBindings)
+	eval.MissingAttributes = missingAttributes(eval)
+	if applyPreDecisionBlockers(&eval, env, envState, envReason, action, eventBindings, resolution) {
+		return eval
+	}
+	decision := matchDecision(env, action)
+	eval.MatchedRuleRef = decision.ruleRef
+	applyDecision(&eval, env, action, decision, resolution)
+	return eval
+}
+
+func newAuthorityEvaluation(evaluationID, selectedPolicyID string, action ObservedAction, eventBindings []EvidenceBinding) AuthorityEvaluation {
 	eval := AuthorityEvaluation{
 		EvaluationID:     evaluationID,
 		EventID:          action.EventID,
@@ -322,61 +410,77 @@ func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope
 	if hasVerifiedGatewayBinding(action, eventBindings) {
 		eval.ModelAttribution = AttributionVerified
 	}
-	eval.MissingAttributes = missingAttributes(eval)
+	return eval
+}
+
+func applyPreDecisionBlockers(eval *AuthorityEvaluation, env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) bool {
 	if envState != "" {
 		eval.State = envState
 		eval.ReasonCode = envReason
-		return eval
+		return true
 	}
 	if !validEventType(action.EventType) {
 		eval.State = StateCannotVerify
 		eval.ReasonCode = "unsupported_event_type"
-		return eval
+		return true
 	}
-	if action.TaskID == "" && env.AuthorityScope != "repository" {
-		eval.State = StateNotAssessed
-		eval.ReasonCode = "task_not_assessed"
-		return eval
+	if state, reason := preDecisionReason(env, action, eventBindings, resolution); reason != "" {
+		eval.State = state
+		eval.ReasonCode = reason
+		return true
 	}
-	if action.TaskID != "" && action.TaskID != env.TaskID && env.AuthorityScope != "repository" {
-		eval.State = StateNotAssessed
-		eval.ReasonCode = "task_outside_selected_envelope"
-		return eval
+	return false
+}
+
+func preDecisionReason(env AuthorityEnvelope, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) (string, string) {
+	if state, reason := taskScopeReason(env, action); reason != "" {
+		return state, reason
 	}
 	if reason := evidenceRefsReason(action.EvidenceRefs, resolution); reason != "" {
-		eval.State = StateCannotVerify
-		eval.ReasonCode = reason
-		return eval
+		return StateCannotVerify, reason
 	}
 	if bindingCannotVerify(eventBindings) {
-		eval.State = StateCannotVerify
-		eval.ReasonCode = "evidence_binding_cannot_verify"
-		return eval
+		return StateCannotVerify, "evidence_binding_cannot_verify"
 	}
-	decision := matchDecision(env, action)
-	eval.MatchedRuleRef = decision.ruleRef
+	return "", ""
+}
+
+func taskScopeReason(env AuthorityEnvelope, action ObservedAction) (string, string) {
+	if env.AuthorityScope == "repository" {
+		return "", ""
+	}
+	if action.TaskID == "" {
+		return StateNotAssessed, "task_not_assessed"
+	}
+	if action.TaskID != env.TaskID {
+		return StateNotAssessed, "task_outside_selected_envelope"
+	}
+	return "", ""
+}
+
+func applyDecision(eval *AuthorityEvaluation, env AuthorityEnvelope, action ObservedAction, decision matchResult, resolution map[string]string) {
 	if decision.state == StateCannotVerify {
-		eval.State = StateCannotVerify
-		eval.ReasonCode = decision.reasonCode
-		return eval
+		eval.State, eval.ReasonCode = StateCannotVerify, decision.reasonCode
+		return
 	}
 	if decision.state == StateNotAssessed {
-		eval.State = StateNotAssessed
-		eval.ReasonCode = "no_applicable_authority_rule"
-		return eval
+		eval.State, eval.ReasonCode = StateNotAssessed, "no_applicable_authority_rule"
+		return
 	}
 	if reason := approvalReason(env, action, decision.ruleRef, resolution); reason != "" {
-		if reason == "approval_evidence_missing" {
-			eval.State = StateOutsideAuthority
-		} else {
-			eval.State = StateCannotVerify
-		}
+		eval.State = approvalFailureState(reason)
 		eval.ReasonCode = reason
-		return eval
+		return
 	}
 	eval.State = decision.state
 	eval.ReasonCode = decision.reasonCode
-	return eval
+}
+
+func approvalFailureState(reason string) string {
+	if reason == "approval_evidence_missing" {
+		return StateOutsideAuthority
+	}
+	return StateCannotVerify
 }
 
 type matchResult struct {
@@ -386,44 +490,48 @@ type matchResult struct {
 }
 
 func matchDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
-	state := StateNotAssessed
-	reason := "no_applicable_authority_rule"
-	ruleRef := ""
-	var matchedTargetState string
-	if contains(env.AllowedEvents, action.EventType) {
-		state = StateWithinAuthority
-		reason = "event_allowed"
-		ruleRef = "allowed_events"
-	}
-	if contains(env.DeniedEvents, action.EventType) {
-		state = StateOutsideAuthority
-		reason = "event_denied"
-		ruleRef = "denied_events"
-	}
+	result := topLevelDecision(env, action)
+	matchedTargetState := ""
 	for _, rule := range env.TargetRules {
-		if !targetMatches(rule.TargetPattern, action.Target) {
+		next, targetState, ok := targetRuleDecision(rule, action)
+		if !ok {
 			continue
 		}
-		if contains(rule.AllowedEvents, action.EventType) {
-			if matchedTargetState == StateOutsideAuthority {
-				return matchResult{state: StateCannotVerify, reasonCode: "overlapping_target_rules_conflict", ruleRef: ruleRef + "," + rule.RuleID}
-			}
-			matchedTargetState = StateWithinAuthority
-			state = StateWithinAuthority
-			reason = "target_event_allowed"
-			ruleRef = rule.RuleID
+		if targetStatesConflict(matchedTargetState, targetState) {
+			return matchResult{state: StateCannotVerify, reasonCode: "overlapping_target_rules_conflict", ruleRef: result.ruleRef + "," + rule.RuleID}
 		}
-		if contains(rule.DeniedEvents, action.EventType) {
-			if matchedTargetState == StateWithinAuthority {
-				return matchResult{state: StateCannotVerify, reasonCode: "overlapping_target_rules_conflict", ruleRef: ruleRef + "," + rule.RuleID}
-			}
-			matchedTargetState = StateOutsideAuthority
-			state = StateOutsideAuthority
-			reason = "target_event_denied"
-			ruleRef = rule.RuleID
-		}
+		matchedTargetState = targetState
+		result = next
 	}
-	return matchResult{state: state, reasonCode: reason, ruleRef: ruleRef}
+	return result
+}
+
+func topLevelDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
+	if contains(env.DeniedEvents, action.EventType) {
+		return matchResult{state: StateOutsideAuthority, reasonCode: "event_denied", ruleRef: "denied_events"}
+	}
+	if contains(env.AllowedEvents, action.EventType) {
+		return matchResult{state: StateWithinAuthority, reasonCode: "event_allowed", ruleRef: "allowed_events"}
+	}
+	return matchResult{state: StateNotAssessed, reasonCode: "no_applicable_authority_rule"}
+}
+
+func targetRuleDecision(rule TargetRule, action ObservedAction) (matchResult, string, bool) {
+	if !targetMatches(rule.TargetPattern, action.Target) {
+		return matchResult{}, "", false
+	}
+	if contains(rule.DeniedEvents, action.EventType) {
+		return matchResult{state: StateOutsideAuthority, reasonCode: "target_event_denied", ruleRef: rule.RuleID}, StateOutsideAuthority, true
+	}
+	if contains(rule.AllowedEvents, action.EventType) {
+		return matchResult{state: StateWithinAuthority, reasonCode: "target_event_allowed", ruleRef: rule.RuleID}, StateWithinAuthority, true
+	}
+	return matchResult{}, "", false
+}
+
+func targetStatesConflict(previous, next string) bool {
+	return (previous == StateOutsideAuthority && next == StateWithinAuthority) ||
+		(previous == StateWithinAuthority && next == StateOutsideAuthority)
 }
 
 func targetMatches(pattern, target string) bool {
@@ -431,9 +539,17 @@ func targetMatches(pattern, target string) bool {
 		return false
 	}
 	if !strings.Contains(pattern, "**") {
-		ok, err := path.Match(pattern, target)
-		return err == nil && ok
+		return pathMatches(pattern, target)
 	}
+	return recursivePathMatches(pattern, target)
+}
+
+func pathMatches(pattern, target string) bool {
+	ok, err := path.Match(pattern, target)
+	return err == nil && ok
+}
+
+func recursivePathMatches(pattern, target string) bool {
 	re := regexp.QuoteMeta(pattern)
 	re = strings.ReplaceAll(re, `\*\*`, `.*`)
 	re = strings.ReplaceAll(re, `\*`, `[^/]*`)
@@ -443,20 +559,26 @@ func targetMatches(pattern, target string) bool {
 
 func approvalReason(env AuthorityEnvelope, action ObservedAction, ruleRef string, resolution map[string]string) string {
 	for _, req := range env.ApprovalRequirements {
-		if req.EventType != "" && req.EventType != action.EventType {
-			continue
-		}
-		if req.TargetRuleRef != "" && req.TargetRuleRef != ruleRef {
-			continue
-		}
-		if strings.TrimSpace(req.ApprovalEvidenceRef) == "" {
-			return "approval_evidence_missing"
-		}
-		if reason := evidenceRefsReason([]string{req.ApprovalEvidenceRef}, resolution); reason != "" {
+		if reason := approvalRequirementReason(req, action, ruleRef, resolution); reason != "" {
 			return reason
 		}
 	}
 	return ""
+}
+
+func approvalRequirementReason(req ApprovalRequirement, action ObservedAction, ruleRef string, resolution map[string]string) string {
+	if !approvalRequirementApplies(req, action, ruleRef) {
+		return ""
+	}
+	if strings.TrimSpace(req.ApprovalEvidenceRef) == "" {
+		return "approval_evidence_missing"
+	}
+	return evidenceRefsReason([]string{req.ApprovalEvidenceRef}, resolution)
+}
+
+func approvalRequirementApplies(req ApprovalRequirement, action ObservedAction, ruleRef string) bool {
+	return (req.EventType == "" || req.EventType == action.EventType) &&
+		(req.TargetRuleRef == "" || req.TargetRuleRef == ruleRef)
 }
 
 func evaluateBindings(inputs []EvidenceBindingInput, actions []ObservedAction) []EvidenceBinding {
@@ -466,33 +588,42 @@ func evaluateBindings(inputs []EvidenceBindingInput, actions []ObservedAction) [
 	}
 	out := make([]EvidenceBinding, 0, len(inputs))
 	for _, input := range inputs {
-		state := input.BindingState
-		reason := "binding_verified"
-		switch {
-		case !actionIDs[input.LeftEventID] || !actionIDs[input.RightEventID]:
-			state = BindingNotAssessed
-			reason = "binding_source_event_absent"
-		case state == BindingVerified:
-			reason = "binding_verified"
-		case state == BindingNotAssessed:
-			reason = "binding_not_assessed"
-		default:
-			state = BindingCannotVerify
-			reason = "binding_cannot_verify"
-		}
-		out = append(out, EvidenceBinding{
-			BindingID:     input.BindingID,
-			LeftEventID:   input.LeftEventID,
-			RightEventID:  input.RightEventID,
-			BindingType:   input.BindingType,
-			BindingState:  state,
-			MatchedFields: input.MatchedFields,
-			EvidenceRef:   input.EvidenceRef,
-			ReasonCode:    reason,
-		})
+		out = append(out, evaluateBinding(input, actionIDs))
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].BindingID < out[j].BindingID })
 	return out
+}
+
+func evaluateBinding(input EvidenceBindingInput, actionIDs map[string]bool) EvidenceBinding {
+	state, reason := bindingStateAndReason(input, actionIDs)
+	return EvidenceBinding{
+		BindingID:     input.BindingID,
+		LeftEventID:   input.LeftEventID,
+		RightEventID:  input.RightEventID,
+		BindingType:   input.BindingType,
+		BindingState:  state,
+		MatchedFields: input.MatchedFields,
+		EvidenceRef:   input.EvidenceRef,
+		ReasonCode:    reason,
+	}
+}
+
+func bindingStateAndReason(input EvidenceBindingInput, actionIDs map[string]bool) (string, string) {
+	if !actionIDs[input.LeftEventID] || !actionIDs[input.RightEventID] {
+		return BindingNotAssessed, "binding_source_event_absent"
+	}
+	return knownBindingStateAndReason(input.BindingState)
+}
+
+func knownBindingStateAndReason(state string) (string, string) {
+	switch state {
+	case BindingVerified:
+		return BindingVerified, "binding_verified"
+	case BindingNotAssessed:
+		return BindingNotAssessed, "binding_not_assessed"
+	default:
+		return BindingCannotVerify, "binding_cannot_verify"
+	}
 }
 
 func bindingStatesByEvent(bindings []EvidenceBinding) map[string][]EvidenceBinding {
@@ -524,19 +655,17 @@ func bindingCannotVerify(bindings []EvidenceBinding) bool {
 
 func evidenceResolutionIndex(input EvidenceResolution) map[string]string {
 	out := map[string]string{}
-	for _, ref := range input.ResolvedExternalRefs {
-		out[ref] = "resolved"
-	}
-	for _, ref := range input.InaccessibleRefs {
-		out[ref] = "inaccessible"
-	}
-	for _, ref := range input.MalformedRefs {
-		out[ref] = "malformed"
-	}
-	for _, ref := range input.StaleRefs {
-		out[ref] = "stale"
-	}
+	addEvidenceResolution(out, input.ResolvedExternalRefs, "resolved")
+	addEvidenceResolution(out, input.InaccessibleRefs, "inaccessible")
+	addEvidenceResolution(out, input.MalformedRefs, "malformed")
+	addEvidenceResolution(out, input.StaleRefs, "stale")
 	return out
+}
+
+func addEvidenceResolution(out map[string]string, refs []string, state string) {
+	for _, ref := range refs {
+		out[ref] = state
+	}
 }
 
 func evidenceRefsReason(refs []string, resolution map[string]string) string {
@@ -544,22 +673,32 @@ func evidenceRefsReason(refs []string, resolution map[string]string) string {
 		return "evidence_ref_missing"
 	}
 	for _, ref := range refs {
-		if unsafeRefPattern.MatchString(ref) || !evidenceRefPattern.MatchString(ref) {
-			return "evidence_ref_malformed"
-		}
-		switch resolution[ref] {
-		case "inaccessible":
-			return "evidence_ref_inaccessible"
-		case "malformed":
-			return "evidence_ref_malformed"
-		case "stale":
-			return "evidence_ref_stale"
-		}
-		if strings.HasPrefix(ref, "external:") && resolution[ref] != "resolved" {
-			return "external_evidence_unresolved"
+		if reason := evidenceRefReason(ref, resolution[ref]); reason != "" {
+			return reason
 		}
 	}
 	return ""
+}
+
+func evidenceRefReason(ref string, resolution string) string {
+	if malformedEvidenceRef(ref) {
+		return "evidence_ref_malformed"
+	}
+	if reason, ok := evidenceRefResolutionReasons[resolution]; ok {
+		return reason
+	}
+	if unresolvedExternalEvidenceRef(ref, resolution) {
+		return "external_evidence_unresolved"
+	}
+	return ""
+}
+
+func malformedEvidenceRef(ref string) bool {
+	return unsafeRefPattern.MatchString(ref) || !evidenceRefPattern.MatchString(ref)
+}
+
+func unresolvedExternalEvidenceRef(ref string, resolution string) bool {
+	return strings.HasPrefix(ref, "external:") && resolution != "resolved"
 }
 
 func aggregateState(evaluations []AuthorityEvaluation, envState string) string {
@@ -569,46 +708,47 @@ func aggregateState(evaluations []AuthorityEvaluation, envState string) string {
 	if len(evaluations) == 0 {
 		return StateNotAssessed
 	}
-	hasOutside := false
-	hasWithin := false
-	hasNotAssessed := false
+	rank := highestEvaluationStateRank(evaluations)
+	if rank < 0 {
+		return StateCannotVerify
+	}
+	return aggregateStateByRank[rank]
+}
+
+func highestEvaluationStateRank(evaluations []AuthorityEvaluation) int {
+	highestRank := -1
 	for _, eval := range evaluations {
-		switch eval.State {
-		case StateCannotVerify:
-			return StateCannotVerify
-		case StateOutsideAuthority:
-			hasOutside = true
-		case StateWithinAuthority:
-			hasWithin = true
-		case StateNotAssessed:
-			hasNotAssessed = true
+		rank, ok := aggregateStatePriority[eval.State]
+		if ok && rank > highestRank {
+			highestRank = rank
 		}
 	}
-	if hasOutside {
-		return StateOutsideAuthority
-	}
-	if hasWithin {
-		return StateWithinAuthority
-	}
-	if hasNotAssessed {
-		return StateNotAssessed
-	}
-	return StateCannotVerify
+	return highestRank
 }
 
 func resultReasons(result Result) []string {
 	reasons := map[string]bool{}
-	for _, eval := range result.Evaluations {
-		if eval.ReasonCode != "" {
-			reasons[eval.ReasonCode] = true
-		}
-	}
-	for _, binding := range result.BindingEvaluations {
-		if binding.ReasonCode != "" {
-			reasons[binding.ReasonCode] = true
-		}
-	}
+	addEvaluationReasons(reasons, result.Evaluations)
+	addBindingReasons(reasons, result.BindingEvaluations)
 	return mapKeys(reasons)
+}
+
+func addEvaluationReasons(reasons map[string]bool, evaluations []AuthorityEvaluation) {
+	for _, eval := range evaluations {
+		addReasonCode(reasons, eval.ReasonCode)
+	}
+}
+
+func addBindingReasons(reasons map[string]bool, bindings []EvidenceBinding) {
+	for _, binding := range bindings {
+		addReasonCode(reasons, binding.ReasonCode)
+	}
+}
+
+func addReasonCode(reasons map[string]bool, code string) {
+	if code != "" {
+		reasons[code] = true
+	}
 }
 
 func nextActions(result Result) []string {

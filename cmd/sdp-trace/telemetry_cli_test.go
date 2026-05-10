@@ -124,3 +124,47 @@ func TestTelemetryExportRejectsBadInputs(t *testing.T) {
 		t.Fatalf("malformed posture was not rejected fail-closed: out=%s err=%s", out.String(), errOut.String())
 	}
 }
+
+func TestTelemetryExportRejectsFlagShapeAndOutputErrors(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "rest args",
+			args: []string{"export", "telemetry", "extra"},
+			want: "export telemetry accepts only flags",
+		},
+		{
+			name: "missing posture",
+			args: []string{"export", "telemetry", "--profile", "prometheus-text-v1", "--out", "-"},
+			want: "export telemetry requires --cross-repo-posture",
+		},
+		{
+			name: "missing out",
+			args: []string{"export", "telemetry", "--profile", "prometheus-text-v1", "--cross-repo-posture", "posture.json"},
+			want: "export telemetry requires --out",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(tt.args, &out, &errOut)
+			if exit != exitUsage || !strings.Contains(errOut.String(), tt.want) {
+				t.Fatalf("exit=%d err=%s", exit, errOut.String())
+			}
+		})
+	}
+
+	var out bytes.Buffer
+	if err := writeTelemetryExportOutput("-", "metric 1\n", &out); err != nil {
+		t.Fatalf("stdout telemetry output failed: %v", err)
+	}
+	if out.String() != "metric 1\n" {
+		t.Fatalf("stdout telemetry output = %q", out.String())
+	}
+	if err := writeTelemetryExportOutput(t.TempDir(), "metric 1\n", &out); err == nil || err.Error() != "out_unwritable" {
+		t.Fatalf("expected out_unwritable, got %v", err)
+	}
+}

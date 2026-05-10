@@ -62,6 +62,126 @@ func TestBuildPacketBindsRefsAndRejectsUnsafeIdentity(t *testing.T) {
 	}
 }
 
+func TestValidateProfileRejectsMalformedProfiles(t *testing.T) {
+	valid := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "default",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles:          []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}},
+	}
+	for name, tc := range map[string]struct {
+		mutate  func(*ReviewProfile)
+		wantErr string
+	}{
+		"bad-schema": {
+			mutate:  func(profile *ReviewProfile) { profile.SchemaVersion = "unknown" },
+			wantErr: "invalid_profile_schema_version: unknown",
+		},
+		"missing-profile-id": {
+			mutate:  func(profile *ReviewProfile) { profile.ProfileID = "" },
+			wantErr: "profile_requires_profile_id",
+		},
+		"missing-required-planes": {
+			mutate:  func(profile *ReviewProfile) { profile.RequiredPlanes = nil },
+			wantErr: "profile_requires_required_planes",
+		},
+		"missing-roles": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles = nil },
+			wantErr: "profile_requires_roles",
+		},
+		"missing-role-fields": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles[0].Runner = "" },
+			wantErr: "profile_role_requires_id_plane_runner",
+		},
+		"invalid-runner": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles[0].Runner = "unknown" },
+			wantErr: "profile_role_invalid_runner: unknown",
+		},
+		"required-plane-without-role": {
+			mutate: func(profile *ReviewProfile) {
+				profile.RequiredPlanes = []string{PlaneCodeCorrectness, PlanePrivacySafety}
+			},
+			wantErr: "profile_required_plane_without_role: privacy_output_safety",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			profile := cloneReviewProfile(valid)
+			tc.mutate(&profile)
+			if err := validateProfile(profile); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("validateProfile() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+	if err := validateProfile(valid); err != nil {
+		t.Fatalf("valid profile rejected: %v", err)
+	}
+}
+
+func TestCitationResolvableCharacterization(t *testing.T) {
+	packet := Packet{
+		DiffRef:          SafeRef{ID: "diff-ref"},
+		ContextRefs:      []SafeRef{{ID: "spec"}},
+		VerificationRefs: []SafeRef{{ID: "verify"}},
+	}
+	for name, tc := range map[string]struct {
+		citation Citation
+		want     bool
+	}{
+		"empty-citation": {
+			citation: Citation{},
+			want:     false,
+		},
+		"diff-ref-with-hunk": {
+			citation: Citation{ContextRefID: "diff-ref", DiffHunkID: "hunk-1"},
+			want:     true,
+		},
+		"diff-alias-with-digest": {
+			citation: Citation{ContextRefID: "diff", SourceDigest: "sha256:abc"},
+			want:     true,
+		},
+		"diff-ref-without-hunk-or-digest": {
+			citation: Citation{ContextRefID: "diff-ref"},
+			want:     false,
+		},
+		"context-ref-with-line": {
+			citation: Citation{ContextRefID: "spec", LineStart: 12},
+			want:     true,
+		},
+		"context-ref-without-location": {
+			citation: Citation{ContextRefID: "spec"},
+			want:     false,
+		},
+		"verification-ref-with-line": {
+			citation: Citation{ContextRefID: "verify", LineStart: 4},
+			want:     true,
+		},
+		"verification-ref-with-hunk-only": {
+			citation: Citation{ContextRefID: "verify", DiffHunkID: "hunk-1"},
+			want:     false,
+		},
+		"unknown-ref-with-digest": {
+			citation: Citation{ContextRefID: "unknown", SourceDigest: "sha256:abc"},
+			want:     true,
+		},
+		"digest-only": {
+			citation: Citation{SourceDigest: "sha256:abc"},
+			want:     true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := citationResolvable(packet, tc.citation); got != tc.want {
+				t.Fatalf("citationResolvable() = %v, want %v for %+v", got, tc.want, tc.citation)
+			}
+		})
+	}
+}
+
+func cloneReviewProfile(profile ReviewProfile) ReviewProfile {
+	profile.RequiredPlanes = append([]string(nil), profile.RequiredPlanes...)
+	profile.Roles = append([]ReviewRole(nil), profile.Roles...)
+	return profile
+}
+
 func TestBuildPacketRecordsUnavailableInputsAndDigestChangesWithDiff(t *testing.T) {
 	root := t.TempDir()
 	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
@@ -398,6 +518,165 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	}
 }
 
+func TestRunReviewPreviewReturnsPreviewOnly(t *testing.T) {
+	root := t.TempDir()
+	packet := Packet{PacketDigest: "sha256:" + sixtyFour("v"), SchemaVersion: SchemaVersionPacket}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "preview",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{
+			{
+				RoleID:         "code",
+				Plane:          PlaneCodeCorrectness,
+				Runner:         RunnerManualExternal,
+				RequestedModel: "not_assessed",
+				TimeoutSeconds: 120,
+			},
+		},
+	}
+	outDir := filepath.Join(root, "unused")
+	runSet, preview, err := RunReview(packet, profile, RunOptions{OutDir: outDir, Preview: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if preview == nil {
+		t.Fatal("expected preview response")
+	}
+	if runSet.SchemaVersion != "" || len(runSet.Results) != 0 {
+		t.Fatalf("preview mode should not produce run-set: %+v", runSet)
+	}
+	if preview.SchemaVersion != SchemaVersionRunSet {
+		t.Fatalf("preview schema = %q", preview.SchemaVersion)
+	}
+	if preview.PacketDigest != packet.PacketDigest {
+		t.Fatalf("preview packet digest = %q want %q", preview.PacketDigest, packet.PacketDigest)
+	}
+	if len(preview.Roles) != 1 {
+		t.Fatalf("preview roles = %d want 1", len(preview.Roles))
+	}
+	if _, err := os.Stat(outDir); !os.IsNotExist(err) {
+		t.Fatalf("preview should not create output directory, got stat err=%v", err)
+	}
+}
+
+func TestWriteJSONAndReadRunSetUseDirectoryContracts(t *testing.T) {
+	root := t.TempDir()
+	runSet := RunSet{
+		SchemaVersion: SchemaVersionRunSet,
+		PacketDigest:  "sha256:" + sixtyFour("7"),
+		Results: []ReviewerResult{{
+			ReviewRunID:    "run-1",
+			PacketDigest:   "sha256:" + sixtyFour("7"),
+			Plane:          PlaneCodeCorrectness,
+			RoleID:         "code",
+			Runner:         RunnerManualExternal,
+			RequestedModel: "manual",
+			ObservedModel:  "manual",
+			ModelFamily:    "manual",
+			ModelVersion:   "v1",
+			Status:         StatusNoFindings,
+		}},
+	}
+	if err := WriteJSON(" ", runSet); err != nil {
+		t.Fatalf("blank WriteJSON path should be ignored: %v", err)
+	}
+	outDir := filepath.Join(root, "runs")
+	if err := WriteJSON(filepath.Join(outDir, "results.json"), runSet); err != nil {
+		t.Fatalf("WriteJSON() error = %v", err)
+	}
+
+	read, err := ReadRunSet(outDir)
+	if err != nil {
+		t.Fatalf("ReadRunSet(dir) error = %v", err)
+	}
+	if len(read.Results) != 1 || read.Results[0].ReviewRunID != "run-1" {
+		t.Fatalf("read run set = %+v", read)
+	}
+
+	runSet.Results = append(runSet.Results, runSet.Results[0])
+	if err := WriteJSON(filepath.Join(outDir, "results.json"), runSet); err != nil {
+		t.Fatalf("WriteJSON malformed runset: %v", err)
+	}
+	if _, err := ReadRunSet(filepath.Join(outDir, "results.json")); err == nil {
+		t.Fatalf("expected run-set validation error")
+	}
+}
+
+func TestPacketProfileAndSmallHelpers(t *testing.T) {
+	root := t.TempDir()
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1"}
+	packetDir := filepath.Join(root, "packet")
+	if err := WriteJSON(filepath.Join(packetDir, "packet.json"), packet); err != nil {
+		t.Fatalf("write packet: %v", err)
+	}
+	readPacket, err := ReadPacket(packetDir)
+	if err != nil {
+		t.Fatalf("ReadPacket(dir) error = %v", err)
+	}
+	if readPacket.PacketID != "packet-1" {
+		t.Fatalf("packet = %+v", readPacket)
+	}
+
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "profile",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles:          []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "manual"}},
+	}
+	profilePath := filepath.Join(root, "profile.json")
+	if err := WriteJSON(profilePath, profile); err != nil {
+		t.Fatalf("write profile: %v", err)
+	}
+	if _, err := ReadProfile(profilePath); err != nil {
+		t.Fatalf("ReadProfile() error = %v", err)
+	}
+
+	if got := defaultReviewerStatus([]Finding{{ID: "f1"}}); got != StatusFindingsReported {
+		t.Fatalf("default status with finding = %s", got)
+	}
+	if got := defaultReviewerStatus(nil); got != StatusNoFindings {
+		t.Fatalf("default status empty = %s", got)
+	}
+	if contextKind("task-review.md") != RefKindTask || contextKind("notes.md") != RefKindDoc || contextKind("schema.json") != RefKindSchema || contextKind("diff.patch") != RefKindSourceExcerpt {
+		t.Fatalf("contextKind mapping changed")
+	}
+
+	metadataPath := writeText(t, root, "metadata.json", `{"ok":true}`)
+	inputsDir := filepath.Join(root, "inputs")
+	if err := os.MkdirAll(inputsDir, 0o755); err != nil {
+		t.Fatalf("mkdir inputs: %v", err)
+	}
+	ref, err := optionalMetadataRef(inputsDir, metadataPath)
+	if err != nil {
+		t.Fatalf("optionalMetadataRef() error = %v", err)
+	}
+	if ref == nil || ref.Kind != RefKindMetadata {
+		t.Fatalf("metadata ref = %+v", ref)
+	}
+	empty, err := optionalMetadataRef(filepath.Join(root, "inputs-empty"), "")
+	if err != nil || empty != nil {
+		t.Fatalf("empty metadata ref = %+v err=%v", empty, err)
+	}
+}
+
+func TestApplyRunnerErrorClassifiesUnavailableAndFailure(t *testing.T) {
+	result := ReviewerResult{}
+	if err := applyRunnerError(&result, exec.ErrNotFound); err == nil {
+		t.Fatalf("expected error returned")
+	}
+	if result.Status != StatusNotAssessed || result.Reason != "runner_unavailable" {
+		t.Fatalf("unavailable result = %+v", result)
+	}
+	result = ReviewerResult{}
+	if err := applyRunnerError(&result, fmt.Errorf("boom")); err == nil {
+		t.Fatalf("expected error returned")
+	}
+	if result.Status != StatusFailed || result.Reason != "runner_failed" {
+		t.Fatalf("failed result = %+v", result)
+	}
+}
+
 func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	root := t.TempDir()
 	packetDigest := "sha256:" + sixtyFour("9")
@@ -422,6 +701,29 @@ func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	}
 	if len(runs.Results) != 1 || runs.Results[0].Status != StatusTimedOut || runs.Results[0].Reason != "runner_timed_out" {
 		t.Fatalf("timeout mapping failed: %+v", runs.Results)
+	}
+}
+
+func TestSafeID(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		out  string
+	}{
+		{name: "normalizes-case-and-space-trims", in: "  Review_Run-01 ", out: "review_run-01"},
+		{name: "replaces-invalid-characters", in: "a@b c", out: "a-b-c"},
+		{name: "retains-safe-punctuation", in: "a-b.c_1", out: "a-b.c_1"},
+		{name: "trims-unsafe-boundaries", in: "---item.", out: "item"},
+		{name: "unicode-to-dash-and-default", in: "π_Т-9", out: "_--9"},
+		{name: "all-invalid-becomes-item", in: " !!! ... \n", out: "item"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := safeID(tc.in); got != tc.out {
+				t.Fatalf("safeID(%q) = %q, want %q", tc.in, got, tc.out)
+			}
+		})
 	}
 }
 

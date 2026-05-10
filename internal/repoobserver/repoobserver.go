@@ -61,6 +61,9 @@ const (
 	SurfaceRepositoryIdentity          = "repository_identity"
 	SurfaceConfig                      = "sdp_trace_config"
 	SurfaceGitignore                   = "sdp_trace_gitignore"
+	gitignoreBeginMarker               = "# sdp-trace begin"
+	gitignoreEndMarker                 = "# sdp-trace end"
+	gitignoreBlock                     = "# sdp-trace begin\n.sdp-trace/hooks/\n.sdp-trace/ci/\n.sdp-trace/install-diff.txt\n# sdp-trace end\n"
 )
 
 var safeIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
@@ -142,13 +145,9 @@ func Doctor(opts Options) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
-	if opts.RepositoryID == "" {
-		config, err := LoadConfig(opts.RepoRoot)
-		if err == nil && config.RepositoryID != "" {
-			opts.RepositoryID = config.RepositoryID
-		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return Status{}, err
-		}
+	opts, err = withConfiguredRepositoryID(opts)
+	if err != nil {
+		return Status{}, err
 	}
 	return buildStatus(opts, false)
 }
@@ -165,6 +164,10 @@ func Install(opts Options) (Status, error) {
 	if !opts.Write {
 		return status, nil
 	}
+	return installWriteMode(opts, status)
+}
+
+func installWriteMode(opts Options, status Status) (Status, error) {
 	summary, err := writeInstallFiles(opts)
 	status.ForceDiffSummary = summary
 	if err != nil {
@@ -199,61 +202,46 @@ func LoadConfig(repoRoot string) (Config, error) {
 	if err := json.Unmarshal(data, &config); err != nil {
 		return Config{}, fmt.Errorf("%s: .sdp-trace/config.json is malformed", ReasonUnsafeOutputRefused)
 	}
-	if config.Profile != "" && config.Profile != ProfileGithubActionsGitHooksV1 {
-		return Config{}, fmt.Errorf("%s: unsupported repo observer profile in .sdp-trace/config.json", ReasonUnsafeOutputRefused)
-	}
-	if config.RepositoryID != "" && !safeIDPattern.MatchString(config.RepositoryID) {
-		return Config{}, fmt.Errorf("%s: repository id in .sdp-trace/config.json must match [A-Za-z0-9_.-]+", ReasonUnsafeOutputRefused)
-	}
-	return config, nil
+	return validateConfig(config)
 }
 
 func HumanTable(status Status) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Profile: %s\n", status.Profile)
-	fmt.Fprintf(&b, "Repository: %s\n", status.RepositoryID)
-	fmt.Fprintf(&b, "Install state: %s\n", status.InstallState)
-	fmt.Fprintf(&b, "Proof state: %s\n\n", status.ProofState)
-	b.WriteString("Surface | Install state | Proof state | Trust scope | Evidence source | Next action\n")
-	b.WriteString("--- | --- | --- | --- | --- | ---\n")
-	for _, surface := range status.Surfaces {
-		action := surface.NextAction
-		if action == "" {
-			action = "-"
-		}
-		fmt.Fprintf(&b, "%s | %s | %s | %s | %s | %s\n",
-			surface.SurfaceID,
-			surface.InstallState,
-			surface.ProofState,
-			surface.TrustScope,
-			surface.EvidenceSource,
-			action,
-		)
-	}
-	if len(status.ForceDiffSummary) > 0 {
-		b.WriteString("\nForce diff summary\n")
-		for _, item := range status.ForceDiffSummary {
-			fmt.Fprintf(&b, "- %s: %s", item.Path, item.Action)
-			if item.Before != "" || item.After != "" {
-				fmt.Fprintf(&b, " [%s -> %s]", item.Before, item.After)
-			}
-			if item.Backup != "" {
-				fmt.Fprintf(&b, " (backup: %s)", item.Backup)
-			}
-			b.WriteString("\n")
-		}
-	}
+	writeHumanTableHeader(&b, status)
+	writeHumanTableSurfaces(&b, status.Surfaces)
+	writeHumanTableDiffSummary(&b, status.ForceDiffSummary)
 	b.WriteString("\nNote: core.hooksPath is local checkout configuration and is not committed into the repository.\n")
 	return b.String()
 }
 
 func normalizeOptions(opts Options) (Options, error) {
+	opts = withDefaultProfile(opts)
+	if err := validateProfile(opts.Profile); err != nil {
+		return Options{}, err
+	}
+	opts, err := withAbsoluteRepoRoot(opts)
+	if err != nil {
+		return Options{}, err
+	}
+	opts = withDefaultNow(opts)
+	return opts, validateRepositoryID(opts.RepositoryID, "repository id must match [A-Za-z0-9_.-]+")
+}
+
+func withDefaultProfile(opts Options) Options {
 	if strings.TrimSpace(opts.Profile) == "" {
 		opts.Profile = ProfileGithubActionsGitHooksV1
 	}
-	if opts.Profile != ProfileGithubActionsGitHooksV1 {
-		return Options{}, fmt.Errorf("repo observer requires --profile %s", ProfileGithubActionsGitHooksV1)
+	return opts
+}
+
+func validateProfile(profile string) error {
+	if profile != ProfileGithubActionsGitHooksV1 {
+		return fmt.Errorf("repo observer requires --profile %s", ProfileGithubActionsGitHooksV1)
 	}
+	return nil
+}
+
+func withAbsoluteRepoRoot(opts Options) (Options, error) {
 	if strings.TrimSpace(opts.RepoRoot) == "" {
 		root, err := repoRoot(".")
 		if err != nil {
@@ -266,13 +254,100 @@ func normalizeOptions(opts Options) (Options, error) {
 		return Options{}, err
 	}
 	opts.RepoRoot = abs
+	return opts, nil
+}
+
+func withDefaultNow(opts Options) Options {
 	if opts.Now.IsZero() {
 		opts.Now = time.Now().UTC()
 	}
-	if opts.RepositoryID != "" && !safeIDPattern.MatchString(opts.RepositoryID) {
-		return Options{}, fmt.Errorf("%s: repository id must match [A-Za-z0-9_.-]+", ReasonUnsafeOutputRefused)
+	return opts
+}
+
+func withConfiguredRepositoryID(opts Options) (Options, error) {
+	if opts.RepositoryID != "" {
+		return opts, nil
+	}
+	return withConfigFileRepositoryID(opts)
+}
+
+func withConfigFileRepositoryID(opts Options) (Options, error) {
+	config, err := LoadConfig(opts.RepoRoot)
+	if errors.Is(err, os.ErrNotExist) {
+		return opts, nil
+	}
+	if err != nil {
+		return Options{}, err
+	}
+	if config.RepositoryID != "" {
+		opts.RepositoryID = config.RepositoryID
 	}
 	return opts, nil
+}
+
+func validateConfig(config Config) (Config, error) {
+	if config.Profile != "" && config.Profile != ProfileGithubActionsGitHooksV1 {
+		return Config{}, fmt.Errorf("%s: unsupported repo observer profile in .sdp-trace/config.json", ReasonUnsafeOutputRefused)
+	}
+	return config, validateRepositoryID(config.RepositoryID, "repository id in .sdp-trace/config.json must match [A-Za-z0-9_.-]+")
+}
+
+func validateRepositoryID(repositoryID, message string) error {
+	if repositoryID != "" && !safeIDPattern.MatchString(repositoryID) {
+		return fmt.Errorf("%s: %s", ReasonUnsafeOutputRefused, message)
+	}
+	return nil
+}
+
+func writeHumanTableHeader(b *strings.Builder, status Status) {
+	fmt.Fprintf(b, "Profile: %s\n", status.Profile)
+	fmt.Fprintf(b, "Repository: %s\n", status.RepositoryID)
+	fmt.Fprintf(b, "Install state: %s\n", status.InstallState)
+	fmt.Fprintf(b, "Proof state: %s\n\n", status.ProofState)
+	b.WriteString("Surface | Install state | Proof state | Trust scope | Evidence source | Next action\n")
+	b.WriteString("--- | --- | --- | --- | --- | ---\n")
+}
+
+func writeHumanTableSurfaces(b *strings.Builder, surfaces []Surface) {
+	for _, surface := range surfaces {
+		writeHumanTableSurface(b, surface)
+	}
+}
+
+func writeHumanTableSurface(b *strings.Builder, surface Surface) {
+	action := surface.NextAction
+	if action == "" {
+		action = "-"
+	}
+	fmt.Fprintf(b, "%s | %s | %s | %s | %s | %s\n",
+		surface.SurfaceID,
+		surface.InstallState,
+		surface.ProofState,
+		surface.TrustScope,
+		surface.EvidenceSource,
+		action,
+	)
+}
+
+func writeHumanTableDiffSummary(b *strings.Builder, summary []DiffSummary) {
+	if len(summary) == 0 {
+		return
+	}
+	b.WriteString("\nForce diff summary\n")
+	for _, item := range summary {
+		writeHumanTableDiffItem(b, item)
+	}
+}
+
+func writeHumanTableDiffItem(b *strings.Builder, item DiffSummary) {
+	fmt.Fprintf(b, "- %s: %s", item.Path, item.Action)
+	if item.Before != "" || item.After != "" {
+		fmt.Fprintf(b, " [%s -> %s]", item.Before, item.After)
+	}
+	if item.Backup != "" {
+		fmt.Fprintf(b, " (backup: %s)", item.Backup)
+	}
+	b.WriteString("\n")
 }
 
 func buildStatus(opts Options, installPreview bool) (Status, error) {
@@ -280,27 +355,9 @@ func buildStatus(opts Options, installPreview bool) (Status, error) {
 	if repoID == "" {
 		repoID = derivedRepositoryID(opts.RepoRoot)
 	}
-	surfaces := []Surface{
-		repositoryIdentitySurface(opts),
-		hooksPathSurface(opts),
-		hookSurface(opts, "pre-commit", SurfacePreCommitHook),
-		hookSurface(opts, "post-commit", SurfacePostCommitHook),
-		hookSurface(opts, "pre-push", SurfacePrePushHook),
-		generatedFileSurface(opts, ".sdp-trace/config.json", SurfaceConfig),
-		gitignoreSurface(opts),
-		ciWorkflowSurface(opts),
-		ciArtifactUploadSurface(opts),
-		ciArtifactBundleSurface(opts),
-		prCheckBindingSurface(),
-		localWrappedCommandsSurface(),
-		agentPromptSurface(),
-	}
+	surfaces := buildSurfaces(opts)
 	if installPreview {
-		for i := range surfaces {
-			if surfaces[i].InstallState == StateFail && strings.HasPrefix(surfaces[i].NextAction, "run install") {
-				surfaces[i].NextAction = "rerun with --write to install this surface"
-			}
-		}
+		applyInstallPreviewActions(surfaces)
 	}
 	status := Status{
 		SchemaVersion:     SchemaVersion,
@@ -317,6 +374,32 @@ func buildStatus(opts Options, installPreview bool) (Status, error) {
 		GeneratedAt:       opts.Now.Format(time.RFC3339),
 	}
 	return status, nil
+}
+
+func buildSurfaces(opts Options) []Surface {
+	return []Surface{
+		repositoryIdentitySurface(opts),
+		hooksPathSurface(opts),
+		hookSurface(opts, "pre-commit", SurfacePreCommitHook),
+		hookSurface(opts, "post-commit", SurfacePostCommitHook),
+		hookSurface(opts, "pre-push", SurfacePrePushHook),
+		generatedFileSurface(opts, ".sdp-trace/config.json", SurfaceConfig),
+		gitignoreSurface(opts),
+		ciWorkflowSurface(opts),
+		ciArtifactUploadSurface(opts),
+		ciArtifactBundleSurface(opts),
+		prCheckBindingSurface(),
+		localWrappedCommandsSurface(),
+		agentPromptSurface(),
+	}
+}
+
+func applyInstallPreviewActions(surfaces []Surface) {
+	for i := range surfaces {
+		if surfaces[i].InstallState == StateFail && strings.HasPrefix(surfaces[i].NextAction, "run install") {
+			surfaces[i].NextAction = "rerun with --write to install this surface"
+		}
+	}
 }
 
 func repositoryIdentitySurface(opts Options) Surface {
@@ -341,17 +424,24 @@ func hookSurface(opts Options, name, surfaceID string) Surface {
 	rel := filepath.Join(".githooks", name)
 	path := filepath.Join(opts.RepoRoot, rel)
 	info, err := os.Stat(path)
-	if err == nil && !info.IsDir() {
-		state := StatePass
-		if info.Mode()&0o111 == 0 {
-			state = StateCannotVerify
-		}
-		return surface(surfaceID, state, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptPresent, rel, "run a git operation to observe hook output")
+	if err == nil {
+		return presentHookSurface(info, surfaceID, rel)
 	}
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return surface(surfaceID, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+rel, ReasonUnsafeOutputRefused, rel, "fix unreadable hook path")
 	}
 	return surface(surfaceID, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptAbsent, rel, "install generated hook script")
+}
+
+func presentHookSurface(info os.FileInfo, surfaceID, rel string) Surface {
+	if info.IsDir() {
+		return surface(surfaceID, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptAbsent, rel, "install generated hook script")
+	}
+	state := StatePass
+	if info.Mode()&0o111 == 0 {
+		state = StateCannotVerify
+	}
+	return surface(surfaceID, state, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptPresent, rel, "run a git operation to observe hook output")
 }
 
 func generatedFileSurface(opts Options, rel, surfaceID string) Surface {
@@ -369,13 +459,24 @@ func generatedFileSurface(opts Options, rel, surfaceID string) Surface {
 func gitignoreSurface(opts Options) Surface {
 	rel := ".gitignore"
 	data, err := os.ReadFile(filepath.Join(opts.RepoRoot, rel))
-	if err == nil && strings.Contains(string(data), "# sdp-trace begin") && strings.Contains(string(data), "# sdp-trace end") {
-		return surface(SurfaceGitignore, StatePass, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonAlreadyInstalled, rel, "")
+	if err == nil {
+		return gitignoreContentSurface(rel, string(data))
 	}
-	if err == nil || errors.Is(err, os.ErrNotExist) {
-		return surface(SurfaceGitignore, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonManualStepRequired, rel, "add sdp-trace ignore block")
+	if errors.Is(err, os.ErrNotExist) {
+		return missingGitignoreSurface(rel)
 	}
 	return surface(SurfaceGitignore, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:.gitignore", ReasonUnsafeOutputRefused, rel, "fix unreadable .gitignore")
+}
+
+func gitignoreContentSurface(rel, data string) Surface {
+	if strings.Contains(data, "# sdp-trace begin") && strings.Contains(data, "# sdp-trace end") {
+		return surface(SurfaceGitignore, StatePass, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonAlreadyInstalled, rel, "")
+	}
+	return missingGitignoreSurface(rel)
+}
+
+func missingGitignoreSurface(rel string) Surface {
+	return surface(SurfaceGitignore, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonManualStepRequired, rel, "add sdp-trace ignore block")
 }
 
 func ciWorkflowSurface(opts Options) Surface {
@@ -386,6 +487,10 @@ func ciWorkflowSurface(opts Options) Surface {
 		proof := StateNotAssessed
 		return surface(SurfaceCIWorkflow, StatePass, proof, ScopeLocalStructural, "filesystem:"+rel, reason, rel, "observe a CI run artifact before treating workflow as proof")
 	}
+	return missingCIWorkflowSurface(rel, err)
+}
+
+func missingCIWorkflowSurface(rel string, err error) Surface {
 	if errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIWorkflow, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonCIWorkflowAbsent, rel, "install GitHub Actions observer workflow")
 	}
@@ -398,6 +503,10 @@ func ciArtifactUploadSurface(opts Options) Surface {
 	if err == nil && strings.Contains(string(data), "actions/upload-artifact") {
 		return surface(SurfaceCIArtifactUpload, StatePass, StateNotAssessed, ScopeCIUploaded, "workflow_declaration:"+rel, ReasonCIArtifactUploadPresent, rel, "inspect uploaded artifact bundle from a real CI run")
 	}
+	return missingCIArtifactUploadSurface(rel, err)
+}
+
+func missingCIArtifactUploadSurface(rel string, err error) Surface {
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIArtifactUpload, StateFail, StateNotAssessed, ScopeCIUploaded, "workflow_declaration:"+rel, ReasonCIArtifactUploadAbsent, rel, "declare CI artifact upload in observer workflow")
 	}
@@ -411,6 +520,10 @@ func ciArtifactBundleSurface(opts Options) Surface {
 	if err == nil && len(entries) > 0 {
 		return surface(SurfaceCIArtifactBundleObservation, StatePass, StateNotAssessed, ScopeCIUploaded, "filesystem:"+rel, ReasonCIArtifactBundleObserved, rel, "treat as local structural only unless downloaded from CI artifact storage")
 	}
+	return missingCIArtifactBundleSurface(rel, err)
+}
+
+func missingCIArtifactBundleSurface(rel string, err error) Surface {
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIArtifactBundleObservation, StateNotAssessed, StateNotAssessed, ScopeCIUploaded, "filesystem:"+rel, ReasonCIArtifactBundleNotObserved, rel, "run CI and inspect uploaded artifact bundle")
 	}
@@ -461,14 +574,9 @@ func aggregateProofState(surfaces []Surface) string {
 	}
 	state := StatePass
 	for _, s := range surfaces {
-		if s.ProofState == StateCannotVerify {
-			return StateCannotVerify
-		}
-		if s.ProofState == StateFail {
-			state = StateFail
-		}
-		if s.ProofState == StateNotAssessed && state == StatePass {
-			state = StateNotAssessed
+		state = combineProofState(state, s.ProofState)
+		if state == StateCannotVerify {
+			return state
 		}
 	}
 	return state
@@ -477,20 +585,67 @@ func aggregateProofState(surfaces []Surface) string {
 func gapsFor(surfaces []Surface) []Gap {
 	gaps := make([]Gap, 0)
 	for _, s := range surfaces {
-		if s.InstallState == StatePass && s.ProofState == StatePass {
+		gap, ok := gapForSurface(s)
+		if !ok {
 			continue
 		}
-		if s.InstallState == StateNotAssessed && s.ProofState == StateNotAssessed && s.SurfaceID == SurfaceAgentPrompt {
-			gaps = append(gaps, Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: "agent prompt cooperation is not repository setup proof"})
-			continue
-		}
-		detail := s.NextAction
-		if detail == "" {
-			detail = s.ReasonCode
-		}
-		gaps = append(gaps, Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: detail})
+		gaps = append(gaps, gap)
 	}
 	return gaps
+}
+
+func combineProofState(current, next string) string {
+	return combinedProofState(current, next)
+}
+
+func combinedProofState(current, next string) string {
+	if proofStateDominates(next) {
+		return StateCannotVerify
+	}
+	if proofStateFails(next) {
+		return StateFail
+	}
+	return combineNonFailingProofState(current, next)
+}
+
+func proofStateDominates(state string) bool {
+	return state == StateCannotVerify
+}
+
+func proofStateFails(state string) bool {
+	return state == StateFail
+}
+
+func combineNonFailingProofState(current, next string) string {
+	if current == StatePass && next == StateNotAssessed {
+		return StateNotAssessed
+	}
+	return current
+}
+
+func gapForSurface(s Surface) (Gap, bool) {
+	if s.InstallState == StatePass && s.ProofState == StatePass {
+		return Gap{}, false
+	}
+	if agentPromptNotAssessed(s) {
+		return agentPromptGap(s), true
+	}
+	return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: gapDetail(s)}, true
+}
+
+func agentPromptNotAssessed(s Surface) bool {
+	return s.InstallState == StateNotAssessed && s.ProofState == StateNotAssessed && s.SurfaceID == SurfaceAgentPrompt
+}
+
+func agentPromptGap(s Surface) Gap {
+	return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: "agent prompt cooperation is not repository setup proof"}
+}
+
+func gapDetail(s Surface) string {
+	if s.NextAction != "" {
+		return s.NextAction
+	}
+	return s.ReasonCode
 }
 
 func nextActionsFor(surfaces []Surface) []NextAction {
@@ -512,6 +667,19 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 	if err := ensureNoUnsafeHooksPath(opts); err != nil {
 		return nil, err
 	}
+	summaries, err := writeInstallTargets(opts)
+	if err != nil {
+		return summaries, err
+	}
+	summary, err := updateGitignore(opts)
+	if err != nil {
+		return summaries, err
+	}
+	summaries = append(summaries, summary...)
+	return appendHooksPathSummary(opts, summaries)
+}
+
+func writeInstallTargets(opts Options) ([]DiffSummary, error) {
 	repoID := opts.RepositoryID
 	if repoID == "" {
 		repoID = derivedRepositoryID(opts.RepoRoot)
@@ -524,13 +692,12 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 		}
 		summaries = append(summaries, summary...)
 	}
-	summary, err := updateGitignore(opts)
-	if err != nil {
-		return summaries, err
-	}
-	summaries = append(summaries, summary...)
+	return summaries, nil
+}
+
+func appendHooksPathSummary(opts Options, summaries []DiffSummary) ([]DiffSummary, error) {
 	previousHooksPath := strings.TrimSpace(gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath"))
-	if opts.Force && previousHooksPath != "" && previousHooksPath != ".githooks" {
+	if opts.Force && isDifferentHooksPath(previousHooksPath) {
 		summaries = append(summaries, DiffSummary{
 			Path:    "git_config:core.hooksPath",
 			Action:  "overwrite_hooks_path",
@@ -545,6 +712,10 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 	return summaries, nil
 }
 
+func isDifferentHooksPath(path string) bool {
+	return path != "" && path != ".githooks"
+}
+
 func ensureNoUnsafeHooksPath(opts Options) error {
 	value := strings.TrimSpace(gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath"))
 	if value == "" || value == ".githooks" || opts.Force {
@@ -554,44 +725,85 @@ func ensureNoUnsafeHooksPath(opts Options) error {
 }
 
 func writeTarget(opts Options, target targetFile) ([]DiffSummary, error) {
-	path := filepath.Clean(filepath.Join(opts.RepoRoot, target.path))
-	rel, relErr := filepath.Rel(opts.RepoRoot, path)
-	if relErr != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || filepath.IsAbs(rel) {
-		return nil, fmt.Errorf("%s: target outside repository", ReasonUnsafeOutputRefused)
+	path, err := safeTargetPath(opts, target)
+	if err != nil {
+		return nil, err
 	}
-	mode := os.FileMode(0o644)
-	if target.executable {
-		mode = 0o755
-	}
+	mode := targetMode(target)
 	data := []byte(target.content)
 	if existing, err := os.ReadFile(path); err == nil {
-		if string(existing) == target.content {
-			if target.executable {
-				return nil, os.Chmod(path, mode)
-			}
-			return nil, nil
-		}
-		if !opts.Force {
-			return nil, fmt.Errorf("%s: %s exists and differs; use --force after reviewing safe diff", ReasonManualStepRequired, target.path)
-		}
-		if err := os.WriteFile(path+".bak", existing, 0o644); err != nil {
-			return nil, fmt.Errorf("%s: backup failed for %s", ReasonUnsafeOutputRefused, target.path)
-		}
-		summary := DiffSummary{
-			Path:    target.path,
-			Action:  "overwrite_existing_file",
-			Before:  contentSummary(existing),
-			After:   contentSummary(data),
-			Summary: "replace generated file content using safe byte and line counts",
-			Backup:  target.path + ".bak",
-		}
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			return nil, err
-		}
-		return []DiffSummary{summary}, os.WriteFile(path, data, mode)
+		return writeExistingTarget(opts, target, path, mode, existing, data)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
+	return writeNewTarget(path, data, mode)
+}
+
+func safeTargetPath(opts Options, target targetFile) (string, error) {
+	path := filepath.Clean(filepath.Join(opts.RepoRoot, target.path))
+	rel, relErr := filepath.Rel(opts.RepoRoot, path)
+	if targetPathEscapes(rel, relErr) {
+		return "", fmt.Errorf("%s: target outside repository", ReasonUnsafeOutputRefused)
+	}
+	return path, nil
+}
+
+func targetPathEscapes(rel string, relErr error) bool {
+	if relErr != nil {
+		return true
+	}
+	return invalidRelativeTarget(rel)
+}
+
+func invalidRelativeTarget(rel string) bool {
+	if rel == "." || rel == ".." {
+		return true
+	}
+	if filepath.IsAbs(rel) {
+		return true
+	}
+	return strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
+func targetMode(target targetFile) os.FileMode {
+	if target.executable {
+		return 0o755
+	}
+	return 0o644
+}
+
+func writeExistingTarget(opts Options, target targetFile, path string, mode os.FileMode, existing, data []byte) ([]DiffSummary, error) {
+	if string(existing) == target.content {
+		if target.executable {
+			return nil, os.Chmod(path, mode)
+		}
+		return nil, nil
+	}
+	if !opts.Force {
+		return nil, fmt.Errorf("%s: %s exists and differs; use --force after reviewing safe diff", ReasonManualStepRequired, target.path)
+	}
+	return overwriteTarget(target, path, mode, existing, data)
+}
+
+func overwriteTarget(target targetFile, path string, mode os.FileMode, existing, data []byte) ([]DiffSummary, error) {
+	if err := os.WriteFile(path+".bak", existing, 0o644); err != nil {
+		return nil, fmt.Errorf("%s: backup failed for %s", ReasonUnsafeOutputRefused, target.path)
+	}
+	summary := DiffSummary{
+		Path:    target.path,
+		Action:  "overwrite_existing_file",
+		Before:  contentSummary(existing),
+		After:   contentSummary(data),
+		Summary: "replace generated file content using safe byte and line counts",
+		Backup:  target.path + ".bak",
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, err
+	}
+	return []DiffSummary{summary}, os.WriteFile(path, data, mode)
+}
+
+func writeNewTarget(path string, data []byte, mode os.FileMode) ([]DiffSummary, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
 	}
@@ -600,43 +812,60 @@ func writeTarget(opts Options, target targetFile) ([]DiffSummary, error) {
 
 func updateGitignore(opts Options) ([]DiffSummary, error) {
 	path := filepath.Join(opts.RepoRoot, ".gitignore")
-	block := "# sdp-trace begin\n.sdp-trace/hooks/\n.sdp-trace/ci/\n.sdp-trace/install-diff.txt\n# sdp-trace end\n"
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, os.WriteFile(path, []byte(block), 0o644)
+		return nil, os.WriteFile(path, []byte(gitignoreBlock), 0o644)
 	}
 	if err != nil {
 		return nil, err
 	}
 	text := string(data)
-	start := strings.Index(text, "# sdp-trace begin")
-	end := strings.Index(text, "# sdp-trace end")
-	if start >= 0 && end >= start {
-		end += len("# sdp-trace end")
-		current := text[start:end]
-		if current == strings.TrimSuffix(block, "\n") {
-			return nil, nil
-		}
-		if !opts.Force {
-			return nil, fmt.Errorf("%s: .gitignore sdp-trace block differs; use --force after reviewing safe diff", ReasonManualStepRequired)
-		}
-		if err := os.WriteFile(path+".bak", data, 0o644); err != nil {
-			return nil, fmt.Errorf("%s: backup failed for .gitignore", ReasonUnsafeOutputRefused)
-		}
-		next := text[:start] + strings.TrimSuffix(block, "\n") + text[end:]
-		return []DiffSummary{{
-			Path:    ".gitignore",
-			Action:  "replace_sdp_trace_block",
-			Before:  contentSummary(data),
-			After:   contentSummary([]byte(next)),
-			Summary: "replace marked sdp-trace gitignore block using safe byte and line counts",
-			Backup:  ".gitignore.bak",
-		}}, os.WriteFile(path, []byte(next), 0o644)
+	start, end := locateGitignoreBlock(text)
+	if start >= 0 {
+		return updateSdpTraceGitignoreBlock(opts, path, text, data, start, end)
 	}
+	return appendGitignoreMarker(path, text)
+}
+
+func locateGitignoreBlock(text string) (int, int) {
+	start := strings.Index(text, gitignoreBeginMarker)
+	if start < 0 {
+		return -1, -1
+	}
+	end := strings.Index(text, gitignoreEndMarker)
+	if end < start {
+		return -1, -1
+	}
+	return start, end + len(gitignoreEndMarker)
+}
+
+func updateSdpTraceGitignoreBlock(opts Options, path, text string, data []byte, start, end int) ([]DiffSummary, error) {
+	current := text[start:end]
+	if current == strings.TrimSuffix(gitignoreBlock, "\n") {
+		return nil, nil
+	}
+	if !opts.Force {
+		return nil, fmt.Errorf("%s: .gitignore sdp-trace block differs; use --force after reviewing safe diff", ReasonManualStepRequired)
+	}
+	if err := os.WriteFile(path+".bak", data, 0o644); err != nil {
+		return nil, fmt.Errorf("%s: backup failed for .gitignore", ReasonUnsafeOutputRefused)
+	}
+	next := text[:start] + strings.TrimSuffix(gitignoreBlock, "\n") + text[end:]
+	return []DiffSummary{{
+		Path:    ".gitignore",
+		Action:  "replace_sdp_trace_block",
+		Before:  contentSummary(data),
+		After:   contentSummary([]byte(next)),
+		Summary: "replace marked sdp-trace gitignore block using safe byte and line counts",
+		Backup:  ".gitignore.bak",
+	}}, os.WriteFile(path, []byte(next), 0o644)
+}
+
+func appendGitignoreMarker(path, text string) ([]DiffSummary, error) {
 	if strings.TrimSpace(text) != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
-	text += block
+	text += gitignoreBlock
 	return nil, os.WriteFile(path, []byte(text), 0o644)
 }
 
@@ -811,17 +1040,39 @@ func derivedRepositoryID(root string) string {
 }
 
 func sanitizeOrigin(origin string) string {
-	origin = strings.TrimSpace(origin)
-	if idx := strings.Index(origin, "#"); idx >= 0 {
-		origin = origin[:idx]
+	origin = removeOriginFragment(strings.TrimSpace(origin))
+	hadURLCredentials := hasURLCredentials(origin)
+	origin = removeOriginCredentials(origin)
+	if hadURLCredentials {
+		return origin
 	}
+	return originTail(origin)
+}
+
+func removeOriginFragment(origin string) string {
+	if idx := strings.Index(origin, "#"); idx >= 0 {
+		return origin[:idx]
+	}
+	return origin
+}
+
+func removeOriginCredentials(origin string) string {
 	if strings.Contains(origin, "@") && !strings.Contains(origin, "://") {
-		origin = origin[strings.LastIndex(origin, "@")+1:]
+		return origin[strings.LastIndex(origin, "@")+1:]
 	}
 	if at := strings.LastIndex(origin, "@"); strings.Contains(origin[:max(at, 0)], "://") && at >= 0 {
 		schemeEnd := strings.Index(origin, "://")
 		return origin[:schemeEnd+3] + origin[at+1:]
 	}
+	return origin
+}
+
+func hasURLCredentials(origin string) bool {
+	at := strings.LastIndex(origin, "@")
+	return at >= 0 && strings.Contains(origin[:max(at, 0)], "://")
+}
+
+func originTail(origin string) string {
 	origin = strings.ReplaceAll(origin, "\\", "/")
 	parts := strings.Split(origin, "/")
 	if len(parts) > 2 {

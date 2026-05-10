@@ -231,107 +231,282 @@ func Evaluate(input Input) AssessmentResult {
 }
 
 func policyCondition(input Input) Condition {
-	if input.Policy.PolicyID == "" || input.Policy.PolicyDigest == "" {
-		return cannotVerify("redaction_policy_bound", "missing_redaction_policy", "redaction policy is required", "Supply a redaction policy with stable id, version, digest, and provenance.")
+	if condition, ok := validatePolicyContract(input.Policy); ok {
+		return condition
 	}
-	if len(input.Policy.RedactionActions) == 0 || len(input.Policy.ForbiddenPersistenceClasses) == 0 || input.Policy.Authority.ActorID == "" || len(input.Policy.ProfileMappings) == 0 || input.Policy.UnresolvedRedactionImpact == "" {
-		return cannotVerify("redaction_policy_bound", "redaction_policy_contract_incomplete", "redaction policy contract is incomplete", "Supply redaction actions, forbidden persistence classes, authority, profile mappings, and unresolved-redaction impact.")
+	if condition, ok := validateRunPolicyBinding(input); ok {
+		return condition
 	}
-	if input.Policy.Authority.VerificationState == AuthoritySelfClaimed {
-		return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction policy authority is self-claimed", "Use a provenance or accountability-bound redaction policy authority.")
-	}
-	if input.Run.RedactionPolicyDigest != input.Policy.PolicyDigest {
-		return fail("redaction_policy_bound", "redaction_policy_mismatch", "run evidence is not bound to the selected redaction policy", "Regenerate or select evidence bound to the redaction policy.")
-	}
-	for _, event := range input.Run.Events {
-		if event.RedactionPolicyDigest != "" && event.RedactionPolicyDigest != input.Policy.PolicyDigest {
-			return fail("redaction_policy_bound", "redaction_policy_mismatch", "event evidence contradicts the selected redaction policy digest", "Use a run whose event redaction policy digests match.")
-		}
-		if event.RedactionAuthority.VerificationState == AuthoritySelfClaimed {
-			return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction authority is self-claimed", "Use a provenance or accountability-bound redaction authority.")
-		}
+	if condition, ok := validateEventPolicyBindings(input); ok {
+		return condition
 	}
 	return pass("redaction_policy_bound", "redaction_policy_bound", "redaction policy digest and authority evidence are bound")
 }
 
+func validatePolicyContract(policy Policy) (Condition, bool) {
+	for _, check := range policyContractChecks(policy) {
+		if check.failed {
+			return check.condition, true
+		}
+	}
+	return Condition{}, false
+}
+
+type policyContractCheck struct {
+	failed    bool
+	condition Condition
+}
+
+func policyContractChecks(policy Policy) []policyContractCheck {
+	return []policyContractCheck{
+		{
+			failed:    policy.PolicyID == "" || policy.PolicyDigest == "",
+			condition: cannotVerify("redaction_policy_bound", "missing_redaction_policy", "redaction policy is required", "Supply a redaction policy with stable id, version, digest, and provenance."),
+		},
+		{
+			failed:    policyContractIncomplete(policy),
+			condition: cannotVerify("redaction_policy_bound", "redaction_policy_contract_incomplete", "redaction policy contract is incomplete", "Supply redaction actions, forbidden persistence classes, authority, profile mappings, and unresolved-redaction impact."),
+		},
+		{
+			failed:    policy.Authority.VerificationState == AuthoritySelfClaimed,
+			condition: cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction policy authority is self-claimed", "Use a provenance or accountability-bound redaction policy authority."),
+		},
+	}
+}
+
+func policyContractIncomplete(policy Policy) bool {
+	missingParts := []bool{
+		len(policy.RedactionActions) == 0,
+		len(policy.ForbiddenPersistenceClasses) == 0,
+		policy.Authority.ActorID == "",
+		len(policy.ProfileMappings) == 0,
+		policy.UnresolvedRedactionImpact == "",
+	}
+	for _, missing := range missingParts {
+		if missing {
+			return true
+		}
+	}
+	return false
+}
+
+func validateRunPolicyBinding(input Input) (Condition, bool) {
+	if input.Run.RedactionPolicyDigest == input.Policy.PolicyDigest {
+		return Condition{}, false
+	}
+	return fail("redaction_policy_bound", "redaction_policy_mismatch", "run evidence is not bound to the selected redaction policy", "Regenerate or select evidence bound to the redaction policy."), true
+}
+
+func validateEventPolicyBindings(input Input) (Condition, bool) {
+	for _, event := range input.Run.Events {
+		if condition, ok := validateEventPolicyBinding(input.Policy, event); ok {
+			return condition, true
+		}
+	}
+	return Condition{}, false
+}
+
+func validateEventPolicyBinding(policy Policy, event EventRetention) (Condition, bool) {
+	if event.RedactionPolicyDigest != "" && event.RedactionPolicyDigest != policy.PolicyDigest {
+		return fail("redaction_policy_bound", "redaction_policy_mismatch", "event evidence contradicts the selected redaction policy digest", "Use a run whose event redaction policy digests match."), true
+	}
+	if event.RedactionAuthority.VerificationState == AuthoritySelfClaimed {
+		return cannotVerify("redaction_policy_bound", "authority_self_claimed", "redaction authority is self-claimed", "Use a provenance or accountability-bound redaction authority."), true
+	}
+	return Condition{}, false
+}
+
 func prewriteCondition(input Input) Condition {
-	if input.Policy.PolicyID == "" || input.Policy.PolicyDigest == "" {
+	if prewritePolicyMissing(input.Policy) {
 		return cannotVerify("redaction_prewrite_applied", "redaction_policy_missing", "redaction rule coverage cannot be checked without the selected policy", "Supply the selected redaction policy before assessing rule coverage.")
 	}
 	rules := policyRules(input.Policy)
 	for _, event := range input.Run.Events {
-		if event.SecretLikeValuePresent {
-			return fail("redaction_prewrite_applied", "secret_like_value_persisted", "secret-like value is marked as persisted in retained metadata", "Apply pre-write redaction and retain only digests or safe references.")
-		}
-		if event.RedactionInputDigest == "" || event.RedactedPayloadDigest == "" {
-			return cannotVerify("redaction_prewrite_applied", "redaction_digest_missing", "pre-write redaction digests are missing", "Record pre-redaction and redacted payload digests.")
-		}
-		if event.RedactionAction == RedactionActionApplyRule && len(event.RedactionRuleRefs) == 0 {
-			return cannotVerify("redaction_prewrite_applied", "redaction_rule_refs_missing", "redaction rule references are missing", "Record the redaction rule ids applied before persistence.")
-		}
-		for _, ruleRef := range event.RedactionRuleRefs {
-			rule, ok := rules[ruleRef]
-			if !ok {
-				return fail("redaction_prewrite_applied", "redaction_rule_unknown", "event references a redaction rule that is absent from the selected policy", "Use event redaction_rule_refs from the selected redaction policy.")
-			}
-			if rule.Action != "" && rule.Action != event.RedactionAction {
-				return fail("redaction_prewrite_applied", "redaction_rule_action_mismatch", "event redaction action contradicts the selected policy rule", "Align event redaction action with the selected policy rule.")
-			}
+		if condition, ok := prewriteConditionForEvent(event, rules); ok {
+			return condition
 		}
 	}
 	return pass("redaction_prewrite_applied", "redaction_prewrite_applied", "pre-write redaction metadata is verifier-readable")
 }
 
+func prewritePolicyMissing(policy Policy) bool {
+	return policy.PolicyID == "" || policy.PolicyDigest == ""
+}
+
+func prewriteConditionForEvent(event EventRetention, rules map[string]Rule) (Condition, bool) {
+	for _, failure := range []conditionFailure{
+		{
+			matched:   prewriteEventHasSecretLike(event),
+			condition: fail("redaction_prewrite_applied", "secret_like_value_persisted", "secret-like value is marked as persisted in retained metadata", "Apply pre-write redaction and retain only digests or safe references."),
+		},
+		{
+			matched:   prewriteMissingRedactionDigests(event),
+			condition: cannotVerify("redaction_prewrite_applied", "redaction_digest_missing", "pre-write redaction digests are missing", "Record pre-redaction and redacted payload digests."),
+		},
+		{
+			matched:   prewriteRuleRefsMissing(event),
+			condition: cannotVerify("redaction_prewrite_applied", "redaction_rule_refs_missing", "redaction rule references are missing", "Record the redaction rule ids applied before persistence."),
+		},
+	} {
+		if failure.matched {
+			return failure.condition, true
+		}
+	}
+	if condition, ok := prewriteConditionForRuleRefs(event, rules); ok {
+		return condition, true
+	}
+	return Condition{}, false
+}
+
+type conditionFailure struct {
+	matched   bool
+	condition Condition
+}
+
+func prewriteConditionForRuleRefs(event EventRetention, rules map[string]Rule) (Condition, bool) {
+	for _, ruleRef := range event.RedactionRuleRefs {
+		if condition, ok := prewriteConditionForRuleRef(ruleRef, event.RedactionAction, rules); ok {
+			return condition, true
+		}
+	}
+	return Condition{}, false
+}
+
+func prewriteConditionForRuleRef(ruleRef, eventAction string, rules map[string]Rule) (Condition, bool) {
+	rule, ok := rules[ruleRef]
+	if !ok {
+		return fail("redaction_prewrite_applied", "redaction_rule_unknown", "event references a redaction rule that is absent from the selected redaction policy", "Use event redaction_rule_refs from the selected redaction policy."), true
+	}
+	if prewriteRuleActionMismatch(rule.Action, eventAction) {
+		return fail("redaction_prewrite_applied", "redaction_rule_action_mismatch", "event redaction action contradicts the selected policy rule", "Align event redaction action with the selected policy rule."), true
+	}
+	return Condition{}, false
+}
+
+func prewriteRuleActionMismatch(ruleAction, eventAction string) bool {
+	return ruleAction != "" && ruleAction != eventAction
+}
+
+func prewriteEventHasSecretLike(event EventRetention) bool {
+	return event.SecretLikeValuePresent
+}
+
+func prewriteMissingRedactionDigests(event EventRetention) bool {
+	return event.RedactionInputDigest == "" || event.RedactedPayloadDigest == ""
+}
+
+func prewriteRuleRefsMissing(event EventRetention) bool {
+	return event.RedactionAction == RedactionActionApplyRule && len(event.RedactionRuleRefs) == 0
+}
+
 func unresolvedCondition(input Input) Condition {
 	for _, event := range input.Run.Events {
-		if event.RedactionUnresolved {
-			return fail("redaction_unresolved_visible", "redaction_unresolved", "unresolved redaction is visible and blocks forensic retention", "Resolve redaction or lower the forensic claim.")
-		}
-		if event.RedactionAction == RedactionActionWithhold {
-			if event.Withholding == nil || event.Withholding.Authority.ActorID == "" || event.Withholding.ReasonCode == "" || event.Withholding.Justification == "" {
-				return cannotVerify("redaction_unresolved_visible", "withholding_audit_missing", "withholding lacks required audit evidence", "Record withholding authority, requestor when different, reason, and justification.")
-			}
-			if event.Withholding.Authority.VerificationState != AuthorityVerified {
-				return cannotVerify("redaction_unresolved_visible", "withholding_authority_unverifiable", "withholding authority is not provenance or accountability verified", "Record verified withholding authority evidence.")
-			}
+		if condition, ok := unresolvedConditionForEvent(event); ok {
+			return condition
 		}
 	}
 	return pass("redaction_unresolved_visible", "redaction_resolved", "redaction states are resolved or explicitly non-blocking")
 }
 
+func unresolvedConditionForEvent(event EventRetention) (Condition, bool) {
+	if event.RedactionUnresolved {
+		return fail("redaction_unresolved_visible", "redaction_unresolved", "unresolved redaction is visible and blocks forensic retention", "Resolve redaction or lower the forensic claim."), true
+	}
+	if event.RedactionAction != RedactionActionWithhold {
+		return Condition{}, false
+	}
+	return withholdingCondition(event.Withholding)
+}
+
+func withholdingCondition(withholding *Withholding) (Condition, bool) {
+	if withholdingAuditMissing(withholding) {
+		return cannotVerify("redaction_unresolved_visible", "withholding_audit_missing", "withholding lacks required audit evidence", "Record withholding authority, requestor when different, reason, and justification."), true
+	}
+	if withholding.Authority.VerificationState != AuthorityVerified {
+		return cannotVerify("redaction_unresolved_visible", "withholding_authority_unverifiable", "withholding authority is not provenance or accountability verified", "Record verified withholding authority evidence."), true
+	}
+	return Condition{}, false
+}
+
+func withholdingAuditMissing(withholding *Withholding) bool {
+	return withholding == nil ||
+		withholding.Authority.ActorID == "" ||
+		withholding.ReasonCode == "" ||
+		withholding.Justification == ""
+}
+
 func retentionModeCondition(input Input) Condition {
 	allowed := allowedRetentionModes(input.Policy)
 	for _, event := range input.Run.Events {
-		if !validRetentionMode(event.RetentionMode) {
-			return fail("retention_mode_declared", "invalid_retention_mode", "event declares a non-FR-054 retention mode", "Use digest_only, sanitized_excerpt, encrypted_raw_ref, external_artifact_ref, or not_assessed.")
-		}
-		if len(allowed) > 0 && !allowed[event.RetentionMode] {
-			return fail("retention_mode_declared", "retention_mode_not_policy_allowed", "event retention mode is not allowed by the selected redaction policy", "Use a retention mode allowed by the selected policy.")
+		if condition, ok := retentionModeConditionForEvent(event, allowed); ok {
+			return condition
 		}
 	}
 	return pass("retention_mode_declared", "retention_mode_declared", "events declare FR-054 retention modes")
 }
 
+func retentionModeConditionForEvent(event EventRetention, allowed map[string]bool) (Condition, bool) {
+	if !validRetentionMode(event.RetentionMode) {
+		return fail("retention_mode_declared", "invalid_retention_mode", "event declares a non-FR-054 retention mode", "Use digest_only, sanitized_excerpt, encrypted_raw_ref, external_artifact_ref, or not_assessed."), true
+	}
+	if len(allowed) > 0 && !allowed[event.RetentionMode] {
+		return fail("retention_mode_declared", "retention_mode_not_policy_allowed", "event retention mode is not allowed by the selected redaction policy", "Use a retention mode allowed by the selected policy."), true
+	}
+	return Condition{}, false
+}
+
 func criticalEvidenceCondition(input Input) Condition {
 	critical := criticalEvents(input)
 	for _, event := range input.Run.Events {
-		if !critical[event.EventType] && event.ForensicImportance != "critical" {
-			continue
-		}
-		switch event.RetentionMode {
-		case RetentionModeSanitizedExcerpt:
-			continue
-		case RetentionModeEncryptedRawRef, RetentionModeExternalArtifactRef:
-			if event.RawReference == nil {
-				return cannotVerify("critical_evidence_reconstructable", "raw_reference_missing", "critical raw reference evidence is missing", "Bind critical evidence to encrypted or external raw reference metadata.")
-			}
-		case RetentionModeDigestOnly:
-			return failWithCap("critical_evidence_reconstructable", "critical_evidence_digest_only", "critical evidence is digest-only and not reconstructable", RetentionModeDigestOnly, "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families.")
-		case RetentionModeNotAssessed:
-			return failWithCap("critical_evidence_reconstructable", "critical_evidence_not_assessed", "critical evidence retention is not assessed", RetentionModeNotAssessed, "Capture critical evidence or keep forensic retention open.")
+		if condition, ok := criticalEvidenceConditionForEvent(event, critical); ok {
+			return condition
 		}
 	}
 	return pass("critical_evidence_reconstructable", "critical_evidence_reconstructable", "critical event families have reconstructable retention")
+}
+
+func criticalEvidenceConditionForEvent(event EventRetention, critical map[string]bool) (Condition, bool) {
+	if !criticalEvent(critical, event) {
+		return Condition{}, false
+	}
+	return criticalRetentionCondition(event)
+}
+
+func criticalEvent(critical map[string]bool, event EventRetention) bool {
+	return critical[event.EventType] || event.ForensicImportance == "critical"
+}
+
+func criticalRetentionCondition(event EventRetention) (Condition, bool) {
+	if event.RetentionMode == RetentionModeSanitizedExcerpt {
+		return Condition{}, false
+	}
+	if criticalRetentionNeedsRawReference(event.RetentionMode) {
+		return missingCriticalRawReferenceCondition(event)
+	}
+	return insufficientCriticalRetentionCondition(event.RetentionMode)
+}
+
+func insufficientCriticalRetentionCondition(mode string) (Condition, bool) {
+	if condition, ok := insufficientCriticalRetentionConditions[mode]; ok {
+		return condition, true
+	}
+	return Condition{}, false
+}
+
+var insufficientCriticalRetentionConditions = map[string]Condition{
+	RetentionModeDigestOnly:  failWithCap("critical_evidence_reconstructable", "critical_evidence_digest_only", "critical evidence is digest-only and not reconstructable", RetentionModeDigestOnly, "Retain sanitized excerpts, encrypted raw references, or external artifact references for critical event families."),
+	RetentionModeNotAssessed: failWithCap("critical_evidence_reconstructable", "critical_evidence_not_assessed", "critical evidence retention is not assessed", RetentionModeNotAssessed, "Capture critical evidence or keep forensic retention open."),
+}
+
+func criticalRetentionNeedsRawReference(mode string) bool {
+	return mode == RetentionModeEncryptedRawRef || mode == RetentionModeExternalArtifactRef
+}
+
+func missingCriticalRawReferenceCondition(event EventRetention) (Condition, bool) {
+	if event.RawReference != nil {
+		return Condition{}, false
+	}
+	return cannotVerify("critical_evidence_reconstructable", "raw_reference_missing", "critical raw reference evidence is missing", "Bind critical evidence to encrypted or external raw reference metadata."), true
 }
 
 func rawReferenceCondition(input Input) Condition {
@@ -340,42 +515,123 @@ func rawReferenceCondition(input Input) Condition {
 		if ref == nil {
 			continue
 		}
-		if ref.Digest.Algorithm != "sha256" || len(ref.Digest.Value) != 64 {
-			return fail("raw_reference_bound", "weak_digest", "raw reference digest is weak, unknown, or malformed", "Use SHA-256 or stronger digest binding for raw references.")
-		}
-		if ref.ReferenceType != RetentionModeEncryptedRawRef && ref.ReferenceType != RetentionModeExternalArtifactRef {
-			return fail("raw_reference_bound", "raw_reference_type_invalid", "raw reference type is not an accepted FR-054 raw reference mode", "Use encrypted_raw_ref or external_artifact_ref.")
-		}
-		if ref.ReferenceURI == "" {
-			return cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference.")
-		}
-		if ref.AccessState == "" || ref.AccessState == AccessStateNotAssessed || ref.AccessState == AccessStateUnavailable || ref.AccessState == AccessStateRevoked {
-			return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time.")
-		}
-		if ref.AccessStateLastVerified == "" {
-			return cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment.")
-		}
-		if ref.ReferenceType == RetentionModeEncryptedRawRef && (ref.KeyCustodyState == "" || ref.KeyCustodyState == KeyCustodyUnknown || ref.KeyCustodyState == KeyCustodyNotAssessed || ref.KeyCustodyState == KeyCustodyCompromised || ref.KeyCustodyState == KeyCustodyDestroyed) {
-			return cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state.")
-		}
-		if ref.RetentionLifecycle.State == "" || ref.RetentionLifecycle.State == RetentionLifecycleNotAssessed || ref.RetentionLifecycle.State == RetentionLifecycleExpired || ref.RetentionLifecycle.State == RetentionLifecycleRevoked || ref.RetentionLifecycle.State == RetentionLifecycleDeleted {
-			return cannotVerify("raw_reference_bound", "retention_lifecycle_unverifiable", "raw reference retention lifecycle is not active", "Record active retention lifecycle evidence.")
+		if condition, ok := validateRawReference(ref); !ok {
+			return condition
 		}
 	}
 	return pass("raw_reference_bound", "raw_reference_bound", "raw references are digest-bound and access-verifiable")
 }
 
+func validateRawReference(ref *RawReference) (Condition, bool) {
+	condition, ok := rawReferenceValidationFailure(ref)
+	return condition, ok
+}
+
+type rawReferenceValidationRule struct {
+	invalid   func(*RawReference) bool
+	condition Condition
+}
+
+var rawReferenceValidationRules = []rawReferenceValidationRule{
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.Digest.Algorithm != "sha256" || len(ref.Digest.Value) != 64
+		},
+		condition: fail("raw_reference_bound", "weak_digest", "raw reference digest is weak, unknown, or malformed", "Use SHA-256 or stronger digest binding for raw references."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.ReferenceType != RetentionModeEncryptedRawRef && ref.ReferenceType != RetentionModeExternalArtifactRef
+		},
+		condition: fail("raw_reference_bound", "raw_reference_type_invalid", "raw reference type is not an accepted FR-054 raw reference mode", "Use encrypted_raw_ref or external_artifact_ref."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.ReferenceURI == ""
+		},
+		condition: cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return rawReferenceAccessUnverifiable(ref)
+		},
+		condition: cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return ref.AccessStateLastVerified == ""
+		},
+		condition: cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return encryptedKeyCustodyUnverifiable(ref)
+		},
+		condition: cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state."),
+	},
+	{
+		invalid: func(ref *RawReference) bool {
+			return retentionLifecycleUnverifiable(ref.RetentionLifecycle.State)
+		},
+		condition: cannotVerify("raw_reference_bound", "retention_lifecycle_unverifiable", "raw reference retention lifecycle is not active", "Record active retention lifecycle evidence."),
+	},
+}
+
+func rawReferenceValidationFailure(ref *RawReference) (Condition, bool) {
+	for _, rule := range rawReferenceValidationRules {
+		if rule.invalid(ref) {
+			return rule.condition, false
+		}
+	}
+	return Condition{}, true
+}
+
+func rawReferenceAccessUnverifiable(ref *RawReference) bool {
+	switch ref.AccessState {
+	case "", AccessStateNotAssessed, AccessStateUnavailable, AccessStateRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
+func encryptedKeyCustodyUnverifiable(ref *RawReference) bool {
+	if ref.ReferenceType != RetentionModeEncryptedRawRef {
+		return false
+	}
+	switch ref.KeyCustodyState {
+	case "", KeyCustodyUnknown, KeyCustodyNotAssessed, KeyCustodyCompromised, KeyCustodyDestroyed:
+		return true
+	default:
+		return false
+	}
+}
+
+func retentionLifecycleUnverifiable(state string) bool {
+	switch state {
+	case "", RetentionLifecycleNotAssessed, RetentionLifecycleExpired, RetentionLifecycleRevoked, RetentionLifecycleDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
 func overclaimCondition(input Input) Condition {
 	critical := criticalEvents(input)
 	for _, event := range input.Run.Events {
-		if !critical[event.EventType] && event.ForensicImportance != "critical" {
-			continue
-		}
-		if event.RetentionMode == RetentionModeDigestOnly || event.RetentionMode == RetentionModeNotAssessed {
+		if overclaimsForensicProfile(event, critical) {
 			return fail("forensic_profile_not_overclaimed", "forensic_profile_capped", "forensic retention output is capped by insufficient critical evidence", "Do not claim forensic reconstruction for digest-only or not-assessed critical evidence.")
 		}
 	}
 	return pass("forensic_profile_not_overclaimed", "forensic_profile_not_overclaimed", "forensic output does not exceed retained evidence")
+}
+
+func overclaimsForensicProfile(event EventRetention, critical map[string]bool) bool {
+	return criticalEvent(critical, event) && insufficientCriticalRetention(event.RetentionMode)
+}
+
+func insufficientCriticalRetention(mode string) bool {
+	return mode == RetentionModeDigestOnly || mode == RetentionModeNotAssessed
 }
 
 func profileSelectionCondition(input Input) Condition {
@@ -383,38 +639,80 @@ func profileSelectionCondition(input Input) Condition {
 	if selection.SelectedProfile == "" {
 		return Condition{ID: "profile_selection_accountable", State: StateNotAssessed, ReasonCode: "profile_selection_not_assessed", Reason: "profile selection accountability is not recorded", NextAction: "Record actor, profile, policy digest, and justification when policy requires it."}
 	}
-	if selection.SelectedProfile != ProfileForensicRetention || selection.RedactionPolicyDigest != input.Policy.PolicyDigest || selection.ActorID == "" || selection.Justification == "" || !selection.AuthorityVerified {
+	if !profileSelectionVerified(selection, input.Policy.PolicyDigest) {
 		return cannotVerify("profile_selection_accountable", "profile_selection_unverifiable", "forensic profile selection accountability cannot be verified", "Record accountable forensic profile selection evidence.")
 	}
 	return pass("profile_selection_accountable", "profile_selection_accountable", "forensic profile selection is accountable")
 }
 
+func profileSelectionVerified(selection ProfileSelection, policyDigest string) bool {
+	required := []bool{
+		selection.SelectedProfile == ProfileForensicRetention,
+		selection.RedactionPolicyDigest == policyDigest,
+		selection.ActorID != "",
+		selection.Justification != "",
+		selection.AuthorityVerified,
+	}
+	for _, ok := range required {
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func criticalEvents(input Input) map[string]bool {
 	out := map[string]bool{}
-	defaults := []string{
-		"command_started",
-		"command_finished",
-		"test_output_observed",
-		"file_mutation_observed",
-		"artifact_captured",
-		"model_identity_observed",
-		"harness_identity_observed",
-		"requirement_superseded",
-		"redaction_applied",
-		"run_closed",
-	}
-	for _, eventType := range defaults {
+	addCriticalDefaults(out)
+	addCriticalPolicyEvents(out, input.Policy.CriticalEventFamilies)
+	removeDowngradedEvents(out, input.Policy.NonCriticalEventFamilyReasons)
+	return out
+}
+
+func addCriticalDefaults(out map[string]bool) {
+	for _, eventType := range defaultCriticalEventTypes {
 		out[eventType] = true
 	}
-	for _, eventType := range input.Policy.CriticalEventFamilies {
+}
+
+var defaultCriticalEventTypes = []string{
+	"command_started",
+	"command_finished",
+	"test_output_observed",
+	"file_mutation_observed",
+	"artifact_captured",
+	"model_identity_observed",
+	"harness_identity_observed",
+	"requirement_superseded",
+	"redaction_applied",
+	"run_closed",
+}
+
+func addCriticalPolicyEvents(out map[string]bool, eventTypes []string) {
+	for _, eventType := range eventTypes {
 		out[eventType] = true
 	}
-	for _, downgrade := range input.Policy.NonCriticalEventFamilyReasons {
-		if downgrade.EventType != "" && downgrade.Reason != "" && downgrade.AuthorityID != "" {
+}
+
+func removeDowngradedEvents(out map[string]bool, downgrades []CriticalityDowngrade) {
+	for _, downgrade := range downgrades {
+		if criticalityDowngradeComplete(downgrade) {
 			delete(out, downgrade.EventType)
 		}
 	}
-	return out
+}
+
+func criticalityDowngradeComplete(downgrade CriticalityDowngrade) bool {
+	return allNonEmpty(downgrade.EventType, downgrade.Reason, downgrade.AuthorityID)
+}
+
+func allNonEmpty(values ...string) bool {
+	for _, value := range values {
+		if value == "" {
+			return false
+		}
+	}
+	return true
 }
 
 func validRetentionMode(mode string) bool {
@@ -450,11 +748,15 @@ func topLevel(conditions []Condition) string {
 		if condition.State == StateFail {
 			return StateFail
 		}
-		if condition.State == StateCannotVerify || condition.State == StateNotAssessed {
+		if conditionLimitsTopLevel(condition) {
 			highest = StateCannotVerify
 		}
 	}
 	return highest
+}
+
+func conditionLimitsTopLevel(condition Condition) bool {
+	return condition.State == StateCannotVerify || condition.State == StateNotAssessed
 }
 
 func reasons(conditions []Condition) []string {
@@ -471,9 +773,7 @@ func reasons(conditions []Condition) []string {
 func nextActions(conditions []Condition) []string {
 	set := map[string]bool{}
 	for _, condition := range conditions {
-		if condition.State != StatePass && condition.NextAction != "" {
-			set[condition.NextAction] = true
-		}
+		addNextAction(set, condition)
 	}
 	out := []string{}
 	for action := range set {
@@ -481,6 +781,12 @@ func nextActions(conditions []Condition) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func addNextAction(set map[string]bool, condition Condition) {
+	if condition.State != StatePass && condition.NextAction != "" {
+		set[condition.NextAction] = true
+	}
 }
 
 func pass(id, code, reason string) Condition {

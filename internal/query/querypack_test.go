@@ -80,6 +80,31 @@ func TestForensicsBasicPackPreservesMissingRequiredArtifact(t *testing.T) {
 	}
 }
 
+func TestTimelineRowsFallbackWhenRunHasNoEventRefsAndOptionalArtifactsMissing(t *testing.T) {
+	runDir := t.TempDir()
+	writeQueryPackJSON(t, filepath.Join(runDir, "run.json"), map[string]any{
+		"run_id": "run-no-events",
+	})
+
+	result, err := ForensicsBasicPack(runDir)
+	if err != nil {
+		t.Fatalf("forensics pack: %v", err)
+	}
+	timeline := result.QueryRows[QueryForensicsTimeline]
+	if len(timeline) != 3 {
+		t.Fatalf("timeline rows = %+v", timeline)
+	}
+	if timeline[0].ReasonCode != "run_timeline_available" || timeline[0].SourceRef != "block_09.run.run_id" {
+		t.Fatalf("fallback run row = %+v", timeline[0])
+	}
+	if timeline[1].EvidenceState != RowStateNotAssessed || timeline[1].EvidenceGap != EvidenceFamilyRetention {
+		t.Fatalf("missing forensic row = %+v", timeline[1])
+	}
+	if timeline[2].EvidenceState != RowStateNotAssessed || timeline[2].EvidenceGap != EvidenceFamilyAdapterCapture {
+		t.Fatalf("missing adapter row = %+v", timeline[2])
+	}
+}
+
 func TestForensicsBasicPackPreservesUnreadableOptionalArtifactAsCannotVerifyRows(t *testing.T) {
 	runDir := writeForensicsPackFixture(t)
 	adapterPath := filepath.Join(runDir, "adapter-capture.assessment-result.json")
@@ -306,6 +331,56 @@ func TestForensicsBasicPackSafetyClassesAreVerifiedAgainstOutput(t *testing.T) {
 		assertMarkerAbsent(t, payload, marker)
 		assertMarkerAbsent(t, []byte(explanation), marker)
 	}
+}
+
+func TestSafeTokenPreservesAllowedCharsAndDropsUnsafe(t *testing.T) {
+	t.Run("keepsAllowedCharacters", func(t *testing.T) {
+		got := safeToken("abc_DEF-012")
+		if got != "abc_DEF-012" {
+			t.Fatalf("safeToken preserved = %q", got)
+		}
+	})
+
+	t.Run("dropsUnsafeCharacters", func(t *testing.T) {
+		got := safeToken("a b+c:d/e.f:g")
+		if got != "abcdefg" {
+			t.Fatalf("safeToken filtered = %q", got)
+		}
+	})
+
+	t.Run("normalizesEmptyResult", func(t *testing.T) {
+		got := safeToken(" a+b ")
+		if got != "ab" {
+			t.Fatalf("safeToken removed all unsafe chars = %q", got)
+		}
+	})
+
+	t.Run("dropsNonAscii", func(t *testing.T) {
+		got := safeToken("a-b_🙂-1")
+		if got != "a-b_-1" {
+			t.Fatalf("safeToken filtered unicode = %q", got)
+		}
+	})
+}
+
+func TestSafeTokenUnknownForEmptyOrFullyUnsafe(t *testing.T) {
+	t.Run("emptyValue", func(t *testing.T) {
+		if got := safeToken(""); got != "unknown" {
+			t.Fatalf("empty value = %q", got)
+		}
+	})
+
+	t.Run("preservesSingleSafeCharacter", func(t *testing.T) {
+		if got := safeToken("a!@#$"); got != "a" {
+			t.Fatalf("fully unsafe with one safe char = %q", got)
+		}
+	})
+
+	t.Run("allUnsafe", func(t *testing.T) {
+		if got := safeToken(" !*"); got != "unknown" {
+			t.Fatalf("all-unsafe value = %q", got)
+		}
+	})
 }
 
 func writeForensicsPackFixture(t *testing.T) string {

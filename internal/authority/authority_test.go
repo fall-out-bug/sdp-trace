@@ -42,6 +42,34 @@ func TestEvaluateGitOnlyKeepsAttributionNotAssessed(t *testing.T) {
 	}
 }
 
+func TestWritePersistsResultJSON(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "authority-result.json")
+	result := Evaluate(validPackage())
+	if err := Write(path, result); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	var decoded Result
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if decoded.SchemaVersion != ResultSchemaVersion {
+		t.Fatalf("schema_version = %s", decoded.SchemaVersion)
+	}
+}
+
+func TestTargetMatchesNonRecursivePattern(t *testing.T) {
+	if !targetMatches("src/*.go", "src/main.go") {
+		t.Fatalf("expected non-recursive target match")
+	}
+	if targetMatches("src/*.go", "src/nested/main.go") {
+		t.Fatalf("did not expect non-recursive target match")
+	}
+}
+
 func TestEvaluateMissingApprovalEvidenceIsOutsideAuthority(t *testing.T) {
 	pkg := validPackage()
 	pkg.AuthorityEnvelopes[0].TargetRules[0].DeniedEvents = nil
@@ -203,6 +231,162 @@ func TestEvaluateOverlappingTargetRulesCannotVerify(t *testing.T) {
 	}
 }
 
+func TestAggregateState(t *testing.T) {
+	tests := []struct {
+		name        string
+		envState    string
+		evaluations []AuthorityEvaluation
+		want        string
+	}{
+		{
+			name:     "policy envelope verification failure wins",
+			envState: StateCannotVerify,
+			want:     StateCannotVerify,
+		},
+		{
+			name: "no actions",
+			want: StateNotAssessed,
+		},
+		{
+			name: "cannot verify action dominates all",
+			evaluations: []AuthorityEvaluation{
+				{State: StateWithinAuthority},
+				{State: StateCannotVerify},
+				{State: StateOutsideAuthority},
+			},
+			want: StateCannotVerify,
+		},
+		{
+			name: "outside dominates within and not assessed",
+			evaluations: []AuthorityEvaluation{
+				{State: StateWithinAuthority},
+				{State: StateNotAssessed},
+				{State: StateOutsideAuthority},
+			},
+			want: StateOutsideAuthority,
+		},
+		{
+			name: "within dominates not assessed",
+			evaluations: []AuthorityEvaluation{
+				{State: StateNotAssessed},
+				{State: StateWithinAuthority},
+			},
+			want: StateWithinAuthority,
+		},
+		{
+			name: "unknown state defaults to cannot verify",
+			evaluations: []AuthorityEvaluation{
+				{State: "unexpected"},
+			},
+			want: StateCannotVerify,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := aggregateState(tt.evaluations, tt.envState)
+			if got != tt.want {
+				t.Fatalf("aggregateState() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidateEnvelopeReasons(t *testing.T) {
+	base := validPackage().AuthorityEnvelopes[0]
+	tests := []struct {
+		name   string
+		mutate func(*AuthorityEnvelope)
+		want   string
+	}{
+		{
+			name:   "missing required field",
+			mutate: func(env *AuthorityEnvelope) { env.ActorRef = "" },
+			want:   "authority_envelope_malformed",
+		},
+		{
+			name:   "unsupported top level event",
+			mutate: func(env *AuthorityEnvelope) { env.AllowedEvents = []string{"unknown"} },
+			want:   "unsupported_event_type",
+		},
+		{
+			name: "top level allow deny conflict",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = []string{"review"}
+				env.DeniedEvents = []string{"review"}
+			},
+			want: "allow_deny_event_conflict",
+		},
+		{
+			name:   "target rule malformed",
+			mutate: func(env *AuthorityEnvelope) { env.TargetRules[0].RuleID = "" },
+			want:   "target_rule_malformed",
+		},
+		{
+			name:   "target unsupported event",
+			mutate: func(env *AuthorityEnvelope) { env.TargetRules[0].DeniedEvents = []string{"unknown"} },
+			want:   "target_rule_conflict",
+		},
+		{
+			name: "target allow deny conflict",
+			mutate: func(env *AuthorityEnvelope) {
+				env.TargetRules[0].AllowedEvents = []string{"direct_mutation"}
+				env.TargetRules[0].DeniedEvents = []string{"direct_mutation"}
+			},
+			want: "target_rule_conflict",
+		},
+		{
+			name: "target allowed conflicts with top level denial",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = nil
+				env.DeniedEvents = []string{"direct_mutation"}
+				env.TargetRules[0].AllowedEvents = []string{"direct_mutation"}
+				env.TargetRules[0].DeniedEvents = nil
+			},
+			want: "target_rule_conflicts_with_top_level",
+		},
+		{
+			name: "target denied conflicts with top level allow",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = []string{"direct_mutation"}
+				env.DeniedEvents = nil
+				env.TargetRules[0].AllowedEvents = nil
+				env.TargetRules[0].DeniedEvents = []string{"direct_mutation"}
+			},
+			want: "target_rule_conflicts_with_top_level",
+		},
+		{
+			name: "overlapping target rules conflict",
+			mutate: func(env *AuthorityEnvelope) {
+				env.AllowedEvents = nil
+				env.TargetRules = append(env.TargetRules, TargetRule{
+					RuleID:        "rule-ci-allow",
+					TargetPattern: ".github/workflows/**",
+					AllowedEvents: []string{"direct_mutation"},
+				})
+			},
+			want: "overlapping_target_rules_conflict",
+		},
+		{
+			name: "valid envelope",
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := base
+			env.TargetRules = append([]TargetRule(nil), base.TargetRules...)
+			if tt.mutate != nil {
+				tt.mutate(&env)
+			}
+			if got := validateEnvelope(env); got != tt.want {
+				t.Fatalf("reason = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateExternalAndStaleEvidenceCannotVerify(t *testing.T) {
 	for name, mutate := range map[string]func(*Package){
 		"unresolved-external": func(pkg *Package) {
@@ -218,6 +402,158 @@ func TestEvaluateExternalAndStaleEvidenceCannotVerify(t *testing.T) {
 			result := Evaluate(pkg)
 			if result.AuthorityEvaluationState != StateCannotVerify {
 				t.Fatalf("state = %s reasons=%v", result.AuthorityEvaluationState, result.Reasons)
+			}
+		})
+	}
+}
+
+func TestEvidenceRefsReason(t *testing.T) {
+	tests := []struct {
+		name       string
+		refs       []string
+		resolution map[string]string
+		want       string
+	}{
+		{
+			name: "missing refs",
+			want: "evidence_ref_missing",
+		},
+		{
+			name: "malformed syntax",
+			refs: []string{"not-a-ref"},
+			want: "evidence_ref_malformed",
+		},
+		{
+			name: "unsafe reference token",
+			refs: []string{"file:access_token=bad"},
+			want: "evidence_ref_malformed",
+		},
+		{
+			name:       "inaccessible ref",
+			refs:       []string{"file:evidence/git-diff.json"},
+			resolution: map[string]string{"file:evidence/git-diff.json": "inaccessible"},
+			want:       "evidence_ref_inaccessible",
+		},
+		{
+			name: "malformed resolution marker",
+			refs: []string{"file:evidence/git-diff.json"},
+			resolution: map[string]string{
+				"file:evidence/git-diff.json": "malformed",
+			},
+			want: "evidence_ref_malformed",
+		},
+		{
+			name: "stale ref",
+			refs: []string{"file:evidence/git-diff.json"},
+			resolution: map[string]string{
+				"file:evidence/git-diff.json": "stale",
+			},
+			want: "evidence_ref_stale",
+		},
+		{
+			name: "external unresolved",
+			refs: []string{"external:ticket-1"},
+			want: "external_evidence_unresolved",
+		},
+		{
+			name: "external resolved",
+			refs: []string{"external:ticket-1"},
+			resolution: map[string]string{
+				"external:ticket-1": "resolved",
+			},
+			want: "",
+		},
+		{
+			name: "first invalid reference wins",
+			refs: []string{"file:evidence/git-diff.json", "external:ticket-1"},
+			resolution: map[string]string{
+				"file:evidence/git-diff.json": "inaccessible",
+				"external:ticket-1":           "resolved",
+			},
+			want: "evidence_ref_inaccessible",
+		},
+		{
+			name: "external unresolved wins after malformed",
+			refs: []string{"file:ref with space", "external:ticket-1"},
+			resolution: map[string]string{
+				"external:ticket-1": "resolved",
+			},
+			want: "evidence_ref_malformed",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := evidenceRefsReason(tt.refs, tt.resolution); got != tt.want {
+				t.Fatalf("evidenceRefsReason() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEvaluateActionReasonOrdering(t *testing.T) {
+	pkg := validPackage()
+	env := pkg.AuthorityEnvelopes[0]
+	action := pkg.ObservedActions[0]
+	tests := []struct {
+		name        string
+		envState    string
+		envReason   string
+		mutate      func(*AuthorityEnvelope, *ObservedAction)
+		bindings    []EvidenceBinding
+		resolution  map[string]string
+		wantState   string
+		wantReason  string
+		matchedRule string
+	}{
+		{name: "envelope state first", envState: StateCannotVerify, envReason: "selected_policy_ambiguous", wantState: StateCannotVerify, wantReason: "selected_policy_ambiguous"},
+		{name: "unsupported event", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.EventType = "unknown" }, wantState: StateCannotVerify, wantReason: "unsupported_event_type"},
+		{name: "task not assessed", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.TaskID = "" }, wantState: StateNotAssessed, wantReason: "task_not_assessed"},
+		{name: "task outside envelope", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.TaskID = "other" }, wantState: StateNotAssessed, wantReason: "task_outside_selected_envelope"},
+		{name: "external evidence", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) {
+			action.EvidenceRefs = []string{"external:ticket-1"}
+		}, wantState: StateCannotVerify, wantReason: "external_evidence_unresolved"},
+		{
+			name:       "binding cannot verify",
+			bindings:   []EvidenceBinding{{BindingState: BindingCannotVerify}},
+			wantState:  StateCannotVerify,
+			wantReason: "evidence_binding_cannot_verify",
+		},
+		{
+			name:        "matched denial",
+			wantState:   StateOutsideAuthority,
+			wantReason:  "target_event_denied",
+			matchedRule: "rule-ci-denied",
+		},
+		{
+			name: "approval evidence missing",
+			mutate: func(env *AuthorityEnvelope, _ *ObservedAction) {
+				env.TargetRules[0].DeniedEvents = nil
+				env.TargetRules[0].AllowedEvents = []string{"direct_mutation"}
+				env.ApprovalRequirements = []ApprovalRequirement{{
+					RequirementID: "approval-1",
+					EventType:     "direct_mutation",
+					TargetRuleRef: "rule-ci-denied",
+				}}
+			},
+			wantState:   StateOutsideAuthority,
+			wantReason:  "approval_evidence_missing",
+			matchedRule: "rule-ci-denied",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testAction := action
+			testEnv := env
+			if tt.mutate != nil {
+				tt.mutate(&testEnv, &testAction)
+			}
+			eval := evaluateAction("eval-1", pkg.SelectedPolicyID, testEnv, tt.envState, tt.envReason, testAction, tt.bindings, tt.resolution)
+			if eval.State != tt.wantState || eval.ReasonCode != tt.wantReason {
+				t.Fatalf("evaluation = %+v, want %s/%s", eval, tt.wantState, tt.wantReason)
+			}
+			if tt.matchedRule != "" && eval.MatchedRuleRef != tt.matchedRule {
+				t.Fatalf("matched rule = %q, want %q", eval.MatchedRuleRef, tt.matchedRule)
 			}
 		})
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
+	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -248,6 +249,230 @@ func interactionEventForCLITest(id string, sequence int) interaction.Event {
 
 func shellQuoteForTest(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
+}
+
+func TestCLISmallHelpersCoverFallbackPaths(t *testing.T) {
+	if got := subcommandName("plain"); got != "plain" {
+		t.Fatalf("subcommandName without args = %q", got)
+	}
+	if got := harnessStateExitCode("unknown_state"); got != exitCannotVerify {
+		t.Fatalf("unknown harness state exit = %d", got)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if writeJSONPayload(&out, &errOut, func() {}, "marshal helper") {
+		t.Fatalf("function value should not marshal")
+	}
+	if !strings.Contains(errOut.String(), "marshal helper:") {
+		t.Fatalf("missing marshal error: %s", errOut.String())
+	}
+}
+
+func TestCLIArgumentHelpersCoverErrorBranches(t *testing.T) {
+	tests := []struct {
+		name string
+		run  func(*bytes.Buffer) int
+		want string
+	}{
+		{
+			name: "envelope missing subcommand",
+			run: func(errOut *bytes.Buffer) int {
+				_, code, ok := parseEnvelopeSummarizeArgs(nil, errOut)
+				if ok {
+					t.Fatalf("parseEnvelopeSummarizeArgs unexpectedly succeeded")
+				}
+				return code
+			},
+			want: "envelope requires summarize",
+		},
+		{
+			name: "envelope rejects rest",
+			run: func(errOut *bytes.Buffer) int {
+				_, code, ok := parseEnvelopeSummarizeArgs([]string{"summarize", "extra"}, errOut)
+				if ok {
+					t.Fatalf("parseEnvelopeSummarizeArgs unexpectedly accepted rest args")
+				}
+				return code
+			},
+			want: "envelope summarize accepts only flags",
+		},
+		{
+			name: "envelope requires path",
+			run: func(errOut *bytes.Buffer) int {
+				_, code, ok := parseEnvelopeSummarizeArgs([]string{"summarize"}, errOut)
+				if ok {
+					t.Fatalf("parseEnvelopeSummarizeArgs unexpectedly accepted missing envelope")
+				}
+				return code
+			},
+			want: "envelope summarize requires --envelope",
+		},
+		{
+			name: "wrapped command parse error",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--unknown"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted unknown flag")
+				}
+				return code
+			},
+			want: "",
+		},
+		{
+			name: "wrapped command missing command",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--task", "T", "--use-default-contract"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted missing command")
+				}
+				return code
+			},
+			want: "run requires a command",
+		},
+		{
+			name: "wrapped command missing task",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--use-default-contract", "--", "echo", "ok"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted missing task")
+				}
+				return code
+			},
+			want: "run requires --task",
+		},
+		{
+			name: "wrapped command missing contract",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parseWrappedCommandArgs([]string{"--task", "T", "--", "echo", "ok"}, errOut)
+				if ok {
+					t.Fatalf("parseWrappedCommandArgs unexpectedly accepted missing contract")
+				}
+				return code
+			},
+			want: "run requires --contract unless --use-default-contract is set",
+		},
+		{
+			name: "preview parse error",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parsePreviewCommandArgs("preview", []string{"--unknown"}, errOut)
+				if ok {
+					t.Fatalf("parsePreviewCommandArgs unexpectedly accepted unknown flag")
+				}
+				return code
+			},
+			want: "",
+		},
+		{
+			name: "preview missing command",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parsePreviewCommandArgs("preview", nil, errOut)
+				if ok {
+					t.Fatalf("parsePreviewCommandArgs unexpectedly accepted missing command")
+				}
+				return code
+			},
+			want: "preview requires a command",
+		},
+		{
+			name: "preview missing contract",
+			run: func(errOut *bytes.Buffer) int {
+				_, _, code, ok := parsePreviewCommandArgs("preview", []string{"--use-default-contract=false", "--", "echo", "ok"}, errOut)
+				if ok {
+					t.Fatalf("parsePreviewCommandArgs unexpectedly accepted missing contract")
+				}
+				return code
+			},
+			want: "preview requires --contract unless --use-default-contract is set",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			if got := tt.run(&errOut); got != exitUsage {
+				t.Fatalf("exit=%d err=%s", got, errOut.String())
+			}
+			if tt.want != "" && !strings.Contains(errOut.String(), tt.want) {
+				t.Fatalf("missing %q in %s", tt.want, errOut.String())
+			}
+		})
+	}
+
+	var errOut bytes.Buffer
+	opts, command, code, ok := parseWrappedCommandArgs([]string{"--task", "T", "--use-default-contract", "--", "echo", "ok"}, &errOut)
+	if !ok || code != 0 || opts.stringValue("task") != "T" || strings.Join(command, " ") != "echo ok" {
+		t.Fatalf("valid wrapped args parse failed ok=%v code=%d command=%v err=%s", ok, code, command, errOut.String())
+	}
+	opts, command, code, ok = parsePreviewCommandArgs("preview", []string{"--", "echo", "ok"}, &errOut)
+	if !ok || code != 0 || !opts.boolValue("use-default-contract") || strings.Join(command, " ") != "echo ok" {
+		t.Fatalf("valid preview args parse failed ok=%v code=%d command=%v err=%s", ok, code, command, errOut.String())
+	}
+}
+
+func TestProtectedInputStatusBranches(t *testing.T) {
+	dir := t.TempDir()
+	readable := filepath.Join(dir, "readable.json")
+	malformed := filepath.Join(dir, "malformed.json")
+	if err := os.WriteFile(readable, []byte(`{"ok":true}`), 0o644); err != nil {
+		t.Fatalf("write readable fixture: %v", err)
+	}
+	if err := os.WriteFile(malformed, []byte(`{not-json`), 0o644); err != nil {
+		t.Fatalf("write malformed fixture: %v", err)
+	}
+	for _, tt := range []struct {
+		name string
+		path string
+		want string
+	}{
+		{"blank", "  ", "absent"},
+		{"missing", filepath.Join(dir, "missing.json"), "present_unreadable"},
+		{"directory", dir, "present_malformed"},
+		{"malformed", malformed, "present_malformed"},
+		{"readable", readable, "present_readable"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := protectedInputStatus(tt.path); got != tt.want {
+				t.Fatalf("protectedInputStatus(%q)=%q want %q", tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCLICommandDispatchAndQueryErrorBranches(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	exit := runInteraction(context.Background(), nil, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "interaction requires relay, import-transcript, or summarize") {
+		t.Fatalf("missing interaction command exit=%d err=%s", exit, errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runInteraction(context.Background(), []string{"unknown"}, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "unknown interaction command: unknown") {
+		t.Fatalf("unknown interaction command exit=%d err=%s", exit, errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runExport(context.Background(), nil, &out, &errOut)
+	if exit != exitUsage || !strings.Contains(errOut.String(), "export requires cross-repo-posture or telemetry") {
+		t.Fatalf("missing export command exit=%d err=%s", exit, errOut.String())
+	}
+	if exportCommandIs(nil, "telemetry") || exportSubcommandIs([]string{"cross-repo-posture"}, "explain") {
+		t.Fatalf("export command helpers accepted missing args")
+	}
+
+	_, code, ok := runNamedQuery("unknown-query", t.TempDir(), &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "unsupported query: unknown-query") {
+		t.Fatalf("unsupported query ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = runNamedQuery(query.QueryCaptureDepth, filepath.Join(t.TempDir(), "missing-run"), &errOut)
+	if ok || code != exitCannotVerify {
+		t.Fatalf("missing query run ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
 }
 
 func TestReleaseProofWritesFailForMissingManifestArtifact(t *testing.T) {
@@ -485,6 +710,94 @@ func TestDoctorReportsUnsupportedExpectedEvidenceCannotVerify(t *testing.T) {
 	}
 	if len(check.Missing) == 0 {
 		t.Fatalf("expected missing unsupported event references")
+	}
+}
+
+func TestExpectedEvidenceReferenceGapsClassifiesMissingAndUnsupportedFields(t *testing.T) {
+	gaps := expectedEvidenceReferenceGaps(trace.Contract{
+		RequiredEvents: []string{"unsupported_event"},
+		RequiredEvidence: []trace.EvidenceRequirement{
+			{},
+			{ID: "missing-event-type"},
+			{ID: "unsupported", EventType: "unsupported_event"},
+			{ID: "supported", EventType: string(trace.EventCommandStarted)},
+		},
+	})
+
+	want := []string{
+		"required_events:unsupported_event",
+		"required_evidence:<missing_id>",
+		"required_evidence::<missing_event_type>",
+		"required_evidence:missing-event-type:<missing_event_type>",
+		"required_evidence:unsupported:unsupported_event",
+	}
+	if !reflect.DeepEqual(gaps, want) {
+		t.Fatalf("gaps = %#v, want %#v", gaps, want)
+	}
+}
+
+func TestCheckpointVerifyHelpersCoverPolicyAndExitBranches(t *testing.T) {
+	policyPath := filepath.Join(t.TempDir(), "policy.json")
+	writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{
+		SchemaVersion: checkpoint.PolicySchemaVersion,
+		AllowedSigners: []checkpoint.TrustedSigner{{
+			SignerID: "ci",
+		}},
+	})
+
+	policy, err := readCheckpointPolicy(policyPath)
+	if err != nil {
+		t.Fatalf("read policy: %v", err)
+	}
+	if policy == nil || policy.SchemaVersion != checkpoint.PolicySchemaVersion {
+		t.Fatalf("unexpected policy: %+v", policy)
+	}
+	policy, err = readCheckpointPolicy("")
+	if err != nil || policy != nil {
+		t.Fatalf("empty policy path = %+v, %v", policy, err)
+	}
+	if _, err := readCheckpointPolicy(filepath.Join(t.TempDir(), "missing.json")); err == nil {
+		t.Fatalf("missing policy did not fail")
+	}
+
+	if checkpointVerifyExitCode(checkpoint.StatePass) != 0 {
+		t.Fatalf("pass exit code changed")
+	}
+	if checkpointVerifyExitCode(checkpoint.StateCannotVerify) != exitCannotVerify {
+		t.Fatalf("cannot_verify exit code changed")
+	}
+	if checkpointVerifyExitCode(checkpoint.StateFail) != 1 {
+		t.Fatalf("fail exit code changed")
+	}
+}
+
+func TestInstallRepoObserverHelpersCoverErrorAndParseBranches(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if opts, code, ok := parseInstallRepoObserverArgs([]string{"repo-observer", "--profile", repoobserver.ProfileGithubActionsGitHooksV1}, &out, &errOut); !ok || code != 0 || opts == nil {
+		t.Fatalf("parse install opts failed: ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if _, code, ok := parseInstallRepoObserverArgs([]string{}, &out, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing subcommand parse = ok:%v code:%d", ok, code)
+	}
+	if _, code, ok := parseInstallRepoObserverArgs([]string{"repo-observer", "extra"}, &out, &errOut); ok || code != exitUsage {
+		t.Fatalf("extra arg parse = ok:%v code:%d", ok, code)
+	}
+
+	code, handled := handleRepoObserverInstallError(repoobserver.Status{}, nil, &out, &errOut)
+	if handled || code != 0 {
+		t.Fatalf("nil error handled unexpectedly: handled=%v code=%d", handled, code)
+	}
+	status := repoobserver.Status{SchemaVersion: repoobserver.SchemaVersion}
+	code, handled = handleRepoObserverInstallError(status, os.ErrPermission, &out, &errOut)
+	if !handled || code != exitCannotVerify || !strings.Contains(errOut.String(), os.ErrPermission.Error()) {
+		t.Fatalf("install error handling changed: handled=%v code=%d err=%s", handled, code, errOut.String())
+	}
+	if repoObserverInstallExitCode(false, repoobserver.Status{InstallState: repoobserver.StateFail}) != 0 {
+		t.Fatalf("dry-run install exit changed")
+	}
+	if repoObserverInstallExitCode(true, repoobserver.Status{InstallState: repoobserver.StateCannotVerify}) != exitCannotVerify {
+		t.Fatalf("write install cannot_verify exit changed")
 	}
 }
 
@@ -1085,6 +1398,55 @@ func TestManagedAssessPassesAndExplains(t *testing.T) {
 	}
 }
 
+func TestAssessRequiresProfile(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"assess", "--out", filepath.Join(t.TempDir(), "assessment.json")}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("assess missing profile exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.TrimSpace(errOut.String()) != "assess requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope" {
+		t.Fatalf("assess missing profile error = %q", strings.TrimSpace(errOut.String()))
+	}
+}
+
+func TestAssessPreviewRequiresProfile(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"assess", "preview", "--out", filepath.Join(t.TempDir(), "assessment-preview.json")}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("assess preview missing profile exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if strings.TrimSpace(errOut.String()) != "assess preview requires --profile adapter-capture, managed-harness, forensic-retention, ci-artifact-observation, or authority-envelope" {
+		t.Fatalf("assess preview missing profile error = %q", strings.TrimSpace(errOut.String()))
+	}
+}
+
+func TestAssessExplainUsageAndUnsupportedSchema(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if exit := runAssessExplain(nil, &out, &errOut); exit != exitUsage {
+		t.Fatalf("missing result exit = %d", exit)
+	}
+	if !strings.Contains(errOut.String(), "requires --assessment-result") {
+		t.Fatalf("missing usage error: %s", errOut.String())
+	}
+
+	root := t.TempDir()
+	path := filepath.Join(root, "unknown.json")
+	if err := os.WriteFile(path, []byte(`{"schema_version":"unknown"}`), 0o644); err != nil {
+		t.Fatalf("write unknown schema: %v", err)
+	}
+	out.Reset()
+	errOut.Reset()
+	if exit := runAssessExplain([]string{"--assessment-result", path}, &out, &errOut); exit != exitCannotVerify {
+		t.Fatalf("unknown schema exit = %d", exit)
+	}
+	if !strings.Contains(errOut.String(), "unsupported assessment-result schema_version: unknown") {
+		t.Fatalf("missing unsupported schema error: %s", errOut.String())
+	}
+}
+
 func TestManagedAssessRejectsPostHocPolicyAndWitnessMismatch(t *testing.T) {
 	root := t.TempDir()
 	paths := writeManagedFixtureInputs(t, root)
@@ -1206,6 +1568,97 @@ func TestProtectedGatePreviewRendersAbsentInputsWithoutWriting(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "gate-result.json")); !os.IsNotExist(err) {
 		t.Fatalf("protected preview wrote gate artifact")
+	}
+}
+
+func TestProtectedGateRequiresSingleRunDir(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "ok")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "ok")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	gatePath := filepath.Join(t.TempDir(), "protected-gate.json")
+	contractPath := writeGateContract(t, t.TempDir())
+	checkpointPath := filepath.Join(t.TempDir(), "checkpoint.json")
+	policyPath := filepath.Join(t.TempDir(), "policy.json")
+	witnessPath := filepath.Join(t.TempDir(), "witness.json")
+	writeJSONFileForTest(t, checkpointPath, checkpoint.SignedCheckpoint{})
+	writeJSONFileForTest(t, policyPath, checkpoint.TrustedCheckpointPolicy{
+		SchemaVersion: checkpoint.PolicySchemaVersion,
+	})
+	writeJSONFileForTest(t, witnessPath, demo.WitnessSummary{})
+
+	exit := run([]string{
+		"gate",
+		"--profile", "protected",
+		"--out", gatePath,
+		"--checkpoint", checkpointPath,
+		"--checkpoint-policy", policyPath,
+		"--witness", witnessPath,
+		"--contract", contractPath,
+		root,
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("protected gate single-run exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "protected gate requires one selected run, got 2") {
+		t.Fatalf("protected gate missing multi-run error: %s", errOut.String())
+	}
+	if _, err := os.Stat(gatePath); !os.IsNotExist(err) {
+		t.Fatalf("protected gate wrote artifact despite multi-run error")
+	}
+}
+
+func TestLoadProtectedGateRowsRejectsInvalidContract(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "ok")
+	contractPath := filepath.Join(t.TempDir(), "contract.json")
+	if err := os.WriteFile(contractPath, []byte(`{`), 0o644); err != nil {
+		t.Fatalf("write contract: %v", err)
+	}
+	var errOut bytes.Buffer
+	_, _, _, code, ok := loadProtectedGateRows(root, contractPath, &errOut)
+	if ok {
+		t.Fatalf("invalid contract accepted ok=%v code=%d", ok, code)
+	}
+	if code != 1 {
+		t.Fatalf("invalid contract exit = %d", code)
+	}
+	if strings.TrimSpace(errOut.String()) == "" {
+		t.Fatalf("invalid contract error missing")
+	}
+}
+
+func TestLoadProtectedGateRowsRejectsInvalidTarget(t *testing.T) {
+	contractPath := writeGateContract(t, t.TempDir())
+	target := filepath.Join(t.TempDir(), "not-a-run-dir")
+	if err := os.WriteFile(target, []byte("not-json"), 0o644); err != nil {
+		t.Fatalf("write target file: %v", err)
+	}
+	var errOut bytes.Buffer
+	_, _, _, code, ok := loadProtectedGateRows(target, contractPath, &errOut)
+	if ok {
+		t.Fatalf("invalid target accepted ok=%v code=%d", ok, code)
+	}
+	if code != 1 {
+		t.Fatalf("invalid target exit = %d", code)
+	}
+	if !strings.Contains(errOut.String(), "not a directory") {
+		t.Fatalf("invalid target error mismatch: %s", errOut.String())
+	}
+}
+
+func TestLoadProtectedWitnessExpectationRejectsMissingRuns(t *testing.T) {
+	var errOut bytes.Buffer
+	_, _, ok := loadProtectedWitnessExpectation(t.TempDir(), &errOut)
+	if ok {
+		t.Fatalf("empty target reported ok")
+	}
+	if !strings.Contains(errOut.String(), "no run directories found") {
+		t.Fatalf("missing run directories error mismatch: %s", errOut.String())
 	}
 }
 
@@ -1562,6 +2015,48 @@ func TestGateExplainRendersProtectedFields(t *testing.T) {
 	}
 }
 
+func TestGateExplainParseUsage(t *testing.T) {
+	for name, tc := range map[string]struct {
+		args    []string
+		wantOK  bool
+		wantErr string
+	}{
+		"unknown-flag": {
+			args:    []string{"--unknown"},
+			wantErr: "unknown flag --unknown",
+		},
+		"rest-arg": {
+			args:    []string{"--gate-result", "gate.json", "extra"},
+			wantErr: "gate explain accepts only flags",
+		},
+		"missing-gate-result": {
+			args:    []string{},
+			wantErr: "gate explain requires --gate-result <file>",
+		},
+		"valid": {
+			args:   []string{"--gate-result", "gate.json"},
+			wantOK: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			path, code, ok := parseGateExplainArgs(tc.args, &errOut)
+			if ok != tc.wantOK {
+				t.Fatalf("ok = %v want %v path=%q code=%d err=%s", ok, tc.wantOK, path, code, errOut.String())
+			}
+			if tc.wantOK {
+				if path != "gate.json" || code != 0 || errOut.Len() != 0 {
+					t.Fatalf("valid parse path=%q code=%d err=%s", path, code, errOut.String())
+				}
+				return
+			}
+			if code != exitUsage || !strings.Contains(errOut.String(), tc.wantErr) {
+				t.Fatalf("usage parse code=%d err=%s want %q", code, errOut.String(), tc.wantErr)
+			}
+		})
+	}
+}
+
 func TestGateExplainUnsupportedArtifactCannotVerify(t *testing.T) {
 	gatePath := filepath.Join(t.TempDir(), "unsupported-gate.json")
 	if err := os.WriteFile(gatePath, []byte(`{"schema_version":"unknown-gate-result-v1"}`), 0o644); err != nil {
@@ -1679,6 +2174,47 @@ func TestGateExitCodeChecksRequiredRunStatesDirectly(t *testing.T) {
 	}
 }
 
+func TestGateExitCodeAggregatesNonProtectedStates(t *testing.T) {
+	cases := []struct {
+		name string
+		edit func(*demo.GateResult)
+		want int
+	}{
+		{name: "pass", want: 0},
+		{name: "local fail", edit: func(result *demo.GateResult) {
+			result.LocalGate = demo.GateFail
+		}, want: 1},
+		{name: "ci missing telemetry", edit: func(result *demo.GateResult) {
+			result.CIWitnessGate = demo.GateMissingTelemetry
+		}, want: 1},
+		{name: "audit cannot verify", edit: func(result *demo.GateResult) {
+			result.AuditGradeGate = demo.GateCannotVerify
+		}, want: exitCannotVerify},
+		{name: "fail takes precedence over cannot verify", edit: func(result *demo.GateResult) {
+			result.LocalGate = demo.GateFail
+			result.AuditGradeGate = demo.GateCannotVerify
+		}, want: 1},
+		{name: "required run cannot verify", edit: func(result *demo.GateResult) {
+			result.RequiredRuns = []demo.RequiredRunResult{{ID: "verification_run", State: demo.GateCannotVerify}}
+		}, want: exitCannotVerify},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := demo.GateResult{
+				LocalGate:      demo.GatePass,
+				CIWitnessGate:  demo.GatePass,
+				AuditGradeGate: demo.GatePass,
+			}
+			if tc.edit != nil {
+				tc.edit(&result)
+			}
+			if got := gateExitCode(result); got != tc.want {
+				t.Fatalf("exit code = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 	cases := []struct {
 		name          string
@@ -1688,6 +2224,8 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 		{name: "pass", protectedGate: demo.GatePass, want: 0},
 		{name: "fail", protectedGate: demo.GateFail, want: 1},
 		{name: "cannot_verify", protectedGate: demo.GateCannotVerify, want: exitCannotVerify},
+		{name: "unknown falls through to component fail", protectedGate: "", want: 1},
+		{name: "unknown falls through to component pass", protectedGate: "unexpected", want: 0},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1698,8 +2236,90 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 				CIWitnessGate:   demo.GateFail,
 				AuditGradeGate:  demo.GateFail,
 			}
+			if tc.protectedGate == "unexpected" {
+				result.LocalGate = demo.GatePass
+				result.CIWitnessGate = demo.GatePass
+				result.AuditGradeGate = demo.GatePass
+			}
 			if got := gateExitCode(result); got != tc.want {
 				t.Fatalf("exit code = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestWitnessMatchesProtectedInput(t *testing.T) {
+	witnessSummary := demo.WitnessSummary{
+		Kind:       "github-actions",
+		Status:     demo.GatePass,
+		TrustScope: "ci_witnessed",
+		Source: demo.WitnessSourceIdentity{
+			Repository: "org/repo",
+			Ref:        "refs/heads/main",
+			CommitSHA:  "abc123",
+		},
+		CIIdentity: demo.WitnessCIIdentity{RunID: "run-1"},
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+	expected := demo.WitnessExpectation{
+		Repository: "org/repo",
+		Ref:        "refs/heads/main",
+		CommitSHA:  "abc123",
+		RunID:      "run-1",
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+	cases := []struct {
+		name   string
+		mutate func(*demo.WitnessSummary, *demo.WitnessExpectation)
+		want   bool
+	}{
+		{name: "match", want: true},
+		{name: "trust", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.TrustScope = "local"
+		}},
+		{name: "repository", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.Source.Repository = "other/repo"
+		}},
+		{name: "ref", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.Source.Ref = "refs/heads/feature"
+		}},
+		{name: "commit", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.Source.CommitSHA = "def456"
+		}},
+		{name: "run", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.CIIdentity.RunID = "run-2"
+		}},
+		{name: "missing expected artifact", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			expectation.RunArtifacts = append(expectation.RunArtifacts, demo.WitnessArtifactDigest{Path: "002/run.json", SHA256: "sha256-b"})
+		}},
+		{name: "mismatched artifact", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
+			summary.RunArtifacts[0].SHA256 = "sha256-b"
+		}},
+		{name: "empty artifact expectation keeps existing behavior", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			expectation.RunArtifacts = nil
+		}},
+		{name: "empty artifact expectation and empty witness artifacts match", mutate: func(summary *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			summary.RunArtifacts = nil
+			expectation.RunArtifacts = nil
+		}, want: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			summary := witnessSummary
+			summary.RunArtifacts = append([]demo.WitnessArtifactDigest(nil), witnessSummary.RunArtifacts...)
+			expectation := expected
+			expectation.RunArtifacts = append([]demo.WitnessArtifactDigest(nil), expected.RunArtifacts...)
+			if tc.mutate != nil {
+				tc.mutate(&summary, &expectation)
+			}
+			if got := witnessMatchesProtectedInput(summary, expectation); got != tc.want {
+				t.Fatalf("match = %v, want %v", got, tc.want)
 			}
 		})
 	}
@@ -2221,5 +2841,73 @@ func readTestJSON(t *testing.T, path string, value any) {
 	}
 	if err := json.Unmarshal(payload, value); err != nil {
 		t.Fatalf("unmarshal json %s: %v", path, err)
+	}
+}
+
+func TestCLITailHelpersCoverErrorBranches(t *testing.T) {
+	var errOut bytes.Buffer
+	dir := t.TempDir()
+
+	allowed := allowedRunnerSet([]string{"qwen, kimi", "  "})
+	if !allowed["qwen"] || !allowed["kimi"] || allowed[""] {
+		t.Fatalf("allowedRunnerSet = %+v", allowed)
+	}
+
+	if _, err := readExistingPRReviewLedger(filepath.Join(dir, "missing-ledger.json")); err == nil {
+		t.Fatalf("missing ledger should fail")
+	}
+	if _, _, ok := readPRReviewPacketAndProfile(&flagSet{}, &errOut); ok {
+		t.Fatalf("missing packet/profile should fail")
+	}
+	if code, ok := writePRReviewSummaryFile(dir, "summary", &errOut); ok || code != exitUsage {
+		t.Fatalf("summary dir write code=%d ok=%v", code, ok)
+	}
+
+	for _, verdict := range []trace.VerifierVerdict{
+		trace.VerdictObserved,
+		trace.VerdictNotAssessed,
+		trace.VerdictFail,
+		trace.VerdictCannotVerify,
+		"unknown",
+	} {
+		_ = verifierResultExitCode(verdict)
+	}
+
+	if previewGateMode(trace.Contract{RequiredRuns: []trace.RequiredRun{{Profile: demo.GateModeAdvisoryCI}}}) != demo.GateModeAdvisoryCI {
+		t.Fatalf("advisory gate mode not selected")
+	}
+	if previewGateMode(trace.Contract{RequiredRuns: []trace.RequiredRun{{Profile: demo.GateModeProtectedFuture}}}) != demo.GateModeProtectedFuture {
+		t.Fatalf("protected future gate mode not selected")
+	}
+
+	if err := refuseExistingFile(dir); err == nil || !strings.Contains(err.Error(), "directory") {
+		t.Fatalf("directory refusal = %v", err)
+	}
+	if err := refuseExistingFile(filepath.Join(dir, "new-file")); err != nil {
+		t.Fatalf("new file refusal = %v", err)
+	}
+
+	if _, code, ok := parseObserveSessionArgs([]string{"--profile", "p", "--out", "o"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("observe session without command code=%d ok=%v", code, ok)
+	}
+	errOut.Reset()
+	if _, code, ok := parseCheckpointVerifyArgs([]string{"--run", "r", "--checkpoint", "c", "extra"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("checkpoint verify rest code=%d ok=%v", code, ok)
+	}
+	errOut.Reset()
+	if _, code, ok := parseCrossRepoPostureExplainArgs([]string{"extra"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("posture explain rest code=%d ok=%v", code, ok)
+	}
+	errOut.Reset()
+	if _, code, ok := readCrossRepoPostureExplainResult(filepath.Join(dir, "missing.json"), &errOut); ok || code != exitCannotVerify {
+		t.Fatalf("posture explain missing code=%d ok=%v", code, ok)
+	}
+
+	var out bytes.Buffer
+	if code := writeImportedTranscript(interaction.Trace{SchemaVersion: interaction.SchemaVersion}, nil, &out, &errOut); code != 0 {
+		t.Fatalf("writeImportedTranscript success code=%d", code)
+	}
+	if code := writeImportedTranscript(interaction.Trace{}, os.ErrNotExist, &out, &errOut); code != exitCannotVerify {
+		t.Fatalf("writeImportedTranscript error code=%d", code)
 	}
 }

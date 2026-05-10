@@ -47,35 +47,64 @@ func RenderPrometheus(result posture.ExportResult) (string, error) {
 		return "# sdp_trace_posture no_rows\n# EOF\n", nil
 	}
 	sortSeries(series)
+	return renderPrometheusSeries(series), nil
+}
+
+func renderPrometheusSeries(series []Series) string {
 	var out strings.Builder
 	currentFamily := ""
 	for _, item := range series {
 		if item.Name != currentFamily {
-			out.WriteString("# HELP ")
-			out.WriteString(item.Name)
-			out.WriteByte(' ')
-			out.WriteString(item.Help)
-			out.WriteByte('\n')
-			out.WriteString("# TYPE ")
-			out.WriteString(item.Name)
-			out.WriteByte(' ')
-			out.WriteString(item.Type)
-			out.WriteByte('\n')
+			writePrometheusFamilyHeader(&out, item)
 			currentFamily = item.Name
 		}
-		out.WriteString(item.Name)
-		out.WriteString(renderLabels(item.Labels))
-		out.WriteByte(' ')
-		out.WriteString(strconv.FormatFloat(item.Value, 'f', -1, 64))
-		out.WriteByte('\n')
+		writePrometheusSample(&out, item)
 	}
 	out.WriteString("# EOF\n")
-	return out.String(), nil
+	return out.String()
+}
+
+func writePrometheusFamilyHeader(out *strings.Builder, item Series) {
+	out.WriteString("# HELP ")
+	out.WriteString(item.Name)
+	out.WriteByte(' ')
+	out.WriteString(item.Help)
+	out.WriteByte('\n')
+	out.WriteString("# TYPE ")
+	out.WriteString(item.Name)
+	out.WriteByte(' ')
+	out.WriteString(item.Type)
+	out.WriteByte('\n')
+}
+
+func writePrometheusSample(out *strings.Builder, item Series) {
+	out.WriteString(item.Name)
+	out.WriteString(renderLabels(item.Labels))
+	out.WriteByte(' ')
+	out.WriteString(strconv.FormatFloat(item.Value, 'f', -1, 64))
+	out.WriteByte('\n')
 }
 
 func BuildSeries(result posture.ExportResult) ([]Series, error) {
-	var series []Series
-	for _, row := range result.MetricRows {
+	metricSeries, err := buildMetricSeries(result.MetricRows)
+	if err != nil {
+		return nil, err
+	}
+	movementSeries, err := buildMovementSeries(result.MovementRows)
+	if err != nil {
+		return nil, err
+	}
+	series := make([]Series, 0, len(metricSeries)+len(movementSeries)+len(result.RefusalRows)+len(result.InputSelection))
+	series = append(series, metricSeries...)
+	series = append(series, movementSeries...)
+	series = append(series, aggregateRefusals(result.RefusalRows)...)
+	series = append(series, aggregateInputs(result.InputSelection)...)
+	return finalizeSeries(series)
+}
+
+func buildMetricSeries(rows []posture.MetricRow) ([]Series, error) {
+	series := make([]Series, 0, len(rows)*3)
+	for _, row := range rows {
 		base, err := metricLabels(row)
 		if err != nil {
 			return nil, err
@@ -86,7 +115,12 @@ func BuildSeries(result posture.ExportResult) ([]Series, error) {
 			gauge("sdp_trace_posture_metric_not_assessed", "Posture metric not assessed row count from sdp-trace evidence posture export.", base, float64(row.NotAssessedCount)),
 		)
 	}
-	for _, row := range result.MovementRows {
+	return series, nil
+}
+
+func buildMovementSeries(rows []posture.MovementRow) ([]Series, error) {
+	series := make([]Series, 0, len(rows)*4)
+	for _, row := range rows {
 		base, err := movementLabels(row)
 		if err != nil {
 			return nil, err
@@ -98,17 +132,19 @@ func BuildSeries(result posture.ExportResult) ([]Series, error) {
 			gauge("sdp_trace_posture_movement_comparable", "Posture movement comparability fact from sdp-trace evidence posture export.", base, comparableValue(row.Comparable)),
 		)
 	}
-	for _, item := range aggregateRefusals(result.RefusalRows) {
-		series = append(series, item)
-	}
-	for _, item := range aggregateInputs(result.InputSelection) {
-		series = append(series, item)
-	}
+	return series, nil
+}
+
+func finalizeSeries(series []Series) ([]Series, error) {
 	for _, item := range series {
 		if err := validateLabels(item.Labels); err != nil {
 			return nil, err
 		}
 	}
+	return checkedSeries(series)
+}
+
+func checkedSeries(series []Series) ([]Series, error) {
 	if err := rejectDuplicateSeries(series); err != nil {
 		return nil, err
 	}
@@ -216,17 +252,28 @@ func comparableValue(value bool) float64 {
 
 func validateLabels(labels map[string]string) error {
 	for key, value := range labels {
-		if !allowedLabelName(key) {
-			return fmt.Errorf("unsupported label name: %s", key)
-		}
-		if value == "" {
-			continue
-		}
-		if len(value) > MaxLabelValueBytes || !utf8.ValidString(value) || unsafeValue(value) {
-			return fmt.Errorf("unsafe label value for key: %s", key)
+		if err := validateLabel(key, value); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func validateLabel(key, value string) error {
+	if !allowedLabelName(key) {
+		return fmt.Errorf("unsupported label name: %s", key)
+	}
+	if value == "" {
+		return nil
+	}
+	if unsafeLabelValue(value) {
+		return fmt.Errorf("unsafe label value for key: %s", key)
+	}
+	return nil
+}
+
+func unsafeLabelValue(value string) bool {
+	return len(value) > MaxLabelValueBytes || !utf8.ValidString(value) || unsafeValue(value)
 }
 
 func allowedLabelName(value string) bool {
@@ -240,19 +287,31 @@ func allowedLabelName(value string) bool {
 
 func unsafeValue(value string) bool {
 	lower := strings.ToLower(value)
-	return strings.Contains(lower, "http://") ||
-		strings.Contains(lower, "https://") ||
-		strings.Contains(lower, "secret") ||
-		strings.Contains(lower, "token") ||
-		strings.Contains(lower, "credential") ||
-		strings.Contains(lower, "password") ||
-		strings.Contains(lower, "bearer") ||
-		strings.Contains(lower, "api_key") ||
-		strings.Contains(lower, "access_key") ||
-		strings.Contains(lower, "private") ||
-		strings.Contains(value, "@") ||
-		strings.Contains(value, "/") ||
-		strings.Contains(value, "\\")
+	return containsAnyMarker(lower, unsafeLowerMarkers) || containsAnyMarker(value, unsafeRawMarkers)
+}
+
+var unsafeLowerMarkers = []string{
+	"http://",
+	"https://",
+	"secret",
+	"token",
+	"credential",
+	"password",
+	"bearer",
+	"api_key",
+	"access_key",
+	"private",
+}
+
+var unsafeRawMarkers = []string{"@", "/", "\\"}
+
+func containsAnyMarker(value string, markers []string) bool {
+	for _, marker := range markers {
+		if strings.Contains(value, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func sortSeries(series []Series) {
@@ -279,16 +338,15 @@ func renderLabels(labels map[string]string) string {
 	if len(labels) == 0 {
 		return ""
 	}
-	keys := make([]string, 0, len(labels))
-	for key, value := range labels {
-		if value != "" {
-			keys = append(keys, key)
-		}
-	}
+	keys := nonEmptyLabelKeys(labels)
 	if len(keys) == 0 {
 		return ""
 	}
 	sort.Strings(keys)
+	return renderSortedLabels(labels, keys)
+}
+
+func renderSortedLabels(labels map[string]string, keys []string) string {
 	var out strings.Builder
 	out.WriteByte('{')
 	for i, key := range keys {
@@ -302,6 +360,16 @@ func renderLabels(labels map[string]string) string {
 	}
 	out.WriteByte('}')
 	return out.String()
+}
+
+func nonEmptyLabelKeys(labels map[string]string) []string {
+	keys := make([]string, 0, len(labels))
+	for key, value := range labels {
+		if value != "" {
+			keys = append(keys, key)
+		}
+	}
+	return keys
 }
 
 func escapeLabelValue(value string) string {

@@ -63,6 +63,87 @@ func TestEvaluateCannotVerifyLateAdapterEvent(t *testing.T) {
 	}
 }
 
+func TestRunBindingConditionRejectsInvalidBindings(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RunEvidence)
+		state  string
+		reason string
+	}{
+		{
+			name:   "missing run identity",
+			mutate: func(run *RunEvidence) { run.RunID = "" },
+			state:  StateCannotVerify,
+			reason: "run_binding_missing",
+		},
+		{
+			name:   "event mismatch",
+			mutate: func(run *RunEvidence) { run.AdapterEvents[0].RunNonce = "other" },
+			state:  StateFail,
+			reason: "run_binding_mismatch",
+		},
+		{
+			name:   "late same-chain event",
+			mutate: func(run *RunEvidence) { run.AdapterEvents[0].Sequence = run.RunClosedSequence + 1 },
+			state:  StateCannotVerify,
+			reason: "late_adapter_event",
+		},
+		{
+			name: "same-chain digest missing",
+			mutate: func(run *RunEvidence) {
+				run.RunClosedSequence = 0
+				run.AdapterEvents[0].EventHash = ""
+			},
+			state:  StateCannotVerify,
+			reason: "same_chain_digest_missing",
+		},
+		{
+			name: "bundle unbound",
+			mutate: func(run *RunEvidence) {
+				input := Input{Run: *run}
+				useAdapterBundleBinding(&input)
+				*run = input.Run
+				run.AdapterEvents[0].BindingMode = BindingAdapterBundle
+				run.AdapterEvents[0].AdapterBundleHeadDigest = "wrong"
+				run.AdapterEvents[0].AdapterBundleID = run.AdapterBundle.BundleID
+			},
+			state:  StateCannotVerify,
+			reason: "adapter_bundle_unbound",
+		},
+		{
+			name: "late bundle",
+			mutate: func(run *RunEvidence) {
+				input := Input{Run: *run}
+				useAdapterBundleBinding(&input)
+				*run = input.Run
+				run.AdapterEvents[0].BindingMode = BindingAdapterBundle
+				run.AdapterEvents[0].AdapterBundleHeadDigest = run.AdapterBundle.HeadDigest
+				run.AdapterEvents[0].AdapterBundleID = run.AdapterBundle.BundleID
+				run.AdapterBundle.ReferencedSequence = run.RunClosedSequence + 1
+			},
+			state:  StateCannotVerify,
+			reason: "late_adapter_bundle",
+		},
+		{
+			name:   "missing binding mode",
+			mutate: func(run *RunEvidence) { run.AdapterEvents[0].BindingMode = "" },
+			state:  StateCannotVerify,
+			reason: "binding_mode_missing",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			run := validInput().Run
+			tt.mutate(&run)
+			condition := runBindingCondition(run)
+			if condition.State != tt.state || condition.ReasonCode != tt.reason {
+				t.Fatalf("condition = %+v, want %s/%s", condition, tt.state, tt.reason)
+			}
+		})
+	}
+}
+
 func TestEvaluateFailsUnsafeAdapterMetadata(t *testing.T) {
 	input := validInput()
 	input.Run.AdapterEvents[0].SensitiveMetadataPersisted = true
@@ -74,6 +155,38 @@ func TestEvaluateFailsUnsafeAdapterMetadata(t *testing.T) {
 	}
 	condition := conditionByID(result.AdapterCaptureConditions, "redaction_metadata_consistent")
 	if condition.State != StateFail || condition.ReasonCode != "forbidden_adapter_metadata_persisted" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestEvaluateCannotVerifySensitiveEventMissingRedactionMetadata(t *testing.T) {
+	input := validInput()
+	for i := range input.Run.AdapterEvents {
+		if input.Run.AdapterEvents[i].EventType == "tool_call" {
+			input.Run.AdapterEvents[i].RedactionPolicyDigest = ""
+			input.Run.AdapterEvents[i].RetentionMode = ""
+			break
+		}
+	}
+	result := Evaluate(input)
+	if result.AdapterCaptureAssessment != StateCannotVerify {
+		t.Fatalf("assessment = %s reasons=%v", result.AdapterCaptureAssessment, result.Reasons)
+	}
+	condition := conditionByID(result.AdapterCaptureConditions, "redaction_metadata_consistent")
+	if condition.State != StateCannotVerify || condition.ReasonCode != "redaction_metadata_missing" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestEvaluateFailsOnInvalidRetentionMode(t *testing.T) {
+	input := validInput()
+	input.Run.AdapterEvents[0].RetentionMode = "bad-mode"
+	result := Evaluate(input)
+	if result.AdapterCaptureAssessment != StateFail {
+		t.Fatalf("assessment = %s reasons=%v", result.AdapterCaptureAssessment, result.Reasons)
+	}
+	condition := conditionByID(result.AdapterCaptureConditions, "redaction_metadata_consistent")
+	if condition.State != StateFail || condition.ReasonCode != "invalid_retention_mode" {
 		t.Fatalf("condition = %+v", condition)
 	}
 }
@@ -143,6 +256,28 @@ func TestEvaluateCannotVerifyConflictingCorrelationKeys(t *testing.T) {
 	}
 }
 
+func TestContractConditionRejectsMalformedEvent(t *testing.T) {
+	run := validInput().Run
+	run.AdapterEvents[0].ProducerIdentity = ""
+	condition := contractCondition(run)
+	if condition.State != StateFail || condition.ReasonCode != "adapter_event_malformed" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestContractConditionAllowsSameCorrelationAcrossEventTypes(t *testing.T) {
+	run := validInput().Run
+	correlated := run.AdapterEvents[2]
+	correlated.EventType = "command_started"
+	correlated.EventID = "evt-command-alt"
+	correlated.Sequence = 9
+	run.AdapterEvents = append(run.AdapterEvents, correlated)
+	condition := contractCondition(run)
+	if condition.State != StatePass {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
 func TestEvaluateAllowsDuplicateEmptyCorrelationRefs(t *testing.T) {
 	input := validInput()
 	input.Run.AdapterEvents[2].CorrelationRef = ""
@@ -167,6 +302,111 @@ func TestEvaluateAllowsRedactedCapturedEventWithCap(t *testing.T) {
 	condition := conditionByID(result.AdapterCaptureConditions, "capture_depth_not_overclaimed")
 	if condition.State != StatePass {
 		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestOverclaimConditionRejectsUncappedInsufficientEvidence(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RunEvidence)
+	}{
+		{
+			name: "summary state insufficient",
+			mutate: func(run *RunEvidence) {
+				run.EventFamilySummaries = []EventFamilyState{{
+					EventFamily:     "tool_call",
+					State:           StateCannotVerify,
+					RetentionMode:   RetentionSanitizedExcerpt,
+					Reconstructable: true,
+				}}
+			},
+		},
+		{
+			name: "summary retention insufficient",
+			mutate: func(run *RunEvidence) {
+				run.EventFamilySummaries = []EventFamilyState{{
+					EventFamily:     "tool_call",
+					State:           StatePass,
+					RetentionMode:   RetentionDigestOnly,
+					Reconstructable: true,
+				}}
+			},
+		},
+		{
+			name: "event capture state insufficient",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "redacted"
+				run.AdapterEvents[2].RetentionMode = RetentionSanitizedExcerpt
+				run.AdapterEvents[2].ReconstructableClaimed = true
+			},
+		},
+		{
+			name: "event retention insufficient",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "captured"
+				run.AdapterEvents[2].RetentionMode = RetentionNotAssessed
+				run.AdapterEvents[2].ReconstructableClaimed = true
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			run := validInput().Run
+			tt.mutate(&run)
+			condition := overclaimCondition(run)
+			if condition.State != StateFail || condition.ReasonCode != "capture_depth_overclaimed" {
+				t.Fatalf("condition = %+v", condition)
+			}
+		})
+	}
+}
+
+func TestOverclaimConditionAllowsSufficientOrCappedEvidence(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RunEvidence)
+	}{
+		{
+			name: "summary cap annotation",
+			mutate: func(run *RunEvidence) {
+				run.EventFamilySummaries = []EventFamilyState{{
+					EventFamily:     "tool_call",
+					State:           StateCannotVerify,
+					RetentionMode:   RetentionDigestOnly,
+					Reconstructable: true,
+					CapAnnotation:   "digest-only evidence",
+				}}
+			},
+		},
+		{
+			name: "event cap annotation",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "redacted"
+				run.AdapterEvents[2].RetentionMode = RetentionNotAssessed
+				run.AdapterEvents[2].ReconstructableClaimed = true
+				run.AdapterEvents[2].CapAnnotation = "payload redacted"
+			},
+		},
+		{
+			name: "sufficient captured event",
+			mutate: func(run *RunEvidence) {
+				run.AdapterEvents[2].CaptureState = "captured"
+				run.AdapterEvents[2].RetentionMode = RetentionSanitizedExcerpt
+				run.AdapterEvents[2].ReconstructableClaimed = true
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			run := validInput().Run
+			tt.mutate(&run)
+			condition := overclaimCondition(run)
+			if condition.State != StatePass || condition.ReasonCode != "capture_depth_not_overclaimed" {
+				t.Fatalf("condition = %+v", condition)
+			}
+		})
 	}
 }
 

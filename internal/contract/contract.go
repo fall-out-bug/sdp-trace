@@ -46,38 +46,40 @@ func Load(path string) (ExpectedEvidenceContract, error) {
 
 // Validate checks required fields and basic cardinality constraints.
 func (c ExpectedEvidenceContract) Validate() error {
-	if c.SchemaVersion == "" {
-		return fmt.Errorf("schema_version is required")
+	return firstValidationError(
+		func() error { return validateRequiredString(c.SchemaVersion, "schema_version") },
+		func() error { return validateRequiredString(c.ContractID, "contract_id") },
+		func() error { return validateRequiredString(c.Version, "version") },
+		func() error { return validateRequiredString(c.ContractSource, "contract_source") },
+		func() error { return validateRequiredString(c.LockRequiredBefore, "lock_required_before") },
+		func() error { return validateNonEmptyList(c.RequiredObservers, "required_observer") },
+		func() error { return validateNonEmptyList(c.RequiredEvents, "required_event") },
+		func() error { return validateNonEmptyList(c.GateEvents, "gate_event") },
+		func() error { return validateRequiredString(c.MinimumGateTrustScope, "minimum_gate_trust_scope") },
+		func() error { return validateRequiredString(c.RetentionProfile, "retention_profile") },
+		func() error { return validateRequiredString(c.RedactionProfile, "redaction_profile") },
+	)
+}
+
+func validateRequiredString(value, name string) error {
+	if value == "" {
+		return fmt.Errorf("%s is required", name)
 	}
-	if c.ContractID == "" {
-		return fmt.Errorf("contract_id is required")
+	return nil
+}
+
+func validateNonEmptyList(values []string, name string) error {
+	if len(values) == 0 {
+		return fmt.Errorf("at least one %s is required", name)
 	}
-	if c.Version == "" {
-		return fmt.Errorf("version is required")
-	}
-	if c.ContractSource == "" {
-		return fmt.Errorf("contract_source is required")
-	}
-	if c.LockRequiredBefore == "" {
-		return fmt.Errorf("lock_required_before is required")
-	}
-	if len(c.RequiredObservers) == 0 {
-		return fmt.Errorf("at least one required_observer is required")
-	}
-	if len(c.RequiredEvents) == 0 {
-		return fmt.Errorf("at least one required_event is required")
-	}
-	if len(c.GateEvents) == 0 {
-		return fmt.Errorf("at least one gate_event is required")
-	}
-	if c.MinimumGateTrustScope == "" {
-		return fmt.Errorf("minimum_gate_trust_scope is required")
-	}
-	if c.RetentionProfile == "" {
-		return fmt.Errorf("retention_profile is required")
-	}
-	if c.RedactionProfile == "" {
-		return fmt.Errorf("redaction_profile is required")
+	return nil
+}
+
+func firstValidationError(checks ...func() error) error {
+	for _, check := range checks {
+		if err := check(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

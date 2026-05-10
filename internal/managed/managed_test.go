@@ -19,6 +19,15 @@ func TestEvaluatePassesWithManagedBoundaryAndWitness(t *testing.T) {
 	}
 }
 
+func TestPolicyRequiredEventTypesFallback(t *testing.T) {
+	input := validInput()
+	input.Contract.RequiredEventTypes = nil
+	got := requiredEventTypes(input)
+	if len(got) == 0 {
+		t.Fatalf("requiredEventTypes fallback is empty")
+	}
+}
+
 func TestEvaluateFailsClosedForUnmanagedAndPostHocRuns(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -208,6 +217,46 @@ func TestEvaluateCannotVerifyForMismatchedCapabilityReferences(t *testing.T) {
 	}
 }
 
+func TestCapabilityConditionPolicyAndEventCoverage(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate     func(*Input)
+		wantState  string
+		wantReason string
+	}{
+		"missing-authorized-capability-id": {
+			mutate: func(input *Input) {
+				input.Policy.AuthorizedAdapters[0].CapabilityIDs = []string{"harness-events", "missing-capability"}
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "adapter_capability_missing",
+		},
+		"missing-required-event-type": {
+			mutate: func(input *Input) {
+				input.Registry.Adapters[0].Capabilities[3].EventTypes = nil
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "adapter_capability_missing",
+		},
+		"valid-capabilities": {
+			mutate:     func(*Input) {},
+			wantState:  StatePass,
+			wantReason: "adapter_capabilities_satisfy_contract",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			input := validInput()
+			tc.mutate(&input)
+			condition := capabilityCondition(input)
+			if condition.State != tc.wantState || condition.ReasonCode != tc.wantReason {
+				t.Fatalf("capabilityCondition() = %+v, want state=%s reason=%s", condition, tc.wantState, tc.wantReason)
+			}
+			if condition.State != StatePass && condition.NextAction == "" {
+				t.Fatalf("capabilityCondition() = %+v, want non-pass next action", condition)
+			}
+		})
+	}
+}
+
 func TestEvaluateCannotVerifyWhenWitnessHasNoArtifactBinding(t *testing.T) {
 	input := validInput()
 	input.Run.OutputArtifacts = nil
@@ -219,6 +268,36 @@ func TestEvaluateCannotVerifyWhenWitnessHasNoArtifactBinding(t *testing.T) {
 	condition := conditionByID(result.ManagedConditions, "managed_witness_bound")
 	if condition.State != StateCannotVerify || condition.ReasonCode != "managed_witness_missing" {
 		t.Fatalf("witness condition = %+v", condition)
+	}
+}
+
+func TestWitnessConditionRejectsInvalidBindings(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*Input)
+		state  string
+		reason string
+	}{
+		{name: "missing witness id", mutate: func(input *Input) { input.Witness.WitnessID = "" }, state: StateCannotVerify, reason: "managed_witness_missing"},
+		{name: "stale witness", mutate: func(input *Input) { input.Witness.FreshnessState = StateCannotVerify }, state: StateCannotVerify, reason: "managed_witness_missing"},
+		{name: "missing run artifacts", mutate: func(input *Input) { input.Run.OutputArtifacts = nil }, state: StateCannotVerify, reason: "managed_witness_missing"},
+		{name: "missing witness artifacts", mutate: func(input *Input) { input.Witness.ArtifactDigests = nil }, state: StateCannotVerify, reason: "managed_witness_missing"},
+		{name: "missing boundary", mutate: func(input *Input) { input.Run.ManagedBoundaryEnrolled = nil }, state: StateFail, reason: "managed_witness_mismatch"},
+		{name: "run mismatch", mutate: func(input *Input) { input.Witness.RunNonce = "wrong" }, state: StateFail, reason: "managed_witness_mismatch"},
+		{name: "authority mismatch", mutate: func(input *Input) { input.Witness.ManagedPolicyDigest = "wrong" }, state: StateFail, reason: "managed_witness_mismatch"},
+		{name: "event mismatch", mutate: func(input *Input) { input.Witness.LaunchEventDigest = "wrong" }, state: StateFail, reason: "managed_witness_mismatch"},
+		{name: "artifact mismatch", mutate: func(input *Input) { input.Witness.ArtifactDigests[0].SHA256 = "wrong" }, state: StateFail, reason: "managed_witness_mismatch"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := validInput()
+			tt.mutate(&input)
+			condition := witnessCondition(input)
+			if condition.State != tt.state || condition.ReasonCode != tt.reason {
+				t.Fatalf("condition = %+v, want %s/%s", condition, tt.state, tt.reason)
+			}
+		})
 	}
 }
 

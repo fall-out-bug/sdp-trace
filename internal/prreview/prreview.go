@@ -299,6 +299,59 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 	if err := ensureNewDir(opts.OutDir); err != nil {
 		return Packet{}, err
 	}
+	return buildPacketInPreparedDir(opts)
+}
+
+func buildPacketInPreparedDir(opts PacketOptions) (Packet, error) {
+	now, createdBy, ciState := packetDefaults(opts)
+	refs, err := buildPacketRefs(opts)
+	if err != nil {
+		return Packet{}, err
+	}
+	packet := newPacket(opts, refs, now, createdBy, ciState)
+	if err := finalizePacket(opts.OutDir, &packet); err != nil {
+		return Packet{}, err
+	}
+	return packet, nil
+}
+
+func finalizePacket(outDir string, packet *Packet) error {
+	digest, err := packetDigest(*packet)
+	if err != nil {
+		return err
+	}
+	packet.PacketDigest = "sha256:" + digest
+	return WriteJSON(filepath.Join(outDir, "packet.json"), *packet)
+}
+
+func newPacket(opts PacketOptions, refs packetRefs, now time.Time, createdBy, ciState string) Packet {
+	return Packet{
+		SchemaVersion:     SchemaVersionPacket,
+		PacketID:          fmt.Sprintf("%s-%s-%s", opts.RepoID, opts.ChangeRef, opts.HeadCommit[:12]),
+		RepoID:            opts.RepoID,
+		ChangeRef:         opts.ChangeRef,
+		BaseCommit:        opts.BaseCommit,
+		HeadCommit:        opts.HeadCommit,
+		DiffRef:           refs.diff,
+		MetadataRef:       refs.metadata,
+		ContextRefs:       refs.context,
+		VerificationRefs:  refs.verification,
+		CIState:           ciState,
+		CreatedAt:         now.Format(time.RFC3339),
+		CreatedBy:         createdBy,
+		RedactionState:    RedactionNone,
+		UnavailableFields: unavailablePacketFields(opts),
+	}
+}
+
+type packetRefs struct {
+	diff         SafeRef
+	metadata     *SafeRef
+	context      []SafeRef
+	verification []SafeRef
+}
+
+func packetDefaults(opts PacketOptions) (time.Time, string, string) {
 	now := opts.Now
 	if now.IsZero() {
 		now = time.Now().UTC()
@@ -307,65 +360,76 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 	if createdBy == "" {
 		createdBy = "sdp-trace"
 	}
-	if opts.CIState == "" {
-		opts.CIState = StateNotAssessed
+	ciState := opts.CIState
+	if ciState == "" {
+		ciState = StateNotAssessed
 	}
+	return now, createdBy, ciState
+}
+
+func buildPacketRefs(opts PacketOptions) (packetRefs, error) {
 	inputDir := filepath.Join(opts.OutDir, "inputs")
 	if err := os.MkdirAll(inputDir, 0o755); err != nil {
-		return Packet{}, err
+		return packetRefs{}, err
 	}
+	return collectPacketRefs(inputDir, opts)
+}
+
+func collectPacketRefs(inputDir string, opts PacketOptions) (packetRefs, error) {
 	diffRef, err := copyInput(inputDir, "diff.patch", opts.DiffPath, RefKindDiff, ContentUnifiedDiff)
 	if err != nil {
-		return Packet{}, err
+		return packetRefs{}, err
 	}
-	var metadataRef *SafeRef
-	if strings.TrimSpace(opts.MetadataPath) != "" {
-		ref, err := copyInput(inputDir, "metadata.json", opts.MetadataPath, RefKindMetadata, contentType(opts.MetadataPath))
-		if err != nil {
-			return Packet{}, err
-		}
-		metadataRef = &ref
-	}
-	contextRefs, err := copyInputs(inputDir, "context", opts.ContextPaths)
+	metadataRef, err := optionalMetadataRef(inputDir, opts.MetadataPath)
 	if err != nil {
-		return Packet{}, err
+		return packetRefs{}, err
 	}
-	for i := range contextRefs {
-		contextRefs[i].Kind = contextKind(opts.ContextPaths[i])
-	}
-	verificationRefs, err := copyInputs(inputDir, "verification", opts.VerificationPaths)
+	contextRefs, err := packetContextRefs(inputDir, opts.ContextPaths)
 	if err != nil {
-		return Packet{}, err
+		return packetRefs{}, err
 	}
-	for i := range verificationRefs {
-		verificationRefs[i].Kind = RefKindVerification
-	}
-	packet := Packet{
-		SchemaVersion:     SchemaVersionPacket,
-		PacketID:          fmt.Sprintf("%s-%s-%s", opts.RepoID, opts.ChangeRef, opts.HeadCommit[:12]),
-		RepoID:            opts.RepoID,
-		ChangeRef:         opts.ChangeRef,
-		BaseCommit:        opts.BaseCommit,
-		HeadCommit:        opts.HeadCommit,
-		DiffRef:           diffRef,
-		MetadataRef:       metadataRef,
-		ContextRefs:       contextRefs,
-		VerificationRefs:  verificationRefs,
-		CIState:           opts.CIState,
-		CreatedAt:         now.Format(time.RFC3339),
-		CreatedBy:         createdBy,
-		RedactionState:    RedactionNone,
-		UnavailableFields: unavailablePacketFields(opts),
-	}
-	digest, err := packetDigest(packet)
+	return packetRefsWithVerification(inputDir, opts, diffRef, metadataRef, contextRefs)
+}
+
+func packetRefsWithVerification(inputDir string, opts PacketOptions, diffRef SafeRef, metadataRef *SafeRef, contextRefs []SafeRef) (packetRefs, error) {
+	verificationRefs, err := packetVerificationRefs(inputDir, opts.VerificationPaths)
 	if err != nil {
-		return Packet{}, err
+		return packetRefs{}, err
 	}
-	packet.PacketDigest = "sha256:" + digest
-	if err := WriteJSON(filepath.Join(opts.OutDir, "packet.json"), packet); err != nil {
-		return Packet{}, err
+	return packetRefs{diff: diffRef, metadata: metadataRef, context: contextRefs, verification: verificationRefs}, nil
+}
+
+func optionalMetadataRef(inputDir, metadataPath string) (*SafeRef, error) {
+	if strings.TrimSpace(metadataPath) == "" {
+		return nil, nil
 	}
-	return packet, nil
+	ref, err := copyInput(inputDir, "metadata.json", metadataPath, RefKindMetadata, contentType(metadataPath))
+	if err != nil {
+		return nil, err
+	}
+	return &ref, nil
+}
+
+func packetContextRefs(inputDir string, paths []string) ([]SafeRef, error) {
+	refs, err := copyInputs(inputDir, "context", paths)
+	if err != nil {
+		return nil, err
+	}
+	for i := range refs {
+		refs[i].Kind = contextKind(paths[i])
+	}
+	return refs, nil
+}
+
+func packetVerificationRefs(inputDir string, paths []string) ([]SafeRef, error) {
+	refs, err := copyInputs(inputDir, "verification", paths)
+	if err != nil {
+		return nil, err
+	}
+	for i := range refs {
+		refs[i].Kind = RefKindVerification
+	}
+	return refs, nil
 }
 
 func unavailablePacketFields(opts PacketOptions) []UnavailableField {
@@ -386,29 +450,31 @@ func RunReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *
 	if err := validateProfile(profile); err != nil {
 		return RunSet{}, nil, err
 	}
+	opts = normalizeRunOptions(opts)
+	if opts.Preview {
+		return RunSet{}, preview(packet, profile), nil
+	}
+	return runReview(packet, profile, opts)
+}
+
+func normalizeRunOptions(opts RunOptions) RunOptions {
 	if opts.Now.IsZero() {
 		opts.Now = time.Now().UTC()
 	}
 	if opts.WorkDir == "" {
 		opts.WorkDir = "."
 	}
-	if opts.Preview {
-		return RunSet{}, preview(packet, profile), nil
-	}
-	if err := ensureNewDir(opts.OutDir); err != nil {
+	return opts
+}
+
+func runReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *RunPreview, error) {
+	rawDir, err := prepareRunDirectories(opts.OutDir)
+	if err != nil {
 		return RunSet{}, nil, err
 	}
-	rawDir := filepath.Join(opts.OutDir, "raw")
-	if err := os.MkdirAll(rawDir, 0o755); err != nil {
+	results, err := runReviewRoles(packet, profile.Roles, opts, rawDir)
+	if err != nil {
 		return RunSet{}, nil, err
-	}
-	results := make([]ReviewerResult, 0, len(profile.Roles))
-	for _, role := range profile.Roles {
-		result, err := runRole(packet, role, opts, rawDir)
-		if err != nil {
-			return RunSet{}, nil, err
-		}
-		results = append(results, result)
 	}
 	runSet := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packet.PacketDigest, Results: results}
 	if err := WriteJSON(filepath.Join(opts.OutDir, "results.json"), runSet); err != nil {
@@ -417,123 +483,91 @@ func RunReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *
 	return runSet, nil, nil
 }
 
+func prepareRunDirectories(outDir string) (string, error) {
+	if err := ensureNewDir(outDir); err != nil {
+		return "", err
+	}
+	rawDir := filepath.Join(outDir, "raw")
+	if err := os.MkdirAll(rawDir, 0o755); err != nil {
+		return "", err
+	}
+	return rawDir, nil
+}
+
+func runReviewRoles(packet Packet, roles []ReviewRole, opts RunOptions, rawDir string) ([]ReviewerResult, error) {
+	results := make([]ReviewerResult, 0, len(roles))
+	for _, role := range roles {
+		result, err := runRole(packet, role, opts, rawDir)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
 func SynthesizeLedger(packet Packet, runs RunSet, existing *Ledger) Ledger {
+	findings := synthesizeLedgerFindings(runs, existingFindings(existing))
+	sort.Slice(findings, func(i, j int) bool { return findings[i].ID < findings[j].ID })
+	return Ledger{SchemaVersion: SchemaVersionLedger, PacketDigest: packet.PacketDigest, Findings: findings}
+}
+
+func existingFindings(existing *Ledger) map[string]LedgerFinding {
 	byFinding := map[string]LedgerFinding{}
 	if existing != nil {
 		for _, finding := range existing.Findings {
 			byFinding[finding.ID] = finding
 		}
 	}
+	return byFinding
+}
+
+func synthesizeLedgerFindings(runs RunSet, byFinding map[string]LedgerFinding) []LedgerFinding {
 	findings := []LedgerFinding{}
 	for _, result := range runs.Results {
 		for _, finding := range result.Findings {
-			id := finding.ID
-			if id == "" {
-				id = result.ReviewRunID + "-finding"
-			}
-			disposition := defaultDisposition(finding.Severity)
-			if prior, ok := byFinding[id]; ok && prior.Disposition != "" {
-				disposition = prior.Disposition
-			}
-			findings = append(findings, LedgerFinding{
-				ID:           id,
-				ReviewRunID:  result.ReviewRunID,
-				Plane:        result.Plane,
-				RoleID:       result.RoleID,
-				Severity:     safeSeverity(finding.Severity),
-				Summary:      safeText(finding.Summary),
-				Citation:     finding.Citation,
-				Disposition:  disposition,
-				EvidenceRefs: finding.EvidenceRefs,
-			})
+			findings = append(findings, ledgerFindingFromReviewFinding(result, finding, byFinding))
 		}
 	}
-	sort.Slice(findings, func(i, j int) bool { return findings[i].ID < findings[j].ID })
-	return Ledger{SchemaVersion: SchemaVersionLedger, PacketDigest: packet.PacketDigest, Findings: findings}
+	return findings
+}
+
+func ledgerFindingFromReviewFinding(result ReviewerResult, finding Finding, byFinding map[string]LedgerFinding) LedgerFinding {
+	id := finding.ID
+	if id == "" {
+		id = result.ReviewRunID + "-finding"
+	}
+	disposition := defaultDisposition(finding.Severity)
+	if prior, ok := byFinding[id]; ok && prior.Disposition != "" {
+		disposition = prior.Disposition
+	}
+	return LedgerFinding{
+		ID:           id,
+		ReviewRunID:  result.ReviewRunID,
+		Plane:        result.Plane,
+		RoleID:       result.RoleID,
+		Severity:     safeSeverity(finding.Severity),
+		Summary:      safeText(finding.Summary),
+		Citation:     finding.Citation,
+		Disposition:  disposition,
+		EvidenceRefs: finding.EvidenceRefs,
+	}
 }
 
 func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) Validation {
-	required := map[string]bool{}
 	roleByID := map[string]ReviewRole{}
-	for _, plane := range profile.RequiredPlanes {
-		if plane != "" {
-			required[plane] = true
-		}
-	}
 	for _, role := range profile.Roles {
 		roleByID[role.RoleID] = role
 	}
-	planeResults := make([]PlaneResult, 0, len(required))
+
+	required := requiredPlaneSet(profile.RequiredPlanes)
 	reasons := []string{}
 	nextActions := []string{}
-	usableCount := 0
-	cannotVerify := false
-	if runs.PacketDigest != packet.PacketDigest || ledger.PacketDigest != packet.PacketDigest {
-		cannotVerify = true
-		reasons = append(reasons, "packet_digest_mismatch")
-		nextActions = append(nextActions, "Create a new packet and rerun review for the current head.")
-	}
-	for _, result := range runs.Results {
-		if result.PacketDigest != packet.PacketDigest {
-			cannotVerify = true
-			reasons = append(reasons, "result_packet_digest_mismatch:"+safeID(result.ReviewRunID))
-			nextActions = append(nextActions, "Discard stale reviewer results and rerun review for the current packet.")
-		}
-	}
-	for plane := range required {
-		best := PlaneResult{Plane: plane, Status: StateNotAssessed, Usable: false, Reason: "required_plane_not_assessed", NextAction: "Run or import a reviewer result for this plane."}
-		for _, result := range runs.Results {
-			if result.Plane != plane {
-				continue
-			}
-			best = planeResult(result)
-			if best.Usable && modelMismatchWithoutFallback(roleByID[result.RoleID], result) {
-				best.Usable = false
-				best.Status = StatusCannotVerify
-				best.Reason = "model_identity_mismatch"
-				best.NextAction = "Rerun the reviewer or record fallback provenance for the observed model."
-			}
-			if best.Usable {
-				usableCount++
-			}
-			break
-		}
-		if best.Status == CoverageCannotVerify || best.Status == StatusTimedOut || best.Status == StatusEmptyOutput || best.Status == StatusOffTask || best.Status == StatusParseFailed || best.Status == StatusCannotVerify {
-			cannotVerify = true
-		}
-		if best.Reason != "" {
-			reasons = append(reasons, fmt.Sprintf("%s:%s", plane, best.Status))
-		}
-		if best.NextAction != "" && !best.Usable {
-			nextActions = append(nextActions, best.NextAction)
-		}
-		planeResults = append(planeResults, best)
-	}
-	sort.Slice(planeResults, func(i, j int) bool { return planeResults[i].Plane < planeResults[j].Plane })
-	unresolved := false
-	safeFindings := make([]LedgerFinding, 0, len(ledger.Findings))
-	for _, finding := range ledger.Findings {
-		finding.Summary = safeText(finding.Summary)
-		if (finding.Severity == SeverityCritical || finding.Severity == SeverityMajor) && finding.Disposition == DispositionUnresolvedReviewBlocker {
-			unresolved = true
-		}
-		if !citationResolvable(packet, finding.Citation) {
-			cannotVerify = true
-			reasons = append(reasons, "finding_citation_cannot_verify")
-		}
-		safeFindings = append(safeFindings, finding)
-	}
-	state := CoverageSatisfied
-	switch {
-	case cannotVerify:
-		state = CoverageCannotVerify
-	case len(required) == 0 || usableCount == 0:
-		state = CoverageNotAssessed
-	case usableCount < len(required):
-		state = CoveragePartial
-	case unresolved:
-		state = CoverageUnresolved
-	}
+	cannotVerify := appendDigestValidation(packet, runs, ledger, &reasons, &nextActions)
+	planeResults, usableCount, planesCannotVerify := validateRequiredPlanes(required, roleByID, runs, &reasons, &nextActions)
+	safeFindings, unresolved, findingsCannotVerify := validateLedgerFindings(packet, ledger, &reasons)
+	state := reviewCoverageState(required, usableCount, cannotVerify || planesCannotVerify || findingsCannotVerify, unresolved)
+
 	return Validation{
 		SchemaVersion:       SchemaVersionValidation,
 		PacketDigest:        packet.PacketDigest,
@@ -550,44 +584,203 @@ func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) 
 	}
 }
 
+func requiredPlaneSet(planes []string) map[string]bool {
+	required := map[string]bool{}
+	for _, plane := range planes {
+		if plane != "" {
+			required[plane] = true
+		}
+	}
+	return required
+}
+
+func appendDigestValidation(packet Packet, runs RunSet, ledger Ledger, reasons, nextActions *[]string) bool {
+	cannotVerify := false
+	if runs.PacketDigest != packet.PacketDigest || ledger.PacketDigest != packet.PacketDigest {
+		appendValidationAction(reasons, nextActions, "packet_digest_mismatch", "Create a new packet and rerun review for the current head.")
+		cannotVerify = true
+	}
+	for _, result := range runs.Results {
+		if result.PacketDigest != packet.PacketDigest {
+			appendValidationAction(reasons, nextActions, "result_packet_digest_mismatch:"+safeID(result.ReviewRunID), "Discard stale reviewer results and rerun review for the current packet.")
+			cannotVerify = true
+		}
+	}
+	return cannotVerify
+}
+
+func appendValidationAction(reasons, nextActions *[]string, reason, nextAction string) {
+	*reasons = append(*reasons, reason)
+	*nextActions = append(*nextActions, nextAction)
+}
+
+func validateRequiredPlanes(required map[string]bool, roleByID map[string]ReviewRole, runs RunSet, reasons, nextActions *[]string) ([]PlaneResult, int, bool) {
+	planeResults := make([]PlaneResult, 0, len(required))
+	usableCount := 0
+	cannotVerify := false
+	for plane := range required {
+		best := bestPlaneResult(plane, roleByID, runs)
+		if best.Usable {
+			usableCount++
+		}
+		cannotVerify = cannotVerify || planeCannotVerify(best.Status)
+		appendPlaneValidationNotes(best, reasons, nextActions)
+		planeResults = append(planeResults, best)
+	}
+	sort.Slice(planeResults, func(i, j int) bool { return planeResults[i].Plane < planeResults[j].Plane })
+	return planeResults, usableCount, cannotVerify
+}
+
+func appendPlaneValidationNotes(result PlaneResult, reasons, nextActions *[]string) {
+	if result.Reason != "" {
+		*reasons = append(*reasons, fmt.Sprintf("%s:%s", result.Plane, result.Status))
+	}
+	if result.NextAction != "" && !result.Usable {
+		*nextActions = append(*nextActions, result.NextAction)
+	}
+}
+
+func bestPlaneResult(plane string, roleByID map[string]ReviewRole, runs RunSet) PlaneResult {
+	best := PlaneResult{Plane: plane, Status: StateNotAssessed, Usable: false, Reason: "required_plane_not_assessed", NextAction: "Run or import a reviewer result for this plane."}
+	for _, result := range runs.Results {
+		if result.Plane != plane {
+			continue
+		}
+		return planeResultWithModelCheck(roleByID[result.RoleID], result)
+	}
+	return best
+}
+
+func planeResultWithModelCheck(role ReviewRole, result ReviewerResult) PlaneResult {
+	best := planeResult(result)
+	if best.Usable && modelMismatchWithoutFallback(role, result) {
+		best.Usable = false
+		best.Status = StatusCannotVerify
+		best.Reason = "model_identity_mismatch"
+		best.NextAction = "Rerun the reviewer or record fallback provenance for the observed model."
+	}
+	return best
+}
+
+func planeCannotVerify(status string) bool {
+	switch status {
+	// StatusCannotVerify and CoverageCannotVerify currently share the same
+	// wire value. Plane results carry reviewer statuses, so use the status
+	// constant here and keep coverage-state selection in reviewCoverageState.
+	case StatusCannotVerify, StatusTimedOut, StatusEmptyOutput, StatusOffTask, StatusParseFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+func validateLedgerFindings(packet Packet, ledger Ledger, reasons *[]string) ([]LedgerFinding, bool, bool) {
+	unresolved := false
+	cannotVerify := false
+	safeFindings := make([]LedgerFinding, 0, len(ledger.Findings))
+	for _, finding := range ledger.Findings {
+		finding.Summary = safeText(finding.Summary)
+		unresolved = unresolved || ledgerFindingUnresolved(finding)
+		cannotVerify = cannotVerify || appendCitationReasonIfUnresolvable(packet, finding, reasons)
+		safeFindings = append(safeFindings, finding)
+	}
+	return safeFindings, unresolved, cannotVerify
+}
+
+func ledgerFindingUnresolved(finding LedgerFinding) bool {
+	return (finding.Severity == SeverityCritical || finding.Severity == SeverityMajor) && finding.Disposition == DispositionUnresolvedReviewBlocker
+}
+
+func appendCitationReasonIfUnresolvable(packet Packet, finding LedgerFinding, reasons *[]string) bool {
+	if citationResolvable(packet, finding.Citation) {
+		return false
+	}
+	*reasons = append(*reasons, "finding_citation_cannot_verify")
+	return true
+}
+
+func reviewCoverageState(required map[string]bool, usableCount int, cannotVerify, unresolved bool) string {
+	if cannotVerify {
+		return CoverageCannotVerify
+	}
+	if noReviewCoverage(required, usableCount) {
+		return CoverageNotAssessed
+	}
+	return assessedReviewCoverageState(required, usableCount, unresolved)
+}
+
+func noReviewCoverage(required map[string]bool, usableCount int) bool {
+	return len(required) == 0 || usableCount == 0
+}
+
+func assessedReviewCoverageState(required map[string]bool, usableCount int, unresolved bool) string {
+	if usableCount < len(required) {
+		return CoveragePartial
+	}
+	if unresolved {
+		return CoverageUnresolved
+	}
+	return CoverageSatisfied
+}
+
 func modelMismatchWithoutFallback(role ReviewRole, result ReviewerResult) bool {
 	requested := defaultString(role.RequestedModel, result.RequestedModel)
 	observed := result.ObservedModel
-	if requested == "" || requested == StateNotAssessed || observed == "" || observed == StateNotAssessed {
+	if modelIdentityMissing(requested) || modelIdentityMissing(observed) {
 		return false
 	}
 	if requested == observed {
 		return false
 	}
+	return fallbackMetadataMissing(result)
+}
+
+func modelIdentityMissing(model string) bool {
+	return model == "" || model == StateNotAssessed
+}
+
+func fallbackMetadataMissing(result ReviewerResult) bool {
 	return result.FallbackForModel == "" || result.FallbackReason == ""
 }
 
 func Summarize(validation Validation, ledger Ledger) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Review coverage: %s\n", validation.ReviewCoverageState)
-	fmt.Fprintf(&b, "CI state: %s\n", validation.CIState)
-	fmt.Fprintf(&b, "Authority scope: %s\n", validation.AuthorityScope)
-	fmt.Fprintf(&b, "Merge decision: %s\n", validation.MergeDecision)
-	fmt.Fprintf(&b, "Release decision: %s\n", validation.ReleaseDecision)
-	fmt.Fprintf(&b, "Risk acceptance: %s\n", validation.RiskAcceptance)
+	writeSummaryHeader(&b, validation)
+	writeSummaryPlanes(&b, validation.PlaneResults)
+	writeSummaryFindings(&b, ledger.Findings)
+	return b.String()
+}
+
+func writeSummaryHeader(b *strings.Builder, validation Validation) {
+	fmt.Fprintf(b, "Review coverage: %s\n", validation.ReviewCoverageState)
+	fmt.Fprintf(b, "CI state: %s\n", validation.CIState)
+	fmt.Fprintf(b, "Authority scope: %s\n", validation.AuthorityScope)
+	fmt.Fprintf(b, "Merge decision: %s\n", validation.MergeDecision)
+	fmt.Fprintf(b, "Release decision: %s\n", validation.ReleaseDecision)
+	fmt.Fprintf(b, "Risk acceptance: %s\n", validation.RiskAcceptance)
 	b.WriteString("This is review-record evidence only; merge, release, and risk decisions remain external.\n")
-	if len(validation.PlaneResults) > 0 {
+}
+
+func writeSummaryPlanes(b *strings.Builder, planes []PlaneResult) {
+	if len(planes) > 0 {
 		b.WriteString("\nPlanes\n")
-		for _, plane := range validation.PlaneResults {
-			fmt.Fprintf(&b, "- %s: %s", plane.Plane, plane.Status)
+		for _, plane := range planes {
+			fmt.Fprintf(b, "- %s: %s", plane.Plane, plane.Status)
 			if plane.NextAction != "" {
-				fmt.Fprintf(&b, " next_action=%s", safeText(plane.NextAction))
+				fmt.Fprintf(b, " next_action=%s", safeText(plane.NextAction))
 			}
 			b.WriteString("\n")
 		}
 	}
-	if len(ledger.Findings) > 0 {
+}
+
+func writeSummaryFindings(b *strings.Builder, findings []LedgerFinding) {
+	if len(findings) > 0 {
 		b.WriteString("\nFindings\n")
-		for _, finding := range ledger.Findings {
-			fmt.Fprintf(&b, "- %s [%s] %s (%s)\n", finding.ID, finding.Severity, safeText(finding.Summary), finding.Disposition)
+		for _, finding := range findings {
+			fmt.Fprintf(b, "- %s [%s] %s (%s)\n", finding.ID, finding.Severity, safeText(finding.Summary), finding.Disposition)
 		}
 	}
-	return b.String()
 }
 
 func WriteJSON(path string, value any) error {
@@ -622,9 +815,7 @@ func ReadProfile(path string) (ReviewProfile, error) {
 
 func ReadRunSet(path string) (RunSet, error) {
 	var runs RunSet
-	if fileInfo, err := os.Stat(path); err == nil && fileInfo.IsDir() {
-		path = filepath.Join(path, "results.json")
-	}
+	path = runSetPath(path)
 	if err := readJSON(path, &runs); err != nil {
 		return runs, err
 	}
@@ -632,6 +823,13 @@ func ReadRunSet(path string) (RunSet, error) {
 		return runs, err
 	}
 	return runs, nil
+}
+
+func runSetPath(path string) string {
+	if fileInfo, err := os.Stat(path); err == nil && fileInfo.IsDir() {
+		return filepath.Join(path, "results.json")
+	}
+	return path
 }
 
 func ReadLedger(path string) (Ledger, error) {
@@ -656,22 +854,44 @@ func validatePacketOptions(opts PacketOptions) error {
 	if strings.TrimSpace(opts.OutDir) == "" {
 		return errors.New("pr_review_packet_requires_out")
 	}
+	if err := validatePacketIdentityOptions(opts); err != nil {
+		return err
+	}
+	if err := validatePacketInputOptions(opts); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validatePacketIdentityOptions(opts PacketOptions) error {
 	if !repoIDPattern.MatchString(opts.RepoID) {
 		return fmt.Errorf("unsafe_repo_id: repo_id must match %s", repoIDPattern.String())
 	}
 	if !changeRefPattern.MatchString(opts.ChangeRef) {
 		return fmt.Errorf("unsafe_change_ref: change_ref must match %s", changeRefPattern.String())
 	}
-	if !sha40Pattern.MatchString(opts.BaseCommit) || !sha40Pattern.MatchString(opts.HeadCommit) {
+	if !validPacketCommits(opts) {
 		return errors.New("invalid_commit_sha: base and head must be 40 lowercase hex characters")
 	}
+	return nil
+}
+
+func validPacketCommits(opts PacketOptions) bool {
+	return sha40Pattern.MatchString(opts.BaseCommit) && sha40Pattern.MatchString(opts.HeadCommit)
+}
+
+func validatePacketInputOptions(opts PacketOptions) error {
 	if strings.TrimSpace(opts.DiffPath) == "" {
 		return errors.New("pr_review_packet_requires_diff")
 	}
-	if opts.CIState != "" && !validCIState(opts.CIState) {
+	if invalidPacketCIState(opts) {
 		return fmt.Errorf("invalid_ci_state: %s", opts.CIState)
 	}
 	return nil
+}
+
+func invalidPacketCIState(opts PacketOptions) bool {
+	return opts.CIState != "" && !validCIState(opts.CIState)
 }
 
 func validateRunSet(runs RunSet) error {
@@ -689,9 +909,24 @@ func validateRunSet(runs RunSet) error {
 }
 
 func validateProfile(profile ReviewProfile) error {
+	if err := validateProfileHeader(profile); err != nil {
+		return err
+	}
+	rolePlanes, err := validateProfileRoles(profile.Roles)
+	if err != nil {
+		return err
+	}
+	return validateRequiredPlaneRoles(profile.RequiredPlanes, rolePlanes)
+}
+
+func validateProfileHeader(profile ReviewProfile) error {
 	if profile.SchemaVersion != "" && profile.SchemaVersion != SchemaVersionProfile {
 		return fmt.Errorf("invalid_profile_schema_version: %s", profile.SchemaVersion)
 	}
+	return requireProfileFields(profile)
+}
+
+func requireProfileFields(profile ReviewProfile) error {
 	if strings.TrimSpace(profile.ProfileID) == "" {
 		return errors.New("profile_requires_profile_id")
 	}
@@ -701,17 +936,36 @@ func validateProfile(profile ReviewProfile) error {
 	if len(profile.Roles) == 0 {
 		return errors.New("profile_requires_roles")
 	}
+	return nil
+}
+
+func validateProfileRoles(roles []ReviewRole) (map[string]bool, error) {
 	rolePlanes := map[string]bool{}
-	for _, role := range profile.Roles {
-		if role.RoleID == "" || role.Plane == "" || role.Runner == "" {
-			return errors.New("profile_role_requires_id_plane_runner")
-		}
-		if !validRunner(role.Runner) {
-			return fmt.Errorf("profile_role_invalid_runner: %s", role.Runner)
+	for _, role := range roles {
+		if err := validateProfileRole(role); err != nil {
+			return nil, err
 		}
 		rolePlanes[role.Plane] = true
 	}
-	for _, plane := range profile.RequiredPlanes {
+	return rolePlanes, nil
+}
+
+func validateProfileRole(role ReviewRole) error {
+	if profileRoleMissingRequiredField(role) {
+		return errors.New("profile_role_requires_id_plane_runner")
+	}
+	if !validRunner(role.Runner) {
+		return fmt.Errorf("profile_role_invalid_runner: %s", role.Runner)
+	}
+	return nil
+}
+
+func profileRoleMissingRequiredField(role ReviewRole) bool {
+	return role.RoleID == "" || role.Plane == "" || role.Runner == ""
+}
+
+func validateRequiredPlaneRoles(requiredPlanes []string, rolePlanes map[string]bool) error {
+	for _, plane := range requiredPlanes {
 		if !rolePlanes[plane] {
 			return fmt.Errorf("profile_required_plane_without_role: %s", plane)
 		}
@@ -720,8 +974,64 @@ func validateProfile(profile ReviewProfile) error {
 }
 
 func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (ReviewerResult, error) {
-	started := opts.Now.Format(time.RFC3339)
-	result := ReviewerResult{
+	result := newReviewerResult(packet, role, opts.Now)
+	result.CommandDigest = commandDigest(role.Command)
+	baseline, ready, err := prepareRoleRunner(&result, role, opts)
+	if err != nil || !ready {
+		return result, err
+	}
+	output, timedOut, err := runRoleCommand(role, opts)
+	result.EndedAt = time.Now().UTC().Format(time.RFC3339)
+	result = completeRoleResult(result, role, packet, opts.WorkDir, baseline, output, timedOut, err)
+	return writeRawResult(result, rawDir, output)
+}
+
+func completeRoleResult(result ReviewerResult, role ReviewRole, packet Packet, workDir string, baseline *workingTreeBaseline, output []byte, timedOut bool, runErr error) ReviewerResult {
+	if completed, ok := completeUnparsedRoleResult(result, output, timedOut, runErr); ok {
+		return completed
+	}
+	parsed, err := parseReviewerOutput(result, role, packet, output)
+	return completeParsedRoleResult(markRoleParseFailure(parsed, err), role, workDir, baseline)
+}
+
+func completeUnparsedRoleResult(result ReviewerResult, output []byte, timedOut bool, runErr error) (ReviewerResult, bool) {
+	switch {
+	case timedOut:
+		result.Status = StatusTimedOut
+		result.Reason = "runner_timed_out"
+		return result, true
+	case applyRunnerError(&result, runErr) != nil:
+		return result, true
+	case emptyReviewerOutput(output):
+		result.Status = StatusEmptyOutput
+		result.Reason = "runner_empty_output"
+		return result, true
+	default:
+		return result, false
+	}
+}
+
+func markRoleParseFailure(result ReviewerResult, err error) ReviewerResult {
+	if err == nil {
+		return result
+	}
+	result.Status = StatusParseFailed
+	result.Reason = "runner_output_parse_failed"
+	return result
+}
+
+func completeParsedRoleResult(parsed ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) ReviewerResult {
+	applyOpenCodeMutationCheck(&parsed, role, workDir, baseline)
+	return parsed
+}
+
+func emptyReviewerOutput(output []byte) bool {
+	return len(strings.TrimSpace(string(output))) == 0
+}
+
+func newReviewerResult(packet Packet, role ReviewRole, now time.Time) ReviewerResult {
+	started := now.Format(time.RFC3339)
+	return ReviewerResult{
 		ReviewRunID:    safeID("run-" + role.RoleID),
 		PacketDigest:   packet.PacketDigest,
 		Plane:          role.Plane,
@@ -735,41 +1045,92 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 		StartedAt:      started,
 		EndedAt:        started,
 	}
-	result.CommandDigest = commandDigest(role.Command)
+}
+
+func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions) (*workingTreeBaseline, bool, error) {
+	if role.Runner != RunnerManualExternal && !opts.AllowedRunners[role.Runner] {
+		return nil, false, fmt.Errorf("runner_not_allowed: %s", role.Runner)
+	}
+	if role.Runner == RunnerOpenCode {
+		return prepareOpenCodeBaseline(result, role, opts.WorkDir)
+	}
+	return prepareCommandRunner(result, role)
+}
+
+func prepareCommandRunner(result *ReviewerResult, role ReviewRole) (*workingTreeBaseline, bool, error) {
+	if err := attachPromptRef(result, role); err != nil {
+		return nil, false, nil
+	}
+	return nil, commandConfigured(result, role), nil
+}
+
+func attachPromptRef(result *ReviewerResult, role ReviewRole) error {
 	promptRef, err := promptSafeRef(role)
 	if err != nil {
 		result.Status = StatusCannotVerify
 		result.Reason = "prompt_ref_cannot_verify"
-		return result, nil
+		return err
 	}
 	result.PromptRef = promptRef
-	if role.Runner != RunnerManualExternal && !opts.AllowedRunners[role.Runner] {
-		return result, fmt.Errorf("runner_not_allowed: %s", role.Runner)
-	}
-	if role.Runner == RunnerOpenCode && !role.ReadOnlyEnforced {
-		result.Reason = "opencode_read_only_not_enforced"
-		return result, nil
-	}
-	var baseline *workingTreeBaseline
-	if role.Runner == RunnerOpenCode {
-		mode := defaultString(role.WorkingTreeMode, "clean_required")
-		var err error
-		baseline, err = captureWorkingTreeBaseline(opts.WorkDir)
-		if err != nil {
-			result.Status = StatusCannotVerify
-			result.Reason = "working_tree_baseline_cannot_verify"
-			return result, nil
-		}
-		if mode == "clean_required" && baseline.Count > 0 {
-			result.Status = StatusNotAssessed
-			result.Reason = "working_tree_dirty"
-			return result, nil
-		}
-	}
+	return nil
+}
+
+func commandConfigured(result *ReviewerResult, role ReviewRole) bool {
 	if len(role.Command) == 0 {
 		result.Reason = "runner_command_not_configured"
-		return result, nil
+		return false
 	}
+	return true
+}
+
+func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir string) (*workingTreeBaseline, bool, error) {
+	if !openCodeReadOnlyReady(result, role) {
+		return nil, false, nil
+	}
+	baseline, err := captureWorkingTreeBaseline(workDir)
+	if err != nil {
+		result.Status = StatusCannotVerify
+		result.Reason = "working_tree_baseline_cannot_verify"
+		return nil, false, nil
+	}
+	return openCodeBaselineReady(result, role, baseline)
+}
+
+func openCodeBaselineReady(result *ReviewerResult, role ReviewRole, baseline *workingTreeBaseline) (*workingTreeBaseline, bool, error) {
+	if !openCodeBaselineClean(result, role, baseline) {
+		return nil, false, nil
+	}
+	return baseline, commandConfigured(result, role), nil
+}
+
+func openCodeReadOnlyReady(result *ReviewerResult, role ReviewRole) bool {
+	if !role.ReadOnlyEnforced {
+		markOpenCodeReadOnlyMissing(result)
+		return false
+	}
+	if err := attachPromptRef(result, role); err != nil {
+		return false
+	}
+	return true
+}
+
+func openCodeBaselineClean(result *ReviewerResult, role ReviewRole, baseline *workingTreeBaseline) bool {
+	mode := defaultString(role.WorkingTreeMode, "clean_required")
+	if mode != "clean_required" || baseline.Count == 0 {
+		return true
+	}
+	result.Status = StatusNotAssessed
+	result.Reason = "working_tree_dirty"
+	return false
+}
+
+func markOpenCodeReadOnlyMissing(result *ReviewerResult) {
+	// Keep the default not_assessed status: this is a safety preflight
+	// refusal, not a runner execution failure.
+	result.Reason = "opencode_read_only_not_enforced"
+}
+
+func runRoleCommand(role ReviewRole, opts RunOptions) ([]byte, bool, error) {
 	timeout := time.Duration(role.TimeoutSeconds) * time.Second
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -779,44 +1140,49 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 	cmd := exec.CommandContext(ctx, role.Command[0], role.Command[1:]...)
 	cmd.Dir = opts.WorkDir
 	output, err := cmd.Output()
-	ended := time.Now().UTC().Format(time.RFC3339)
-	result.EndedAt = ended
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		result.Status = StatusTimedOut
-		result.Reason = "runner_timed_out"
-		return writeRawResult(result, rawDir, output)
+	return output, errors.Is(ctx.Err(), context.DeadlineExceeded), err
+}
+
+func applyRunnerError(result *ReviewerResult, err error) error {
+	if err == nil {
+		return nil
 	}
+	if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
+		result.Status = StatusNotAssessed
+		result.Reason = "runner_unavailable"
+	} else {
+		result.Status = StatusFailed
+		result.Reason = "runner_failed"
+	}
+	return err
+}
+
+func applyOpenCodeMutationCheck(result *ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) {
+	if !needsOpenCodeMutationCheck(role, baseline) {
+		return
+	}
+	after, err := captureWorkingTreeBaseline(workDir)
 	if err != nil {
-		if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
-			result.Status = StatusNotAssessed
-			result.Reason = "runner_unavailable"
-		} else {
-			result.Status = StatusFailed
-			result.Reason = "runner_failed"
-		}
-		return writeRawResult(result, rawDir, output)
+		markBaselineCannotVerify(result)
+		return
 	}
-	if len(strings.TrimSpace(string(output))) == 0 {
-		result.Status = StatusEmptyOutput
-		result.Reason = "runner_empty_output"
-		return writeRawResult(result, rawDir, output)
+	if baselineChanged(after, baseline) {
+		result.Status = StatusCannotVerify
+		result.Reason = "mutation_detected"
 	}
-	result, err = parseReviewerOutput(result, role, packet, output)
-	if err != nil {
-		result.Status = StatusParseFailed
-		result.Reason = "runner_output_parse_failed"
-	}
-	if role.Runner == RunnerOpenCode && baseline != nil {
-		after, err := captureWorkingTreeBaseline(opts.WorkDir)
-		if err != nil {
-			result.Status = StatusCannotVerify
-			result.Reason = "working_tree_baseline_cannot_verify"
-		} else if after.Digest != baseline.Digest || after.Count != baseline.Count {
-			result.Status = StatusCannotVerify
-			result.Reason = "mutation_detected"
-		}
-	}
-	return writeRawResult(result, rawDir, output)
+}
+
+func needsOpenCodeMutationCheck(role ReviewRole, baseline *workingTreeBaseline) bool {
+	return role.Runner == RunnerOpenCode && baseline != nil
+}
+
+func markBaselineCannotVerify(result *ReviewerResult) {
+	result.Status = StatusCannotVerify
+	result.Reason = "working_tree_baseline_cannot_verify"
+}
+
+func baselineChanged(after, before *workingTreeBaseline) bool {
+	return after.Digest != before.Digest || after.Count != before.Count
 }
 
 type workingTreeBaseline struct {
@@ -842,18 +1208,30 @@ func captureWorkingTreeBaseline(workDir string) (*workingTreeBaseline, error) {
 
 func parseReviewerOutput(base ReviewerResult, role ReviewRole, packet Packet, output []byte) (ReviewerResult, error) {
 	var parsed ReviewerResult
-	// RequiredOutputSchema identifies the declared schema contract; this parser
-	// enforces the concrete Go contract with unknown-field rejection.
-	decoder := json.NewDecoder(strings.NewReader(string(output)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&parsed); err != nil {
+	if err := decodeReviewerOutput(output, &parsed); err != nil {
 		return base, err
 	}
-	if parsed.PacketDigest != packet.PacketDigest || parsed.Plane != role.Plane || parsed.RoleID != role.RoleID {
+	if reviewerOutputMismatched(parsed, role, packet) {
 		base.Status = StatusOffTask
 		base.Reason = "reviewer_output_wrong_packet_plane_or_role"
 		return base, nil
 	}
+	return normalizeParsedReviewerOutput(parsed, base, role), nil
+}
+
+func reviewerOutputMismatched(parsed ReviewerResult, role ReviewRole, packet Packet) bool {
+	return parsed.PacketDigest != packet.PacketDigest || parsed.Plane != role.Plane || parsed.RoleID != role.RoleID
+}
+
+func decodeReviewerOutput(output []byte, parsed *ReviewerResult) error {
+	// RequiredOutputSchema identifies the declared schema contract; this parser
+	// enforces the concrete Go contract with unknown-field rejection.
+	decoder := json.NewDecoder(strings.NewReader(string(output)))
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(parsed)
+}
+
+func normalizeParsedReviewerOutput(parsed, base ReviewerResult, role ReviewRole) ReviewerResult {
 	parsed.ReviewRunID = defaultString(parsed.ReviewRunID, base.ReviewRunID)
 	parsed.Runner = defaultString(parsed.Runner, role.Runner)
 	parsed.RequestedModel = defaultString(parsed.RequestedModel, defaultString(role.RequestedModel, StateNotAssessed))
@@ -865,13 +1243,16 @@ func parseReviewerOutput(base ReviewerResult, role ReviewRole, packet Packet, ou
 	parsed.CommandDigest = base.CommandDigest
 	parsed.PromptRef = base.PromptRef
 	if parsed.Status == "" {
-		if len(parsed.Findings) > 0 {
-			parsed.Status = StatusFindingsReported
-		} else {
-			parsed.Status = StatusNoFindings
-		}
+		parsed.Status = defaultReviewerStatus(parsed.Findings)
 	}
-	return parsed, nil
+	return parsed
+}
+
+func defaultReviewerStatus(findings []Finding) string {
+	if len(findings) > 0 {
+		return StatusFindingsReported
+	}
+	return StatusNoFindings
 }
 
 func writeRawResult(result ReviewerResult, rawDir string, output []byte) (ReviewerResult, error) {
@@ -982,13 +1363,21 @@ func ensureNewDir(path string) error {
 		return errors.New("missing_output_path")
 	}
 	entries, err := os.ReadDir(path)
-	if err == nil && len(entries) > 0 {
+	if dirHasEntries(entries, err) {
 		return fmt.Errorf("output_exists: %s", filepath.Base(path))
 	}
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if readDirFailed(err) {
 		return err
 	}
 	return os.MkdirAll(path, 0o755)
+}
+
+func dirHasEntries(entries []os.DirEntry, err error) bool {
+	return err == nil && len(entries) > 0
+}
+
+func readDirFailed(err error) bool {
+	return err != nil && !errors.Is(err, os.ErrNotExist)
 }
 
 func validCIState(state string) bool {
@@ -1011,30 +1400,30 @@ func validRunner(runner string) bool {
 
 func planeResult(result ReviewerResult) PlaneResult {
 	pr := PlaneResult{Plane: result.Plane, Status: result.Status, RunID: result.ReviewRunID}
-	switch result.Status {
-	case StatusFindingsReported, StatusNoFindings:
+	if reviewerStatusUsable(result.Status) {
 		pr.Usable = true
-	case StatusNotAssessed:
-		pr.Reason = "reviewer_not_assessed"
-		pr.NextAction = "Run a configured reviewer or import a usable result for this plane."
-	case StatusTimedOut:
-		pr.Status = StatusTimedOut
-		pr.Reason = "reviewer_timed_out"
-		pr.NextAction = "Increase timeout or replace the reviewer for this plane."
-	case StatusEmptyOutput:
-		pr.Reason = "reviewer_empty_output"
-		pr.NextAction = "Retry with a shorter bounded prompt or replace the reviewer."
-	case StatusOffTask:
-		pr.Reason = "reviewer_off_task"
-		pr.NextAction = "Rerun with the frozen packet and required output schema."
-	case StatusParseFailed:
-		pr.Reason = "reviewer_parse_failed"
-		pr.NextAction = "Rerun with JSON-only output matching the required schema."
-	default:
-		pr.Reason = "reviewer_cannot_verify"
-		pr.NextAction = "Replace or rerun the reviewer."
+		return pr
 	}
+	pr.Reason, pr.NextAction = reviewerStatusAction(result.Status)
 	return pr
+}
+
+func reviewerStatusUsable(status string) bool {
+	return status == StatusFindingsReported || status == StatusNoFindings
+}
+
+func reviewerStatusAction(status string) (string, string) {
+	actions := map[string][2]string{
+		StatusNotAssessed: {"reviewer_not_assessed", "Run a configured reviewer or import a usable result for this plane."},
+		StatusTimedOut:    {"reviewer_timed_out", "Increase timeout or replace the reviewer for this plane."},
+		StatusEmptyOutput: {"reviewer_empty_output", "Retry with a shorter bounded prompt or replace the reviewer."},
+		StatusOffTask:     {"reviewer_off_task", "Rerun with the frozen packet and required output schema."},
+		StatusParseFailed: {"reviewer_parse_failed", "Rerun with JSON-only output matching the required schema."},
+	}
+	if action, ok := actions[status]; ok {
+		return action[0], action[1]
+	}
+	return "reviewer_cannot_verify", "Replace or rerun the reviewer."
 }
 
 func defaultDisposition(severity string) string {
@@ -1056,39 +1445,94 @@ func safeSeverity(severity string) string {
 }
 
 func citationResolvable(packet Packet, citation Citation) bool {
-	if citation.ContextRefID == "" && citation.SourceDigest == "" {
+	if !citationHasAnchor(citation) {
 		return false
 	}
-	if citation.ContextRefID == packet.DiffRef.ID || citation.ContextRefID == "diff" {
-		return citation.DiffHunkID != "" || citation.SourceDigest != ""
-	}
-	for _, ref := range packet.ContextRefs {
-		if citation.ContextRefID == ref.ID {
-			return citation.DiffHunkID != "" || citation.SourceDigest != "" || citation.LineStart > 0
-		}
-	}
-	for _, ref := range packet.VerificationRefs {
-		if citation.ContextRefID == ref.ID {
-			return citation.SourceDigest != "" || citation.LineStart > 0
-		}
+	if resolvable, ok := citationRefResolvable(packet, citation); ok {
+		return resolvable
 	}
 	return citation.SourceDigest != ""
+}
+
+func citationHasAnchor(citation Citation) bool {
+	return citation.ContextRefID != "" || citation.SourceDigest != ""
+}
+
+func citationRefResolvable(packet Packet, citation Citation) (bool, bool) {
+	for _, resolver := range citationResolvers {
+		if resolver.matches(packet, citation) {
+			return resolver.resolvable(citation), true
+		}
+	}
+	return false, false
+}
+
+type citationResolver struct {
+	matches    func(Packet, Citation) bool
+	resolvable func(Citation) bool
+}
+
+var citationResolvers = []citationResolver{
+	{matches: citationMatchesDiff, resolvable: citationHasDiffLocation},
+	{matches: citationMatchesContext, resolvable: citationHasContextLocation},
+	{matches: citationMatchesVerification, resolvable: citationHasVerificationLocation},
+}
+
+func citationMatchesDiff(packet Packet, citation Citation) bool {
+	return citation.ContextRefID == packet.DiffRef.ID || citation.ContextRefID == "diff"
+}
+
+func citationMatchesContext(packet Packet, citation Citation) bool {
+	return safeRefIDExists(packet.ContextRefs, citation.ContextRefID)
+}
+
+func citationMatchesVerification(packet Packet, citation Citation) bool {
+	return safeRefIDExists(packet.VerificationRefs, citation.ContextRefID)
+}
+
+func safeRefIDExists(refs []SafeRef, id string) bool {
+	for _, ref := range refs {
+		if id == ref.ID {
+			return true
+		}
+	}
+	return false
+}
+
+func citationHasDiffLocation(citation Citation) bool {
+	return citation.DiffHunkID != "" || citation.SourceDigest != ""
+}
+
+func citationHasContextLocation(citation Citation) bool {
+	return citation.DiffHunkID != "" || citation.SourceDigest != "" || citation.LineStart > 0
+}
+
+func citationHasVerificationLocation(citation Citation) bool {
+	return citation.SourceDigest != "" || citation.LineStart > 0
 }
 
 func safeText(text string) string {
 	if text == "" {
 		return ""
 	}
-	unsafeMarkers := []string{"SYNTHETIC_", "Bearer ", "access_token=", "BEGIN PRIVATE KEY", "PRIVATE_KEY", "cookie=", "session=", "/Users/", "/private/"}
-	for _, marker := range unsafeMarkers {
-		if strings.Contains(text, marker) {
-			return "[redacted unsafe reviewer text]"
-		}
-	}
-	if (strings.Contains(text, "://") && strings.Contains(text, "@")) || strings.Contains(text, "token=") {
+	if containsUnsafeTextMarker(text) || containsUnsafeTextPattern(text) {
 		return "[redacted unsafe reviewer text]"
 	}
 	return text
+}
+
+func containsUnsafeTextMarker(text string) bool {
+	unsafeMarkers := []string{"SYNTHETIC_", "Bearer ", "access_token=", "BEGIN PRIVATE KEY", "PRIVATE_KEY", "cookie=", "session=", "/Users/", "/private/"}
+	for _, marker := range unsafeMarkers {
+		if strings.Contains(text, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsUnsafeTextPattern(text string) bool {
+	return (strings.Contains(text, "://") && strings.Contains(text, "@")) || strings.Contains(text, "token=")
 }
 
 func uniqueStrings(values []string) []string {
@@ -1152,19 +1596,20 @@ func normalizedExt(path string) string {
 
 func safeID(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
-	var b strings.Builder
-	for _, r := range value {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' {
-			b.WriteRune(r)
-		} else {
-			b.WriteByte('-')
-		}
-	}
-	out := strings.Trim(b.String(), "-.")
+	out := strings.Trim(strings.Map(safeIDMapper, value), "-.")
 	if out == "" {
 		return "item"
 	}
 	return out
+}
+
+const safeIDAllowedChars = "abcdefghijklmnopqrstuvwxyz0123456789_.-"
+
+func safeIDMapper(r rune) rune {
+	if r <= 127 && strings.IndexByte(safeIDAllowedChars, byte(r)) >= 0 {
+		return r
+	}
+	return '-'
 }
 
 func defaultString(value, fallback string) string {

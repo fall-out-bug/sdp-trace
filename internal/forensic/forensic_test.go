@@ -47,6 +47,132 @@ func TestEvaluateCannotVerifyUnverifiableRawReferenceAccess(t *testing.T) {
 	}
 }
 
+func TestEvaluateRawReferenceReasonCodes(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RawReference)
+		state  string
+		reason string
+	}{
+		{
+			name: "invalid reference type",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeDigestOnly
+			},
+			state:  StateFail,
+			reason: "raw_reference_type_invalid",
+		},
+		{
+			name: "missing reference uri",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceURI = ""
+			},
+			state:  StateCannotVerify,
+			reason: "missing_reference",
+		},
+		{
+			name: "encrypted key custody unknown",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeEncryptedRawRef
+				ref.KeyCustodyState = KeyCustodyUnknown
+			},
+			state:  StateCannotVerify,
+			reason: "key_custody_unverifiable",
+		},
+		{
+			name: "retention lifecycle expired",
+			mutate: func(ref *RawReference) {
+				ref.RetentionLifecycle.State = RetentionLifecycleExpired
+			},
+			state:  StateCannotVerify,
+			reason: "retention_lifecycle_unverifiable",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := validInput()
+			tt.mutate(input.Run.Events[1].RawReference)
+			result := Evaluate(input)
+			condition := conditionByID(result.ForensicConditions, "raw_reference_bound")
+			if condition.State != tt.state || condition.ReasonCode != tt.reason {
+				t.Fatalf("condition = %+v", condition)
+			}
+		})
+	}
+}
+
+func TestValidateRawReferenceRules(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*RawReference)
+		wantOk bool
+		want   string
+	}{
+		{
+			name:   "weak digest",
+			mutate: func(ref *RawReference) { ref.Digest.Algorithm = "md5" },
+			wantOk: false,
+			want:   "weak_digest",
+		},
+		{
+			name:   "invalid reference type",
+			mutate: func(ref *RawReference) { ref.ReferenceType = RetentionModeDigestOnly },
+			wantOk: false,
+			want:   "raw_reference_type_invalid",
+		},
+		{
+			name: "access unverified before timestamp",
+			mutate: func(ref *RawReference) {
+				ref.AccessState = AccessStateRestricted
+				ref.AccessStateLastVerified = ""
+			},
+			wantOk: false,
+			want:   "access_unverifiable",
+		},
+		{
+			name: "key custody unverifiable",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeEncryptedRawRef
+				ref.KeyCustodyState = KeyCustodyUnknown
+				ref.AccessState = AccessStateVerifiedAvailable
+			},
+			wantOk: false,
+			want:   "key_custody_unverifiable",
+		},
+		{
+			name: "lifecycle not active",
+			mutate: func(ref *RawReference) {
+				ref.ReferenceType = RetentionModeEncryptedRawRef
+				ref.KeyCustodyState = KeyCustodyEscrowed
+				ref.AccessState = AccessStateVerifiedAvailable
+				ref.RetentionLifecycle.State = RetentionLifecycleExpired
+			},
+			wantOk: false,
+			want:   "retention_lifecycle_unverifiable",
+		},
+		{
+			name:   "valid reference passes",
+			mutate: func(*RawReference) {},
+			wantOk: true,
+			want:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ref := *validInput().Run.Events[1].RawReference
+			tt.mutate(&ref)
+			condition, ok := validateRawReference(&ref)
+			if ok != tt.wantOk {
+				t.Fatalf("ok=%v, want %v", ok, tt.wantOk)
+			}
+			if !ok && condition.ReasonCode != tt.want {
+				t.Fatalf("reason=%s, want=%s", condition.ReasonCode, tt.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateFailsWeakDigestAndCannotVerifySelfClaimedAuthority(t *testing.T) {
 	input := validInput()
 	input.Run.Events[1].RawReference.Digest.Algorithm = "sha1"
@@ -61,6 +187,144 @@ func TestEvaluateFailsWeakDigestAndCannotVerifySelfClaimedAuthority(t *testing.T
 	policyCondition := conditionByID(result.ForensicConditions, "redaction_policy_bound")
 	if policyCondition.State != StateCannotVerify || policyCondition.ReasonCode != "authority_self_claimed" {
 		t.Fatalf("policy condition = %+v", conditionByID(result.ForensicConditions, "redaction_policy_bound"))
+	}
+}
+
+func TestPolicyConditionPreservesPrecedence(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate     func(*Input)
+		wantState  string
+		wantReason string
+	}{
+		"missing-policy-preempts-other-errors": {
+			mutate: func(input *Input) {
+				input.Policy.PolicyID = ""
+				input.Run.RedactionPolicyDigest = "different"
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "missing_redaction_policy",
+		},
+		"incomplete-policy-preempts-self-claimed-authority": {
+			mutate: func(input *Input) {
+				input.Policy.RedactionActions = nil
+				input.Policy.Authority.VerificationState = AuthoritySelfClaimed
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_policy_contract_incomplete",
+		},
+		"policy-authority-preempts-run-mismatch": {
+			mutate: func(input *Input) {
+				input.Policy.Authority.VerificationState = AuthoritySelfClaimed
+				input.Run.RedactionPolicyDigest = "different"
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "authority_self_claimed",
+		},
+		"run-mismatch-preempts-event-mismatch": {
+			mutate: func(input *Input) {
+				input.Run.RedactionPolicyDigest = "different"
+				input.Run.Events[0].RedactionPolicyDigest = "also-different"
+			},
+			wantState:  StateFail,
+			wantReason: "redaction_policy_mismatch",
+		},
+		"event-self-claimed-authority": {
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionAuthority.VerificationState = AuthoritySelfClaimed
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "authority_self_claimed",
+		},
+		"valid-policy-binding-passes": {
+			mutate:     func(*Input) {},
+			wantState:  StatePass,
+			wantReason: "redaction_policy_bound",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			input := validInput()
+			tc.mutate(&input)
+			condition := policyCondition(input)
+			if condition.State != tc.wantState || condition.ReasonCode != tc.wantReason {
+				t.Fatalf("condition = %+v, want state=%s reason=%s", condition, tc.wantState, tc.wantReason)
+			}
+		})
+	}
+}
+
+func TestPrewriteConditionReasonPrecedence(t *testing.T) {
+	tests := []struct {
+		name       string
+		mutate     func(*Input)
+		wantState  string
+		wantReason string
+	}{
+		{
+			name: "missing-selected-policy",
+			mutate: func(input *Input) {
+				input.Policy.PolicyID = ""
+				input.Policy.PolicyDigest = ""
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_policy_missing",
+		},
+		{
+			name: "secret-like-persisted",
+			mutate: func(input *Input) {
+				input.Run.Events[0].SecretLikeValuePresent = true
+			},
+			wantState:  StateFail,
+			wantReason: "secret_like_value_persisted",
+		},
+		{
+			name: "missing-redaction-digests",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionInputDigest = ""
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_digest_missing",
+		},
+		{
+			name: "missing-rule-refs-for-apply-rule",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionRuleRefs = nil
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_rule_refs_missing",
+		},
+		{
+			name: "unknown-rule-ref",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionRuleRefs = []string{"missing-rule"}
+			},
+			wantState:  StateFail,
+			wantReason: "redaction_rule_unknown",
+		},
+		{
+			name: "rule-action-mismatch",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionAction = RedactionActionWithhold
+			},
+			wantState:  StateFail,
+			wantReason: "redaction_rule_action_mismatch",
+		},
+		{
+			name:       "pass",
+			mutate:     func(*Input) {},
+			wantState:  StatePass,
+			wantReason: "redaction_prewrite_applied",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			input := validInput()
+			tc.mutate(&input)
+			condition := prewriteCondition(input)
+			if condition.State != tc.wantState || condition.ReasonCode != tc.wantReason {
+				t.Fatalf("condition = %+v, want state=%s reason=%s", condition, tc.wantState, tc.wantReason)
+			}
+		})
 	}
 }
 
@@ -348,4 +612,19 @@ func conditionByID(conditions []Condition, id string) Condition {
 		}
 	}
 	return Condition{}
+}
+
+func TestCriticalEventsAppliesCompleteDowngrade(t *testing.T) {
+	input := validInput()
+	input.Policy.NonCriticalEventFamilyReasons = []CriticalityDowngrade{
+		{EventType: "command_finished", Reason: "covered elsewhere", AuthorityID: "human:security-owner"},
+		{EventType: "run_closed", Reason: "missing authority"},
+	}
+	critical := criticalEvents(input)
+	if critical["command_finished"] {
+		t.Fatalf("complete downgrade did not remove command_finished")
+	}
+	if !critical["run_closed"] {
+		t.Fatalf("incomplete downgrade removed run_closed")
+	}
 }

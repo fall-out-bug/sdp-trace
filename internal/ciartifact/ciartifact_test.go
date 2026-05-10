@@ -175,6 +175,58 @@ func TestEvaluateManifestMutationRegressions(t *testing.T) {
 	}
 }
 
+func TestEvaluateFamilyPreservesPrecedence(t *testing.T) {
+	for name, tc := range map[string]struct {
+		req        FamilyRequirement
+		input      FamilyInput
+		required   bool
+		wantState  string
+		wantReason string
+	}{
+		"not-required-extra-family-remains-not-assessed": {
+			input:      FamilyInput{Family: "extra", ProducerScope: ProducerCIUploaded, ArtifactAccessState: AccessPresent, BindingState: BindingMatched},
+			required:   false,
+			wantState:  StateNotAssessed,
+			wantReason: "family_not_selected",
+		},
+		"unsafe-access-preempts-producer-and-binding": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCheckedIn, ArtifactAccessState: AccessUnsafe, BindingState: BindingMismatch},
+			required:   true,
+			wantState:  StateFail,
+			wantReason: "unsafe_artifact_output",
+		},
+		"producer-authority-preempts-binding": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCheckedIn, ArtifactAccessState: AccessPresent, BindingState: BindingMismatch},
+			required:   true,
+			wantState:  StateCannotVerify,
+			wantReason: "checked_in_claim_contradicts_ci_artifacts",
+		},
+		"binding-mismatch-fails-after-access-and-producer-pass": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCIUploaded, ArtifactAccessState: AccessPresent, BindingState: BindingMismatch},
+			required:   true,
+			wantState:  StateFail,
+			wantReason: "source_run_binding_mismatch",
+		},
+		"observed-family-passes": {
+			req:        FamilyRequirement{Family: "provenance", RequiredProducerScope: ProducerCIUploaded},
+			input:      FamilyInput{Family: "provenance", ProducerScope: ProducerCIUploaded, ArtifactAccessState: AccessPresent, BindingState: BindingMatched},
+			required:   true,
+			wantState:  StatePass,
+			wantReason: "family_observed",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := evaluateFamily(tc.req, tc.input, tc.required)
+			if result.FamilyState != tc.wantState || result.ReasonCode != tc.wantReason {
+				t.Fatalf("family result = %+v, want state=%s reason=%s", result, tc.wantState, tc.wantReason)
+			}
+		})
+	}
+}
+
 func TestEvaluateDefaultsIndexAndSafetyToNotAssessed(t *testing.T) {
 	manifest := validManifest()
 	manifest.ArtifactIndex = ArtifactIndexInput{}
@@ -214,6 +266,132 @@ func TestEvaluateSafeTokenLengthMatchesSchema(t *testing.T) {
 	}
 	if result.SafetyRuleset.ID != SafetyRulesetDefault {
 		t.Fatalf("empty safety ruleset id = %q", result.SafetyRuleset.ID)
+	}
+}
+
+func TestSafeIdentityToken(t *testing.T) {
+	cases := []struct {
+		name     string
+		value    string
+		extra    string
+		expected bool
+	}{
+		{
+			name:     "empty token passes",
+			value:    "",
+			extra:    "._:-",
+			expected: true,
+		},
+		{
+			name:     "max-length ascii token passes",
+			value:    strings.Repeat("a", 256),
+			extra:    "._:-",
+			expected: true,
+		},
+		{
+			name:     "over-length token fails",
+			value:    strings.Repeat("a", 257),
+			extra:    "._:-",
+			expected: false,
+		},
+		{
+			name:     "unsafe marker rejects token",
+			value:    "Bearer raw-secret-value",
+			extra:    "._:-",
+			expected: false,
+		},
+		{
+			name:     "slash disallowed without extra",
+			value:    "a/b",
+			extra:    "._:-",
+			expected: false,
+		},
+		{
+			name:     "slash allowed with extra",
+			value:    "org/repo",
+			extra:    "/",
+			expected: true,
+		},
+		{
+			name:     "path-prefix is unsafe",
+			value:    "/etc",
+			extra:    "/._-",
+			expected: false,
+		},
+		{
+			name:     "unicode is rejected",
+			value:    "repo-α",
+			extra:    "._:-",
+			expected: false,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := safeIdentityToken(tc.value, tc.extra); got != tc.expected {
+				t.Fatalf("safeIdentityToken(%q, %q) = %v, want %v", tc.value, tc.extra, got, tc.expected)
+			}
+		})
+	}
+}
+
+func TestSanitizeRun(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    RunIdentity
+		want     RunIdentity
+		wantSafe bool
+	}{
+		{
+			name:     "all fields are safe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: true,
+		},
+		{
+			name:     "unsafe provider is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "Bearer raw-secret-value", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe run id is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1?token=raw-secret-value", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunAttempt: "1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe run attempt is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "attempt/1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe workflow id is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "/unsafe-workflow", JobID: "job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", JobID: "job-1"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe job is dropped and marks unsafe",
+			input:    RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify", JobID: "/job-1"},
+			want:     RunIdentity{Provider: "generic-ci", RunID: "run-1", RunAttempt: "1", WorkflowID: "verify"},
+			wantSafe: false,
+		},
+		{
+			name:     "unsafe and safe mixed preserve safe fields",
+			input:    RunIdentity{Provider: "Bearer raw-secret-value", RunID: "run-1", RunAttempt: "attempt/1", WorkflowID: "verify", JobID: "job-1"},
+			want:     RunIdentity{RunID: "run-1", WorkflowID: "verify", JobID: "job-1"},
+			wantSafe: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, gotSafe := sanitizeRun(tc.input)
+			if gotSafe != tc.wantSafe || got != tc.want {
+				t.Fatalf("sanitizeRun(%+v) = (%+v, %v), want (%+v, %v)", tc.input, got, gotSafe, tc.want, tc.wantSafe)
+			}
+		})
 	}
 }
 

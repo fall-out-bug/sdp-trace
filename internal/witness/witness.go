@@ -153,50 +153,15 @@ func BuildGitHubActionsWithFetcher(runsRoot, reportDir string, env map[string]st
 		Actor:      env["GITHUB_ACTOR"],
 	}
 
-	runArtifacts, err := hashRunArtifacts(runsRoot)
-	if err != nil {
+	if err := hydrateGitHubArtifacts(&record, runsRoot, reportDir); err != nil {
 		return Record{}, err
 	}
-	record.RunArtifacts = runArtifacts
-	if reportDir != "" {
-		reportArtifacts, err := hashReportArtifacts(reportDir)
-		if err != nil {
-			return Record{}, err
-		}
-		record.ReportArtifacts = reportArtifacts
-	}
-
-	missing := missingGitHubIdentity(env)
-	if len(missing) > 0 {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingCIIdentity)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceSameJob)
-		record.MissingIdentityFields = missing
+	if record, blocked := handleGitHubIdentityChecks(record, env); blocked {
 		return record, nil
 	}
-	oidcMissing := missingGitHubOIDC(env)
-	if len(oidcMissing) > 0 {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonMissingCIOIDC)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
-		record.MissingIdentityFields = oidcMissing
+	if record, blocked := handleGitHubOIDCChecks(record, env, fetcher); blocked {
 		return record, nil
 	}
-	token, err := fetcher(env)
-	if err != nil {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonInvalidCIOIDC)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
-		return record, nil
-	}
-	claims, err := parseOIDCClaims(token)
-	if err != nil || !claimsMatchEnvironment(claims, env) {
-		applyProfileState(&record, StatusCannotVerify, stateCannotVerify, ReasonInvalidCIOIDC)
-		record.TrustScope = TrustScopeLocalObserved
-		record.ProfileStates = defaultProfileStates(stateCannotVerify, independenceCIJob)
-		return record, nil
-	}
-	record.OIDC = &claims
 	record.Status = StatusPass
 	record.TrustScope = TrustScopeCIWitnessed
 	record.EstablishedTrustScope = TrustScopeCIWitnessed
@@ -204,6 +169,55 @@ func BuildGitHubActionsWithFetcher(runsRoot, reportDir string, env map[string]st
 	record.ReasonCodes = []string{ReasonCIIdentityPresent}
 	record.ProfileStates = defaultProfileStates(statePass, independenceCIJob)
 	return record, nil
+}
+
+func hydrateGitHubArtifacts(record *Record, runsRoot, reportDir string) error {
+	runArtifacts, err := hashRunArtifacts(runsRoot)
+	if err != nil {
+		return err
+	}
+	record.RunArtifacts = runArtifacts
+	if reportDir != "" {
+		reportArtifacts, err := hashReportArtifacts(reportDir)
+		if err != nil {
+			return err
+		}
+		record.ReportArtifacts = reportArtifacts
+	}
+	return nil
+}
+
+func handleGitHubIdentityChecks(record Record, env map[string]string) (Record, bool) {
+	missing := missingGitHubIdentity(env)
+	if len(missing) > 0 {
+		return applyGitHubFailure(record, ReasonMissingCIIdentity, independenceSameJob, missing), true
+	}
+	oidcMissing := missingGitHubOIDC(env)
+	if len(oidcMissing) > 0 {
+		return applyGitHubFailure(record, ReasonMissingCIOIDC, independenceCIJob, oidcMissing), true
+	}
+	return record, false
+}
+
+func handleGitHubOIDCChecks(record Record, env map[string]string, fetcher TokenFetcher) (Record, bool) {
+	token, err := fetcher(env)
+	if err != nil {
+		return applyGitHubFailure(record, ReasonInvalidCIOIDC, independenceCIJob, nil), true
+	}
+	claims, err := parseOIDCClaims(token)
+	if err != nil || !claimsMatchEnvironment(claims, env) {
+		return applyGitHubFailure(record, ReasonInvalidCIOIDC, independenceCIJob, nil), true
+	}
+	record.OIDC = &claims
+	return record, false
+}
+
+func applyGitHubFailure(record Record, reason, independence string, missing []string) Record {
+	applyProfileState(&record, StatusCannotVerify, stateCannotVerify, reason)
+	record.TrustScope = TrustScopeLocalObserved
+	record.ProfileStates = defaultProfileStates(stateCannotVerify, independence)
+	record.MissingIdentityFields = missing
+	return record
 }
 
 func WriteGitHubActions(outPath, runsRoot, reportDir string, env map[string]string) (Record, error) {
@@ -218,14 +232,15 @@ func WriteGitHubActions(outPath, runsRoot, reportDir string, env map[string]stri
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return Record{}, err
 	}
+	return record, writeRecord(outPath, record)
+}
+
+func writeRecord(outPath string, record Record) error {
 	data, err := json.MarshalIndent(record, "", "  ")
 	if err != nil {
-		return Record{}, err
+		return err
 	}
-	if err := os.WriteFile(outPath, append(data, '\n'), 0o644); err != nil {
-		return Record{}, err
-	}
-	return record, nil
+	return os.WriteFile(outPath, append(data, '\n'), 0o644)
 }
 
 func Load(path string) (Record, error) {
@@ -247,39 +262,53 @@ func IsPassingCI(record Record) bool {
 }
 
 func EnvironmentFromOS() map[string]string {
+	return environmentFromEntries(os.Environ())
+}
+
+func environmentFromEntries(entries []string) map[string]string {
 	env := map[string]string{}
-	for _, entry := range os.Environ() {
-		key, value, ok := strings.Cut(entry, "=")
-		if ok {
-			env[key] = value
-		}
+	for _, entry := range entries {
+		addEnvironmentEntry(env, entry)
 	}
 	return env
 }
 
-func missingGitHubIdentity(env map[string]string) []string {
-	required := []string{
-		"GITHUB_ACTIONS",
-		"GITHUB_SHA",
-		"GITHUB_RUN_ID",
-		"GITHUB_RUN_ATTEMPT",
-		"GITHUB_WORKFLOW",
-		"GITHUB_JOB",
-		"GITHUB_ACTOR",
-		"GITHUB_REPOSITORY",
-		"GITHUB_REF",
-		"GITHUB_SERVER_URL",
+func addEnvironmentEntry(env map[string]string, entry string) {
+	key, value, ok := strings.Cut(entry, "=")
+	if ok {
+		env[key] = value
 	}
+}
+
+func missingGitHubIdentity(env map[string]string) []string {
+	missing := missingEnvKeys(env, githubIdentityEnvKeys)
+	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
+		missing = append(missing, "GITHUB_ACTIONS=true")
+	}
+	sort.Strings(missing)
+	return missing
+}
+
+var githubIdentityEnvKeys = []string{
+	"GITHUB_ACTIONS",
+	"GITHUB_SHA",
+	"GITHUB_RUN_ID",
+	"GITHUB_RUN_ATTEMPT",
+	"GITHUB_WORKFLOW",
+	"GITHUB_JOB",
+	"GITHUB_ACTOR",
+	"GITHUB_REPOSITORY",
+	"GITHUB_REF",
+	"GITHUB_SERVER_URL",
+}
+
+func missingEnvKeys(env map[string]string, required []string) []string {
 	missing := make([]string, 0)
 	for _, key := range required {
 		if strings.TrimSpace(env[key]) == "" {
 			missing = append(missing, key)
 		}
 	}
-	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
-		missing = append(missing, "GITHUB_ACTIONS=true")
-	}
-	sort.Strings(missing)
 	return missing
 }
 
@@ -296,34 +325,67 @@ func missingGitHubOIDC(env map[string]string) []string {
 }
 
 func FetchGitHubOIDCToken(env map[string]string) (string, error) {
-	requestURL, err := url.Parse(env["ACTIONS_ID_TOKEN_REQUEST_URL"])
+	token, err := fetchGitHubOIDCToken(
+		http.DefaultClient,
+		env["ACTIONS_ID_TOKEN_REQUEST_URL"],
+		env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"],
+	)
 	if err != nil {
 		return "", err
 	}
-	if !strings.HasSuffix(requestURL.Host, "actions.githubusercontent.com") {
-		return "", fmt.Errorf("unexpected oidc request host: %s", requestURL.Host)
+	return token, nil
+}
+
+func fetchGitHubOIDCToken(httpClient *http.Client, requestURL, requestToken string) (string, error) {
+	req, err := buildOIDCTokenRequest(requestURL, requestToken)
+	if err != nil {
+		return "", err
 	}
-	query := requestURL.Query()
+	body, err := executeOIDCTokenRequest(httpClient, req)
+	if err != nil {
+		return "", err
+	}
+	return parseOIDCTokenResponse(body)
+}
+
+func buildOIDCTokenRequest(requestURL, requestToken string) (*http.Request, error) {
+	parsed, err := url.Parse(requestURL)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasSuffix(parsed.Host, "actions.githubusercontent.com") {
+		return nil, fmt.Errorf("unexpected oidc request host: %s", parsed.Host)
+	}
+	query := parsed.Query()
 	query.Set("audience", "sdp-trace")
-	requestURL.RawQuery = query.Encode()
-	req, err := http.NewRequest(http.MethodGet, requestURL.String(), nil)
+	parsed.RawQuery = query.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, parsed.String(), nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	req.Header.Set("Authorization", "bearer "+env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"])
+	req.Header.Set("Authorization", "bearer "+requestToken)
 	req.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	return req, nil
+}
+
+func executeOIDCTokenRequest(httpClient *http.Client, req *http.Request) ([]byte, error) {
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("oidc token request returned %s", resp.Status)
+	if !successHTTPStatus(resp.StatusCode) {
+		return nil, fmt.Errorf("oidc token request returned %s", resp.Status)
 	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+	return io.ReadAll(resp.Body)
+}
+
+func successHTTPStatus(statusCode int) bool {
+	return statusCode >= 200 && statusCode < 300
+}
+
+func parseOIDCTokenResponse(body []byte) (string, error) {
 	var payload struct {
 		Value string `json:"value"`
 	}
@@ -371,22 +433,38 @@ func audienceString(value any) string {
 	case string:
 		return typed
 	case []any:
-		parts := make([]string, 0, len(typed))
-		for _, item := range typed {
-			if text, ok := item.(string); ok {
-				parts = append(parts, text)
-			}
-		}
-		return strings.Join(parts, ",")
+		return strings.Join(stringItems(typed), ",")
 	default:
 		return ""
 	}
 }
 
+func stringItems(values []any) []string {
+	parts := make([]string, 0, len(values))
+	for _, item := range values {
+		parts = appendStringItem(parts, item)
+	}
+	return parts
+}
+
+func appendStringItem(parts []string, item any) []string {
+	if text, ok := item.(string); ok {
+		return append(parts, text)
+	}
+	return parts
+}
+
 func claimsMatchEnvironment(claims OIDCClaims, env map[string]string) bool {
-	return claims.Issuer == githubOIDCIssuer &&
-		claims.Audience == "sdp-trace" &&
-		claims.Repository == env["GITHUB_REPOSITORY"] &&
+	return claimsTrustContextMatches(claims) &&
+		claimsGitContextMatches(claims, env)
+}
+
+func claimsTrustContextMatches(claims OIDCClaims) bool {
+	return claims.Issuer == githubOIDCIssuer && claims.Audience == "sdp-trace"
+}
+
+func claimsGitContextMatches(claims OIDCClaims, env map[string]string) bool {
+	return claims.Repository == env["GITHUB_REPOSITORY"] &&
 		claims.Ref == env["GITHUB_REF"] &&
 		claims.SHA == env["GITHUB_SHA"]
 }
@@ -415,28 +493,37 @@ func hashReportArtifacts(reportDir string) ([]ArtifactDigest, error) {
 	if err != nil {
 		return nil, err
 	}
+	return hashReportArtifactEntries(reportDir, entries)
+}
+
+func hashReportArtifactEntries(reportDir string, entries []os.DirEntry) ([]ArtifactDigest, error) {
 	artifacts := make([]ArtifactDigest, 0)
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if skipReportArtifactEntry(entry) {
 			continue
 		}
-		if entry.Name() == "ci-witness.json" {
-			continue
-		}
-		path := filepath.Join(reportDir, entry.Name())
-		digest, err := hashFile(path)
+		artifact, err := hashReportArtifact(reportDir, entry.Name())
 		if err != nil {
 			return nil, err
 		}
-		artifacts = append(artifacts, ArtifactDigest{
-			Path:   filepath.ToSlash(entry.Name()),
-			SHA256: digest,
-		})
+		artifacts = append(artifacts, artifact)
 	}
 	sort.Slice(artifacts, func(i, j int) bool {
 		return artifacts[i].Path < artifacts[j].Path
 	})
 	return artifacts, nil
+}
+
+func skipReportArtifactEntry(entry os.DirEntry) bool {
+	return entry.IsDir() || entry.Name() == "ci-witness.json"
+}
+
+func hashReportArtifact(reportDir, name string) (ArtifactDigest, error) {
+	digest, err := hashFile(filepath.Join(reportDir, name))
+	if err != nil {
+		return ArtifactDigest{}, err
+	}
+	return ArtifactDigest{Path: filepath.ToSlash(name), SHA256: digest}, nil
 }
 
 func hashFile(path string) (string, error) {

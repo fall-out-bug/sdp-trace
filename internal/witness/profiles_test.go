@@ -1,12 +1,14 @@
 package witness
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -247,6 +249,147 @@ func TestCIEnvelopeNonPassReasonCodes(t *testing.T) {
 	}
 }
 
+func TestBuildCIEnvelopeProfileIncludesReportArtifacts(t *testing.T) {
+	root := writeRunRoot(t)
+	reportDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(reportDir, "report.txt"), []byte("ok"), 0o644); err != nil {
+		t.Fatalf("write report artifact: %v", err)
+	}
+
+	artifacts, err := hashRunArtifacts(root)
+	if err != nil {
+		t.Fatalf("hash artifacts: %v", err)
+	}
+	envelope := EnvelopeInput{
+		ProfileID:    "gitlab-ci-v1",
+		ProviderKind: KindGitLabCI,
+		Source:       SourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
+		CI:           CIIdentity{Provider: KindGitLabCI, RunID: "pipeline-42", Job: "verify"},
+		RunArtifacts: artifacts,
+		ProfileStates: ProfileStates{
+			IdentityState:        statePass,
+			SignerAuthorityState: statePass,
+			FreshnessState:       statePass,
+			ArtifactBindingState: statePass,
+			SourceBindingState:   statePass,
+			RunBindingState:      statePass,
+			PolicyBindingState:   statePass,
+			IndependenceState:    independenceCIJob,
+		},
+	}
+	envelopePath := writeJSON(t, t.TempDir(), "gitlab-envelope.json", envelope)
+
+	record, err := BuildCIEnvelopeProfile(KindGitLabCI, root, reportDir, envelopePath)
+	if err != nil {
+		t.Fatalf("BuildCIEnvelopeProfile: %v", err)
+	}
+	if record.Status != StatusPass || record.Reason != ReasonProfileVerified {
+		t.Fatalf("record = %s/%s", record.Status, record.Reason)
+	}
+	if len(record.ReportArtifacts) == 0 {
+		t.Fatalf("report artifacts were not hashed")
+	}
+}
+
+func TestValidateCIEnvelopeStates(t *testing.T) {
+	pass := ProfileStates{
+		IdentityState:        statePass,
+		SignerAuthorityState: statePass,
+		FreshnessState:       statePass,
+		ArtifactBindingState: statePass,
+		SourceBindingState:   statePass,
+		RunBindingState:      statePass,
+		PolicyBindingState:   statePass,
+		IndependenceState:    independenceCIJob,
+	}
+	tests := []struct {
+		name   string
+		mutate func(*ProfileStates)
+		status string
+		scope  string
+		reason string
+	}{
+		{
+			name:   "pass",
+			mutate: func(*ProfileStates) {},
+		},
+		{
+			name:   "missing identity",
+			mutate: func(state *ProfileStates) { state.IdentityState = stateCannotVerify },
+			status: StatusCannotVerify,
+			scope:  stateCannotVerify,
+			reason: ReasonMissingIdentity,
+		},
+		{
+			name:   "missing signer",
+			mutate: func(state *ProfileStates) { state.SignerAuthorityState = stateCannotVerify },
+			status: StatusCannotVerify,
+			scope:  stateCannotVerify,
+			reason: ReasonMissingSigner,
+		},
+		{
+			name:   "stale freshness",
+			mutate: func(state *ProfileStates) { state.FreshnessState = stateFail },
+			status: StatusFail,
+			scope:  stateFail,
+			reason: ReasonStaleFreshness,
+		},
+		{
+			name:   "missing freshness",
+			mutate: func(state *ProfileStates) { state.FreshnessState = stateCannotVerify },
+			status: StatusCannotVerify,
+			scope:  stateCannotVerify,
+			reason: ReasonMissingFreshness,
+		},
+		{
+			name:   "source mismatch",
+			mutate: func(state *ProfileStates) { state.SourceBindingState = stateFail },
+			status: StatusFail,
+			scope:  stateFail,
+			reason: ReasonSourceMismatch,
+		},
+		{
+			name:   "run mismatch",
+			mutate: func(state *ProfileStates) { state.RunBindingState = stateFail },
+			status: StatusFail,
+			scope:  stateFail,
+			reason: ReasonRunMismatch,
+		},
+		{
+			name:   "missing policy",
+			mutate: func(state *ProfileStates) { state.PolicyBindingState = stateCannotVerify },
+			status: StatusCannotVerify,
+			scope:  stateCannotVerify,
+			reason: ReasonPolicyMissing,
+		},
+		{
+			name:   "missing artifact",
+			mutate: func(state *ProfileStates) { state.ArtifactBindingState = stateCannotVerify },
+			status: StatusCannotVerify,
+			scope:  stateCannotVerify,
+			reason: ReasonMissingArtifact,
+		},
+		{
+			name:   "environment-only",
+			mutate: func(state *ProfileStates) { state.IndependenceState = "ci_same_job" },
+			status: StatusCannotVerify,
+			scope:  stateCannotVerify,
+			reason: ReasonEnvOnly,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			state := pass
+			tt.mutate(&state)
+			decision := validateCIEnvelopeStates(state)
+			if decision.status != tt.status || decision.scope != tt.scope || decision.reason != tt.reason {
+				t.Fatalf("decision = %+v", decision)
+			}
+		})
+	}
+}
+
 func TestBuildkiteEnvelopeSignerAndRunBindingFailures(t *testing.T) {
 	root := writeRunRoot(t)
 	artifacts, err := hashRunArtifacts(root)
@@ -304,6 +447,134 @@ func TestBuildkiteEnvelopeSignerAndRunBindingFailures(t *testing.T) {
 			}
 			if record.Status != tt.status || record.Reason != tt.reason {
 				t.Fatalf("record = %s reason=%s", record.Status, record.Reason)
+			}
+		})
+	}
+}
+
+func TestValidateCustomerPKIAuthority(t *testing.T) {
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	policyDigest := "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+	basePolicy := CustomerPKIAuthorityPolicy{
+		SchemaVersion:   "sdp-trace-customer-pki-authority/v1",
+		ProfileID:       "customer-pki-v1",
+		AllowedSignerID: "signer-1",
+		PublicKeySHA256: digestBytes(publicKey),
+		PolicyDigest:    policyDigest,
+		KeyCustodyState: "hsm",
+	}
+	baseFreshness := CustomerPKIFreshnessEvidence{
+		SignerID:     "signer-1",
+		PolicyDigest: policyDigest,
+	}
+
+	tests := []struct {
+		name       string
+		mutate     func(*CustomerPKIAuthorityPolicy)
+		status     string
+		reason     string
+		stateField string
+		stateValue string
+	}{
+		{
+			name: "supports pass",
+		},
+		{
+			name:       "unsupported profile",
+			mutate:     func(policy *CustomerPKIAuthorityPolicy) { policy.ProfileID = "customer-pki-v2" },
+			status:     StatusFail,
+			reason:     ReasonSignerMismatch,
+			stateField: "signer",
+			stateValue: stateFail,
+		},
+		{
+			name:       "empty signer id",
+			mutate:     func(policy *CustomerPKIAuthorityPolicy) { policy.AllowedSignerID = "" },
+			status:     StatusFail,
+			reason:     ReasonSignerMismatch,
+			stateField: "signer",
+			stateValue: stateFail,
+		},
+		{
+			name:       "signer mismatch",
+			mutate:     func(policy *CustomerPKIAuthorityPolicy) { policy.AllowedSignerID = "other" },
+			status:     StatusFail,
+			reason:     ReasonSignerMismatch,
+			stateField: "signer",
+			stateValue: stateFail,
+		},
+		{
+			name:       "public key mismatch",
+			mutate:     func(policy *CustomerPKIAuthorityPolicy) { policy.PublicKeySHA256 = strings.Repeat("a", 64) },
+			status:     StatusFail,
+			reason:     ReasonSignerMismatch,
+			stateField: "signer",
+			stateValue: stateFail,
+		},
+		{
+			name:       "policy mismatch",
+			mutate:     func(policy *CustomerPKIAuthorityPolicy) { policy.PolicyDigest = strings.Repeat("b", 64) },
+			status:     StatusFail,
+			reason:     ReasonPolicyMismatch,
+			stateField: "policy",
+			stateValue: stateFail,
+		},
+		{
+			name: "revocation required but missing state",
+			mutate: func(policy *CustomerPKIAuthorityPolicy) {
+				policy.RevocationRequired = true
+				policy.RevocationState = ""
+			},
+			status:     StatusNotAssessed,
+			reason:     ReasonRevocationNA,
+			stateField: "signer",
+			stateValue: stateNotAssessed,
+		},
+		{
+			name:       "revoked",
+			mutate:     func(policy *CustomerPKIAuthorityPolicy) { policy.RevocationState = "revoked" },
+			status:     StatusFail,
+			reason:     ReasonCertRevoked,
+			stateField: "signer",
+			stateValue: stateFail,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			policy := basePolicy
+			if tt.mutate != nil {
+				tt.mutate(&policy)
+			}
+			record := baseRecord(KindCustomerPKI)
+			states := customerPKIPassStates(policy)
+			ok := validateCustomerPKIAuthority(&record, states, publicKey, policy, baseFreshness)
+			if tt.status == "" {
+				if !ok {
+					t.Fatalf("expected authority validation pass")
+				}
+				if states.SignerAuthorityState != statePass {
+					t.Fatalf("signer authority state = %s", states.SignerAuthorityState)
+				}
+				return
+			}
+			if ok {
+				t.Fatalf("expected authority validation fail")
+			}
+			if record.Status != tt.status {
+				t.Fatalf("status = %s", record.Status)
+			}
+			if record.Reason != tt.reason {
+				t.Fatalf("reason = %s", record.Reason)
+			}
+			if tt.stateField == "signer" && states.SignerAuthorityState != tt.stateValue {
+				t.Fatalf("signer authority state = %s", states.SignerAuthorityState)
+			}
+			if tt.stateField == "policy" && states.PolicyBindingState != tt.stateValue {
+				t.Fatalf("policy binding state = %s", states.PolicyBindingState)
 			}
 		})
 	}
@@ -371,6 +642,44 @@ func TestCustomerPKIPassesWithSignedFreshnessEvidence(t *testing.T) {
 	if record.ProfileStates.KeyCustodyState != "hsm" {
 		t.Fatalf("key custody = %s", record.ProfileStates.KeyCustodyState)
 	}
+	if record.ProfileStates.SourceBindingState != stateNotAssessed {
+		t.Fatalf("source binding = %s", record.ProfileStates.SourceBindingState)
+	}
+}
+
+func TestLoadCustomerPublicKeyFromPublicPEM(t *testing.T) {
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	dir := t.TempDir()
+	publicKeyPath := writePublicKey(t, dir, publicKey)
+	loaded, err := loadCustomerPublicKey(ProfileOptions{
+		CustomerPKIPublicKey: publicKeyPath,
+	})
+	if err != nil {
+		t.Fatalf("loadCustomerPublicKey: %v", err)
+	}
+	if !bytes.Equal(loaded, publicKey) {
+		t.Fatalf("public key mismatch")
+	}
+}
+
+func TestLoadCustomerPublicKeyFromX509Certificate(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	certPath := writeX509Certificate(t, t.TempDir(), publicKey, privateKey)
+	loaded, err := loadCustomerPublicKey(ProfileOptions{
+		CustomerPKIPublicCert: certPath,
+	})
+	if err != nil {
+		t.Fatalf("loadCustomerPublicKey: %v", err)
+	}
+	if !bytes.Equal(loaded, publicKey) {
+		t.Fatalf("public key mismatch")
+	}
 }
 
 func TestCustomerPKIRejectsPrivateKeyInput(t *testing.T) {
@@ -428,9 +737,34 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 		name     string
 		policy   CustomerPKIAuthorityPolicy
 		evidence CustomerPKIFreshnessEvidence
+		key      ed25519.PublicKey
 		reason   string
 		status   string
 	}{
+		{
+			name: "unsupported profile",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.ProfileID = "customer-pki-v2"
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonSignerMismatch,
+		},
+		{
+			name: "empty signer",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.AllowedSignerID = ""
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonSignerMismatch,
+		},
 		{
 			name: "signer mismatch",
 			policy: func() CustomerPKIAuthorityPolicy {
@@ -439,8 +773,33 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				return copy
 			}(),
 			evidence: evidence,
+			key:      publicKey,
 			status:   StatusFail,
 			reason:   ReasonSignerMismatch,
+		},
+		{
+			name: "public key mismatch",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.PublicKeySHA256 = strings.Repeat("c", 64)
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonSignerMismatch,
+		},
+		{
+			name: "policy digest mismatch",
+			policy: func() CustomerPKIAuthorityPolicy {
+				copy := policy
+				copy.PolicyDigest = strings.Repeat("c", 64)
+				return copy
+			}(),
+			evidence: evidence,
+			key:      publicKey,
+			status:   StatusFail,
+			reason:   ReasonPolicyMismatch,
 		},
 		{
 			name:   "expired freshness",
@@ -451,8 +810,34 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte(freshnessPayload(copy))))
 				return copy
 			}(),
+			key:    publicKey,
 			status: StatusFail,
 			reason: ReasonStaleFreshness,
+		},
+		{
+			name:   "run mismatch",
+			policy: policy,
+			evidence: func() CustomerPKIFreshnessEvidence {
+				copy := evidence
+				copy.RunID = "other-run"
+				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte(freshnessPayload(copy))))
+				return copy
+			}(),
+			key:    publicKey,
+			status: StatusFail,
+			reason: ReasonRunMismatch,
+		},
+		{
+			name:   "invalid signature",
+			policy: policy,
+			evidence: func() CustomerPKIFreshnessEvidence {
+				copy := evidence
+				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte("tampered")))
+				return copy
+			}(),
+			key:    publicKey,
+			status: StatusFail,
+			reason: ReasonSignerMismatch,
 		},
 		{
 			name: "revocation not assessed",
@@ -462,6 +847,7 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				return copy
 			}(),
 			evidence: evidence,
+			key:      publicKey,
 			status:   StatusNotAssessed,
 			reason:   ReasonRevocationNA,
 		},
@@ -473,6 +859,7 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				return copy
 			}(),
 			evidence: evidence,
+			key:      publicKey,
 			status:   StatusFail,
 			reason:   ReasonCertRevoked,
 		},
@@ -485,6 +872,7 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 				copy.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, []byte(freshnessPayload(copy))))
 				return copy
 			}(),
+			key:    publicKey,
 			status: StatusFail,
 			reason: ReasonArtifactMismatch,
 		},
@@ -493,9 +881,13 @@ func TestCustomerPKINonPassReasonCodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			policyPath := writeJSON(t, dir, tt.name+"-policy.json", tt.policy)
 			freshnessPath := writeJSON(t, dir, tt.name+"-freshness.json", tt.evidence)
+			keyPath := publicKeyPath
+			if tt.key != nil {
+				keyPath = writePublicKey(t, dir, tt.key)
+			}
 			record, err := BuildCustomerPKI(root, "", ProfileOptions{
 				CustomerPKIAuthorityPolicy: policyPath,
-				CustomerPKIPublicKey:       publicKeyPath,
+				CustomerPKIPublicKey:       keyPath,
 				CustomerPKIPayloadDigest:   payloadDigest,
 				CustomerPKIFreshness:       freshnessPath,
 			})
@@ -692,6 +1084,30 @@ func writePublicKey(t *testing.T, dir string, publicKey ed25519.PublicKey) strin
 	raw := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
 	if err := os.WriteFile(path, raw, 0o644); err != nil {
 		t.Fatalf("write public key: %v", err)
+	}
+	return path
+}
+
+func writeX509Certificate(t *testing.T, dir string, publicKey ed25519.PublicKey, privateKey ed25519.PrivateKey) string {
+	t.Helper()
+	now := time.Now().UTC()
+	template := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		NotBefore:             now.Add(-time.Minute),
+		NotAfter:              now.Add(time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		BasicConstraintsValid: true,
+		SignatureAlgorithm:    x509.PureEd25519,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey, privateKey)
+	if err != nil {
+		t.Fatalf("create certificate: %v", err)
+	}
+	path := filepath.Join(dir, "public-cert.pem")
+	raw := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatalf("write certificate: %v", err)
 	}
 	return path
 }

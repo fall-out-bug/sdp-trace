@@ -4,13 +4,190 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fall_out_bug/sdp-trace/internal/query"
 )
+
+func TestVerifyDigestManifest(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+
+	actual, err := verifyDigestManifest(digestManifest, queryPack)
+	if err != nil {
+		t.Fatalf("verifyDigestManifest: %v", err)
+	}
+
+	payload, err := os.ReadFile(queryPack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(payload)
+	want := hex.EncodeToString(sum[:])
+	if actual != want {
+		t.Fatalf("digest = %s, want %s", actual, want)
+	}
+}
+
+func TestVerifyDigestManifestMissingQueryPackArtifact(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+	var digest DigestManifest
+	readJSONFixture(t, digestManifest, &digest)
+	digest.Artifacts = nil
+	writeJSON(t, digestManifest, digest)
+
+	_, err := verifyDigestManifest(digestManifest, queryPack)
+	if !errors.Is(err, errMissingRequired) {
+		t.Fatalf("expected errMissingRequired, got %v", err)
+	}
+}
+
+func TestVerifyDigestManifestRejectsMismatchedQueryPackPath(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+	var digest DigestManifest
+	readJSONFixture(t, digestManifest, &digest)
+	digest.Artifacts[0].Path = "other-query-pack.json"
+	writeJSON(t, digestManifest, digest)
+
+	_, err := verifyDigestManifest(digestManifest, queryPack)
+	if !errors.Is(err, errUnsafePath) {
+		t.Fatalf("expected errUnsafePath, got %v", err)
+	}
+}
+
+func TestVerifyDigestManifestMismatchReturnsNoDigest(t *testing.T) {
+	root := t.TempDir()
+	withChdir(t, root)
+
+	queryPack := writeQueryPack(t, ".", "current", "present")
+	digestManifest := writeDigest(t, queryPack)
+	var digest DigestManifest
+	readJSONFixture(t, digestManifest, &digest)
+	digest.Artifacts[0].SHA256 = strings.Repeat("0", 64)
+	writeJSON(t, digestManifest, digest)
+
+	actual, err := verifyDigestManifest(digestManifest, queryPack)
+	if !errors.Is(err, errDigestMismatch) {
+		t.Fatalf("expected errDigestMismatch, got %v", err)
+	}
+	if actual != "" {
+		t.Fatalf("expected empty digest on mismatch, got %q", actual)
+	}
+}
+
+func TestIngestRepository(t *testing.T) {
+	t.Run("trusted", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		digest := writeDigest(t, queryPack)
+		signals := writeSignals(t, ".", "current-signals.json", "timeline.0001", "ci_witnessed", "override_present")
+		repo := selectionRepo("current", "2026-w02", queryPack, digest, signals)
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if !result.trusted {
+			t.Fatalf("unexpected refusal: %+v", result)
+		}
+		if result.digest == "" {
+			t.Fatalf("expected digest")
+		}
+		if result.result.SchemaVersion != query.QueryPackSchemaVersion {
+			t.Fatalf("unexpected schema_version: %q", result.result.SchemaVersion)
+		}
+	})
+
+	t.Run("unsafe label", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "")
+		repo.Repo = "https://provider.example/private"
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if result.trusted || result.refusalReason != "unsafe_label" || result.inputTrustState != "cannot_verify_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if result.recordSelection {
+			t.Fatalf("expected recordSelection false")
+		}
+	})
+
+	t.Run("stale input", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "")
+		repo.InputObservedAt = "2025-12-31T00:00:00Z"
+
+		result := ingestRepository(repo, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC), true)
+		if result.trusted || result.refusalReason != "stale_input" || result.inputTrustState != "stale_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if !result.recordSelection {
+			t.Fatalf("expected recordSelection true")
+		}
+	})
+
+	t.Run("unsupported query pack", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		var payload map[string]any
+		readJSONFixture(t, queryPack, &payload)
+		payload["schema_version"] = "future"
+		writeJSON(t, queryPack, payload)
+		digest := writeDigest(t, queryPack)
+		repo := selectionRepo("current", "2026-w02", queryPack, digest, "")
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if result.trusted || result.refusalReason != "malformed_input" || result.inputTrustState != "cannot_verify_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if result.digest == "" {
+			t.Fatalf("expected digest on malformed query pack")
+		}
+	})
+
+	t.Run("malformed signals", func(t *testing.T) {
+		root := t.TempDir()
+		withChdir(t, root)
+
+		queryPack := writeQueryPack(t, ".", "current", "present")
+		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "malformed-signals.json")
+		if err := os.WriteFile(repo.PostureSignalManifest, []byte("{invalid json"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		result := ingestRepository(repo, time.Time{}, false)
+		if result.trusted || result.refusalReason != "malformed_input" || result.inputTrustState != "cannot_verify_input" {
+			t.Fatalf("unexpected result: %+v", result)
+		}
+		if result.digest == "" {
+			t.Fatalf("expected digest on malformed signals")
+		}
+	})
+}
 
 func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 	root := t.TempDir()
@@ -318,6 +495,37 @@ func TestBuildRejectsUnsupportedDigestManifestSchema(t *testing.T) {
 	}
 }
 
+func TestUnsafeOutput(t *testing.T) {
+	cases := []struct {
+		name   string
+		value  string
+		unsafe bool
+	}{
+		{"safe value", "repository-a", false},
+		{"https url", "https://provider.example", true},
+		{"http url", "http://provider.example", true},
+		{"secret marker", "contains secret", true},
+		{"email", "user@example.com", true},
+		{"slash path", "path/to/file", true},
+		{"windows path", "path\\to\\file", true},
+		{"token", "api-token", true},
+		{"credential", "api credential", true},
+		{"credential and token exact", "credential_or_token", false},
+		{"token with exception", "Credential_OR_Token", false},
+		{"mixed case token", "A Token Value", true},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Helper()
+			if got := unsafeOutput(tc.value); got != tc.unsafe {
+				t.Fatalf("unsafeOutput(%q)=%t expected %t", tc.value, got, tc.unsafe)
+			}
+		})
+	}
+}
+
 func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
@@ -410,6 +618,212 @@ func TestSchemaMirrorsPostureEnums(t *testing.T) {
 	classes := schemaObjectAt(t, outputSafetyProps, "verified_absent_sensitive_classes")
 	items := schemaObjectAt(t, classes, "items")
 	assertSchemaEnumValue(t, items, SensitiveClasses())
+}
+
+func TestValidateExportResultAcceptsCanonicalResult(t *testing.T) {
+	result := validExportResult()
+	if err := ValidateExportResult(result); err != nil {
+		t.Fatalf("validate export result: %v", err)
+	}
+}
+
+func TestValidateExportResultRejectsMalformedNestedRows(t *testing.T) {
+	for name, mutate := range map[string]func(*ExportResult){
+		"metric-dimension": func(result *ExportResult) {
+			result.MetricRows[0].Dimensions["repo"] = "https://provider.example/private"
+		},
+		"metric-trust-summary": func(result *ExportResult) {
+			result.MetricRows[0].InputTrustStateSummary["trusted_input"] = -1
+		},
+		"movement-summary": func(result *ExportResult) {
+			result.MovementSummary.NonComparableReason["unknown"] = 1
+		},
+		"movement-row": func(result *ExportResult) {
+			result.MovementRows[0].CurrentValue = -1
+		},
+		"refusal-reason": func(result *ExportResult) {
+			result.RefusalRows[0].RefusalReason = "ok"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := validExportResult()
+			mutate(&result)
+			if err := ValidateExportResult(result); err == nil {
+				t.Fatalf("expected malformed %s to be rejected", name)
+			}
+		})
+	}
+}
+
+func TestValidateExportResultRejectsMalformedCollections(t *testing.T) {
+	for name, mutate := range map[string]func(*ExportResult){
+		"grouping": func(result *ExportResult) {
+			result.GroupingSetID = "unknown"
+		},
+		"missing-collection": func(result *ExportResult) {
+			result.Handoff = nil
+		},
+		"output-safety": func(result *ExportResult) {
+			result.OutputSafety.VerifiedAbsentSensitiveClasses = nil
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := validExportResult()
+			mutate(&result)
+			if err := ValidateExportResult(result); err == nil {
+				t.Fatalf("expected malformed %s to be rejected", name)
+			}
+		})
+	}
+}
+
+func TestValidateMovementRowRejectsMalformedRows(t *testing.T) {
+	base := validExportResult().MovementRows[0]
+	for name, mutate := range map[string]func(*MovementRow){
+		"identity": func(row *MovementRow) {
+			row.ID = ""
+		},
+		"metric-id": func(row *MovementRow) {
+			row.MetricID = "unknown"
+		},
+		"version": func(row *MovementRow) {
+			row.MetricVersion = "old"
+		},
+		"dimension-key": func(row *MovementRow) {
+			row.DimensionKey = ""
+		},
+		"current-value": func(row *MovementRow) {
+			row.CurrentValue = -1
+		},
+		"previous-value": func(row *MovementRow) {
+			row.PreviousValue = -1
+		},
+		"comparison-basis": func(row *MovementRow) {
+			row.ComparisonBasis = "unsupported"
+		},
+		"non-comparable-reason": func(row *MovementRow) {
+			row.Comparable = false
+			row.NonComparableReason = "output_safety_violation"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			row := base
+			mutate(&row)
+			if err := validateMovementRow(row); err == nil || err.Error() != "malformed posture export movement_row" {
+				t.Fatalf("error = %v, want malformed posture export movement_row", err)
+			}
+		})
+	}
+}
+
+func TestValidateMetricRowShapeRejectsMalformedRows(t *testing.T) {
+	base := validExportResult().MetricRows[0]
+	for name, mutate := range map[string]func(*MetricRow){
+		"identity": func(row *MetricRow) {
+			row.ID = ""
+		},
+		"metric-id": func(row *MetricRow) {
+			row.MetricID = "unknown"
+		},
+		"version": func(row *MetricRow) {
+			row.MetricVersion = "old"
+		},
+		"count": func(row *MetricRow) {
+			row.Numerator = -1
+		},
+		"unit": func(row *MetricRow) {
+			row.Unit = "bytes"
+		},
+		"time-window": func(row *MetricRow) {
+			row.TimeWindow = "https://provider.example/private"
+		},
+		"dimensions": func(row *MetricRow) {
+			row.Dimensions = nil
+		},
+		"source": func(row *MetricRow) {
+			row.SourceInputRefs = nil
+		},
+		"source-state": func(row *MetricRow) {
+			row.SourceFieldState = "unknown"
+		},
+		"trust-summary": func(row *MetricRow) {
+			row.InputTrustStateSummary = nil
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			row := base
+			mutate(&row)
+			if err := validateMetricRowShape(row); err == nil || err.Error() != "malformed posture export metric_row" {
+				t.Fatalf("error = %v, want malformed metric_row", err)
+			}
+		})
+	}
+}
+
+func validExportResult() ExportResult {
+	return ExportResult{
+		SchemaVersion:        SchemaVersion,
+		ExportProfileID:      ProfileID,
+		ExportProfileVersion: ProfileVer,
+		ExportID:             "export.0001",
+		Producer:             "sdp-trace",
+		GeneratedAt:          "2026-01-10T00:00:00Z",
+		GroupingSetID:        GroupingRepoWindow,
+		ActiveGroupingKeys:   []string{"repo", "time_window"},
+		InputSelection: []InputSelection{{
+			InputID:         "input-a",
+			Repository:      "repo-a",
+			TimeWindow:      "2026-w02",
+			PathRedactedID:  "query-pack",
+			SHA256:          strings.Repeat("a", 64),
+			InputTrustState: "trusted_input",
+		}},
+		MetricRows: []MetricRow{{
+			ID:                      "metric.0001",
+			MetricID:                "missing_telemetry_rows",
+			MetricVersion:           ProfileVer,
+			Numerator:               1,
+			Denominator:             2,
+			Unit:                    "rows",
+			TimeWindow:              "2026-w02",
+			Dimensions:              map[string]string{"repo": "repo-a", "time_window": "2026-w02"},
+			DimensionKey:            "repo=repo-a|time_window=2026-w02",
+			SourceInputRefs:         []string{"input-a"},
+			SourceArtifactDigestSet: strings.Repeat("b", 64),
+			SourceFieldState:        "present",
+			NotAssessedCount:        0,
+			InputTrustStateSummary:  map[string]int{"trusted_input": 1},
+		}},
+		MovementRows: []MovementRow{{
+			ID:                   "movement.0001",
+			MetricID:             "missing_telemetry_rows",
+			MetricVersion:        ProfileVer,
+			DimensionKey:         "repo=repo-a|time_window=2026-w02",
+			CurrentMetricRowRef:  "metric.0001",
+			PreviousMetricRowRef: "metric.0000",
+			CurrentValue:         1,
+			PreviousValue:        0,
+			Delta:                1,
+			ComparisonBasis:      "same_profile_metric_dimension_window",
+			Comparable:           true,
+		}},
+		MovementSummary: MovementSummary{
+			ComparableCount:     1,
+			NonComparableCount:  0,
+			NonComparableReason: map[string]int{},
+		},
+		RefusalRows: []RefusalRow{{
+			ID:              "refusal.0001",
+			InputID:         "input-b",
+			TimeWindow:      "2026-w02",
+			RefusalReason:   "stale_input",
+			InputTrustState: "stale_input",
+		}},
+		Handoff: map[string]string{"consumer": "sdp-report"},
+		OutputSafety: OutputSafety{
+			VerifiedAbsentSensitiveClasses: []string{"tokens"},
+		},
+	}
 }
 
 func selectionRepo(inputID, window, qp, digestManifest, signals string) RepositoryWindow {

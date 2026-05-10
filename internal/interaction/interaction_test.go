@@ -90,6 +90,121 @@ func TestRelayRefusesUnsafeContentBeforeForwarding(t *testing.T) {
 	}
 }
 
+func TestReadTraceValidatesPersistedTrace(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "trace.json")
+	trace := Trace{
+		SchemaVersion:     SchemaVersion,
+		TraceID:           "it-1",
+		TaskID:            "task-1",
+		SourceType:        SourcePreclassifiedTranscript,
+		CompletenessState: CompletenessPartial,
+		AssessmentState:   "partial",
+		Events:            []Event{validImportedEvent("ix-1", 1)},
+		CreatedAt:         "2026-05-09T10:00:00Z",
+		UpdatedAt:         "2026-05-09T10:00:00Z",
+	}
+	writeJSONForInteractionTest(t, path, trace)
+
+	read, err := ReadTrace(path)
+	if err != nil {
+		t.Fatalf("ReadTrace() error = %v", err)
+	}
+	if read.TaskID != trace.TaskID || len(read.Events) != 1 {
+		t.Fatalf("read trace = %+v", read)
+	}
+
+	trace.Events[0].TaskID = "other-task"
+	writeJSONForInteractionTest(t, path, trace)
+	if _, err := ReadTrace(path); err == nil || !strings.Contains(err.Error(), "task_id mismatch") {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+}
+
+func TestValidateTraceHeaderRejectsInvalidEnvelope(t *testing.T) {
+	trace := Trace{SchemaVersion: "bad"}
+	if err := ValidateTrace(trace); err == nil || !strings.Contains(err.Error(), "schema_version") {
+		t.Fatalf("expected schema error, got %v", err)
+	}
+	trace = Trace{SchemaVersion: SchemaVersion, TaskID: "task-1", SourceType: "bad", Events: []Event{validImportedEvent("ix-1", 1)}}
+	if err := ValidateTrace(trace); err == nil || !strings.Contains(err.Error(), "unsupported source_type") {
+		t.Fatalf("expected source error, got %v", err)
+	}
+	trace = Trace{SchemaVersion: SchemaVersion, TaskID: "task-1", SourceType: SourcePreclassifiedTranscript}
+	if err := ValidateTrace(trace); err == nil || !strings.Contains(err.Error(), "requires events") {
+		t.Fatalf("expected events error, got %v", err)
+	}
+}
+
+func TestReadEnvelopeValidatesPersistedEnvelope(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "envelope.json")
+	envelope := Envelope{
+		SchemaVersion:   SchemaVersion,
+		TaskID:          "task-1",
+		EnvelopeID:      "env-1",
+		RunRefs:         []string{"recorder:run-1"},
+		InteractionRefs: []string{"sdp://interaction/task-1/ix-1"},
+		AssessmentState: "partial",
+		CreatedAt:       "2026-05-09T10:00:00Z",
+		UpdatedAt:       "2026-05-09T10:00:00Z",
+	}
+	writeJSONForInteractionTest(t, path, envelope)
+
+	read, err := ReadEnvelope(path)
+	if err != nil {
+		t.Fatalf("ReadEnvelope() error = %v", err)
+	}
+	if read.EnvelopeID != envelope.EnvelopeID {
+		t.Fatalf("read envelope = %+v", read)
+	}
+
+	envelope.OperationRefs = []string{"/tmp/local"}
+	writeJSONForInteractionTest(t, path, envelope)
+	if _, err := ReadEnvelope(path); err == nil || !strings.Contains(err.Error(), "unsupported envelope ref") {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+}
+
+func TestNormalizeRelayTrimsAndDefaults(t *testing.T) {
+	opts := normalizeRelay(RelayOptions{
+		TaskID:      " task-1 ",
+		ActorID:     " human ",
+		OperationID: " op-1 ",
+		StageID:     " plan ",
+		Out:         " trace.json ",
+	})
+	if opts.TaskID != "task-1" || opts.ActorID != "human" || opts.OperationID != "op-1" || opts.StageID != "plan" || opts.Out != "trace.json" {
+		t.Fatalf("trimmed options = %+v", opts)
+	}
+	if opts.ActorType != "human_user" || opts.Target != "agent" || opts.EventType != "corrective_feedback" {
+		t.Fatalf("defaulted options = %+v", opts)
+	}
+	if opts.Now.IsZero() {
+		t.Fatalf("Now was not defaulted")
+	}
+}
+
+func TestTraceAssessmentCompletenessTransitions(t *testing.T) {
+	state := newTraceAssessment()
+	state.applyCompleteness(CompletenessPartial)
+	if state.assessment != "partial" || state.completeness != CompletenessPartial {
+		t.Fatalf("partial state = %+v", state)
+	}
+	state.applyCompleteness(CompletenessNotAssessed)
+	if state.assessment != StateNotAssessed || state.completeness != CompletenessNotAssessed || len(state.notAssessed) != 1 {
+		t.Fatalf("not assessed state = %+v", state)
+	}
+	state.applyCompleteness(CompletenessCannotVerify)
+	if state.assessment != StateNotAssessed || state.completeness != CompletenessCannotVerify || len(state.cannotVerify) != 1 {
+		t.Fatalf("cannot verify state = %+v", state)
+	}
+	state.applyCompleteness(CompletenessNotAssessed)
+	if state.completeness != CompletenessCannotVerify || len(state.notAssessed) != 2 {
+		t.Fatalf("cannot verify should dominate later not_assessed: %+v", state)
+	}
+}
+
 func TestImportTranscriptRejectsAgentReportedAndNonMonotonicOrdering(t *testing.T) {
 	dir := t.TempDir()
 	eventsPath := filepath.Join(dir, "events.jsonl")
@@ -122,6 +237,38 @@ func TestImportTranscriptRejectsAgentReportedAndNonMonotonicOrdering(t *testing.
 	}
 }
 
+func TestValidateImportOptions(t *testing.T) {
+	valid := ImportOptions{
+		TaskID:      "task-1",
+		Source:      SourcePreclassifiedTranscript,
+		EventsJSONL: "events.jsonl",
+	}
+	for name, mutate := range map[string]func(*ImportOptions){
+		"source": func(opts *ImportOptions) {
+			opts.Source = SourceObservedControlChannel
+		},
+		"task": func(opts *ImportOptions) {
+			opts.TaskID = "../task"
+		},
+		"events": func(opts *ImportOptions) {
+			opts.EventsJSONL = " "
+		},
+		"valid": func(opts *ImportOptions) {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			opts := valid
+			mutate(&opts)
+			err := validateImportOptions(opts)
+			if name == "valid" && err != nil {
+				t.Fatalf("valid options rejected: %v", err)
+			}
+			if name != "valid" && err == nil {
+				t.Fatalf("expected invalid options to be rejected")
+			}
+		})
+	}
+}
+
 func TestImportTranscriptSuccessSummarizesCatalogMetrics(t *testing.T) {
 	dir := t.TempDir()
 	eventsPath := filepath.Join(dir, "events.jsonl")
@@ -149,6 +296,119 @@ func TestImportTranscriptSuccessSummarizesCatalogMetrics(t *testing.T) {
 	summary := SummarizeTrace(trace)
 	if summary.PlanRejectionCount != 1 || summary.ClarificationTurnCount != 1 || summary.CorrectionAfterTask != 0 {
 		t.Fatalf("summary = %+v", summary)
+	}
+}
+
+func TestSummarizeTraceCountsCorrectionsAndReferences(t *testing.T) {
+	trace := Trace{
+		SchemaVersion:   SchemaVersion,
+		TaskID:          "task-1",
+		TraceID:         "trace-1",
+		AssessmentState: "assessed",
+		Events: []Event{
+			func() Event {
+				event := validImportedEvent("ix-0", 0)
+				event.EventType = "corrective_feedback"
+				event.FrictionClass = "correction"
+				event.State = StateUnreferenced
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-1", 1)
+				event.EventType = "task_assignment"
+				event.FrictionClass = "none"
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-2", 2)
+				event.EventType = "plan_rejected"
+				event.FrictionClass = "none"
+				event.State = StateReferenced
+				event.ReferenceRefs = []string{"evidence:plan"}
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-3", 3)
+				event.EventType = "corrective_feedback"
+				event.FrictionClass = "correction"
+				event.State = StateReferenced
+				event.ReferenceRefs = []string{"sdp://interaction/task-1/ix-3"}
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-4", 4)
+				event.EventType = "evidence_correction"
+				event.FrictionClass = "evidence"
+				event.State = StateUnreferenced
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-5", 5)
+				event.EventType = "clarification_request"
+				event.FrictionClass = "clarification"
+				event.State = StateReferenced
+				event.ReferenceRefs = []string{"evidence:clarification"}
+				return event
+			}(),
+			func() Event {
+				event := validImportedEvent("ix-6", 6)
+				event.EventType = "clarification_answer"
+				event.FrictionClass = "clarification"
+				event.State = StateUnreferenced
+				return event
+			}(),
+		},
+	}
+	summary := SummarizeTrace(trace)
+	if summary.FrictionCounts["correction"] != 2 {
+		t.Fatalf("friction count correction = %d", summary.FrictionCounts["correction"])
+	}
+	if summary.FrictionCounts["none"] != 2 {
+		t.Fatalf("friction count none = %d", summary.FrictionCounts["none"])
+	}
+	if summary.FrictionCounts["evidence"] != 1 {
+		t.Fatalf("friction count evidence = %d", summary.FrictionCounts["evidence"])
+	}
+	if summary.FrictionCounts["clarification"] != 2 {
+		t.Fatalf("friction count clarification = %d", summary.FrictionCounts["clarification"])
+	}
+	if summary.PlanRejectionCount != 1 {
+		t.Fatalf("plan rejection count = %d", summary.PlanRejectionCount)
+	}
+	if summary.ClarificationTurnCount != 2 {
+		t.Fatalf("clarification turn count = %d", summary.ClarificationTurnCount)
+	}
+	if summary.UnreferencedEventCount != 3 {
+		t.Fatalf("unreferenced count = %d", summary.UnreferencedEventCount)
+	}
+	if summary.CorrectionAfterTask != 2 {
+		t.Fatalf("correction-after-task count = %d", summary.CorrectionAfterTask)
+	}
+	if len(summary.NotAssessed) != 0 {
+		t.Fatalf("unexpected not_assessed entries: %v", summary.NotAssessed)
+	}
+}
+
+func TestSummarizeTracePreservesNotAssessedOrdering(t *testing.T) {
+	trace := Trace{
+		SchemaVersion:   SchemaVersion,
+		TaskID:          "task-1",
+		TraceID:         "trace-1",
+		AssessmentState: "assessed",
+		NotAssessed:     []string{"existing"},
+		Events: []Event{
+			validImportedEvent("ix-0", 0),
+		},
+	}
+	summary := SummarizeTrace(trace)
+	want := []string{"existing", "task_assignment event absent; post-assignment correction count is not assessed"}
+	if len(summary.NotAssessed) != len(want) {
+		t.Fatalf("not_assessed count = %d, want %d", len(summary.NotAssessed), len(want))
+	}
+	for i := range want {
+		if summary.NotAssessed[i] != want[i] {
+			t.Fatalf("not_assessed[%d] = %q, want %q", i, summary.NotAssessed[i], want[i])
+		}
 	}
 }
 
@@ -188,6 +448,96 @@ func TestEnvelopeSummaryCountsRefsAndRejectsUnsafeRunRef(t *testing.T) {
 	}
 }
 
+func TestValidateEventRejectsInvalidFields(t *testing.T) {
+	cases := []struct {
+		name    string
+		mutate  func(*Event)
+		wantErr string
+	}{
+		{
+			name: "friction class mismatch",
+			mutate: func(event *Event) {
+				event.FrictionClass = "none"
+			},
+			wantErr: "does not match event_type",
+		},
+		{
+			name: "missing retained content reason",
+			mutate: func(event *Event) {
+				event.ContentRef = ""
+				event.NotRetainedReason = ""
+			},
+			wantErr: "without content_ref requires not_retained_reason",
+		},
+		{
+			name: "unsupported source type",
+			mutate: func(event *Event) {
+				event.Source.SourceType = "agent-memory"
+			},
+			wantErr: "unsupported source_type",
+		},
+		{
+			name: "unsafe source id",
+			mutate: func(event *Event) {
+				event.SourceID = "../transcript"
+			},
+			wantErr: "source_id must match",
+		},
+		{
+			name: "invalid reference ref",
+			mutate: func(event *Event) {
+				event.ReferenceRefs = []string{"/tmp/local-proof"}
+			},
+			wantErr: "unsupported reference_ref",
+		},
+		{
+			name: "invalid llm linkage state",
+			mutate: func(event *Event) {
+				event.LLMRefs = []LLMRef{{LinkageState: "passed"}}
+			},
+			wantErr: "unsupported llm linkage_state",
+		},
+		{
+			name: "negative source sequence",
+			mutate: func(event *Event) {
+				event.SourceSequence = -1
+			},
+			wantErr: "source_sequence must be non-negative",
+		},
+		{
+			name: "invalid retention",
+			mutate: func(event *Event) {
+				event.Retention = "forever"
+			},
+			wantErr: "unsupported retention",
+		},
+		{
+			name: "invalid completeness",
+			mutate: func(event *Event) {
+				event.CompletenessState = "done"
+			},
+			wantErr: "unsupported completeness_state",
+		},
+		{
+			name: "invalid channel exclusivity",
+			mutate: func(event *Event) {
+				event.ChannelExclusivity = "exclusive"
+			},
+			wantErr: "unsupported channel_exclusivity_state",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			event := validImportedEvent("ix-1", 1)
+			tc.mutate(&event)
+			err := ValidateEvent(event)
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("ValidateEvent() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
 func validImportedEvent(id string, sequence int) Event {
 	body := []byte("Please fix stale evidence.\n")
 	sum := sha256Hex(body)
@@ -213,6 +563,17 @@ func validImportedEvent(id string, sequence int) Event {
 		Redaction:              Redaction{PolicyRef: DefaultRedactionPolicyRef},
 		ObservedAt:             "2026-05-09T10:00:00Z",
 		CreatedAt:              "2026-05-09T10:00:00Z",
+	}
+}
+
+func writeJSONForInteractionTest(t *testing.T, path string, value any) {
+	t.Helper()
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		t.Fatalf("write json: %v", err)
 	}
 }
 

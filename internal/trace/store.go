@@ -27,20 +27,23 @@ type RunLayout struct {
 
 // NewRunLayout creates all child directories and returns paths.
 func NewRunLayout(runDir string) (RunLayout, error) {
-	layout := RunLayout{
+	layout := newRunLayout(runDir)
+	for _, dir := range []string{layout.EventsDir, layout.ArtifactsDir, layout.VerifierDir, layout.ExportDir} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return RunLayout{}, err
+		}
+	}
+	return layout, nil
+}
+
+func newRunLayout(runDir string) RunLayout {
+	return RunLayout{
 		RunFilePath:  filepath.Join(runDir, "run.json"),
 		EventsDir:    filepath.Join(runDir, "events"),
 		ArtifactsDir: filepath.Join(runDir, "artifacts"),
 		VerifierDir:  filepath.Join(runDir, "verifier"),
 		ExportDir:    filepath.Join(runDir, "export"),
 	}
-	dirs := []string{layout.EventsDir, layout.ArtifactsDir, layout.VerifierDir, layout.ExportDir}
-	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return RunLayout{}, err
-		}
-	}
-	return layout, nil
 }
 
 // EventFileName returns a stable sequence-based event path inside events/.
@@ -78,18 +81,15 @@ type RunArtifact struct {
 
 // OpenRunArtifact loads the manifest and events from disk.
 func OpenRunArtifact(runDir string) (RunArtifact, error) {
-	layout := RunLayout{
-		RunFilePath:  filepath.Join(runDir, "run.json"),
-		EventsDir:    filepath.Join(runDir, "events"),
-		ArtifactsDir: filepath.Join(runDir, "artifacts"),
-		VerifierDir:  filepath.Join(runDir, "verifier"),
-		ExportDir:    filepath.Join(runDir, "export"),
-	}
-
+	layout := newRunLayout(runDir)
 	manifestData, err := os.ReadFile(layout.RunFilePath)
 	if err != nil {
 		return RunArtifact{}, err
 	}
+	return openRunArtifactWithManifest(layout, manifestData)
+}
+
+func openRunArtifactWithManifest(layout RunLayout, manifestData []byte) (RunArtifact, error) {
 	var manifest RunManifest
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
 		return RunArtifact{}, err
@@ -117,34 +117,17 @@ func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, 
 	if err != nil {
 		return Event{}, err
 	}
-	prevHash := NullEventHash
-	if len(artifact.Events) > 0 {
-		prevHash = artifact.Events[len(artifact.Events)-1].EventHash
-	}
-	event := Event{
-		SchemaVersion: SchemaVersion,
-		RunID:         artifact.Manifest.RunID,
-		EventID:       SHA256Hex(fmt.Sprintf("%s:%s:%d:%s", artifact.Manifest.RunID, eventType, len(artifact.Events), time.Now().UTC().Format(time.RFC3339Nano))),
-		Sequence:      len(artifact.Events),
-		EventType:     eventType,
-		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
-		PrevEventHash: prevHash,
-		HashAlgorithm: HashAlgSHA256,
-		Canonicalization: Canonicalization{
-			Algorithm: CanonicalSchemaAlgo,
-			Version:   CanonicalAlgoVersion,
-		},
-		EventPayload: payload,
-		ObservedBy:   observedBy,
-	}
-	computed, err := event.WithComputedEventHash()
+	event, err := newAppendedRunEvent(artifact, eventType, payload, observedBy)
 	if err != nil {
 		return Event{}, err
 	}
-	event = computed
 	if err := artifact.Layout.WriteEvent(event); err != nil {
 		return Event{}, err
 	}
+	return appendRunEventManifest(artifact, event)
+}
+
+func appendRunEventManifest(artifact RunArtifact, event Event) (Event, error) {
 	artifact.Manifest.EventCount = event.Sequence + 1
 	artifact.Manifest.EventChainHead = event.EventHash
 	artifact.Manifest.FinalChainHead = event.EventHash
@@ -154,57 +137,91 @@ func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, 
 	return event, nil
 }
 
+func newAppendedRunEvent(artifact RunArtifact, eventType EventType, payload map[string]any, observedBy string) (Event, error) {
+	event := Event{
+		SchemaVersion: SchemaVersion,
+		RunID:         artifact.Manifest.RunID,
+		EventID:       SHA256Hex(fmt.Sprintf("%s:%s:%d:%s", artifact.Manifest.RunID, eventType, len(artifact.Events), time.Now().UTC().Format(time.RFC3339Nano))),
+		Sequence:      len(artifact.Events),
+		EventType:     eventType,
+		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
+		PrevEventHash: appendedPrevHash(artifact.Events),
+		HashAlgorithm: HashAlgSHA256,
+		Canonicalization: Canonicalization{
+			Algorithm: CanonicalSchemaAlgo,
+			Version:   CanonicalAlgoVersion,
+		},
+		EventPayload: payload,
+		ObservedBy:   observedBy,
+	}
+	return event.WithComputedEventHash()
+}
+
+func appendedPrevHash(events []Event) string {
+	if len(events) == 0 {
+		return NullEventHash
+	}
+	return events[len(events)-1].EventHash
+}
+
 // ValidateRunDirectory checks that run.json and event files are parseable.
 func ValidateRunDirectory(path string, requireChain bool) error {
 	runArtifact, err := OpenRunArtifact(path)
 	if err != nil {
 		return err
 	}
-	if err := runArtifact.Manifest.Validate(); err != nil {
+	return validateRunArtifact(runArtifact, requireChain)
+}
+
+func validateRunArtifact(artifact RunArtifact, requireChain bool) error {
+	if err := artifact.Manifest.Validate(); err != nil {
 		return err
 	}
-	if requireChain {
-		if err := ValidateEventChain(runArtifact.Events); err != nil {
-			return err
-		}
+	return validateRunDirectoryState(artifact.Manifest, artifact.Events, requireChain)
+}
+
+func validateEventChainIfRequested(events []Event, requireChain bool) error {
+	if !requireChain {
+		return nil
 	}
-	if runArtifact.Manifest.EventCount != 0 && runArtifact.Manifest.EventCount != len(runArtifact.Events) {
-		return fmt.Errorf("event_count mismatch: run.json=%d files=%d", runArtifact.Manifest.EventCount, len(runArtifact.Events))
-	}
-	if runArtifact.Manifest.EventChainHead != "" && len(runArtifact.Events) > 0 {
-		if runArtifact.Events[len(runArtifact.Events)-1].EventHash != runArtifact.Manifest.EventChainHead {
-			return fmt.Errorf("run manifest event_chain_head does not match last event hash")
-		}
+	return ValidateEventChain(events)
+}
+
+func validateManifestEventCount(manifestCount int, eventCount int) error {
+	if manifestCount != 0 && manifestCount != eventCount {
+		return fmt.Errorf("event_count mismatch: run.json=%d files=%d", manifestCount, eventCount)
 	}
 	return nil
 }
 
+func validateManifestEventChainHead(manifestHead string, events []Event) error {
+	if manifestHead == "" || len(events) == 0 {
+		return nil
+	}
+	if events[len(events)-1].EventHash != manifestHead {
+		return fmt.Errorf("run manifest event_chain_head does not match last event hash")
+	}
+	return nil
+}
+
+func validateRunDirectoryState(manifest RunManifest, events []Event, requireChain bool) error {
+	if err := validateEventChainIfRequested(events, requireChain); err != nil {
+		return err
+	}
+	if err := validateManifestEventCount(manifest.EventCount, len(events)); err != nil {
+		return err
+	}
+	return validateManifestEventChainHead(manifest.EventChainHead, events)
+}
+
 // readRunEvents loads and sorts every *.json file in events/.
 func readRunEvents(eventsDir string, entries []fs.DirEntry) ([]Event, error) {
-	jsonFiles := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-		jsonFiles = append(jsonFiles, filepath.Join(eventsDir, entry.Name()))
-	}
-	sort.Strings(jsonFiles)
-
+	jsonFiles := eventJSONFiles(eventsDir, entries)
 	events := make([]Event, 0, len(jsonFiles))
 	for _, path := range jsonFiles {
-		payload, err := os.ReadFile(path)
+		event, err := readRunEvent(path)
 		if err != nil {
 			return nil, err
-		}
-		var event Event
-		if err := json.Unmarshal(payload, &event); err != nil {
-			return nil, err
-		}
-		if err := event.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid event %q: %w", path, err)
 		}
 		events = append(events, event)
 	}
@@ -213,28 +230,73 @@ func readRunEvents(eventsDir string, entries []fs.DirEntry) ([]Event, error) {
 
 // ValidateEventChain checks that hashes and prev-event links are consistent.
 func ValidateEventChain(events []Event) error {
-	if len(events) == 0 {
-		return nil
-	}
 	prevEventHash := NullEventHash
 	for i, event := range events {
-		computed, err := event.WithComputedEventHash()
-		if err != nil {
-			return fmt.Errorf("event %d (%s) hash generation failed: %w", i, event.EventID, err)
-		}
-		if event.EventHash != computed.EventHash {
-			return fmt.Errorf("event %d (%s) event_hash mismatch: expected %s got %s", i, event.EventID, computed.EventHash, event.EventHash)
-		}
-		if err := event.VerifyPayloadDigest(); err != nil {
-			return fmt.Errorf("event %d (%s) payload_digest invalid: %w", i, event.EventID, err)
-		}
-		if event.Sequence != i {
-			return fmt.Errorf("event %d has non-zero-based sequence %d", i, event.Sequence)
-		}
-		if event.PrevEventHash != prevEventHash {
-			return fmt.Errorf("event %d (%s) prev_event_hash expected %s", i, event.EventID, prevEventHash)
+		if err := validateChainEvent(i, event, prevEventHash); err != nil {
+			return err
 		}
 		prevEventHash = event.EventHash
+	}
+	return nil
+}
+
+func eventJSONFiles(eventsDir string, entries []fs.DirEntry) []string {
+	jsonFiles := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if isEventJSON(entry) {
+			jsonFiles = append(jsonFiles, filepath.Join(eventsDir, entry.Name()))
+		}
+	}
+	sort.Strings(jsonFiles)
+	return jsonFiles
+}
+
+func isEventJSON(entry fs.DirEntry) bool {
+	return !entry.IsDir() && filepath.Ext(entry.Name()) == ".json"
+}
+
+func readRunEvent(path string) (Event, error) {
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		return Event{}, err
+	}
+	var event Event
+	if err := json.Unmarshal(payload, &event); err != nil {
+		return Event{}, err
+	}
+	if err := event.Validate(); err != nil {
+		return Event{}, fmt.Errorf("invalid event %q: %w", path, err)
+	}
+	return event, nil
+}
+
+func validateChainEvent(index int, event Event, prevEventHash string) error {
+	computed, err := event.WithComputedEventHash()
+	if err != nil {
+		return fmt.Errorf("event %d (%s) hash generation failed: %w", index, event.EventID, err)
+	}
+	if err := validateEventHash(index, event, computed.EventHash); err != nil {
+		return err
+	}
+	if err := event.VerifyPayloadDigest(); err != nil {
+		return fmt.Errorf("event %d (%s) payload_digest invalid: %w", index, event.EventID, err)
+	}
+	return validateEventPosition(index, event, prevEventHash)
+}
+
+func validateEventHash(index int, event Event, computedHash string) error {
+	if event.EventHash != computedHash {
+		return fmt.Errorf("event %d (%s) event_hash mismatch: expected %s got %s", index, event.EventID, computedHash, event.EventHash)
+	}
+	return nil
+}
+
+func validateEventPosition(index int, event Event, prevEventHash string) error {
+	if event.Sequence != index {
+		return fmt.Errorf("event %d has non-zero-based sequence %d", index, event.Sequence)
+	}
+	if event.PrevEventHash != prevEventHash {
+		return fmt.Errorf("event %d (%s) prev_event_hash expected %s", index, event.EventID, prevEventHash)
 	}
 	return nil
 }
@@ -246,7 +308,10 @@ func CopyArtifactFile(src, dst string) error {
 		return err
 	}
 	defer input.Close()
+	return copyArtifactReader(input, dst)
+}
 
+func copyArtifactReader(input io.Reader, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}

@@ -68,6 +68,108 @@ func TestReportAndGatePassForObservedDemoRuns(t *testing.T) {
 	}
 }
 
+func TestPreviewWitnessBindingMatchesRunArtifacts(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
+
+	expected, err := witnessExpectationFromTarget(root)
+	if err != nil {
+		t.Fatalf("witnessExpectationFromTarget: %v", err)
+	}
+	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	witnessPayload, err := json.Marshal(WitnessSummary{
+		Status:       "pass",
+		TrustScope:   "ci_witnessed",
+		RunArtifacts: expected.RunArtifacts,
+	})
+	if err != nil {
+		t.Fatalf("marshal witness: %v", err)
+	}
+	if err := os.WriteFile(witnessPath, witnessPayload, 0o644); err != nil {
+		t.Fatalf("write witness: %v", err)
+	}
+
+	ok, reasons := PreviewWitnessBinding(witnessPath, root)
+	if !ok {
+		t.Fatalf("preview ok = false reasons=%v", reasons)
+	}
+	if len(reasons) != 0 {
+		t.Fatalf("reasons = %v", reasons)
+	}
+}
+
+func TestCRAPHelperEdges(t *testing.T) {
+	if got := nonCheckpointProtectedTrustCap("", GateCannotVerify); got != string(trace.TrustScopeLocalObserved) {
+		t.Fatalf("default trust cap = %s", got)
+	}
+	if got := nonCheckpointProtectedTrustCap("custom_scope", GateCannotVerify); got != "custom_scope" {
+		t.Fatalf("checkpoint trust cap = %s", got)
+	}
+	if got := nonCheckpointProtectedTrustCap("", GatePass); got != "ci_witnessed" {
+		t.Fatalf("ci trust cap = %s", got)
+	}
+	if _, ok := firstWitnessPath(nil); ok {
+		t.Fatalf("nil witness path reported present")
+	}
+	if _, ok := firstWitnessPath([]string{" "}); ok {
+		t.Fatalf("blank witness path reported present")
+	}
+	if got, ok := firstWitnessPath([]string{"witness.json"}); !ok || got != "witness.json" {
+		t.Fatalf("witness path = %q ok=%t", got, ok)
+	}
+	if got, ok := payloadAnyInt(json.Number("42")); !ok || got != 42 {
+		t.Fatalf("json number int = %d ok=%t", got, ok)
+	}
+	if _, ok := payloadAnyInt(json.Number("bad")); ok {
+		t.Fatalf("bad json number parsed")
+	}
+	if got, ok := payloadAnyInt(7); !ok || got != 7 {
+		t.Fatalf("int payload = %d ok=%t", got, ok)
+	}
+	if got, ok := payloadAnyInt(7.9); !ok || got != 7 {
+		t.Fatalf("float payload = %d ok=%t", got, ok)
+	}
+	if _, ok := payloadAnyInt("7"); ok {
+		t.Fatalf("string payload parsed as int")
+	}
+	if got := stringItems([]any{"a", 7, "b"}); strings.Join(got, ",") != "a,b" {
+		t.Fatalf("stringItems = %v", got)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{}); condition.State != GateCannotVerify {
+		t.Fatalf("missing witness condition = %+v", condition)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{
+		Witness: &WitnessSummary{
+			Source:     WitnessSourceIdentity{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "wrong"},
+			CIIdentity: WitnessCIIdentity{RunID: "run"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha", RunID: "run"},
+	}); condition.State != GateFail || condition.ReasonCode != "ci_witness_mismatch" {
+		t.Fatalf("mismatch witness condition = %+v", condition)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{
+		Witness: &WitnessSummary{
+			Source: WitnessSourceIdentity{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha", RunID: "run"},
+	}); condition.State != GateCannotVerify || condition.ReasonCode != "ci_witness_incomplete" {
+		t.Fatalf("incomplete witness condition = %+v", condition)
+	}
+	if condition := protectedCIWitnessCondition(ProtectedGateInput{
+		Witness: &WitnessSummary{
+			Source:     WitnessSourceIdentity{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha"},
+			CIIdentity: WitnessCIIdentity{RunID: "run"},
+		},
+		WitnessExpectation: WitnessExpectation{Repository: "repo", Ref: "refs/heads/main", CommitSHA: "sha", RunID: "run"},
+	}); condition.State != GatePass || condition.ReasonCode != "ci_witness_bound" {
+		t.Fatalf("passing witness condition = %+v", condition)
+	}
+	if got := applyOptionalWitness(GateResult{CIWitnessGate: GateCannotVerify}, "", []string{"witness.json"}); got.CIWitnessGate != GateCannotVerify || len(got.Reasons) == 0 {
+		t.Fatalf("invalid target witness result = %+v", got)
+	}
+}
+
 func TestReportAcceptsSingleRunDirectory(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	runDir := filepath.Join(t.TempDir(), "single-run")
@@ -79,6 +181,77 @@ func TestReportAcceptsSingleRunDirectory(t *testing.T) {
 	}
 	if artifacts.Summary.RunCount != 1 {
 		t.Fatalf("run count = %d", artifacts.Summary.RunCount)
+	}
+}
+
+func TestDiscoverRunDirsReturnsRootRunDirectoryWhenRunManifestExists(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "run.json"), []byte(`{"run_id":"root-run"}`), 0o644); err != nil {
+		t.Fatalf("write run manifest: %v", err)
+	}
+	dirs, err := DiscoverRunDirs(root)
+	if err != nil {
+		t.Fatalf("DiscoverRunDirs: %v", err)
+	}
+	if len(dirs) != 1 || dirs[0] != root {
+		t.Fatalf("expected only root run dir, got %v", dirs)
+	}
+}
+
+func TestDiscoverRunDirsFindsRunSubdirectoriesInSortedOrder(t *testing.T) {
+	root := t.TempDir()
+	makeRunDir := func(name string) string {
+		path := filepath.Join(root, name)
+		if err := os.MkdirAll(path, 0o755); err != nil {
+			t.Fatalf("create dir %s: %v", name, err)
+		}
+		if err := os.WriteFile(filepath.Join(path, "run.json"), []byte(`{"run_id":"`+name+`"}`), 0o644); err != nil {
+			t.Fatalf("write manifest in %s: %v", name, err)
+		}
+		return path
+	}
+	makeRunDir("z-run")
+	makeRunDir("a-run")
+	if err := os.WriteFile(filepath.Join(root, "ignored.txt"), []byte("ignore"), 0o644); err != nil {
+		t.Fatalf("write ignored file: %v", err)
+	}
+	dirs, err := DiscoverRunDirs(root)
+	if err != nil {
+		t.Fatalf("DiscoverRunDirs: %v", err)
+	}
+	if len(dirs) != 2 || dirs[0] != filepath.Join(root, "a-run") || dirs[1] != filepath.Join(root, "z-run") {
+		t.Fatalf("expected sorted run dirs, got %v", dirs)
+	}
+}
+
+func TestDiscoverRunDirsReturnsNoRunDirectoriesError(t *testing.T) {
+	root := t.TempDir()
+	if _, err := os.Stat(filepath.Join(root, "run.json")); err == nil {
+		t.Fatalf("run manifest should not exist in empty root")
+	}
+	if err := os.Mkdir(filepath.Join(root, "not-a-run"), 0o755); err != nil {
+		t.Fatalf("create directory without manifest: %v", err)
+	}
+	_, err := DiscoverRunDirs(root)
+	if err == nil {
+		t.Fatalf("expected no run directories found")
+	}
+	if err.Error() != "no run directories found" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestDiscoverRunDirsRejectsNonDirectory(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "not-dir")
+	if err := os.WriteFile(path, []byte("hi"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	_, err := DiscoverRunDirs(path)
+	if err == nil {
+		t.Fatalf("expected not-a-directory error")
+	}
+	if !strings.Contains(err.Error(), "not a directory") {
+		t.Fatalf("expected directory error, got: %v", err)
 	}
 }
 
@@ -173,6 +346,80 @@ func TestGateReportsMissingRequiredRun(t *testing.T) {
 	}
 	if !contains(gate.NextActions, "Run required wrapper verification-run through sdp-trace before evaluating advisory gate.") {
 		t.Fatalf("missing next action for required run: %v", gate.NextActions)
+	}
+}
+
+func TestEvaluateRequiredRunsUsesFirstMatchingWrapperRow(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredRuns = []trace.RequiredRun{
+		{
+			ID:               "agent_session",
+			WrapperName:      "agent-session",
+			RequiredEvidence: []string{"agent_session_observed"},
+			Profile:          "observation",
+		},
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "agent-session-bad", RunID: "run-1", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "fail", ClosureState: "completed"},
+		{Name: "agent-session-good", RunID: "run-2", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+	}, contract)
+
+	required := findRequiredRun(t, gate.RequiredRuns, "agent_session")
+	if required.State != GateCannotVerify {
+		t.Fatalf("expected first matching row to win with cannot_verify, got %s", required.State)
+	}
+	if required.MatchedRunID != "run-1" {
+		t.Fatalf("expected first matching run to be selected, got %s", required.MatchedRunID)
+	}
+	if required.Reasons[0] != "required run agent_session cannot verify from run agent-session-bad" {
+		t.Fatalf("unexpected reason = %v", required.Reasons)
+	}
+}
+
+func TestEvaluateRequiredRunsRequiresAllEvidenceEntries(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredRuns = []trace.RequiredRun{
+		{
+			ID:               "agent_session",
+			WrapperName:      "agent-session",
+			RequiredEvidence: []string{"agent_session_observed", "verification_run_observed"},
+		},
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "agent-session", RunID: "run-1", WrapperName: "agent-session", Kind: "agent_session_observed", Result: "observed", ClosureState: "completed"},
+	}, contract)
+
+	required := findRequiredRun(t, gate.RequiredRuns, "agent_session")
+	if required.State != GateCannotVerify {
+		t.Fatalf("expected missing second evidence to fail required run, got %s", required.State)
+	}
+	if required.Reasons[0] != "required run agent_session missing evidence verification_run_observed" {
+		t.Fatalf("unexpected reason = %v", required.Reasons)
+	}
+}
+
+func TestEvaluateRequiredRunsPreservesMissingEvidenceReasonPrecedence(t *testing.T) {
+	contract := traceContractForTest()
+	contract.RequiredRuns = []trace.RequiredRun{
+		{
+			ID:               "agent_session",
+			WrapperName:      "agent-session",
+			RequiredEvidence: []string{"agent_session_observed"},
+		},
+	}
+
+	gate := EvaluateGate([]RunRow{
+		{Name: "agent-session", RunID: "run-1", WrapperName: "agent-session", Kind: "wrong_kind", Result: "fail", ClosureState: "open"},
+	}, contract)
+
+	required := findRequiredRun(t, gate.RequiredRuns, "agent_session")
+	if required.State != GateCannotVerify {
+		t.Fatalf("expected cannot_verify state, got %s", required.State)
+	}
+	if required.Reasons[0] != "required run agent_session missing evidence agent_session_observed" {
+		t.Fatalf("unexpected reason = %v", required.Reasons)
 	}
 }
 
@@ -457,6 +704,126 @@ func TestProtectedGateValidOverrideDoesNotUpgradeFailure(t *testing.T) {
 	}
 }
 
+func TestOverrideRequestsFromEvents(t *testing.T) {
+	contract := trace.Contract{
+		RequiredRuns: []trace.RequiredRun{
+			{ID: "known-run"},
+		},
+		RequiredEvidence: []trace.EvidenceRequirement{
+			{ID: "known-evidence"},
+		},
+	}
+	t.Run("builds only override events and sorts by created_at and id", func(t *testing.T) {
+		events := []trace.Event{
+			{
+				EventType: trace.EventCommandStarted,
+				EventPayload: map[string]any{
+					"override_id": "not-used",
+				},
+			},
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "b",
+					"producer":     "policy",
+					"origin":       "policy-service",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-2",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+				},
+			},
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "a",
+					"producer":     "policy",
+					"origin":       "policy-service",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-1",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+				},
+			},
+		}
+
+		got := overrideRequestsFromEvents(events, contract)
+		if len(got) != 2 {
+			t.Fatalf("got %d overrides", len(got))
+		}
+		if got[0].OverrideID != "a" || got[1].OverrideID != "b" {
+			t.Fatalf("sorting order mismatch: %+v", got)
+		}
+		if got[0].State != GatePass || got[1].State != GatePass {
+			t.Fatalf("expected pass state, got %+v", got)
+		}
+	})
+
+	t.Run("marks missing required fields as cannot_verify", func(t *testing.T) {
+		events := []trace.Event{
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "override-missing-origin",
+					"producer":     "policy",
+					"origin":       "",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-1",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+				},
+			},
+		}
+
+		got := overrideRequestsFromEvents(events, contract)
+		if len(got) != 1 {
+			t.Fatalf("got %d overrides", len(got))
+		}
+		if got[0].State != GateCannotVerify || got[0].Reason != "override request missing origin" {
+			t.Fatalf("unexpected override result: %+v", got[0])
+		}
+	})
+
+	t.Run("uses unknown reference reason when references are not in contract", func(t *testing.T) {
+		events := []trace.Event{
+			{
+				EventType: trace.EventPolicyOverrideRequested,
+				EventPayload: map[string]any{
+					"override_id":  "override-unknown-reference",
+					"producer":     "policy",
+					"origin":       "policy-service",
+					"requested_by": "alice",
+					"reason":       "manual",
+					"source_ref":   "run-1",
+					"scope":        "local",
+					"created_at":   "2026-05-10T09:00:00Z",
+					"affected_required_runs": []string{
+						"known-run",
+						"missing-run",
+					},
+					"affected_evidence": []string{
+						"missing-evidence",
+					},
+				},
+			},
+		}
+
+		got := overrideRequestsFromEvents(events, contract)
+		if len(got) != 1 {
+			t.Fatalf("got %d overrides", len(got))
+		}
+		if got[0].State != GateCannotVerify {
+			t.Fatalf("expected cannot_verify state, got %s", got[0].State)
+		}
+		if got[0].Reason != "override request references unknown evidence missing-evidence" {
+			t.Fatalf("unexpected reason: %s", got[0].Reason)
+		}
+	})
+}
+
 func TestProtectedGateRequiresWitnessRunIDBinding(t *testing.T) {
 	state, reasons := witnessBindingState(WitnessSummary{
 		Kind:        "github-actions",
@@ -479,6 +846,80 @@ func TestProtectedGateRequiresWitnessRunIDBinding(t *testing.T) {
 	}, WitnessExpectation{RunID: "trace-run-1"})
 	if state != GateFail || !contains(reasons, "ci witness run id mismatch: expected trace-run-1 got other-run") {
 		t.Fatalf("state=%s reasons=%v", state, reasons)
+	}
+}
+
+func TestWitnessBindingStateRejectsInvalidBindings(t *testing.T) {
+	tests := []struct {
+		name     string
+		record   WitnessSummary
+		expected WitnessExpectation
+		state    string
+		reason   string
+	}{
+		{
+			name:     "missing repository",
+			expected: WitnessExpectation{Repository: "org/repo"},
+			state:    GateCannotVerify,
+			reason:   "ci witness repository binding is missing",
+		},
+		{
+			name:     "mismatched ref",
+			record:   WitnessSummary{Source: WitnessSourceIdentity{Ref: "refs/heads/feature"}},
+			expected: WitnessExpectation{Ref: "refs/heads/main"},
+			state:    GateFail,
+			reason:   "ci witness ref mismatch: expected refs/heads/main got refs/heads/feature",
+		},
+		{
+			name:     "missing commit",
+			expected: WitnessExpectation{CommitSHA: "abc123"},
+			state:    GateCannotVerify,
+			reason:   "ci witness commit binding is missing",
+		},
+		{
+			name: "unknown artifact",
+			record: WitnessSummary{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "unexpected/run.json",
+				SHA256: "digest",
+			}}},
+			expected: WitnessExpectation{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "expected/run.json",
+				SHA256: "digest",
+			}}},
+			state:  GateCannotVerify,
+			reason: "ci witness artifact unexpected/run.json is not present in current gate input",
+		},
+		{
+			name: "artifact digest mismatch",
+			record: WitnessSummary{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "run/run.json",
+				SHA256: "actual",
+			}}},
+			expected: WitnessExpectation{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "run/run.json",
+				SHA256: "expected",
+			}}},
+			state:  GateFail,
+			reason: "ci witness artifact digest mismatch for run/run.json",
+		},
+		{
+			name: "missing artifact",
+			expected: WitnessExpectation{RunArtifacts: []WitnessArtifactDigest{{
+				Path:   "run/run.json",
+				SHA256: "expected",
+			}}},
+			state:  GateCannotVerify,
+			reason: "ci witness artifact run/run.json is missing from witness",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			state, reasons := witnessBindingState(tt.record, tt.expected)
+			if state != tt.state || !contains(reasons, tt.reason) {
+				t.Fatalf("state=%s reasons=%v", state, reasons)
+			}
+		})
 	}
 }
 

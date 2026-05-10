@@ -1,3 +1,7 @@
 # OpenCode Example
 
-This example will show how OpenCode commands, tools, and model outputs can produce `sdp-trace` evidence.
+State: `placeholder`.
+
+This directory is not first-class MVP evidence. Use
+`examples/pilot-runs/opencode-minimax-kotlin-bazel/` for the current bounded
+OpenCode pilot evidence package.

@@ -106,7 +106,7 @@ Current command surface:
 - `go run ./cmd/sdp-trace gate --out <file> <runs-root-or-run-dir>`
 - `go run ./cmd/sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>`
 - `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>`
-- `go run ./cmd/sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--ci-state <state>] [--created-by <actor>] [--context <file>]... [--verification <file>]...`
+- `go run ./cmd/sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--ci-state <state>] [--created-by <actor>]`
 - `go run ./cmd/sdp-trace pr-review run --packet <dir> --profile <file> --out <dir> [--preview] [--work-dir <dir>] [--allow-external-runner <runner>]...`
 - `go run ./cmd/sdp-trace pr-review synthesize --packet <dir> --runs <dir> --out <file>`
 - `go run ./cmd/sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>`
@@ -165,6 +165,12 @@ entrypoints unless this document and `--help` are updated in the same change.
 
 ## Russian Command Reference
 
+State: `deferred_scope` for full bilingual parity. This table preserves the
+current high-use Russian quick reference, but the English command reference
+above is the canonical command contract until the Russian table is expanded to
+cover every live `--help` command family. Do not claim bilingual command parity
+from this section.
+
 | Команда/профиль | Назначение | Минимальный запуск | Граница вывода и доверия |
 | --- | --- | --- | --- |
 | `wrap` | Наблюдает одну существующую команду как trace run. | `go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok` | Пишет run artifacts; это local observation, пока отчет, witness или профиль не добавят другую проверку. |
@@ -200,6 +206,7 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `witness --kind buildkite` | Записывает Buildkite witness profile evidence. | `go run ./cmd/sdp-trace witness --kind buildkite --out buildkite-witness.json --witness-envelope envelope.json .sdp-trace-runs` | CI-bound evidence не является transparency log или release approval. |
 | `witness --kind customer-pki` | Записывает customer PKI/private-equivalent witness evidence. | `go run ./cmd/sdp-trace witness --kind customer-pki --out customer-pki-witness.json --customer-pki-authority-policy policy.json --customer-pki-public-cert cert.pem --customer-pki-payload-digest <sha256> --customer-pki-freshness-evidence freshness.json .sdp-trace-runs` | Требует accepted customer policy, key/cert material, payload digest и freshness evidence. |
 | `release-proof` | Проверяет source-bound local release manifest. | `go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json` | Caveat: `source_bound_local_release` уже, чем external production trust; dirty/stale source или manifest mismatch не проходят. |
+| `pr-review` | Собирает, запускает, синтезирует, валидирует и суммирует automated PR review evidence. | `go run ./cmd/sdp-trace pr-review check --out review --repo-id demo_repo --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review evidence only; не merge approval, не human approval и не release decision. |
 | `validate-fixtures` | Валидирует fixture directories. | `go run ./cmd/sdp-trace validate-fixtures examples` | Только structural fixture validation; не доказывает customer production readiness. |
 
 ## State And Exit Code Contract

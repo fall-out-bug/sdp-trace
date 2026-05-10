@@ -6,10 +6,11 @@ It records what happened, which evidence exists, what is missing, where the
 evidence came from, and which human owns the next decision. It does not decide
 whether a team may merge, release, accept risk, or claim production trust.
 
-Current product status: controlled-pilot ready for repo-observable evidence,
-local trace packages, assessment profiles, witness artifacts, and source-bound
-release checks. It is not a broad production trust product and it does not
-claim universal harness, model, CI, or air-gapped compatibility.
+Current product status: controlled-pilot MVP. You can try local trace packages,
+repo-observable evidence, assessment profiles, witness artifacts, and
+source-bound release checks. You cannot use this repo as a production trust
+authority, release approval system, universal harness adapter, or guarantee that
+every unwrapped agent run was detected.
 
 ## Start Here
 
