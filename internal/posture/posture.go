@@ -461,15 +461,30 @@ func validateMetricRow(row MetricRow) error {
 }
 
 func validateMetricRowShape(row MetricRow) error {
-	if row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer ||
-		row.Numerator < 0 || row.Denominator < 0 || row.Unit != "rows" ||
-		!safeLabel(row.TimeWindow) || row.Dimensions == nil || row.DimensionKey == "" ||
-		row.SourceInputRefs == nil || row.SourceArtifactDigestSet == "" ||
-		!validSourceFieldState(row.SourceFieldState) || row.NotAssessedCount < 0 ||
-		row.InputTrustStateSummary == nil {
+	if malformedMetricIdentity(row) || malformedMetricCounts(row) || malformedMetricSource(row) {
 		return fmt.Errorf("malformed posture export metric_row")
 	}
 	return nil
+}
+
+func malformedMetricIdentity(row MetricRow) bool {
+	return row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer || !safeLabel(row.TimeWindow)
+}
+
+func malformedMetricCounts(row MetricRow) bool {
+	return row.Numerator < 0 || row.Denominator < 0 || row.Unit != "rows" || row.NotAssessedCount < 0
+}
+
+func malformedMetricSource(row MetricRow) bool {
+	return missingMetricSourceRefs(row) || missingMetricTrustSource(row)
+}
+
+func missingMetricSourceRefs(row MetricRow) bool {
+	return row.Dimensions == nil || row.DimensionKey == "" || row.SourceInputRefs == nil || row.SourceArtifactDigestSet == ""
+}
+
+func missingMetricTrustSource(row MetricRow) bool {
+	return !validSourceFieldState(row.SourceFieldState) || row.InputTrustStateSummary == nil
 }
 
 func validateMetricDimensions(dimensions map[string]string) error {

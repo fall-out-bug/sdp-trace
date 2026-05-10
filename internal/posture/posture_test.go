@@ -444,6 +444,50 @@ func TestValidateExportResultRejectsMalformedNestedRows(t *testing.T) {
 	}
 }
 
+func TestValidateMetricRowShapeRejectsMalformedRows(t *testing.T) {
+	base := validExportResult().MetricRows[0]
+	for name, mutate := range map[string]func(*MetricRow){
+		"identity": func(row *MetricRow) {
+			row.ID = ""
+		},
+		"metric-id": func(row *MetricRow) {
+			row.MetricID = "unknown"
+		},
+		"version": func(row *MetricRow) {
+			row.MetricVersion = "old"
+		},
+		"count": func(row *MetricRow) {
+			row.Numerator = -1
+		},
+		"unit": func(row *MetricRow) {
+			row.Unit = "bytes"
+		},
+		"time-window": func(row *MetricRow) {
+			row.TimeWindow = "https://provider.example/private"
+		},
+		"dimensions": func(row *MetricRow) {
+			row.Dimensions = nil
+		},
+		"source": func(row *MetricRow) {
+			row.SourceInputRefs = nil
+		},
+		"source-state": func(row *MetricRow) {
+			row.SourceFieldState = "unknown"
+		},
+		"trust-summary": func(row *MetricRow) {
+			row.InputTrustStateSummary = nil
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			row := base
+			mutate(&row)
+			if err := validateMetricRowShape(row); err == nil || err.Error() != "malformed posture export metric_row" {
+				t.Fatalf("error = %v, want malformed metric_row", err)
+			}
+		})
+	}
+}
+
 func validExportResult() ExportResult {
 	return ExportResult{
 		SchemaVersion:        SchemaVersion,
