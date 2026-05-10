@@ -85,6 +85,74 @@ func TestInstallWritesIdempotentObserverFiles(t *testing.T) {
 	}
 }
 
+func TestInstallPreviewDoesNotWriteAndExplainsWriteMode(t *testing.T) {
+	repo := initRepo(t)
+	status, err := Install(Options{
+		RepoRoot:     repo,
+		Profile:      ProfileGithubActionsGitHooksV1,
+		RepositoryID: "demo_repo",
+		Write:        false,
+	})
+	if err != nil {
+		t.Fatalf("Install preview error = %v", err)
+	}
+	if status.InstallState != StateFail {
+		t.Fatalf("preview install state = %s", status.InstallState)
+	}
+	if _, err := os.Stat(filepath.Join(repo, ".sdp-trace", "config.json")); !os.IsNotExist(err) {
+		t.Fatalf("preview should not write config, stat=%v", err)
+	}
+	if surfaceByID(t, status, SurfaceConfig).NextAction == "" {
+		t.Fatalf("preview should still explain missing generated config")
+	}
+}
+
+func TestWriteJSONSkipsBlankPathAndCreatesParents(t *testing.T) {
+	if err := WriteJSON(" ", Status{SchemaVersion: SchemaVersion}); err != nil {
+		t.Fatalf("blank WriteJSON path should be ignored: %v", err)
+	}
+	path := filepath.Join(t.TempDir(), "nested", "status.json")
+	if err := WriteJSON(path, Status{SchemaVersion: SchemaVersion, RepositoryID: "demo_repo"}); err != nil {
+		t.Fatalf("WriteJSON() error = %v", err)
+	}
+	var status Status
+	readJSONForTest(t, path, &status)
+	if status.RepositoryID != "demo_repo" {
+		t.Fatalf("status = %+v", status)
+	}
+}
+
+func TestWithAbsoluteRepoRootDefaultsAndAbsolutizes(t *testing.T) {
+	repo := initRepo(t)
+	opts, err := withAbsoluteRepoRoot(Options{RepoRoot: repo})
+	if err != nil {
+		t.Fatalf("withAbsoluteRepoRoot() error = %v", err)
+	}
+	if !filepath.IsAbs(opts.RepoRoot) {
+		t.Fatalf("repo root is not absolute: %s", opts.RepoRoot)
+	}
+
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(oldWD); err != nil {
+			t.Fatalf("restore wd: %v", err)
+		}
+	}()
+	if err := os.Chdir(repo); err != nil {
+		t.Fatalf("chdir repo: %v", err)
+	}
+	defaulted, err := withAbsoluteRepoRoot(Options{})
+	if err != nil {
+		t.Fatalf("default withAbsoluteRepoRoot() error = %v", err)
+	}
+	if !filepath.IsAbs(defaulted.RepoRoot) || filepath.Base(defaulted.RepoRoot) != filepath.Base(repo) {
+		t.Fatalf("default repo root = %s want repo basename %s", defaulted.RepoRoot, filepath.Base(repo))
+	}
+}
+
 func TestDoctorUsesInstalledConfigRepositoryID(t *testing.T) {
 	repo := initRepo(t)
 	if _, err := Install(Options{
@@ -106,6 +174,41 @@ func TestDoctorUsesInstalledConfigRepositoryID(t *testing.T) {
 	}
 	if status.RepositoryID != "demo_repo" {
 		t.Fatalf("repository id = %s", status.RepositoryID)
+	}
+}
+
+func TestDoctorDerivesRepositoryIDAndHumanTableRendersSurfaces(t *testing.T) {
+	repo := initRepo(t)
+	runGitForTest(t, repo, "config", "remote.origin.url", "https://github.com/org/repo.git")
+	status, err := Doctor(Options{
+		RepoRoot: repo,
+		Profile:  ProfileGithubActionsGitHooksV1,
+		Now:      time.Date(2026, 5, 8, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("Doctor() error = %v", err)
+	}
+	if !strings.HasPrefix(status.RepositoryID, "repo_") {
+		t.Fatalf("derived repository id = %q", status.RepositoryID)
+	}
+	table := HumanTable(Status{
+		Profile:      ProfileGithubActionsGitHooksV1,
+		RepositoryID: "demo_repo",
+		InstallState: StatePass,
+		ProofState:   StateNotAssessed,
+		Surfaces: []Surface{{
+			SurfaceID:      SurfaceHooksPath,
+			InstallState:   StatePass,
+			ProofState:     StateNotAssessed,
+			TrustScope:     ScopeLocalStructural,
+			EvidenceSource: "git_config:core.hooksPath",
+		}},
+		ForceDiffSummary: []DiffSummary{{Path: ".gitignore", Action: "append"}},
+	})
+	for _, want := range []string{"Surface | Install state", SurfaceHooksPath, "Force diff summary", ".gitignore: append"} {
+		if !strings.Contains(table, want) {
+			t.Fatalf("human table missing %q:\n%s", want, table)
+		}
 	}
 }
 
@@ -350,6 +453,70 @@ func TestSanitizeOriginRedactsCredentialsAndKeepsStableRepoRef(t *testing.T) {
 				t.Fatalf("sanitizeOrigin(%q) = %q, want %q", tt.origin, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSurfaceStateHelpersPreserveCannotVerifyAndGaps(t *testing.T) {
+	if got := combineProofState(StatePass, StateNotAssessed); got != StateNotAssessed {
+		t.Fatalf("pass + not_assessed = %s", got)
+	}
+	if got := combineProofState(StateFail, StateNotAssessed); got != StateFail {
+		t.Fatalf("fail + not_assessed = %s", got)
+	}
+	if got := combineProofState(StatePass, StateCannotVerify); got != StateCannotVerify {
+		t.Fatalf("cannot_verify did not dominate: %s", got)
+	}
+
+	noGap, ok := gapForSurface(surface("ready", StatePass, StatePass, ScopeLocalStructural, "test", ReasonAlreadyInstalled, "", ""))
+	if ok || noGap.SurfaceID != "" {
+		t.Fatalf("pass/pass should not emit gap: %+v ok=%v", noGap, ok)
+	}
+	agentGap, ok := gapForSurface(surface(SurfaceAgentPrompt, StateNotAssessed, StateNotAssessed, ScopeAgentReported, "test", ReasonAgentReportedNotProof, "", ""))
+	if !ok || !strings.Contains(agentGap.Detail, "not repository setup proof") {
+		t.Fatalf("agent prompt gap = %+v ok=%v", agentGap, ok)
+	}
+	actionGap, ok := gapForSurface(surface("missing", StateFail, StateNotAssessed, ScopeLocalStructural, "test", ReasonManualStepRequired, "", "fix it"))
+	if !ok || actionGap.Detail != "fix it" {
+		t.Fatalf("action gap = %+v ok=%v", actionGap, ok)
+	}
+}
+
+func TestHookAndGitignoreSurfacesCoverPresentMissingAndUnreadable(t *testing.T) {
+	repo := initRepo(t)
+	opts := Options{RepoRoot: repo}
+	if got := hookSurface(opts, "pre-commit", SurfacePreCommitHook); got.InstallState != StateFail {
+		t.Fatalf("missing hook surface = %+v", got)
+	}
+	writeFileForTest(t, filepath.Join(repo, ".githooks", "pre-commit"), "#!/usr/bin/env bash\n")
+	if err := os.Chmod(filepath.Join(repo, ".githooks", "pre-commit"), 0o755); err != nil {
+		t.Fatalf("chmod hook: %v", err)
+	}
+	if got := hookSurface(opts, "pre-commit", SurfacePreCommitHook); got.InstallState != StatePass || got.ProofState != StateNotAssessed {
+		t.Fatalf("present hook surface = %+v", got)
+	}
+	if got := gitignoreSurface(opts); got.InstallState != StateFail {
+		t.Fatalf("missing gitignore surface = %+v", got)
+	}
+	writeFileForTest(t, filepath.Join(repo, ".gitignore"), gitignoreBlock)
+	if got := gitignoreSurface(opts); got.InstallState != StatePass {
+		t.Fatalf("present gitignore surface = %+v", got)
+	}
+}
+
+func TestWriteHumanTableDiffItemIncludesOptionalFields(t *testing.T) {
+	var b strings.Builder
+	writeHumanTableDiffItem(&b, DiffSummary{
+		Path:   ".githooks/pre-commit",
+		Action: "replace",
+		Before: "old",
+		After:  "new",
+		Backup: ".githooks/pre-commit.bak",
+	})
+	line := b.String()
+	for _, want := range []string{".githooks/pre-commit: replace", "[old -> new]", "(backup: .githooks/pre-commit.bak)"} {
+		if !strings.Contains(line, want) {
+			t.Fatalf("diff line %q missing %q", line, want)
+		}
 	}
 }
 

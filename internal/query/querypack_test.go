@@ -80,6 +80,31 @@ func TestForensicsBasicPackPreservesMissingRequiredArtifact(t *testing.T) {
 	}
 }
 
+func TestTimelineRowsFallbackWhenRunHasNoEventRefsAndOptionalArtifactsMissing(t *testing.T) {
+	runDir := t.TempDir()
+	writeQueryPackJSON(t, filepath.Join(runDir, "run.json"), map[string]any{
+		"run_id": "run-no-events",
+	})
+
+	result, err := ForensicsBasicPack(runDir)
+	if err != nil {
+		t.Fatalf("forensics pack: %v", err)
+	}
+	timeline := result.QueryRows[QueryForensicsTimeline]
+	if len(timeline) != 3 {
+		t.Fatalf("timeline rows = %+v", timeline)
+	}
+	if timeline[0].ReasonCode != "run_timeline_available" || timeline[0].SourceRef != "block_09.run.run_id" {
+		t.Fatalf("fallback run row = %+v", timeline[0])
+	}
+	if timeline[1].EvidenceState != RowStateNotAssessed || timeline[1].EvidenceGap != EvidenceFamilyRetention {
+		t.Fatalf("missing forensic row = %+v", timeline[1])
+	}
+	if timeline[2].EvidenceState != RowStateNotAssessed || timeline[2].EvidenceGap != EvidenceFamilyAdapterCapture {
+		t.Fatalf("missing adapter row = %+v", timeline[2])
+	}
+}
+
 func TestForensicsBasicPackPreservesUnreadableOptionalArtifactAsCannotVerifyRows(t *testing.T) {
 	runDir := writeForensicsPackFixture(t)
 	adapterPath := filepath.Join(runDir, "adapter-capture.assessment-result.json")

@@ -1035,11 +1035,7 @@ func commandConfigured(result *ReviewerResult, role ReviewRole) bool {
 }
 
 func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir string) (*workingTreeBaseline, bool, error) {
-	if !role.ReadOnlyEnforced {
-		markOpenCodeReadOnlyMissing(result)
-		return nil, false, nil
-	}
-	if err := attachPromptRef(result, role); err != nil {
+	if !openCodeReadOnlyReady(result, role) {
 		return nil, false, nil
 	}
 	baseline, err := captureWorkingTreeBaseline(workDir)
@@ -1052,6 +1048,17 @@ func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir st
 		return nil, false, nil
 	}
 	return baseline, commandConfigured(result, role), nil
+}
+
+func openCodeReadOnlyReady(result *ReviewerResult, role ReviewRole) bool {
+	if !role.ReadOnlyEnforced {
+		markOpenCodeReadOnlyMissing(result)
+		return false
+	}
+	if err := attachPromptRef(result, role); err != nil {
+		return false
+	}
+	return true
 }
 
 func openCodeBaselineClean(result *ReviewerResult, role ReviewRole, baseline *workingTreeBaseline) bool {
@@ -1098,7 +1105,7 @@ func applyRunnerError(result *ReviewerResult, err error) error {
 }
 
 func applyOpenCodeMutationCheck(result *ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) {
-	if role.Runner != RunnerOpenCode || baseline == nil {
+	if !needsOpenCodeMutationCheck(role, baseline) {
 		return
 	}
 	after, err := captureWorkingTreeBaseline(workDir)
@@ -1110,6 +1117,10 @@ func applyOpenCodeMutationCheck(result *ReviewerResult, role ReviewRole, workDir
 		result.Status = StatusCannotVerify
 		result.Reason = "mutation_detected"
 	}
+}
+
+func needsOpenCodeMutationCheck(role ReviewRole, baseline *workingTreeBaseline) bool {
+	return role.Runner == RunnerOpenCode && baseline != nil
 }
 
 func markBaselineCannotVerify(result *ReviewerResult) {

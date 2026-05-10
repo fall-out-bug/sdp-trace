@@ -113,31 +113,10 @@ func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, 
 	if err != nil {
 		return Event{}, err
 	}
-	prevHash := NullEventHash
-	if len(artifact.Events) > 0 {
-		prevHash = artifact.Events[len(artifact.Events)-1].EventHash
-	}
-	event := Event{
-		SchemaVersion: SchemaVersion,
-		RunID:         artifact.Manifest.RunID,
-		EventID:       SHA256Hex(fmt.Sprintf("%s:%s:%d:%s", artifact.Manifest.RunID, eventType, len(artifact.Events), time.Now().UTC().Format(time.RFC3339Nano))),
-		Sequence:      len(artifact.Events),
-		EventType:     eventType,
-		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
-		PrevEventHash: prevHash,
-		HashAlgorithm: HashAlgSHA256,
-		Canonicalization: Canonicalization{
-			Algorithm: CanonicalSchemaAlgo,
-			Version:   CanonicalAlgoVersion,
-		},
-		EventPayload: payload,
-		ObservedBy:   observedBy,
-	}
-	computed, err := event.WithComputedEventHash()
+	event, err := newAppendedRunEvent(artifact, eventType, payload, observedBy)
 	if err != nil {
 		return Event{}, err
 	}
-	event = computed
 	if err := artifact.Layout.WriteEvent(event); err != nil {
 		return Event{}, err
 	}
@@ -148,6 +127,33 @@ func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, 
 		return Event{}, err
 	}
 	return event, nil
+}
+
+func newAppendedRunEvent(artifact RunArtifact, eventType EventType, payload map[string]any, observedBy string) (Event, error) {
+	event := Event{
+		SchemaVersion: SchemaVersion,
+		RunID:         artifact.Manifest.RunID,
+		EventID:       SHA256Hex(fmt.Sprintf("%s:%s:%d:%s", artifact.Manifest.RunID, eventType, len(artifact.Events), time.Now().UTC().Format(time.RFC3339Nano))),
+		Sequence:      len(artifact.Events),
+		EventType:     eventType,
+		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
+		PrevEventHash: appendedPrevHash(artifact.Events),
+		HashAlgorithm: HashAlgSHA256,
+		Canonicalization: Canonicalization{
+			Algorithm: CanonicalSchemaAlgo,
+			Version:   CanonicalAlgoVersion,
+		},
+		EventPayload: payload,
+		ObservedBy:   observedBy,
+	}
+	return event.WithComputedEventHash()
+}
+
+func appendedPrevHash(events []Event) string {
+	if len(events) == 0 {
+		return NullEventHash
+	}
+	return events[len(events)-1].EventHash
 }
 
 // ValidateRunDirectory checks that run.json and event files are parseable.

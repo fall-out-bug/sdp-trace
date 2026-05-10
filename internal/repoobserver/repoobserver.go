@@ -347,27 +347,9 @@ func buildStatus(opts Options, installPreview bool) (Status, error) {
 	if repoID == "" {
 		repoID = derivedRepositoryID(opts.RepoRoot)
 	}
-	surfaces := []Surface{
-		repositoryIdentitySurface(opts),
-		hooksPathSurface(opts),
-		hookSurface(opts, "pre-commit", SurfacePreCommitHook),
-		hookSurface(opts, "post-commit", SurfacePostCommitHook),
-		hookSurface(opts, "pre-push", SurfacePrePushHook),
-		generatedFileSurface(opts, ".sdp-trace/config.json", SurfaceConfig),
-		gitignoreSurface(opts),
-		ciWorkflowSurface(opts),
-		ciArtifactUploadSurface(opts),
-		ciArtifactBundleSurface(opts),
-		prCheckBindingSurface(),
-		localWrappedCommandsSurface(),
-		agentPromptSurface(),
-	}
+	surfaces := buildSurfaces(opts)
 	if installPreview {
-		for i := range surfaces {
-			if surfaces[i].InstallState == StateFail && strings.HasPrefix(surfaces[i].NextAction, "run install") {
-				surfaces[i].NextAction = "rerun with --write to install this surface"
-			}
-		}
+		applyInstallPreviewActions(surfaces)
 	}
 	status := Status{
 		SchemaVersion:     SchemaVersion,
@@ -384,6 +366,32 @@ func buildStatus(opts Options, installPreview bool) (Status, error) {
 		GeneratedAt:       opts.Now.Format(time.RFC3339),
 	}
 	return status, nil
+}
+
+func buildSurfaces(opts Options) []Surface {
+	return []Surface{
+		repositoryIdentitySurface(opts),
+		hooksPathSurface(opts),
+		hookSurface(opts, "pre-commit", SurfacePreCommitHook),
+		hookSurface(opts, "post-commit", SurfacePostCommitHook),
+		hookSurface(opts, "pre-push", SurfacePrePushHook),
+		generatedFileSurface(opts, ".sdp-trace/config.json", SurfaceConfig),
+		gitignoreSurface(opts),
+		ciWorkflowSurface(opts),
+		ciArtifactUploadSurface(opts),
+		ciArtifactBundleSurface(opts),
+		prCheckBindingSurface(),
+		localWrappedCommandsSurface(),
+		agentPromptSurface(),
+	}
+}
+
+func applyInstallPreviewActions(surfaces []Surface) {
+	for i := range surfaces {
+		if surfaces[i].InstallState == StateFail && strings.HasPrefix(surfaces[i].NextAction, "run install") {
+			surfaces[i].NextAction = "rerun with --write to install this surface"
+		}
+	}
 }
 
 func repositoryIdentitySurface(opts Options) Surface {
@@ -408,17 +416,24 @@ func hookSurface(opts Options, name, surfaceID string) Surface {
 	rel := filepath.Join(".githooks", name)
 	path := filepath.Join(opts.RepoRoot, rel)
 	info, err := os.Stat(path)
-	if err == nil && !info.IsDir() {
-		state := StatePass
-		if info.Mode()&0o111 == 0 {
-			state = StateCannotVerify
-		}
-		return surface(surfaceID, state, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptPresent, rel, "run a git operation to observe hook output")
+	if err == nil {
+		return presentHookSurface(info, surfaceID, rel)
 	}
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return surface(surfaceID, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+rel, ReasonUnsafeOutputRefused, rel, "fix unreadable hook path")
 	}
 	return surface(surfaceID, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptAbsent, rel, "install generated hook script")
+}
+
+func presentHookSurface(info os.FileInfo, surfaceID, rel string) Surface {
+	if info.IsDir() {
+		return surface(surfaceID, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptAbsent, rel, "install generated hook script")
+	}
+	state := StatePass
+	if info.Mode()&0o111 == 0 {
+		state = StateCannotVerify
+	}
+	return surface(surfaceID, state, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptPresent, rel, "run a git operation to observe hook output")
 }
 
 func generatedFileSurface(opts Options, rel, surfaceID string) Surface {
@@ -436,13 +451,24 @@ func generatedFileSurface(opts Options, rel, surfaceID string) Surface {
 func gitignoreSurface(opts Options) Surface {
 	rel := ".gitignore"
 	data, err := os.ReadFile(filepath.Join(opts.RepoRoot, rel))
-	if err == nil && strings.Contains(string(data), "# sdp-trace begin") && strings.Contains(string(data), "# sdp-trace end") {
-		return surface(SurfaceGitignore, StatePass, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonAlreadyInstalled, rel, "")
+	if err == nil {
+		return gitignoreContentSurface(rel, string(data))
 	}
-	if err == nil || errors.Is(err, os.ErrNotExist) {
-		return surface(SurfaceGitignore, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonManualStepRequired, rel, "add sdp-trace ignore block")
+	if errors.Is(err, os.ErrNotExist) {
+		return missingGitignoreSurface(rel)
 	}
 	return surface(SurfaceGitignore, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:.gitignore", ReasonUnsafeOutputRefused, rel, "fix unreadable .gitignore")
+}
+
+func gitignoreContentSurface(rel, data string) Surface {
+	if strings.Contains(data, "# sdp-trace begin") && strings.Contains(data, "# sdp-trace end") {
+		return surface(SurfaceGitignore, StatePass, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonAlreadyInstalled, rel, "")
+	}
+	return missingGitignoreSurface(rel)
+}
+
+func missingGitignoreSurface(rel string) Surface {
+	return surface(SurfaceGitignore, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonManualStepRequired, rel, "add sdp-trace ignore block")
 }
 
 func ciWorkflowSurface(opts Options) Surface {
@@ -566,10 +592,18 @@ func gapForSurface(s Surface) (Gap, bool) {
 	if s.InstallState == StatePass && s.ProofState == StatePass {
 		return Gap{}, false
 	}
-	if s.InstallState == StateNotAssessed && s.ProofState == StateNotAssessed && s.SurfaceID == SurfaceAgentPrompt {
-		return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: "agent prompt cooperation is not repository setup proof"}, true
+	if agentPromptNotAssessed(s) {
+		return agentPromptGap(s), true
 	}
 	return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: gapDetail(s)}, true
+}
+
+func agentPromptNotAssessed(s Surface) bool {
+	return s.InstallState == StateNotAssessed && s.ProofState == StateNotAssessed && s.SurfaceID == SurfaceAgentPrompt
+}
+
+func agentPromptGap(s Surface) Gap {
+	return Gap{SurfaceID: s.SurfaceID, ReasonCode: s.ReasonCode, Detail: "agent prompt cooperation is not repository setup proof"}
 }
 
 func gapDetail(s Surface) string {
@@ -971,17 +1005,39 @@ func derivedRepositoryID(root string) string {
 }
 
 func sanitizeOrigin(origin string) string {
-	origin = strings.TrimSpace(origin)
-	if idx := strings.Index(origin, "#"); idx >= 0 {
-		origin = origin[:idx]
+	origin = removeOriginFragment(strings.TrimSpace(origin))
+	hadURLCredentials := hasURLCredentials(origin)
+	origin = removeOriginCredentials(origin)
+	if hadURLCredentials {
+		return origin
 	}
+	return originTail(origin)
+}
+
+func removeOriginFragment(origin string) string {
+	if idx := strings.Index(origin, "#"); idx >= 0 {
+		return origin[:idx]
+	}
+	return origin
+}
+
+func removeOriginCredentials(origin string) string {
 	if strings.Contains(origin, "@") && !strings.Contains(origin, "://") {
-		origin = origin[strings.LastIndex(origin, "@")+1:]
+		return origin[strings.LastIndex(origin, "@")+1:]
 	}
 	if at := strings.LastIndex(origin, "@"); strings.Contains(origin[:max(at, 0)], "://") && at >= 0 {
 		schemeEnd := strings.Index(origin, "://")
 		return origin[:schemeEnd+3] + origin[at+1:]
 	}
+	return origin
+}
+
+func hasURLCredentials(origin string) bool {
+	at := strings.LastIndex(origin, "@")
+	return at >= 0 && strings.Contains(origin[:max(at, 0)], "://")
+}
+
+func originTail(origin string) string {
 	origin = strings.ReplaceAll(origin, "\\", "/")
 	parts := strings.Split(origin, "/")
 	if len(parts) > 2 {

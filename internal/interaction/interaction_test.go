@@ -90,6 +90,121 @@ func TestRelayRefusesUnsafeContentBeforeForwarding(t *testing.T) {
 	}
 }
 
+func TestReadTraceValidatesPersistedTrace(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "trace.json")
+	trace := Trace{
+		SchemaVersion:     SchemaVersion,
+		TraceID:           "it-1",
+		TaskID:            "task-1",
+		SourceType:        SourcePreclassifiedTranscript,
+		CompletenessState: CompletenessPartial,
+		AssessmentState:   "partial",
+		Events:            []Event{validImportedEvent("ix-1", 1)},
+		CreatedAt:         "2026-05-09T10:00:00Z",
+		UpdatedAt:         "2026-05-09T10:00:00Z",
+	}
+	writeJSONForInteractionTest(t, path, trace)
+
+	read, err := ReadTrace(path)
+	if err != nil {
+		t.Fatalf("ReadTrace() error = %v", err)
+	}
+	if read.TaskID != trace.TaskID || len(read.Events) != 1 {
+		t.Fatalf("read trace = %+v", read)
+	}
+
+	trace.Events[0].TaskID = "other-task"
+	writeJSONForInteractionTest(t, path, trace)
+	if _, err := ReadTrace(path); err == nil || !strings.Contains(err.Error(), "task_id mismatch") {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+}
+
+func TestValidateTraceHeaderRejectsInvalidEnvelope(t *testing.T) {
+	trace := Trace{SchemaVersion: "bad"}
+	if err := ValidateTrace(trace); err == nil || !strings.Contains(err.Error(), "schema_version") {
+		t.Fatalf("expected schema error, got %v", err)
+	}
+	trace = Trace{SchemaVersion: SchemaVersion, TaskID: "task-1", SourceType: "bad", Events: []Event{validImportedEvent("ix-1", 1)}}
+	if err := ValidateTrace(trace); err == nil || !strings.Contains(err.Error(), "unsupported source_type") {
+		t.Fatalf("expected source error, got %v", err)
+	}
+	trace = Trace{SchemaVersion: SchemaVersion, TaskID: "task-1", SourceType: SourcePreclassifiedTranscript}
+	if err := ValidateTrace(trace); err == nil || !strings.Contains(err.Error(), "requires events") {
+		t.Fatalf("expected events error, got %v", err)
+	}
+}
+
+func TestReadEnvelopeValidatesPersistedEnvelope(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "envelope.json")
+	envelope := Envelope{
+		SchemaVersion:   SchemaVersion,
+		TaskID:          "task-1",
+		EnvelopeID:      "env-1",
+		RunRefs:         []string{"recorder:run-1"},
+		InteractionRefs: []string{"sdp://interaction/task-1/ix-1"},
+		AssessmentState: "partial",
+		CreatedAt:       "2026-05-09T10:00:00Z",
+		UpdatedAt:       "2026-05-09T10:00:00Z",
+	}
+	writeJSONForInteractionTest(t, path, envelope)
+
+	read, err := ReadEnvelope(path)
+	if err != nil {
+		t.Fatalf("ReadEnvelope() error = %v", err)
+	}
+	if read.EnvelopeID != envelope.EnvelopeID {
+		t.Fatalf("read envelope = %+v", read)
+	}
+
+	envelope.OperationRefs = []string{"/tmp/local"}
+	writeJSONForInteractionTest(t, path, envelope)
+	if _, err := ReadEnvelope(path); err == nil || !strings.Contains(err.Error(), "unsupported envelope ref") {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+}
+
+func TestNormalizeRelayTrimsAndDefaults(t *testing.T) {
+	opts := normalizeRelay(RelayOptions{
+		TaskID:      " task-1 ",
+		ActorID:     " human ",
+		OperationID: " op-1 ",
+		StageID:     " plan ",
+		Out:         " trace.json ",
+	})
+	if opts.TaskID != "task-1" || opts.ActorID != "human" || opts.OperationID != "op-1" || opts.StageID != "plan" || opts.Out != "trace.json" {
+		t.Fatalf("trimmed options = %+v", opts)
+	}
+	if opts.ActorType != "human_user" || opts.Target != "agent" || opts.EventType != "corrective_feedback" {
+		t.Fatalf("defaulted options = %+v", opts)
+	}
+	if opts.Now.IsZero() {
+		t.Fatalf("Now was not defaulted")
+	}
+}
+
+func TestTraceAssessmentCompletenessTransitions(t *testing.T) {
+	state := newTraceAssessment()
+	state.applyCompleteness(CompletenessPartial)
+	if state.assessment != "partial" || state.completeness != CompletenessPartial {
+		t.Fatalf("partial state = %+v", state)
+	}
+	state.applyCompleteness(CompletenessNotAssessed)
+	if state.assessment != StateNotAssessed || state.completeness != CompletenessNotAssessed || len(state.notAssessed) != 1 {
+		t.Fatalf("not assessed state = %+v", state)
+	}
+	state.applyCompleteness(CompletenessCannotVerify)
+	if state.assessment != StateNotAssessed || state.completeness != CompletenessCannotVerify || len(state.cannotVerify) != 1 {
+		t.Fatalf("cannot verify state = %+v", state)
+	}
+	state.applyCompleteness(CompletenessNotAssessed)
+	if state.completeness != CompletenessCannotVerify || len(state.notAssessed) != 2 {
+		t.Fatalf("cannot verify should dominate later not_assessed: %+v", state)
+	}
+}
+
 func TestImportTranscriptRejectsAgentReportedAndNonMonotonicOrdering(t *testing.T) {
 	dir := t.TempDir()
 	eventsPath := filepath.Join(dir, "events.jsonl")
@@ -389,6 +504,27 @@ func TestValidateEventRejectsInvalidFields(t *testing.T) {
 			},
 			wantErr: "source_sequence must be non-negative",
 		},
+		{
+			name: "invalid retention",
+			mutate: func(event *Event) {
+				event.Retention = "forever"
+			},
+			wantErr: "unsupported retention",
+		},
+		{
+			name: "invalid completeness",
+			mutate: func(event *Event) {
+				event.CompletenessState = "done"
+			},
+			wantErr: "unsupported completeness_state",
+		},
+		{
+			name: "invalid channel exclusivity",
+			mutate: func(event *Event) {
+				event.ChannelExclusivity = "exclusive"
+			},
+			wantErr: "unsupported channel_exclusivity_state",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -427,6 +563,17 @@ func validImportedEvent(id string, sequence int) Event {
 		Redaction:              Redaction{PolicyRef: DefaultRedactionPolicyRef},
 		ObservedAt:             "2026-05-09T10:00:00Z",
 		CreatedAt:              "2026-05-09T10:00:00Z",
+	}
+}
+
+func writeJSONForInteractionTest(t *testing.T, path string, value any) {
+	t.Helper()
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		t.Fatalf("write json: %v", err)
 	}
 }
 

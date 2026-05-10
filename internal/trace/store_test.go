@@ -193,6 +193,60 @@ func TestAppendRunEventExtendsChainAndUpdatesManifest(t *testing.T) {
 	}
 }
 
+func TestAppendRunEventStartsChainForEmptyManifest(t *testing.T) {
+	runDir := t.TempDir()
+	layout, err := NewRunLayout(runDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest := RunManifest{
+		SchemaVersion:   SchemaVersion,
+		RunID:           "run-empty",
+		RecorderVersion: RecorderVersion,
+		ContractID:      DefaultContract.ContractID,
+		EventCount:      0,
+	}
+	if err := layout.WriteRun(manifest); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+
+	appended, err := AppendRunEvent(runDir, EventRunStarted, map[string]any{"state": "started"}, "test-observer")
+	if err != nil {
+		t.Fatalf("AppendRunEvent() error = %v", err)
+	}
+	if appended.Sequence != 0 || appended.PrevEventHash != NullEventHash {
+		t.Fatalf("first event chain fields = %+v", appended)
+	}
+	artifact, err := OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("OpenRunArtifact() error = %v", err)
+	}
+	if artifact.Manifest.EventCount != 1 || artifact.Manifest.EventChainHead != appended.EventHash || artifact.Manifest.FinalChainHead != appended.EventHash {
+		t.Fatalf("manifest not updated for first event: %+v", artifact.Manifest)
+	}
+}
+
+func TestOpenRunArtifactAndCopyArtifactFileErrorBranches(t *testing.T) {
+	if _, err := OpenRunArtifact(filepath.Join(t.TempDir(), "missing")); err == nil {
+		t.Fatalf("expected missing run artifact error")
+	}
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	dst := filepath.Join(dir, "nested", "dst.txt")
+	if err := os.WriteFile(src, []byte("artifact"), 0o644); err != nil {
+		t.Fatalf("write src: %v", err)
+	}
+	if err := CopyArtifactFile(src, dst); err != nil {
+		t.Fatalf("CopyArtifactFile() error = %v", err)
+	}
+	if data, err := os.ReadFile(dst); err != nil || string(data) != "artifact" {
+		t.Fatalf("copied data = %q err=%v", data, err)
+	}
+	if err := CopyArtifactFile(filepath.Join(dir, "missing"), filepath.Join(dir, "out")); err == nil {
+		t.Fatalf("expected missing source error")
+	}
+}
+
 func TestValidateEventChainRejectsBrokenPreviousHash(t *testing.T) {
 	first := Event{
 		SchemaVersion: SchemaVersion,

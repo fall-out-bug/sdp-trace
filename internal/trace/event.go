@@ -119,6 +119,10 @@ func writeNumericScalar(buf *bytes.Buffer, value any) bool {
 	if !reflected.IsValid() {
 		return false
 	}
+	return writeReflectedNumericScalar(buf, reflected)
+}
+
+func writeReflectedNumericScalar(buf *bytes.Buffer, reflected reflect.Value) bool {
 	switch reflected.Kind() {
 	case reflect.Float32, reflect.Float64:
 		writeJSONNumber(buf, trimFloatToJSON(reflected.Convert(reflect.TypeOf(float64(0))).Float()))

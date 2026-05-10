@@ -560,6 +560,123 @@ func TestRunReviewPreviewReturnsPreviewOnly(t *testing.T) {
 	}
 }
 
+func TestWriteJSONAndReadRunSetUseDirectoryContracts(t *testing.T) {
+	root := t.TempDir()
+	runSet := RunSet{
+		SchemaVersion: SchemaVersionRunSet,
+		PacketDigest:  "sha256:" + sixtyFour("7"),
+		Results: []ReviewerResult{{
+			ReviewRunID:    "run-1",
+			PacketDigest:   "sha256:" + sixtyFour("7"),
+			Plane:          PlaneCodeCorrectness,
+			RoleID:         "code",
+			Runner:         RunnerManualExternal,
+			RequestedModel: "manual",
+			ObservedModel:  "manual",
+			ModelFamily:    "manual",
+			ModelVersion:   "v1",
+			Status:         StatusNoFindings,
+		}},
+	}
+	if err := WriteJSON(" ", runSet); err != nil {
+		t.Fatalf("blank WriteJSON path should be ignored: %v", err)
+	}
+	outDir := filepath.Join(root, "runs")
+	if err := WriteJSON(filepath.Join(outDir, "results.json"), runSet); err != nil {
+		t.Fatalf("WriteJSON() error = %v", err)
+	}
+
+	read, err := ReadRunSet(outDir)
+	if err != nil {
+		t.Fatalf("ReadRunSet(dir) error = %v", err)
+	}
+	if len(read.Results) != 1 || read.Results[0].ReviewRunID != "run-1" {
+		t.Fatalf("read run set = %+v", read)
+	}
+
+	runSet.Results = append(runSet.Results, runSet.Results[0])
+	if err := WriteJSON(filepath.Join(outDir, "results.json"), runSet); err != nil {
+		t.Fatalf("WriteJSON malformed runset: %v", err)
+	}
+	if _, err := ReadRunSet(filepath.Join(outDir, "results.json")); err == nil {
+		t.Fatalf("expected run-set validation error")
+	}
+}
+
+func TestPacketProfileAndSmallHelpers(t *testing.T) {
+	root := t.TempDir()
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1"}
+	packetDir := filepath.Join(root, "packet")
+	if err := WriteJSON(filepath.Join(packetDir, "packet.json"), packet); err != nil {
+		t.Fatalf("write packet: %v", err)
+	}
+	readPacket, err := ReadPacket(packetDir)
+	if err != nil {
+		t.Fatalf("ReadPacket(dir) error = %v", err)
+	}
+	if readPacket.PacketID != "packet-1" {
+		t.Fatalf("packet = %+v", readPacket)
+	}
+
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "profile",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles:          []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "manual"}},
+	}
+	profilePath := filepath.Join(root, "profile.json")
+	if err := WriteJSON(profilePath, profile); err != nil {
+		t.Fatalf("write profile: %v", err)
+	}
+	if _, err := ReadProfile(profilePath); err != nil {
+		t.Fatalf("ReadProfile() error = %v", err)
+	}
+
+	if got := defaultReviewerStatus([]Finding{{ID: "f1"}}); got != StatusFindingsReported {
+		t.Fatalf("default status with finding = %s", got)
+	}
+	if got := defaultReviewerStatus(nil); got != StatusNoFindings {
+		t.Fatalf("default status empty = %s", got)
+	}
+	if contextKind("task-review.md") != RefKindTask || contextKind("notes.md") != RefKindDoc || contextKind("schema.json") != RefKindSchema || contextKind("diff.patch") != RefKindSourceExcerpt {
+		t.Fatalf("contextKind mapping changed")
+	}
+
+	metadataPath := writeText(t, root, "metadata.json", `{"ok":true}`)
+	inputsDir := filepath.Join(root, "inputs")
+	if err := os.MkdirAll(inputsDir, 0o755); err != nil {
+		t.Fatalf("mkdir inputs: %v", err)
+	}
+	ref, err := optionalMetadataRef(inputsDir, metadataPath)
+	if err != nil {
+		t.Fatalf("optionalMetadataRef() error = %v", err)
+	}
+	if ref == nil || ref.Kind != RefKindMetadata {
+		t.Fatalf("metadata ref = %+v", ref)
+	}
+	empty, err := optionalMetadataRef(filepath.Join(root, "inputs-empty"), "")
+	if err != nil || empty != nil {
+		t.Fatalf("empty metadata ref = %+v err=%v", empty, err)
+	}
+}
+
+func TestApplyRunnerErrorClassifiesUnavailableAndFailure(t *testing.T) {
+	result := ReviewerResult{}
+	if err := applyRunnerError(&result, exec.ErrNotFound); err == nil {
+		t.Fatalf("expected error returned")
+	}
+	if result.Status != StatusNotAssessed || result.Reason != "runner_unavailable" {
+		t.Fatalf("unavailable result = %+v", result)
+	}
+	result = ReviewerResult{}
+	if err := applyRunnerError(&result, fmt.Errorf("boom")); err == nil {
+		t.Fatalf("expected error returned")
+	}
+	if result.Status != StatusFailed || result.Reason != "runner_failed" {
+		t.Fatalf("failed result = %+v", result)
+	}
+}
+
 func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	root := t.TempDir()
 	packetDigest := "sha256:" + sixtyFour("9")

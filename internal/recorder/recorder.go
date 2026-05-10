@@ -270,16 +270,7 @@ func (h *hashWriter) Digest() string {
 }
 
 func newRunWriter(runDir string, contract trace.Contract, task string) (*runWriter, error) {
-	if err := os.MkdirAll(filepath.Join(runDir, "events"), 0o755); err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(filepath.Join(runDir, "artifacts"), 0o755); err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(filepath.Join(runDir, "verifier"), 0o755); err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(filepath.Join(runDir, "export"), 0o755); err != nil {
+	if err := createRunLayoutDirs(runDir); err != nil {
 		return nil, err
 	}
 
@@ -308,6 +299,15 @@ func newRunWriter(runDir string, contract trace.Contract, task string) (*runWrit
 		contract: contract,
 		manifest: manifest,
 	}, nil
+}
+
+func createRunLayoutDirs(runDir string) error {
+	for _, rel := range []string{"events", "artifacts", "verifier", "export"} {
+		if err := os.MkdirAll(filepath.Join(runDir, rel), 0o755); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (w *runWriter) appendEvent(eventType trace.EventType, payload any) error {
