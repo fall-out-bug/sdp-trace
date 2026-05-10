@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fall_out_bug/sdp-trace/internal/recorder"
@@ -123,6 +124,75 @@ func TestVerifyCannotVerifyMissingEventsDirectory(t *testing.T) {
 	}
 	if audit == nil || audit.Issue != "event_load_failed" {
 		t.Fatalf("expected event_load_failed audit, got %#v", audit)
+	}
+}
+
+func TestExplainRunIncludesMissingEvidence(t *testing.T) {
+	tempDir := t.TempDir()
+	contractPath := filepath.Join(tempDir, "contract.json")
+	contract := trace.Contract{
+		ContractID:     "explain-missing-evidence",
+		Version:        "v1",
+		RequiredEvents: []string{"recorder_attached", "run_started", "command_started", "command_finished", "run_closed", "test_observed"},
+	}
+	if err := writeJSONFile(contractPath, contract); err != nil {
+		t.Fatalf("write contract: %v", err)
+	}
+	runDir := runAndCapture(t, []string{"explain"}, true, contractPath)
+
+	explanation, err := ExplainRun(runDir)
+	if err != nil {
+		t.Fatalf("ExplainRun() error = %v", err)
+	}
+	for _, want := range []string{
+		"result: not_assessed",
+		"missing_evidence:",
+		" - test_observed: missing (required_by_contract)",
+		"contract_path: " + contractPath,
+	} {
+		if !strings.Contains(explanation, want) {
+			t.Fatalf("explanation missing %q:\n%s", want, explanation)
+		}
+	}
+}
+
+func TestWriteVerifierArtifactsWritesAuditConditionally(t *testing.T) {
+	runDir := t.TempDir()
+	result := trace.VerifierResult{
+		RunID:  "run-a",
+		RunDir: runDir,
+		Result: trace.VerdictCannotVerify,
+		Reason: "tampered",
+	}
+	table := trace.MissingEvidenceTable{
+		ContractID: "contract-a",
+		Rows: []trace.MissingEvidenceRow{{
+			ExpectedEvent: "test_observed",
+			ObservedState: "missing",
+			Reason:        "required event not found",
+		}},
+	}
+	audit := &trace.IntegrityAudit{
+		RunID:  "run-a",
+		Issue:  "tampered_chain",
+		Reason: "hash mismatch",
+	}
+
+	if err := WriteVerifierArtifacts(runDir, result, table, audit); err != nil {
+		t.Fatalf("WriteVerifierArtifacts() error = %v", err)
+	}
+	for _, name := range []string{"verifier-result.json", "missing-evidence-table.json", "integrity-audit.json"} {
+		if _, err := os.Stat(filepath.Join(runDir, "verifier", name)); err != nil {
+			t.Fatalf("expected %s to be written: %v", name, err)
+		}
+	}
+
+	runDirNoAudit := t.TempDir()
+	if err := WriteVerifierArtifacts(runDirNoAudit, result, table, nil); err != nil {
+		t.Fatalf("WriteVerifierArtifacts() without audit error = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(runDirNoAudit, "verifier", "integrity-audit.json")); !os.IsNotExist(err) {
+		t.Fatalf("integrity audit should not be written when nil: %v", err)
 	}
 }
 

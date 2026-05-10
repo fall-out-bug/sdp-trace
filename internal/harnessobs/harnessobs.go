@@ -754,55 +754,13 @@ func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, n
 
 func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []Event {
 	signals := rawSignals(raw)
-	families := map[string]bool{}
-	if hasSignal(signals, "session.started", "session.completed", "run.started", "run.completed", "step_start", "step-start", "step_finish", "step-finish") || hasSignalPrefix(signals, "session.", "run.") {
-		families["harness"] = true
-	}
-	if hasKey(raw, "model", "model_id", "modelid", "provider") {
-		families["model"] = true
-	}
-	if hasKey(raw, "role") || hasSignal(signals, "message", "response", "text") || hasSignalPrefix(signals, "message.", "response.") {
-		families["interaction"] = true
-	}
-	if hasKey(raw, "tool", "tool_call", "toolcall") || hasSignal(signals, "tool.call", "tool.result", "tool_use") || hasSignalPrefix(signals, "tool.") {
-		families["tool"] = true
-	}
-	if hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") || hasSignalPrefix(signals, "mutation.") || nativeMutationTool(raw) {
-		families["mutation"] = true
-	}
-	if hasSignal(signals, "test.finished", "test.started", "test.passed", "test.failed") || hasSignalPrefix(signals, "test.") {
-		families["test"] = true
-	}
-	if hasKey(raw, "phase") || hasSignal(signals, "phase") || hasSignalPrefix(signals, "phase.", "gsd.", "gsd_") {
-		families["phase"] = true
-	}
-	if hasSignal(signals, "review") || hasSignalPrefix(signals, "review.") {
-		families["review"] = true
-	}
-	if hasSignal(signals, "pull_request", "pull request") || hasSignalPrefix(signals, "pr.", "pr_") {
-		families["pr"] = true
-	}
-	if hasSignal(signals, "merge") || hasSignalPrefix(signals, "merge.") {
-		families["merge"] = true
-	}
+	families := openCodeFamilies(raw, signals)
 	if len(families) == 0 {
 		return nil
 	}
-	ordered := make([]string, 0, len(families))
-	for family := range families {
-		ordered = append(ordered, family)
-	}
-	sort.Strings(ordered)
-	observedAt := findTimestamp(raw)
-	if observedAt == "" {
-		observedAt = now.Format(time.RFC3339)
-	}
-	actor := "opencode"
-	if model := findStringByKey(raw, "model", "model_id", "modelid"); model != "" {
-		actor = safeToken(model)
-	} else if provider := findStringByKey(raw, "provider"); provider != "" {
-		actor = safeToken(provider)
-	}
+	ordered := sortedFamilies(families)
+	observedAt := openCodeObservedAt(raw, now)
+	actor := openCodeActor(raw)
 	sourceRef := fmt.Sprintf("raw-%06d", lineNo)
 	events := make([]Event, 0, len(ordered))
 	for _, family := range ordered {
@@ -816,6 +774,88 @@ func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []E
 		))
 	}
 	return events
+}
+
+func openCodeFamilies(raw map[string]any, signals []string) map[string]bool {
+	families := map[string]bool{}
+	setFamily(families, "harness", openCodeHarnessFamily(signals))
+	setFamily(families, "model", hasKey(raw, "model", "model_id", "modelid", "provider"))
+	setFamily(families, "interaction", openCodeInteractionFamily(raw, signals))
+	setFamily(families, "tool", openCodeToolFamily(raw, signals))
+	setFamily(families, "mutation", openCodeMutationFamily(raw, signals))
+	setFamily(families, "test", openCodeTestFamily(signals))
+	setFamily(families, "phase", openCodePhaseFamily(raw, signals))
+	setFamily(families, "review", hasSignal(signals, "review") || hasSignalPrefix(signals, "review."))
+	setFamily(families, "pr", hasSignal(signals, "pull_request", "pull request") || hasSignalPrefix(signals, "pr.", "pr_"))
+	setFamily(families, "merge", hasSignal(signals, "merge") || hasSignalPrefix(signals, "merge."))
+	return families
+}
+
+func setFamily(families map[string]bool, family string, observed bool) {
+	if observed {
+		families[family] = true
+	}
+}
+
+func openCodeHarnessFamily(signals []string) bool {
+	return hasSignal(signals, "session.started", "session.completed", "run.started", "run.completed", "step_start", "step-start", "step_finish", "step-finish") ||
+		hasSignalPrefix(signals, "session.", "run.")
+}
+
+func openCodeInteractionFamily(raw map[string]any, signals []string) bool {
+	return hasKey(raw, "role") ||
+		hasSignal(signals, "message", "response", "text") ||
+		hasSignalPrefix(signals, "message.", "response.")
+}
+
+func openCodeToolFamily(raw map[string]any, signals []string) bool {
+	return hasKey(raw, "tool", "tool_call", "toolcall") ||
+		hasSignal(signals, "tool.call", "tool.result", "tool_use") ||
+		hasSignalPrefix(signals, "tool.")
+}
+
+func openCodeMutationFamily(raw map[string]any, signals []string) bool {
+	return hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") ||
+		hasSignalPrefix(signals, "mutation.") ||
+		nativeMutationTool(raw)
+}
+
+func openCodeTestFamily(signals []string) bool {
+	return hasSignal(signals, "test.finished", "test.started", "test.passed", "test.failed") ||
+		hasSignalPrefix(signals, "test.")
+}
+
+func openCodePhaseFamily(raw map[string]any, signals []string) bool {
+	return hasKey(raw, "phase") ||
+		hasSignal(signals, "phase") ||
+		hasSignalPrefix(signals, "phase.", "gsd.", "gsd_")
+}
+
+func sortedFamilies(families map[string]bool) []string {
+	ordered := make([]string, 0, len(families))
+	for family := range families {
+		ordered = append(ordered, family)
+	}
+	sort.Strings(ordered)
+	return ordered
+}
+
+func openCodeObservedAt(raw map[string]any, now time.Time) string {
+	observedAt := findTimestamp(raw)
+	if observedAt == "" {
+		return now.Format(time.RFC3339)
+	}
+	return observedAt
+}
+
+func openCodeActor(raw map[string]any) string {
+	if model := findStringByKey(raw, "model", "model_id", "modelid"); model != "" {
+		return safeToken(model)
+	}
+	if provider := findStringByKey(raw, "provider"); provider != "" {
+		return safeToken(provider)
+	}
+	return "opencode"
 }
 
 func sessionCommandFacts(session SessionRun) []Event {

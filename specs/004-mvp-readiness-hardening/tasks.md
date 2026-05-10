@@ -38,7 +38,7 @@
 ## Phase 4: Complexity And CRAP Hardening
 
 - [x] T020 Decompose `internal/posture.ValidateExportResult` to the selected maximum complexity/CRAP threshold, or explicitly block MVP readiness until decomposition is approved.
-- [ ] T021 Decompose `internal/harnessobs.normalizeOpenCodeRawLine` to the selected maximum complexity/CRAP threshold, or explicitly block MVP readiness until decomposition is approved.
+- [x] T021 Decompose `internal/harnessobs.normalizeOpenCodeRawLine` to the selected maximum complexity/CRAP threshold, or explicitly block MVP readiness until decomposition is approved.
 - [x] T022 Triage other functions with cyclomatic/cognitive complexity or CRAP above the selected threshold.
 - [x] T023 Run `gocyclo`, selected `gocognit`, and CRAP review gates and record result.
 
@@ -49,8 +49,8 @@
 - [x] T026 Add focused tests for `internal/export` primary happy/error paths, or remove it from MVP claim surface.
 - [x] T027 Add focused `internal/trace` tests for core run/event safety and validation paths.
 - [x] T028 Add focused tests for `internal/posture` primary happy/error paths for validated export behavior.
-- [ ] T029 Add focused tests for refactored harness observation behavior.
-- [ ] T030 Add focused tests for `internal/verifier` MVP-critical happy/error paths, or remove it from MVP claim surface.
+- [x] T029 Add focused tests for refactored harness observation behavior.
+- [x] T030 Add focused tests for `internal/verifier` MVP-critical happy/error paths, or remove it from MVP claim surface.
 - [x] T031 Run `go test ./... -coverprofile` and record package-level and function-level coverage deltas.
 
 ## Phase 6: CI And Verification

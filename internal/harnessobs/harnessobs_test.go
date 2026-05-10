@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -78,6 +79,66 @@ func TestObserveRejectsUnsafeRawPromptAndDoesNotWriteRun(t *testing.T) {
 	}
 	if _, statErr := os.Stat(filepath.Join(dir, "run")); !os.IsNotExist(statErr) {
 		t.Fatalf("run dir exists after unsafe observe: %v", statErr)
+	}
+}
+
+func TestNormalizeOpenCodeRawLineClassifiesFamilies(t *testing.T) {
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	raw := map[string]any{
+		"type":      "tool.call",
+		"model":     "minimax/MiniMax-M2.7",
+		"role":      "assistant",
+		"tool":      "edit",
+		"phase":     "gsd.phase.1",
+		"timestamp": "2026-05-10T11:59:00Z",
+	}
+
+	events := normalizeOpenCodeRawLine(raw, 7, now)
+	got := map[string]Event{}
+	for _, event := range events {
+		got[event.EventFamily] = event
+	}
+	wantFamilies := []string{"interaction", "model", "mutation", "phase", "tool"}
+	if len(got) != len(wantFamilies) {
+		t.Fatalf("families = %v, want exactly %v", keys(got), wantFamilies)
+	}
+	for _, family := range wantFamilies {
+		event, ok := got[family]
+		if !ok {
+			t.Fatalf("missing family %s in %+v", family, events)
+		}
+		if event.SourceRef != "raw-000007" {
+			t.Fatalf("%s source_ref = %s", family, event.SourceRef)
+		}
+		if event.ActorRef != "minimax-MiniMax-M2.7" {
+			t.Fatalf("%s actor_ref = %s", family, event.ActorRef)
+		}
+		if event.ObservedAt != "2026-05-10T11:59:00Z" {
+			t.Fatalf("%s observed_at = %s", family, event.ObservedAt)
+		}
+	}
+}
+
+func keys(events map[string]Event) []string {
+	out := make([]string, 0, len(events))
+	for key := range events {
+		out = append(out, key)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func TestNormalizeOpenCodeRawLineUsesDefaultActorAndTime(t *testing.T) {
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	events := normalizeOpenCodeRawLine(map[string]any{"type": "session.started"}, 1, now)
+	if len(events) != 1 {
+		t.Fatalf("events = %+v, want one harness event", events)
+	}
+	if events[0].ActorRef != "opencode" {
+		t.Fatalf("actor_ref = %s, want opencode", events[0].ActorRef)
+	}
+	if events[0].ObservedAt != now.Format(time.RFC3339) {
+		t.Fatalf("observed_at = %s, want %s", events[0].ObservedAt, now.Format(time.RFC3339))
 	}
 }
 
