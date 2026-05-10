@@ -317,31 +317,86 @@ func validateEventPolicyBinding(policy Policy, event EventRetention) (Condition,
 }
 
 func prewriteCondition(input Input) Condition {
-	if input.Policy.PolicyID == "" || input.Policy.PolicyDigest == "" {
+	if prewritePolicyMissing(input.Policy) {
 		return cannotVerify("redaction_prewrite_applied", "redaction_policy_missing", "redaction rule coverage cannot be checked without the selected policy", "Supply the selected redaction policy before assessing rule coverage.")
 	}
 	rules := policyRules(input.Policy)
 	for _, event := range input.Run.Events {
-		if event.SecretLikeValuePresent {
-			return fail("redaction_prewrite_applied", "secret_like_value_persisted", "secret-like value is marked as persisted in retained metadata", "Apply pre-write redaction and retain only digests or safe references.")
-		}
-		if event.RedactionInputDigest == "" || event.RedactedPayloadDigest == "" {
-			return cannotVerify("redaction_prewrite_applied", "redaction_digest_missing", "pre-write redaction digests are missing", "Record pre-redaction and redacted payload digests.")
-		}
-		if event.RedactionAction == RedactionActionApplyRule && len(event.RedactionRuleRefs) == 0 {
-			return cannotVerify("redaction_prewrite_applied", "redaction_rule_refs_missing", "redaction rule references are missing", "Record the redaction rule ids applied before persistence.")
-		}
-		for _, ruleRef := range event.RedactionRuleRefs {
-			rule, ok := rules[ruleRef]
-			if !ok {
-				return fail("redaction_prewrite_applied", "redaction_rule_unknown", "event references a redaction rule that is absent from the selected policy", "Use event redaction_rule_refs from the selected redaction policy.")
-			}
-			if rule.Action != "" && rule.Action != event.RedactionAction {
-				return fail("redaction_prewrite_applied", "redaction_rule_action_mismatch", "event redaction action contradicts the selected policy rule", "Align event redaction action with the selected policy rule.")
-			}
+		if condition, ok := prewriteConditionForEvent(event, rules); ok {
+			return condition
 		}
 	}
 	return pass("redaction_prewrite_applied", "redaction_prewrite_applied", "pre-write redaction metadata is verifier-readable")
+}
+
+func prewritePolicyMissing(policy Policy) bool {
+	return policy.PolicyID == "" || policy.PolicyDigest == ""
+}
+
+func prewriteConditionForEvent(event EventRetention, rules map[string]Rule) (Condition, bool) {
+	for _, failure := range []conditionFailure{
+		{
+			matched:   prewriteEventHasSecretLike(event),
+			condition: fail("redaction_prewrite_applied", "secret_like_value_persisted", "secret-like value is marked as persisted in retained metadata", "Apply pre-write redaction and retain only digests or safe references."),
+		},
+		{
+			matched:   prewriteMissingRedactionDigests(event),
+			condition: cannotVerify("redaction_prewrite_applied", "redaction_digest_missing", "pre-write redaction digests are missing", "Record pre-redaction and redacted payload digests."),
+		},
+		{
+			matched:   prewriteRuleRefsMissing(event),
+			condition: cannotVerify("redaction_prewrite_applied", "redaction_rule_refs_missing", "redaction rule references are missing", "Record the redaction rule ids applied before persistence."),
+		},
+	} {
+		if failure.matched {
+			return failure.condition, true
+		}
+	}
+	if condition, ok := prewriteConditionForRuleRefs(event, rules); ok {
+		return condition, true
+	}
+	return Condition{}, false
+}
+
+type conditionFailure struct {
+	matched   bool
+	condition Condition
+}
+
+func prewriteConditionForRuleRefs(event EventRetention, rules map[string]Rule) (Condition, bool) {
+	for _, ruleRef := range event.RedactionRuleRefs {
+		if condition, ok := prewriteConditionForRuleRef(ruleRef, event.RedactionAction, rules); ok {
+			return condition, true
+		}
+	}
+	return Condition{}, false
+}
+
+func prewriteConditionForRuleRef(ruleRef, eventAction string, rules map[string]Rule) (Condition, bool) {
+	rule, ok := rules[ruleRef]
+	if !ok {
+		return fail("redaction_prewrite_applied", "redaction_rule_unknown", "event references a redaction rule that is absent from the selected redaction policy", "Use event redaction_rule_refs from the selected redaction policy."), true
+	}
+	if prewriteRuleActionMismatch(rule.Action, eventAction) {
+		return fail("redaction_prewrite_applied", "redaction_rule_action_mismatch", "event redaction action contradicts the selected policy rule", "Align event redaction action with the selected policy rule."), true
+	}
+	return Condition{}, false
+}
+
+func prewriteRuleActionMismatch(ruleAction, eventAction string) bool {
+	return ruleAction != "" && ruleAction != eventAction
+}
+
+func prewriteEventHasSecretLike(event EventRetention) bool {
+	return event.SecretLikeValuePresent
+}
+
+func prewriteMissingRedactionDigests(event EventRetention) bool {
+	return event.RedactionInputDigest == "" || event.RedactedPayloadDigest == ""
+}
+
+func prewriteRuleRefsMissing(event EventRetention) bool {
+	return event.RedactionAction == RedactionActionApplyRule && len(event.RedactionRuleRefs) == 0
 }
 
 func unresolvedCondition(input Input) Condition {

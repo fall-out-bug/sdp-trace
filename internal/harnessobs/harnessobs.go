@@ -1737,40 +1737,91 @@ func safeOutFile(path string) (string, error) {
 }
 
 func safeParentDir(path string) (string, error) {
-	if path == "" {
-		path = "."
-	}
-	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
-		return "", errors.New("parent path must be relative local directory without traversal")
-	}
-	clean := filepath.Clean(path)
-	resolved, err := filepath.EvalSymlinks(clean)
+	clean, err := normalizePotentialParentPath(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			parent := filepath.Dir(clean)
-			if parent == clean {
-				return "", err
-			}
-			return safeParentDir(parent)
-		}
 		return "", err
 	}
+
+	resolved, err := resolveParentPathWithinWorkingDirectory(clean)
+	if err != nil {
+		return "", err
+	}
+
+	return ensurePathInsideWorkingDirectory(resolved)
+}
+
+func normalizePotentialParentPath(path string) (string, error) {
+	path = defaultRelativeParentPath(path)
+	if err := validatePotentialParentPath(path); err != nil {
+		return "", err
+	}
+	return filepath.Clean(path), nil
+}
+
+func defaultRelativeParentPath(path string) string {
+	if path == "" {
+		return "."
+	}
+	return path
+}
+
+func validatePotentialParentPath(path string) error {
+	if filepath.IsAbs(path) {
+		return errors.New("parent path must be relative local directory without traversal")
+	}
+	if strings.Contains(path, "://") {
+		return errors.New("parent path must be relative local directory without traversal")
+	}
+	if strings.Contains(path, "..") {
+		return errors.New("parent path must be relative local directory without traversal")
+	}
+	return nil
+}
+
+func resolveParentPathWithinWorkingDirectory(clean string) (string, error) {
+	resolved, err := filepath.EvalSymlinks(clean)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		return resolveMissingParent(clean)
+	}
+	return resolved, nil
+}
+
+func resolveMissingParent(clean string) (string, error) {
+	parent := filepath.Dir(clean)
+	if parent == clean {
+		return "", os.ErrNotExist
+	}
+	return resolveParentPathWithinWorkingDirectory(parent)
+}
+
+func ensurePathInsideWorkingDirectory(path string) (string, error) {
+	absPath, err := absolutePath(path)
+	if err != nil {
+		return "", err
+	}
+	rel, err := relativePathFromWorkingDirectory(absPath)
+	if err != nil {
+		return "", err
+	}
+	if pathEscapesWorkingDirectory(rel) {
+		return "", errors.New("parent path escapes working directory")
+	}
+	return rel, nil
+}
+
+func absolutePath(path string) (string, error) {
+	return filepath.Abs(path)
+}
+
+func relativePathFromWorkingDirectory(path string) (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	abs, err := filepath.Abs(resolved)
-	if err != nil {
-		return "", err
-	}
-	rel, err := filepath.Rel(cwd, abs)
-	if err != nil {
-		return "", err
-	}
-	if strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
-		return "", errors.New("parent path escapes working directory")
-	}
-	return rel, nil
+	return filepath.Rel(cwd, path)
 }
 
 func safeOutDir(path string) (string, error) {

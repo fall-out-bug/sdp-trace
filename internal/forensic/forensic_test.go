@@ -180,6 +180,82 @@ func TestPolicyConditionPreservesPrecedence(t *testing.T) {
 	}
 }
 
+func TestPrewriteConditionReasonPrecedence(t *testing.T) {
+	tests := []struct {
+		name       string
+		mutate     func(*Input)
+		wantState  string
+		wantReason string
+	}{
+		{
+			name: "missing-selected-policy",
+			mutate: func(input *Input) {
+				input.Policy.PolicyID = ""
+				input.Policy.PolicyDigest = ""
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_policy_missing",
+		},
+		{
+			name: "secret-like-persisted",
+			mutate: func(input *Input) {
+				input.Run.Events[0].SecretLikeValuePresent = true
+			},
+			wantState:  StateFail,
+			wantReason: "secret_like_value_persisted",
+		},
+		{
+			name: "missing-redaction-digests",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionInputDigest = ""
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_digest_missing",
+		},
+		{
+			name: "missing-rule-refs-for-apply-rule",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionRuleRefs = nil
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "redaction_rule_refs_missing",
+		},
+		{
+			name: "unknown-rule-ref",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionRuleRefs = []string{"missing-rule"}
+			},
+			wantState:  StateFail,
+			wantReason: "redaction_rule_unknown",
+		},
+		{
+			name: "rule-action-mismatch",
+			mutate: func(input *Input) {
+				input.Run.Events[0].RedactionAction = RedactionActionWithhold
+			},
+			wantState:  StateFail,
+			wantReason: "redaction_rule_action_mismatch",
+		},
+		{
+			name:       "pass",
+			mutate:     func(*Input) {},
+			wantState:  StatePass,
+			wantReason: "redaction_prewrite_applied",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			input := validInput()
+			tc.mutate(&input)
+			condition := prewriteCondition(input)
+			if condition.State != tc.wantState || condition.ReasonCode != tc.wantReason {
+				t.Fatalf("condition = %+v, want state=%s reason=%s", condition, tc.wantState, tc.wantReason)
+			}
+		})
+	}
+}
+
 func TestEvaluateWithholdMapsToNotAssessedWithoutRawReference(t *testing.T) {
 	input := validInput()
 	input.Run.Events[0].RedactionAction = RedactionActionWithhold

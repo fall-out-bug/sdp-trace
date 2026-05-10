@@ -208,6 +208,46 @@ func TestEvaluateCannotVerifyForMismatchedCapabilityReferences(t *testing.T) {
 	}
 }
 
+func TestCapabilityConditionPolicyAndEventCoverage(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate     func(*Input)
+		wantState  string
+		wantReason string
+	}{
+		"missing-authorized-capability-id": {
+			mutate: func(input *Input) {
+				input.Policy.AuthorizedAdapters[0].CapabilityIDs = []string{"harness-events", "missing-capability"}
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "adapter_capability_missing",
+		},
+		"missing-required-event-type": {
+			mutate: func(input *Input) {
+				input.Registry.Adapters[0].Capabilities[3].EventTypes = nil
+			},
+			wantState:  StateCannotVerify,
+			wantReason: "adapter_capability_missing",
+		},
+		"valid-capabilities": {
+			mutate:     func(*Input) {},
+			wantState:  StatePass,
+			wantReason: "adapter_capabilities_satisfy_contract",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			input := validInput()
+			tc.mutate(&input)
+			condition := capabilityCondition(input)
+			if condition.State != tc.wantState || condition.ReasonCode != tc.wantReason {
+				t.Fatalf("capabilityCondition() = %+v, want state=%s reason=%s", condition, tc.wantState, tc.wantReason)
+			}
+			if condition.State != StatePass && condition.NextAction == "" {
+				t.Fatalf("capabilityCondition() = %+v, want non-pass next action", condition)
+			}
+		})
+	}
+}
+
 func TestEvaluateCannotVerifyWhenWitnessHasNoArtifactBinding(t *testing.T) {
 	input := validInput()
 	input.Run.OutputArtifacts = nil

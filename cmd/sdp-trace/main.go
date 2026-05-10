@@ -2705,6 +2705,45 @@ func hasGateState(states []string, targets ...string) bool {
 }
 
 func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	options, ok := parseWitnessOptions(args, stderr)
+	if !ok {
+		return exitUsage
+	}
+	record, err := buildWitnessRecord(options)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	return writeWitnessRecordOutput(stdout, record)
+}
+
+type witnessOptions struct {
+	kind                      string
+	target                    string
+	out                       string
+	reportDir                 string
+	witnessEnvelope           string
+	customerPKIAuthorityPath  string
+	customerPKIPublicCertPath string
+	customerPKIPublicKeyPath  string
+	customerPKIPayloadDigest  string
+	customerPKIFreshnessPath  string
+}
+
+func parseWitnessOptions(args []string, stderr io.Writer) (witnessOptions, bool) {
+	opts, ok := parseWitnessFlagSet(args, stderr)
+	if !ok {
+		return witnessOptions{}, false
+	}
+	options, message, ok := witnessOptionsFromFlags(opts)
+	if !ok {
+		fmt.Fprintln(stderr, message)
+		return witnessOptions{}, false
+	}
+	return options, true
+}
+
+func parseWitnessFlagSet(args []string, stderr io.Writer) (*flagSet, bool) {
 	opts := &flagSet{name: "witness"}
 	opts.setString("kind", "")
 	opts.setString("out", "")
@@ -2717,61 +2756,152 @@ func runWitness(_ context.Context, args []string, stdout, stderr io.Writer) int 
 	opts.setString("customer-pki-freshness-evidence", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitUsage
+		return nil, false
 	}
+	return opts, true
+}
+
+func witnessOptionsFromFlags(opts *flagSet) (witnessOptions, string, bool) {
+	fields, message, ok := witnessRequiredFieldsFromFlags(opts)
+	if !ok {
+		return witnessOptions{}, message, false
+	}
+	return witnessOptionsFromRequiredFields(fields, opts), "", true
+}
+
+type witnessRequiredFields struct {
+	target string
+	kind   string
+	out    string
+}
+
+func witnessRequiredFieldsFromFlags(opts *flagSet) (witnessRequiredFields, string, bool) {
+	target, message, ok := witnessTargetFromFlags(opts)
+	if !ok {
+		return witnessRequiredFields{}, message, false
+	}
+	return witnessKindOutFromFlags(opts, target)
+}
+
+func witnessKindOutFromFlags(opts *flagSet, target string) (witnessRequiredFields, string, bool) {
+	kind, message, ok := witnessKindFromFlags(opts)
+	if !ok {
+		return witnessRequiredFields{}, message, false
+	}
+	out, message, ok := witnessOutFromFlags(opts)
+	if !ok {
+		return witnessRequiredFields{}, message, false
+	}
+	if message, ok := validateWitnessKindFlags(kind, opts); !ok {
+		return witnessRequiredFields{}, message, false
+	}
+	return witnessRequiredFields{target: target, kind: kind, out: out}, "", true
+}
+
+func witnessOptionsFromRequiredFields(fields witnessRequiredFields, opts *flagSet) witnessOptions {
+	return witnessOptions{
+		kind:                      fields.kind,
+		target:                    fields.target,
+		out:                       fields.out,
+		reportDir:                 opts.stringValue("report-dir"),
+		witnessEnvelope:           opts.stringValue("witness-envelope"),
+		customerPKIAuthorityPath:  opts.stringValue("customer-pki-authority-policy"),
+		customerPKIPublicCertPath: opts.stringValue("customer-pki-public-cert"),
+		customerPKIPublicKeyPath:  opts.stringValue("customer-pki-public-key"),
+		customerPKIPayloadDigest:  opts.stringValue("customer-pki-payload-digest"),
+		customerPKIFreshnessPath:  opts.stringValue("customer-pki-freshness-evidence"),
+	}
+}
+
+func witnessTargetFromFlags(opts *flagSet) (string, string, bool) {
 	targets := opts.rest()
 	if len(targets) != 1 {
-		fmt.Fprintln(stderr, "witness requires <runs-root-or-run-dir>")
-		return exitUsage
+		return "", "witness requires <runs-root-or-run-dir>", false
 	}
+	return targets[0], "", true
+}
+
+func witnessKindFromFlags(opts *flagSet) (string, string, bool) {
 	kind := opts.stringValue("kind")
 	if !allowedWitnessKind(kind) {
-		fmt.Fprintln(stderr, "witness requires --kind github-actions, gitlab-ci, buildkite, or customer-pki")
-		return exitUsage
+		return "", "witness requires --kind github-actions, gitlab-ci, buildkite, or customer-pki", false
 	}
-	outPath := opts.stringValue("out")
-	if outPath == "" {
-		fmt.Fprintln(stderr, "witness requires --out <file>")
-		return exitUsage
+	return kind, "", true
+}
+
+func witnessOutFromFlags(opts *flagSet) (string, string, bool) {
+	out := opts.stringValue("out")
+	if out == "" {
+		return "", "witness requires --out <file>", false
 	}
-	var record witness.Record
-	var err error
-	switch kind {
-	case witness.KindGitHubActions:
-		record, err = witness.WriteGitHubActions(outPath, targets[0], opts.stringValue("report-dir"), witness.EnvironmentFromOS())
-	case witness.KindGitLabCI, witness.KindBuildkite:
-		record, err = witness.WriteProfile(kind, outPath, targets[0], opts.stringValue("report-dir"), witness.ProfileOptions{
-			EnvelopePath: opts.stringValue("witness-envelope"),
-		})
-	case witness.KindCustomerPKI:
-		if missing := missingCustomerPKIFlags(opts); len(missing) > 0 {
-			fmt.Fprintf(stderr, "customer-pki witness requires %s\n", strings.Join(missing, ", "))
-			return exitUsage
-		}
-		record, err = witness.WriteProfile(kind, outPath, targets[0], opts.stringValue("report-dir"), witness.ProfileOptions{
-			CustomerPKIAuthorityPolicy: opts.stringValue("customer-pki-authority-policy"),
-			CustomerPKIPublicCert:      opts.stringValue("customer-pki-public-cert"),
-			CustomerPKIPublicKey:       opts.stringValue("customer-pki-public-key"),
-			CustomerPKIPayloadDigest:   opts.stringValue("customer-pki-payload-digest"),
-			CustomerPKIFreshness:       opts.stringValue("customer-pki-freshness-evidence"),
-		})
+	return out, "", true
+}
+
+func validateWitnessKindFlags(kind string, opts *flagSet) (string, bool) {
+	missing := missingWitnessKindFlags(kind, opts)
+	if len(missing) > 0 {
+		return fmt.Sprintf("customer-pki witness requires %s", strings.Join(missing, ", ")), false
 	}
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+	return "", true
+}
+
+func missingWitnessKindFlags(kind string, opts *flagSet) []string {
+	if kind != witness.KindCustomerPKI {
+		return nil
 	}
+	return missingCustomerPKIFlags(opts)
+}
+
+func buildWitnessRecord(opts witnessOptions) (witness.Record, error) {
+	builder, ok := witnessRecordBuilders()[opts.kind]
+	if !ok {
+		return witness.Record{}, fmt.Errorf("unsupported witness kind %q", opts.kind)
+	}
+	return builder(opts)
+}
+
+type witnessRecordBuilder func(witnessOptions) (witness.Record, error)
+
+func witnessRecordBuilders() map[string]witnessRecordBuilder {
+	return map[string]witnessRecordBuilder{
+		witness.KindGitHubActions: buildGitHubActionsWitness,
+		witness.KindGitLabCI:      buildEnvelopeWitness,
+		witness.KindBuildkite:     buildEnvelopeWitness,
+		witness.KindCustomerPKI:   buildCustomerPKIWitness,
+	}
+}
+
+func buildGitHubActionsWitness(opts witnessOptions) (witness.Record, error) {
+	return witness.WriteGitHubActions(opts.out, opts.target, opts.reportDir, witness.EnvironmentFromOS())
+}
+
+func buildEnvelopeWitness(opts witnessOptions) (witness.Record, error) {
+	return witness.WriteProfile(opts.kind, opts.out, opts.target, opts.reportDir, witness.ProfileOptions{
+		EnvelopePath: opts.witnessEnvelope,
+	})
+}
+
+func buildCustomerPKIWitness(opts witnessOptions) (witness.Record, error) {
+	return witness.WriteProfile(witness.KindCustomerPKI, opts.out, opts.target, opts.reportDir, witness.ProfileOptions{
+		CustomerPKIAuthorityPolicy: opts.customerPKIAuthorityPath,
+		CustomerPKIPublicCert:      opts.customerPKIPublicCertPath,
+		CustomerPKIPublicKey:       opts.customerPKIPublicKeyPath,
+		CustomerPKIPayloadDigest:   opts.customerPKIPayloadDigest,
+		CustomerPKIFreshness:       opts.customerPKIFreshnessPath,
+	})
+}
+
+func writeWitnessRecordOutput(stdout io.Writer, record witness.Record) int {
 	payload, _ := json.MarshalIndent(record, "", "  ")
 	fmt.Fprintf(stdout, "%s\n", payload)
-	if record.Status == witness.StatusCannotVerify {
+	switch record.Status {
+	case witness.StatusCannotVerify, witness.StatusNotAssessed:
 		return exitCannotVerify
-	}
-	if record.Status == witness.StatusFail {
+	case witness.StatusFail:
 		return 1
+	default:
+		return 0
 	}
-	if record.Status == witness.StatusNotAssessed {
-		return exitCannotVerify
-	}
-	return 0
 }
 
 func missingCustomerPKIFlags(opts *flagSet) []string {

@@ -878,6 +878,79 @@ func TestOutParentEscapes(t *testing.T) {
 	}
 }
 
+func TestSafeParentDirRejectsUnsafeInput(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+	}{
+		{name: "absolute-path", path: string(filepath.Separator) + "tmp"},
+		{name: "url", path: "https://example.com/out"},
+		{name: "traversal", path: "../run"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := safeParentDir(tt.path); err == nil || !strings.Contains(err.Error(), "relative local directory without traversal") {
+				t.Fatalf("safeParentDir(%q) error = %v, want traversal rejection", tt.path, err)
+			}
+		})
+	}
+}
+
+func TestSafeParentDirCharacterizesMissingAndExistingPaths(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	got, err := safeParentDir("")
+	if err != nil || got != "." {
+		t.Fatalf("safeParentDir(\"\") = %q/%v, want .", got, err)
+	}
+	if err := os.MkdirAll(filepath.Join("existing", "leaf"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got, err = safeParentDir(filepath.Join("missing", "child"))
+	if err != nil || got != "." {
+		t.Fatalf("safeParentDir(\"missing/child\") = %q/%v, want .", got, err)
+	}
+	got, err = safeParentDir(filepath.Join("existing", "leaf"))
+	if err != nil || got != filepath.Join("existing", "leaf") {
+		t.Fatalf("safeParentDir(\"existing/leaf\") = %q/%v, want existing/leaf", got, err)
+	}
+	got, err = safeParentDir(filepath.Join("existing", "missing-child"))
+	if err != nil || got != "existing" {
+		t.Fatalf("safeParentDir(\"existing/missing-child\") = %q/%v, want existing", got, err)
+	}
+}
+
+func TestSafeParentDirResolvesSymlinks(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	safeTarget := "safe-link-target"
+	if err := os.Mkdir(safeTarget, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(safeTarget, "safe-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	got, err := safeParentDir(filepath.Join("safe-link", "child"))
+	if err != nil {
+		t.Fatalf("safeParentDir(\"safe-link/child\") error = %v", err)
+	}
+	if got != safeTarget {
+		t.Fatalf("safeParentDir(\"safe-link/child\") = %q, want %q", got, safeTarget)
+	}
+
+	outside := t.TempDir()
+	if err := os.Symlink(outside, "escape-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if _, err := safeParentDir(filepath.Join("escape-link", "child")); err == nil || !strings.Contains(err.Error(), "parent path escapes working directory") {
+		t.Fatalf("safeParentDir(\"escape-link/child\") error = %v, want parent path escapes", err)
+	}
+}
+
 func TestEnsureOutDirEmptyOrMissing(t *testing.T) {
 	dir := t.TempDir()
 	oldwd := chdir(t, dir)

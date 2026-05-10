@@ -213,31 +213,84 @@ func loadRunEvents(runDir string) ([]trace.Event, error) {
 }
 
 func verifyChain(events []trace.Event, expectedHead string) (bool, string) {
-	for i, event := range events {
-		if event.Sequence != i {
-			return false, fmt.Sprintf("sequence mismatch at %s", event.EventID)
-		}
-		if i == 0 && event.PrevEventHash != trace.NullEventHash {
-			return false, "first event has non-empty prev_event_hash"
-		}
-		if i > 0 && event.PrevEventHash != events[i-1].EventHash {
-			return false, fmt.Sprintf("broken chain at %d (%s)", i+1, event.EventID)
-		}
-		if err := event.VerifyPayloadDigest(); err != nil {
-			return false, fmt.Sprintf("invalid payload digest for %s: %s", event.EventID, err)
-		}
-		recomputed, err := trace.EventHash(event)
-		if err != nil {
-			return false, fmt.Sprintf("invalid event hash for %s", event.EventID)
-		}
-		if event.EventHash != recomputed {
-			return false, fmt.Sprintf("hash mismatch for %s", event.EventID)
-		}
+	if issue := verifyChainEvents(events); issue != "" {
+		return false, issue
 	}
-	if expectedHead != "" && events[len(events)-1].EventHash != expectedHead {
-		return false, "run head does not match manifest final_chain_head"
+	if issue := verifyExpectedHead(events, expectedHead); issue != "" {
+		return false, issue
 	}
 	return true, ""
+}
+
+func verifyChainEvents(events []trace.Event) string {
+	for i, event := range events {
+		if issue := verifyChainEvent(events, i, event); issue != "" {
+			return issue
+		}
+	}
+	return ""
+}
+
+func verifyExpectedHead(events []trace.Event, expectedHead string) string {
+	if expectedHead != "" && events[len(events)-1].EventHash != expectedHead {
+		return "run head does not match manifest final_chain_head"
+	}
+	return ""
+}
+
+func verifyChainEvent(events []trace.Event, index int, event trace.Event) string {
+	if issue := verifyChainSequence(index, event); issue != "" {
+		return issue
+	}
+	if issue := verifyChainPrevHash(events, index, event); issue != "" {
+		return issue
+	}
+	if issue := verifyChainPayloadDigest(event); issue != "" {
+		return issue
+	}
+	return verifyChainEventHash(event)
+}
+
+func verifyChainSequence(index int, event trace.Event) string {
+	if event.Sequence != index {
+		return fmt.Sprintf("sequence mismatch at %s", event.EventID)
+	}
+	return ""
+}
+
+func verifyChainPrevHash(events []trace.Event, index int, event trace.Event) string {
+	if event.PrevEventHash != chainExpectedPrevHash(events, index) {
+		if index == 0 {
+			return "first event has non-empty prev_event_hash"
+		}
+		return fmt.Sprintf("broken chain at %d (%s)", index+1, event.EventID)
+	}
+	return ""
+}
+
+func chainExpectedPrevHash(events []trace.Event, index int) string {
+	if index == 0 {
+		return trace.NullEventHash
+	}
+	return events[index-1].EventHash
+}
+
+func verifyChainPayloadDigest(event trace.Event) string {
+	if err := event.VerifyPayloadDigest(); err != nil {
+		return fmt.Sprintf("invalid payload digest for %s: %s", event.EventID, err)
+	}
+	return ""
+}
+
+func verifyChainEventHash(event trace.Event) string {
+	recomputed, err := trace.EventHash(event)
+	if err != nil {
+		return fmt.Sprintf("invalid event hash for %s", event.EventID)
+	}
+	if event.EventHash != recomputed {
+		return fmt.Sprintf("hash mismatch for %s", event.EventID)
+	}
+	return ""
 }
 
 // WriteVerifierArtifacts writes verifier result and missing-evidence table for later query.

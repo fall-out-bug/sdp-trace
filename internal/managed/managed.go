@@ -293,21 +293,66 @@ func capabilityCondition(input Input) Condition {
 	if !ok {
 		return cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "selected adapter capabilities cannot be verified", "Supply an authorized adapter with declared capabilities.")
 	}
+	return selectedAdapterCapabilityCondition(input, adapter)
+}
+
+func selectedAdapterCapabilityCondition(input Input, adapter Adapter) Condition {
+	authorized, condition, ok := managedCapabilityPolicy(input, adapter)
+	if !ok {
+		return condition
+	}
+	if !adapterSatisfiesPolicyCapabilities(adapter, authorized) {
+		return cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "adapter capability references do not satisfy managed policy", "Use an adapter whose declared capabilities match managed policy requirements.")
+	}
+	if !adapterCapabilitiesCoverEvents(input, adapter, authorized) {
+		return cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "adapter capability set does not cover a required event type", "Use an adapter whose capabilities cover the managed contract.")
+	}
+	return pass("adapter_capabilities_satisfy_contract", "adapter_capabilities_satisfy_contract", "adapter capabilities cover required event types")
+}
+
+func managedCapabilityPolicy(input Input, adapter Adapter) (AuthorizedAdapter, Condition, bool) {
 	authorized, ok := selectedAuthorizedAdapter(input, adapter)
 	if !ok || len(authorized.CapabilityIDs) == 0 {
-		return cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "managed policy does not name required adapter capabilities", "Supply managed policy capability requirements for the selected adapter.")
+		return AuthorizedAdapter{}, cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "managed policy does not name required adapter capabilities", "Supply managed policy capability requirements for the selected adapter."), false
 	}
+	return authorized, Condition{}, true
+}
+
+func adapterSatisfiesPolicyCapabilities(adapter Adapter, authorized AuthorizedAdapter) bool {
 	capabilityRefs := stringSet(adapter.CapabilityRefs)
+	capabilityIDs := adapterCapabilityIDs(adapter)
+	for _, capabilityID := range authorized.CapabilityIDs {
+		if !capabilityDeclared(capabilityID, capabilityRefs, capabilityIDs) {
+			return false
+		}
+	}
+	return true
+}
+
+func adapterCapabilityIDs(adapter Adapter) map[string]bool {
 	capabilityIDs := map[string]bool{}
 	for _, capability := range adapter.Capabilities {
 		capabilityIDs[capability.ID] = true
 	}
-	authorizedCapabilityIDs := stringSet(authorized.CapabilityIDs)
-	for _, capabilityID := range authorized.CapabilityIDs {
-		if !capabilityRefs[capabilityID] || !capabilityIDs[capabilityID] {
-			return cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "adapter capability references do not satisfy managed policy", "Use an adapter whose declared capabilities match managed policy requirements.")
+	return capabilityIDs
+}
+
+func capabilityDeclared(capabilityID string, refs, ids map[string]bool) bool {
+	return refs[capabilityID] && ids[capabilityID]
+}
+
+func adapterCapabilitiesCoverEvents(input Input, adapter Adapter, authorized AuthorizedAdapter) bool {
+	capEvents := authorizedCapabilityEvents(adapter, authorized)
+	for _, eventType := range requiredEventTypes(input) {
+		if !capEvents[eventType] {
+			return false
 		}
 	}
+	return true
+}
+
+func authorizedCapabilityEvents(adapter Adapter, authorized AuthorizedAdapter) map[string]bool {
+	authorizedCapabilityIDs := stringSet(authorized.CapabilityIDs)
 	capEvents := map[string]bool{}
 	for _, capability := range adapter.Capabilities {
 		if !authorizedCapabilityIDs[capability.ID] {
@@ -317,12 +362,7 @@ func capabilityCondition(input Input) Condition {
 			capEvents[eventType] = true
 		}
 	}
-	for _, eventType := range requiredEventTypes(input) {
-		if !capEvents[eventType] {
-			return cannotVerify("adapter_capabilities_satisfy_contract", "adapter_capability_missing", "adapter capability set does not cover a required event type", "Use an adapter whose capabilities cover the managed contract.")
-		}
-	}
-	return pass("adapter_capabilities_satisfy_contract", "adapter_capabilities_satisfy_contract", "adapter capabilities cover required event types")
+	return capEvents
 }
 
 func adapterActivationCondition(input Input) Condition {
