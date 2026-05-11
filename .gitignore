@@ -1,5 +1,6 @@
 .DS_Store
 .sdp/
+.codex-subagents/
 .sdp-trace-runs/
 benchmarks/repos/
 dist/

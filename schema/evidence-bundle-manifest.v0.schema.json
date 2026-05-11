@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/evidence-bundle-manifest.v0.schema.json",
+  "title": "Evidence Bundle Manifest v0",
+  "type": "object",
+  "required": ["schema_version", "bundle_id", "packet_digest", "entries"],
+  "properties": {
+    "schema_version": { "const": "evidence-bundle-manifest.v0" },
+    "bundle_id": { "type": "string", "minLength": 1 },
+    "packet_digest": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    },
+    "resolvers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resolver" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": ["ref", "source_class", "retained_form", "redaction_status"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1 },
+        "source_class": {
+          "type": "string",
+          "enum": ["git", "ci", "harness", "review", "witness", "change_host", "external_assertion", "manual"]
+        },
+        "digest": { "type": "string" },
+        "retained_form": {
+          "type": "string",
+          "enum": ["raw", "redacted", "digest_only", "external_ref", "not_retained"]
+        },
+        "redaction_status": {
+          "type": "string",
+          "enum": ["not_needed", "redacted", "digest_only", "withheld", "cannot_verify"]
+        },
+        "resolver": { "type": "string" },
+        "expires_at": { "type": "string" },
+        "artifact_access": {
+          "type": "string",
+          "enum": ["present", "partial", "expired", "inaccessible", "malformed", "not_assessed", "cannot_verify"]
+        },
+        "projection_role": {
+          "type": "string",
+          "enum": ["canonical_packet", "pr_comment_projection", "body_projection", "supporting_evidence"]
+        },
+        "contradicts_ref": { "type": "string" },
+        "contradicts_row_id": {
+          "type": "string",
+          "enum": ["PC-CHANGE", "PC-INITIATOR", "PC-AGENT-ROUTE", "PC-MUTATION", "PC-VERIFICATION", "PC-REVIEW", "PC-AUTHORITY", "PC-THEATER", "PC-ATTESTATION", "PC-DECISION", "PC-RESIDUAL-GAPS"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "resolver": {
+      "type": "object",
+      "required": ["ref", "resolver"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1 },
+        "resolver": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

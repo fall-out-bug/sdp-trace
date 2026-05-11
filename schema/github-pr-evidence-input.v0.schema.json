@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sdp.dev/trace/github-pr-evidence-input.v0.schema.json",
+  "title": "GitHub PR Evidence Input v0",
+  "type": "object",
+  "required": ["schema_version", "pr", "commit_range"],
+  "properties": {
+    "schema_version": { "const": "github-pr-evidence-input.v0" },
+    "pr": {
+      "type": "object",
+      "required": ["number", "url", "title", "author", "base_ref", "head_ref", "head_sha"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "body_ref": { "type": "string" },
+        "author": { "type": "string", "minLength": 1 },
+        "base_ref": { "type": "string", "minLength": 1 },
+        "head_ref": { "type": "string", "minLength": 1 },
+        "head_sha": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "commit_range": {
+      "type": "object",
+      "required": ["base", "head"],
+      "properties": {
+        "base": { "type": "string", "minLength": 1 },
+        "head": { "type": "string", "minLength": 1 },
+        "changed_files_ref": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "url", "conclusion"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "minLength": 1 },
+          "conclusion": { "type": "string", "enum": ["success", "failure", "cancelled", "skipped", "timed_out", "action_required", "neutral", "not_assessed"] },
+          "artifact_refs": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "resolver", "retained_form"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "resolver": { "type": "string", "minLength": 1 },
+          "retained_form": { "type": "string", "enum": ["raw", "redacted", "digest_only", "external_ref", "not_retained"] },
+          "expires_at": { "type": "string" },
+          "digest": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["reviewer", "resolver", "state"],
+        "properties": {
+          "reviewer": { "type": "string", "minLength": 1 },
+          "resolver": { "type": "string", "minLength": 1 },
+          "state": { "type": "string", "enum": ["pass", "partial", "fail", "cannot_verify", "not_assessed"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "agent_route_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

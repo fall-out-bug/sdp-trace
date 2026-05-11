@@ -24,6 +24,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/harnessobs"
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
+	"github.com/fall_out_bug/sdp-trace/internal/packet"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
 	"github.com/fall_out_bug/sdp-trace/internal/prreview"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
@@ -71,6 +72,7 @@ var commandHandlers = map[string]commandHandler{
 	"validate-fixtures": runValidateFixtures,
 	"release-proof":     runReleaseProof,
 	"pr-review":         runPRReview,
+	"packet":            runPacket,
 }
 
 func main() {
@@ -483,6 +485,108 @@ func runPRReview(_ context.Context, args []string, stdout, stderr io.Writer) int
 		"summarize":  runPRReviewSummarize,
 		"check":      runPRReviewCheck,
 	})
+}
+
+func runPacket(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runSubcommand(args, stdout, stderr, "packet <build-github|validate|render> [flags]", "packet requires build-github, validate, or render", map[string]subcommandHandler{
+		"build-github": runPacketBuildGitHub,
+		"validate":     runPacketValidate,
+		"render":       runPacketRender,
+	})
+}
+
+func runPacketBuildGitHub(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "packet build-github"}
+	opts.setString("github-input", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if !requireOnlyFlags(opts, stderr, "packet build-github accepts only flags", []requiredCLIFlag{
+		{"github-input", "packet build-github requires --github-input"},
+		{"out", "packet build-github requires --out"},
+	}) {
+		return exitUsage
+	}
+	input, err := packet.LoadGitHubInput(opts.stringValue("github-input"))
+	if err != nil {
+		fmt.Fprintf(stderr, "read github input: %v\n", err)
+		return exitCannotVerify
+	}
+	bundle := packet.BuildFromGitHubInput(input, time.Now().UTC())
+	result := packet.Validate(bundle, time.Now().UTC())
+	if result.State != packet.StatePass {
+		writeJSONPayloadUnchecked(stdout, result)
+		return exitCannotVerify
+	}
+	if err := writeJSONFile(opts.stringValue("out"), bundle); err != nil {
+		fmt.Fprintf(stderr, "write packet bundle: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "wrote %s\n", opts.stringValue("out"))
+	return 0
+}
+
+func runPacketValidate(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "packet validate"}
+	opts.setString("bundle", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if !requireOnlyFlags(opts, stderr, "packet validate accepts only flags", []requiredCLIFlag{
+		{"bundle", "packet validate requires --bundle"},
+	}) {
+		return exitUsage
+	}
+	bundle, err := packet.LoadBundle(opts.stringValue("bundle"))
+	if err != nil {
+		fmt.Fprintf(stderr, "read packet bundle: %v\n", err)
+		return exitCannotVerify
+	}
+	result := packet.Validate(bundle, time.Now().UTC())
+	writeJSONPayloadUnchecked(stdout, result)
+	return packetValidationExit(result)
+}
+
+func runPacketRender(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "packet render"}
+	opts.setString("bundle", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if !requireOnlyFlags(opts, stderr, "packet render accepts only flags", []requiredCLIFlag{
+		{"bundle", "packet render requires --bundle"},
+		{"out", "packet render requires --out"},
+	}) {
+		return exitUsage
+	}
+	bundle, err := packet.LoadBundle(opts.stringValue("bundle"))
+	if err != nil {
+		fmt.Fprintf(stderr, "read packet bundle: %v\n", err)
+		return exitCannotVerify
+	}
+	markdown, err := packet.RenderMarkdown(bundle)
+	if err != nil {
+		fmt.Fprintf(stderr, "render packet: %v\n", err)
+		return exitCannotVerify
+	}
+	if err := writeTextFileAtomic(opts.stringValue("out"), markdown); err != nil {
+		fmt.Fprintf(stderr, "write packet: %v\n", err)
+		return exitCannotVerify
+	}
+	fmt.Fprintf(stdout, "wrote %s\n", opts.stringValue("out"))
+	return 0
+}
+
+func packetValidationExit(result packet.Validation) int {
+	if result.State == packet.StatePass {
+		return 0
+	}
+	return exitCannotVerify
 }
 
 func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
@@ -4685,6 +4789,9 @@ Usage:
   sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>
   sdp-trace pr-review summarize --validation <file> --ledger <file> [--out <file>]
   sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]...
+  sdp-trace packet build-github --github-input <file> --out <file>
+  sdp-trace packet validate --bundle <file>
+  sdp-trace packet render --bundle <file> --out <file>
   sdp-trace validate-fixtures [root-dir]
 `
 	fmt.Fprint(w, usage)

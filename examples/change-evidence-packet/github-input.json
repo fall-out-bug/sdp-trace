@@ -1,0 +1,44 @@
+{
+  "schema_version": "github-pr-evidence-input.v0",
+  "pr": {
+    "number": 5,
+    "url": "https://github.com/fall-out-bug/sdp-trace-demo-jvm-gsd/pull/5",
+    "title": "Add stats endpoint",
+    "body_ref": "https://github.com/fall-out-bug/sdp-trace-demo-jvm-gsd/pull/5",
+    "author": "demo-agent",
+    "base_ref": "main",
+    "head_ref": "feature/stats",
+    "head_sha": "1111111111111111111111111111111111111111"
+  },
+  "commit_range": {
+    "base": "0000000000000000000000000000000000000000",
+    "head": "1111111111111111111111111111111111111111",
+    "changed_files_ref": "git diff --name-only base..head"
+  },
+  "checks": [
+    {
+      "name": "bazel-test",
+      "url": "https://github.com/fall-out-bug/sdp-trace-demo-jvm-gsd/actions/runs/1",
+      "conclusion": "success",
+      "artifact_refs": ["bazel-test-report"]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "bazel-test-report",
+      "resolver": "https://github.com/fall-out-bug/sdp-trace-demo-jvm-gsd/actions/runs/1/artifacts",
+      "retained_form": "external_ref",
+      "digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": "external-reviewer",
+      "resolver": "REVIEW_FEATURE5_GLM47.md",
+      "state": "partial"
+    }
+  ],
+  "agent_route_refs": [
+    ".opencode/session-observation.json"
+  ]
+}
