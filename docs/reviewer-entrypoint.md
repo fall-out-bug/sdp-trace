@@ -2,7 +2,7 @@
 
 Use this path for a first-time reviewer check in under five minutes. For the
 full bilingual command/profile surface, see `docs/agent-entrypoint.md` and
-`go run ./cmd/sdp-trace --help`.
+`sdp-trace --help`.
 
 For the demo-repository pilot evidence package, read
 `examples/pilot-runs/opencode-minimax-kotlin-bazel/README.md` before inspecting
@@ -14,11 +14,11 @@ OpenCode, MiniMax, Kotlin, or Bazel support.
 From a clean checkout, run:
 
 1. `go test ./...`
-2. `go run ./cmd/sdp-trace --help`
-3. `go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc`
-4. Create or inspect a run with `go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok`.
-5. Verify that run with `go run ./cmd/sdp-trace verify <run-dir>`.
-6. If documentation changed, compare command examples against `go run ./cmd/sdp-trace --help`.
+2. `sdp-trace --help`
+3. `sdp-trace validate-fixtures examples/agentic-sdlc`
+4. Create or inspect a run with `sdp-trace wrap --name smoke -- /bin/echo ok`.
+5. Verify that run with `sdp-trace verify <run-dir>`.
+6. If documentation changed, compare command examples against `sdp-trace --help`.
 
 External production trust is not part of this quick path. Use a live
 `external_production_trust` profile path before making production trust claims.
@@ -134,16 +134,16 @@ You may not state external production trust guarantees until
 
 | Goal | Command | Typical state boundary |
 | --- | --- | --- |
-| Local trace verification | `go run ./cmd/sdp-trace verify <run-dir>` | `observed` supports local structural assertions only |
-| Missing evidence review | `go run ./cmd/sdp-trace query --query missing-evidence <run-dir>` | Missing evidence remains visible, not passed |
-| Forensic package review | `go run ./cmd/sdp-trace query-pack explain --result <file>` | Explanation of retained evidence only |
-| Managed harness review | `go run ./cmd/sdp-trace assess explain --assessment-result <file>` | Assessment facts; external policy owns block/allow |
-| First-run harness observation review | `go run ./cmd/sdp-trace observe collect --profile <session-profile.json> --run <run-dir>` | Session-profile collection; missing declared output is `cannot_verify` |
-| Harness event validation | `go run ./cmd/sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <file>` | Event-family facts; missing required families are not passes |
-| Authority envelope review | `go run ./cmd/sdp-trace assess --profile authority-envelope --authority-package <file> --out <file>` | Authority facts only; external policy owns consequences |
-| CI/customer witness review | `go run ./cmd/sdp-trace witness --kind <kind> --out <file> <runs-root-or-run-dir>` | CI/customer-bound evidence, not production trust by itself |
-| Source-bound release review | `go run ./cmd/sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |
-| Automated PR review evidence | `go run ./cmd/sdp-trace pr-review check --out review --repo-id <safe-id> --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review-record completeness only; not merge approval |
+| Local trace verification | `sdp-trace verify <run-dir>` | `observed` supports local structural assertions only |
+| Missing evidence review | `sdp-trace query --query missing-evidence <run-dir>` | Missing evidence remains visible, not passed |
+| Forensic package review | `sdp-trace query-pack explain --result <file>` | Explanation of retained evidence only |
+| Managed harness review | `sdp-trace assess explain --assessment-result <file>` | Assessment facts; external policy owns block/allow |
+| First-run harness observation review | `sdp-trace observe collect --profile <session-profile.json> --run <run-dir>` | Session-profile collection; missing declared output is `cannot_verify` |
+| Harness event validation | `sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <file>` | Event-family facts; missing required families are not passes |
+| Authority envelope review | `sdp-trace assess --profile authority-envelope --authority-package <file> --out <file>` | Authority facts only; external policy owns consequences |
+| CI/customer witness review | `sdp-trace witness --kind <kind> --out <file> <runs-root-or-run-dir>` | CI/customer-bound evidence, not production trust by itself |
+| Source-bound release review | `sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |
+| Automated PR review evidence | `sdp-trace pr-review check --out review --repo-id <safe-id> --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review-record completeness only; not merge approval |
 
 This entrypoint is intentionally minimal and is intended to prevent over-claiming
 from reproducible verifier output.

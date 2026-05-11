@@ -26,6 +26,44 @@ The demo is not an enterprise closed-contour deployment, signed-attestation
 profile, semantic quality evaluator, employee-monitoring system, or proof of
 broad OSS tool compatibility.
 
+## Demo Operating Model
+
+The demo exists to prove `sdp-trace` as a product, not to prove that an
+assistant can hand-assemble a convincing demo repository.
+
+For CTO-visible feature work, the implementation route is OpenCode + GSD +
+`minimax-coding-plan/MiniMax-M2.5`. Codex may coordinate the run, prepare or
+reinstall `sdp-trace`, operate the external recorder setup, inspect outputs, and
+review the result. Codex MUST NOT directly implement, repair, or backfill demo
+feature behavior in the demo repository.
+
+`sdp-trace` is a passive flight recorder for the demo delivery loop. The
+developer prompt given to OpenCode/GSD MUST NOT instruct the developer route to
+use `sdp-trace`, maintain trace files, manufacture evidence, update provenance,
+or close packet rows. Evidence must come from recorder observation, GitHub/CI
+artifacts, retained review outputs, and generated packets.
+
+This is a local observed product demo, not signed or external production trust.
+Checked-in observation JSON is not authority by itself. CTO-visible packets must
+be generated from live-validated or CI-retained recorder artifacts whose bundle
+entries include resolver refs and digests. If the recorder artifact integrity,
+timestamp, or passivity boundary cannot be machine-verified beyond prompt/setup
+metadata, the affected row must be `partial` or `cannot_verify` with the
+limitation named in `PC-RESIDUAL-GAPS`; the demo must not claim audit-grade
+recorder integrity or fully verified non-interference.
+
+Codex-authored changes in the demo repository are allowed only for setup-only
+infrastructure such as recorder installation, CI artifact upload, PR templates,
+ignore rules, packet directories, and tracker scaffolding. Those changes MUST
+be marked `setup_only` and cannot close feature packet rows.
+
+If OpenCode/GSD produces an incorrect or incomplete feature, Codex may review
+and redirect the route with a new task or prompt. Codex must not patch the
+feature directly. If `sdp-trace` cannot observe enough to support the packet,
+P0 product blockers are fixed in `sdp-trace` before claiming the feature proof;
+P1 and lower product issues may be recorded and fixed after the current feature
+delivery unless they block the demo proof.
+
 ## Core Demo Claim
 
 The demo may claim:
@@ -38,10 +76,14 @@ The demo may claim:
 The demo MUST NOT claim:
 
 - the change is semantically correct unless review/test evidence supports it;
+- Codex-authored feature work proves the OpenCode/GSD route;
+- OpenCode/GSD maintained or authored its own `sdp-trace` evidence;
 - merge, release, production trust, or compliance approval;
 - support for all OpenCode/GSD, `pi`, GSD2, Superpowers, Hermes, OpenClaw, or
   other OSS agents;
 - signed trust;
+- audit-grade recorder integrity or fully verified recorder passivity unless
+  signed, externally timestamped, or otherwise machine-verified evidence exists;
 - local/self-hosted enterprise readiness.
 
 ## Existing Demo Repository Assessment
@@ -126,7 +168,8 @@ Selection rule:
 
 1. Inventory every existing feature/history slice for available GitHub issue or
    PR body task source, PR metadata, commit range, GitHub Actions run, artifact
-   availability, review evidence, and OpenCode/GSD observation evidence.
+   availability, review evidence, OpenCode/GSD observation evidence, and
+   Codex-authored feature contamination.
 2. Choose the slice with the most retained, resolvable evidence surfaces.
 3. Record the selection rationale in packet metadata `generated_from`.
 4. If no existing slice can meet the first-packet minimum bar, the first packet
@@ -136,11 +179,18 @@ Minimum bar for the first CTO-visible packet:
 
 - at least four required packet rows are `pass` or `partial`;
 - `PC-CHANGE` and `PC-MUTATION` have retained, resolvable evidence refs;
-- at least one of `PC-VERIFICATION`, `PC-REVIEW`, or `PC-AGENT-ROUTE` exits
-  `not_assessed`, meaning the row is assessed as `pass`, `partial`, or `fail`;
+- `PC-AGENT-ROUTE` is `pass` or `partial` and backed by recorder-observed
+  OpenCode/GSD/MiniMax evidence;
+- at least one of `PC-VERIFICATION` or `PC-REVIEW` exits `not_assessed`,
+  meaning the row is assessed as `pass`, `partial`, or `fail`;
 - no more than one row is `cannot_verify` without a concrete closure path in
   `PC-RESIDUAL-GAPS`;
 - every remaining missing row has a one-line reason.
+
+If a P0 `sdp-trace` recorder or product blocker prevents `PC-AGENT-ROUTE` from
+being supported by observed OpenCode/GSD/MiniMax evidence, first-packet success
+is blocked until the product issue is fixed and the route is rerun or otherwise
+observed with retained evidence.
 
 007 MUST NOT use hand-authored packets as demo proof. Hand-authored packets are
 allowed only inside 006 pre-renderer fixture validation. The demo starts after
@@ -201,7 +251,8 @@ Every feature PR in the v2 demo MUST have:
 | evidence | minimum requirement |
 | --- | --- |
 | Task source | GitHub issue, PR body task section, or retained task artifact. |
-| Agent route | OpenCode/GSD observation run with selected model route. |
+| Agent route | Recorder-observed OpenCode/GSD run with selected MiniMax route; no feature row may be closed by Codex-authored implementation. |
+| Prompt boundary | Retained prompt text or prompt digest metadata sufficient to verify the prompt did not ask OpenCode/GSD to maintain `sdp-trace` evidence. |
 | Mutation | GitHub commit range plus observed mutation evidence when available. |
 | Verification | GitHub Actions check and retained artifact, or explicit `cannot_verify`. |
 | Review | GitHub PR review, retained external review artifact, or `not_assessed`. |
@@ -227,6 +278,8 @@ Every demo packet MUST include all Product Contract v0 rows:
 
 The demo should expect some rows to be `not_assessed`. That is acceptable when
 the packet says so clearly, but an all-gap packet is not a successful CTO demo.
+For the first happy-path CTO-visible packet, `PC-AGENT-ROUTE` cannot be
+`not_assessed` or `cannot_verify`.
 
 ## Demo Feature Set
 
@@ -242,7 +295,20 @@ Recommended v2 feature sequence:
 5. `F5`: stats endpoint.
 
 Each feature must be its own issue, branch, PR, CI run, packet, and review
-record. Setup work must be separate from feature work.
+record. Setup work must be separate from feature work, and setup-only changes
+cannot be counted as feature delivery evidence.
+
+For each feature, the expected delivery loop is:
+
+1. Codex prepares or reinstalls `sdp-trace` outside the OpenCode/GSD developer
+   prompt.
+2. Codex starts the observed OpenCode/GSD route with a normal feature task that
+   does not mention `sdp-trace` evidence duties.
+3. OpenCode/GSD implements or repairs the feature.
+4. `sdp-trace` records provenance, evidence, trace, and friction from outside
+   the developer loop.
+5. Codex reviews the result and either redirects OpenCode/GSD or generates and
+   validates the packet from recorded evidence.
 
 ## Negative / Theater Demo
 
@@ -322,6 +388,29 @@ run.
   compliance, production trust, or quality approval.
 - **FR-010**: Existing `sdp-trace-demo-jvm-gsd` history MUST be preserved before
   any v2 packetization track or optional sales-demo branch starts.
+- **FR-011**: CTO-visible feature implementation MUST be performed through
+  OpenCode + GSD + `minimax-coding-plan/MiniMax-M2.5`, not direct Codex edits.
+- **FR-012**: Feature prompts MUST NOT instruct OpenCode/GSD to use
+  `sdp-trace`, write evidence, update trace files, or close packet rows.
+- **FR-013**: Codex-authored demo repository changes MUST be limited to
+  `setup_only` infrastructure and MUST NOT close feature packet rows.
+- **FR-014**: P0 `sdp-trace` product blockers that prevent route/provenance or
+  evidence proof MUST be fixed before claiming a feature packet; P1 and lower
+  issues MAY be recorded for follow-up unless they block the proof.
+- **FR-015**: Existing or backfilled feature candidates MUST be audited for
+  Codex-authored feature behavior before they can be used as CTO-visible
+  OpenCode/GSD route proof.
+- **FR-016**: Every feature packet MUST retain prompt text or prompt digest
+  metadata sufficient to check that the developer prompt did not ask
+  OpenCode/GSD to maintain `sdp-trace` evidence or close packet rows.
+- **FR-017**: CTO-visible packets MUST be generated from live-validated or
+  CI-retained recorder artifacts with resolver refs and digests; checked-in
+  observation JSON alone is not authoritative.
+- **FR-018**: Setup-only Codex commits MUST have a machine-checkable file-scope
+  rule or independent review showing they did not change feature source,
+  feature tests, or application behavior.
+- **FR-019**: The first happy-path packet MUST be checked against the
+  first-packet minimum bar before buyer rehearsal; failure blocks demo success.
 
 ## Success Criteria
 
@@ -338,6 +427,21 @@ run.
 - **SC-006**: At least one happy-path feature PR has `PC-THEATER: pass`, showing
   that theater assessment can produce a clean result when evidence is properly
   bound.
+- **SC-007**: For every CTO-visible feature packet, `PC-AGENT-ROUTE` is backed
+  by recorder-observed OpenCode/GSD/MiniMax evidence or the packet explicitly
+  reports `cannot_verify`/`not_assessed`; Codex-authored feature work never
+  satisfies this row.
+- **SC-008**: A reviewer can inspect the retained task prompt or prompt digest
+  metadata and confirm it did not ask OpenCode/GSD to manufacture or maintain
+  `sdp-trace` evidence.
+- **SC-009**: At least one happy-path CTO-visible feature packet has
+  `PC-AGENT-ROUTE: pass` or `partial` backed by recorder-observed
+  OpenCode/GSD/MiniMax evidence before demo success is claimed.
+- **SC-010**: The first happy-path buyer rehearsal is blocked unless a retained
+  gate/check artifact shows the first packet met the minimum bar.
+- **SC-011**: If prompt/setup metadata is the only passivity evidence,
+  `PC-AGENT-ROUTE` may be `partial` but not `pass`, and residual gaps name the
+  unverified passivity boundary.
 
 ## Open Decisions With Proposed Defaults
 

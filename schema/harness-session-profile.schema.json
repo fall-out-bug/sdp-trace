@@ -22,6 +22,10 @@
       "maxItems": 3,
       "items": { "$ref": "#/$defs/setupAction" }
     },
+    "isolation_rules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/isolationRule" }
+    },
     "stream_capture": {
       "enum": ["disabled", "digest_only", "retained_safe"]
     }
@@ -51,7 +55,24 @@
       "required": ["id", "kind", "required"],
       "properties": {
         "id": { "$ref": "#/$defs/safeId" },
-        "kind": { "enum": ["init", "profile", "wrapper", "hook"] },
+        "kind": { "enum": ["init", "profile", "wrapper", "hook", "context_isolation"] },
+        "required": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "isolationRule": {
+      "type": "object",
+      "required": ["id", "kind", "target_path", "pattern", "required"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "kind": { "enum": ["ignore_line", "json_read_deny"] },
+        "target_path": { "$ref": "#/$defs/relativeFile" },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "not": { "pattern": "[\\r\\n]" }
+        },
         "required": { "type": "boolean" }
       },
       "additionalProperties": false

@@ -1,0 +1,25 @@
+name: Release binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build release binaries
+        run: ./scripts/build-release-binaries.sh
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdp-trace-binaries
+          path: dist/

@@ -58,7 +58,7 @@ A source-bound local release proves that the selected `source_commit` contains e
 Run the current Go verifier:
 
 ```bash
-go run ./cmd/sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json
+sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json
 ```
 
 The verifier refuses to treat uncommitted source changes as immutable source-bound proof because they cannot be honestly attributed to a clean source reference. A successful source-bound local release may assess `source_commit_artifacts_verified: true`, but it still records external trust and production release verification as `not_assessed`.

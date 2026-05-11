@@ -15,6 +15,27 @@
       "id": "select-session-profile",
       "kind": "profile",
       "required": true
+    },
+    {
+      "id": "install-context-isolation",
+      "kind": "context_isolation",
+      "required": true
+    }
+  ],
+  "isolation_rules": [
+    {
+      "id": "hide-evidence-from-discovery",
+      "kind": "ignore_line",
+      "target_path": ".ignore",
+      "pattern": ".evidence/",
+      "required": true
+    },
+    {
+      "id": "deny-evidence-read",
+      "kind": "json_read_deny",
+      "target_path": ".opencode/opencode.json",
+      "pattern": "*/.evidence/*",
+      "required": true
     }
   ],
   "stream_capture": "disabled"

@@ -187,6 +187,24 @@ func TestBuildGitHubVerificationPassCitesArtifactRefs(t *testing.T) {
 	}
 }
 
+func TestCheckDemoRejectsSelfDeclaredRouteEvidence(t *testing.T) {
+	input := validGitHubInput()
+	input.AgentRouteEvidenceKind = "harness_route_observation"
+	input.AgentRouteComponents = []string{"opencode", "gsd", "minimax-m2.5"}
+	bundle := BuildFromGitHubInput(input, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StateFail || !hasError(result.Errors, "retained structured OpenCode/GSD/MiniMax") {
+		t.Fatalf("self-declared route evidence passed: %+v", result)
+	}
+
+	input.AgentRouteDigest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	bundle = BuildFromGitHubInput(input, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	result = CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StatePass {
+		t.Fatalf("digest-bound route evidence failed: %+v", result)
+	}
+}
+
 func validBundle() Bundle {
 	rows := []Row{
 		row("PC-CHANGE", StatePass, "PR 38 change is bound to source metadata.", []string{"git:change"}),

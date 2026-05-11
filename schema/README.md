@@ -61,7 +61,7 @@ Canonical validation commands for this path:
 
 ```bash
 go test ./...
-go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
+sdp-trace validate-fixtures examples/agentic-sdlc
 ```
 
 Validation commands exclude `.git/`, `.beads/`, `.sdp-trace-runs/`, `benchmarks/repos/`, temporary directories, editor caches, and generated dependency directories.

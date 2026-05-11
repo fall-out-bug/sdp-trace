@@ -923,6 +923,22 @@ func TestUsageMentionsDoctorPreviewAndRepoObserverInstall(t *testing.T) {
 	}
 }
 
+func TestVersionCommandPrintsBinaryVersion(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	old := version
+	version = "test-version"
+	t.Cleanup(func() { version = old })
+
+	exit := run([]string{"version"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("version exit=%d stderr=%s", exit, errOut.String())
+	}
+	if strings.TrimSpace(out.String()) != "sdp-trace test-version" {
+		t.Fatalf("version output = %q", out.String())
+	}
+}
+
 func TestCheckpointCreateAndVerifyCLI(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	runDir := filepath.Join(t.TempDir(), "run")

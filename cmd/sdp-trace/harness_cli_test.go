@@ -710,6 +710,55 @@ func TestObserveSetupRejectsUnimplementedStreamCapture(t *testing.T) {
 	}
 }
 
+func TestObserveSetupInstallsAndVerifiesContextIsolation(t *testing.T) {
+	dir := t.TempDir()
+	writeHarnessCLIProfile(t, dir)
+	profile := harnessobs.SessionProfile{
+		SchemaVersion:      harnessobs.SessionProfileSchemaVersion,
+		ProfileID:          "opencode-gsd-fixture-v1",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		SetupActions: []harnessobs.SessionSetupAction{
+			{ID: "init", Kind: "init", Required: true},
+			{ID: "profile", Kind: "profile", Required: true},
+			{ID: "context-isolation", Kind: "context_isolation", Required: true},
+		},
+		IsolationRules: []harnessobs.SessionIsolationRule{
+			{ID: "hide-evidence-from-discovery", Kind: "ignore_line", TargetPath: ".ignore", Pattern: ".evidence/", Required: true},
+			{ID: "deny-evidence-read", Kind: "json_read_deny", TargetPath: ".opencode/opencode.json", Pattern: "*/.evidence/*", Required: true},
+		},
+		StreamCapture: "disabled",
+	}
+	writeJSONFixtureCLI(t, filepath.Join(dir, "session-profile.json"), profile)
+	oldwd := chdirCLI(t, dir)
+	defer oldwd()
+
+	var out, errOut bytes.Buffer
+	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"id": "hide-evidence-from-discovery"`) ||
+		!strings.Contains(out.String(), `"id": "deny-evidence-read"`) ||
+		!strings.Contains(out.String(), `"state": "pass"`) {
+		t.Fatalf("setup output missing isolation verification: %s", out.String())
+	}
+	ignoreData, err := os.ReadFile(filepath.Join(dir, ".ignore"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(ignoreData), ".evidence/") {
+		t.Fatalf(".ignore missing evidence rule: %s", string(ignoreData))
+	}
+	configData, err := os.ReadFile(filepath.Join(dir, ".opencode", "opencode.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(configData), `"*/.evidence/*": "deny"`) {
+		t.Fatalf("opencode config missing read deny: %s", string(configData))
+	}
+}
+
 func TestHarnessObserveCLIRejectsUnsafePrompt(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfile(t, dir)
@@ -729,6 +778,17 @@ func TestHarnessObserveCLIRejectsUnsafePrompt(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "run")); !os.IsNotExist(err) {
 		t.Fatalf("run dir exists after unsafe observe: %v", err)
+	}
+}
+
+func writeJSONFixtureCLI(t *testing.T, path string, value any) {
+	t.Helper()
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 

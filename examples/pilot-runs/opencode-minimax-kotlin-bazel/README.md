@@ -9,7 +9,7 @@ jq empty examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/*.json
 jq empty examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json
 go test ./...
 jq empty schema/*.json
-go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
+sdp-trace validate-fixtures examples/agentic-sdlc
 git diff --check
 ```
 

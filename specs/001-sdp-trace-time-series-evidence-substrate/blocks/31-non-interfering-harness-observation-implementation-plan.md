@@ -117,7 +117,7 @@ Actions:
 2. Add a generic session profile schema or focused Go contract for setup
    actions, safe env names, declared log paths, declared output directories,
    stream capture policy, raw-surface-to-`harness-event-v1` mappings, redaction
-   rules, and external-tool requirements.
+   rules, context isolation rules, and external-tool requirements.
 3. Ship the OpenCode/GSD mapping as a checked-in profile example under
    `examples/harness-observation/`, not as hidden Go special-case logic.
 4. The reviewed CLI shape may change, but profile resolution must use a file path
@@ -140,6 +140,9 @@ Actions:
    reviewed wrapper or hook installation only when the profile requires it. It
    must be explicit, reviewable, and documented as pre-work; it must not require
    prompt rewriting, prompt relay, or manual trace authoring during delivery.
+   When a profile declares context isolation, setup must install and verify the
+   declared local file rules before the delivery loop and record rule-level
+   states and target-file digests in session evidence.
 6. During the harness run, use only allowed observation mechanisms: process
    boundary capture, stdout/stderr digests or retained-safe excerpts only when
    declared safe by the profile, declared log tailing, declared output-directory

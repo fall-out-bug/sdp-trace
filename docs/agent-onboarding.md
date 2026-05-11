@@ -50,9 +50,9 @@ Run the current Go-first smoke path:
 
 ```text
 go test ./...
-go run ./cmd/sdp-trace --help
-go run ./cmd/sdp-trace wrap --name smoke -- /bin/echo ok
-go run ./cmd/sdp-trace verify <run-dir>
+sdp-trace --help
+sdp-trace wrap --name smoke -- /bin/echo ok
+sdp-trace verify <run-dir>
 ```
 
 Use these docs while working:

@@ -160,14 +160,15 @@ type ObserveOptions struct {
 }
 
 type SessionProfile struct {
-	SchemaVersion      string               `json:"schema_version"`
-	ProfileID          string               `json:"profile_id"`
-	HarnessProfilePath string               `json:"harness_profile_path"`
-	EventSourcePath    string               `json:"event_source_path"`
-	RawEventSourcePath string               `json:"raw_event_source_path,omitempty"`
-	RawEventFormat     string               `json:"raw_event_format,omitempty"`
-	SetupActions       []SessionSetupAction `json:"setup_actions,omitempty"`
-	StreamCapture      string               `json:"stream_capture"`
+	SchemaVersion      string                 `json:"schema_version"`
+	ProfileID          string                 `json:"profile_id"`
+	HarnessProfilePath string                 `json:"harness_profile_path"`
+	EventSourcePath    string                 `json:"event_source_path"`
+	RawEventSourcePath string                 `json:"raw_event_source_path,omitempty"`
+	RawEventFormat     string                 `json:"raw_event_format,omitempty"`
+	SetupActions       []SessionSetupAction   `json:"setup_actions,omitempty"`
+	IsolationRules     []SessionIsolationRule `json:"isolation_rules,omitempty"`
+	StreamCapture      string                 `json:"stream_capture"`
 }
 
 type SessionSetupAction struct {
@@ -176,30 +177,49 @@ type SessionSetupAction struct {
 	Required bool   `json:"required"`
 }
 
+type SessionIsolationRule struct {
+	ID         string `json:"id"`
+	Kind       string `json:"kind"`
+	TargetPath string `json:"target_path"`
+	Pattern    string `json:"pattern"`
+	Required   bool   `json:"required"`
+}
+
 type SessionRun struct {
-	SchemaVersion      string   `json:"schema_version"`
-	ProfileID          string   `json:"profile_id"`
-	HarnessProfilePath string   `json:"harness_profile_path"`
-	EventSourcePath    string   `json:"event_source_path"`
-	RawEventSourcePath string   `json:"raw_event_source_path,omitempty"`
-	RawEventFormat     string   `json:"raw_event_format,omitempty"`
-	SetupActionIDs     []string `json:"setup_action_ids,omitempty"`
-	CommandDigest      string   `json:"command_digest,omitempty"`
-	CommandDigestState string   `json:"command_digest_state,omitempty"`
-	CommandModel       string   `json:"command_model,omitempty"`
-	CommandModelState  string   `json:"command_model_state,omitempty"`
-	ProcessID          int      `json:"process_id,omitempty"`
-	ProcessIDState     string   `json:"process_id_state,omitempty"`
-	StartTime          string   `json:"start_time,omitempty"`
-	EndTime            string   `json:"end_time,omitempty"`
-	SourceCommit       string   `json:"source_commit,omitempty"`
-	SourceCommitState  string   `json:"source_commit_state,omitempty"`
-	ObservedRunDir     string   `json:"observed_run_dir,omitempty"`
-	OutputDigest       string   `json:"output_digest,omitempty"`
-	NormalizedDigest   string   `json:"normalized_digest,omitempty"`
-	CollectionState    string   `json:"collection_state,omitempty"`
-	CollectionReason   string   `json:"collection_reason,omitempty"`
-	CreatedAt          string   `json:"created_at"`
+	SchemaVersion      string                   `json:"schema_version"`
+	ProfileID          string                   `json:"profile_id"`
+	HarnessProfilePath string                   `json:"harness_profile_path"`
+	EventSourcePath    string                   `json:"event_source_path"`
+	RawEventSourcePath string                   `json:"raw_event_source_path,omitempty"`
+	RawEventFormat     string                   `json:"raw_event_format,omitempty"`
+	SetupActionIDs     []string                 `json:"setup_action_ids,omitempty"`
+	IsolationResults   []SessionIsolationResult `json:"isolation_results,omitempty"`
+	CommandDigest      string                   `json:"command_digest,omitempty"`
+	CommandDigestState string                   `json:"command_digest_state,omitempty"`
+	CommandModel       string                   `json:"command_model,omitempty"`
+	CommandModelState  string                   `json:"command_model_state,omitempty"`
+	ProcessID          int                      `json:"process_id,omitempty"`
+	ProcessIDState     string                   `json:"process_id_state,omitempty"`
+	StartTime          string                   `json:"start_time,omitempty"`
+	EndTime            string                   `json:"end_time,omitempty"`
+	SourceCommit       string                   `json:"source_commit,omitempty"`
+	SourceCommitState  string                   `json:"source_commit_state,omitempty"`
+	ObservedRunDir     string                   `json:"observed_run_dir,omitempty"`
+	OutputDigest       string                   `json:"output_digest,omitempty"`
+	NormalizedDigest   string                   `json:"normalized_digest,omitempty"`
+	CollectionState    string                   `json:"collection_state,omitempty"`
+	CollectionReason   string                   `json:"collection_reason,omitempty"`
+	CreatedAt          string                   `json:"created_at"`
+}
+
+type SessionIsolationResult struct {
+	ID         string `json:"id"`
+	Kind       string `json:"kind"`
+	TargetPath string `json:"target_path"`
+	Pattern    string `json:"pattern"`
+	State      string `json:"state"`
+	ReasonCode string `json:"reason_code"`
+	SHA256     string `json:"sha256,omitempty"`
 }
 
 type SessionSetupOptions struct {
@@ -404,6 +424,11 @@ func setupSessionRun(profilePath, outDir string, now time.Time, rawCommand strin
 		return SessionRun{}, err
 	}
 	run := newSessionRunWithCommand(profile, now, rawCommand)
+	results, err := installIsolationRules(profilePath, profile.IsolationRules)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	run.IsolationResults = results
 	if err := writeSessionJSON(filepath.Join(outDir, "session.json"), run); err != nil {
 		return SessionRun{}, err
 	}
@@ -865,7 +890,10 @@ func validateSessionProfile(profile *SessionProfile) error {
 	if err := normalizeSessionStreamCapture(profile); err != nil {
 		return err
 	}
-	return validateSessionSetupActions(profile.SetupActions)
+	if err := validateSessionSetupActions(profile.SetupActions); err != nil {
+		return err
+	}
+	return validateSessionIsolationRules(profile.IsolationRules)
 }
 
 func validateSessionProfileIdentity(profile SessionProfile) error {
@@ -950,10 +978,219 @@ func validateSessionSetupAction(action SessionSetupAction) error {
 		return errors.New("unsafe setup action id")
 	}
 	switch action.Kind {
-	case "init", "profile", "wrapper", "hook":
+	case "init", "profile", "wrapper", "hook", "context_isolation":
 		return nil
 	default:
 		return errors.New("unsupported setup action kind")
+	}
+}
+
+func validateSessionIsolationRules(rules []SessionIsolationRule) error {
+	for _, rule := range rules {
+		if err := validateSessionIsolationRule(rule); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateSessionIsolationRule(rule SessionIsolationRule) error {
+	if !safeIDPattern.MatchString(rule.ID) {
+		return errors.New("unsafe isolation rule id")
+	}
+	if strings.TrimSpace(rule.Pattern) == "" || strings.Contains(rule.Pattern, "\n") || strings.Contains(rule.Pattern, "\r") {
+		return errors.New("unsafe isolation rule pattern")
+	}
+	if unsafeProfileRelativePath(rule.TargetPath) {
+		return errors.New("unsafe isolation target path")
+	}
+	switch rule.Kind {
+	case "ignore_line", "json_read_deny":
+		return nil
+	default:
+		return errors.New("unsupported isolation rule kind")
+	}
+}
+
+func installIsolationRules(profilePath string, rules []SessionIsolationRule) ([]SessionIsolationResult, error) {
+	results := make([]SessionIsolationResult, 0, len(rules))
+	for _, rule := range rules {
+		resolvedRule, err := resolveIsolationRuleTarget(profilePath, rule)
+		if err != nil {
+			return nil, err
+		}
+		result, err := installIsolationRule(resolvedRule)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
+func resolveIsolationRuleTarget(profilePath string, rule SessionIsolationRule) (SessionIsolationRule, error) {
+	targetPath, err := safeProfileRelativeIsolationFile(profilePath, rule.TargetPath)
+	if err != nil {
+		return SessionIsolationRule{}, err
+	}
+	rule.TargetPath = targetPath
+	return rule, nil
+}
+
+func safeProfileRelativeIsolationFile(profilePath, relPath string) (string, error) {
+	if unsafeProfileRelativePath(relPath) {
+		return "", errors.New("profile relative isolation path must be local without traversal")
+	}
+	baseDir := filepath.Dir(profilePath)
+	if baseDir == "." {
+		baseDir = ""
+	}
+	path := filepath.Join(baseDir, relPath)
+	clean := filepath.Clean(path)
+	parent := filepath.Dir(clean)
+	if err := validatePotentialParentPath(parent); err != nil {
+		return "", err
+	}
+	if err := ensureOutParentInsideWorkingDirectory(parent); err != nil {
+		return "", err
+	}
+	base := filepath.Base(clean)
+	if strings.TrimSpace(base) == "" || strings.ContainsAny(base, `/\`) {
+		return "", errors.New("unsafe isolation filename")
+	}
+	return clean, nil
+}
+
+func installIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
+	if err := ensureIsolationRule(rule); err != nil {
+		return SessionIsolationResult{}, err
+	}
+	return verifyIsolationRule(rule)
+}
+
+func ensureIsolationRule(rule SessionIsolationRule) error {
+	switch rule.Kind {
+	case "ignore_line":
+		return ensureLineFileRule(rule.TargetPath, rule.Pattern)
+	case "json_read_deny":
+		return ensureJSONReadDenyRule(rule.TargetPath, rule.Pattern)
+	default:
+		return errors.New("unsupported isolation rule kind")
+	}
+}
+
+func ensureLineFileRule(path, line string) error {
+	lines, err := readOptionalLines(path)
+	if err != nil {
+		return err
+	}
+	for _, existing := range lines {
+		if existing == line {
+			return nil
+		}
+	}
+	lines = append(lines, line)
+	return writeLines(path, lines)
+}
+
+func readOptionalLines(path string) ([]string, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	text := strings.TrimRight(string(data), "\n")
+	if text == "" {
+		return nil, nil
+	}
+	return strings.Split(text, "\n"), nil
+}
+
+func writeLines(path string, lines []string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+}
+
+func ensureJSONReadDenyRule(path, pattern string) error {
+	config := map[string]any{}
+	data, err := os.ReadFile(path)
+	if err == nil && len(strings.TrimSpace(string(data))) > 0 {
+		if err := json.Unmarshal(data, &config); err != nil {
+			return err
+		}
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	permission := ensureObject(config, "permission")
+	read := ensureObject(permission, "read")
+	read[pattern] = "deny"
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return writeJSON(path, config)
+}
+
+func ensureObject(parent map[string]any, key string) map[string]any {
+	if child, ok := parent[key].(map[string]any); ok {
+		return child
+	}
+	child := map[string]any{}
+	parent[key] = child
+	return child
+}
+
+func verifyIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
+	result := SessionIsolationResult{
+		ID:         rule.ID,
+		Kind:       rule.Kind,
+		TargetPath: filepath.ToSlash(rule.TargetPath),
+		Pattern:    rule.Pattern,
+		State:      StatePass,
+		ReasonCode: "isolation_rule_verified",
+	}
+	ok, err := isolationRulePresent(rule)
+	if err != nil {
+		return SessionIsolationResult{}, err
+	}
+	if !ok {
+		result.State = StateCannotVerify
+		result.ReasonCode = "isolation_rule_absent"
+	}
+	if digest := digestFile(rule.TargetPath); digest != "" {
+		result.SHA256 = digest
+	}
+	return result, nil
+}
+
+func isolationRulePresent(rule SessionIsolationRule) (bool, error) {
+	switch rule.Kind {
+	case "ignore_line":
+		lines, err := readOptionalLines(rule.TargetPath)
+		if err != nil {
+			return false, err
+		}
+		for _, line := range lines {
+			if line == rule.Pattern {
+				return true, nil
+			}
+		}
+		return false, nil
+	case "json_read_deny":
+		var config struct {
+			Permission struct {
+				Read map[string]string `json:"read"`
+			} `json:"permission"`
+		}
+		if err := readExistingJSON(rule.TargetPath, &config); err != nil {
+			return false, err
+		}
+		return config.Permission.Read[rule.Pattern] == "deny", nil
+	default:
+		return false, errors.New("unsupported isolation rule kind")
 	}
 }
 

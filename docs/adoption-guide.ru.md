@@ -70,10 +70,10 @@ evidence package per repo and commit
 Минимальная command sequence:
 
 ```text
-go run ./cmd/sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
-go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs
-go run ./cmd/sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
-go run ./cmd/sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
+sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
+sdp-trace report --out .sdp-trace-report .sdp-trace-runs
+sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
+sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
 ```
 
 Если агент или разработчик не запускается через `sdp-trace wrap` или adapter,

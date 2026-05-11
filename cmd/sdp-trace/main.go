@@ -38,16 +38,19 @@ import (
 )
 
 const (
+	exitFail         = 1
 	exitUsage        = 2
 	exitCannotVerify = 3
 )
 
 var cliStdin io.Reader = os.Stdin
+var version = "dev"
 
 type commandHandler func(context.Context, []string, io.Writer, io.Writer) int
 type subcommandHandler func([]string, io.Writer, io.Writer) int
 
 var commandHandlers = map[string]commandHandler{
+	"version":           runVersion,
 	"wrap":              runWrap,
 	"run":               runWrappedCommand,
 	"dry-run":           runDryRun,
@@ -73,6 +76,11 @@ var commandHandlers = map[string]commandHandler{
 	"release-proof":     runReleaseProof,
 	"pr-review":         runPRReview,
 	"packet":            runPacket,
+}
+
+func runVersion(_ context.Context, _ []string, stdout, _ io.Writer) int {
+	fmt.Fprintf(stdout, "sdp-trace %s\n", version)
+	return 0
 }
 
 func main() {
@@ -488,9 +496,10 @@ func runPRReview(_ context.Context, args []string, stdout, stderr io.Writer) int
 }
 
 func runPacket(_ context.Context, args []string, stdout, stderr io.Writer) int {
-	return runSubcommand(args, stdout, stderr, "packet <build-github|validate|render> [flags]", "packet requires build-github, validate, or render", map[string]subcommandHandler{
+	return runSubcommand(args, stdout, stderr, "packet <build-github|validate|check-demo|render> [flags]", "packet requires build-github, validate, check-demo, or render", map[string]subcommandHandler{
 		"build-github": runPacketBuildGitHub,
 		"validate":     runPacketValidate,
+		"check-demo":   runPacketCheckDemo,
 		"render":       runPacketRender,
 	})
 }
@@ -550,6 +559,28 @@ func runPacketValidate(args []string, stdout, stderr io.Writer) int {
 	return packetValidationExit(result)
 }
 
+func runPacketCheckDemo(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "packet check-demo"}
+	opts.setString("bundle", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if !requireOnlyFlags(opts, stderr, "packet check-demo accepts only flags", []requiredCLIFlag{
+		{"bundle", "packet check-demo requires --bundle"},
+	}) {
+		return exitUsage
+	}
+	bundle, err := packet.LoadBundle(opts.stringValue("bundle"))
+	if err != nil {
+		fmt.Fprintf(stderr, "read packet bundle: %v\n", err)
+		return exitCannotVerify
+	}
+	result := packet.CheckDemoFirstPacket(bundle, time.Now().UTC())
+	writeJSONPayloadUnchecked(stdout, result)
+	return packetDemoGateExit(result)
+}
+
 func runPacketRender(args []string, stdout, stderr io.Writer) int {
 	opts := &flagSet{name: "packet render"}
 	opts.setString("bundle", "")
@@ -587,6 +618,13 @@ func packetValidationExit(result packet.Validation) int {
 		return 0
 	}
 	return exitCannotVerify
+}
+
+func packetDemoGateExit(result packet.Validation) int {
+	if result.State == packet.StatePass {
+		return 0
+	}
+	return exitFail
 }
 
 func runPRReviewPacket(args []string, stdout, stderr io.Writer) int {
@@ -4748,6 +4786,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>
+  sdp-trace version
   sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>
@@ -4791,6 +4830,7 @@ Usage:
   sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]...
   sdp-trace packet build-github --github-input <file> --out <file>
   sdp-trace packet validate --bundle <file>
+  sdp-trace packet check-demo --bundle <file>
   sdp-trace packet render --bundle <file> --out <file>
   sdp-trace validate-fixtures [root-dir]
 `

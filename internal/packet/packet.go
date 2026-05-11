@@ -172,17 +172,19 @@ type BundleManifest struct {
 }
 
 type BundleEntry struct {
-	Ref              string `json:"ref"`
-	SourceClass      string `json:"source_class"`
-	Digest           string `json:"digest,omitempty"`
-	RetainedForm     string `json:"retained_form"`
-	RedactionStatus  string `json:"redaction_status"`
-	Resolver         string `json:"resolver,omitempty"`
-	ExpiresAt        string `json:"expires_at,omitempty"`
-	ArtifactAccess   string `json:"artifact_access,omitempty"`
-	ProjectionRole   string `json:"projection_role,omitempty"`
-	ContradictsRef   string `json:"contradicts_ref,omitempty"`
-	ContradictsRowID string `json:"contradicts_row_id,omitempty"`
+	Ref                string   `json:"ref"`
+	SourceClass        string   `json:"source_class"`
+	Digest             string   `json:"digest,omitempty"`
+	RetainedForm       string   `json:"retained_form"`
+	RedactionStatus    string   `json:"redaction_status"`
+	Resolver           string   `json:"resolver,omitempty"`
+	ExpiresAt          string   `json:"expires_at,omitempty"`
+	ArtifactAccess     string   `json:"artifact_access,omitempty"`
+	ProjectionRole     string   `json:"projection_role,omitempty"`
+	EvidenceKind       string   `json:"evidence_kind,omitempty"`
+	ObservedComponents []string `json:"observed_components,omitempty"`
+	ContradictsRef     string   `json:"contradicts_ref,omitempty"`
+	ContradictsRowID   string   `json:"contradicts_row_id,omitempty"`
 }
 
 type ResolverEntry struct {
@@ -196,13 +198,16 @@ type Bundle struct {
 }
 
 type GitHubPREvidenceInput struct {
-	SchemaVersion  string            `json:"schema_version"`
-	PR             GitHubPR          `json:"pr"`
-	CommitRange    GitHubCommitRange `json:"commit_range"`
-	Checks         []GitHubCheck     `json:"checks,omitempty"`
-	Artifacts      []GitHubArtifact  `json:"artifacts,omitempty"`
-	Reviews        []GitHubReview    `json:"reviews,omitempty"`
-	AgentRouteRefs []string          `json:"agent_route_refs,omitempty"`
+	SchemaVersion          string            `json:"schema_version"`
+	PR                     GitHubPR          `json:"pr"`
+	CommitRange            GitHubCommitRange `json:"commit_range"`
+	Checks                 []GitHubCheck     `json:"checks,omitempty"`
+	Artifacts              []GitHubArtifact  `json:"artifacts,omitempty"`
+	Reviews                []GitHubReview    `json:"reviews,omitempty"`
+	AgentRouteRefs         []string          `json:"agent_route_refs,omitempty"`
+	AgentRouteComponents   []string          `json:"agent_route_components,omitempty"`
+	AgentRouteDigest       string            `json:"agent_route_digest,omitempty"`
+	AgentRouteEvidenceKind string            `json:"agent_route_evidence_kind,omitempty"`
 }
 
 type GitHubPR struct {
@@ -322,6 +327,176 @@ func Validate(bundle Bundle, now time.Time) Validation {
 		resolverByRef: map[string]string{},
 	}
 	return validator.validate()
+}
+
+func CheckDemoFirstPacket(bundle Bundle, now time.Time) Validation {
+	validation := Validate(bundle, now)
+	check := demoFirstPacketChecker{
+		bundle:     bundle,
+		now:        now,
+		rows:       map[string]Row{},
+		entryByRef: map[string]BundleEntry{},
+		errors:     append([]string(nil), validation.Errors...),
+	}
+	return check.validate()
+}
+
+type demoFirstPacketChecker struct {
+	bundle     Bundle
+	now        time.Time
+	rows       map[string]Row
+	entryByRef map[string]BundleEntry
+	errors     []string
+}
+
+func (c *demoFirstPacketChecker) validate() Validation {
+	c.index()
+	c.requireToolGenerated()
+	c.requirePassOrPartialRows(4)
+	c.requireRowEvidence("PC-CHANGE")
+	c.requireRowEvidence("PC-MUTATION")
+	c.requireAgentRouteEvidence()
+	c.requireVerificationOrReviewAssessed()
+	c.requireCannotVerifyClosureCap()
+	state := StatePass
+	if len(c.errors) > 0 {
+		state = StateFail
+	}
+	return Validation{State: state, Errors: c.errors}
+}
+
+func (c *demoFirstPacketChecker) requireToolGenerated() {
+	if c.bundle.Packet.AuthoringMethod != AuthoringToolGenerated {
+		c.add("demo first-packet gate requires tool_generated authoring_method, got %s", c.bundle.Packet.AuthoringMethod)
+	}
+}
+
+func (c *demoFirstPacketChecker) index() {
+	for _, row := range c.bundle.Packet.Rows {
+		c.rows[row.ID] = row
+	}
+	for _, entry := range c.bundle.Manifest.Entries {
+		c.entryByRef[entry.Ref] = entry
+	}
+}
+
+func (c *demoFirstPacketChecker) requirePassOrPartialRows(minimum int) {
+	count := 0
+	for _, row := range c.rows {
+		if row.State == StatePass || row.State == StatePartial {
+			count++
+		}
+	}
+	if count < minimum {
+		c.add("demo first-packet gate requires at least %d pass or partial rows, got %d", minimum, count)
+	}
+}
+
+func (c *demoFirstPacketChecker) requireRowEvidence(rowID string) {
+	row := c.rows[rowID]
+	if len(row.EvidenceRefs) == 0 {
+		c.add("demo first-packet gate requires %s retained evidence refs", rowID)
+		return
+	}
+	for _, ref := range row.EvidenceRefs {
+		entry, ok := c.entryByRef[ref]
+		if !ok {
+			continue
+		}
+		if !demoUsableEntry(entry, c.now) {
+			c.add("demo first-packet gate requires %s evidence ref %q to be retained and usable", rowID, ref)
+		}
+	}
+}
+
+func (c *demoFirstPacketChecker) requireAgentRouteEvidence() {
+	row := c.rows["PC-AGENT-ROUTE"]
+	if row.State != StatePass && row.State != StatePartial {
+		c.add("demo first-packet gate requires PC-AGENT-ROUTE must be pass or partial, got %s", row.State)
+		return
+	}
+	if len(row.EvidenceRefs) == 0 {
+		c.add("demo first-packet gate requires PC-AGENT-ROUTE retained evidence refs")
+		return
+	}
+	for _, ref := range row.EvidenceRefs {
+		entry := c.entryByRef[ref]
+		if entry.SourceClass == "harness" && demoUsableEntry(entry, c.now) && demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry) {
+			return
+		}
+	}
+	c.add("demo first-packet gate requires PC-AGENT-ROUTE evidence from retained structured OpenCode/GSD/MiniMax harness route observation")
+}
+
+func (c *demoFirstPacketChecker) requireVerificationOrReviewAssessed() {
+	if rowAssessed(c.rows["PC-VERIFICATION"]) || rowAssessed(c.rows["PC-REVIEW"]) {
+		return
+	}
+	c.add("demo first-packet gate requires PC-VERIFICATION or PC-REVIEW to be pass, partial, or fail")
+}
+
+func rowAssessed(row Row) bool {
+	return row.State == StatePass || row.State == StatePartial || row.State == StateFail
+}
+
+func (c *demoFirstPacketChecker) requireCannotVerifyClosureCap() {
+	unclosed := 0
+	for _, row := range c.rows {
+		if row.State != StateCannotVerify {
+			continue
+		}
+		if !gapForRowWithClosure(c.bundle.Packet.ResidualGaps, row.ID) {
+			unclosed++
+		}
+	}
+	if unclosed > 1 {
+		c.add("demo first-packet gate allows at most one cannot_verify row without closure path, got %d", unclosed)
+	}
+}
+
+func gapForRowWithClosure(gaps []ResidualGap, rowID string) bool {
+	for _, gap := range gaps {
+		if gap.RowID == rowID && strings.TrimSpace(gap.ClosureEvidence) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *demoFirstPacketChecker) add(format string, args ...any) {
+	c.errors = append(c.errors, fmt.Sprintf(format, args...))
+}
+
+func demoUsableEntry(entry BundleEntry, now time.Time) bool {
+	if strings.TrimSpace(entry.Resolver) == "" || strings.TrimSpace(entry.Digest) == "" {
+		return false
+	}
+	if entryExpired(entry, now) {
+		return false
+	}
+	if passRefUnverifiable(entry) {
+		return false
+	}
+	return true
+}
+
+func demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry BundleEntry) bool {
+	if entry.EvidenceKind != "harness_route_observation" {
+		return false
+	}
+	if syntheticEntryDigest(entry) {
+		return false
+	}
+	components := map[string]bool{}
+	for _, component := range entry.ObservedComponents {
+		components[strings.ToLower(strings.TrimSpace(component))] = true
+	}
+	return components["opencode"] && components["gsd"] &&
+		(components["minimax"] || components["minimax-m2.5"] || components["minimax-m2"])
+}
+
+func syntheticEntryDigest(entry BundleEntry) bool {
+	return strings.TrimSpace(entry.Digest) == "" || entry.Digest == digestPlaceholder(entry.Ref+entry.Resolver)
 }
 
 type bundleValidator struct {
@@ -653,9 +828,9 @@ func githubRows(input GitHubPREvidenceInput) []Row {
 
 func githubChangeRow(input GitHubPREvidenceInput) Row {
 	if strings.TrimSpace(input.CommitRange.Base) == "" || strings.TrimSpace(input.CommitRange.Head) == "" {
-		return githubRow("PC-CHANGE", StateCannotVerify, "GitHub PR metadata is retained but commit range is incomplete.", []string{"github:pr"}, "missing commit range base or head")
+		return githubRow("PC-CHANGE", StateCannotVerify, "Change-host metadata is retained but commit range is incomplete.", []string{"github:pr"}, "missing commit range base or head")
 	}
-	return githubRow("PC-CHANGE", StatePass, "GitHub PR metadata and commit range are retained.", []string{"github:pr", "git:commit-range"}, "")
+	return githubRow("PC-CHANGE", StatePass, "Change-host metadata and commit range are retained.", []string{"github:pr", "git:commit-range"}, "")
 }
 
 func githubMutationRow(input GitHubPREvidenceInput) Row {
@@ -758,7 +933,13 @@ func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
 		entries = append(entries, bundleEntry("github:pr-body", "change_host", input.PR.BodyRef, "external_ref"))
 	}
 	if len(input.AgentRouteRefs) > 0 {
-		entries = append(entries, bundleEntry("agent:route", "harness", strings.Join(input.AgentRouteRefs, ", "), "external_ref"))
+		entry := bundleEntry("agent:route", "harness", strings.Join(input.AgentRouteRefs, ", "), "external_ref")
+		if strings.TrimSpace(input.AgentRouteDigest) != "" {
+			entry.Digest = input.AgentRouteDigest
+		}
+		entry.EvidenceKind = input.AgentRouteEvidenceKind
+		entry.ObservedComponents = input.AgentRouteComponents
+		entries = append(entries, entry)
 	}
 	if len(input.Checks) > 0 {
 		entries = append(entries, bundleEntry("github:check", "ci", checkResolvers(input.Checks), "external_ref"))

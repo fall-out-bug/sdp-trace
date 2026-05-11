@@ -685,6 +685,53 @@ func TestSetupSessionWritesSessionRunWithCommand(t *testing.T) {
 	}
 }
 
+func TestSetupSessionInstallsIsolationRulesRelativeToProfile(t *testing.T) {
+	dir := t.TempDir()
+	demoDir := filepath.Join(dir, "demo")
+	if err := os.Mkdir(demoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeProfile(t, demoDir, []string{"harness"}, nil)
+	sessionProfile := SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		IsolationRules: []SessionIsolationRule{{
+			ID:         "ignore-evidence",
+			Kind:       "ignore_line",
+			TargetPath: ".ignore",
+			Pattern:    ".evidence/",
+			Required:   true,
+		}},
+	}
+	writeJSONFixture(t, filepath.Join(demoDir, "session-profile.json"), sessionProfile)
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	run, err := SetupSession(SessionSetupOptions{
+		ProfilePath: "demo/session-profile.json",
+		OutDir:      "run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("SetupSession() error = %v", err)
+	}
+	if len(run.IsolationResults) != 1 || run.IsolationResults[0].State != StatePass {
+		t.Fatalf("isolation results = %+v, want one pass", run.IsolationResults)
+	}
+	data, err := os.ReadFile(filepath.Join(demoDir, ".ignore"))
+	if err != nil {
+		t.Fatalf("demo .ignore missing: %v", err)
+	}
+	if strings.TrimSpace(string(data)) != ".evidence/" {
+		t.Fatalf("demo .ignore = %q, want .evidence/", string(data))
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".ignore")); !os.IsNotExist(err) {
+		t.Fatalf("cwd .ignore should not exist, stat err=%v", err)
+	}
+}
+
 func TestSetupSessionWritesBlankCommandDefaults(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
