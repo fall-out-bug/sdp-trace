@@ -91,6 +91,135 @@ No known critical or major finding remains intentionally open from the combined
 draft review. The split itself still needs focused re-review because it changes
 sequencing and removes the pre-renderer hand-authored demo path.
 
+## 2026-05-11 Operating Model Correction Review
+
+Scope:
+
+- Codex role boundary for demo feature work.
+- OpenCode + GSD + `minimax-coding-plan/MiniMax-M2.5` as the CTO-visible
+  feature implementation route.
+- `sdp-trace` as passive flight recorder outside the developer prompt.
+- Setup-only Codex exception.
+- P0/P1+ product blocker handling.
+
+Review runs:
+
+| plane | reviewer/runtime | status | raw output |
+| --- | --- | --- | --- |
+| requirements/evidence/security | Codex subagent `019e17af-e8b4-7833-9311-94b042d937b5` | usable | notification captured in thread |
+| focused Socratic | `pi` with `openrouter/deepseek/deepseek-v4-pro` | usable | `raw/2026-05-11-operating-model-deepseek.md` |
+| focused fix-check | `pi` with `openrouter/deepseek/deepseek-v4-pro` | usable for first accepted fixes | `raw/2026-05-11-operating-model-fixcheck-deepseek.md` |
+| replacement fix-check | Codex subagent `019e17b7-a8f7-7360-9336-e90bc1d2eb9c` | usable | notification captured in thread |
+| implementation review | `pi` with `deepseek/deepseek-chat` | usable only as secondary signal; line references were imprecise | local scratch `/tmp/sdp-trace-review/packet-check-demo-fixcheck.md` |
+| implementation review | Codex subagent `019e1821-a351-71d0-a0ee-91f089482f46` | usable | notification captured in thread |
+| implementation review | Codex subagent `019e1825-4cd5-7ec0-b4e2-2e6284ef5588` | usable | notification captured in thread |
+| implementation fix-check | Codex subagent `019e1828-1eca-7f31-943b-b7bd1ab0e583` | usable | notification captured in thread |
+
+Findings and dispositions:
+
+| id | severity | plane | finding | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| OM-001 | critical | requirements / route proof | Demo success could still pass without proving the OpenCode/GSD/MiniMax route because the first-packet bar allowed `PC-AGENT-ROUTE` to remain `not_assessed`/`cannot_verify`. | `accepted_fixed` | `spec.md` now requires first-packet `PC-AGENT-ROUTE` to be `pass` or `partial` with recorder-observed OpenCode/GSD/MiniMax evidence; SC-009 repeats the success gate. |
+| OM-002 | major | provenance / contamination | Existing/backfilled feature packets lacked a Codex-authored feature contamination audit. | `accepted_fixed` | `spec.md` FR-015, `tasks.md` T014, and `demo-repo-plan.md` require the audit before using history as CTO-visible route proof. |
+| OM-003 | major | blocker handling | `demo-repo-plan.md` allowed continuing with `cannot_verify` after a P0 route/provenance blocker. | `accepted_fixed` | `spec.md`, `plan.md`, and `demo-repo-plan.md` now block feature proof until P0 route/provenance blockers are fixed and rerun or otherwise observed. |
+| OM-004 | major | prompt boundary | Prompt separation was only required for the first selected feature, not every feature. | `accepted_fixed` | `spec.md` FR-016/SC-008 and `tasks.md` T015-T019 require retained prompt text or digest validation for every feature. |
+| OM-005 | critical | observation integrity | Checked-in recorder JSON could be mistaken for authority without live validation, CI retention, signing, or timestamping. | `accepted_fixed_narrowed` | `spec.md` and `demo-repo-plan.md` now define `local_observed` trust scope, require live-validated or CI-retained recorder artifacts with resolver refs and digests, and prohibit audit-grade integrity claims without stronger evidence. |
+| OM-006 | critical | recorder passivity | Recorder passivity was asserted without machine-verifiable proof. | `accepted_fixed_narrowed` | `spec.md` and `tasks.md` now say prompt/setup metadata can support only `PC-AGENT-ROUTE: partial`; `pass` requires stronger machine evidence, and residual gaps must name unverified passivity. |
+| OM-007 | critical | success gate | First-packet minimum bar was not explicitly gated before buyer rehearsal. | `accepted_fixed` | `tasks.md` T021 adds a first-packet gate before rehearsal; `spec.md` FR-019/SC-010 require the gate. |
+| OM-008 | major | theater evidence | Negative theater depended on an undefined automatic assessor. | `accepted_fixed_narrowed` | `plan.md` and `tasks.md` require 006-generated or 006-validated theater findings; if 006 validates a supplied finding rather than detecting it automatically, the packet must state that limitation. |
+| OM-009 | major | setup-only boundary | Setup-only Codex changes were prose labels rather than checkable boundaries. | `accepted_fixed` | `spec.md` FR-018, `tasks.md` T012, and `demo-repo-plan.md` define machine-checkable or independently reviewed setup-only scope. |
+| OM-010 | major | implementation / route evidence | `packet check-demo` could accept generic harness evidence if the manifest resolver merely mentioned OpenCode, GSD, and MiniMax. | `accepted_fixed` | `internal/packet/packet.go` now requires `evidence_kind: harness_route_observation` and `observed_components` covering OpenCode, GSD, and MiniMax; `schema/evidence-bundle-manifest.v0.schema.json` and `cmd/sdp-trace/packet_cli_test.go` cover the structured fields. |
+| OM-011 | major | implementation / evidence freshness | `packet check-demo` could accept expired `PC-CHANGE` or `PC-MUTATION` refs for `partial` rows when expiry was represented only by `expires_at`. | `accepted_fixed` | `internal/packet/packet.go` passes `now` into `demoUsableEntry` and rejects `entryExpired`; `cmd/sdp-trace/packet_cli_test.go` covers an expired partial `PC-CHANGE` ref. |
+
+Current result: focused fix-check reported no critical or major findings for
+OM-001 through OM-004. A `pi` final fix-check for OM-005 through OM-009 hung and
+returned empty output; it is unusable and not counted as evidence. Replacement
+subagent fix-check reported `NO CRITICAL OR MAJOR FINDINGS` for OM-005 through
+OM-009.
+
+Implementation fix-check for the 007 first-packet gate reported
+`NO CRITICAL OR MAJOR FINDINGS` after OM-010 and OM-011 were fixed. Local live
+verification passed with `go test ./...`, `jq empty schema/*.json`,
+`git diff --check`, `sdp-trace packet validate --bundle
+examples/change-evidence-packet/happy-path.bundle.json`, and `sdp-trace packet
+check-demo --bundle examples/change-evidence-packet/happy-path.bundle.json`.
+CI, external witness, signed attestation, and production trust remain
+`not_assessed` for this local dirty worktree.
+
+## 2026-05-11 Demo Repository Audit
+
+Target: `/home/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd`.
+Branch: `demo-v2-packetization`, not `main`.
+
+Observed dirty files:
+
+- isolation/evidence setup: `.gitignore`, `.ignore`, `.opencode/opencode.json`,
+  `.bazelversion`, `.evidence/local-build-test/...`;
+- planning/docs: `README.md`, `.planning/phases/01-project-skeleton/*.md`;
+- build files: `MODULE.bazel`, `MODULE.bazel.lock`, `WORKSPACE`,
+  `app/BUILD.bazel`.
+
+Local verification:
+
+- `bazel build //...`: pass.
+- `bazel test //... --test_output=errors`: pass.
+- `git diff --check`: pass.
+- Agent-visible scan across `README.md`, `.planning`, `.github`, Bazel files,
+  `app`, `.opencode`, `.ignore`, and `.gitignore`: no `sdp-trace` or
+  `sdp_trace` matches.
+
+Disposition:
+
+- `.ignore` plus `.opencode/opencode.json` is consistent with the current
+  isolation direction, but the residual gap remains open until `sdp-trace`
+  installs/verifies the isolation contract itself.
+- `.evidence/local-build-test/manifest.json` correctly records local dirty
+  scope and `cannot_verify` for CI witness, audit-grade gate, and
+  `RG-OPENCODE-CONTEXT-IGNORE-001`.
+- Build-file changes are outside the default setup-only allowlist. They appear
+  to be build-system repair/setup rather than application feature behavior, but
+  they require an independent setup-only review record before being treated as
+  setup evidence. They must not close CTO-visible feature packet rows.
+- No Codex-authored demo application feature behavior is accepted from this
+  audit. Any feature repair must go through OpenCode/GSD + MiniMax under passive
+  `sdp-trace` observation.
+
+## 2026-05-11 Feature 1 Readiness Slice
+
+Feature: `GET /ready` in
+`/home/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd`.
+
+Route and evidence:
+
+- Initial `codex-subagent run opencode` route hung and was cancelled. It is
+  recorded as friction and not counted as delivery evidence.
+- Direct OpenCode route with `opencode/minimax-m2.5-free` completed under
+  passive recorder at
+  `.evidence/feature-readiness-opencode-direct-free/run`.
+- OpenCode review-fix route tightened `/ready` smoke coverage at
+  `.evidence/feature-readiness-review-fix/run`.
+- Final local verification ran under recorder at
+  `.evidence/feature-readiness-final-verification/run` and produced
+  `local_gate: pass`, `ci_witness_gate: cannot_verify`, and
+  `audit_grade_gate: cannot_verify`.
+- The product builder generated
+  `.sdp-trace/bundles/feature-1/bundle.json` and
+  `.sdp-trace/packets/feature-1.md`.
+- `sdp-trace packet validate --bundle .sdp-trace/bundles/feature-1/bundle.json`:
+  pass.
+- `sdp-trace packet check-demo --bundle .sdp-trace/bundles/feature-1/bundle.json`:
+  pass.
+
+Disposition:
+
+- `PC-AGENT-ROUTE` is `partial`, not `pass`, because route proof is local-only
+  and prompt body retention is digest-only.
+- CI witness, signed attestation, authority, and audit-grade trust remain
+  `not_assessed` or `cannot_verify`; they are not claimed.
+- The feature slice demonstrates `sdp-trace` as local flight recorder plus packet
+  generator/checker for an OpenCode/MiniMax demo route, not merge approval or
+  production trust.
+
 ## Current Recommended First Slice
 
 1. Complete 006 Change Evidence Packet Core first.

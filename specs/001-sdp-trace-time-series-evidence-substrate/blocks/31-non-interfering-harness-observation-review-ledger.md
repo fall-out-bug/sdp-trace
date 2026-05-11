@@ -104,3 +104,23 @@ review findings.
 
 Focused PR re-review result after fixes: `APPROVE`. No remaining critical or
 major findings were reported for PR29-TE-01 or PR29-CODE-01.
+
+## Context Isolation Re-Review Findings
+
+Date: 2026-05-11
+
+Scope:
+
+- `SessionProfile.isolation_rules`
+- `observe setup` installation and verification for `.ignore` and JSON
+  read-deny rules
+- OpenCode/GSD example session profile
+- Block 31 spec and implementation-plan delta
+
+| ID | Severity | Plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| I31-ISO-REVIEW-01 | none | code / trace-evidence / requirements | Adversarial review reported no critical or major findings for the context isolation delta. | no_action | `pi --model deepseek/deepseek-chat --no-tools --no-context-files --no-session -p @/tmp/sdp-trace-isolation-diff.patch ...` returned `NO CRITICAL OR MAJOR FINDINGS`. |
+
+Focused isolation re-review result: `APPROVE`. This review only approves the
+setup-time file-rule evidence path. It does not assess prompt-injection
+resistance or prove actual model-context exclusion in a live OpenCode run.

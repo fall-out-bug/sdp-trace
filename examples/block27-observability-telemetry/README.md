@@ -19,7 +19,7 @@ When the Block 27 CLI lands, regenerate the Prometheus text snapshot from the
 Block 21 posture fixture:
 
 ```bash
-go run ./cmd/sdp-trace export telemetry \
+sdp-trace export telemetry \
   --profile prometheus-text-v1 \
   --cross-repo-posture examples/block21-cross-repo-posture/valid-movement/cross-repo-posture-export.json \
   --out examples/block27-observability-telemetry/prometheus/metrics.prom
@@ -28,7 +28,7 @@ go run ./cmd/sdp-trace export telemetry \
 For textfile collector handoff, write to a collector directory instead:
 
 ```bash
-go run ./cmd/sdp-trace export telemetry \
+sdp-trace export telemetry \
   --profile prometheus-text-v1 \
   --cross-repo-posture examples/block21-cross-repo-posture/valid-movement/cross-repo-posture-export.json \
   --out /var/lib/node_exporter/textfile_collector/sdp_trace_posture.prom

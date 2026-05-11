@@ -27,6 +27,43 @@ The first packet target is selected by evidence richness. If no existing
 feature/history slice meets the first-packet minimum bar from `spec.md`, create
 a new v2 feature PR in the same repo instead of forcing a weak backfill.
 
+## Demo Roles
+
+The demo repository is the proof target. Feature behavior in CTO-visible demo
+PRs must be implemented by OpenCode + GSD +
+`minimax-coding-plan/MiniMax-M2.5`, observed by `sdp-trace` as an external
+flight recorder.
+
+Codex may:
+
+- install, rebuild, or reinstall `sdp-trace`;
+- prepare setup-only recorder and CI infrastructure;
+- inspect repository state and GitHub evidence;
+- review OpenCode/GSD output and redirect the route with a new task;
+- run verification commands when needed;
+- generate and validate packets from retained evidence.
+
+Codex must not:
+
+- implement or repair feature behavior directly;
+- ask OpenCode/GSD to maintain `sdp-trace` evidence or trace files;
+- count setup-only commits as feature delivery;
+- backfill missing route/provenance/evidence by editing README, tracker, or
+  packet prose.
+
+If a feature needs a code fix, Codex records the finding and sends a new
+OpenCode/GSD task. If `sdp-trace` cannot record enough evidence, fix P0 product
+blockers in `sdp-trace`, reinstall the recorder, and rerun or otherwise observe
+the route with retained evidence before claiming feature proof. `cannot_verify`
+may remain only for non-successful packets, non-blocking rows, or P1 and lower
+issues that do not prevent the demo claim.
+
+The demo trust scope is local observed unless a row has GitHub/CI, signed,
+externally timestamped, or customer-equivalent evidence. Checked-in recorder
+artifacts are not authority without live validation or CI-retained resolver and
+digest binding. Prompt/setup metadata can support `PC-AGENT-ROUTE: partial`;
+`pass` requires stronger machine evidence of recorder integrity and passivity.
+
 ## Demo V2 Repository Contract
 
 The repository must show a reviewable GitHub story:
@@ -76,12 +113,40 @@ Packetization setup PR must establish:
 
 Setup PR must not implement product features.
 
+Codex-authored setup changes are allowed only when they are explicitly
+`setup_only`; they cannot close feature packet rows.
+
+Default setup-only file scope:
+
+- `.github/`;
+- `.sdp-trace/`;
+- `docs/demo-tracker.md`;
+- `.gitignore`, `.ignore`;
+- `.opencode/` recorder configuration;
+- packet and bundle directory placeholders.
+
+Application source, application tests, and functional build behavior are outside
+setup-only scope unless a separate independent review records why the change is
+not feature behavior.
+
 ## Feature PR Requirements
 
 For each feature packet target:
 
 - use existing PR/history when available;
 - create a new PR only when a feature has no usable GitHub evidence surface;
+- require OpenCode/GSD + MiniMax as the feature implementation route;
+- keep `sdp-trace` out of the developer prompt and let it observe from outside;
+- route Codex review findings back to OpenCode/GSD instead of direct Codex
+  patches;
+- audit whether existing/backfilled feature behavior or repairs were
+  Codex-authored before using the feature as CTO-visible OpenCode/GSD route
+  proof;
+- retain prompt text or prompt digest metadata and validate that the prompt did
+  not ask OpenCode/GSD to use `sdp-trace`, author evidence, update trace files,
+  or close packet rows;
+- bind recorder artifacts by resolver and digest through live validation or
+  CI-retained artifacts;
 - inspect whether historical GitHub Actions artifacts are still available;
 - CI artifact names:
   - `feature-<number>-change-evidence-packet`

@@ -167,6 +167,31 @@ A session profile declares the raw observation surfaces and how they normalize t
 The OpenCode/GSD mapping must ship as a reviewed profile fixture or example
 under `examples/harness-observation/`, not as hidden Go special-case logic.
 
+### Context Isolation Setup
+
+For harnesses that can otherwise discover committed evidence packages as normal
+repository context, the session profile may declare context isolation rules as
+bounded pre-work. These rules are setup evidence, not a delivery verdict.
+
+The first rule grammar is closed and file-based:
+
+- `ignore_line`: ensure a literal line exists in a local ignore file such as
+  `.ignore`;
+- `json_read_deny`: ensure a literal pattern maps to `deny` under a local JSON
+  read-permission object.
+
+Setup must install and immediately verify every declared isolation rule before
+the delivery loop starts. The session output must record the rule id, kind,
+target path, pattern, state, reason code, and target-file SHA-256. Missing,
+malformed, unsafe, or unverifiable isolation keeps the rule state
+`cannot_verify` or fails setup; it must not be treated as green by prose.
+
+The OpenCode/GSD example may use this generic rule grammar to create `.ignore`
+and `.opencode/opencode.json`, but product claims remain limited to the
+declared file rules. Prompt-injection resistance and actual model context
+exclusion remain `not_assessed` unless separately observed in a live harness
+session.
+
 Bounded setup means at most three documented setup actions before delivery:
 
 1. one initialization command;

@@ -73,7 +73,23 @@
         "additionalProperties": false
       }
     },
-    "agent_route_refs": { "type": "array", "items": { "type": "string" } }
+    "agent_route_refs": { "type": "array", "items": { "type": "string" } },
+    "agent_route_evidence_kind": {
+      "type": "string",
+      "enum": ["harness_route_observation"]
+    },
+    "agent_route_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "agent_route_components": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["opencode", "gsd", "minimax", "minimax-m2", "minimax-m2.5"]
+      },
+      "uniqueItems": true
+    }
   },
   "additionalProperties": false
 }

@@ -21,7 +21,7 @@ Git-only evidence can prove a path mutation and commit binding. It cannot prove 
 ## Command
 
 ```bash
-go run ./cmd/sdp-trace assess \
+sdp-trace assess \
   --profile authority-envelope \
   --authority-package examples/authority-envelope-basic/outside-authority-denied-target/authority-package.json \
   --out authority-evaluation.json
@@ -30,13 +30,13 @@ go run ./cmd/sdp-trace assess \
 Explain a result:
 
 ```bash
-go run ./cmd/sdp-trace assess explain --assessment-result authority-evaluation.json
+sdp-trace assess explain --assessment-result authority-evaluation.json
 ```
 
 Preview required inputs without emitting an evaluation:
 
 ```bash
-go run ./cmd/sdp-trace assess preview \
+sdp-trace assess preview \
   --profile authority-envelope \
   --authority-package examples/authority-envelope-basic/outside-authority-denied-target/authority-package.json
 ```

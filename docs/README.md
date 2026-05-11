@@ -7,14 +7,15 @@ working specs and historical implementation records.
 
 1. [Agent Onboarding](agent-onboarding.md): the single link to give a coding
    agent before it works in this repository.
-2. [Core Concepts](concepts.md): vocabulary and product boundary.
-3. [Agent Entrypoint](agent-entrypoint.md): current command, state, trust-scope,
+2. [Install](install.md): binary-first setup; Go is not required at runtime.
+3. [Core Concepts](concepts.md): vocabulary and product boundary.
+4. [Agent Entrypoint](agent-entrypoint.md): current command, state, trust-scope,
    authority-scope, and exit-code contract.
-4. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path and
+5. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path and
    overclaim rules.
-5. [Harness Integration](harness-integration.md): how existing workflows feed
+6. [Harness Integration](harness-integration.md): how existing workflows feed
    trace evidence without being replaced.
-6. [Schema Reference](../schema/README.md): the portable JSON contracts.
+7. [Schema Reference](../schema/README.md): the portable JSON contracts.
 
 ## Governance And Rollout Docs
 

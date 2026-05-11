@@ -46,6 +46,18 @@
           "type": "string",
           "enum": ["canonical_packet", "pr_comment_projection", "body_projection", "supporting_evidence"]
         },
+        "evidence_kind": {
+          "type": "string",
+          "enum": ["harness_route_observation"]
+        },
+        "observed_components": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["opencode", "gsd", "minimax", "minimax-m2", "minimax-m2.5"]
+          },
+          "uniqueItems": true
+        },
         "contradicts_ref": { "type": "string" },
         "contradicts_row_id": {
           "type": "string",

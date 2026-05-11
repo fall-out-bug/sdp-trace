@@ -59,12 +59,12 @@ Redaction states are verifier-visible:
 Forensic retention assessment is explicit:
 
 ```bash
-go run ./cmd/sdp-trace assess --profile forensic-retention \
+sdp-trace assess --profile forensic-retention \
   --run <run-dir> \
   --redaction-policy <policy.json> \
   --out <assessment-result.json>
 
-go run ./cmd/sdp-trace assess explain \
+sdp-trace assess explain \
   --assessment-result <assessment-result.json>
 ```
 
@@ -81,11 +81,11 @@ adapter events are present, bound to the selected run, safe to inspect, and
 honest about capture-depth limits.
 
 ```bash
-go run ./cmd/sdp-trace assess --profile adapter-capture \
+sdp-trace assess --profile adapter-capture \
   --run <run-dir> \
   --out <assessment-result.json>
 
-go run ./cmd/sdp-trace query --query capture-depth <run-dir>
+sdp-trace query --query capture-depth <run-dir>
 ```
 
 Adapter capture supports two binding modes:
@@ -111,7 +111,7 @@ bodies must not appear in committed artifacts or preview/query/explain output.
 The current Go-first validation command for committed fixture packages is:
 
 ```bash
-go run ./cmd/sdp-trace validate-fixtures examples/agentic-sdlc
+sdp-trace validate-fixtures examples/agentic-sdlc
 ```
 
 The query names below describe the product surface expected from flight-recorder
@@ -119,9 +119,9 @@ summaries. They are not Node.js command names and must not add Node.js to the
 active product path.
 
 ```bash
-go run ./cmd/sdp-trace query --query missing-evidence <run-dir>
-go run ./cmd/sdp-trace query --query capture-depth <run-dir>
-go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 \
+sdp-trace query --query missing-evidence <run-dir>
+sdp-trace query --query capture-depth <run-dir>
+sdp-trace query-pack --pack forensics-basic-v1 \
   --run <run-dir> \
   --out <query-pack-result.json>
 ```

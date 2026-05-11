@@ -89,6 +89,7 @@ Preferred shape:
 
 ```text
 sdp-trace packet validate --bundle <path>
+sdp-trace packet check-demo --bundle <path>
 sdp-trace packet render --bundle <path> --out <path>
 ```
 

@@ -12,7 +12,7 @@ exercise the same state and reason-code matrix through generated manifests.
 Run the complete-coverage fixture:
 
 ```bash
-go run ./cmd/sdp-trace assess \
+sdp-trace assess \
   --profile ci-artifact-observation \
   --artifact-manifest examples/block26-ci-artifact-observation/input/ci-uploaded-bundle-complete-coverage/artifact-manifest.json \
   --out /tmp/block26-observation.json
@@ -21,7 +21,7 @@ go run ./cmd/sdp-trace assess \
 Explain the result:
 
 ```bash
-go run ./cmd/sdp-trace assess explain \
+sdp-trace assess explain \
   --assessment-result /tmp/block26-observation.json
 ```
 

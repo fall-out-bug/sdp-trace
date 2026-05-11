@@ -55,31 +55,31 @@ For each repository, add:
 Minimum implementation sequence:
 
 ```text
-go run ./cmd/sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
-go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs
-go run ./cmd/sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
-go run ./cmd/sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
+sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
+sdp-trace report --out .sdp-trace-report .sdp-trace-runs
+sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
+sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
 ```
 
 Useful local checks:
 
 ```text
-go run ./cmd/sdp-trace doctor
-go run ./cmd/sdp-trace verify .sdp-trace-runs/<run-id>
-go run ./cmd/sdp-trace explain .sdp-trace-runs/<run-id>
-go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/<run-id>
-go run ./cmd/sdp-trace query-pack --pack forensics-basic-v1 --run .sdp-trace-runs/<run-id> --out query-pack.json
+sdp-trace doctor
+sdp-trace verify .sdp-trace-runs/<run-id>
+sdp-trace explain .sdp-trace-runs/<run-id>
+sdp-trace query --query missing-evidence .sdp-trace-runs/<run-id>
+sdp-trace query-pack --pack forensics-basic-v1 --run .sdp-trace-runs/<run-id> --out query-pack.json
 ```
 
 ## Profiles To Use
 
 | Need | Command |
 | --- | --- |
-| Adapter coverage and overclaim review | `go run ./cmd/sdp-trace assess --profile adapter-capture --out assessment.json --run .sdp-trace-runs/<run-id>` |
-| Managed harness profile | `go run ./cmd/sdp-trace assess --profile managed-harness --out assessment.json --contract contract.json --run .sdp-trace-runs/<run-id> --adapter-registry registry.json --managed-policy policy.json --managed-witness witness.json` |
-| Forensic retention profile | `go run ./cmd/sdp-trace assess --profile forensic-retention --out assessment.json --run .sdp-trace-runs/<run-id> --redaction-policy redaction.json` |
-| Assessment explanation | `go run ./cmd/sdp-trace assess explain --assessment-result assessment.json` |
-| Source-bound release proof | `go run ./cmd/sdp-trace release-proof --manifest contract-manifest.json --out release-proof.json` |
+| Adapter coverage and overclaim review | `sdp-trace assess --profile adapter-capture --out assessment.json --run .sdp-trace-runs/<run-id>` |
+| Managed harness profile | `sdp-trace assess --profile managed-harness --out assessment.json --contract contract.json --run .sdp-trace-runs/<run-id> --adapter-registry registry.json --managed-policy policy.json --managed-witness witness.json` |
+| Forensic retention profile | `sdp-trace assess --profile forensic-retention --out assessment.json --run .sdp-trace-runs/<run-id> --redaction-policy redaction.json` |
+| Assessment explanation | `sdp-trace assess explain --assessment-result assessment.json` |
+| Source-bound release proof | `sdp-trace release-proof --manifest contract-manifest.json --out release-proof.json` |
 
 `managed-harness` emits verifier facts and exit behavior. It does not decide
 merge/release readiness. Missing managed witness evidence generally remains
