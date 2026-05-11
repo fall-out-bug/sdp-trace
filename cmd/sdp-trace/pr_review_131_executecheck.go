@@ -14,6 +14,7 @@ func executePRReviewCheck(packet prreview.Packet, profile prreview.ReviewProfile
 	// validation artifacts can refer to the same run set.
 	runs, preview, err := prreview.RunReview(packet, profile, prreview.RunOptions{
 		OutDir:            filepath.Join(outDir, "runs"),
+		PacketDir:         filepath.Join(outDir, "packet"),
 		AllowedRunners:    allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
 		Preview:           opts.boolValue("preview"),
 		WorkDir:           opts.stringValue("work-dir"),

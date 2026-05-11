@@ -62,6 +62,7 @@ jobs:
                 "plane": "code_correctness",
                 "runner": "pi",
                 "requested_model": "minimax/MiniMax-M2.7",
+                "command": [".github/scripts/pr-review-pi.sh", "minimax", "MiniMax-M2.7"],
                 "timeout_seconds": 600,
                 "required_output_schema": "schema/pr-review-result.schema.json",
                 "raw_output_retention": "digest_only"
@@ -71,6 +72,7 @@ jobs:
                 "plane": "trace_evidence_provenance",
                 "runner": "pi",
                 "requested_model": "zai/glm-5.1",
+                "command": [".github/scripts/pr-review-pi.sh", "zai", "glm-5.1"],
                 "timeout_seconds": 600,
                 "required_output_schema": "schema/pr-review-result.schema.json",
                 "raw_output_retention": "digest_only"
@@ -80,6 +82,7 @@ jobs:
                 "plane": "requirements_vs_implementation",
                 "runner": "pi",
                 "requested_model": "kimi-coding/k2p6",
+                "command": [".github/scripts/pr-review-pi.sh", "kimi-coding", "k2p6"],
                 "timeout_seconds": 600,
                 "required_output_schema": "schema/pr-review-result.schema.json",
                 "raw_output_retention": "digest_only"

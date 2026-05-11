@@ -16,14 +16,18 @@ func applyRunnerError(result *ReviewerResult, err error) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
-
-		result.Status = StatusNotAssessed
-		result.Reason = "runner_unavailable"
-	} else {
-
-		result.Status = StatusFailed
-		result.Reason = "runner_failed"
-	}
+	status, reason := runnerErrorState(err)
+	result.Status = status
+	result.Reason = reason
 	return err
+}
+
+func runnerErrorState(err error) (string, string) {
+	if errors.Is(err, errPromptEvidenceCannotVerify) {
+		return StatusCannotVerify, "prompt_evidence_cannot_verify"
+	}
+	if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
+		return StatusNotAssessed, "runner_unavailable"
+	}
+	return StatusFailed, "runner_failed"
 }

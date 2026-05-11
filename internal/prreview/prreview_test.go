@@ -543,6 +543,9 @@ func TestRunReviewArtifactPipelineRedactsUnsafeReviewerText(t *testing.T) {
 		if !strings.Contains(string(data), "[redacted unsafe reviewer text]") && path != filepath.Join(root, "summary.md") {
 			t.Fatalf("%s missing redaction marker:\n%s", path, string(data))
 		}
+		if strings.Contains(string(data), "SYNTHETIC_RATIONALE_SECRET_PIPELINE") {
+			t.Fatalf("%s leaked rationale marker:\n%s", path, string(data))
+		}
 	}
 	if _, err := os.Stat(filepath.Join(root, "runs", "raw", "run-privacy.out")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("digest-only raw output should not persist raw bytes, err=%v", err)
@@ -840,6 +843,50 @@ func TestRunReviewCannotVerifyUnreadablePromptTemplate(t *testing.T) {
 	}
 }
 
+func TestRunReviewPromptIncludesPacketEvidence(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n+package main\n")
+	metadataPath := writeText(t, root, "metadata.txt", "PR #123\n")
+	verificationPath := writeText(t, root, "verification.txt", "verify: pass\n")
+	packetDir := filepath.Join(root, "packet")
+	packet, err := BuildPacket(PacketOptions{
+		OutDir:            packetDir,
+		RepoID:            "demo_repo",
+		ChangeRef:         "pr-123",
+		BaseCommit:        forty("a"),
+		HeadCommit:        forty("b"),
+		DiffPath:          diffPath,
+		MetadataPath:      metadataPath,
+		VerificationPaths: []string{verificationPath},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	promptPath := writeText(t, root, "prompt.md", "review {{packet_digest}}\n")
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "prompt-evidence",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{{
+			RoleID:            "code",
+			Plane:             PlaneCodeCorrectness,
+			Runner:            RunnerManualExternal,
+			RequestedModel:    "fake",
+			Command:           []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "prompt-includes-evidence"},
+			PromptTemplateRef: promptPath,
+		}},
+	}
+	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
+	t.Setenv("PR_REVIEW_EXPECTED_DIGEST", packet.PacketDigest)
+	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs"), PacketDir: packetDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs.Results) != 1 || runs.Results[0].Status != StatusNoFindings {
+		t.Fatalf("prompt evidence run failed: %+v", runs.Results)
+	}
+}
+
 func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 	root := t.TempDir()
 	packetDigest := "sha256:" + sixtyFour("9")
@@ -916,7 +963,16 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"security_forgery_overclaim","role_id":"pi-success","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
 		os.Exit(0)
 	case "unsafe-structured-output":
-		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("9") + `","plane":"privacy_output_safety","role_id":"privacy","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"findings_reported","findings":[{"id":"F1","severity":"minor","citation":{"context_ref_id":"diff","diff_hunk_id":"hunk-1"},"summary":"SYNTHETIC_TOKEN_SECRET_PIPELINE","suggested_fix":"remove SYNTHETIC_PROMPT_SECRET_PIPELINE","question":"is /Users/private/repo visible?","evidence_refs":["https://access_token=secret@example.invalid/review"]}]}`)
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("9") + `","plane":"privacy_output_safety","role_id":"privacy","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"findings_reported","findings":[{"id":"F1","severity":"minor","citation":{"context_ref_id":"diff","diff_hunk_id":"hunk-1"},"summary":"SYNTHETIC_TOKEN_SECRET_PIPELINE","rationale":"SYNTHETIC_RATIONALE_SECRET_PIPELINE","suggested_fix":"remove SYNTHETIC_PROMPT_SECRET_PIPELINE","question":"is /Users/private/repo visible?","evidence_refs":["https://access_token=secret@example.invalid/review"]}]}`)
+		os.Exit(0)
+	case "prompt-includes-evidence":
+		stdin, err := io.ReadAll(os.Stdin)
+		expectedDigest := os.Getenv("PR_REVIEW_EXPECTED_DIGEST")
+		prompt := string(stdin)
+		if err != nil || expectedDigest == "" || !strings.Contains(prompt, expectedDigest) || !strings.Contains(prompt, "diff --git a/a.go b/a.go") || !strings.Contains(prompt, "PR #123") || !strings.Contains(prompt, "verify: pass") {
+			os.Exit(3)
+		}
+		fmt.Print(`{"packet_digest":"` + expectedDigest + `","plane":"code_correctness","role_id":"code","runner":"manual_external","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
 		os.Exit(0)
 	case "should-not-run":
 		os.Exit(4)

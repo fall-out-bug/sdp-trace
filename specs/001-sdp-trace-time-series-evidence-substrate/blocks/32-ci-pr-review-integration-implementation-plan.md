@@ -1,7 +1,6 @@
 # Block 32 Implementation Plan: CI PR Review Integration
 
-Status: Draft. Implementation is blocked until Socratic review is complete and
-the reviewed direction is explicitly approved.
+Status: Implemented in PR 31; pending final PR-level review and merge approval.
 
 ## Slice 1: CI Profile And Prompt Contract
 
@@ -18,9 +17,12 @@ Work:
   `pr-review-result` JSON.
 - Ensure role commands do not embed secrets.
 - Use command shapes such as `pi --provider zai --model glm-5.1 --no-tools
-  --no-context-files --no-session -p <trusted prompt text>` through the existing
-  Block 30 external command runner, with command digest recorded by
+  --no-context-files --no-session -p @<trusted prompt file>` through the
+  existing Block 30 external command runner, with command digest recorded by
   `internal/prreview`.
+- Render prompts from trusted templates plus packet JSON and retained packet
+  refs, so reviewers can inspect PR diff/context as data without persisting raw
+  prompt bytes in artifacts.
 - Add fixture validation for the profile.
 
 Verification:

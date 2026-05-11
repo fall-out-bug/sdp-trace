@@ -167,12 +167,12 @@ Current command surface:
 - `sdp-trace gate --out <file> <runs-root-or-run-dir>`
 - `sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>`
 - `sdp-trace release-proof --manifest <file> --out <file>`
-- `sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--ci-state <state>] [--created-by <actor>]`
+- `sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--metadata <file>] [--context <file>]... [--verification <file>]... [--ci-state <state>] [--created-by <actor>]`
 - `sdp-trace pr-review run --packet <dir> --profile <file> --out <dir> [--preview] [--work-dir <dir>] [--allow-external-runner <runner>]... [--not-assessed-reason <reason>]`
 - `sdp-trace pr-review synthesize --packet <dir> --runs <dir> --out <file>`
 - `sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>`
 - `sdp-trace pr-review summarize --validation <file> --ledger <file> [--out <file>]`
-- `sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]... [--not-assessed-reason <reason>]`
+- `sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--metadata <file>] [--context <file>]... [--verification <file>]... [--work-dir <dir>] [--allow-external-runner <runner>]... [--not-assessed-reason <reason>]`
 - `sdp-trace packet build-pr --source <github-actions|github-fixture> --out <dir> [--github-event <file>] [--checks-json <file>] [--artifacts-json <file>] [--route-manifest <file>] [--github-api-url <url>]`
 - `sdp-trace packet build-github --github-input <file> --out <file>`
 - `sdp-trace packet validate --bundle <file>`

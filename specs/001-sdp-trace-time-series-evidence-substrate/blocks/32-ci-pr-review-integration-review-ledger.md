@@ -1,6 +1,6 @@
 # Block 32 Review Ledger: CI PR Review Integration
 
-Status: draft spec created; Socratic review pending.
+Status: Socratic and implementation review findings adjudicated; PR 31 pending final PR-level review and merge approval.
 
 ## Recipe Search Notes
 
@@ -94,7 +94,16 @@ not committed.
 | --- | --- | --- | --- | --- | --- |
 | PR32-REQ-01 | major | requirements-vs-implementation | Reviewer claimed `actions/checkout@v6`, `actions/setup-go@v6`, `actions/setup-node@v6`, and `actions/upload-artifact@v6` do not exist and would fail the workflow. | rejected_false_positive | Live upstream checks on 2026-05-10 showed official v6 releases exist for the referenced actions; downgrading would be stale advice. |
 | PR32-TE-01 | major | tracing/evidence | T242 was checked off without proving the full uploaded artifact pipeline redacts unsafe structured reviewer text from `results.json`, `ledger.json`, `validation.json`, and `summary.md`. | accepted_fixed | `parseReviewerOutput` now sanitizes structured reviewer findings before `results.json` is written; `TestRunReviewArtifactPipelineRedactsUnsafeReviewerText` injects synthetic token, prompt, authenticated URL, and private-path markers and asserts the workflow upload artifact candidates do not contain them. |
-| PR32-TE-02 | major | tracing/evidence | The `pr-review-pi.sh` wrapper passes rendered prompts as a `pi -p` command argument, which can hit argument length limits for large prompts. | rejected_narrower | Current Block 32 prompt templates intentionally pass metadata and packet identifiers only, not PR diff bodies. The reviewer identified a valid future robustness risk, but it is not a blocker for this CI profile. |
+| PR32-TE-02 | major | tracing/evidence | The `pr-review-pi.sh` wrapper passes rendered prompts as a `pi -p` command argument, which can hit argument length limits for large prompts. | accepted_fixed | The wrapper now invokes `pi -p @<prompt-file>`, and `runRoleCommand` passes the rendered prompt through stdin to the wrapper. |
+| PR31-AXIS-01 | major | security / artifact safety | Axis review found `Finding.Rationale` was parsed from model output but not sanitized before `results.json`, ledger, validation, or summary artifacts. | accepted_fixed | `sanitizeReviewerResult` now applies `safeText` to `Rationale`; `TestRunReviewArtifactPipelineRedactsUnsafeReviewerText` injects `SYNTHETIC_RATIONALE_SECRET_PIPELINE` and asserts artifact candidates do not leak it. |
+| PR31-AXIS-02 | major | requirements / UX | Axis review found model reviewers received only prompt templates with identifiers, not the retained PR diff/context packet data needed to review PR code as data. | accepted_fixed | `RunOptions.PacketDir`, `renderPromptEvidence`, digest-checked packet ref loading, and `TestRunReviewPromptIncludesPacketEvidence` now ensure prompts include packet JSON, diff, metadata, and verification refs without persisting raw prompt bytes. |
+| PR31-AXIS-03 | major | requirements / CI profile | Axis review found the workflow bootstrap profile lacked role `command` arrays, so a missing profile plus configured secrets could produce `runner_command_not_configured` instead of model review. | accepted_fixed | The bootstrap profile now includes `.github/scripts/pr-review-pi.sh` command arrays for MiniMax, GLM, and Kimi roles. |
+| PR31-AXIS-04 | major | spec drift / documentation | Axis review found the spec, plan, and ledger status still said implementation was blocked or Socratic review pending despite implemented PR state. | accepted_fixed | Block 32 spec, implementation plan, and review ledger statuses now say implemented in PR 31 and pending final PR-level review/merge approval. |
+| PR31-AXIS-05 | major | DX / CLI docs | Axis review found `--help` and docs omitted implemented `pr-review packet/check` flags, including `--metadata`, `--context`, `--verification`, and `--not-assessed-reason`. | accepted_fixed | `cmd/sdp-trace` usage and `docs/agent-entrypoint.md` now list the implemented flags. |
+| PR31-AXIS-06 | minor | maintainability metrics | Maintainability Index has no agreed Go tool/formula in this repository, so the axis cannot produce decision-grade evidence yet. | deferred_not_assessed | Local gates currently cover `golangci-lint`, CRAP, gocyclo, gocognit, tests, JSON, and whitespace. A future CI/docs slice should define the MI tool/formula before treating MI > 70 as a hard gate. |
+| PR31-SEC-RR-01 | major | security re-review | Reviewer claimed packet evidence inclusion is disabled when a role has no `prompt_template_ref`. | rejected_false_positive | `renderPrompt` calls `renderPromptTemplate` and then always appends `renderPromptEvidence(packet, packetDir)`; `TestRunReviewPromptIncludesPacketEvidence` proves evidence is sent through stdin. |
+| PR31-SEC-RR-02 | major | security re-review | Reviewer found raw `pi` stderr could leak prompt/diff/provider details into GitHub Actions logs. | accepted_fixed | `.github/scripts/pr-review-pi.sh` now redirects `pi` stderr to `/dev/null`; runner failures are represented by structured `runner_failed` / `runner_unavailable` states rather than raw stderr. |
+| PR31-SEC-RR-03 | minor | security re-review | Reviewer asked to verify `pi -p @file` support for the pinned runner. | accepted_fixed | Local `pi --version` reports `0.74.0`; `pi -p @<tempfile>` was verified to read file contents and return the expected output. |
 
 ## PR Review State
 
@@ -105,5 +114,12 @@ not committed.
 - Code/correctness: `minimax/MiniMax-M2.7` output was not clean findings-only
   JSON and is recorded as lower-quality review evidence; no additional
   critical or major blocker was accepted from that output.
+- Focused re-review after axis fixes:
+  `openrouter/qwen/qwen3.6-plus` returned `APPROVE`; no remaining critical or
+  major issues were reported for the fixed diff.
+- Focused security re-review:
+  `openrouter/deepseek/deepseek-v4-pro` reported two majors; one was rejected
+  as a false positive with code/test evidence, and one was accepted/fixed by
+  suppressing raw `pi` stderr.
 - Critical findings remaining: 0
 - Major findings remaining: 0

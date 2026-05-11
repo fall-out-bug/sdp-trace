@@ -1,7 +1,6 @@
 # Block 32: CI PR Review Integration
 
-Status: Draft spec. Implementation is blocked until Socratic review is complete
-and the reviewed direction is explicitly approved.
+Status: Implemented in PR 31; pending final PR-level review and merge approval.
 
 Parent artifacts:
 
@@ -268,6 +267,9 @@ specified as a separate evidence contract.
   approval.
 - `docs/ci-check-policy.md` warns maintainers not to treat
   `pr-review-evidence-only` as human approval or production trust.
+- Model prompts include the packet metadata and retained packet refs needed for
+  reviewers to inspect the PR diff/context as data; raw prompt bytes are not
+  persisted in committed artifacts or uploaded bundles.
 
 ## Open Questions
 

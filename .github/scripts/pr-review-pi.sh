@@ -13,4 +13,5 @@ pi --provider "$provider" \
   --no-tools \
   --no-context-files \
   --no-session \
-  -p "$(<"$prompt_file")"
+  -p @"$prompt_file" \
+  2>/dev/null

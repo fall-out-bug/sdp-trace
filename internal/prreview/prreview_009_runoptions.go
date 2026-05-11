@@ -6,6 +6,7 @@ import (
 
 type RunOptions struct {
 	OutDir            string
+	PacketDir         string
 	AllowedRunners    map[string]bool
 	Preview           bool
 	Now               time.Time

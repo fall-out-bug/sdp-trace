@@ -24,7 +24,7 @@ func runRoleCommand(packet Packet, role ReviewRole, opts RunOptions) ([]byte, bo
 	defer cancel()
 	cmd := exec.CommandContext(ctx, role.Command[0], role.Command[1:]...)
 	cmd.Dir = opts.WorkDir
-	prompt, err := renderPrompt(packet, role)
+	prompt, err := renderPrompt(packet, role, opts.PacketDir)
 	if err != nil {
 		return nil, false, err
 	}
