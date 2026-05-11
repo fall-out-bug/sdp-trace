@@ -1,0 +1,54 @@
+# Socratic Review: Demo Truth & Contamination
+
+**Reviewer**: Demo truth and contamination reviewer
+**Date**: 2026-05-10
+**Scope**: `specs/006-github-oss-demo-packet/`
+
+---
+
+## Analysis
+
+The 006 package makes a defensible product argument: a real agent-delivery history with known contamination is better evidence that `sdp-trace` can organize messy evidence than a sterile new repo. This argument is correct in principle.
+
+However, the spec leaves three critical gaps that would turn an honest default into a contaminated demo:
+
+**Gap 1: The first packet target is unspecified.** The existing repo has five features with varying evidence quality. Feature 4 has a known contaminated review and re-review cycle. If the first packet a CTO sees is Feature 4, and the packet has more `not_assessed` rows than green ones, the buyer sees a product that can't deliver. The spec says "select one existing feature" but provides no selection criteria and no minimum bar for the first packet's row states. A CTO reading a first packet full of `not_assessed` rows will not distinguish honest evidence gaps from product immaturity. That is the exact overclaim pattern the repo already failed at once.
+
+**Gap 2: The contamination narrative is unspecified.** The review packet mentions Feature 4 contamination was "marked and re-reviewed." That is exactly the kind of history `sdp-trace` should make legible. But the 006 spec never states whether Feature 4's packet should surface the contamination, how it would do so, or whether Feature 4 is even eligible as a packet target. If the first demo packet omits or sanitizes the contamination, the demo is dishonest. If it surfaces it without framing, the CTO sees a broken feature, not a product capability.
+
+**Gap 3: The v1-to-v2 evidence gap has no acceptance criteria.** The spec correctly says v1 observation evidence is not v2 packet evidence. But it never states how many `not_assessed` rows are acceptable in the *first* packet vs. subsequent packets. The risk: the first packet has `PC-REVIEW`, `PC-VERIFICATION`, `PC-ATTESTATION`, and `PC-DECISION` all `not_assessed` with no clear path to closure. A CTO sees four out of eleven rows dead. The product looks unfinished, not honest.
+
+These three gaps together mean the existing-repo default could produce a first demo that is both honest (correctly showing gaps) and disastrous (showing so many gaps the buyer dismisses the product). The plan conflates "honest about contamination" with "ready for buyer viewing." These are distinct.
+
+---
+
+```text
+Verdict: REVISE_BEFORE_USER_APPROVAL
+```
+
+Findings:
+
+| id | severity | file/section | finding | exact fix |
+|---|---|---|---|---|
+| CT-001 | **critical** | `spec.md` Required Demo Evidence / `plan.md` Workstream B B2 | The first packet target feature is unspecified. Feature 4 has known review contamination. If the first CTO-visible packet hits Feature 4, the buyer sees noise, not product capability. If it hits Feature 1 (health endpoint) with thin evidence, the packet is mostly `not_assessed` rows and the buyer sees an unfinished product. | Add a **first-packet selection rule**: the first packet target must have at least 3 of 11 required rows at `pass` or `partial` with retained evidence refs from the existing repo. If no existing feature meets this bar, the first packet must come from a new feature PR after packetization setup, not from backfilled v1 history. State explicitly which feature is the proposed first target. |
+| CT-002 | **critical** | `spec.md` Existing Demo Repository Assessment | Feature 4's contaminated review and re-review history is acknowledged in the review packet but absent from the spec. If Feature 4 becomes a packet target, the contamination must be surfaced or the demo is dishonest. If Feature 4 is excluded, the spec doesn't say so. | Add a **contamination handling rule**: if a packet target feature has known contamination history, the packet MUST include a triggered theater finding (likely `review_theater` as a deferred P1 visible in `PC-RESIDUAL-GAPS`) or the feature MUST be explicitly excluded as a packet target with a recorded reason. V1 observation history cannot be selectively hidden. |
+| CT-003 | **critical** | `spec.md` Required Demo Evidence / Success Criteria SC-001 | The spec requires all five features to have packets (SC-002), but the first CTO-visible demo only needs one packet (SC-001). The spec doesn't define the minimum acceptable row-state profile for that first packet. A first packet with 8 of 11 rows `not_assessed` is honest but useless to a CTO. | Add a **first-packet minimum bar**: the first CTO-visible packet must have at least 4 rows at `pass` or `partial` with resolvable evidence refs, and no more than 1 row at `cannot_verify` without a concrete closure path documented in `PC-RESIDUAL-GAPS`. If the existing repo cannot produce such a packet, the first implementation slice must create a new feature PR under the packetization track. |
+| CT-004 | **major** | `plan.md` Reset Decision table / `demo-repo-plan.md` | The decision rules for "too noisy" vs. "keep existing" are circular. The rule says "keep existing repo" by default, but "use fresh branch if main is too noisy for buyer rehearsal." The spec never defines "too noisy." Without a definition, the team will either default to the harder path (existing repo, risking CT-001/CT-003) or switch to the easier path (fresh branch, dodging the product problem) with no objective trigger. | Replace the Reset Decision table with a **concrete trigger**: switch to fresh `demo-v2` root branch only if the first-packet selection rule (from CT-001) and first-packet minimum bar (from CT-003) both fail for all existing features. If even one existing feature can produce a viable first packet, stay in the existing repo. Add a fallback: if switching to a fresh branch, `PC-RESIDUAL-GAPS` for every packet must still reference the v1 observation history as a deferred evidence surface. |
+| CT-005 | **major** | `spec.md` Negative / Theater Demo section | The negative theater PR is correctly specified as separate from happy-path features. However, the spec doesn't address what happens if a CTO or reviewer encounters the negative PR *before* any happy-path packet. The repo's PR list will show both. Without visual separation in GitHub navigation, the negative PR looks like a product failure alongside feature PRs. | Add a **negative PR isolation rule**: the negative/theater PR must use a distinct naming prefix (`DEMO-NEGATIVE:`), must have its own GitHub label (`demo-theater`), and the demo README/tracker must list it in a separate "Demo Integrity Examples" table, not interleaved with feature rows. The CTO demo script in `demo-repo-plan.md` must state that the negative PR is shown second, after at least one happy-path packet is understood. |
+| CT-006 | **minor** | `demo-repo-plan.md` Setup PR Requirements | The setup PR requirements say "artifact upload for packet and bundle paths" but the `sdp-trace` product prerequisites (T009-T015 in tasks.md) haven't been implemented yet. The setup PR could ship CI infrastructure that expects a packet generator that doesn't exist, creating false green checks. | Add a **setup PR guard**: the setup PR must generate its own CI artifact as an empty valid packet (all rows `not_assessed`, bundle manifest empty with `not_retained` entries) to prove the CI artifact path works. The first real packet after setup must replace this empty artifact. Do not let setup pass CI without a validated artifact upload. |
+| CT-007 | **minor** | `spec.md` Demo Feature Set | The recommended feature sequence (F1-F5) is listed, but the spec doesn't map which existing features already have observation coverage. If the selection rule in CT-001 picks Feature 5 (stats endpoint) and Feature 5 was never observed under `sdp-trace observe session`, the `PC-AGENT-ROUTE` row is `not_assessed` with no path to backfill. | Add a **feature evidence inventory table** to the spec or demo-repo-plan: map each existing feature to its current evidence state (observation run? CI run? review? artifact?). This table becomes input to the first-packet selection rule. |
+
+Existing repo default:
+**Yes, the existing repo is the right default, but only after the three critical fixes are applied.** The raw truth that the existing repo has real contamination and missing evidence is product strength, not weakness-IF the first packet selector, contamination handling, and first-packet minimum bar are explicit. Without those fixes, "existing repo by default" is a coin flip between product integrity and buyer confusion. The spec currently leans toward confusion because it doesn't defend the first buyer impression.
+
+The plan is right that hiding the mess in a new repo weakens product proof. But the spec is wrong that simply keeping the repo is enough. You need a selection rule that picks a feature with enough evidence to demonstrate the packet's value, a contamination rule that surfaces Feature 4 honestly without making it the first impression, and a minimum bar so the CTO sees a packet with more green rows than gray ones.
+
+Smallest first slice:
+**One setup PR establishing the CI artifact path (with empty valid packet), followed by one new feature PR with full evidence capture from the start-not backfilled from v1 observation history.** The existing repo's v1 features should be kept and the Feature 4 contamination left visible, but the first CTO-visible packet should come from a new feature (F1: health endpoint or a trivial new feature) run end-to-end under the packetization track: GitHub issue -> OpenCode/GSD observed session -> PR -> CI artifact containing generated packet -> review evidence -> packet with 6+ rows at `pass`/`partial`. Once that first packet proves the value prop, backfill existing features where evidence supports it. This avoids the v1-to-v2 gap CT-003 while preserving the existing history as honest context. The existing repo stays; the first packet is new.
+
+Claims to refuse:
+- "Existing v1 observation history = v2 packet row evidence" - the spec already rejects this, but any demo script or README that implies it must be refused.
+- "Feature 4 contaminated review was resolved, therefore the packet is clean" - contamination history is part of the evidence surface, not a resolved bug to erase.
+- "Five feature packets exist" as a success claim when some are backfilled from `not_assessed` v1 observation - count only features with resolvable evidence refs per the minimum bar.
+- Any packet that omits the Feature 4 contamination when Feature 4 is a target, or presents it as a `pass` without triggering a theater finding.
+- Any claim that `not_assessed` rows are a product maturity issue rather than an evidence surface gap - the packet must distinguish "we didn't capture this" from "this surface doesn't exist."

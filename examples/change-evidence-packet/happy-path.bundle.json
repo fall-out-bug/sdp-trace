@@ -1,0 +1,65 @@
+{
+  "packet": {
+    "packet_version": "change-evidence-packet.v0",
+    "packet_id": "packet-demo-happy-path",
+    "source_change": {
+      "repository": "fall-out-bug/sdp-trace-demo-jvm-gsd",
+      "change_id": "PR-5",
+      "url": "https://github.com/fall-out-bug/sdp-trace-demo-jvm-gsd/pull/5",
+      "commit_range": "base..head"
+    },
+    "generated_at": "2026-05-11T12:00:00Z",
+    "authoring_method": "tool_generated",
+    "selected_profile": "change-host-rich-v0",
+    "redaction_policy": "not_needed",
+    "bundle_ref": "bundle-demo-happy-path",
+    "packet_state": "review_ready",
+    "projection": {
+      "kind": "canonical_markdown_artifact",
+      "canonical": true,
+      "artifact_ref": "packet:markdown"
+    },
+    "rows": [
+      { "id": "PC-CHANGE", "state": "pass", "summary": "GitHub PR metadata and commit range are retained.", "evidence_refs": ["git:change"], "owner": "maintainer" },
+      { "id": "PC-INITIATOR", "state": "partial", "summary": "Task source is retained from the PR body.", "evidence_refs": ["task:pr-body"], "reason": "PR body is weaker than a dedicated issue binding.", "owner": "maintainer" },
+      { "id": "PC-AGENT-ROUTE", "state": "partial", "summary": "OpenCode/GSD route evidence is retained.", "evidence_refs": ["harness:route"], "reason": "Delegation chain is represented by retained observation output only.", "owner": "maintainer" },
+      { "id": "PC-MUTATION", "state": "pass", "summary": "Changed files and commit range are retained.", "evidence_refs": ["git:change"], "owner": "maintainer" },
+      { "id": "PC-VERIFICATION", "state": "pass", "summary": "CI run evidence is retained.", "evidence_refs": ["ci:run"], "owner": "maintainer" },
+      { "id": "PC-REVIEW", "state": "partial", "summary": "External review artifact is retained.", "evidence_refs": ["review:packet"], "reason": "Review is retained externally, not as a GitHub review.", "owner": "maintainer" },
+      { "id": "PC-AUTHORITY", "state": "not_assessed", "summary": "Authority was not assessed for this fixture.", "evidence_refs": [], "reason": "Authority profile is outside this fixture.", "owner": "maintainer" },
+      { "id": "PC-THEATER", "state": "pass", "summary": "No P0 theater finding triggered.", "evidence_refs": ["theater:assessment"], "owner": "maintainer" },
+      { "id": "PC-ATTESTATION", "state": "not_assessed", "summary": "Signed or external attestation was not assessed.", "evidence_refs": [], "reason": "Signed trust is outside this fixture.", "owner": "maintainer" },
+      { "id": "PC-DECISION", "state": "pass", "summary": "Next decision owner is retained.", "evidence_refs": ["decision:owner"], "owner": "maintainer" },
+      { "id": "PC-RESIDUAL-GAPS", "state": "partial", "summary": "Partial rows remain explicit.", "evidence_refs": ["gap:residual"], "reason": "Initiator, route, review, authority, and attestation rows are not all pass.", "owner": "maintainer" }
+    ],
+    "residual_gaps": [
+      { "row_id": "PC-INITIATOR", "state": "partial", "reason": "PR body is weaker than a dedicated issue binding.", "closure_evidence": "GitHub issue or retained prompt boundary." },
+      { "row_id": "PC-AGENT-ROUTE", "state": "partial", "reason": "Delegation chain is represented by retained observation output only.", "closure_evidence": "Complete route chain evidence." },
+      { "row_id": "PC-REVIEW", "state": "partial", "reason": "Review is retained externally, not as a GitHub review.", "closure_evidence": "GitHub review or signed retained review artifact." },
+      { "row_id": "PC-AUTHORITY", "state": "not_assessed", "reason": "Authority profile is outside this fixture.", "closure_evidence": "Authority profile evidence." },
+      { "row_id": "PC-ATTESTATION", "state": "not_assessed", "reason": "Signed trust is outside this fixture.", "closure_evidence": "Signed packet and witness evidence." }
+    ],
+    "decision_owners": [
+      { "decision": "merge", "owner": "maintainer", "state": "not_assessed", "reason": "Packet is not approval." },
+      { "decision": "release", "owner": "release owner", "state": "not_assessed", "reason": "Packet is not release approval." },
+      { "decision": "risk_acceptance", "owner": "risk owner", "state": "not_assessed", "reason": "Packet is not risk acceptance." },
+      { "decision": "security_review", "owner": "security owner", "state": "not_assessed", "reason": "Packet is not security review." }
+    ],
+    "non_approval": "This packet does not approve merge, release, compliance, production trust, semantic correctness, or signed external trust."
+  },
+  "manifest": {
+    "schema_version": "evidence-bundle-manifest.v0",
+    "bundle_id": "bundle-demo-happy-path",
+    "packet_digest": "sha256:39adaaf56aa8db76047aaea5974b8064a10ab75a189ab401752488e411eb692a",
+    "entries": [
+      { "ref": "git:change", "source_class": "git", "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "retained_form": "raw", "redaction_status": "not_needed", "resolver": "git show --stat base..head" },
+      { "ref": "task:pr-body", "source_class": "change_host", "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "retained_form": "external_ref", "redaction_status": "not_needed", "resolver": "GitHub PR body" },
+      { "ref": "harness:route", "source_class": "harness", "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "retained_form": "raw", "redaction_status": "redacted", "resolver": "OpenCode/GSD observation artifact" },
+      { "ref": "ci:run", "source_class": "ci", "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "retained_form": "external_ref", "redaction_status": "not_needed", "resolver": "GitHub Actions run", "artifact_access": "present" },
+      { "ref": "review:packet", "source_class": "review", "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "retained_form": "raw", "redaction_status": "not_needed", "resolver": "review artifact" },
+      { "ref": "theater:assessment", "source_class": "witness", "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666", "retained_form": "raw", "redaction_status": "not_needed", "resolver": "packet validator" },
+      { "ref": "gap:residual", "source_class": "manual", "digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "retained_form": "raw", "redaction_status": "not_needed", "resolver": "packet residual gaps" },
+      { "ref": "decision:owner", "source_class": "manual", "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888", "retained_form": "raw", "redaction_status": "not_needed", "resolver": "packet decision owners" }
+    ]
+  }
+}
