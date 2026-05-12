@@ -19,6 +19,10 @@ GitHub Actions context or supplied GitHub fixture JSON plus recorder route
 metadata, then writes `bundle.json`, `change-evidence-packet.md`, and
 `build-pr-result.json` into the output directory. Checked-in packet Markdown or
 checked-in bundle JSON cannot override those generated artifacts.
+In GitHub Actions mode, omitted `--checks-json` and `--artifacts-json` inputs
+are discovered from the current workflow run with `GITHUB_TOKEN` or `GH_TOKEN`;
+missing token, run, repository, route, prompt-boundary, or retained artifact
+evidence keeps the result `cannot_verify`.
 
 `packet build-github --github-input` remains a fixture/backfill command. It is
 not sufficient live-demo proof by itself because the input is curated before the

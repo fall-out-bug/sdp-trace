@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -182,6 +184,68 @@ func TestPacketBuildPRFixtureFailsClosedWithoutPromptBoundary(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "prompt boundary evidence missing") {
 		t.Fatalf("missing cannot_verify diagnostic: %s", out.String())
+	}
+}
+
+func TestPacketBuildPRActionsDiscoversArtifacts(t *testing.T) {
+	root := t.TempDir()
+	eventPath := filepath.Join(root, "event.json")
+	routePath := filepath.Join(root, "route.json")
+	outDir := filepath.Join(root, "packet-out")
+	writeTestJSON(t, eventPath, map[string]any{
+		"pull_request": map[string]any{
+			"number":   38,
+			"html_url": "https://github.com/example/repo/pull/38",
+			"title":    "Demo feature",
+			"body_ref": "https://github.com/example/repo/pull/38",
+			"diff_url": "https://github.com/example/repo/pull/38/files",
+			"user":     map[string]any{"login": "developer"},
+			"base":     map[string]any{"ref": "main", "sha": "base-sha"},
+			"head":     map[string]any{"ref": "feature", "sha": "head-sha"},
+		},
+	})
+	writeTestJSON(t, routePath, packet.GitHubPREvidenceInput{
+		AgentRouteRefs:         []string{"recorder:run-1"},
+		AgentRouteComponents:   []string{"opencode", "gsd", "minimax-m2.5"},
+		AgentRouteDigest:       "sha256:route",
+		AgentRouteEvidenceKind: "harness_route_observation",
+		PromptBoundary:         packet.PromptBoundary{Text: "Implement the feature and run tests."},
+		Reviews:                []packet.GitHubReview{{Reviewer: "pi", Resolver: "external:review", State: packet.StatePass}},
+	})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer test-token" {
+			t.Fatalf("missing bearer token: %q", r.Header.Get("Authorization"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"artifacts":[{"id":2002,"name":"evidence-bundles","expired":false,"expires_at":"2026-08-10T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2002/zip"}]}`))
+	}))
+	defer server.Close()
+	t.Setenv("GITHUB_EVENT_PATH", eventPath)
+	t.Setenv("GITHUB_REPOSITORY", "example/repo")
+	t.Setenv("GITHUB_RUN_ID", "1001")
+	t.Setenv("GITHUB_JOB", "build-and-test")
+	t.Setenv("GITHUB_SERVER_URL", "https://github.com")
+	t.Setenv("GITHUB_TOKEN", "test-token")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"packet", "build-pr",
+		"--source", "github-actions",
+		"--github-api-url", server.URL,
+		"--route-manifest", routePath,
+		"--out", outDir,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	var bundle packet.Bundle
+	readTestJSON(t, filepath.Join(outDir, "bundle.json"), &bundle)
+	if got := rowStateForCLI(bundle, "PC-VERIFICATION"); got != packet.StatePass {
+		t.Fatalf("PC-VERIFICATION state = %s", got)
+	}
+	entry := packetEntryForCLI(bundle, "artifact:evidence-bundles")
+	if entry.Resolver == "" || entry.SourceRef != "1001" {
+		t.Fatalf("discovered artifact entry missing binding: %+v", entry)
 	}
 }
 

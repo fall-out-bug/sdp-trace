@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -512,6 +513,7 @@ func runPacketBuildPR(args []string, stdout, stderr io.Writer) int {
 	opts.setString("checks-json", "")
 	opts.setString("artifacts-json", "")
 	opts.setString("route-manifest", "")
+	opts.setString("github-api-url", "")
 	opts.setString("out", "")
 	if err := opts.parse(args); err != nil {
 		fmt.Fprintln(stderr, err)
@@ -629,6 +631,16 @@ func buildPRInputFromOptions(opts *flagSet) (packet.GitHubPREvidenceInput, error
 	if err := readOptionalJSON(opts.stringValue("artifacts-json"), &input.Artifacts); err != nil {
 		return packet.GitHubPREvidenceInput{}, fmt.Errorf("read artifacts json: %w", err)
 	}
+	if source == "github-actions" && len(input.Artifacts) == 0 {
+		artifacts, err := githubActionsArtifacts(opts.stringValue("github-api-url"), os.Getenv)
+		if err != nil {
+			return packet.GitHubPREvidenceInput{}, err
+		}
+		input.Artifacts = artifacts
+	}
+	if source == "github-actions" && len(input.Checks) == 0 {
+		input.Checks = []packet.GitHubCheck{githubActionsCurrentRunCheck(input.Artifacts, os.Getenv)}
+	}
 	var route packet.GitHubPREvidenceInput
 	if err := readOptionalJSON(opts.stringValue("route-manifest"), &route); err != nil {
 		return packet.GitHubPREvidenceInput{}, fmt.Errorf("read route manifest: %w", err)
@@ -641,6 +653,97 @@ func buildPRInputFromOptions(opts *flagSet) (packet.GitHubPREvidenceInput, error
 	input.IntegrationActions = route.IntegrationActions
 	input.Reviews = route.Reviews
 	return input, nil
+}
+
+func githubActionsCurrentRunCheck(artifacts []packet.GitHubArtifact, getenv func(string) string) packet.GitHubCheck {
+	refs := []string{}
+	for _, artifact := range artifacts {
+		if strings.TrimSpace(artifact.Name) != "" {
+			refs = append(refs, artifact.Name)
+		}
+	}
+	name := getenv("GITHUB_JOB")
+	if strings.TrimSpace(name) == "" {
+		name = getenv("GITHUB_WORKFLOW")
+	}
+	if strings.TrimSpace(name) == "" {
+		name = "github-actions-current-run"
+	}
+	server := getenv("GITHUB_SERVER_URL")
+	if strings.TrimSpace(server) == "" {
+		server = "https://github.com"
+	}
+	runURL := strings.TrimRight(server, "/") + "/" + getenv("GITHUB_REPOSITORY") + "/actions/runs/" + getenv("GITHUB_RUN_ID")
+	return packet.GitHubCheck{Name: name, URL: runURL, Conclusion: "success", ArtifactRefs: refs}
+}
+
+func githubActionsArtifacts(apiURLFlag string, getenv func(string) string) ([]packet.GitHubArtifact, error) {
+	repo := getenv("GITHUB_REPOSITORY")
+	runID := getenv("GITHUB_RUN_ID")
+	token := getenv("GITHUB_TOKEN")
+	if token == "" {
+		token = getenv("GH_TOKEN")
+	}
+	if strings.TrimSpace(repo) == "" || strings.TrimSpace(runID) == "" {
+		return nil, errors.New("missing GITHUB_REPOSITORY or GITHUB_RUN_ID for GitHub Actions artifact discovery")
+	}
+	if strings.TrimSpace(token) == "" {
+		return nil, errors.New("missing GITHUB_TOKEN or GH_TOKEN for GitHub Actions artifact discovery")
+	}
+	apiURL := strings.TrimSpace(apiURLFlag)
+	if apiURL == "" {
+		apiURL = getenv("GITHUB_API_URL")
+	}
+	if apiURL == "" {
+		apiURL = "https://api.github.com"
+	}
+	url := strings.TrimRight(apiURL, "/") + "/repos/" + repo + "/actions/runs/" + runID + "/artifacts"
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("list GitHub Actions artifacts: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, fmt.Errorf("list GitHub Actions artifacts: HTTP %d", resp.StatusCode)
+	}
+	var payload struct {
+		Artifacts []struct {
+			ID        int64  `json:"id"`
+			Name      string `json:"name"`
+			Expired   bool   `json:"expired"`
+			ExpiresAt string `json:"expires_at"`
+			URL       string `json:"archive_download_url"`
+		} `json:"artifacts"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, fmt.Errorf("decode GitHub Actions artifacts: %w", err)
+	}
+	artifacts := []packet.GitHubArtifact{}
+	for _, artifact := range payload.Artifacts {
+		if artifact.Expired {
+			continue
+		}
+		resolver := artifact.URL
+		if resolver == "" && artifact.ID != 0 {
+			resolver = strings.TrimRight(apiURL, "/") + "/repos/" + repo + "/actions/artifacts/" + fmt.Sprint(artifact.ID) + "/zip"
+		}
+		artifacts = append(artifacts, packet.GitHubArtifact{
+			Name:         artifact.Name,
+			Resolver:     resolver,
+			RetainedForm: "external_ref",
+			ExpiresAt:    artifact.ExpiresAt,
+		})
+	}
+	if len(artifacts) == 0 {
+		return nil, errors.New("GitHub Actions artifact discovery returned no retained artifacts")
+	}
+	return artifacts, nil
 }
 
 type prFixtureEvent struct {
@@ -5011,7 +5114,7 @@ Usage:
   sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>
   sdp-trace pr-review summarize --validation <file> --ledger <file> [--out <file>]
   sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]...
-  sdp-trace packet build-pr --source <github-actions|github-fixture> --out <dir> [--github-event <file>] [--checks-json <file>] [--artifacts-json <file>] [--route-manifest <file>]
+  sdp-trace packet build-pr --source <github-actions|github-fixture> --out <dir> [--github-event <file>] [--checks-json <file>] [--artifacts-json <file>] [--route-manifest <file>] [--github-api-url <url>]
   sdp-trace packet build-github --github-input <file> --out <file>
   sdp-trace packet validate --bundle <file>
   sdp-trace packet check-demo --bundle <file>
