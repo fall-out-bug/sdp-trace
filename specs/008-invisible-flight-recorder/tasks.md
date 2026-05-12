@@ -41,4 +41,4 @@
 - [x] T032 Run `git diff --check`.
 - [x] T033 Run release binary build and checksum verification.
 - [x] T034 Run post-implementation multi-plane review.
-- [ ] T035 Open PR to `main` with review and verification evidence.
+- [x] T035 Open PR to `main` with review and verification evidence.
