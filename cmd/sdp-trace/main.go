@@ -620,7 +620,7 @@ func buildPRInputFromOptions(opts *flagSet) (packet.GitHubPREvidenceInput, error
 		WorkflowRunID:         os.Getenv("GITHUB_RUN_ID"),
 		RequirePromptBoundary: true,
 	}
-	if input.WorkflowRunID == "" && source == "github-fixture" {
+	if source == "github-fixture" {
 		input.WorkflowRunID = event.WorkflowRunID
 	}
 	if err := readOptionalJSON(opts.stringValue("checks-json"), &input.Checks); err != nil {
