@@ -12,11 +12,14 @@ Download a release artifact for your platform, verify the digest from
 sdp-trace version
 sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
 sdp-trace report --out .sdp-trace-report .sdp-trace-runs/smoke
+sdp-trace packet build-pr --source github-actions --out packet-artifacts
 ```
 
 The wrapped command is the existing harness command. `sdp-trace` records command
 provenance and retained artifacts outside the prompt surface; it does not inject
 instructions into the harness or model context.
+For PR packet proof, `packet build-pr` is the live GitHub Actions path; curated
+`packet build-github --github-input` files are fixture/backfill inputs only.
 
 ## Build Path
 

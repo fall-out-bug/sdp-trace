@@ -91,6 +91,7 @@ var theaterReasonCodes = map[string]bool{
 	"unbound_intent":             true,
 	"ci_theater":                 true,
 	"scope_theater":              true,
+	"prompt_contamination":       true,
 }
 
 var requiredDecisions = []string{"merge", "release", "risk_acceptance", "security_review"}
@@ -185,6 +186,11 @@ type BundleEntry struct {
 	ObservedComponents []string `json:"observed_components,omitempty"`
 	ContradictsRef     string   `json:"contradicts_ref,omitempty"`
 	ContradictsRowID   string   `json:"contradicts_row_id,omitempty"`
+	Actor              string   `json:"actor,omitempty"`
+	WriteAuthority     string   `json:"write_authority,omitempty"`
+	GeneratedBy        string   `json:"generated_by,omitempty"`
+	SourceCommitState  string   `json:"source_commit_state,omitempty"`
+	SourceRef          string   `json:"source_ref,omitempty"`
 }
 
 type ResolverEntry struct {
@@ -198,16 +204,48 @@ type Bundle struct {
 }
 
 type GitHubPREvidenceInput struct {
-	SchemaVersion          string            `json:"schema_version"`
-	PR                     GitHubPR          `json:"pr"`
-	CommitRange            GitHubCommitRange `json:"commit_range"`
-	Checks                 []GitHubCheck     `json:"checks,omitempty"`
-	Artifacts              []GitHubArtifact  `json:"artifacts,omitempty"`
-	Reviews                []GitHubReview    `json:"reviews,omitempty"`
-	AgentRouteRefs         []string          `json:"agent_route_refs,omitempty"`
-	AgentRouteComponents   []string          `json:"agent_route_components,omitempty"`
-	AgentRouteDigest       string            `json:"agent_route_digest,omitempty"`
-	AgentRouteEvidenceKind string            `json:"agent_route_evidence_kind,omitempty"`
+	SchemaVersion          string              `json:"schema_version"`
+	PR                     GitHubPR            `json:"pr"`
+	CommitRange            GitHubCommitRange   `json:"commit_range"`
+	Checks                 []GitHubCheck       `json:"checks,omitempty"`
+	Artifacts              []GitHubArtifact    `json:"artifacts,omitempty"`
+	Reviews                []GitHubReview      `json:"reviews,omitempty"`
+	WorkflowRunID          string              `json:"workflow_run_id,omitempty"`
+	RequirePromptBoundary  bool                `json:"require_prompt_boundary,omitempty"`
+	AgentRouteRefs         []string            `json:"agent_route_refs,omitempty"`
+	AgentRouteComponents   []string            `json:"agent_route_components,omitempty"`
+	AgentRouteDigest       string              `json:"agent_route_digest,omitempty"`
+	AgentRouteEvidenceKind string              `json:"agent_route_evidence_kind,omitempty"`
+	PromptBoundary         PromptBoundary      `json:"prompt_boundary,omitempty"`
+	IntegrationActions     []IntegrationAction `json:"integration_actions,omitempty"`
+}
+
+type PromptBoundary struct {
+	Text          string `json:"text,omitempty"`
+	Digest        string `json:"digest,omitempty"`
+	CaptureActor  string `json:"capture_actor,omitempty"`
+	CapturedAt    string `json:"captured_at,omitempty"`
+	CaptureMethod string `json:"capture_method,omitempty"`
+}
+
+type PromptBoundaryClassification struct {
+	Verdict          string   `json:"verdict"`
+	RouteProofEffect string   `json:"route_proof_effect"`
+	Reasons          []string `json:"reasons,omitempty"`
+}
+
+type IntegrationAction struct {
+	Kind     string `json:"kind"`
+	Actor    string `json:"actor"`
+	Resolver string `json:"resolver"`
+}
+
+type BuildPRResult struct {
+	State      string   `json:"state"`
+	BundlePath string   `json:"bundle_path,omitempty"`
+	PacketPath string   `json:"packet_path,omitempty"`
+	ResultPath string   `json:"result_path,omitempty"`
+	Errors     []string `json:"errors,omitempty"`
 }
 
 type GitHubPR struct {
@@ -298,6 +336,22 @@ func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bu
 		DecisionOwners:  defaultDecisionOwners(),
 		NonApproval:     "This packet does not approve merge, release, compliance, production trust, semantic correctness, or signed external trust.",
 	}
+	classification := ClassifyPromptBoundary(input.PromptBoundary)
+	if classification.Verdict == "contaminated" {
+		packet.TheaterFindings = append(packet.TheaterFindings, TheaterFinding{
+			ReasonCode:          "prompt_contamination",
+			State:               StateFail,
+			Severity:            "P0",
+			Finding:             strings.Join(classification.Reasons, "; "),
+			TriggerEvidenceRefs: []string{"prompt:boundary"},
+		})
+	}
+	if len(input.IntegrationActions) > 0 {
+		if packet.Extensions == nil {
+			packet.Extensions = map[string]any{}
+		}
+		packet.Extensions["integration_actions"] = input.IntegrationActions
+	}
 	return Bundle{
 		Packet: packet,
 		Manifest: BundleManifest{
@@ -306,6 +360,54 @@ func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bu
 			PacketDigest:  PacketDigest(packet),
 			Entries:       entries,
 		},
+	}
+}
+
+func ClassifyPromptBoundary(boundary PromptBoundary) PromptBoundaryClassification {
+	text := strings.TrimSpace(boundary.Text)
+	if text != "" {
+		lower := strings.ToLower(text)
+		for _, phrase := range forbiddenRecorderDutyPhrases() {
+			if strings.Contains(lower, phrase) {
+				return PromptBoundaryClassification{
+					Verdict:          "contaminated",
+					RouteProofEffect: StateFail,
+					Reasons:          []string{"developer prompt contains recorder-duty phrase: " + phrase},
+				}
+			}
+		}
+		return PromptBoundaryClassification{Verdict: "clean", RouteProofEffect: StatePass}
+	}
+	if strings.TrimSpace(boundary.Digest) == "" &&
+		strings.TrimSpace(boundary.CaptureActor) == "" &&
+		strings.TrimSpace(boundary.CapturedAt) == "" &&
+		strings.TrimSpace(boundary.CaptureMethod) == "" {
+		return PromptBoundaryClassification{Verdict: "missing", RouteProofEffect: StateCannotVerify, Reasons: []string{"prompt boundary evidence missing"}}
+	}
+	if strings.TrimSpace(boundary.Digest) != "" &&
+		strings.TrimSpace(boundary.CaptureActor) != "" &&
+		strings.TrimSpace(boundary.CapturedAt) != "" &&
+		strings.TrimSpace(boundary.CaptureMethod) != "" {
+		if _, err := time.Parse(time.RFC3339, boundary.CapturedAt); err == nil {
+			return PromptBoundaryClassification{Verdict: "digest_only", RouteProofEffect: StatePartial, Reasons: []string{"prompt text unavailable; digest metadata retained"}}
+		}
+	}
+	return PromptBoundaryClassification{Verdict: "malformed", RouteProofEffect: StateCannotVerify, Reasons: []string{"prompt boundary metadata malformed"}}
+}
+
+func forbiddenRecorderDutyPhrases() []string {
+	return []string{
+		"sdp-trace",
+		".sdp-trace",
+		".evidence",
+		"write evidence",
+		"update evidence",
+		"maintain provenance",
+		"update provenance",
+		"update packet",
+		"update bundle",
+		"close gate",
+		"claim verification",
 	}
 }
 
@@ -848,15 +950,32 @@ func githubInitiatorRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubAgentRouteRow(input GitHubPREvidenceInput) Row {
+	classification := ClassifyPromptBoundary(input.PromptBoundary)
+	if input.RequirePromptBoundary && classification.RouteProofEffect == StateFail {
+		return githubRow("PC-AGENT-ROUTE", StateFail, "Developer prompt contains recorder duties.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
+	}
+	if input.RequirePromptBoundary && classification.RouteProofEffect == StateCannotVerify {
+		return githubRow("PC-AGENT-ROUTE", StateCannotVerify, "Prompt boundary evidence cannot verify developer-route independence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
+	}
 	if len(input.AgentRouteRefs) > 0 {
+		if input.RequirePromptBoundary && classification.RouteProofEffect == StatePartial {
+			return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs and digest-only prompt boundary are retained.", []string{"agent:route", "prompt:boundary"}, "prompt text is unavailable; digest-only boundary supports partial route proof")
+		}
 		return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs are retained.", []string{"agent:route"}, "route refs are input refs, not a complete observed delegation chain")
 	}
 	return githubRow("PC-AGENT-ROUTE", StateNotAssessed, "Agent route evidence was not provided.", nil, "missing OpenCode/GSD observation ref")
 }
 
 func githubVerificationRow(input GitHubPREvidenceInput) Row {
+	classification := ClassifyPromptBoundary(input.PromptBoundary)
+	if input.RequirePromptBoundary && (classification.RouteProofEffect == StateFail || classification.RouteProofEffect == StateCannotVerify) {
+		return githubRow("PC-VERIFICATION", StateCannotVerify, "Verification cannot pass without clean or partially retained prompt-boundary evidence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
+	}
 	if len(input.Checks) == 0 {
 		return githubRow("PC-VERIFICATION", StateCannotVerify, "No GitHub check evidence was provided.", nil, "missing GitHub check or workflow run evidence")
+	}
+	if input.RequirePromptBoundary && strings.TrimSpace(input.WorkflowRunID) == "" {
+		return githubRow("PC-VERIFICATION", StateCannotVerify, "No current workflow run id was provided.", []string{"github:check"}, "missing workflow run id for CI-owned packet generation")
 	}
 	if !checksHaveRetainedArtifactRefs(input) {
 		return githubRow("PC-VERIFICATION", StatePartial, "GitHub check evidence is retained without retained artifact binding.", []string{"github:check"}, "GitHub CI green is not verification pass without retained artifact evidence")
@@ -867,6 +986,9 @@ func githubVerificationRow(input GitHubPREvidenceInput) Row {
 		}
 	}
 	refs := append([]string{"github:check"}, artifactEvidenceRefs(input)...)
+	if strings.TrimSpace(input.WorkflowRunID) != "" {
+		return githubRow("PC-VERIFICATION", StatePass, "GitHub check and retained artifact evidence are retained for workflow run "+input.WorkflowRunID+".", refs, "")
+	}
 	return githubRow("PC-VERIFICATION", StatePass, "GitHub check and retained artifact evidence are retained.", refs, "")
 }
 
@@ -923,14 +1045,17 @@ func githubRow(id, state, summary string, refs []string, reason string) Row {
 
 func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
 	entries := []BundleEntry{
-		bundleEntry("github:pr", "change_host", input.PR.URL, "external_ref"),
-		bundleEntry("git:commit-range", "git", input.CommitRange.Base+".."+input.CommitRange.Head, "external_ref"),
-		bundleEntry("theater:builder", "witness", "sdp-trace packet build-github", "raw"),
-		bundleEntry("decision:owners", "manual", "default generated decision owners", "raw"),
-		bundleEntry("gap:generated", "manual", "generated residual gaps", "raw"),
+		authorityEntry(bundleEntry("github:pr", "change_host", input.PR.URL, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
+		authorityEntry(bundleEntry("git:commit-range", "git", input.CommitRange.Base+".."+input.CommitRange.Head, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
+		authorityEntry(bundleEntry("theater:builder", "witness", "sdp-trace packet build-pr", "raw"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
+		authorityEntry(bundleEntry("decision:owners", "manual", "default generated decision owners", "raw"), "operator", "operator_authored", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
+		authorityEntry(bundleEntry("gap:generated", "manual", "generated residual gaps", "raw"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
+	}
+	if input.RequirePromptBoundary || strings.TrimSpace(input.PromptBoundary.Text) != "" || strings.TrimSpace(input.PromptBoundary.Digest) != "" {
+		entries = append(entries, authorityEntry(bundleEntry("prompt:boundary", "harness", promptBoundaryResolver(input.PromptBoundary), promptBoundaryRetainedForm(input.PromptBoundary)), "recorder", "recorder_owned", "sdp-trace recorder run", "external_retained_artifact", input.PromptBoundary.Digest))
 	}
 	if input.PR.BodyRef != "" {
-		entries = append(entries, bundleEntry("github:pr-body", "change_host", input.PR.BodyRef, "external_ref"))
+		entries = append(entries, authorityEntry(bundleEntry("github:pr-body", "change_host", input.PR.BodyRef, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID))
 	}
 	if len(input.AgentRouteRefs) > 0 {
 		entry := bundleEntry("agent:route", "harness", strings.Join(input.AgentRouteRefs, ", "), "external_ref")
@@ -939,24 +1064,61 @@ func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
 		}
 		entry.EvidenceKind = input.AgentRouteEvidenceKind
 		entry.ObservedComponents = input.AgentRouteComponents
+		entry = authorityEntry(entry, "recorder", "recorder_owned", "sdp-trace recorder run", "external_retained_artifact", input.AgentRouteDigest)
 		entries = append(entries, entry)
 	}
 	if len(input.Checks) > 0 {
-		entries = append(entries, bundleEntry("github:check", "ci", checkResolvers(input.Checks), "external_ref"))
+		entries = append(entries, authorityEntry(bundleEntry("github:check", "ci", checkResolvers(input.Checks), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID))
 	}
 	if len(input.Reviews) > 0 {
-		entries = append(entries, bundleEntry("github:review", "review", reviewResolvers(input.Reviews), "external_ref"))
+		entries = append(entries, authorityEntry(bundleEntry("github:review", "review", reviewResolvers(input.Reviews), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID))
 	}
 	for _, artifact := range input.Artifacts {
 		entry := bundleEntry("artifact:"+artifact.Name, "ci", artifact.Resolver, artifact.RetainedForm)
 		entry.ExpiresAt = artifact.ExpiresAt
 		entry.Digest = artifact.Digest
+		entry = authorityEntry(entry, "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)
+		entries = append(entries, entry)
+	}
+	for _, action := range input.IntegrationActions {
+		entry := bundleEntry("integration:"+action.Kind, "manual", action.Resolver, "external_ref")
+		entry = authorityEntry(entry, "integration", "integration_authored", action.Actor, "github_workflow_run", input.WorkflowRunID)
 		entries = append(entries, entry)
 	}
 	return entries
 }
 
+func authorityEntry(entry BundleEntry, actor, writeAuthority, generatedBy, sourceCommitState, sourceRef string) BundleEntry {
+	entry.Actor = actor
+	entry.WriteAuthority = writeAuthority
+	entry.GeneratedBy = generatedBy
+	entry.SourceCommitState = sourceCommitState
+	entry.SourceRef = strings.TrimSpace(sourceRef)
+	return entry
+}
+
+func promptBoundaryResolver(boundary PromptBoundary) string {
+	if strings.TrimSpace(boundary.Text) != "" {
+		return "prompt:text-retained"
+	}
+	if strings.TrimSpace(boundary.Digest) != "" {
+		return "prompt:digest:" + boundary.Digest
+	}
+	return "prompt:missing"
+}
+
+func promptBoundaryRetainedForm(boundary PromptBoundary) string {
+	if strings.TrimSpace(boundary.Text) != "" {
+		return "redacted"
+	}
+	if strings.TrimSpace(boundary.Digest) != "" {
+		return "digest_only"
+	}
+	return "not_retained"
+}
+
 func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
+	resolver = redactSecretLike(resolver)
 	return BundleEntry{
 		Ref:             ref,
 		SourceClass:     sourceClass,
@@ -966,6 +1128,16 @@ func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
 		Resolver:        resolver,
 		ArtifactAccess:  "present",
 	}
+}
+
+func redactSecretLike(value string) string {
+	redacted := value
+	for _, marker := range []string{"SECRET", "TOKEN", "Authorization:"} {
+		if strings.Contains(strings.ToUpper(redacted), strings.ToUpper(marker)) {
+			return "[redacted-secret]"
+		}
+	}
+	return redacted
 }
 
 func residualGapsForRows(rows []Row) []ResidualGap {
