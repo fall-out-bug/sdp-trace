@@ -496,12 +496,195 @@ func runPRReview(_ context.Context, args []string, stdout, stderr io.Writer) int
 }
 
 func runPacket(_ context.Context, args []string, stdout, stderr io.Writer) int {
-	return runSubcommand(args, stdout, stderr, "packet <build-github|validate|check-demo|render> [flags]", "packet requires build-github, validate, check-demo, or render", map[string]subcommandHandler{
+	return runSubcommand(args, stdout, stderr, "packet <build-pr|build-github|validate|check-demo|render> [flags]", "packet requires build-pr, build-github, validate, check-demo, or render", map[string]subcommandHandler{
+		"build-pr":     runPacketBuildPR,
 		"build-github": runPacketBuildGitHub,
 		"validate":     runPacketValidate,
 		"check-demo":   runPacketCheckDemo,
 		"render":       runPacketRender,
 	})
+}
+
+func runPacketBuildPR(args []string, stdout, stderr io.Writer) int {
+	opts := &flagSet{name: "packet build-pr"}
+	opts.setString("source", "github-actions")
+	opts.setString("github-event", "")
+	opts.setString("checks-json", "")
+	opts.setString("artifacts-json", "")
+	opts.setString("route-manifest", "")
+	opts.setString("out", "")
+	if err := opts.parse(args); err != nil {
+		fmt.Fprintln(stderr, err)
+		return exitUsage
+	}
+	if !requireOnlyFlags(opts, stderr, "packet build-pr accepts only flags", []requiredCLIFlag{
+		{"out", "packet build-pr requires --out"},
+	}) {
+		return exitUsage
+	}
+	input, err := buildPRInputFromOptions(opts)
+	if err != nil {
+		result := packet.BuildPRResult{State: packet.StateCannotVerify, Errors: []string{err.Error()}}
+		writeJSONPayloadUnchecked(stdout, result)
+		return exitCannotVerify
+	}
+	bundle := packet.BuildFromGitHubInput(input, time.Now().UTC())
+	validation := packet.Validate(bundle, time.Now().UTC())
+	liveGateErrors := packetBuildPRGateErrors(bundle)
+	outDir := opts.stringValue("out")
+	result := packet.BuildPRResult{
+		State:      packet.StatePass,
+		BundlePath: filepath.Join(outDir, "bundle.json"),
+		PacketPath: filepath.Join(outDir, "change-evidence-packet.md"),
+		ResultPath: filepath.Join(outDir, "build-pr-result.json"),
+		Errors:     append(validation.Errors, liveGateErrors...),
+	}
+	if len(result.Errors) > 0 {
+		result.State = packet.StateCannotVerify
+		writeJSONPayloadUnchecked(stdout, result)
+		return exitCannotVerify
+	}
+	markdown, err := packet.RenderMarkdown(bundle)
+	if err != nil {
+		result.State = packet.StateCannotVerify
+		result.Errors = []string{err.Error()}
+		writeJSONPayloadUnchecked(stdout, result)
+		return exitCannotVerify
+	}
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		fmt.Fprintf(stderr, "create packet output dir: %v\n", err)
+		return exitCannotVerify
+	}
+	if err := writeJSONFile(result.BundlePath, bundle); err != nil {
+		fmt.Fprintf(stderr, "write packet bundle: %v\n", err)
+		return exitCannotVerify
+	}
+	if err := writeTextFileAtomic(result.PacketPath, markdown); err != nil {
+		fmt.Fprintf(stderr, "write packet markdown: %v\n", err)
+		return exitCannotVerify
+	}
+	if err := writeJSONFile(result.ResultPath, result); err != nil {
+		fmt.Fprintf(stderr, "write packet result: %v\n", err)
+		return exitCannotVerify
+	}
+	writeJSONPayloadUnchecked(stdout, result)
+	return 0
+}
+
+func packetBuildPRGateErrors(bundle packet.Bundle) []string {
+	rows := map[string]packet.Row{}
+	for _, row := range bundle.Packet.Rows {
+		rows[row.ID] = row
+	}
+	errors := []string{}
+	route := rows["PC-AGENT-ROUTE"]
+	if route.State != packet.StatePass && route.State != packet.StatePartial {
+		errors = append(errors, "PC-AGENT-ROUTE cannot verify live route proof: "+route.Reason)
+	}
+	verification := rows["PC-VERIFICATION"]
+	if verification.State != packet.StatePass {
+		errors = append(errors, "PC-VERIFICATION cannot verify live CI evidence: "+verification.Reason)
+	}
+	return errors
+}
+
+func buildPRInputFromOptions(opts *flagSet) (packet.GitHubPREvidenceInput, error) {
+	source := opts.stringValue("source")
+	eventPath := opts.stringValue("github-event")
+	if source == "github-actions" && eventPath == "" {
+		eventPath = os.Getenv("GITHUB_EVENT_PATH")
+	}
+	if source != "github-actions" && source != "github-fixture" {
+		return packet.GitHubPREvidenceInput{}, fmt.Errorf("unsupported packet build-pr source %q", source)
+	}
+	if eventPath == "" {
+		return packet.GitHubPREvidenceInput{}, errors.New("missing GitHub event JSON")
+	}
+	event, err := loadPRFixtureEvent(eventPath)
+	if err != nil {
+		return packet.GitHubPREvidenceInput{}, err
+	}
+	input := packet.GitHubPREvidenceInput{
+		SchemaVersion: "github-pr-evidence-input.v0",
+		PR: packet.GitHubPR{
+			Number:  event.PullRequest.Number,
+			URL:     event.PullRequest.HTMLURL,
+			Title:   event.PullRequest.Title,
+			BodyRef: event.PullRequest.BodyRef,
+			Author:  event.PullRequest.User.Login,
+			BaseRef: event.PullRequest.Base.Ref,
+			HeadRef: event.PullRequest.Head.Ref,
+			HeadSHA: event.PullRequest.Head.SHA,
+		},
+		CommitRange:           packet.GitHubCommitRange{Base: event.PullRequest.Base.SHA, Head: event.PullRequest.Head.SHA, ChangedFilesRef: event.PullRequest.DiffURL},
+		WorkflowRunID:         os.Getenv("GITHUB_RUN_ID"),
+		RequirePromptBoundary: true,
+	}
+	if source == "github-fixture" {
+		input.WorkflowRunID = event.WorkflowRunID
+	}
+	if err := readOptionalJSON(opts.stringValue("checks-json"), &input.Checks); err != nil {
+		return packet.GitHubPREvidenceInput{}, fmt.Errorf("read checks json: %w", err)
+	}
+	if err := readOptionalJSON(opts.stringValue("artifacts-json"), &input.Artifacts); err != nil {
+		return packet.GitHubPREvidenceInput{}, fmt.Errorf("read artifacts json: %w", err)
+	}
+	var route packet.GitHubPREvidenceInput
+	if err := readOptionalJSON(opts.stringValue("route-manifest"), &route); err != nil {
+		return packet.GitHubPREvidenceInput{}, fmt.Errorf("read route manifest: %w", err)
+	}
+	input.AgentRouteRefs = route.AgentRouteRefs
+	input.AgentRouteComponents = route.AgentRouteComponents
+	input.AgentRouteDigest = route.AgentRouteDigest
+	input.AgentRouteEvidenceKind = route.AgentRouteEvidenceKind
+	input.PromptBoundary = route.PromptBoundary
+	input.IntegrationActions = route.IntegrationActions
+	input.Reviews = route.Reviews
+	return input, nil
+}
+
+type prFixtureEvent struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	PullRequest   struct {
+		Number  int    `json:"number"`
+		HTMLURL string `json:"html_url"`
+		Title   string `json:"title"`
+		BodyRef string `json:"body_ref"`
+		DiffURL string `json:"diff_url"`
+		User    struct {
+			Login string `json:"login"`
+		} `json:"user"`
+		Base struct {
+			Ref string `json:"ref"`
+			SHA string `json:"sha"`
+		} `json:"base"`
+		Head struct {
+			Ref string `json:"ref"`
+			SHA string `json:"sha"`
+		} `json:"head"`
+	} `json:"pull_request"`
+}
+
+func loadPRFixtureEvent(path string) (prFixtureEvent, error) {
+	var event prFixtureEvent
+	if err := readOptionalJSON(path, &event); err != nil {
+		return event, err
+	}
+	if event.PullRequest.Number == 0 || strings.TrimSpace(event.PullRequest.HTMLURL) == "" {
+		return event, errors.New("missing pull_request metadata in GitHub event")
+	}
+	return event, nil
+}
+
+func readOptionalJSON(path string, target any) error {
+	if strings.TrimSpace(path) == "" {
+		return nil
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, target)
 }
 
 func runPacketBuildGitHub(args []string, stdout, stderr io.Writer) int {
@@ -4828,6 +5011,7 @@ Usage:
   sdp-trace pr-review validate --packet <dir> --profile <file> --runs <dir> --ledger <file> --out <file>
   sdp-trace pr-review summarize --validation <file> --ledger <file> [--out <file>]
   sdp-trace pr-review check --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> --profile <file> [--work-dir <dir>] [--allow-external-runner <runner>]...
+  sdp-trace packet build-pr --source <github-actions|github-fixture> --out <dir> [--github-event <file>] [--checks-json <file>] [--artifacts-json <file>] [--route-manifest <file>]
   sdp-trace packet build-github --github-input <file> --out <file>
   sdp-trace packet validate --bundle <file>
   sdp-trace packet check-demo --bundle <file>

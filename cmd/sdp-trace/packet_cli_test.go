@@ -49,6 +49,7 @@ func TestPacketCommandAppearsInTopLevelHelp(t *testing.T) {
 		t.Fatalf("help exit %d err=%s", exit, errOut.String())
 	}
 	if !strings.Contains(out.String(), "sdp-trace packet validate --bundle <file>") ||
+		!strings.Contains(out.String(), "sdp-trace packet build-pr --source <github-actions|github-fixture> --out <dir>") ||
 		!strings.Contains(out.String(), "sdp-trace packet build-github --github-input <file> --out <file>") ||
 		!strings.Contains(out.String(), "sdp-trace packet check-demo --bundle <file>") ||
 		!strings.Contains(out.String(), "sdp-trace packet render --bundle <file> --out <file>") {
@@ -72,6 +73,127 @@ func TestPacketBuildGitHubCLI(t *testing.T) {
 		bundle.Packet.BundleRef != bundle.Manifest.BundleID ||
 		bundle.Manifest.PacketDigest == "" {
 		t.Fatalf("generated bundle not bound/tool-generated: %+v", bundle)
+	}
+}
+
+func TestPacketBuildPRFixtureCLIWritesArtifacts(t *testing.T) {
+	root := t.TempDir()
+	eventPath := filepath.Join(root, "event.json")
+	checksPath := filepath.Join(root, "checks.json")
+	artifactsPath := filepath.Join(root, "artifacts.json")
+	routePath := filepath.Join(root, "route.json")
+	outDir := filepath.Join(root, "packet-out")
+	writeTestJSON(t, eventPath, map[string]any{
+		"workflow_run_id": "1001",
+		"pull_request": map[string]any{
+			"number":   38,
+			"html_url": "https://github.com/example/repo/pull/38",
+			"title":    "Demo feature",
+			"body_ref": "https://github.com/example/repo/pull/38",
+			"diff_url": "https://github.com/example/repo/pull/38/files",
+			"user":     map[string]any{"login": "developer"},
+			"base":     map[string]any{"ref": "main", "sha": "base-sha"},
+			"head":     map[string]any{"ref": "feature", "sha": "head-sha"},
+		},
+	})
+	writeTestJSON(t, checksPath, []packet.GitHubCheck{{
+		Name:         "ci",
+		URL:          "https://github.com/example/repo/actions/runs/1001",
+		Conclusion:   "success",
+		ArtifactRefs: []string{"packet-artifacts"},
+	}})
+	writeTestJSON(t, artifactsPath, []packet.GitHubArtifact{{
+		Name:         "packet-artifacts",
+		Resolver:     "https://github.com/example/repo/actions/runs/1001/artifacts/2002",
+		RetainedForm: "external_ref",
+		Digest:       "sha256:artifact",
+	}})
+	writeTestJSON(t, routePath, packet.GitHubPREvidenceInput{
+		AgentRouteRefs:         []string{"recorder:run-1"},
+		AgentRouteComponents:   []string{"opencode", "gsd", "minimax-m2.5"},
+		AgentRouteDigest:       "sha256:route",
+		AgentRouteEvidenceKind: "harness_route_observation",
+		PromptBoundary:         packet.PromptBoundary{Text: "Implement the feature and run tests."},
+		Reviews:                []packet.GitHubReview{{Reviewer: "pi", Resolver: "external:review", State: packet.StatePass}},
+	})
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"packet", "build-pr",
+		"--source", "github-fixture",
+		"--github-event", eventPath,
+		"--checks-json", checksPath,
+		"--artifacts-json", artifactsPath,
+		"--route-manifest", routePath,
+		"--out", outDir,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	for _, name := range []string{"bundle.json", "change-evidence-packet.md", "build-pr-result.json"} {
+		if _, err := os.Stat(filepath.Join(outDir, name)); err != nil {
+			t.Fatalf("expected %s: %v", name, err)
+		}
+	}
+	var bundle packet.Bundle
+	readTestJSON(t, filepath.Join(outDir, "bundle.json"), &bundle)
+	if got := rowStateForCLI(bundle, "PC-VERIFICATION"); got != packet.StatePass {
+		t.Fatalf("PC-VERIFICATION state = %s", got)
+	}
+	if !strings.Contains(bundle.Packet.Rows[4].Summary, "1001") {
+		t.Fatalf("verification row does not bind workflow run: %+v", bundle.Packet.Rows[4])
+	}
+	entry := packetEntryForCLI(bundle, "artifact:packet-artifacts")
+	if entry.Actor != "ci_packet_builder" || entry.WriteAuthority != "ci_generated" || entry.SourceRef != "1001" {
+		t.Fatalf("artifact authority metadata missing: %+v", entry)
+	}
+}
+
+func TestPacketBuildPRFixtureFailsClosedWithoutPromptBoundary(t *testing.T) {
+	root := t.TempDir()
+	eventPath := filepath.Join(root, "event.json")
+	checksPath := filepath.Join(root, "checks.json")
+	artifactsPath := filepath.Join(root, "artifacts.json")
+	writeTestJSON(t, eventPath, map[string]any{
+		"workflow_run_id": "1001",
+		"pull_request": map[string]any{
+			"number":   38,
+			"html_url": "https://github.com/example/repo/pull/38",
+			"title":    "Demo feature",
+			"user":     map[string]any{"login": "developer"},
+			"base":     map[string]any{"ref": "main", "sha": "base-sha"},
+			"head":     map[string]any{"ref": "feature", "sha": "head-sha"},
+		},
+	})
+	writeTestJSON(t, checksPath, []packet.GitHubCheck{{Name: "ci", URL: "https://github.com/example/repo/actions/runs/1001", Conclusion: "success", ArtifactRefs: []string{"packet-artifacts"}}})
+	writeTestJSON(t, artifactsPath, []packet.GitHubArtifact{{Name: "packet-artifacts", Resolver: "https://github.com/example/repo/actions/runs/1001/artifacts/2002", RetainedForm: "external_ref", Digest: "sha256:artifact"}})
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"packet", "build-pr",
+		"--source", "github-fixture",
+		"--github-event", eventPath,
+		"--checks-json", checksPath,
+		"--artifacts-json", artifactsPath,
+		"--out", filepath.Join(root, "packet-out"),
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "prompt boundary evidence missing") {
+		t.Fatalf("missing cannot_verify diagnostic: %s", out.String())
+	}
+}
+
+func TestPacketBuildPRDoesNotAcceptCheckedInPacketAuthority(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"packet", "build-pr", "--out", t.TempDir(), "--bundle", "checked-in-bundle.json"}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "unknown flag --bundle") {
+		t.Fatalf("expected stale packet input flag rejection, got err=%s out=%s", errOut.String(), out.String())
 	}
 }
 
@@ -353,6 +475,24 @@ func packetCLIRow(id, state, summary string, refs []string) packet.Row {
 		row.Reason = "non-pass state is explicit"
 	}
 	return row
+}
+
+func rowStateForCLI(bundle packet.Bundle, id string) string {
+	for _, row := range bundle.Packet.Rows {
+		if row.ID == id {
+			return row.State
+		}
+	}
+	return ""
+}
+
+func packetEntryForCLI(bundle packet.Bundle, ref string) packet.BundleEntry {
+	for _, entry := range bundle.Manifest.Entries {
+		if entry.Ref == ref {
+			return entry
+		}
+	}
+	return packet.BundleEntry{}
 }
 
 func setPacketCLIRowState(bundle *packet.Bundle, id, state string, refs []string, reason string) {

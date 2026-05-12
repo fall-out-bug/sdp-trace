@@ -7,11 +7,22 @@ into trust.
 The canonical packet is Markdown rendered from a structured bundle:
 
 ```text
+sdp-trace packet build-pr --source github-actions --out packet-artifacts
 sdp-trace packet build-github --github-input github-pr-evidence-input.json --out packet-bundle.json
 sdp-trace packet validate --bundle examples/change-evidence-packet/happy-path.bundle.json
 sdp-trace packet check-demo --bundle examples/change-evidence-packet/happy-path.bundle.json
 sdp-trace packet render --bundle examples/change-evidence-packet/happy-path.bundle.json --out change-evidence-packet.md
 ```
+
+`packet build-pr` is the live-demo path. It derives packet artifacts from
+GitHub Actions context or supplied GitHub fixture JSON plus recorder route
+metadata, then writes `bundle.json`, `change-evidence-packet.md`, and
+`build-pr-result.json` into the output directory. Checked-in packet Markdown or
+checked-in bundle JSON cannot override those generated artifacts.
+
+`packet build-github --github-input` remains a fixture/backfill command. It is
+not sufficient live-demo proof by itself because the input is curated before the
+builder runs.
 
 Every packet has these rows:
 

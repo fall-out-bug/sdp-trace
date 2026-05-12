@@ -62,7 +62,21 @@
         "contradicts_row_id": {
           "type": "string",
           "enum": ["PC-CHANGE", "PC-INITIATOR", "PC-AGENT-ROUTE", "PC-MUTATION", "PC-VERIFICATION", "PC-REVIEW", "PC-AUTHORITY", "PC-THEATER", "PC-ATTESTATION", "PC-DECISION", "PC-RESIDUAL-GAPS"]
-        }
+        },
+        "actor": {
+          "type": "string",
+          "enum": ["developer_route", "recorder", "ci_packet_builder", "operator", "integration"]
+        },
+        "write_authority": {
+          "type": "string",
+          "enum": ["route_observed", "recorder_owned", "ci_generated", "operator_authored", "integration_authored", "unknown"]
+        },
+        "generated_by": { "type": "string", "minLength": 1 },
+        "source_commit_state": {
+          "type": "string",
+          "enum": ["clean_immutable_commit", "dirty_local_checkout", "github_workflow_run", "external_retained_artifact", "unknown"]
+        },
+        "source_ref": { "type": "string" }
       },
       "additionalProperties": false
     },
