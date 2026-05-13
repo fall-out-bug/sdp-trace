@@ -16,7 +16,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 22 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| File MI | 20 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
 | Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
@@ -241,10 +241,19 @@ Repository absolute file MI drops to 22 failure rows plus the raw
 `exit status 1` line; absolute function MI remains at 1275 failure rows plus
 the raw `exit status 1` line.
 
+The `cmd/sdp-trace/packet_cli.go` and `internal/telemetry/prometheus.go`
+file-layout slice split packet subcommands and Prometheus telemetry helpers into
+same-package files without changing exported APIs. Focused `cmd/sdp-trace`,
+`internal/telemetry`, and `internal/releaseproof` tests pass. Packet and
+telemetry now pass absolute file/function MI. Repository absolute file MI drops
+to 20 failure rows plus the raw `exit status 1` line; absolute function MI
+remains at 1275 failure rows plus the raw `exit status 1` line. The
+releaseproof worker output was discarded because it increased the file-MI
+failure list.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/main.go`
-- `cmd/sdp-trace/packet_cli.go`
 - `internal/adaptercapture/adaptercapture.go`
 - `internal/authority/authority.go`
 - `internal/checkpoint/checkpoint.go`
@@ -261,7 +270,6 @@ the raw `exit status 1` line.
 - `internal/recorder/recorder.go`
 - `internal/releaseproof/releaseproof.go`
 - `internal/repoobserver/repoobserver.go`
-- `internal/telemetry/prometheus.go`
 - `internal/verifier/verify.go`
 - `internal/witness/profiles.go`
 - `internal/witness/witness.go`
