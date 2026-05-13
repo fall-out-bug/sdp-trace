@@ -16,7 +16,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 19 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| File MI | 18 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
 | Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
@@ -262,6 +262,18 @@ the raw `exit status 1` line. A releaseproof file-layout attempt was discarded
 because it either broke existing public `Verification` keyed literals or
 increased file-MI failures.
 
+The `internal/releaseproof/releaseproof.go` file-layout slice split local
+release proof into focused same-package manifest, verification, artifact,
+repository-path, source-state, and proof I/O files while preserving public
+structs and keyed literal compatibility. Focused `internal/releaseproof` tests
+pass, all releaseproof files now pass absolute file/function MI, and
+`internal/releaseproof/releaseproof.go` drops out of the absolute file-MI
+output. Repository absolute file MI drops to 18 failure rows plus the raw
+`exit status 1` line; absolute function MI remains at 1275 failure rows plus
+the raw `exit status 1` line. A parallel repoobserver worker output was
+discarded because it introduced a new function-MI failure and multiple file-MI
+misses.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/main.go`
@@ -279,7 +291,6 @@ increased file-MI failures.
 - `internal/prreview/prreview.go`
 - `internal/query/querypack.go`
 - `internal/recorder/recorder.go`
-- `internal/releaseproof/releaseproof.go`
 - `internal/repoobserver/repoobserver.go`
 - `internal/witness/profiles.go`
 - `internal/witness/witness.go`
