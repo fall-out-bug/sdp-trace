@@ -51,6 +51,10 @@ quality proof. The formula is implemented in `tools/qualitycheck/halstead.go`;
 file-level MI aggregates whole Go files, so same-package file splits can improve
 the metric without changing behavior. Use MI alongside CRAP, complexity,
 coverage, review evidence, and spec-drift checks before making quality claims.
+Raw file-MI threshold failures include `lines`, `cyclo`, and
+`halstead_volume` so remediation can distinguish oversized files from
+high-branching or token-heavy files without treating the metric as an opaque
+score.
 
 If GitHub does not report checks for a PR, record CI as `not_assessed`; do not
 treat local verification as a substitute for remote CI evidence. Local

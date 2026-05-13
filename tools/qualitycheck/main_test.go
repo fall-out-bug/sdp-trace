@@ -283,7 +283,7 @@ func Risky(a, b bool) int {
 		t.Fatalf("exit = %d, want threshold failure; stdout=%s stderr=%s", exit, stdout.String(), stderr.String())
 	}
 	errText := stderr.String()
-	for _, want := range []string{"cyclomatic threshold 1 exceeded", "cognitive threshold 1 exceeded", "function maintainability index", "maintainability index"} {
+	for _, want := range []string{"cyclomatic threshold 1 exceeded", "cognitive threshold 1 exceeded", "function maintainability index", "maintainability index", "lines=", "cyclo=", "halstead_volume="} {
 		if !strings.Contains(errText, want) {
 			t.Fatalf("stderr missing %q: %s", want, errText)
 		}
