@@ -361,7 +361,8 @@ func TestFetchGitHubOIDCTokenSuccess(t *testing.T) {
 
 func TestFetchGitHubOIDCTokenInvalidRequestHost(t *testing.T) {
 	_, err := FetchGitHubOIDCToken(map[string]string{
-		"ACTIONS_ID_TOKEN_REQUEST_URL": "https://malicious.example/token",
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://malicious.example/token",
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
 	})
 	if err == nil {
 		t.Fatalf("expected error")
@@ -372,16 +373,23 @@ func TestFetchGitHubOIDCTokenInvalidRequestHost(t *testing.T) {
 }
 
 func TestFetchGitHubOIDCTokenRejectsSiblingHostAndHTTP(t *testing.T) {
-	for _, requestURL := range []string{
-		"https://evilactions.githubusercontent.com/token",
-		"https://pipelines.actions.githubusercontent.com/token",
-		"http://token.actions.githubusercontent.com/token",
+	for _, tc := range []struct {
+		requestURL string
+		want       string
+	}{
+		{"https://evilactions.githubusercontent.com/token", "unexpected oidc request host: evilactions.githubusercontent.com"},
+		{"https://pipelines.actions.githubusercontent.com/token", "unexpected oidc request host: pipelines.actions.githubusercontent.com"},
+		{"http://token.actions.githubusercontent.com/token", "unexpected oidc request scheme: http"},
 	} {
 		_, err := FetchGitHubOIDCToken(map[string]string{
-			"ACTIONS_ID_TOKEN_REQUEST_URL": requestURL,
+			"ACTIONS_ID_TOKEN_REQUEST_URL":   tc.requestURL,
+			"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
 		})
 		if err == nil {
-			t.Fatalf("expected %s to be rejected", requestURL)
+			t.Fatalf("expected %s to be rejected", tc.requestURL)
+		}
+		if !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("error for %s = %v, want %q", tc.requestURL, err, tc.want)
 		}
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 func buildOIDCTokenRequest(requestURL, requestToken string) (*http.Request, error) {
@@ -14,7 +13,7 @@ func buildOIDCTokenRequest(requestURL, requestToken string) (*http.Request, erro
 	if err != nil {
 		return nil, err
 	}
-	if err := validateOIDCTokenHost(parsed.Host); err != nil {
+	if err := validateOIDCTokenEndpoint(parsed); err != nil {
 		return nil, err
 	}
 	setOIDCTokenAudience(parsed)
@@ -28,10 +27,14 @@ func buildOIDCTokenRequest(requestURL, requestToken string) (*http.Request, erro
 	return req, nil
 }
 
-func validateOIDCTokenHost(host string) error {
-	if !strings.HasSuffix(host, "actions.githubusercontent.com") {
-		// Only GitHub's OIDC endpoint is allowed to receive the request token.
-		return fmt.Errorf("unexpected oidc request host: %s", host)
+func validateOIDCTokenEndpoint(parsed *url.URL) error {
+	if parsed.Scheme != "https" {
+		// The request token must not cross plaintext transport.
+		return fmt.Errorf("unexpected oidc request scheme: %s", parsed.Scheme)
+	}
+	if parsed.Hostname() != "token.actions.githubusercontent.com" {
+		// Only GitHub's exact OIDC endpoint is allowed to receive the request token.
+		return fmt.Errorf("unexpected oidc request host: %s", parsed.Host)
 	}
 	return nil
 }
