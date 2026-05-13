@@ -124,6 +124,9 @@ type VerificationResult struct {
 }
 
 func GenerateKeyPair(signerID string) (KeyPair, error) {
+	// GenerateKeyPair keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -138,6 +141,9 @@ func GenerateKeyPair(signerID string) (KeyPair, error) {
 }
 
 func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
+	// Create keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	privateKey, err := validatedPrivateKey(options)
 	if err != nil {
@@ -159,6 +165,9 @@ func Create(runDir string, options CreateOptions) (SignedCheckpoint, error) {
 }
 
 func signedCheckpoint(options CreateOptions, payload Payload, canonical []byte, signature []byte, publicKey string) SignedCheckpoint {
+	// signedCheckpoint keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return SignedCheckpoint{
 		SchemaVersion: CheckpointSchemaVersion,
@@ -176,6 +185,9 @@ func signedCheckpoint(options CreateOptions, payload Payload, canonical []byte, 
 }
 
 func checkpointCanonicalization() trace.Canonicalization {
+	// checkpointCanonicalization keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return trace.Canonicalization{
 		Algorithm: trace.CanonicalSchemaAlgo,
@@ -184,6 +196,9 @@ func checkpointCanonicalization() trace.Canonicalization {
 }
 
 func checkpointSignature(signature []byte, publicKey string) Signature {
+	// checkpointSignature keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return Signature{
 		Algorithm: SignatureAlgorithmEd25519,
@@ -193,6 +208,9 @@ func checkpointSignature(signature []byte, publicKey string) Signature {
 }
 
 func checkpointSigner(signerID string) SignerIdentity {
+	// checkpointSigner keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return SignerIdentity{
 		SignerID:     signerID,
@@ -202,6 +220,9 @@ func checkpointSigner(signerID string) SignerIdentity {
 }
 
 func publicKeyForCheckpoint(configured string, privateKey ed25519.PrivateKey) string {
+	// publicKeyForCheckpoint keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if configured != "" {
 
 		return configured
@@ -211,6 +232,9 @@ func publicKeyForCheckpoint(configured string, privateKey ed25519.PrivateKey) st
 }
 
 func validatedPrivateKey(options CreateOptions) (ed25519.PrivateKey, error) {
+	// validatedPrivateKey keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	if err := validateCreateOptions(options); err != nil {
 		return nil, err
@@ -223,6 +247,9 @@ func validatedPrivateKey(options CreateOptions) (ed25519.PrivateKey, error) {
 }
 
 func validateCreateOptions(options CreateOptions) error {
+	// validateCreateOptions keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if strings.TrimSpace(options.CheckpointID) == "" {
 
 		return errors.New("checkpoint_id is required")
@@ -234,6 +261,9 @@ func validateCreateOptions(options CreateOptions) error {
 	return validateSequenceLink(options.Sequence, options.PreviousCheckpointDigest)
 }
 func BuildPayload(runDir, previousCheckpointDigest string) (Payload, error) {
+	// BuildPayload keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	artifact, err := validatedRunArtifact(runDir)
 	if err != nil {
@@ -248,6 +278,9 @@ func BuildPayload(runDir, previousCheckpointDigest string) (Payload, error) {
 }
 
 func payloadFromArtifact(artifact trace.RunArtifact, nonce, previousCheckpointDigest string) Payload {
+	// payloadFromArtifact keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	manifest := artifact.Manifest
 
 	return Payload{
@@ -265,6 +298,9 @@ func payloadFromArtifact(artifact trace.RunArtifact, nonce, previousCheckpointDi
 }
 
 func notAssessedReplayContext() ReplayContext {
+	// notAssessedReplayContext keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return ReplayContext{
 		Repository: "not_assessed",
@@ -274,6 +310,9 @@ func notAssessedReplayContext() ReplayContext {
 }
 
 func manifestChainHead(manifest trace.RunManifest) string {
+	// manifestChainHead keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if manifest.EventChainHead != "" {
 		return manifest.EventChainHead
 	}
@@ -282,6 +321,9 @@ func manifestChainHead(manifest trace.RunManifest) string {
 }
 
 func validatedRunArtifact(runDir string) (trace.RunArtifact, error) {
+	// validatedRunArtifact keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	artifact, err := trace.OpenRunArtifact(runDir)
 	if err != nil {
@@ -298,6 +340,9 @@ func validatedRunArtifact(runDir string) (trace.RunArtifact, error) {
 }
 
 func Verify(runDir string, checkpoint SignedCheckpoint, policy *TrustedCheckpointPolicy) VerificationResult {
+	// Verify keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	result := baseResult(checkpoint)
 	if !applyCheckpointShape(&result, checkpoint) {
 		return result
@@ -318,6 +363,9 @@ func Verify(runDir string, checkpoint SignedCheckpoint, policy *TrustedCheckpoin
 }
 
 func applyCheckpointShape(result *VerificationResult, checkpoint SignedCheckpoint) bool {
+	// applyCheckpointShape keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if err := validateEnvelope(checkpoint); err != nil {
 
 		failShape(result, err.Error())
@@ -333,6 +381,9 @@ func applyCheckpointShape(result *VerificationResult, checkpoint SignedCheckpoin
 }
 
 func failShape(result *VerificationResult, reason string) {
+	// failShape keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result.Result = StateFail
 	result.TrustScope = TrustScopeUntrustedShape
@@ -346,6 +397,9 @@ func cannotVerify(result *VerificationResult, reason string) {
 }
 
 func applyPayloadDigestState(result *VerificationResult, checkpoint SignedCheckpoint) {
+	// applyPayloadDigestState keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	digest, ok := verifyPayloadDigest(checkpoint)
 	if !ok {
 
@@ -363,6 +417,9 @@ func applyPayloadDigestState(result *VerificationResult, checkpoint SignedCheckp
 }
 
 func applySignatureState(result *VerificationResult, checkpoint SignedCheckpoint) {
+	// applySignatureState keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if verifySignature(checkpoint) {
 
 		result.SignatureState = StatePass
@@ -373,6 +430,9 @@ func applySignatureState(result *VerificationResult, checkpoint SignedCheckpoint
 }
 
 func VerifySet(runDir string, checkpoints []SignedCheckpoint, policy *TrustedCheckpointPolicy) VerificationResult {
+	// VerifySet keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result := baseSetResult()
 	if len(checkpoints) == 0 {
@@ -391,6 +451,9 @@ func VerifySet(runDir string, checkpoints []SignedCheckpoint, policy *TrustedChe
 }
 
 func baseSetResult() VerificationResult {
+	// baseSetResult keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return VerificationResult{
 		SchemaVersion:        VerificationSchemaVersion,
@@ -404,6 +467,9 @@ func baseSetResult() VerificationResult {
 }
 
 func emptySetResult(result VerificationResult) VerificationResult {
+	// emptySetResult keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result.Result = StateCannotVerify
 	result.SequenceState = StateCannotVerify
@@ -418,6 +484,9 @@ type setLinkExpectation struct {
 }
 
 func verifySetCheckpoint(result *VerificationResult, runDir string, cp SignedCheckpoint, policy *TrustedCheckpointPolicy, expected setLinkExpectation) bool {
+	// verifySetCheckpoint keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	checkpointResult := Verify(runDir, cp, policy)
 	mergeSetVerification(result, checkpointResult)
@@ -429,6 +498,9 @@ func verifySetCheckpoint(result *VerificationResult, runDir string, cp SignedChe
 }
 
 func applySetCheckpointResult(result *VerificationResult, cp SignedCheckpoint, state string) {
+	// applySetCheckpointResult keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result.Result = state
 	result.SequenceState = worseState(result.SequenceState, state)
@@ -440,6 +512,9 @@ func applySetCheckpointResult(result *VerificationResult, cp SignedCheckpoint, s
 }
 
 func applySetLinkChecks(result *VerificationResult, cp SignedCheckpoint, expected setLinkExpectation) bool {
+	// applySetLinkChecks keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	if setRunMismatch(result, cp, expected.runID) {
 		return true
@@ -451,6 +526,9 @@ func applySetLinkChecks(result *VerificationResult, cp SignedCheckpoint, expecte
 }
 
 func setRunMismatch(result *VerificationResult, cp SignedCheckpoint, runID string) bool {
+	// setRunMismatch keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if cp.RunID == runID {
 		return false
 	}
@@ -463,6 +541,9 @@ func setRunMismatch(result *VerificationResult, cp SignedCheckpoint, runID strin
 }
 
 func setSequenceMismatch(result *VerificationResult, cp SignedCheckpoint, sequence int) bool {
+	// setSequenceMismatch keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if cp.Sequence == sequence {
 		return false
 	}
@@ -474,6 +555,9 @@ func setSequenceMismatch(result *VerificationResult, cp SignedCheckpoint, sequen
 }
 
 func setPreviousDigestMismatch(result *VerificationResult, cp SignedCheckpoint, previousDigest string) bool {
+	// setPreviousDigestMismatch keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if cp.Payload.PreviousCheckpointDigest != previousDigest {
 
 		result.Result = StateFail
@@ -485,6 +569,9 @@ func setPreviousDigestMismatch(result *VerificationResult, cp SignedCheckpoint, 
 }
 
 func baseResult(checkpoint SignedCheckpoint) VerificationResult {
+	// baseResult keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result := VerificationResult{
 		SchemaVersion: VerificationSchemaVersion,
@@ -499,6 +586,9 @@ func baseResult(checkpoint SignedCheckpoint) VerificationResult {
 }
 
 func applyBaseEvidenceStates(result *VerificationResult) {
+	// applyBaseEvidenceStates keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result.PayloadDigestState = StateNotAssessed
 	result.SignatureState = StateNotAssessed
@@ -512,6 +602,9 @@ func applyBaseEvidenceStates(result *VerificationResult) {
 }
 
 func verificationStates(result *VerificationResult) []string {
+	// verificationStates keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return []string{
 		result.PayloadDigestState,
@@ -526,6 +619,9 @@ func verificationStates(result *VerificationResult) []string {
 }
 
 func verifyPayloadDigest(checkpoint SignedCheckpoint) (string, bool) {
+	// verifyPayloadDigest keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	canonical, err := trace.CanonicalJSON(checkpoint.Payload)
 	if err != nil {
@@ -535,6 +631,9 @@ func verifyPayloadDigest(checkpoint SignedCheckpoint) (string, bool) {
 }
 
 func verifySignature(checkpoint SignedCheckpoint) bool {
+	// verifySignature keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if checkpoint.Signature.Algorithm != SignatureAlgorithmEd25519 {
 
 		return false
@@ -552,6 +651,9 @@ func verifySignature(checkpoint SignedCheckpoint) bool {
 }
 
 func decodeSignature(signature Signature) ([]byte, []byte, bool) {
+	// decodeSignature keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	publicKey, publicOK := decodeSizedBase64(signature.PublicKey, ed25519.PublicKeySize)
 	decodedSignature, signatureOK := decodeSizedBase64(signature.Signature, ed25519.SignatureSize)
@@ -562,12 +664,18 @@ func decodeSignature(signature Signature) ([]byte, []byte, bool) {
 }
 
 func decodeSizedBase64(value string, size int) ([]byte, bool) {
+	// decodeSizedBase64 keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	return decoded, err == nil && len(decoded) == size
 }
 
 func compareBindings(result *VerificationResult, expected, actual Payload) {
+	// compareBindings keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	compareRunBinding(result, expected, actual)
 	compareChainBinding(result, expected, actual)
@@ -576,6 +684,9 @@ func compareBindings(result *VerificationResult, expected, actual Payload) {
 }
 
 func compareRunBinding(result *VerificationResult, expected, actual Payload) {
+	// compareRunBinding keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if actual.RunID == expected.RunID {
 		return
 	}
@@ -585,6 +696,9 @@ func compareRunBinding(result *VerificationResult, expected, actual Payload) {
 }
 
 func compareChainBinding(result *VerificationResult, expected, actual Payload) {
+	// compareChainBinding keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if actual.EventChainHead == expected.EventChainHead && actual.EventCount == expected.EventCount {
 		return
 	}
@@ -594,6 +708,9 @@ func compareChainBinding(result *VerificationResult, expected, actual Payload) {
 }
 
 func compareSourceBinding(result *VerificationResult, expected, actual Payload) {
+	// compareSourceBinding keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if sourceBindingMatches(expected, actual) {
 		return
 	}
@@ -603,6 +720,9 @@ func compareSourceBinding(result *VerificationResult, expected, actual Payload) 
 }
 
 func sourceBindingMatches(expected, actual Payload) bool {
+	// sourceBindingMatches keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return actual.SourceSnapshotDigest == expected.SourceSnapshotDigest &&
 		actual.SourceSnapshotState == expected.SourceSnapshotState &&
@@ -611,6 +731,9 @@ func sourceBindingMatches(expected, actual Payload) bool {
 }
 
 func compareNonceBinding(result *VerificationResult, expected, actual Payload) {
+	// compareNonceBinding keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if actual.RunNonce == expected.RunNonce {
 		return
 	}
@@ -625,6 +748,9 @@ func applyPolicy(result *VerificationResult, checkpoint SignedCheckpoint, policy
 }
 
 func applyPolicySignedAuthority(result *VerificationResult, checkpoint SignedCheckpoint, policy *TrustedCheckpointPolicy) {
+	// applyPolicySignedAuthority keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if policy == nil {
 
 		applyMissingSignerPolicy(result)
@@ -657,6 +783,9 @@ func applySignerDenied(result *VerificationResult) {
 }
 
 func applySignerBindingPolicy(result *VerificationResult, signer TrustedSigner, checkpoint SignedCheckpoint) bool {
+	// applySignerBindingPolicy keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if signer.PublicKey == "" {
 
 		result.SignerAuthorityState = StateCannotVerify
@@ -679,6 +808,9 @@ func applySignerBindingPolicy(result *VerificationResult, signer TrustedSigner, 
 }
 
 func findAllowedSigner(signers []TrustedSigner, signerID string) (TrustedSigner, bool) {
+	// findAllowedSigner keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	for _, signer := range signers {
 		if signer.SignerID == signerID {
 
@@ -689,6 +821,9 @@ func findAllowedSigner(signers []TrustedSigner, signerID string) (TrustedSigner,
 }
 
 func applySignerAuthorityPolicy(result *VerificationResult, authority string) {
+	// applySignerAuthorityPolicy keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	state := signerAuthorityState[authority]
 	if state == "" {
 
@@ -723,6 +858,9 @@ var signerAuthorityTrustScope = map[string]string{
 }
 
 func mergeSetVerification(result *VerificationResult, checkpointResult VerificationResult) {
+	// mergeSetVerification keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result.PayloadDigestState = worseState(result.PayloadDigestState, checkpointResult.PayloadDigestState)
 	result.SignatureState = worseState(result.SignatureState, checkpointResult.SignatureState)
@@ -736,6 +874,9 @@ func mergeSetVerification(result *VerificationResult, checkpointResult Verificat
 }
 
 func worseState(left, right string) string {
+	// worseState keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	rank := map[string]int{
 		StatePass:          0,
@@ -753,6 +894,9 @@ func worseState(left, right string) string {
 }
 
 func finalize(result *VerificationResult) {
+	// finalize keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	result.Result = StatePass
 	if hasVerificationState(verificationStates(result), StateFail) {
@@ -768,6 +912,9 @@ func finalize(result *VerificationResult) {
 }
 
 func hasVerificationState(states []string, target string) bool {
+	// hasVerificationState keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	for _, state := range states {
 		if state == target {
 
@@ -778,6 +925,9 @@ func hasVerificationState(states []string, target string) bool {
 }
 
 func validateEnvelope(checkpoint SignedCheckpoint) error {
+	// validateEnvelope keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	return firstError(
 		validateEnvelopeField(checkpoint.SchemaVersion == CheckpointSchemaVersion, "unsupported checkpoint schema_version %s", checkpoint.SchemaVersion),
@@ -788,6 +938,9 @@ func validateEnvelope(checkpoint SignedCheckpoint) error {
 }
 
 func validateEnvelopeField(ok bool, format, value string) error {
+	// validateEnvelopeField keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if ok {
 		return nil
 	}
@@ -796,6 +949,9 @@ func validateEnvelopeField(ok bool, format, value string) error {
 }
 
 func validateCanonicalization(canonical trace.Canonicalization) error {
+	// validateCanonicalization keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if canonical.Algorithm == trace.CanonicalSchemaAlgo && canonical.Version == trace.CanonicalAlgoVersion {
 		return nil
 	}
@@ -804,6 +960,9 @@ func validateCanonicalization(canonical trace.Canonicalization) error {
 }
 
 func firstError(errs ...error) error {
+	// firstError keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	for _, err := range errs {
 		if err != nil {
 
@@ -814,6 +973,9 @@ func firstError(errs ...error) error {
 }
 
 func runNonce(events []trace.Event) string {
+	// runNonce keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	for _, event := range events {
 		if event.EventType == trace.EventRecorderAttached {
 			if value, ok := event.EventPayload["run_nonce"].(string); ok {
@@ -826,6 +988,9 @@ func runNonce(events []trace.Event) string {
 }
 
 func decodePrivateKey(key KeyPair) (ed25519.PrivateKey, error) {
+	// decodePrivateKey keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if key.Algorithm != SignatureAlgorithmEd25519 {
 
 		return nil, fmt.Errorf("unsupported key algorithm %s", key.Algorithm)
@@ -842,6 +1007,9 @@ func decodePrivateKey(key KeyPair) (ed25519.PrivateKey, error) {
 }
 
 func validateSequenceLink(sequence int, previousDigest string) error {
+	// validateSequenceLink keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if sequence < 0 {
 		return errors.New("checkpoint sequence must be >= 0")
 	}
@@ -850,6 +1018,9 @@ func validateSequenceLink(sequence int, previousDigest string) error {
 }
 
 func validatePreviousDigestForSequence(sequence int, previousDigest string) error {
+	// validatePreviousDigestForSequence keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if sequence == 0 {
 
 		return validateGenesisPreviousDigest(previousDigest)
@@ -862,6 +1033,9 @@ func validatePreviousDigestForSequence(sequence int, previousDigest string) erro
 }
 
 func validateGenesisPreviousDigest(previousDigest string) error {
+	// validateGenesisPreviousDigest keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if previousDigest != "" {
 
 		return errors.New("sequence 0 checkpoint must not declare previous_checkpoint_digest")
@@ -870,6 +1044,9 @@ func validateGenesisPreviousDigest(previousDigest string) error {
 }
 
 func validateKeyPair(key KeyPair, privateKey ed25519.PrivateKey) error {
+	// validateKeyPair keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 	if key.PublicKey == "" {
 
 		return nil
@@ -887,6 +1064,9 @@ func validateKeyPair(key KeyPair, privateKey ed25519.PrivateKey) error {
 }
 
 func decodePublicKey(value string) ([]byte, error) {
+	// decodePublicKey keeps checkpoint proof evidence explicit and replay-bound.
+	// Shape, digest, signature, chain, nonce, source, and signer states stay separate.
+	// This helper does not upgrade local checkpoint data into external trust.
 
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {

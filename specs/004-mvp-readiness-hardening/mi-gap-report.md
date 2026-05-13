@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1000 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 940 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -348,6 +348,17 @@ function-MI rows, and file MI improves from 1.2 to 16.5 while remaining below
 70. Repository absolute file MI remains 15 failure rows plus the raw
 `exit status 1` line; absolute function MI drops to 1000 failure rows plus the
 raw `exit status 1` line.
+
+The `internal/checkpoint/checkpoint.go` in-place trust-boundary comment pass
+kept existing function baseline keys stable while documenting checkpoint
+creation, canonical payload construction, envelope shape validation, payload
+digest replay, detached signature verification, sequence/chain binding,
+run/source/nonce binding, signer-policy authority, set aggregation, result
+finalization, and key decoding boundaries. Focused `internal/checkpoint` tests
+pass, `internal/checkpoint` has zero absolute function-MI rows, and file MI
+improves from 7.3 to 22.9 while remaining below 70. Repository absolute file MI
+remains 15 failure rows plus the raw `exit status 1` line; absolute function MI
+drops to 940 failure rows plus the raw `exit status 1` line.
 
 ## File-Level Failures
 
