@@ -1,8 +1,8 @@
 # Feature Specification: Command Package Organization
 
-**Feature Branch**: `010-command-package-organization`  
-**Created**: 2026-05-13  
-**Status**: Draft for PI review  
+**Feature Branch**: `010-command-package-organization`
+**Created**: 2026-05-13
+**Status**: Draft for PI review
 **Input**: PR #43 closed numeric quality gates partly through broad same-package file splitting. Review accepted the result but recorded navigation and contributor-DX debt.
 
 ## Product Boundary

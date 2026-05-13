@@ -1,8 +1,8 @@
 # Feature Specification: Machine-Readable Command Surface
 
-**Feature Branch**: `009-machine-readable-command-surface`  
-**Created**: 2026-05-13  
-**Status**: Draft for PI review  
+**Feature Branch**: `009-machine-readable-command-surface`
+**Created**: 2026-05-13
+**Status**: Draft for PI review
 **Input**: PR #43 DX review found that `sdp-trace` has a large command surface documented in frozen prose, while agents and tools have no stable machine-readable command contract.
 
 ## Product Boundary

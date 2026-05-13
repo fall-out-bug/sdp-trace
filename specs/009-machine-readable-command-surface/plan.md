@@ -6,9 +6,9 @@ Create a typed command-surface registry that can render the existing help text a
 
 ## Technical Context
 
-**Language**: Go  
-**Dependencies**: Go standard library, existing CLI helpers, existing `tools/doccheck`  
-**Verification**: `go test -count=1 ./...`, `go run ./tools/doccheck`, `jq empty` for committed JSON examples, `git diff --check`  
+**Language**: Go
+**Dependencies**: Go standard library, existing CLI helpers, existing `tools/doccheck`
+**Verification**: `go test -count=1 ./...`, `go run ./tools/doccheck`, `jq empty` for committed JSON examples, `git diff --check`
 **Constraints**: Go-only product path; no CLI semantic rewrites in this slice.
 
 ## Phase 0 - PI Spec Review

@@ -1,6 +1,6 @@
 # Tasks: Command Package Organization
 
-**Input**: `spec.md`, `plan.md`  
+**Input**: `spec.md`, `plan.md`
 **Tests**: No implementation before PI design/spec review and explicit approval. Later implementation must preserve behavior and rerun full tests, doccheck, strict MI `70.1`, complexity, CRAP, vet, and `git diff --check`.
 
 ## Phase 0 - PI Review

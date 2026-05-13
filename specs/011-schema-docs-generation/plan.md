@@ -6,9 +6,9 @@ Add a Go-first validation or generation path that keeps schema documentation syn
 
 ## Technical Context
 
-**Language**: Go  
-**Dependencies**: Go standard library, existing JSON syntax checks, optional `jq` in CI  
-**Verification**: `go test -count=1 ./...`, `jq empty schema/*.json`, schema-doc checker, `git diff --check`  
+**Language**: Go
+**Dependencies**: Go standard library, existing JSON syntax checks, optional `jq` in CI
+**Verification**: `go test -count=1 ./...`, `jq empty schema/*.json`, schema-doc checker, `git diff --check`
 **Constraints**: no schema semantic changes, no Node.js/npm tooling.
 
 ## Phase 0 - PI Spec Review

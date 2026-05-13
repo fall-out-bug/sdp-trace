@@ -6,9 +6,9 @@ Improve CLI maintainability by organizing command implementation around command 
 
 ## Technical Context
 
-**Language**: Go  
-**Dependencies**: Go standard library and current internal packages  
-**Verification**: full tests, doccheck, strict MI `70.1`, complexity gates, coverage-backed CRAP, `go vet ./...`, `git diff --check`  
+**Language**: Go
+**Dependencies**: Go standard library and current internal packages
+**Verification**: full tests, doccheck, strict MI `70.1`, complexity gates, coverage-backed CRAP, `go vet ./...`, `git diff --check`
 **Constraints**: no CLI behavior changes, no non-Go tooling, no dependency inversion.
 
 ## Phase 0 - Organization Design Review

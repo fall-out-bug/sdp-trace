@@ -1,8 +1,8 @@
 # Feature Specification: Schema Documentation Validation
 
-**Feature Branch**: `011-schema-docs-generation`  
-**Created**: 2026-05-13  
-**Status**: Draft for PI review  
+**Feature Branch**: `011-schema-docs-generation`
+**Created**: 2026-05-13
+**Status**: Draft for PI review
 **Input**: PR #43 DX review found that schema documentation is manually maintained and can drift from `schema/*.json`.
 
 ## Product Boundary

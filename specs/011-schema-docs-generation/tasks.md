@@ -1,6 +1,6 @@
 # Tasks: Schema Documentation Validation
 
-**Input**: `spec.md`, `plan.md`  
+**Input**: `spec.md`, `plan.md`
 **Tests**: No implementation before PI spec review and explicit approval. Later implementation must run full tests, JSON syntax checks, schema-doc validation, doccheck, and `git diff --check`.
 
 ## Phase 0 - PI Review

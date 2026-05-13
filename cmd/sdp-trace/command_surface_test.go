@@ -164,6 +164,15 @@ func TestRunCommandSurface(t *testing.T) {
 	}
 }
 
+func TestRunCommandSurfaceRejectsExtraArgs(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"command-surface", "unexpected"}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("command-surface with extra args exit=%d, want exitUsage (%d); stderr=%q", exit, exitUsage, errOut.String())
+	}
+}
+
 func TestCommandSurfaceDriftError(t *testing.T) {
 	if err := commandSurfaceDriftError(nil, nil); err != nil {
 		t.Fatalf("expected nil for empty drift, got %v", err)
