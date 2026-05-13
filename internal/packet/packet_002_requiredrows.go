@@ -1,0 +1,15 @@
+package packet
+
+var RequiredRows = []string{
+	"PC-CHANGE",
+	"PC-INITIATOR",
+	"PC-AGENT-ROUTE",
+	"PC-MUTATION",
+	"PC-VERIFICATION",
+	"PC-REVIEW",
+	"PC-AUTHORITY",
+	"PC-THEATER",
+	"PC-ATTESTATION",
+	"PC-DECISION",
+	"PC-RESIDUAL-GAPS",
+}
