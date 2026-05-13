@@ -45,14 +45,14 @@ OpenClaw, Hermes, Claude, Codex, or any specific provider.
 
 ## Constitution Check
 
-| Rule | Status | Evidence |
+| Rule | Live verifier state | Evidence |
 |---|---|---|
-| Spec before implementation | Pass | This branch contains roadmap/spec artifacts only. |
-| Keep product independent | Pass | GitHub is first adapter, not product ontology. |
-| Evidence-backed claims only | Pass | Tool rows remain `not_assessed` until evidence surfaces are inspected. |
-| Preserve missing states | Pass | Roadmap keeps `not_assessed`, `cannot_verify`, `missing_telemetry`, `unsupported`, and `not_integrated`. |
-| No native policy verdicts | Pass | External consumers decide merge, release, compliance, HR, and risk outcomes. |
-| Go-first product path | Pass | No active product code or non-Go toolchain is added. |
+| Spec before implementation | `not_assessed` | Roadmap/spec artifacts are present, but this table is not live verifier output. |
+| Keep product independent | `not_assessed` | GitHub is described as first adapter, not product ontology; no current verifier claim is made here. |
+| Evidence-backed claims only | `not_assessed` | Tool rows remain `not_assessed` until evidence surfaces are inspected by current commands. |
+| Preserve missing states | `not_assessed` | Roadmap keeps `not_assessed`, `cannot_verify`, `missing_telemetry`, `unsupported`, and `not_integrated`. |
+| No native policy verdicts | `not_assessed` | External consumers decide merge, release, compliance, HR, and risk outcomes. |
+| Go-first product path | `not_assessed` | No active product code or non-Go toolchain is added by this roadmap document. |
 
 ## Project Structure
 

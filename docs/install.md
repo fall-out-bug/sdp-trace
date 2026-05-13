@@ -5,21 +5,26 @@ the CLI, but it is not required to run observation around an existing harness.
 
 ## Binary Path
 
-Download a release artifact for your platform, verify the digest from
-`SHA256SUMS`, put it on `PATH`, and verify:
+Download a release artifact for your platform from the repository's GitHub
+releases page, verify the digest from `SHA256SUMS`, put it on `PATH`, and
+verify:
 
 ```text
 sdp-trace version
 sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
 sdp-trace report --out .sdp-trace-report .sdp-trace-runs/smoke
-sdp-trace packet build-pr --source github-actions --out packet-artifacts
 ```
+
+On Windows, replace `/bin/echo ok` with a local command available in your
+shell, for example `cmd /c echo ok` in Command Prompt.
 
 The wrapped command is the existing harness command. `sdp-trace` records command
 provenance and retained artifacts outside the prompt surface; it does not inject
 instructions into the harness or model context.
-For PR packet proof, `packet build-pr` is the live GitHub Actions path; curated
-`packet build-github --github-input` files are fixture/backfill inputs only.
+For PR packet proof, run `packet build-pr --source github-actions` inside
+GitHub Actions with `GITHUB_EVENT_PATH`, `GITHUB_RUN_ID`, repository identity,
+and retained artifact evidence available. Curated `packet build-github
+--github-input` files are fixture/backfill inputs only.
 
 ## Build Path
 
@@ -30,6 +35,20 @@ Maintainers can build release artifacts with:
 ```
 
 This writes platform binaries and SHA-256 files to `dist/`.
+
+For a source checkout without installing a binary, use `go run`:
+
+```text
+go run ./cmd/sdp-trace --help
+go run ./cmd/sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
+go run ./cmd/sdp-trace verify .sdp-trace-runs/smoke
+```
+
+To install from the checkout onto `PATH`:
+
+```text
+go install ./cmd/sdp-trace
+```
 
 The current release matrix is:
 

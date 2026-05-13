@@ -407,16 +407,16 @@ Preferred command surfaces:
 sdp-trace assess --profile adapter-capture ...
 sdp-trace assess preview --profile adapter-capture ...
 sdp-trace assess explain <assessment-result.json>
-sdp-trace query capture-depth ...
+sdp-trace query --query capture-depth <run-dir>
 ```
 
 `assess --profile adapter-capture` is a new Block 19 assessment surface that
 consumes a run artifact plus same-chain adapter events or an adapter bundle
 digest. It does not replace Block 14 `gate`, Block 17 `managed-harness`, or
-Block 18 `forensic-retention`. `query capture-depth` is a read-only summary
-surface for the same facts and is not a policy decision. If Block 20 later
-changes the query command family, Block 19 must preserve read compatibility or
-update this spec before implementation.
+Block 18 `forensic-retention`. `query --query capture-depth <run-dir>` is a
+read-only summary surface for the same facts and is not a policy decision. If
+Block 20 later changes the query command family, Block 19 must preserve read
+compatibility or update this spec before implementation.
 
 Preview must show expected event families, adapter identity requirements,
 capture-depth caps, and missing inputs without printing raw sensitive payloads.

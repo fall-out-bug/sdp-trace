@@ -1,0 +1,64 @@
+{
+  "schema_version": "block30-pr-review-packet-v1",
+  "packet_id": "sdp-trace-pr-43-ec8db521078b",
+  "packet_digest": "sha256:520fe035d353e695a23e64838bd492751cdebad0178b9e69f0378b15a6e735f8",
+  "repo_id": "sdp-trace",
+  "change_ref": "pr-43",
+  "base_commit": "abf6a79767f5708e2f9c69e4d52eadd5cbeb21c0",
+  "head_commit": "ec8db521078b1553830c616d72ae7325d41680eb",
+  "diff_ref": {
+    "id": "diff",
+    "kind": "diff",
+    "ref": "inputs/diff.patch",
+    "digest_sha256": "6bbbb9b375eaf4e2551ef48068fab674e53f03ad00395e7815084532a65f0664",
+    "content_type": "unified_diff",
+    "redaction_state": "none"
+  },
+  "context_refs": [
+    {
+      "id": "context-1",
+      "kind": "doc",
+      "ref": "inputs/context-1.md",
+      "digest_sha256": "418f2412a8fef3c2f9660375df8a8f8ef221316bddbee085c6b87ea6443e2095",
+      "content_type": "markdown",
+      "redaction_state": "none"
+    },
+    {
+      "id": "context-2",
+      "kind": "doc",
+      "ref": "inputs/context-2.md",
+      "digest_sha256": "cfb0ee3a39e7ceacc235ade4fe0f1b703d4429abfffafffea775c6fc7454acbc",
+      "content_type": "markdown",
+      "redaction_state": "none"
+    },
+    {
+      "id": "context-3",
+      "kind": "doc",
+      "ref": "inputs/context-3.md",
+      "digest_sha256": "dfe8353d34620b61810b05cb26f033ac5dab2fe5df1ea6205c4bd945120689c5",
+      "content_type": "markdown",
+      "redaction_state": "none"
+    }
+  ],
+  "verification_refs": [
+    {
+      "id": "verification-1",
+      "kind": "verification",
+      "ref": "inputs/verification-1.txt",
+      "digest_sha256": "188a47d8fc61bc1fad7600029c4b4ab8b21539f957e826ca4d4c30e3a296a2aa",
+      "content_type": "text",
+      "redaction_state": "none"
+    }
+  ],
+  "ci_state": "pass",
+  "created_at": "2026-05-13T14:10:47Z",
+  "created_by": "sdp-trace-cli",
+  "redaction_state": "none",
+  "unavailable_fields": [
+    {
+      "field": "metadata_ref",
+      "state": "not_assessed",
+      "reason": "metadata_input_not_provided"
+    }
+  ]
+}

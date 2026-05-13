@@ -1,66 +1,42 @@
 package trace
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-)
-
-// LoadContract returns a parsed contract from path.
-func LoadContract(path string) (Contract, error) {
-	if path == "" {
-		return DefaultContract, nil
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return Contract{}, err
-	}
-	contract, err := parseContract(data)
-	if err != nil {
-		return Contract{}, err
-	}
-	return contract.withDefaults(path), nil
+// Contract controls required events for milestone verification.
+type Contract struct {
+	ContractID         string                `json:"contract_id"`
+	Version            string                `json:"version"`
+	RequiredEvents     []string              `json:"required_events"`
+	RequiredEvidence   []EvidenceRequirement `json:"required_evidence,omitempty"`
+	RequiredRuns       []RequiredRun         `json:"required_runs,omitempty"`
+	LockRequiredBefore string                `json:"lock_required_before,omitempty"`
 }
 
-func parseContract(data []byte) (Contract, error) {
-	// Keep parsing logic intentionally light for first milestone; full schema
-	// validation is handled in phase-8 schema migration work.
-	var contract Contract
-	if err := json.Unmarshal(data, &contract); err != nil {
-		return Contract{}, err
-	}
-	return contract, nil
+// RequiredRun names a contract-declared run that should be observed for an advisory gate.
+type RequiredRun struct {
+	ID               string   `json:"id"`
+	WrapperName      string   `json:"wrapper_name"`
+	RequiredEvidence []string `json:"required_evidence,omitempty"`
+	Profile          string   `json:"profile,omitempty"`
 }
 
-func (contract Contract) withDefaults(path string) Contract {
-	if contract.ContractID == "" {
-		contract.ContractID = filepath.Base(path)
-	}
-	if contract.Version == "" {
-		contract.Version = SchemaVersion
-	}
-	if len(contract.RequiredEvents) == 0 {
-		contract.RequiredEvents = append([]string(nil), DefaultContract.RequiredEvents...)
-	}
-	return contract
+// EvidenceRequirement names a contract-declared observation that can be
+// matched against event payload fields without product-specific classifiers.
+type EvidenceRequirement struct {
+	ID            string `json:"id"`
+	EventType     string `json:"event_type"`
+	PayloadField  string `json:"payload_field"`
+	PayloadEquals string `json:"payload_equals"`
 }
 
-// GenerateMissingEvidenceTable emits expected/observed rows for a contract.
-func GenerateMissingEvidenceTable(contract Contract, observed map[string]bool) MissingEvidenceTable {
-	rows := make([]MissingEvidenceRow, 0, len(contract.RequiredEvents))
-	for _, eventType := range contract.RequiredEvents {
-		if observed[eventType] {
-			continue
-		}
-		rows = append(rows, MissingEvidenceRow{
-			ExpectedEvent:       eventType,
-			ObservedState:       string(EvidenceStateMissing),
-			Reason:              "required_by_contract",
-			ReplayabilityImpact: string(ReplayabilityPartial),
-		})
-	}
-	return MissingEvidenceTable{
-		ContractID: contract.ContractID,
-		Rows:       rows,
-	}
+// DefaultContract is the minimal local contract for first-milestone local recorder output.
+var DefaultContract = Contract{
+	ContractID: "local-default-v1",
+	Version:    SchemaVersion,
+	RequiredEvents: []string{
+		string(EventRecorderAttached),
+		string(EventRunStarted),
+		string(EventCommandStarted),
+		string(EventCommandFinished),
+		string(EventRunClosed),
+	},
+	LockRequiredBefore: "run_started",
 }

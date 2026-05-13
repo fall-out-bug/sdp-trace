@@ -12,17 +12,15 @@
       "display_name": "Codex implementation session"
     },
     "event_type": "file",
-    "status": "success",
-    "summary": "Process metric catalog was added with names, units, dimensions, evidence sources, not_assessed rules, and privacy risk.",
+    "status": "not_assessed",
+    "summary": "Historical file evidence retained as fixture shape only; current file hash must be replayed before this record can support a claim.",
     "artifact": {
       "uri": "docs/process-metric-catalog.md",
-      "sha256": "0cd4e32785e440b31d7817ca05afc6148b74cb777e347f1bd55cda20e2cd3e26",
-      "hash_algorithm": "sha256",
       "redaction_status": "none",
-      "integrity_status": "verified_hash"
+      "integrity_status": "not_assessed"
     },
     "redaction_status": "none",
-    "integrity_status": "verified_hash",
+    "integrity_status": "not_assessed",
     "dedupe_key": "self-trace-metric-catalog-2026-04-30",
     "conflict_refs": [],
     "accountability": {
@@ -52,7 +50,7 @@
     "id": "evidence-contract-validation-pass",
     "schema_version": "0.1.0",
     "source": "local-command",
-    "external_ref": "scripts/validate-contracts.sh",
+    "external_ref": "historical:scripts/validate-contracts.sh",
     "observed_at": "2026-04-30T20:50:00Z",
     "collected_at": "2026-04-30T20:50:00Z",
     "actor": {
@@ -61,17 +59,15 @@
       "display_name": "Codex implementation session"
     },
     "event_type": "command",
-    "status": "success",
-    "summary": "Contract validation command validates committed contract foundation examples and is extended by self-trace validation.",
+    "status": "not_assessed",
+    "summary": "Historical contract validation command record retained as fixture shape only; the retired script is not current verifier evidence.",
     "artifact": {
-      "uri": "scripts/validate-contracts.sh",
-      "sha256": "00e0a2e515feec5f0b8f3a87e942ea316b946e120d3628b77f4900623456cef0",
-      "hash_algorithm": "sha256",
+      "uri": "historical:scripts/validate-contracts.sh",
       "redaction_status": "none",
-      "integrity_status": "verified_hash"
+      "integrity_status": "not_assessed"
     },
     "redaction_status": "none",
-    "integrity_status": "verified_hash",
+    "integrity_status": "not_assessed",
     "dedupe_key": "self-trace-contract-validation-2026-04-30",
     "conflict_refs": [],
     "accountability": {
@@ -251,7 +247,7 @@
     "id": "evidence-claim-consistency-validation-pass",
     "schema_version": "0.1.0",
     "source": "local-command",
-    "external_ref": "scripts/validate-claim-consistency.mjs",
+    "external_ref": "historical:scripts/validate-claim-consistency.mjs",
     "observed_at": "2026-05-03T12:50:00Z",
     "collected_at": "2026-05-03T12:50:00Z",
     "actor": {
@@ -260,17 +256,15 @@
       "display_name": "Codex implementation session"
     },
     "event_type": "command",
-    "status": "success",
-    "summary": "Claim consistency validator checks committed authoritative claim tags and is invoked by the baseline verifier.",
+    "status": "not_assessed",
+    "summary": "Historical claim-consistency command record retained as fixture shape only; the retired Node validator is not current verifier evidence.",
     "artifact": {
-      "uri": "scripts/validate-claim-consistency.mjs",
-      "sha256": "6b69fd276fdba9d37005d282b2464c9470d6cd31b043f75662c08b5fd3f14c4b",
-      "hash_algorithm": "sha256",
+      "uri": "historical:scripts/validate-claim-consistency.mjs",
       "redaction_status": "none",
-      "integrity_status": "verified_hash"
+      "integrity_status": "not_assessed"
     },
     "redaction_status": "none",
-    "integrity_status": "verified_hash",
+    "integrity_status": "not_assessed",
     "dedupe_key": "block-07-slice-1-claim-consistency-validation",
     "conflict_refs": [],
     "accountability": {

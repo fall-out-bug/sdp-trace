@@ -39,7 +39,7 @@
     },
     "result": {
       "type": "string",
-      "enum": ["pass", "fail", "cannot_verify"]
+      "enum": ["pass", "fail", "cannot_verify", "not_assessed"]
     },
     "trust_scope": {
       "type": "string",
@@ -60,7 +60,10 @@
       "type": "object",
       "required": ["tool", "version", "invocation", "source_subject_ref", "gate_set_digest"],
       "properties": {
-        "tool": { "const": "scripts/verify.sh" },
+        "tool": {
+          "type": "string",
+          "enum": ["sdp-trace", "go test", "jq", "git diff"]
+        },
         "version": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
         "invocation": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
         "source_subject_ref": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
@@ -216,8 +219,14 @@
       },
       "then": {
         "properties": {
+          "result": {
+            "enum": ["cannot_verify", "not_assessed"]
+          },
           "trust_scope": {
             "const": "untrusted_shape_only"
+          },
+          "not_assessed": {
+            "minItems": 1
           },
           "generated_at": {
             "const": "1970-01-01T00:00:00Z"

@@ -190,8 +190,77 @@ func TestPacketBuildPRFixtureFailsClosedWithoutPromptBoundary(t *testing.T) {
 func TestPacketBuildPRActionsDiscoversArtifacts(t *testing.T) {
 	root := t.TempDir()
 	eventPath := filepath.Join(root, "event.json")
+	checksPath := filepath.Join(root, "checks.json")
 	routePath := filepath.Join(root, "route.json")
 	outDir := filepath.Join(root, "packet-out")
+	writeTestJSON(t, eventPath, map[string]any{
+		"pull_request": map[string]any{
+			"number":   38,
+			"html_url": "https://github.com/example/repo/pull/38",
+			"title":    "Demo feature",
+			"body_ref": "https://github.com/example/repo/pull/38",
+			"diff_url": "https://github.com/example/repo/pull/38/files",
+			"user":     map[string]any{"login": "developer"},
+			"base":     map[string]any{"ref": "main", "sha": "base-sha"},
+			"head":     map[string]any{"ref": "feature", "sha": "head-sha"},
+		},
+	})
+	writeTestJSON(t, checksPath, []packet.GitHubCheck{{
+		Name:         "build-and-test",
+		URL:          "https://github.com/example/repo/actions/runs/1001",
+		Conclusion:   "success",
+		ArtifactRefs: []string{"evidence-bundles"},
+	}})
+	writeTestJSON(t, routePath, packet.GitHubPREvidenceInput{
+		AgentRouteRefs:         []string{"recorder:run-1"},
+		AgentRouteComponents:   []string{"opencode", "gsd", "minimax-m2.5"},
+		AgentRouteDigest:       "sha256:route",
+		AgentRouteEvidenceKind: "harness_route_observation",
+		PromptBoundary:         packet.PromptBoundary{Text: "Implement the feature and run tests."},
+		Reviews:                []packet.GitHubReview{{Reviewer: "pi", Resolver: "external:review", State: packet.StatePass}},
+	})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			t.Fatalf("loopback test server received bearer token: %q", r.Header.Get("Authorization"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"artifacts":[{"id":2002,"name":"evidence-bundles","expired":false,"expires_at":"2026-08-10T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2002/zip"}]}`))
+	}))
+	defer server.Close()
+	t.Setenv("GITHUB_EVENT_PATH", eventPath)
+	t.Setenv("GITHUB_REPOSITORY", "example/repo")
+	t.Setenv("GITHUB_RUN_ID", "1001")
+	t.Setenv("GITHUB_JOB", "build-and-test")
+	t.Setenv("GITHUB_SERVER_URL", "https://github.com")
+	t.Setenv("GITHUB_TOKEN", "test-token")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"packet", "build-pr",
+		"--source", "github-actions",
+		"--github-api-url", server.URL,
+		"--checks-json", checksPath,
+		"--route-manifest", routePath,
+		"--out", outDir,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	var bundle packet.Bundle
+	readTestJSON(t, filepath.Join(outDir, "bundle.json"), &bundle)
+	if got := rowStateForCLI(bundle, "PC-VERIFICATION"); got != packet.StatePass {
+		t.Fatalf("PC-VERIFICATION state = %s", got)
+	}
+	entry := packetEntryForCLI(bundle, "artifact:evidence-bundles")
+	if entry.Resolver == "" || entry.SourceRef != "1001" {
+		t.Fatalf("discovered artifact entry missing binding: %+v", entry)
+	}
+}
+
+func TestPacketBuildPRActionsFailsClosedWithoutCheckEvidence(t *testing.T) {
+	root := t.TempDir()
+	eventPath := filepath.Join(root, "event.json")
+	routePath := filepath.Join(root, "route.json")
 	writeTestJSON(t, eventPath, map[string]any{
 		"pull_request": map[string]any{
 			"number":   38,
@@ -213,9 +282,6 @@ func TestPacketBuildPRActionsDiscoversArtifacts(t *testing.T) {
 		Reviews:                []packet.GitHubReview{{Reviewer: "pi", Resolver: "external:review", State: packet.StatePass}},
 	})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer test-token" {
-			t.Fatalf("missing bearer token: %q", r.Header.Get("Authorization"))
-		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"artifacts":[{"id":2002,"name":"evidence-bundles","expired":false,"expires_at":"2026-08-10T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2002/zip"}]}`))
 	}))
@@ -223,9 +289,9 @@ func TestPacketBuildPRActionsDiscoversArtifacts(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_PATH", eventPath)
 	t.Setenv("GITHUB_REPOSITORY", "example/repo")
 	t.Setenv("GITHUB_RUN_ID", "1001")
-	t.Setenv("GITHUB_JOB", "build-and-test")
 	t.Setenv("GITHUB_SERVER_URL", "https://github.com")
 	t.Setenv("GITHUB_TOKEN", "test-token")
+
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	exit := run([]string{
@@ -233,19 +299,109 @@ func TestPacketBuildPRActionsDiscoversArtifacts(t *testing.T) {
 		"--source", "github-actions",
 		"--github-api-url", server.URL,
 		"--route-manifest", routePath,
-		"--out", outDir,
+		"--out", filepath.Join(root, "packet-out"),
 	}, &out, &errOut)
-	if exit != 0 {
+	if exit != exitCannotVerify {
 		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
 	}
-	var bundle packet.Bundle
-	readTestJSON(t, filepath.Join(outDir, "bundle.json"), &bundle)
-	if got := rowStateForCLI(bundle, "PC-VERIFICATION"); got != packet.StatePass {
-		t.Fatalf("PC-VERIFICATION state = %s", got)
+	if !strings.Contains(out.String(), "missing GitHub check or workflow run evidence") {
+		t.Fatalf("missing check-evidence diagnostic: %s", out.String())
 	}
-	entry := packetEntryForCLI(bundle, "artifact:evidence-bundles")
-	if entry.Resolver == "" || entry.SourceRef != "1001" {
-		t.Fatalf("discovered artifact entry missing binding: %+v", entry)
+}
+
+func TestPacketBuildPRRejectsUnsafeGitHubAPIURL(t *testing.T) {
+	root := t.TempDir()
+	eventPath := filepath.Join(root, "event.json")
+	outDir := filepath.Join(root, "packet")
+	writeTestJSON(t, eventPath, map[string]any{
+		"pull_request": map[string]any{
+			"number":   38,
+			"html_url": "https://github.com/example/repo/pull/38",
+			"body_ref": "https://github.com/example/repo/pull/38",
+			"diff_url": "https://github.com/example/repo/pull/38/files",
+			"user":     map[string]any{"login": "developer"},
+			"base":     map[string]any{"ref": "main", "sha": "base-sha"},
+			"head":     map[string]any{"ref": "feature", "sha": "head-sha"},
+		},
+	})
+	t.Setenv("GITHUB_EVENT_PATH", eventPath)
+	t.Setenv("GITHUB_REPOSITORY", "example/repo")
+	t.Setenv("GITHUB_RUN_ID", "1001")
+	t.Setenv("GITHUB_TOKEN", "test-token")
+	t.Setenv("GITHUB_SERVER_URL", "https://github.com")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"packet", "build-pr",
+		"--source", "github-actions",
+		"--github-api-url", "http://evil.example/api",
+		"--out", outDir,
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "HTTPS is required") {
+		t.Fatalf("expected unsafe URL error in JSON output, got err=%s out=%s", errOut.String(), out.String())
+	}
+}
+
+func TestGitHubAPIURLPolicy(t *testing.T) {
+	tests := []struct {
+		name      string
+		apiURL    string
+		serverURL string
+		wantErr   string
+	}{
+		{name: "github dot com", apiURL: "https://api.github.com"},
+		{name: "github enterprise same host", apiURL: "https://github.example.com/api/v3", serverURL: "https://github.example.com"},
+		{name: "loopback test server", apiURL: "http://127.0.0.1:8080"},
+		{name: "reject public API for enterprise server", apiURL: "https://api.github.com", serverURL: "https://github.example.com", wantErr: "not the configured GitHub host"},
+		{name: "reject plain http remote", apiURL: "http://evil.example/api", wantErr: "HTTPS is required"},
+		{name: "reject embedded credentials", apiURL: "https://user:secret@api.github.com", wantErr: "embedded credentials are not allowed"},
+		{name: "reject different https host", apiURL: "https://evil.example/api", serverURL: "https://github.example.com", wantErr: "not the configured GitHub host"},
+		{name: "reject malformed", apiURL: "://bad", wantErr: "unsafe GitHub API URL"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateGitHubAPIURL(tt.apiURL, tt.serverURL)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("validateGitHubAPIURL() error = %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("validateGitHubAPIURL() error = %v, want %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGitHubActionsArtifactsRequestOnlySendsTokenOverHTTPS(t *testing.T) {
+	tests := []struct {
+		name     string
+		apiURL   string
+		wantAuth string
+	}{
+		{name: "https github", apiURL: "https://api.github.com", wantAuth: "Bearer test-token"},
+		{name: "http loopback", apiURL: "http://127.0.0.1:8080", wantAuth: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := githubActionsArtifactsRequest(githubActionsArtifactContext{
+				apiURL: tt.apiURL,
+				repo:   "example/repo",
+				runID:  "1001",
+				token:  "test-token",
+			})
+			if err != nil {
+				t.Fatalf("githubActionsArtifactsRequest() error = %v", err)
+			}
+			if got := req.Header.Get("Authorization"); got != tt.wantAuth {
+				t.Fatalf("Authorization = %q, want %q", got, tt.wantAuth)
+			}
+		})
 	}
 }
 

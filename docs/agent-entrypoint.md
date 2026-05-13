@@ -68,10 +68,48 @@ selected profile cannot run or lacks required evidence, the command must use
 
 ## Command Contract
 
+## Local Quality Gates
+
+Use these checks for Go-first product-path changes before claiming local
+CRAP, cyclomatic-complexity, or cognitive-complexity pass:
+
+- `go test -count=1 ./... -coverprofile=/tmp/sdp-trace-cover.out`
+- `go tool cover -func=/tmp/sdp-trace-cover.out > /tmp/sdp-trace-cover-func.txt`
+- `go run ./tools/qualitycheck -fail-only -cyclo-over 10 -cognitive-over 10 cmd internal tools`
+- `go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal`
+- `go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools`
+- `go run ./tools/qualitycheck -gocyclo cmd internal tools > /tmp/sdp-trace-gocyclo.txt`
+- `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-cover-func.txt -gocyclo /tmp/sdp-trace-gocyclo.txt -threshold 5 -strict-less`
+- `go run ./tools/qualitycheck -mi-under 70 cmd internal tools` as the advisory absolute executable-file MI check; this is expected to remain `assessed_gap` until the historical baseline is retired
+
+The CRAP, cyclomatic, and cognitive gates cover Go files under `cmd`,
+`internal`, and `tools`; test files are excluded. The enforced complexity
+threshold is `<= 10`, and the CRAP threshold is strict: a function with CRAP
+`5.00` or greater is not a pass. CI enforces
+CRAP/cyclomatic/cognitive gates for `cmd`, `internal`, and `tools`, the
+function-MI ratchet for `cmd` and `internal`, and the file-MI ratchet for
+`cmd`, `internal`, and `tools`. Maintainability Index remains `assessed_gap`
+for absolute `> 70`: the baselines prevent regression and block new
+below-threshold functions/files, but historical below-threshold functions/files
+are not claimed as passing.
+
+Treat Maintainability Index as a local refactor heuristic, not a standalone
+quality proof. File-level MI is sensitive to file size and can improve after a
+same-package split without behavior changing; keep CRAP, complexity, coverage,
+spec drift, and review evidence in the same claim.
+
+Spec drift, work-without-spec, and docs completeness are review gates, not
+machine-proof gates today. For behavior or trust-claim changes, compare the
+implementation against the active spec, plan, and task, then update this command
+contract and affected docs in the same slice. Missing spec or stale docs keep
+the gate `cannot_verify` or `not_assessed`; do not convert them into pass by
+local prose.
+
 Current command surface:
 
-- `go test ./...`
+- `go test -count=1 ./...`
 - `sdp-trace --help`
+- `sdp-trace version`
 - `sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>`
 - `sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>`
 - `sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>`
@@ -100,7 +138,9 @@ Current command surface:
 - `sdp-trace assess --profile adapter-capture --out <file> --run <run-dir>`
 - `sdp-trace assess --profile managed-harness --out <file> --contract <file> --run <run-dir> --adapter-registry <file> --managed-policy <file> --managed-witness <file>`
 - `sdp-trace assess --profile forensic-retention --out <file> --run <run-dir> --redaction-policy <file>`
-- `sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention> [profile inputs]`
+- `sdp-trace assess --profile ci-artifact-observation --out <file> --artifact-manifest <file>`
+- `sdp-trace assess --profile authority-envelope --out <file> --authority-package <file>`
+- `sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention|ci-artifact-observation|authority-envelope> [profile inputs]`
 - `sdp-trace assess explain --assessment-result <file>`
 - `sdp-trace report --out <dir> <runs-root-or-run-dir>`
 - `sdp-trace gate --out <file> <runs-root-or-run-dir>`
@@ -169,7 +209,7 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `packet build-pr` | Build live PR packet artifacts from GitHub Actions context/API or offline GitHub fixtures without checked-in packet edits. | `sdp-trace packet build-pr --source github-actions --route-manifest route.json --out packet-artifacts` | Authoritative live-demo packet path for this slice. Writes `bundle.json`, `change-evidence-packet.md`, and `build-pr-result.json`; `PC-VERIFICATION` must bind to workflow/artifact evidence or remains `cannot_verify`. If `--checks-json` and `--artifacts-json` are omitted in GitHub Actions, the builder uses `GITHUB_TOKEN`/`GH_TOKEN` and the current run context to discover retained artifacts. |
 | `packet build-github` | Build a packet bundle from a curated GitHub input fixture. | `sdp-trace packet build-github --github-input examples/change-evidence-packet/github-input.json --out packet-bundle.json` | Backfill/fixture authority only. It is useful for examples and regression tests, but not sufficient as live demo flight-recorder proof. |
 | `packet` | Validate, demo-check, and render Change Evidence Packet v0 bundles. | `sdp-trace packet render --bundle examples/change-evidence-packet/happy-path.bundle.json --out change-evidence-packet.md` | Canonical packet rendering only; row states and residual gaps are not merge, release, compliance, production trust, or semantic quality approval. `packet check-demo` is limited to the 007 first-packet minimum bar and is not a general approval gate. |
-| `validate-fixtures` | Validate checked fixture directories. | `sdp-trace validate-fixtures examples` | Structural fixture validation only; does not prove customer production readiness. |
+| `validate-fixtures` | Validate checked trace-run fixture directories. | `sdp-trace validate-fixtures examples/agentic-sdlc` | Structural fixture validation only; does not prove customer production readiness. Point it at a fixture root that contains run directories. |
 
 ## Russian Command Reference
 
@@ -215,7 +255,7 @@ from this section.
 | `witness --kind customer-pki` | Записывает customer PKI/private-equivalent witness evidence. | `sdp-trace witness --kind customer-pki --out customer-pki-witness.json --customer-pki-authority-policy policy.json --customer-pki-public-cert cert.pem --customer-pki-payload-digest <sha256> --customer-pki-freshness-evidence freshness.json .sdp-trace-runs` | Требует accepted customer policy, key/cert material, payload digest и freshness evidence. |
 | `release-proof` | Проверяет source-bound local release manifest. | `sdp-trace release-proof --manifest examples/contract-foundation/contract-manifest.example.json --out release-proof.json` | Caveat: `source_bound_local_release` уже, чем external production trust; dirty/stale source или manifest mismatch не проходят. |
 | `pr-review` | Собирает, запускает, синтезирует, валидирует и суммирует automated PR review evidence. | `sdp-trace pr-review check --out review --repo-id demo_repo --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review evidence only; не merge approval, не human approval и не release decision. |
-| `validate-fixtures` | Валидирует fixture directories. | `sdp-trace validate-fixtures examples` | Только structural fixture validation; не доказывает customer production readiness. |
+| `validate-fixtures` | Валидирует trace-run fixture directories. | `sdp-trace validate-fixtures examples/agentic-sdlc` | Только structural fixture validation; не доказывает customer production readiness. Указывайте fixture root, где есть run directories. |
 
 ## State And Exit Code Contract
 

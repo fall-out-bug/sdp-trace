@@ -167,6 +167,30 @@ func TestEvaluateMissingPolicyIsNotAssessed(t *testing.T) {
 	}
 }
 
+func TestEvaluateSelectedPolicyNotFoundIsNotAssessed(t *testing.T) {
+	pkg := validPackage()
+	pkg.SelectedPolicyID = "policy-missing"
+	result := Evaluate(pkg)
+	if result.AuthorityEvaluationState != StateNotAssessed {
+		t.Fatalf("state = %s", result.AuthorityEvaluationState)
+	}
+	if result.Evaluations[0].ReasonCode != "selected_policy_not_found" {
+		t.Fatalf("evaluation = %+v", result.Evaluations[0])
+	}
+}
+
+func TestEvaluateAmbiguousPolicyCannotVerify(t *testing.T) {
+	pkg := validPackage()
+	pkg.AuthorityEnvelopes = append(pkg.AuthorityEnvelopes, pkg.AuthorityEnvelopes[0])
+	result := Evaluate(pkg)
+	if result.AuthorityEvaluationState != StateCannotVerify {
+		t.Fatalf("state = %s", result.AuthorityEvaluationState)
+	}
+	if result.Evaluations[0].ReasonCode != "selected_policy_ambiguous" {
+		t.Fatalf("evaluation = %+v", result.Evaluations[0])
+	}
+}
+
 func TestEvaluateConflictingEnvelopeCannotVerify(t *testing.T) {
 	pkg := validPackage()
 	pkg.AuthorityEnvelopes[0].AllowedEvents = []string{"direct_mutation"}

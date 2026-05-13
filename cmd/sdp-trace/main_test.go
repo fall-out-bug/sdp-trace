@@ -18,6 +18,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
+	"github.com/fall_out_bug/sdp-trace/internal/posture"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
@@ -2918,8 +2919,30 @@ func TestCLITailHelpersCoverErrorBranches(t *testing.T) {
 	if _, code, ok := readCrossRepoPostureExplainResult(filepath.Join(dir, "missing.json"), &errOut); ok || code != exitCannotVerify {
 		t.Fatalf("posture explain missing code=%d ok=%v", code, ok)
 	}
+	unsupportedPath := filepath.Join(dir, "unsupported-posture.json")
+	writeTestJSON(t, unsupportedPath, posture.ExportResult{SchemaVersion: "wrong", ExportProfileID: posture.ProfileID})
+	errOut.Reset()
+	if _, code, ok := readCrossRepoPostureExplainResult(unsupportedPath, &errOut); ok || code != exitCannotVerify {
+		t.Fatalf("posture explain unsupported code=%d ok=%v", code, ok)
+	}
 
 	var out bytes.Buffer
+	if code := runDoctor(context.Background(), []string{"--help"}, &out, &errOut); code != 0 {
+		t.Fatalf("doctor help code=%d", code)
+	}
+	if !strings.Contains(out.String(), "Usage:") {
+		t.Fatalf("doctor help output = %q", out.String())
+	}
+	if !unexpectedFixtureResultFailed(trace.VerifierResult{Result: trace.VerdictFail}) {
+		t.Fatalf("fail verdict should fail implicit fixture expectation")
+	}
+	if !unexpectedFixtureResultFailed(trace.VerifierResult{Result: trace.VerdictCannotVerify}) {
+		t.Fatalf("cannot_verify verdict should fail implicit fixture expectation")
+	}
+	if unexpectedFixtureResultFailed(trace.VerifierResult{Result: trace.VerdictObserved}) {
+		t.Fatalf("observed verdict should satisfy implicit fixture expectation")
+	}
+
 	if code := writeImportedTranscript(interaction.Trace{SchemaVersion: interaction.SchemaVersion}, nil, &out, &errOut); code != 0 {
 		t.Fatalf("writeImportedTranscript success code=%d", code)
 	}

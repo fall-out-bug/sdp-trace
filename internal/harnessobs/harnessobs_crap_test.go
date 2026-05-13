@@ -178,6 +178,231 @@ func TestSmallUtilityEdgeBranches(t *testing.T) {
 	if decoded.SchemaVersion != ValidationSchemaVersion {
 		t.Fatalf("DecodeValidation() schema = %s", decoded.SchemaVersion)
 	}
+	if _, err := DecodeValidation(bytes.NewBufferString("{")); err == nil {
+		t.Fatalf("DecodeValidation(invalid) error = nil")
+	}
+}
+
+func TestSetupActionAndDegradationUtilityBranches(t *testing.T) {
+	if err := validateSessionSetupAction(SessionSetupAction{ID: "setup-1", Kind: "hook"}); err != nil {
+		t.Fatalf("validateSessionSetupAction(valid) error = %v", err)
+	}
+	if err := validateSessionSetupAction(SessionSetupAction{ID: "../bad", Kind: "hook"}); err == nil || !strings.Contains(err.Error(), "unsafe setup action id") {
+		t.Fatalf("validateSessionSetupAction(bad id) error = %v", err)
+	}
+	if err := validateSessionSetupAction(SessionSetupAction{ID: "setup-1", Kind: "shell"}); err == nil || !strings.Contains(err.Error(), "unsupported setup action kind") {
+		t.Fatalf("validateSessionSetupAction(bad kind) error = %v", err)
+	}
+	if !validDegradationRule(Rule{State: StateCannotVerify, ReasonCode: "missing-proof"}) {
+		t.Fatalf("validDegradationRule(valid) = false")
+	}
+	if validDegradationRule(Rule{State: "unknown", ReasonCode: "missing-proof"}) {
+		t.Fatalf("validDegradationRule(unknown state) = true")
+	}
+	if validDegradationRule(Rule{State: StateCannotVerify, ReasonCode: "../bad"}) {
+		t.Fatalf("validDegradationRule(unsafe reason) = true")
+	}
+}
+
+func TestNormalizedWriteAndShellAndSourceCommitBranches(t *testing.T) {
+	dir := t.TempDir()
+	blockingFile := filepath.Join(dir, "file")
+	if err := os.WriteFile(blockingFile, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeNormalizedEvents(filepath.Join(blockingFile, "events.jsonl"), nil); err == nil {
+		t.Fatalf("writeNormalizedEvents(blocked parent) error = nil")
+	}
+	if got := shellFields(`opencode run --model "qwen coder"`); len(got) != 4 || got[3] != "qwen coder" {
+		t.Fatalf("shellFields(quoted model) = %#v", got)
+	}
+
+	oldwd := chdir(t, dir)
+	if got := sourceCommit(); got != "" {
+		t.Fatalf("sourceCommit(non-git) = %q, want empty", got)
+	}
+	oldwd()
+	if got := sourceCommit(); got != "" && len(got) != 40 {
+		t.Fatalf("sourceCommit(repo) = %q, want empty or full hash", got)
+	}
+}
+
+func TestNormalizeSessionStreamCaptureErrors(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mode    string
+		wantErr string
+	}{
+		"digest only": {
+			mode:    ContentDigestOnly,
+			wantErr: "stream_capture mode not implemented",
+		},
+		"unsupported": {
+			mode:    "full",
+			wantErr: "unsupported stream_capture",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			profile := SessionProfile{StreamCapture: tc.mode}
+			err := normalizeSessionStreamCapture(&profile)
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("normalizeSessionStreamCapture() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestIsolationRuleValidationBranches(t *testing.T) {
+	valid := SessionIsolationRule{
+		ID:         "rule-1",
+		Kind:       "json_read_deny",
+		TargetPath: "settings.json",
+		Pattern:    "/tmp/private",
+	}
+	if err := validateSessionIsolationRule(valid); err != nil {
+		t.Fatalf("validateSessionIsolationRule(valid) error = %v", err)
+	}
+
+	for name, tc := range map[string]struct {
+		rule    SessionIsolationRule
+		wantErr string
+	}{
+		"bad id": {
+			rule:    SessionIsolationRule{ID: "../bad", Kind: "json_read_deny", TargetPath: "settings.json", Pattern: "/tmp/private"},
+			wantErr: "unsafe isolation rule id",
+		},
+		"blank pattern": {
+			rule:    SessionIsolationRule{ID: "rule-1", Kind: "json_read_deny", TargetPath: "settings.json", Pattern: " \t"},
+			wantErr: "unsafe isolation rule pattern",
+		},
+		"newline pattern": {
+			rule:    SessionIsolationRule{ID: "rule-1", Kind: "json_read_deny", TargetPath: "settings.json", Pattern: "a\nb"},
+			wantErr: "unsafe isolation rule pattern",
+		},
+		"unsafe target": {
+			rule:    SessionIsolationRule{ID: "rule-1", Kind: "json_read_deny", TargetPath: "../settings.json", Pattern: "/tmp/private"},
+			wantErr: "unsafe isolation target path",
+		},
+		"unsupported kind": {
+			rule:    SessionIsolationRule{ID: "rule-1", Kind: "write_allow", TargetPath: "settings.json", Pattern: "/tmp/private"},
+			wantErr: "unsupported isolation rule kind",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := validateSessionIsolationRule(tc.rule)
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("validateSessionIsolationRule() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestSafeProfileRelativeIsolationFileBranches(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	path, err := safeProfileRelativeIsolationFile("demo/session-profile.json", "settings/permissions.json")
+	if err != nil {
+		t.Fatalf("safeProfileRelativeIsolationFile() error = %v", err)
+	}
+	if path != filepath.Join("demo", "settings", "permissions.json") {
+		t.Fatalf("safeProfileRelativeIsolationFile() = %q", path)
+	}
+
+	for name, relPath := range map[string]string{
+		"absolute":   filepath.Join(string(filepath.Separator), "tmp", "settings.json"),
+		"traversal":  "../settings.json",
+		"url":        "file://settings.json",
+		"blank base": " ",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := safeProfileRelativeIsolationFile("session-profile.json", relPath); err == nil {
+				t.Fatalf("safeProfileRelativeIsolationFile(%q) error = nil", relPath)
+			}
+		})
+	}
+
+	outside := t.TempDir()
+	if err := os.Symlink(outside, "outside-link"); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if _, err := safeProfileRelativeIsolationFile("session-profile.json", "outside-link/nested/settings.json"); err == nil || !strings.Contains(err.Error(), "escapes working directory") {
+		t.Fatalf("safeProfileRelativeIsolationFile(symlink escape) error = %v, want escapes working directory", err)
+	}
+}
+
+func TestEnsureJSONReadDenyRuleAndPresenceBranches(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	path := "settings.json"
+
+	if err := ensureJSONReadDenyRule(path, "/tmp/private"); err != nil {
+		t.Fatalf("ensureJSONReadDenyRule(missing) error = %v", err)
+	}
+	if present, err := jsonReadDenyRulePresent(path, "/tmp/private"); err != nil || !present {
+		t.Fatalf("jsonReadDenyRulePresent() = %v/%v, want true/nil", present, err)
+	}
+	if present, err := jsonReadDenyRulePresent(path, "/tmp/other"); err != nil || present {
+		t.Fatalf("jsonReadDenyRulePresent(absent) = %v/%v, want false/nil", present, err)
+	}
+
+	writeJSONFixture(t, path, map[string]any{
+		"permission": "replace-me",
+		"kept":       true,
+	})
+	if err := ensureJSONReadDenyRule(path, "/home/private"); err != nil {
+		t.Fatalf("ensureJSONReadDenyRule(replace permission) error = %v", err)
+	}
+	var config map[string]any
+	readJSONFixture(t, path, &config)
+	if config["kept"] != true {
+		t.Fatalf("kept field = %v, want true", config["kept"])
+	}
+	permission, ok := config["permission"].(map[string]any)
+	if !ok {
+		t.Fatalf("permission = %#v, want object", config["permission"])
+	}
+	read, ok := permission["read"].(map[string]any)
+	if !ok || read["/home/private"] != "deny" {
+		t.Fatalf("permission.read = %#v, want /home/private deny", permission["read"])
+	}
+
+	if err := os.WriteFile(path, []byte(" \n\t"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ensureJSONReadDenyRule(path, "/blank"); err != nil {
+		t.Fatalf("ensureJSONReadDenyRule(blank JSON) error = %v", err)
+	}
+
+	if err := os.WriteFile(path, []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ensureJSONReadDenyRule(path, "/bad"); err == nil {
+		t.Fatalf("ensureJSONReadDenyRule(invalid JSON) error = nil")
+	}
+}
+
+func TestIsolationRulePresentBranches(t *testing.T) {
+	dir := t.TempDir()
+	linePath := filepath.Join(dir, "ignore")
+	if err := os.WriteFile(linePath, []byte(".evidence/\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	present, err := isolationRulePresent(SessionIsolationRule{Kind: "ignore_line", TargetPath: linePath, Pattern: ".evidence/"})
+	if err != nil || !present {
+		t.Fatalf("isolationRulePresent(ignore_line) = %v/%v, want true/nil", present, err)
+	}
+	present, err = isolationRulePresent(SessionIsolationRule{Kind: "ignore_line", TargetPath: linePath, Pattern: ".trace/"})
+	if err != nil || present {
+		t.Fatalf("isolationRulePresent(ignore_line absent) = %v/%v, want false/nil", present, err)
+	}
+	if _, err := isolationRulePresent(SessionIsolationRule{Kind: "unknown"}); err == nil || !strings.Contains(err.Error(), "unsupported isolation rule kind") {
+		t.Fatalf("isolationRulePresent(unknown) error = %v, want unsupported kind", err)
+	}
+	if err := ensureIsolationRule(SessionIsolationRule{Kind: "unknown"}); err == nil || !strings.Contains(err.Error(), "unsupported isolation rule kind") {
+		t.Fatalf("ensureIsolationRule(unknown) error = %v, want unsupported kind", err)
+	}
 }
 
 func containsString(values []string, want string) bool {

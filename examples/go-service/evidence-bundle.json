@@ -1,27 +1,27 @@
 {
   "id": "go-service-change-001",
-  "scope": "Add input validation to POST /widgets",
+  "scope": "Placeholder Go service scenario; no live change evidence is assessed.",
   "items": [
     {
       "kind": "diff",
       "source": "git diff -- api/widgets.go api/widgets_test.go",
-      "summary": "Change touches handler and tests only.",
-      "status": "pass",
-      "status_origin": "external"
+      "summary": "Placeholder fixture only; Change touches handler and tests only.",
+      "status": "not_assessed",
+      "status_origin": "placeholder"
     },
     {
       "kind": "test",
       "source": "go test ./...",
-      "summary": "All Go tests passed locally.",
-      "status": "pass",
-      "status_origin": "external"
+      "summary": "Placeholder fixture only; All Go tests passed locally.",
+      "status": "not_assessed",
+      "status_origin": "placeholder"
     },
     {
       "kind": "review",
       "source": "human-review:team-lead",
-      "summary": "Reviewer confirmed validation behavior matches spec.",
-      "status": "pass",
-      "status_origin": "external"
+      "summary": "Placeholder fixture only; Reviewer confirmed validation behavior matches spec.",
+      "status": "not_assessed",
+      "status_origin": "placeholder"
     }
   ]
 }

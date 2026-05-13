@@ -535,6 +535,21 @@ func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
 		t.Fatalf("StreamCapture = %s, want disabled", loaded.StreamCapture)
 	}
 
+	if err := os.WriteFile(path, []byte(`{"schema_version":"harness-session-profile-v1","profile_id":"session-profile","harness_profile_path":"profile.json","event_source_path":"events.jsonl","unexpected":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unknown field") {
+		t.Fatalf("LoadSessionProfile() unknown field error = %v", err)
+	}
+
+	trailing := `{"schema_version":"harness-session-profile-v1","profile_id":"session-profile","harness_profile_path":"profile.json","event_source_path":"events.jsonl"}{"schema_version":"second"}`
+	if err := os.WriteFile(path, []byte(trailing), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "trailing data") {
+		t.Fatalf("LoadSessionProfile() trailing data error = %v", err)
+	}
+
 	profile.RawEventFormat = OpenCodeJSONLRawFormat
 	profile.RawEventSourcePath = ""
 	writeJSONFixture(t, path, profile)

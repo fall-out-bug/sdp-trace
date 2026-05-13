@@ -101,6 +101,46 @@ func TestEvaluateCannotVerifyWhenManifestSourceCommitMissing(t *testing.T) {
 	}
 }
 
+func TestEvaluateRejectsManifestOutsideRepoBoundary(t *testing.T) {
+	root := t.TempDir()
+	for _, manifestPath := range []string{
+		"../manifest.json",
+		filepath.Join(root, "manifest.json"),
+		"",
+	} {
+		if _, err := Evaluate(root, manifestPath, time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC)); err == nil {
+			t.Fatalf("Evaluate accepted manifest path %q", manifestPath)
+		}
+	}
+}
+
+func TestEvaluateNormalizesManifestRef(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "manifest.json"), `{
+  "id": "test-manifest",
+  "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "trusted_identity_policy_ref": "policy.json",
+  "artifacts": [],
+  "accountability": {
+    "dri": {"identity_ref": "role:dri", "actor_type": "human_role"},
+    "approver": {"identity_ref": "role:approver", "actor_type": "human_role"},
+    "escalation": {"identity_ref": "role:cto", "actor_type": "human_role"},
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "approval",
+    "risk_owner": {"identity_ref": "role:risk", "actor_type": "human_role"},
+    "line_of_defense": "second"
+  }
+}`)
+	result, err := Evaluate(root, "./manifest.json", time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("Evaluate: %v", err)
+	}
+	if result.ManifestRef != "manifest.json" {
+		t.Fatalf("ManifestRef = %q", result.ManifestRef)
+	}
+}
+
 func TestEvaluateReadsArtifactsFromManifestSourceCommit(t *testing.T) {
 	root := t.TempDir()
 	runGit(t, root, "init")
@@ -205,6 +245,23 @@ func TestEvaluateFailsWhenWorktreeIsDirty(t *testing.T) {
 	}
 	if result.SourceCommitReason != "dirty checkout cannot support source-bound local release proof" {
 		t.Fatalf("source commit reason = %s", result.SourceCommitReason)
+	}
+}
+
+func TestEvaluateRejectsManifestSymlinkOutsideRepo(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.invalid")
+	runGit(t, root, "config", "user.name", "Test")
+	writeFile(t, filepath.Join(outside, "manifest.json"), `{"source_commit":"outside"}`)
+	if err := os.Symlink(filepath.Join(outside, "manifest.json"), filepath.Join(root, "manifest.json")); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	_, err := Evaluate(root, "manifest.json", time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC))
+	if err == nil || !strings.Contains(err.Error(), "resolves outside repository") {
+		t.Fatalf("Evaluate() error = %v, want outside repository rejection", err)
 	}
 }
 

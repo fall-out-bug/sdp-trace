@@ -2,11 +2,28 @@ package policy
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
-
-	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
+
+// LoadPolicy loads and validates a policy file.
+func LoadPolicy(path string) (AuthorityPolicy, error) {
+	// Policy loading is file-backed; callers must supply a concrete authority
+	// artifact before validation can establish the local policy boundary.
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return AuthorityPolicy{}, err
+	}
+	// Policy bytes are decoded before validation so callers never receive a
+	// partially trusted authority policy.
+	var loaded AuthorityPolicy
+	if err := json.Unmarshal(raw, &loaded); err != nil {
+		return AuthorityPolicy{}, err
+	}
+	if err := loaded.Validate(); err != nil {
+		return AuthorityPolicy{}, err
+	}
+	return loaded, nil
+}
 
 // AuthorityPolicy is the loaded and validated authority policy for adapters, signers, and witness scopes.
 type AuthorityPolicy struct {
@@ -18,153 +35,4 @@ type AuthorityPolicy struct {
 	AllowedWitnessProfiles []string                `json:"allowed_witness_profiles"`
 	DemonstrationProfiles  []string                `json:"demonstration_profiles"`
 	TrustBoundaryDefaults  TrustBoundaryDefaults   `json:"trust_boundary_defaults"`
-}
-
-type AdapterAuthorityEntry struct {
-	AdapterID         string   `json:"adapter_id"`
-	Provider          string   `json:"provider"`
-	IdentityState     string   `json:"identity_state"`
-	AllowedEventTypes []string `json:"allowed_event_types"`
-	AllowedByPolicy   bool     `json:"allowed_by_policy"`
-}
-
-type SignerAuthorityEntry struct {
-	SignerID             string   `json:"signer_id"`
-	ProfileID            string   `json:"profile_id"`
-	AllowedScopes        []string `json:"allowed_scopes"`
-	IndependenceRequired bool     `json:"independence_required"`
-	Environment          string   `json:"environment"`
-}
-
-type TrustBoundaryDefaults struct {
-	DefaultWitnessIndependence string `json:"default_witness_independence"`
-	LocalProfileLabel          string `json:"local_profile_label"`
-}
-
-type SigningProfileSpec struct {
-	SchemaVersion string `json:"schema_version"`
-	ProfileID     string `json:"profile_id"`
-	Format        string `json:"format"`
-	Description   string `json:"description"`
-	VerifierHost  string `json:"verifier_host"`
-}
-
-type RedactionProfileSpec struct {
-	SchemaVersion string `json:"schema_version"`
-	ProfileID     string `json:"profile_id"`
-	Description   string `json:"description"`
-	DefaultMode   string `json:"default_retention_mode"`
-}
-
-type AuthorityPolicyValidator struct {
-	policy AuthorityPolicy
-}
-
-// LoadPolicy loads and validates a policy file.
-func LoadPolicy(path string) (AuthorityPolicy, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return AuthorityPolicy{}, err
-	}
-	var loaded AuthorityPolicy
-	if err := json.Unmarshal(raw, &loaded); err != nil {
-		return AuthorityPolicy{}, err
-	}
-	if err := loaded.Validate(); err != nil {
-		return AuthorityPolicy{}, err
-	}
-	return loaded, nil
-}
-
-// Validate checks policy invariants required before verifier use.
-func (policy AuthorityPolicy) Validate() error {
-	return firstPolicyError(
-		requiredString(policy.SchemaVersion, "schema_version is required"),
-		requiredString(policy.PolicyID, "policy_id is required"),
-		requiredList(policy.AllowedSigners, "at least one allowed signer is required"),
-		requiredList(policy.AllowedWitnessProfiles, "at least one allowed witness profile is required"),
-	)
-}
-
-func requiredString(value, message string) error {
-	if value != "" {
-		return nil
-	}
-	return errors.New(message)
-}
-
-func requiredList[T any](values []T, message string) error {
-	if len(values) > 0 {
-		return nil
-	}
-	return errors.New(message)
-}
-
-func firstPolicyError(errs ...error) error {
-	for _, err := range errs {
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// NewAuthorityPolicyValidator builds a read-only validator.
-func NewAuthorityPolicyValidator(policy AuthorityPolicy) AuthorityPolicyValidator {
-	return AuthorityPolicyValidator{policy: policy}
-}
-
-// CanAdapterEmit checks whether an adapter id can emit a given event type.
-func (v AuthorityPolicyValidator) CanAdapterEmit(adapterID string, eventType trace.EventType) bool {
-	for _, adapter := range v.policy.AllowedAdapters {
-		if adapterCanEmit(adapter, adapterID, string(eventType)) {
-			return true
-		}
-	}
-	return false
-}
-
-func adapterCanEmit(adapter AdapterAuthorityEntry, adapterID, eventType string) bool {
-	return adapter.AdapterID == adapterID &&
-		adapter.AllowedByPolicy &&
-		stringInList(adapter.AllowedEventTypes, eventType)
-}
-
-// SignerAllowed checks whether a signer/profile tuple is permitted.
-func (v AuthorityPolicyValidator) SignerAllowed(signerID string, profileID string) bool {
-	for _, signer := range v.policy.AllowedSigners {
-		if signerAllowedForProfile(signer, signerID, profileID) {
-			return true
-		}
-	}
-	return false
-}
-
-func signerAllowedForProfile(signer SignerAuthorityEntry, signerID, profileID string) bool {
-	return signer.SignerID == signerID &&
-		signer.ScopeAllowed("signer") &&
-		signer.ProfileID == profileID
-}
-
-// WitnessProfileAllowed checks whether witness profile is trusted by policy.
-func (v AuthorityPolicyValidator) WitnessProfileAllowed(profileID string) bool {
-	return stringInList(v.policy.AllowedWitnessProfiles, profileID)
-}
-
-// IsDemonstrationProfile marks a local-only profile as not production-grade.
-func (v AuthorityPolicyValidator) IsDemonstrationProfile(profileID string) bool {
-	return stringInList(v.policy.DemonstrationProfiles, profileID)
-}
-
-func (signer SignerAuthorityEntry) ScopeAllowed(scope string) bool {
-	return stringInList(signer.AllowedScopes, scope)
-}
-
-func stringInList(values []string, needle string) bool {
-	for _, value := range values {
-		if value == needle {
-			return true
-		}
-	}
-	return false
 }

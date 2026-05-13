@@ -1,6 +1,9 @@
 package packet
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +29,29 @@ func TestValidateAndRenderHappyPath(t *testing.T) {
 		if !strings.Contains(md, want) {
 			t.Fatalf("rendered packet missing %q:\n%s", want, md)
 		}
+	}
+}
+
+func TestLoadBundleAndGitHubInput(t *testing.T) {
+	dir := t.TempDir()
+	bundlePath := filepath.Join(dir, "bundle.json")
+	inputPath := filepath.Join(dir, "github-input.json")
+	writeJSONForTest(t, bundlePath, validBundle())
+	writeJSONForTest(t, inputPath, validGitHubInput())
+
+	bundle, err := LoadBundle(bundlePath)
+	if err != nil {
+		t.Fatalf("LoadBundle: %v", err)
+	}
+	if bundle.Packet.PacketID == "" {
+		t.Fatalf("loaded bundle missing packet id")
+	}
+	input, err := LoadGitHubInput(inputPath)
+	if err != nil {
+		t.Fatalf("LoadGitHubInput: %v", err)
+	}
+	if input.PR.Number != 5 {
+		t.Fatalf("loaded PR number = %d", input.PR.Number)
 	}
 }
 
@@ -88,6 +114,22 @@ func TestValidateRejectsMissingResidualGapForNonPassRow(t *testing.T) {
 	}
 }
 
+func TestGapForRowWithClosure(t *testing.T) {
+	gaps := []ResidualGap{
+		{RowID: "PC-REVIEW", Reason: "missing review"},
+		{RowID: "PC-AGENT-ROUTE", Reason: "partial route", ClosureEvidence: "retained route observation"},
+	}
+	if !gapForRowWithClosure(gaps, "PC-AGENT-ROUTE") {
+		t.Fatalf("expected closure gap for PC-AGENT-ROUTE")
+	}
+	if gapForRowWithClosure(gaps, "PC-REVIEW") {
+		t.Fatalf("gap without closure evidence should not close")
+	}
+	if gapForRowWithClosure(gaps, "PC-VERIFICATION") {
+		t.Fatalf("missing row should not close")
+	}
+}
+
 func TestValidateRejectsTheaterPassWithFindings(t *testing.T) {
 	bundle := validBundle()
 	bundle.Packet.TheaterFindings = []TheaterFinding{{
@@ -146,12 +188,37 @@ func TestValidateContradictionRequiresPartialAndGap(t *testing.T) {
 	}
 }
 
+func TestRowIDForRefUsesRequiredRowOrder(t *testing.T) {
+	bundle := validBundle()
+	rows := rowsByID(bundle.Packet.Rows)
+	if got := rowIDForRef(rows, "git:change"); got != "PC-CHANGE" {
+		t.Fatalf("rowIDForRef(shared ref) = %q, want PC-CHANGE", got)
+	}
+}
+
 func TestValidateRejectsProjectionMarkedCanonicalOverArtifact(t *testing.T) {
 	bundle := validBundle()
 	bundle.Packet.Projection = Projection{Kind: "github_pr_comment", Canonical: true}
 	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
 	if result.State != StateFail || !hasError(result.Errors, "canonical projection must be") {
 		t.Fatalf("result = %+v", result)
+	}
+}
+
+func TestValidateAcceptsResolverEntryForManifestEvidence(t *testing.T) {
+	bundle := validBundle()
+	for i := range bundle.Manifest.Entries {
+		if bundle.Manifest.Entries[i].Ref == "ci:run" {
+			bundle.Manifest.Entries[i].Resolver = ""
+		}
+	}
+	bundle.Manifest.Resolvers = []ResolverEntry{
+		{Ref: "", Resolver: "ignored"},
+		{Ref: "ci:run", Resolver: "examples/change-evidence-packet/ci-run"},
+	}
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StatePass {
+		t.Fatalf("resolver entry did not satisfy evidence resolver: %+v", result)
 	}
 }
 
@@ -357,4 +424,23 @@ func validGitHubInput() GitHubPREvidenceInput {
 
 func refreshPacketDigest(bundle *Bundle) {
 	bundle.Manifest.PacketDigest = PacketDigest(bundle.Packet)
+}
+
+func rowsByID(rows []Row) map[string]Row {
+	byID := map[string]Row{}
+	for _, row := range rows {
+		byID[row.ID] = row
+	}
+	return byID
+}
+
+func writeJSONForTest(t *testing.T, path string, value any) {
+	t.Helper()
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
 }

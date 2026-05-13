@@ -16,8 +16,8 @@ production trust authority.
 **Primary Dependencies**: Go standard library; existing CLI help; `jq`; local
 linters available in current environment (`golangci-lint`, `gocyclo`,
 `gocognit`)
-**Testing**: `go test ./...`, `go test ./... -coverprofile`, per-function CRAP
-baseline/review, `jq empty schema/*.json`, `git diff --check`,
+**Testing**: `go test -count=1 ./...`, `go test -count=1 ./... -coverprofile`,
+per-function CRAP baseline/review, `jq empty schema/*.json`, `git diff --check`,
 `golangci-lint run ./...`, selected complexity gate, doc command-surface check
 **Target Platform**: Portable repository workflows and GitHub Actions
 **Project Type**: Documentation, tests, small Go refactors, CI gate hardening

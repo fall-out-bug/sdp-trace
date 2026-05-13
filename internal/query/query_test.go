@@ -39,6 +39,19 @@ func TestMissingEvidenceQueryMatchesVerifier(t *testing.T) {
 	}
 }
 
+func TestMissingEvidenceQueryReturnsExistingArtifactReadError(t *testing.T) {
+	runDir := t.TempDir()
+	artifactPath := filepath.Join(runDir, "verifier", "missing-evidence-table.json")
+	if err := os.MkdirAll(artifactPath, 0o755); err != nil {
+		t.Fatalf("create unreadable artifact path: %v", err)
+	}
+
+	_, err := MissingEvidence(runDir)
+	if err == nil {
+		t.Fatalf("expected existing artifact read error")
+	}
+}
+
 func TestCaptureDepthQueryExposesReadOnlyFacts(t *testing.T) {
 	run := adaptercapture.ValidTestInput().Run
 	run.UnverifiedTaskExpanded = true

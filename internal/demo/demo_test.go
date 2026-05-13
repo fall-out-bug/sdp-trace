@@ -109,6 +109,12 @@ func TestCRAPHelperEdges(t *testing.T) {
 	if got := nonCheckpointProtectedTrustCap("", GatePass); got != "ci_witnessed" {
 		t.Fatalf("ci trust cap = %s", got)
 	}
+	if got := mapCheckpointState(checkpoint.StatePass); got != GatePass {
+		t.Fatalf("mapCheckpointState(pass) = %s", got)
+	}
+	if got := mapCheckpointState("unexpected"); got != GateCannotVerify {
+		t.Fatalf("mapCheckpointState(unexpected) = %s", got)
+	}
 	if _, ok := firstWitnessPath(nil); ok {
 		t.Fatalf("nil witness path reported present")
 	}
@@ -135,6 +141,12 @@ func TestCRAPHelperEdges(t *testing.T) {
 	}
 	if got := stringItems([]any{"a", 7, "b"}); strings.Join(got, ",") != "a,b" {
 		t.Fatalf("stringItems = %v", got)
+	}
+	if got := payloadAnyStringSlice([]string{"x", "y"}); strings.Join(got, ",") != "x,y" {
+		t.Fatalf("string slice payload = %v", got)
+	}
+	if got := payloadAnyStringSlice(7); got != nil {
+		t.Fatalf("non-string slice payload = %v", got)
 	}
 	if condition := protectedCIWitnessCondition(ProtectedGateInput{}); condition.State != GateCannotVerify {
 		t.Fatalf("missing witness condition = %+v", condition)

@@ -14,24 +14,29 @@ every unwrapped agent run was detected.
 
 ## Start Here
 
-1. Give [Agent Onboarding](docs/agent-onboarding.md) to any coding agent before
-   it works in this repository.
+1. Read [Install](docs/install.md) and choose either a release binary or
+   source checkout command path.
 2. Read [Core Concepts](docs/concepts.md) to understand the contract:
    spec, plan, task, evidence, gate, decision, trace, and provenance.
-3. Run the local smoke path:
+3. Give [Agent Onboarding](docs/agent-onboarding.md) to any coding agent before
+   it works in this repository.
+4. Run the local smoke path:
 
    ```text
-   go test ./...
-   sdp-trace --help
-   sdp-trace wrap --name smoke -- /bin/echo ok
-   sdp-trace verify <run-dir>
+   go test -count=1 ./...
+   go run ./cmd/sdp-trace --help
+   go run ./cmd/sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
+   go run ./cmd/sdp-trace verify .sdp-trace-runs/smoke
    ```
 
-4. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
+   On Windows, replace `/bin/echo ok` with a local command available in your
+   shell, for example `cmd /c echo ok` in Command Prompt.
+
+5. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
    command and state contract.
-5. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
+6. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
    verification path and overclaim checklist.
-6. Use [Documentation Map](docs/README.md) to choose the right next document.
+7. Use [Documentation Map](docs/README.md) to choose the right next document.
 
 Origin note: `sdp-trace` was extracted from delivery evidence work in
 `sdp_lab`. That history is not a runtime dependency and should not be required
@@ -51,6 +56,39 @@ context for using this repository.
 Every output is scoped. A local trace does not become CI evidence. A CI witness
 does not become production trust. A checked-in JSON file is an audit artifact
 until the current verifier replays it or an accepted external signature binds it.
+
+## CTO View
+
+Use `sdp-trace` when the organization needs delivery evidence that survives a
+specific agent, harness, or workflow choice. The product gives engineering and
+governance teams a portable record of:
+
+- what spec, plan, and task a change came from;
+- which evidence exists and which evidence is still missing;
+- where the evidence was produced: local, CI, customer authority, or another
+  stated scope;
+- which gate facts can be handed to policy consumers;
+- which human owns the next decision when evidence is incomplete.
+
+The control objective is not "AI says this is safe." The control objective is
+"a reviewer or policy system can see the evidence boundary, replay supported
+checks, and refuse overclaims." That makes `sdp-trace` useful for CTO-level
+questions about agent adoption, release risk, auditability, and vendor
+portability without turning this repository into the release authority.
+
+## Developer Experience
+
+The happy path should stay ordinary:
+
+1. Keep your normal spec, plan, task, code review, and CI flow.
+2. Wrap or adapt the observable parts of the work.
+3. Retain evidence artifacts and explicit gaps.
+4. Hand assessment input to the policy consumer that already owns the decision.
+
+Developers should not need to learn an internal SDP runtime, switch agents, or
+accept hidden GitHub assumptions. If a workflow cannot yet produce replayable
+evidence, record `not_assessed` or `cannot_verify` and keep the policy decision
+outside `sdp-trace`.
 
 ## What It Does Not Do
 
@@ -72,9 +110,9 @@ those consumers.
 The docs have one primary path. They should not require readers to classify
 themselves before understanding the repository.
 
-1. [Agent Onboarding](docs/agent-onboarding.md)
-2. [Documentation Map](docs/README.md)
-3. [Core Concepts](docs/concepts.md)
+1. [Install](docs/install.md)
+2. [Core Concepts](docs/concepts.md)
+3. [Agent Onboarding](docs/agent-onboarding.md)
 4. [Agent Entrypoint](docs/agent-entrypoint.md)
 5. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
 6. [Harness Integration](docs/harness-integration.md)
@@ -102,3 +140,11 @@ spec -> plan -> task -> change -> evidence -> provenance -> accountability -> as
 External policy consumers can turn assessment input and verifier facts into
 decisions. When evidence is missing, the state must remain `not_assessed`,
 `cannot_verify`, `missing_telemetry`, or an explicit failure reason.
+
+## Adoption Shape
+
+Start with one repository and one narrow gate. A good first adoption is usually
+"retain local and CI evidence for this class of changes" rather than "approve
+all AI work." Expand only after reviewers can replay the evidence boundary and
+the team has decided who owns merge, release, risk override, and escalation
+decisions.

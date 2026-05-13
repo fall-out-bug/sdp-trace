@@ -293,7 +293,7 @@ func TestSynthesizeAndValidateCoverageSatisfied(t *testing.T) {
 	packetDigest := "sha256:" + sixtyFour("3")
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StatePass}
 	profile := ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "default", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}}}
-	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{ReviewRunID: "run-code", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings}}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{ReviewRunID: "run-code", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-code")}}}
 	ledger := SynthesizeLedger(packet, runs, nil)
 	validation := Validate(packet, profile, runs, ledger)
 	if validation.ReviewCoverageState != CoverageSatisfied {
@@ -310,11 +310,44 @@ func TestSynthesizeAndValidateCoverageSatisfied(t *testing.T) {
 	}
 }
 
+func TestValidateCannotVerifyUsableStatusWithoutRetainedOutput(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("8")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StatePass}
+	profile := ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "default", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{ReviewRunID: "run-code", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings}}}
+	ledger := SynthesizeLedger(packet, runs, nil)
+	validation := Validate(packet, profile, runs, ledger)
+	if validation.ReviewCoverageState != CoverageCannotVerify {
+		t.Fatalf("coverage = %s want cannot_verify", validation.ReviewCoverageState)
+	}
+	if len(validation.PlaneResults) != 1 || validation.PlaneResults[0].Reason != "reviewer_output_not_retained" {
+		t.Fatalf("retained-output reason missing: %+v", validation.PlaneResults)
+	}
+}
+
+func TestValidateUsesBestPlaneResultAcrossRetries(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("8")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StatePass}
+	profile := ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "default", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{
+		{ReviewRunID: "run-code-first", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusParseFailed},
+		{ReviewRunID: "run-code-retry", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-code-retry")},
+	}}
+	ledger := SynthesizeLedger(packet, runs, nil)
+	validation := Validate(packet, profile, runs, ledger)
+	if validation.ReviewCoverageState != CoverageSatisfied {
+		t.Fatalf("coverage = %s want %s validation=%+v", validation.ReviewCoverageState, CoverageSatisfied, validation)
+	}
+	if len(validation.PlaneResults) != 1 || validation.PlaneResults[0].RunID != "run-code-retry" {
+		t.Fatalf("best plane result not selected: %+v", validation.PlaneResults)
+	}
+}
+
 func TestValidateCannotVerifyUnexplainedModelMismatch(t *testing.T) {
 	packetDigest := "sha256:" + sixtyFour("5")
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
 	profile := ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "default", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "model-a"}}}
-	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{ReviewRunID: "run-code", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "model-a", ObservedModel: "model-b", ModelFamily: "family", ModelVersion: "v1", Status: StatusNoFindings}}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{ReviewRunID: "run-code", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "model-a", ObservedModel: "model-b", ModelFamily: "family", ModelVersion: "v1", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-code")}}}
 	ledger := SynthesizeLedger(packet, runs, nil)
 	validation := Validate(packet, profile, runs, ledger)
 	if validation.ReviewCoverageState != CoverageCannotVerify {
@@ -370,6 +403,7 @@ func TestValidateCoverageStatesForNoReviewersUnresolvedAndStaleDigest(t *testing
 		ModelFamily:    "not_assessed",
 		ModelVersion:   "not_assessed",
 		Status:         StatusFindingsReported,
+		RawOutputRef:   retainedRawRef("run-code"),
 		Findings:       []Finding{{ID: "F1", Severity: SeverityMajor, Citation: Citation{ContextRefID: "diff", DiffHunkID: "hunk-1"}, Summary: "Missing validation."}},
 	}}
 	ledger = SynthesizeLedger(packet, runs, nil)
@@ -783,4 +817,15 @@ func forty(s string) string {
 
 func sixtyFour(s string) string {
 	return strings.Repeat(s, 64)
+}
+
+func retainedRawRef(id string) *SafeRef {
+	return &SafeRef{
+		ID:             "raw-" + id,
+		Kind:           RefKindRawOutput,
+		Ref:            "raw/" + id + ".out",
+		DigestSHA256:   sixtyFour("9"),
+		ContentType:    ContentText,
+		RedactionState: RedactionDigestOnly,
+	}
 }

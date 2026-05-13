@@ -11,17 +11,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
       - name: Go tests
-        run: go test ./... -coverprofile=coverage.out
+        run: go test -count=1 ./... -coverprofile=coverage.out
+      - name: MI baseline change policy
+        if: github.event_name == 'pull_request'
+        run: |
+          git diff --name-only '${{ github.event.pull_request.base.sha }}'...HEAD |
+            go run ./tools/mibaselinepolicy -base-ref '${{ github.event.pull_request.base.sha }}'
+      - name: Go quality gates
+        run: |
+          go tool cover -func=coverage.out > coverage-func.txt
+          go run ./tools/qualitycheck -fail-only -cyclo-over 10 -cognitive-over 10 cmd internal tools
+          go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal
+          go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools
+          go run ./tools/qualitycheck -gocyclo cmd internal tools > gocyclo.txt
+          go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less
       - name: Go lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.62.0
       - name: JSON syntax
-        run: jq empty schema/*.json examples/block19-adapter-capture/*.json
+        run: jq empty schema/*.json examples/block19-adapter-capture/*.json examples/self-trace/proof-summary.example.json tools/qualitycheck/function-mi-baseline.json tools/qualitycheck/file-mi-baseline.json
+      - name: Docs command surface
+        run: go run ./tools/doccheck
       - name: Whitespace check
         run: git diff --check

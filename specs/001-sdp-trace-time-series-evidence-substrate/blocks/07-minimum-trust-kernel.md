@@ -234,7 +234,7 @@ The verifier must not rely on NLP over prose.
 Any document, matrix, task, or report that intends to make an authoritative claim must include a machine-readable claim tag. Example:
 
 ```markdown
-<!-- sdp-trace-claim: trusted_contract_release=false; proof_ref=examples/self-trace/proof-summary.example.json; profile=source_bound_local_release -->
+<!-- sdp-trace-claim: claim=trust_not_assessed; subject=trusted_contract_release; state=not_assessed; profile=source_bound_local_release; evidence=state:claim_tags_consistent -->
 ```
 
 The claim-consistency check validates tags against proof summary output. Untagged prose is commentary and must not be treated as authoritative evidence. Docs may still be reviewed for misleading language, but that review is not the machine claim authority.

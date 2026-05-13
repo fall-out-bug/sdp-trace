@@ -2,7 +2,7 @@
 
 **Feature Branch**: `008-invisible-flight-recorder`
 **Created**: 2026-05-12
-**Status**: Draft - requires multi-plane review before implementation
+**Status**: Implemented locally; post-implementation review recorded; PR/final-head CI evidence pending
 **Input**: Demo audit findings from the GitHub OSS packet demo.
 
 ## Product Boundary
@@ -111,8 +111,8 @@ metadata or residual gaps without upgrading route proof.
 The command surface makes the clean path obvious:
 
 ```text
-sdp-trace recorder install ...
-sdp-trace recorder run --profile <profile> -- <developer-command...>
+sdp-trace observe setup --profile <session-profile.json> --out <run-dir>
+sdp-trace observe session --profile <session-profile.json> --out <run-dir> -- <developer-command...>
 sdp-trace packet build-pr --source github-actions --out <dir>
 ```
 
@@ -142,10 +142,12 @@ external evidence resolves the conflict.
 
 ## Command Contract
 
-The supported live-demo route is:
+The supported live-demo route follows the current command contract in
+`docs/agent-entrypoint.md`. At this checkpoint the implemented command surface
+is:
 
 ```text
-sdp-trace recorder run --profile local_development_recorder -- <developer-command...>
+sdp-trace observe session --profile <session-profile.json> --out <run-dir> -- <developer-command...>
 sdp-trace packet build-pr --source github-actions --out <dir>
 ```
 

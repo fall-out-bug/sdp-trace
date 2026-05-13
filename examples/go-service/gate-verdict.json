@@ -2,10 +2,8 @@
   "origin": "external",
   "producer": "sdp-gate-example",
   "gate": "scope-and-tests",
-  "verdict": "pass",
-  "evidence": [
-    "go-service-change-001"
-  ],
-  "rationale": "The diff is scoped to the handler and tests, and the test command passed.",
-  "confidence": 0.9
+  "verdict": "not_assessed",
+  "evidence": [],
+  "rationale": "Placeholder fixture only; no live diff, test, review, or external policy evidence is assessed.",
+  "external_policy_ref": "not_assessed:placeholder"
 }

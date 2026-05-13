@@ -1,0 +1,2 @@
+CI verify passed for PR #43 head ec8db521078b1553830c616d72ae7325d41680eb: https://github.com/fall-out-bug/sdp-trace/actions/runs/25804393829/job/75802932780
+Local replay before packet generation: git status clean; absolute file MI remains assessed_gap.

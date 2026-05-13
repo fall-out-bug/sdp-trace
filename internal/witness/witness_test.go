@@ -58,6 +58,12 @@ func TestCRAPHelperEdges(t *testing.T) {
 	if got := stringItems([]any{"sdp", 1, "trace"}); strings.Join(got, ",") != "sdp,trace" {
 		t.Fatalf("stringItems = %v", got)
 	}
+	if got := audienceString([]any{"sdp-trace", "other"}); got != "sdp-trace,other" {
+		t.Fatalf("audienceString list = %q", got)
+	}
+	if got := audienceString("sdp-trace"); got != "sdp-trace" {
+		t.Fatalf("audienceString scalar = %q", got)
+	}
 
 	root := t.TempDir()
 	for name, payload := range map[string]string{
@@ -284,7 +290,7 @@ func completeGitHubEnv() map[string]string {
 		"GITHUB_REPOSITORY":              "org/repo",
 		"GITHUB_REF":                     "refs/heads/main",
 		"GITHUB_SERVER_URL":              "https://github.com",
-		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://pipelines.actions.githubusercontent.com/token",
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://token.actions.githubusercontent.com/token",
 		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
 	}
 }
@@ -355,13 +361,36 @@ func TestFetchGitHubOIDCTokenSuccess(t *testing.T) {
 
 func TestFetchGitHubOIDCTokenInvalidRequestHost(t *testing.T) {
 	_, err := FetchGitHubOIDCToken(map[string]string{
-		"ACTIONS_ID_TOKEN_REQUEST_URL": "https://malicious.example/token",
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://malicious.example/token",
+		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
 	})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 	if !strings.Contains(err.Error(), "unexpected oidc request host: malicious.example") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestFetchGitHubOIDCTokenRejectsSiblingHostAndHTTP(t *testing.T) {
+	for _, tc := range []struct {
+		requestURL string
+		want       string
+	}{
+		{"https://evilactions.githubusercontent.com/token", "unexpected oidc request host: evilactions.githubusercontent.com"},
+		{"https://pipelines.actions.githubusercontent.com/token", "unexpected oidc request host: pipelines.actions.githubusercontent.com"},
+		{"http://token.actions.githubusercontent.com/token", "unexpected oidc request scheme: http"},
+	} {
+		_, err := FetchGitHubOIDCToken(map[string]string{
+			"ACTIONS_ID_TOKEN_REQUEST_URL":   tc.requestURL,
+			"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
+		})
+		if err == nil {
+			t.Fatalf("expected %s to be rejected", tc.requestURL)
+		}
+		if !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("error for %s = %v, want %q", tc.requestURL, err, tc.want)
+		}
 	}
 }
 

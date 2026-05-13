@@ -50,6 +50,88 @@ func TestEvaluateFailsAgentReportedTestAsExecutedEvidence(t *testing.T) {
 	}
 }
 
+func TestTestProvenanceEventConditionNonExecutedBranches(t *testing.T) {
+	tests := []struct {
+		name       string
+		provenance string
+		claimed    bool
+		state      string
+		reason     string
+	}{
+		{
+			name:       "agent reported unclaimed",
+			provenance: "agent_reported",
+			state:      StateCannotVerify,
+			reason:     "test_execution_unverified",
+		},
+		{
+			name:       "harness observed claimed",
+			provenance: "harness_observed",
+			claimed:    true,
+			state:      StateFail,
+			reason:     "harness_observed_test_not_executed",
+		},
+		{
+			name:       "harness observed unclaimed",
+			provenance: "harness_observed",
+			state:      StateCannotVerify,
+			reason:     "test_execution_unverified",
+		},
+		{
+			name:       "missing",
+			provenance: "",
+			state:      StateCannotVerify,
+			reason:     "test_provenance_missing",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			condition := testProvenanceEventCondition(AdapterEvent{
+				TestProvenance:          tt.provenance,
+				ExecutedEvidenceClaimed: tt.claimed,
+			})
+			if condition.State != tt.state || condition.ReasonCode != tt.reason {
+				t.Fatalf("condition = %+v, want %s/%s", condition, tt.state, tt.reason)
+			}
+		})
+	}
+}
+
+func TestSmallPolicyPredicatesCoverBranches(t *testing.T) {
+	for _, provenance := range []string{"ci_executed", "wrapper_executed"} {
+		if !testProvenanceExecuted(provenance) {
+			t.Fatalf("provenance %q should be executed", provenance)
+		}
+	}
+	if testProvenanceExecuted("agent_reported") {
+		t.Fatalf("agent-reported provenance should not be executed")
+	}
+
+	if !providerRefContainsSecret(ProviderRef{SourceRef: "https://example.invalid/src?token=secret-token"}) {
+		t.Fatalf("source ref secret was not detected")
+	}
+	if !providerRefContainsSecret(ProviderRef{ChangeRef: "https://example.invalid/change?access_token=secret-token"}) {
+		t.Fatalf("change ref secret was not detected")
+	}
+	if !providerRefContainsSecret(ProviderRef{ReviewRef: "https://example.invalid/review?session_id=secret-token"}) {
+		t.Fatalf("review ref secret was not detected")
+	}
+	if providerRefContainsSecret(ProviderRef{SourceRef: "repo@sha", ChangeRef: "change-7", ReviewRef: "review-7"}) {
+		t.Fatalf("token-free provider refs should pass")
+	}
+
+	if !adapterEventOverclaims(AdapterEvent{ReconstructableClaimed: true, CaptureState: StateMissingTelemetry}) {
+		t.Fatalf("insufficient reconstructable event should overclaim")
+	}
+	if adapterEventOverclaims(AdapterEvent{ReconstructableClaimed: true, CaptureState: "captured", RetentionMode: RetentionDigestOnly, CapAnnotation: "digest-only cap"}) {
+		t.Fatalf("cap annotation should prevent overclaim")
+	}
+	if adapterEventOverclaims(AdapterEvent{ReconstructableClaimed: false, CaptureState: StateMissingTelemetry}) {
+		t.Fatalf("non-reconstructable event should not overclaim")
+	}
+}
+
 func TestEvaluateCannotVerifyLateAdapterEvent(t *testing.T) {
 	input := validInput()
 	input.Run.AdapterEvents[1].Sequence = input.Run.RunClosedSequence + 1

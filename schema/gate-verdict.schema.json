@@ -10,14 +10,40 @@
     "gate": { "type": "string", "minLength": 1 },
     "verdict": {
       "type": "string",
-      "enum": ["pass", "warn", "fail", "not_assessed"]
+      "enum": ["pass", "warn", "fail", "not_assessed", "cannot_verify"]
     },
     "evidence": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
     },
     "rationale": { "type": "string" },
-    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+    "external_policy_ref": { "type": "string", "minLength": 1 }
   },
-  "additionalProperties": true
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verdict": { "enum": ["pass", "warn", "fail"] }
+        },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "evidence": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verdict": { "enum": ["not_assessed", "cannot_verify"] }
+        },
+        "required": ["verdict"]
+      },
+      "then": {
+        "required": ["rationale"]
+      }
+    }
+  ],
+  "additionalProperties": false
 }
