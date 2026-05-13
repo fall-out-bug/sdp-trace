@@ -247,6 +247,9 @@ type envelopeRefCounts struct {
 }
 
 func Relay(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stderr io.Writer) (Trace, int, error) {
+	// Relay keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	opts = normalizeRelay(opts)
 	if len(opts.Command) == 0 {
@@ -256,6 +259,9 @@ func Relay(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stde
 }
 
 func relayWithCommand(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stderr io.Writer) (Trace, int, error) {
+	// relayWithCommand keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	body, err := readBody(stdin)
 	if err != nil {
@@ -274,6 +280,9 @@ func relayWithCommand(ctx context.Context, opts RelayOptions, stdin io.Reader, s
 }
 
 func writeRelayTrace(path string, trace Trace, event Event, body []byte) error {
+	// writeRelayTrace keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := WriteContentBlobs(path, trace, map[string][]byte{event.InteractionID: body}); err != nil {
 		return err
@@ -281,6 +290,9 @@ func writeRelayTrace(path string, trace Trace, event Event, body []byte) error {
 	return WriteTrace(path, trace)
 }
 func ImportTranscript(opts ImportOptions) (Trace, error) {
+	// ImportTranscript keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	opts = normalizeImport(opts)
 	if err := validateImportOptions(opts); err != nil {
@@ -298,6 +310,9 @@ func ImportTranscript(opts ImportOptions) (Trace, error) {
 }
 
 func validateImportOptions(opts ImportOptions) error {
+	// validateImportOptions keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if opts.Source != SourcePreclassifiedTranscript {
 		return errors.New("interaction import-transcript requires --source preclassified-transcript-import")
@@ -312,6 +327,9 @@ func validateImportOptions(opts ImportOptions) error {
 }
 
 func importTranscriptEvents(opts ImportOptions) ([]Event, error) {
+	// importTranscriptEvents keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	events, err := readJSONLEvents(opts.EventsJSONL)
 	if err != nil {
@@ -324,6 +342,9 @@ func importTranscriptEvents(opts ImportOptions) ([]Event, error) {
 }
 
 func normalizeTranscriptEvents(events []Event, opts ImportOptions) error {
+	// normalizeTranscriptEvents keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if len(events) == 0 {
 		return errors.New("interaction import-transcript requires at least one event")
@@ -337,6 +358,9 @@ func normalizeTranscriptEvents(events []Event, opts ImportOptions) error {
 }
 
 func normalizeTranscriptEvent(event *Event, opts ImportOptions) error {
+	// normalizeTranscriptEvent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := validateTranscriptEventTask(*event, opts); err != nil {
 		return err
@@ -352,6 +376,9 @@ func normalizeTranscriptEvent(event *Event, opts ImportOptions) error {
 }
 
 func validateTranscriptEventTask(event Event, opts ImportOptions) error {
+	// validateTranscriptEventTask keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if event.TaskID != opts.TaskID {
 
 		return fmt.Errorf("event task_id %q does not match import task_id", event.TaskID)
@@ -360,6 +387,9 @@ func validateTranscriptEventTask(event Event, opts ImportOptions) error {
 }
 
 func validateTranscriptEventSource(event Event) error {
+	// validateTranscriptEventSource keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if event.Source.SourceType == SourceAgentReported {
 		return errors.New("agent-reported interaction is not accepted as event evidence")
@@ -371,6 +401,9 @@ func validateTranscriptEventSource(event Event) error {
 }
 
 func NewObservedEvent(opts RelayOptions, body []byte, sequence int) (Event, error) {
+	// NewObservedEvent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := validateObservedEventOptions(opts); err != nil {
 		return Event{}, err
@@ -382,6 +415,9 @@ func NewObservedEvent(opts RelayOptions, body []byte, sequence int) (Event, erro
 }
 
 func validateObservedEventOptions(opts RelayOptions) error {
+	// validateObservedEventOptions keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if err := validateObservedEventIDs(opts); err != nil {
 		return err
 	}
@@ -390,6 +426,9 @@ func validateObservedEventOptions(opts RelayOptions) error {
 }
 
 func validateObservedEventIDs(opts RelayOptions) error {
+	// validateObservedEventIDs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := validateSafeID("task_id", opts.TaskID); err != nil {
 		return err
@@ -400,6 +439,9 @@ func validateObservedEventIDs(opts RelayOptions) error {
 	return validateObservedActorID(opts)
 }
 func validateObservedActorID(opts RelayOptions) error {
+	// validateObservedActorID keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if opts.ActorID == "" {
 
 		opts.ActorID = opts.ActorType
@@ -407,6 +449,9 @@ func validateObservedActorID(opts RelayOptions) error {
 	return validateSafeID("actor_id", opts.ActorID)
 }
 func validateObservedEventCatalog(opts RelayOptions) error {
+	// validateObservedEventCatalog keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if !validActorType(opts.ActorType) {
 		return fmt.Errorf("unsupported actor_type %q", opts.ActorType)
@@ -418,6 +463,9 @@ func validateObservedEventCatalog(opts RelayOptions) error {
 }
 
 func observedEvent(opts RelayOptions, body []byte, sequence int) Event {
+	// observedEvent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if opts.ActorID == "" {
 		opts.ActorID = opts.ActorType
@@ -429,6 +477,9 @@ func observedEvent(opts RelayOptions, body []byte, sequence int) Event {
 }
 
 func observedEventRecord(opts RelayOptions, body []byte, id string, sequence int, now string) Event {
+	// observedEventRecord keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	event := observedEventIdentity(opts, id, sequence)
 	event.Source = observedRelaySource()
@@ -438,6 +489,9 @@ func observedEventRecord(opts RelayOptions, body []byte, id string, sequence int
 }
 
 func observedEventIdentity(opts RelayOptions, id string, sequence int) Event {
+	// observedEventIdentity keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	return Event{
 		SchemaVersion: SchemaVersion,
@@ -459,6 +513,9 @@ func observedEventIdentity(opts RelayOptions, id string, sequence int) Event {
 }
 
 func applyObservedEventContent(event *Event, taskID, id string, body []byte) {
+	// applyObservedEventContent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	event.ContentRef = interactionContentRef(taskID, id)
 	event.ContentDigest = interactionSHA256Hex(body)
@@ -466,6 +523,9 @@ func applyObservedEventContent(event *Event, taskID, id string, body []byte) {
 }
 
 func applyObservedEventAssessment(event *Event, now string) {
+	// applyObservedEventAssessment keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	event.Retention = RetentionSanitizedExcerpt
 	event.State = StateUnreferenced
@@ -499,6 +559,9 @@ func interactionSHA256Hex(body []byte) string {
 }
 
 func NewTrace(taskID, sourceType string, events []Event, now time.Time) Trace {
+	// NewTrace keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if now.IsZero() {
 		now = time.Now().UTC()
@@ -514,6 +577,9 @@ func newTraceAssessment() *traceAssessment {
 	return &traceAssessment{completeness: CompletenessComplete, assessment: "assessed"}
 }
 func (state *traceAssessment) applyCompleteness(completeness string) {
+	// applyCompleteness keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch completeness {
 	case CompletenessCannotVerify:
@@ -526,6 +592,9 @@ func (state *traceAssessment) applyCompleteness(completeness string) {
 }
 
 func (state *traceAssessment) markCannotVerify() {
+	// markCannotVerify keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	state.assessment = StateNotAssessed
 	state.completeness = CompletenessCannotVerify
@@ -533,6 +602,9 @@ func (state *traceAssessment) markCannotVerify() {
 }
 
 func (state *traceAssessment) markNotAssessed() {
+	// markNotAssessed keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if state.completeness != CompletenessCannotVerify {
 		state.assessment = StateNotAssessed
@@ -542,6 +614,9 @@ func (state *traceAssessment) markNotAssessed() {
 }
 
 func (state *traceAssessment) markPartial() {
+	// markPartial keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if state.completeness == CompletenessComplete {
 
 		state.assessment = "partial"
@@ -549,6 +624,9 @@ func (state *traceAssessment) markPartial() {
 	}
 }
 func traceFromAssessment(taskID, sourceType string, events []Event, now time.Time, state *traceAssessment) Trace {
+	// traceFromAssessment keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	stamp := now.UTC().Format(time.RFC3339)
 	return Trace{
@@ -567,6 +645,9 @@ func traceFromAssessment(taskID, sourceType string, events []Event, now time.Tim
 }
 
 func ValidateEvent(event Event) error {
+	// ValidateEvent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	return firstValidationError(
 		func() error { return validateEventIdentity(event) },
@@ -579,6 +660,9 @@ func ValidateEvent(event Event) error {
 }
 
 func firstValidationError(checks ...func() error) error {
+	// firstValidationError keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, check := range checks {
 		if err := check(); err != nil {
@@ -589,6 +673,9 @@ func firstValidationError(checks ...func() error) error {
 }
 
 func validateEventIdentity(event Event) error {
+	// validateEventIdentity keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if event.SchemaVersion != SchemaVersion {
 		return errors.New("interaction event has unsupported schema_version")
@@ -600,6 +687,9 @@ func validateEventIdentity(event Event) error {
 }
 
 func validateEventPrimaryIDs(event Event) error {
+	// validateEventPrimaryIDs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if err := validateSafeID("interaction_id", event.InteractionID); err != nil {
 
 		return err
@@ -608,6 +698,9 @@ func validateEventPrimaryIDs(event Event) error {
 }
 
 func validateEventOptionalIDs(event Event) error {
+	// validateEventOptionalIDs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if err := validateOptionalSafeID("operation_id", event.OperationID); err != nil {
 
 		return err
@@ -616,6 +709,9 @@ func validateEventOptionalIDs(event Event) error {
 }
 
 func validateOptionalSafeID(label, value string) error {
+	// validateOptionalSafeID keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if value == "" {
 
 		return nil
@@ -624,6 +720,9 @@ func validateOptionalSafeID(label, value string) error {
 }
 
 func validateEventCatalog(event Event) error {
+	// validateEventCatalog keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := validateSafeID("actor.id", event.Actor.ID); err != nil {
 		return err
@@ -637,6 +736,9 @@ func validateEventCatalog(event Event) error {
 	return validateEventRetentionStates(event)
 }
 func validateEventTypeAndFriction(event Event) error {
+	// validateEventTypeAndFriction keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if !validEventType(event.EventType) {
 		return fmt.Errorf("unsupported event_type %q", event.EventType)
@@ -648,6 +750,9 @@ func validateEventTypeAndFriction(event Event) error {
 }
 
 func validateEventActorAndState(event Event) error {
+	// validateEventActorAndState keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if !validActorType(event.Actor.ActorType) {
 		return fmt.Errorf("unsupported actor_type %q", event.Actor.ActorType)
@@ -659,6 +764,9 @@ func validateEventActorAndState(event Event) error {
 }
 
 func validateEventRetentionStates(event Event) error {
+	// validateEventRetentionStates keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if !validRetention(event.Retention) {
 		return fmt.Errorf("unsupported retention %q", event.Retention)
@@ -673,6 +781,9 @@ func validateEventRetentionStates(event Event) error {
 }
 
 func validateEventSource(event Event) error {
+	// validateEventSource keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if !validSourceType(event.Source.SourceType) {
 		return fmt.Errorf("unsupported source_type %q", event.Source.SourceType)
@@ -684,6 +795,9 @@ func validateEventSource(event Event) error {
 }
 
 func validateEventContent(event Event) error {
+	// validateEventContent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if err := validateEventDigest(event); err != nil {
 		return err
 	}
@@ -692,6 +806,9 @@ func validateEventContent(event Event) error {
 }
 
 func validateEventDigest(event Event) error {
+	// validateEventDigest keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if event.DigestAlgorithm != DigestAlgorithmSHA256 || !sha256Pattern.MatchString(event.ContentDigest) {
 
 		return errors.New("interaction event requires sha256 content digest")
@@ -700,6 +817,9 @@ func validateEventDigest(event Event) error {
 }
 
 func validateEventContentRef(event Event) error {
+	// validateEventContentRef keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := validateContentRefFormat(event.ContentRef); err != nil {
 		return err
@@ -710,6 +830,9 @@ func validateEventContentRef(event Event) error {
 	return nil
 }
 func validateContentRefFormat(contentRef string) error {
+	// validateContentRefFormat keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if contentRef != "" && !contentRefPattern.MatchString(contentRef) {
 
 		return fmt.Errorf("unsupported content_ref %q", contentRef)
@@ -718,6 +841,9 @@ func validateContentRefFormat(contentRef string) error {
 }
 
 func validateEventTiming(event Event) error {
+	// validateEventTiming keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if _, err := time.Parse(time.RFC3339, event.ObservedAt); err != nil {
 		return errors.New("observed_at must be RFC3339")
@@ -732,6 +858,9 @@ func validateEventTiming(event Event) error {
 }
 
 func validateEventRefs(event Event) error {
+	// validateEventRefs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if err := validateReferenceRefs(event.ReferenceRefs); err != nil {
 
 		return err
@@ -740,6 +869,9 @@ func validateEventRefs(event Event) error {
 }
 
 func validateReferenceRefs(refs []string) error {
+	// validateReferenceRefs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, ref := range refs {
 		if !validReference(ref) {
@@ -750,6 +882,9 @@ func validateReferenceRefs(refs []string) error {
 }
 
 func validateLLMRefs(refs []LLMRef) error {
+	// validateLLMRefs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, ref := range refs {
 		if !validLLMLinkageState(ref.LinkageState) {
@@ -763,6 +898,9 @@ func validLLMLinkageState(state string) bool {
 	return state == StateNotAssessed || state == StateCannotVerify || state == StateReferenced
 }
 func WriteTrace(path string, trace Trace) error {
+	// WriteTrace keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if strings.TrimSpace(path) == "" {
 		return errors.New("interaction command requires --out")
@@ -778,6 +916,9 @@ func WriteTrace(path string, trace Trace) error {
 }
 
 func WriteContentBlobs(tracePath string, trace Trace, bodies map[string][]byte) error {
+	// WriteContentBlobs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, event := range trace.Events {
 		body, ok := bodies[event.InteractionID]
@@ -792,6 +933,9 @@ func WriteContentBlobs(tracePath string, trace Trace, bodies map[string][]byte) 
 }
 
 func writeContentBlob(tracePath string, event Event, body []byte) error {
+	// writeContentBlob keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	sum := sha256.Sum256(body)
 	if event.ContentDigest != hex.EncodeToString(sum[:]) {
@@ -822,6 +966,9 @@ func ReadTrace(path string) (Trace, error) {
 }
 
 func ValidateTrace(trace Trace) error {
+	// ValidateTrace keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if trace.SchemaVersion != SchemaVersion {
 		return errors.New("interaction trace has unsupported schema_version")
@@ -836,6 +983,9 @@ func ValidateTrace(trace Trace) error {
 }
 
 func validateTraceHeader(trace Trace) error {
+	// validateTraceHeader keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if err := validateSafeID("task_id", trace.TaskID); err != nil {
 		return err
@@ -850,6 +1000,9 @@ func validateTraceHeader(trace Trace) error {
 }
 
 func validateTraceEvents(trace Trace) error {
+	// validateTraceEvents keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, event := range trace.Events {
 		if event.TaskID != trace.TaskID {
@@ -862,6 +1015,9 @@ func validateTraceEvents(trace Trace) error {
 	return nil
 }
 func SummarizeTrace(trace Trace) Summary {
+	// SummarizeTrace keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	summary := newTraceSummaryCounter()
 	for _, event := range trace.Events {
@@ -875,6 +1031,9 @@ func SummarizeTrace(trace Trace) Summary {
 	return traceSummary(trace, summary, notAssessed)
 }
 func traceSummary(trace Trace, summary *traceSummaryCounter, notAssessed []string) Summary {
+	// traceSummary keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	counts := traceSummaryCounts(trace, summary)
 	return Summary{
@@ -896,6 +1055,9 @@ func traceSummary(trace Trace, summary *traceSummaryCounter, notAssessed []strin
 }
 
 func traceSummaryCounts(trace Trace, summary *traceSummaryCounter) traceCounts {
+	// traceSummaryCounts keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	return traceCounts{
 		events:         len(trace.Events),
@@ -914,6 +1076,9 @@ func newTraceSummaryCounter() *traceSummaryCounter {
 }
 
 func summarizeTraceEvent(event Event, summary *traceSummaryCounter) {
+	// summarizeTraceEvent keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	summary.frictionCounts[event.FrictionClass]++
 	if event.EventType == "task_assignment" {
@@ -925,6 +1090,9 @@ func summarizeTraceEvent(event Event, summary *traceSummaryCounter) {
 }
 
 func summarizeTraceEventTypeCounters(eventType string, summary *traceSummaryCounter) {
+	// summarizeTraceEventTypeCounters keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch eventType {
 	case "plan_rejected":
@@ -937,6 +1105,9 @@ func summarizeTraceEventTypeCounters(eventType string, summary *traceSummaryCoun
 }
 
 func summarizeTraceReferenceAndCorrection(event Event, summary *traceSummaryCounter) {
+	// summarizeTraceReferenceAndCorrection keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if eventIsUnreferenced(event) {
 		summary.unreferencedCount++
@@ -951,6 +1122,9 @@ func eventIsUnreferenced(event Event) bool {
 }
 
 func isPostAssignmentCorrection(eventType string) bool {
+	// isPostAssignmentCorrection keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch eventType {
 	case "corrective_feedback", "boundary_violation", "evidence_correction":
@@ -978,6 +1152,9 @@ func ReadEnvelope(path string) (Envelope, error) {
 }
 
 func ValidateEnvelope(envelope Envelope) error {
+	// ValidateEnvelope keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if envelope.SchemaVersion != SchemaVersion {
 		return errors.New("delivery envelope has unsupported schema_version")
@@ -992,6 +1169,9 @@ func ValidateEnvelope(envelope Envelope) error {
 }
 
 func validateEnvelopeIdentity(envelope Envelope) error {
+	// validateEnvelopeIdentity keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 	if err := validateSafeID("task_id", envelope.TaskID); err != nil {
 
 		return err
@@ -999,6 +1179,9 @@ func validateEnvelopeIdentity(envelope Envelope) error {
 	return validateSafeID("envelope_id", envelope.EnvelopeID)
 }
 func validateEnvelopeRunRefs(refs []string) error {
+	// validateEnvelopeRunRefs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, ref := range refs {
 		if !runRefPattern.MatchString(ref) {
@@ -1009,6 +1192,9 @@ func validateEnvelopeRunRefs(refs []string) error {
 }
 
 func validateEnvelopeRefs(envelope Envelope) error {
+	// validateEnvelopeRefs keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	for _, refs := range envelopeReferenceGroups(envelope) {
 		for _, ref := range refs {
@@ -1029,6 +1215,9 @@ func SummarizeEnvelope(envelope Envelope) Summary {
 }
 
 func envelopeSummary(envelope Envelope, counts envelopeRefCounts) Summary {
+	// envelopeSummary keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	return Summary{
 		SchemaVersion: SchemaVersion,
@@ -1056,6 +1245,9 @@ func envelopeSummary(envelope Envelope, counts envelopeRefCounts) Summary {
 }
 
 func envelopeReferenceCounts(envelope Envelope) envelopeRefCounts {
+	// envelopeReferenceCounts keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	counts := primaryEnvelopeReferenceCounts(envelope)
 	addExecutionEnvelopeReferenceCounts(&counts, envelope)
@@ -1063,6 +1255,9 @@ func envelopeReferenceCounts(envelope Envelope) envelopeRefCounts {
 }
 
 func primaryEnvelopeReferenceCounts(envelope Envelope) envelopeRefCounts {
+	// primaryEnvelopeReferenceCounts keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	run := len(envelope.RunRefs)
 	source := len(envelope.SourceRefs)
@@ -1073,6 +1268,9 @@ func primaryEnvelopeReferenceCounts(envelope Envelope) envelopeRefCounts {
 }
 
 func addExecutionEnvelopeReferenceCounts(counts *envelopeRefCounts, envelope Envelope) {
+	// addExecutionEnvelopeReferenceCounts keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	counts.interaction = len(envelope.InteractionRefs)
 	counts.operation = len(envelope.OperationRefs)
@@ -1085,6 +1283,9 @@ func addExecutionEnvelopeReferenceCounts(counts *envelopeRefCounts, envelope Env
 }
 
 func normalizeRelay(opts RelayOptions) RelayOptions {
+	// normalizeRelay keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	opts.TaskID = strings.TrimSpace(opts.TaskID)
 	opts.ActorType = strings.TrimSpace(opts.ActorType)
@@ -1098,6 +1299,9 @@ func normalizeRelay(opts RelayOptions) RelayOptions {
 }
 
 func defaultRelayOptions(opts RelayOptions) RelayOptions {
+	// defaultRelayOptions keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	opts = defaultRelayStrings(opts)
 	if opts.Now.IsZero() {
@@ -1107,6 +1311,9 @@ func defaultRelayOptions(opts RelayOptions) RelayOptions {
 }
 
 func defaultRelayStrings(opts RelayOptions) RelayOptions {
+	// defaultRelayStrings keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if opts.ActorType == "" {
 		opts.ActorType = "human_user"
@@ -1120,6 +1327,9 @@ func defaultRelayStrings(opts RelayOptions) RelayOptions {
 	return opts
 }
 func normalizeImport(opts ImportOptions) ImportOptions {
+	// normalizeImport keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	opts.TaskID = strings.TrimSpace(opts.TaskID)
 	opts.Source = strings.TrimSpace(opts.Source)
@@ -1153,6 +1363,9 @@ func readBody(stdin io.Reader) ([]byte, error) {
 }
 
 func readJSONLEvents(path string) ([]Event, error) {
+	// readJSONLEvents keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -1162,6 +1375,9 @@ func readJSONLEvents(path string) ([]Event, error) {
 	return scanJSONLEvents(file)
 }
 func scanJSONLEvents(file *os.File) ([]Event, error) {
+	// scanJSONLEvents keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), MaxBodyBytes*4)
@@ -1191,6 +1407,9 @@ func appendJSONLEventLine(events []Event, text string) ([]Event, error) {
 }
 
 func parseJSONLEventLine(text string, event *Event) (bool, error) {
+	// parseJSONLEventLine keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	line := strings.TrimSpace(text)
 	if line == "" {
@@ -1203,6 +1422,9 @@ func parseJSONLEventLine(text string, event *Event) (bool, error) {
 }
 
 func validateOrdering(events []Event) error {
+	// validateOrdering keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	last := map[string]int{}
 	seen := map[string]bool{}
@@ -1218,6 +1440,9 @@ func validateOrdering(events []Event) error {
 }
 
 func runForward(ctx context.Context, command []string, body []byte, stdout, stderr io.Writer) (int, error) {
+	// runForward keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Stdin = bytes.NewReader(body)
@@ -1235,6 +1460,9 @@ func runForward(ctx context.Context, command []string, body []byte, stdout, stde
 }
 
 func validateSafeID(label, value string) error {
+	// validateSafeID keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -1246,6 +1474,9 @@ func validateSafeID(label, value string) error {
 	return nil
 }
 func unsafeCount(body []byte) int {
+	// unsafeCount keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	text := string(body)
 	count := 0
@@ -1256,6 +1487,9 @@ func unsafeCount(body []byte) int {
 }
 
 func randomHex(n int) string {
+	// randomHex keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	buf := make([]byte, n)
 	if _, err := rand.Read(buf); err != nil {
@@ -1266,6 +1500,9 @@ func randomHex(n int) string {
 }
 
 func validActorType(value string) bool {
+	// validActorType keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch value {
 	case "human_user", "human_role", "human_group", "ai_agent", "model", "system", "tool", "organization", "other":
@@ -1276,6 +1513,9 @@ func validActorType(value string) bool {
 }
 
 func validSourceType(value string) bool {
+	// validSourceType keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch value {
 	case SourceObservedControlChannel, SourcePreclassifiedTranscript:
@@ -1290,6 +1530,9 @@ func validEventType(value string) bool {
 }
 
 func validRetention(value string) bool {
+	// validRetention keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch value {
 	case RetentionDigestOnly, RetentionSanitizedExcerpt, RetentionEncryptedRawRef, RetentionExternalArtifactRef, RetentionNotAssessed:
@@ -1300,6 +1543,9 @@ func validRetention(value string) bool {
 }
 
 func validCompleteness(value string) bool {
+	// validCompleteness keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch value {
 	case CompletenessComplete, CompletenessPartial, CompletenessNotAssessed, CompletenessCannotVerify:
@@ -1310,6 +1556,9 @@ func validCompleteness(value string) bool {
 }
 
 func validChannelExclusivity(value string) bool {
+	// validChannelExclusivity keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch value {
 	case ChannelExclusivityNotAssessed, StateReferenced, StateCannotVerify:
@@ -1319,6 +1568,9 @@ func validChannelExclusivity(value string) bool {
 	}
 }
 func validEventState(value string) bool {
+	// validEventState keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	switch value {
 	case StateObserved, StateReferenced, StateUnreferenced, StateNotAssessed, StateCannotVerify, "redacted":
@@ -1333,6 +1585,9 @@ func frictionClass(eventType string) string {
 }
 
 func validReference(ref string) bool {
+	// validReference keeps interaction trace evidence explicit and source-bound.
+	// Relay, import, validation, envelope, summary, and retention states stay separate.
+	// This helper records or renders observed interaction data; it does not create external proof.
 
 	if strings.TrimSpace(ref) == "" || strings.Contains(ref, " ") {
 		return false

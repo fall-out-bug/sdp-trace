@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 840 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 755 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -383,6 +383,17 @@ function-MI rows, and file MI improves from 6.2 to 18.5 while remaining below
 70. Repository absolute file MI remains 15 failure rows plus the raw
 `exit status 1` line; absolute function MI drops to 840 failure rows plus the
 raw `exit status 1` line.
+
+The `internal/interaction/interaction.go` in-place trust-boundary comment pass
+kept existing function baseline keys stable while documenting relay forwarding,
+transcript import, observed event construction, trace assessment, event
+validation, content blob persistence, trace validation, summary rendering,
+envelope reference counting, normalization, JSONL scanning, ordering, safe-ID
+validation, and catalog predicates. Focused `internal/interaction` tests pass,
+`internal/interaction` has zero absolute function-MI rows, and file MI improves
+from 0.0 to 7.0 while remaining below 70. Repository absolute file MI remains
+15 failure rows plus the raw `exit status 1` line; absolute function MI drops
+to 755 failure rows plus the raw `exit status 1` line.
 
 ## File-Level Failures
 
