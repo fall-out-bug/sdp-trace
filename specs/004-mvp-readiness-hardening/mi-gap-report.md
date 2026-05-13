@@ -478,6 +478,12 @@ plus the raw `exit status 1` line.
 3. Treat tool MI separately from product MI. Tool files are already under CRAP,
    complexity, coverage, and ratchet gates; absolute file MI remains low because
    the current MI formula penalizes compact parser/analyzer files heavily.
+4. Do not repeat the naive `internal/query/querypack.go` split shape. A coarse
+   same-package split multiplied file-MI failures, and a later generated
+   fine-grained split plus worker retry produced invalid Go before being
+   restored. Future query-pack file-MI work needs a hand-reviewed vertical
+   extraction with focused package tests and package-level file-MI replay after
+   each move.
 4. Update this report after each MI retirement slice with the same two commands
    above, and only remove the `assessed_gap` label when both absolute commands
    exit `0`.

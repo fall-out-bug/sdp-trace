@@ -472,3 +472,12 @@ Unusable attempts:
   behavior-preserving extraction that passed focused tests but increased the
   absolute file-MI failure list, so the output was discarded and not counted as
   implementation evidence.
+- 2026-05-13 local `internal/query/querypack.go` file-layout experiments split
+  the query pack into coarse and then fine-grained same-package files, but the
+  coarse split multiplied file-MI failures and the generated fine split was
+  syntactically invalid. Both outputs were restored before commit and are not
+  counted as implementation evidence.
+- Worker `019e2178-6a41-7031-afbc-7efd9566d4fe` was assigned the same
+  `internal/query/querypack.go` file-MI slice but timed out, was shut down, and
+  left a broken shared-workspace diff where `internal/query` did not compile.
+  The output was restored and is not counted as worker evidence.
