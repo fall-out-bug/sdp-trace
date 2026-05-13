@@ -23,7 +23,7 @@ The objective is complete only when all of the following have live evidence:
 | DX review | Command docs and examples are checked against live CLI behavior where command surface changed. | `pass_with_advisory_findings`: `go run ./cmd/sdp-trace --help`, `go run ./tools/doccheck`, and PI reviewer `run_Xi0eO498u-` completed. Advisory follow-ups remain for machine-readable command surface, usage generation, shell completion, and package navigation. |
 | UX review | Human-facing packets, summaries, reports, and explanations remain readable and do not overclaim. | `pass_with_advisory_findings`: CLI top-level help renders current commands, docs command-surface checks pass, and no reviewer found misleading output claims. Shell completion/progressive flag discovery remains an advisory DX follow-up. |
 | Documentation completeness | README/docs/schema/example docs cover changed behavior and trust scope without external-trust overclaims. | `pass_with_advisory_findings`: `go run ./tools/doccheck` passes and docs now record strict `> 70` MI evidence; schema README generation/validation remains an advisory follow-up. |
-| CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `pass_for_current_head`: PR #43 `verify` passed for head `0c49053` in GitHub Actions run `25813868920`. Re-query after any new push; checked-in source text is not live CI authority for future heads. |
+| CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `requires_live_query`: checked-in source text is not live CI authority. Re-query PR #43 after any push and bind any `verify` pass to the exact head outside this file. |
 | MVP ready-state closure | PR opened, PR-level review planes complete, named reviewer sign-off recorded, and merge held until approval. | `not_assessed_for_merge`: draft PR #43 is open. This polish audit is not a merge approval or named reviewer sign-off. |
 
 ## Prompt-To-Artifact Checklist
@@ -91,7 +91,7 @@ The latest local verification replayed:
 
 All listed local commands exited 0. Absolute file MI and absolute function MI
 without baselines now exit 0 with no failure output for Go under `cmd`,
-`internal`, and `tools` at threshold `70.1`. PR #43 `verify` passed for head
-`0c49053`; the check must be live-queried again after any future push, because
-this checked-in file does not by itself prove CI-backed closure for future
-heads.
+`internal`, and `tools` at threshold `70.1`. PR #43 `verify` must be
+live-queried after each push and bound to the exact head outside this file,
+because checked-in source text does not by itself prove CI-backed closure for
+future heads.
