@@ -327,6 +327,9 @@ type PlaneResult struct {
 }
 
 func BuildPacket(opts PacketOptions) (Packet, error) {
+	// BuildPacket keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if err := validatePacketOptions(opts); err != nil {
 		return Packet{}, err
@@ -338,6 +341,9 @@ func BuildPacket(opts PacketOptions) (Packet, error) {
 }
 
 func buildPacketInPreparedDir(opts PacketOptions) (Packet, error) {
+	// buildPacketInPreparedDir keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	now, createdBy, ciState := packetDefaults(opts)
 	refs, err := buildPacketRefs(opts)
@@ -352,6 +358,9 @@ func buildPacketInPreparedDir(opts PacketOptions) (Packet, error) {
 }
 
 func finalizePacket(outDir string, packet *Packet) error {
+	// finalizePacket keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	digest, err := packetDigest(*packet)
 	if err != nil {
@@ -362,6 +371,9 @@ func finalizePacket(outDir string, packet *Packet) error {
 }
 
 func newPacket(opts PacketOptions, refs packetRefs, now time.Time, createdBy, ciState string) Packet {
+	// newPacket keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	packet := newPacketIdentity(opts)
 	attachPacketRefs(&packet, refs)
@@ -371,6 +383,9 @@ func newPacket(opts PacketOptions, refs packetRefs, now time.Time, createdBy, ci
 }
 
 func newPacketIdentity(opts PacketOptions) Packet {
+	// newPacketIdentity keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	return Packet{
 		SchemaVersion:  SchemaVersionPacket,
@@ -384,6 +399,9 @@ func newPacketIdentity(opts PacketOptions) Packet {
 }
 
 func attachPacketRefs(packet *Packet, refs packetRefs) {
+	// attachPacketRefs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	packet.DiffRef = refs.diff
 	packet.MetadataRef = refs.metadata
@@ -392,6 +410,9 @@ func attachPacketRefs(packet *Packet, refs packetRefs) {
 }
 
 func attachPacketProvenance(packet *Packet, now time.Time, createdBy, ciState string) {
+	// attachPacketProvenance keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	packet.CIState = ciState
 	packet.CreatedAt = now.Format(time.RFC3339)
@@ -406,6 +427,9 @@ type packetRefs struct {
 }
 
 func packetDefaults(opts PacketOptions) (time.Time, string, string) {
+	// packetDefaults keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	now := opts.Now
 	if now.IsZero() {
@@ -425,6 +449,9 @@ func packetDefaults(opts PacketOptions) (time.Time, string, string) {
 }
 
 func buildPacketRefs(opts PacketOptions) (packetRefs, error) {
+	// buildPacketRefs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	inputDir := filepath.Join(opts.OutDir, "inputs")
 
 	if err := os.MkdirAll(inputDir, 0o755); err != nil {
@@ -434,6 +461,9 @@ func buildPacketRefs(opts PacketOptions) (packetRefs, error) {
 }
 
 func collectPacketRefs(inputDir string, opts PacketOptions) (packetRefs, error) {
+	// collectPacketRefs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	diffRef, err := copyDiffRef(inputDir, opts.DiffPath)
 	if err != nil {
@@ -443,6 +473,9 @@ func collectPacketRefs(inputDir string, opts PacketOptions) (packetRefs, error) 
 }
 
 func collectOptionalPacketRefs(inputDir string, opts PacketOptions, diffRef SafeRef) (packetRefs, error) {
+	// collectOptionalPacketRefs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	metadataRef, err := optionalMetadataRef(inputDir, opts.MetadataPath)
 	if err != nil {
@@ -460,6 +493,9 @@ func copyDiffRef(inputDir, diffPath string) (SafeRef, error) {
 }
 
 func packetRefsWithVerification(inputDir string, opts PacketOptions, diffRef SafeRef, metadataRef *SafeRef, contextRefs []SafeRef) (packetRefs, error) {
+	// packetRefsWithVerification keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	verificationRefs, err := packetVerificationRefs(inputDir, opts.VerificationPaths)
 	if err != nil {
@@ -469,6 +505,9 @@ func packetRefsWithVerification(inputDir string, opts PacketOptions, diffRef Saf
 }
 
 func optionalMetadataRef(inputDir, metadataPath string) (*SafeRef, error) {
+	// optionalMetadataRef keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if strings.TrimSpace(metadataPath) == "" {
 		return nil, nil
@@ -481,6 +520,9 @@ func optionalMetadataRef(inputDir, metadataPath string) (*SafeRef, error) {
 }
 
 func packetContextRefs(inputDir string, paths []string) ([]SafeRef, error) {
+	// packetContextRefs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	refs, err := copyInputs(inputDir, "context", paths)
 	if err != nil {
 		return nil, err
@@ -493,6 +535,9 @@ func packetContextRefs(inputDir string, paths []string) ([]SafeRef, error) {
 }
 
 func packetVerificationRefs(inputDir string, paths []string) ([]SafeRef, error) {
+	// packetVerificationRefs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	refs, err := copyInputs(inputDir, "verification", paths)
 	if err != nil {
 		return nil, err
@@ -505,6 +550,9 @@ func packetVerificationRefs(inputDir string, paths []string) ([]SafeRef, error) 
 }
 
 func unavailablePacketFields(opts PacketOptions) []UnavailableField {
+	// unavailablePacketFields keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	fields := []UnavailableField{}
 	if strings.TrimSpace(opts.MetadataPath) == "" {
@@ -522,6 +570,9 @@ func unavailablePacketFields(opts PacketOptions) []UnavailableField {
 	return fields
 }
 func RunReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *RunPreview, error) {
+	// RunReview keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if err := validateProfile(profile); err != nil {
 		return RunSet{}, nil, err
@@ -534,6 +585,9 @@ func RunReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *
 }
 
 func normalizeRunOptions(opts RunOptions) RunOptions {
+	// normalizeRunOptions keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if opts.Now.IsZero() {
 
 		opts.Now = time.Now().UTC()
@@ -546,6 +600,9 @@ func normalizeRunOptions(opts RunOptions) RunOptions {
 }
 
 func runReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *RunPreview, error) {
+	// runReview keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	rawDir, err := prepareRunDirectories(opts.OutDir)
 	if err != nil {
@@ -564,6 +621,9 @@ func runReview(packet Packet, profile ReviewProfile, opts RunOptions) (RunSet, *
 }
 
 func prepareRunDirectories(outDir string) (string, error) {
+	// prepareRunDirectories keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if err := ensureNewDir(outDir); err != nil {
 		return "", err
 	}
@@ -576,6 +636,9 @@ func prepareRunDirectories(outDir string) (string, error) {
 }
 
 func runReviewRoles(packet Packet, roles []ReviewRole, opts RunOptions, rawDir string) ([]ReviewerResult, error) {
+	// runReviewRoles keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	results := make([]ReviewerResult, 0, len(roles))
 	for _, role := range roles {
@@ -588,6 +651,9 @@ func runReviewRoles(packet Packet, roles []ReviewRole, opts RunOptions, rawDir s
 	return results, nil
 }
 func SynthesizeLedger(packet Packet, runs RunSet, existing *Ledger) Ledger {
+	// SynthesizeLedger keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	findings := synthesizeLedgerFindings(runs, existingFindings(existing))
 	sort.Slice(findings, func(i, j int) bool { return findings[i].ID < findings[j].ID })
@@ -595,6 +661,9 @@ func SynthesizeLedger(packet Packet, runs RunSet, existing *Ledger) Ledger {
 }
 
 func existingFindings(existing *Ledger) map[string]LedgerFinding {
+	// existingFindings keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	byFinding := map[string]LedgerFinding{}
 	if existing != nil {
@@ -606,6 +675,9 @@ func existingFindings(existing *Ledger) map[string]LedgerFinding {
 }
 
 func synthesizeLedgerFindings(runs RunSet, byFinding map[string]LedgerFinding) []LedgerFinding {
+	// synthesizeLedgerFindings keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	findings := []LedgerFinding{}
 	for _, result := range runs.Results {
@@ -617,6 +689,9 @@ func synthesizeLedgerFindings(runs RunSet, byFinding map[string]LedgerFinding) [
 }
 
 func ledgerFindingFromReviewFinding(result ReviewerResult, finding Finding, byFinding map[string]LedgerFinding) LedgerFinding {
+	// ledgerFindingFromReviewFinding keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	id := ledgerFindingID(result, finding)
 	return LedgerFinding{
@@ -633,6 +708,9 @@ func ledgerFindingFromReviewFinding(result ReviewerResult, finding Finding, byFi
 }
 
 func ledgerFindingID(result ReviewerResult, finding Finding) string {
+	// ledgerFindingID keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if finding.ID != "" {
 		return finding.ID
 	}
@@ -641,6 +719,9 @@ func ledgerFindingID(result ReviewerResult, finding Finding) string {
 }
 
 func carriedLedgerDisposition(id string, finding Finding, byFinding map[string]LedgerFinding) string {
+	// carriedLedgerDisposition keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if prior, ok := byFinding[id]; ok && prior.Disposition != "" {
 
 		return prior.Disposition
@@ -648,6 +729,9 @@ func carriedLedgerDisposition(id string, finding Finding, byFinding map[string]L
 	return defaultDisposition(finding.Severity)
 }
 func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) Validation {
+	// Validate keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	required := requiredPlaneSet(profile.RequiredPlanes)
 	reasons := []string{}
@@ -661,6 +745,9 @@ func Validate(packet Packet, profile ReviewProfile, runs RunSet, ledger Ledger) 
 }
 
 func reviewRolesByID(roles []ReviewRole) map[string]ReviewRole {
+	// reviewRolesByID keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	roleByID := map[string]ReviewRole{}
 	for _, role := range roles {
 
@@ -670,6 +757,9 @@ func reviewRolesByID(roles []ReviewRole) map[string]ReviewRole {
 }
 
 func validationResult(packet Packet, planeResults []PlaneResult, findings []LedgerFinding, state string, reasons, nextActions []string) Validation {
+	// validationResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	return Validation{
 		SchemaVersion:       SchemaVersionValidation,
@@ -688,6 +778,9 @@ func validationResult(packet Packet, planeResults []PlaneResult, findings []Ledg
 }
 
 func requiredPlaneSet(planes []string) map[string]bool {
+	// requiredPlaneSet keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	required := map[string]bool{}
 	for _, plane := range planes {
 		if plane != "" {
@@ -699,6 +792,9 @@ func requiredPlaneSet(planes []string) map[string]bool {
 }
 
 func appendDigestValidation(packet Packet, runs RunSet, ledger Ledger, reasons, nextActions *[]string) bool {
+	// appendDigestValidation keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	cannotVerify := false
 	if packetDigestMismatch(packet, runs, ledger) {
@@ -720,12 +816,18 @@ func packetDigestMismatch(packet Packet, runs RunSet, ledger Ledger) bool {
 }
 
 func appendValidationAction(reasons, nextActions *[]string, reason, nextAction string) {
+	// appendValidationAction keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	*reasons = append(*reasons, reason)
 	*nextActions = append(*nextActions, nextAction)
 }
 
 func validateRequiredPlanes(required map[string]bool, roleByID map[string]ReviewRole, runs RunSet, reasons, nextActions *[]string) ([]PlaneResult, int, bool) {
+	// validateRequiredPlanes keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	planeResults := make([]PlaneResult, 0, len(required))
 	usableCount := 0
@@ -741,6 +843,9 @@ func validateRequiredPlanes(required map[string]bool, roleByID map[string]Review
 }
 
 func requiredPlaneResult(plane string, roleByID map[string]ReviewRole, runs RunSet, reasons, nextActions *[]string) PlaneResult {
+	// requiredPlaneResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	result := bestPlaneResult(plane, roleByID, runs)
 	appendPlaneValidationNotes(result, reasons, nextActions)
@@ -755,6 +860,9 @@ func boolCount(value bool) int {
 }
 
 func appendPlaneValidationNotes(result PlaneResult, reasons, nextActions *[]string) {
+	// appendPlaneValidationNotes keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if result.Reason != "" {
 
 		*reasons = append(*reasons, fmt.Sprintf("%s:%s", result.Plane, result.Status))
@@ -766,6 +874,9 @@ func appendPlaneValidationNotes(result PlaneResult, reasons, nextActions *[]stri
 }
 
 func bestPlaneResult(plane string, roleByID map[string]ReviewRole, runs RunSet) PlaneResult {
+	// bestPlaneResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	best := PlaneResult{Plane: plane, Status: StateNotAssessed, Usable: false, Reason: "required_plane_not_assessed", NextAction: "Run or import a reviewer result for this plane."}
 	for _, result := range runs.Results {
@@ -778,6 +889,9 @@ func bestPlaneResult(plane string, roleByID map[string]ReviewRole, runs RunSet) 
 }
 
 func planeResultWithModelCheck(role ReviewRole, result ReviewerResult) PlaneResult {
+	// planeResultWithModelCheck keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	best := planeResult(result)
 	if best.Usable && modelMismatchWithoutFallback(role, result) {
@@ -790,6 +904,9 @@ func planeResultWithModelCheck(role ReviewRole, result ReviewerResult) PlaneResu
 }
 
 func planeCannotVerify(status string) bool {
+	// planeCannotVerify keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	switch status {
 
 	case StatusCannotVerify, StatusTimedOut, StatusEmptyOutput, StatusOffTask, StatusParseFailed:
@@ -800,6 +917,9 @@ func planeCannotVerify(status string) bool {
 }
 
 func validateLedgerFindings(packet Packet, ledger Ledger, reasons *[]string) ([]LedgerFinding, bool, bool) {
+	// validateLedgerFindings keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	unresolved := false
 	cannotVerify := false
@@ -818,6 +938,9 @@ func ledgerFindingUnresolved(finding LedgerFinding) bool {
 }
 
 func appendCitationReasonIfUnresolvable(packet Packet, finding LedgerFinding, reasons *[]string) bool {
+	// appendCitationReasonIfUnresolvable keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if citationResolvable(packet, finding.Citation) {
 		return false
 	}
@@ -827,6 +950,9 @@ func appendCitationReasonIfUnresolvable(packet Packet, finding LedgerFinding, re
 }
 
 func reviewCoverageState(required map[string]bool, usableCount int, cannotVerify, unresolved bool) string {
+	// reviewCoverageState keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if cannotVerify {
 		return CoverageCannotVerify
@@ -842,6 +968,9 @@ func noReviewCoverage(required map[string]bool, usableCount int) bool {
 }
 
 func assessedReviewCoverageState(required map[string]bool, usableCount int, unresolved bool) string {
+	// assessedReviewCoverageState keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if usableCount < len(required) {
 
 		return CoveragePartial
@@ -854,6 +983,9 @@ func assessedReviewCoverageState(required map[string]bool, usableCount int, unre
 }
 
 func modelMismatchWithoutFallback(role ReviewRole, result ReviewerResult) bool {
+	// modelMismatchWithoutFallback keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	requested := defaultString(role.RequestedModel, result.RequestedModel)
 	observed := result.ObservedModel
@@ -884,6 +1016,9 @@ func Summarize(validation Validation, ledger Ledger) string {
 }
 
 func writeSummaryHeader(b *strings.Builder, validation Validation) {
+	// writeSummaryHeader keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	fmt.Fprintf(b, "Review coverage: %s\n", validation.ReviewCoverageState)
 	fmt.Fprintf(b, "CI state: %s\n", validation.CIState)
@@ -895,6 +1030,9 @@ func writeSummaryHeader(b *strings.Builder, validation Validation) {
 }
 
 func writeSummaryPlanes(b *strings.Builder, planes []PlaneResult) {
+	// writeSummaryPlanes keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if len(planes) > 0 {
 		b.WriteString("\nPlanes\n")
 		for _, plane := range planes {
@@ -909,6 +1047,9 @@ func writeSummaryPlanes(b *strings.Builder, planes []PlaneResult) {
 }
 
 func writeSummaryFindings(b *strings.Builder, findings []LedgerFinding) {
+	// writeSummaryFindings keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if len(findings) > 0 {
 		b.WriteString("\nFindings\n")
 		for _, finding := range findings {
@@ -919,6 +1060,9 @@ func writeSummaryFindings(b *strings.Builder, findings []LedgerFinding) {
 }
 
 func WriteJSON(path string, value any) error {
+	// WriteJSON keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if strings.TrimSpace(path) == "" {
 		return nil
@@ -934,6 +1078,9 @@ func WriteJSON(path string, value any) error {
 }
 
 func ReadPacket(path string) (Packet, error) {
+	// ReadPacket keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	var packet Packet
 	if fileInfo, err := os.Stat(path); err == nil && fileInfo.IsDir() {
 
@@ -943,6 +1090,9 @@ func ReadPacket(path string) (Packet, error) {
 }
 
 func ReadProfile(path string) (ReviewProfile, error) {
+	// ReadProfile keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	var profile ReviewProfile
 	if err := readJSON(path, &profile); err != nil {
 		return profile, err
@@ -952,6 +1102,9 @@ func ReadProfile(path string) (ReviewProfile, error) {
 }
 
 func ReadRunSet(path string) (RunSet, error) {
+	// ReadRunSet keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	var runs RunSet
 
 	path = runSetPath(path)
@@ -965,6 +1118,9 @@ func ReadRunSet(path string) (RunSet, error) {
 }
 
 func runSetPath(path string) string {
+	// runSetPath keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if fileInfo, err := os.Stat(path); err == nil && fileInfo.IsDir() {
 
 		return filepath.Join(path, "results.json")
@@ -983,6 +1139,9 @@ func ReadValidation(path string) (Validation, error) {
 }
 
 func readJSON(path string, value any) error {
+	// readJSON keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -992,6 +1151,9 @@ func readJSON(path string, value any) error {
 }
 
 func validatePacketOptions(opts PacketOptions) error {
+	// validatePacketOptions keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if strings.TrimSpace(opts.OutDir) == "" {
 
 		return errors.New("pr_review_packet_requires_out")
@@ -1006,6 +1168,9 @@ func validatePacketOptions(opts PacketOptions) error {
 }
 
 func validatePacketIdentityOptions(opts PacketOptions) error {
+	// validatePacketIdentityOptions keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if !repoIDPattern.MatchString(opts.RepoID) {
 		return fmt.Errorf("unsafe_repo_id: repo_id must match %s", repoIDPattern.String())
@@ -1024,6 +1189,9 @@ func validPacketCommits(opts PacketOptions) bool {
 }
 
 func validatePacketInputOptions(opts PacketOptions) error {
+	// validatePacketInputOptions keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if strings.TrimSpace(opts.DiffPath) == "" {
 
 		return errors.New("pr_review_packet_requires_diff")
@@ -1040,6 +1208,9 @@ func invalidPacketCIState(opts PacketOptions) bool {
 }
 
 func validateRunSet(runs RunSet) error {
+	// validateRunSet keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	seen := map[string]bool{}
 	for _, result := range runs.Results {
@@ -1057,6 +1228,9 @@ func validateRunSet(runs RunSet) error {
 }
 
 func validateProfile(profile ReviewProfile) error {
+	// validateProfile keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if err := validateProfileHeader(profile); err != nil {
 		return err
@@ -1069,6 +1243,9 @@ func validateProfile(profile ReviewProfile) error {
 }
 
 func validateProfileHeader(profile ReviewProfile) error {
+	// validateProfileHeader keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if profile.SchemaVersion != "" && profile.SchemaVersion != SchemaVersionProfile {
 
 		return fmt.Errorf("invalid_profile_schema_version: %s", profile.SchemaVersion)
@@ -1077,6 +1254,9 @@ func validateProfileHeader(profile ReviewProfile) error {
 }
 
 func requireProfileFields(profile ReviewProfile) error {
+	// requireProfileFields keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if strings.TrimSpace(profile.ProfileID) == "" {
 
 		return errors.New("profile_requires_profile_id")
@@ -1093,6 +1273,9 @@ func requireProfileFields(profile ReviewProfile) error {
 }
 
 func validateProfileRoles(roles []ReviewRole) (map[string]bool, error) {
+	// validateProfileRoles keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	rolePlanes := map[string]bool{}
 	for _, role := range roles {
@@ -1105,6 +1288,9 @@ func validateProfileRoles(roles []ReviewRole) (map[string]bool, error) {
 }
 
 func validateProfileRole(role ReviewRole) error {
+	// validateProfileRole keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if profileRoleMissingRequiredField(role) {
 
 		return errors.New("profile_role_requires_id_plane_runner")
@@ -1122,6 +1308,9 @@ func profileRoleMissingRequiredField(role ReviewRole) bool {
 }
 
 func validateRequiredPlaneRoles(requiredPlanes []string, rolePlanes map[string]bool) error {
+	// validateRequiredPlaneRoles keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	for _, plane := range requiredPlanes {
 		if !rolePlanes[plane] {
@@ -1131,6 +1320,9 @@ func validateRequiredPlaneRoles(requiredPlanes []string, rolePlanes map[string]b
 	return nil
 }
 func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (ReviewerResult, error) {
+	// runRole keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	result := newReviewerResult(packet, role, opts.Now)
 	result.CommandDigest = commandDigest(role.Command)
@@ -1145,6 +1337,9 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 }
 
 func completeRoleResult(result ReviewerResult, role ReviewRole, packet Packet, workDir string, baseline *workingTreeBaseline, output []byte, timedOut bool, runErr error) ReviewerResult {
+	// completeRoleResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if completed, ok := completeUnparsedRoleResult(result, output, timedOut, runErr); ok {
 		return completed
@@ -1154,6 +1349,9 @@ func completeRoleResult(result ReviewerResult, role ReviewRole, packet Packet, w
 }
 
 func completeUnparsedRoleResult(result ReviewerResult, output []byte, timedOut bool, runErr error) (ReviewerResult, bool) {
+	// completeUnparsedRoleResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if timedOut {
 		result.Status = StatusTimedOut
@@ -1164,6 +1362,9 @@ func completeUnparsedRoleResult(result ReviewerResult, output []byte, timedOut b
 }
 
 func completeUnparsedRoleErrorOrEmpty(result ReviewerResult, output []byte, runErr error) (ReviewerResult, bool) {
+	// completeUnparsedRoleErrorOrEmpty keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	switch {
 	case applyRunnerError(&result, runErr) != nil:
@@ -1178,6 +1379,9 @@ func completeUnparsedRoleErrorOrEmpty(result ReviewerResult, output []byte, runE
 }
 
 func markRoleParseFailure(result ReviewerResult, err error) ReviewerResult {
+	// markRoleParseFailure keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if err == nil {
 		return result
@@ -1188,6 +1392,9 @@ func markRoleParseFailure(result ReviewerResult, err error) ReviewerResult {
 }
 
 func completeParsedRoleResult(parsed ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) ReviewerResult {
+	// completeParsedRoleResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	applyOpenCodeMutationCheck(&parsed, role, workDir, baseline)
 	return parsed
@@ -1198,6 +1405,9 @@ func emptyReviewerOutput(output []byte) bool {
 }
 
 func newReviewerResult(packet Packet, role ReviewRole, now time.Time) ReviewerResult {
+	// newReviewerResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	started := now.Format(time.RFC3339)
 
@@ -1218,6 +1428,9 @@ func newReviewerResult(packet Packet, role ReviewRole, now time.Time) ReviewerRe
 }
 
 func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions) (*workingTreeBaseline, bool, error) {
+	// prepareRoleRunner keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if role.Runner != RunnerManualExternal && !opts.AllowedRunners[role.Runner] {
 		return nil, false, fmt.Errorf("runner_not_allowed: %s", role.Runner)
@@ -1229,6 +1442,9 @@ func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions)
 }
 
 func prepareCommandRunner(result *ReviewerResult, role ReviewRole) (*workingTreeBaseline, bool, error) {
+	// prepareCommandRunner keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if err := attachPromptRef(result, role); err != nil {
 		return nil, false, nil
 	}
@@ -1237,6 +1453,9 @@ func prepareCommandRunner(result *ReviewerResult, role ReviewRole) (*workingTree
 }
 
 func attachPromptRef(result *ReviewerResult, role ReviewRole) error {
+	// attachPromptRef keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	promptRef, err := promptSafeRef(role)
 	if err != nil {
 
@@ -1249,6 +1468,9 @@ func attachPromptRef(result *ReviewerResult, role ReviewRole) error {
 }
 
 func commandConfigured(result *ReviewerResult, role ReviewRole) bool {
+	// commandConfigured keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if len(role.Command) == 0 {
 
 		result.Reason = "runner_command_not_configured"
@@ -1258,6 +1480,9 @@ func commandConfigured(result *ReviewerResult, role ReviewRole) bool {
 }
 
 func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir string) (*workingTreeBaseline, bool, error) {
+	// prepareOpenCodeBaseline keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if !openCodeReadOnlyReady(result, role) {
 		return nil, false, nil
@@ -1272,6 +1497,9 @@ func prepareOpenCodeBaseline(result *ReviewerResult, role ReviewRole, workDir st
 }
 
 func openCodeBaselineReady(result *ReviewerResult, role ReviewRole, baseline *workingTreeBaseline) (*workingTreeBaseline, bool, error) {
+	// openCodeBaselineReady keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if !openCodeBaselineClean(result, role, baseline) {
 		return nil, false, nil
 	}
@@ -1280,6 +1508,9 @@ func openCodeBaselineReady(result *ReviewerResult, role ReviewRole, baseline *wo
 }
 
 func openCodeReadOnlyReady(result *ReviewerResult, role ReviewRole) bool {
+	// openCodeReadOnlyReady keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if !role.ReadOnlyEnforced {
 		markOpenCodeReadOnlyMissing(result)
 		return false
@@ -1292,6 +1523,9 @@ func openCodeReadOnlyReady(result *ReviewerResult, role ReviewRole) bool {
 }
 
 func openCodeBaselineClean(result *ReviewerResult, role ReviewRole, baseline *workingTreeBaseline) bool {
+	// openCodeBaselineClean keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	mode := defaultString(role.WorkingTreeMode, "clean_required")
 	if mode != "clean_required" || baseline.Count == 0 {
@@ -1308,6 +1542,9 @@ func markOpenCodeReadOnlyMissing(result *ReviewerResult) {
 }
 
 func runRoleCommand(role ReviewRole, opts RunOptions) ([]byte, bool, error) {
+	// runRoleCommand keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	timeout := time.Duration(role.TimeoutSeconds) * time.Second
 	if timeout <= 0 {
@@ -1322,6 +1559,9 @@ func runRoleCommand(role ReviewRole, opts RunOptions) ([]byte, bool, error) {
 }
 
 func applyRunnerError(result *ReviewerResult, err error) error {
+	// applyRunnerError keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if err == nil {
 		return nil
@@ -1339,6 +1579,9 @@ func applyRunnerError(result *ReviewerResult, err error) error {
 }
 
 func applyOpenCodeMutationCheck(result *ReviewerResult, role ReviewRole, workDir string, baseline *workingTreeBaseline) {
+	// applyOpenCodeMutationCheck keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if !needsOpenCodeMutationCheck(role, baseline) {
 		return
@@ -1373,6 +1616,9 @@ type workingTreeBaseline struct {
 }
 
 func captureWorkingTreeBaseline(workDir string) (*workingTreeBaseline, error) {
+	// captureWorkingTreeBaseline keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	cmd := exec.Command("git", "status", "--porcelain")
 	cmd.Dir = workDir
@@ -1411,6 +1657,9 @@ func reviewerOutputMismatched(parsed ReviewerResult, role ReviewRole, packet Pac
 }
 
 func decodeReviewerOutput(output []byte, parsed *ReviewerResult) error {
+	// decodeReviewerOutput keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	decoder := json.NewDecoder(strings.NewReader(string(output)))
 	decoder.DisallowUnknownFields()
@@ -1418,6 +1667,9 @@ func decodeReviewerOutput(output []byte, parsed *ReviewerResult) error {
 }
 
 func normalizeParsedReviewerOutput(parsed, base ReviewerResult, role ReviewRole) ReviewerResult {
+	// normalizeParsedReviewerOutput keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	parsed.ReviewRunID = defaultString(parsed.ReviewRunID, base.ReviewRunID)
 	parsed.Runner = defaultString(parsed.Runner, role.Runner)
@@ -1428,6 +1680,9 @@ func normalizeParsedReviewerOutput(parsed, base ReviewerResult, role ReviewRole)
 }
 
 func normalizeParsedReviewerModels(parsed *ReviewerResult, role ReviewRole) {
+	// normalizeParsedReviewerModels keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	parsed.RequestedModel = defaultString(parsed.RequestedModel, defaultString(role.RequestedModel, StateNotAssessed))
 	parsed.ObservedModel = defaultString(parsed.ObservedModel, StateNotAssessed)
@@ -1436,6 +1691,9 @@ func normalizeParsedReviewerModels(parsed *ReviewerResult, role ReviewRole) {
 }
 
 func attachParsedReviewerExecution(parsed *ReviewerResult, base ReviewerResult) {
+	// attachParsedReviewerExecution keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	parsed.StartedAt = base.StartedAt
 	parsed.EndedAt = base.EndedAt
@@ -1444,6 +1702,9 @@ func attachParsedReviewerExecution(parsed *ReviewerResult, base ReviewerResult) 
 }
 
 func normalizeParsedReviewerStatus(parsed *ReviewerResult) {
+	// normalizeParsedReviewerStatus keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if parsed.Status == "" {
 
 		parsed.Status = defaultReviewerStatus(parsed.Findings)
@@ -1451,6 +1712,9 @@ func normalizeParsedReviewerStatus(parsed *ReviewerResult) {
 }
 
 func defaultReviewerStatus(findings []Finding) string {
+	// defaultReviewerStatus keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if len(findings) > 0 {
 
 		return StatusFindingsReported
@@ -1459,6 +1723,9 @@ func defaultReviewerStatus(findings []Finding) string {
 }
 
 func writeRawResult(result ReviewerResult, rawDir string, output []byte) (ReviewerResult, error) {
+	// writeRawResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if output != nil {
 
 		name := safeID(result.ReviewRunID) + ".out"
@@ -1472,6 +1739,9 @@ func writeRawResult(result ReviewerResult, rawDir string, output []byte) (Review
 	return result, nil
 }
 func preview(packet Packet, profile ReviewProfile) *RunPreview {
+	// preview keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	roles := make([]PreviewRole, 0, len(profile.Roles))
 	for _, role := range profile.Roles {
@@ -1481,6 +1751,9 @@ func preview(packet Packet, profile ReviewProfile) *RunPreview {
 }
 
 func previewRole(role ReviewRole) PreviewRole {
+	// previewRole keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	return PreviewRole{
 		RoleID:         role.RoleID,
@@ -1495,6 +1768,9 @@ func previewRole(role ReviewRole) PreviewRole {
 }
 
 func promptDigestForRole(role ReviewRole) string {
+	// promptDigestForRole keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	promptRef, _ := promptSafeRef(role)
 	if promptRef == nil {
 		return ""
@@ -1504,6 +1780,9 @@ func promptDigestForRole(role ReviewRole) string {
 }
 
 func promptSafeRef(role ReviewRole) (*SafeRef, error) {
+	// promptSafeRef keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if strings.TrimSpace(role.PromptTemplateRef) == "" {
 		return nil, nil
@@ -1517,6 +1796,9 @@ func promptSafeRef(role ReviewRole) (*SafeRef, error) {
 }
 
 func promptDigestRef(role ReviewRole, data []byte) *SafeRef {
+	// promptDigestRef keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	sum := sha256.Sum256(data)
 	return &SafeRef{
@@ -1530,6 +1812,9 @@ func promptDigestRef(role ReviewRole, data []byte) *SafeRef {
 }
 
 func copyInputs(inputDir, prefix string, paths []string) ([]SafeRef, error) {
+	// copyInputs keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	refs := make([]SafeRef, 0, len(paths))
 	for i, path := range paths {
@@ -1543,6 +1828,9 @@ func copyInputs(inputDir, prefix string, paths []string) ([]SafeRef, error) {
 }
 
 func copiedInputRef(inputDir, prefix string, index int, path string) (SafeRef, error) {
+	// copiedInputRef keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	position := index + 1
 	name := fmt.Sprintf("%s-%d%s", prefix, position, normalizedExt(path))
@@ -1555,6 +1843,9 @@ func copiedInputRef(inputDir, prefix string, index int, path string) (SafeRef, e
 }
 
 func copyInput(inputDir, name, source, kind, contentType string) (SafeRef, error) {
+	// copyInput keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	data, err := os.ReadFile(source)
 	if err != nil {
@@ -1567,6 +1858,9 @@ func copyInput(inputDir, name, source, kind, contentType string) (SafeRef, error
 }
 
 func writeCopiedInput(inputDir, name string, data []byte) error {
+	// writeCopiedInput keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	dest := filepath.Join(inputDir, name)
 	if err := os.WriteFile(dest, data, 0o644); err != nil {
 
@@ -1576,6 +1870,9 @@ func writeCopiedInput(inputDir, name string, data []byte) error {
 }
 
 func copiedInputSafeRef(name, kind, contentType string, data []byte) SafeRef {
+	// copiedInputSafeRef keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	digest := sha256.Sum256(data)
 	return SafeRef{
@@ -1589,6 +1886,9 @@ func copiedInputSafeRef(name, kind, contentType string, data []byte) SafeRef {
 }
 
 func digestJSON(value any) (string, error) {
+	// digestJSON keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	data, err := json.Marshal(value)
 	if err != nil {
 
@@ -1599,12 +1899,18 @@ func digestJSON(value any) (string, error) {
 }
 
 func packetDigest(packet Packet) (string, error) {
+	// packetDigest keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	canonical := packet
 	canonical.PacketDigest = ""
 	return digestJSON(canonical)
 }
 func ensureNewDir(path string) error {
+	// ensureNewDir keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if strings.TrimSpace(path) == "" {
 		return errors.New("missing_output_path")
@@ -1628,6 +1934,9 @@ func readDirFailed(err error) bool {
 }
 
 func validCIState(state string) bool {
+	// validCIState keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	switch state {
 	case StatePass, StateFail, StatePending, StateNotAssessed, StateCannotVerify:
 
@@ -1638,6 +1947,9 @@ func validCIState(state string) bool {
 }
 
 func validRunner(runner string) bool {
+	// validRunner keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	switch runner {
 	case RunnerPI, RunnerOpenCode, RunnerManualExternal:
@@ -1648,6 +1960,9 @@ func validRunner(runner string) bool {
 }
 
 func planeResult(result ReviewerResult) PlaneResult {
+	// planeResult keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	pr := PlaneResult{Plane: result.Plane, Status: result.Status, RunID: result.ReviewRunID}
 	if reviewerStatusUsable(result.Status) {
@@ -1663,6 +1978,9 @@ func reviewerStatusUsable(status string) bool {
 }
 
 func reviewerStatusAction(status string) (string, string) {
+	// reviewerStatusAction keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	actions := map[string][2]string{
 		StatusNotAssessed: {"reviewer_not_assessed", "Run a configured reviewer or import a usable result for this plane."},
@@ -1678,6 +1996,9 @@ func reviewerStatusAction(status string) (string, string) {
 }
 
 func defaultDisposition(severity string) string {
+	// defaultDisposition keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	switch safeSeverity(severity) {
 	case SeverityCritical, SeverityMajor:
@@ -1688,6 +2009,9 @@ func defaultDisposition(severity string) string {
 }
 
 func safeSeverity(severity string) string {
+	// safeSeverity keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	switch severity {
 	case SeverityCritical, SeverityMajor, SeverityMinor, SeverityInformational:
 
@@ -1698,6 +2022,9 @@ func safeSeverity(severity string) string {
 }
 
 func citationResolvable(packet Packet, citation Citation) bool {
+	// citationResolvable keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if !citationHasAnchor(citation) {
 		return false
@@ -1713,6 +2040,9 @@ func citationHasAnchor(citation Citation) bool {
 }
 
 func citationRefResolvable(packet Packet, citation Citation) (bool, bool) {
+	// citationRefResolvable keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	for _, resolver := range citationResolvers {
 		if resolver.matches(packet, citation) {
@@ -1746,6 +2076,9 @@ func citationMatchesVerification(packet Packet, citation Citation) bool {
 }
 
 func safeRefIDExists(refs []SafeRef, id string) bool {
+	// safeRefIDExists keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	for _, ref := range refs {
 		if id == ref.ID {
 
@@ -1771,6 +2104,9 @@ func citationHasVerificationLocation(citation Citation) bool {
 }
 
 func safeText(text string) string {
+	// safeText keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if text == "" {
 		return ""
@@ -1782,6 +2118,9 @@ func safeText(text string) string {
 }
 
 func containsUnsafeTextMarker(text string) bool {
+	// containsUnsafeTextMarker keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	unsafeMarkers := []string{"SYNTHETIC_", "Bearer ", "access_token=", "BEGIN PRIVATE KEY", "PRIVATE_KEY", "cookie=", "session=", "/Users/", "/private/"}
 	for _, marker := range unsafeMarkers {
 		if strings.Contains(text, marker) {
@@ -1797,6 +2136,9 @@ func containsUnsafeTextPattern(text string) bool {
 }
 
 func uniqueStrings(values []string) []string {
+	// uniqueStrings keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	seen := map[string]bool{}
 	out := []string{}
@@ -1813,6 +2155,9 @@ func uniqueStrings(values []string) []string {
 }
 
 func commandDigest(command []string) string {
+	// commandDigest keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	if len(command) == 0 {
 		return ""
@@ -1822,6 +2167,9 @@ func commandDigest(command []string) string {
 }
 
 func contextKind(path string) string {
+	// contextKind keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 
 	ext := strings.ToLower(filepath.Ext(path))
 	if ext != ".md" && ext != ".markdown" {
@@ -1831,6 +2179,9 @@ func contextKind(path string) string {
 }
 
 func contextKindByExtension(ext string) string {
+	// contextKindByExtension keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	switch ext {
 	case ".json":
 
@@ -1841,6 +2192,9 @@ func contextKindByExtension(ext string) string {
 }
 
 func markdownContextKind(path string) string {
+	// markdownContextKind keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if strings.Contains(strings.ToLower(filepath.Base(path)), "task") {
 
 		return RefKindTask
@@ -1849,6 +2203,9 @@ func markdownContextKind(path string) string {
 }
 
 func contentType(path string) string {
+	// contentType keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".json":
 
@@ -1861,6 +2218,9 @@ func contentType(path string) string {
 }
 
 func normalizedExt(path string) string {
+	// normalizedExt keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
 	case ".json", ".md", ".txt", ".diff", ".patch":
@@ -1872,6 +2232,9 @@ func normalizedExt(path string) string {
 }
 
 func safeID(value string) string {
+	// safeID keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	value = strings.ToLower(strings.TrimSpace(value))
 	out := strings.Trim(strings.Map(safeIDMapper, value), "-.")
 	if out == "" {
@@ -1884,6 +2247,9 @@ func safeID(value string) string {
 const safeIDAllowedChars = "abcdefghijklmnopqrstuvwxyz0123456789_.-"
 
 func safeIDMapper(r rune) rune {
+	// safeIDMapper keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if r <= 127 && strings.IndexByte(safeIDAllowedChars, byte(r)) >= 0 {
 		return r
 	}
@@ -1892,6 +2258,9 @@ func safeIDMapper(r rune) rune {
 }
 
 func defaultString(value, fallback string) string {
+	// defaultString keeps review evidence explicit and replay-bound.
+	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
+	// This helper validates or projects review data; it does not create external proof.
 	if strings.TrimSpace(value) == "" {
 
 		return fallback

@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 123 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 0 failure rows | The absolute function-level MI check exits 0 in the current tree; absolute file MI remains open. |
 
 Function-level failures by top-level area:
 
@@ -438,6 +438,16 @@ pass, `internal/packet` has zero absolute function-MI rows, and file MI
 remains below 70. Repository absolute file MI remains 15 failure rows plus the
 raw `exit status 1` line; absolute function MI drops to 123 failure rows plus
 the raw `exit status 1` line.
+
+The `internal/prreview/prreview.go` in-place trust-boundary comment pass kept
+existing function baseline keys stable while documenting packet construction,
+review run preparation, role/profile validation, required plane coverage,
+digest and citation validation, model fallback accounting, raw reviewer output
+capture, prompt/input reference copying, command safety, and summary rendering.
+Focused `internal/prreview` tests pass, `internal/prreview` has zero absolute
+function-MI rows, and file MI remains below 70. Repository absolute function MI
+now exits 0 with no output. Repository absolute file MI remains 15 failure rows
+plus the raw `exit status 1` line.
 
 ## File-Level Failures
 
