@@ -16,8 +16,8 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 24 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1275 stderr rows | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| File MI | 22 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -232,11 +232,18 @@ drops to 1275 stderr rows. The pi query worker was cancelled because it wrote
 into the main checkout and left new below-threshold rows; the local repairs are
 the counted evidence.
 
+The `cmd/sdp-trace/harness_cli.go` file-layout slice split the harness router,
+observe, validate, validate argument/exit mapping, and summarize surfaces into
+same-package files. Focused `cmd/sdp-trace` tests pass, all new harness files
+pass absolute file/function MI, and `cmd/sdp-trace/observe_cli.go` plus
+`cmd/sdp-trace/harness_cli.go` drop out of the absolute file-MI output.
+Repository absolute file MI drops to 22 failure rows plus the raw
+`exit status 1` line; absolute function MI remains at 1275 failure rows plus
+the raw `exit status 1` line.
+
 ## File-Level Failures
 
-- `cmd/sdp-trace/harness_cli.go`
 - `cmd/sdp-trace/main.go`
-- `cmd/sdp-trace/observe_cli.go`
 - `cmd/sdp-trace/packet_cli.go`
 - `internal/adaptercapture/adaptercapture.go`
 - `internal/authority/authority.go`
