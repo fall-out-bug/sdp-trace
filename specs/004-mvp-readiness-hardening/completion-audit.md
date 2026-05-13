@@ -19,11 +19,11 @@ The objective is complete only when all of the following have live evidence:
 | Spec drift | Active specs, docs, tasks, and implementation ledger identify changed behavior and remaining gaps. | `partial`: `docs/spec-drift-register.md` records quality, Block 31, Spec 008, stale Node-era, and roadmap gaps. |
 | Work without spec | Every trust-affecting implementation change has a SpecKit delta or is explicitly recorded as `not_assessed`, `cannot_verify`, `assessed_gap`, or `deferred_scope`. | `partial`: current slice has Spec 004 coverage and review rows, but final PR-level evidence is not present. |
 | CleanCode / CleanArchitecture | Independent review of changed Go boundaries and complexity, with accepted findings fixed or recorded. | `partial`: local implementation review findings were handled and supplemental PR-level subagent review is in progress; required `manual_external` profile planes are still pending. |
-| Security review | Trust, path, network, secret, authority, and external-input changes reviewed and valid findings fixed. | `partial`: local security review findings were fixed and supplemental PR-level subagent review is in progress; required `manual_external` security/trust evidence remains pending. |
+| Security review | Trust, path, network, secret, authority, and external-input changes reviewed and valid findings fixed. | `partial`: local security review findings were fixed, including the GitHub OIDC endpoint token-boundary fix; required `manual_external` PR review evidence remains pending. |
 | DX review | Command docs and examples are checked against live CLI behavior where command surface changed. | `partial`: docs were updated and local checks pass; supplemental PR-level review is in progress and required external plane remains pending. |
 | UX review | Human-facing packets, summaries, reports, and explanations remain readable and do not overclaim. | `partial`: local review completed and supplemental PR-level UX review is in progress; required external plane remains pending. |
 | Documentation completeness | README/docs/schema/example docs cover changed behavior and trust scope without external-trust overclaims. | `partial`: local docs updated; final PR checklist/sign-off remain open. |
-| CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `not_assessed_in_file`: checked-in audit text is not live CI authority; query PR #43 after each push and record the exact head/check result outside the source-bound commit loop. |
+| CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `pass_live_at_observation`: PR #43 `verify` passed for head `a8e581c1352c44ce7298af483b603edf03a9cbc0` in run `25802244015`; this checked-in text is not authority for future heads. |
 | MVP ready-state closure | PR opened, PR-level review planes complete, named reviewer sign-off recorded, and merge held until approval. | `partial`: draft PR #43 is open, but final-head CI must be live-queried after each push; required `manual_external` review planes and named sign-off remain open. |
 
 ## Prompt-To-Artifact Checklist
@@ -38,7 +38,7 @@ The objective is complete only when all of the following have live evidence:
 | `работа без спек` | Spec 004 delta plus `implementation-ledger.md` review rows; draft PR #43 opened; required external review/sign-off tasks remain open. | `partial` |
 | `CleanCode patters` | `tools/qualitycheck` complexity output; implementation review rows in `implementation-ledger.md`. | `pass_local_with_external_gap` |
 | `CleanArchitecture patters` | Review rows and dependency-boundary docs; no harness-specific product dependency added by the quality tooling. | `pass_local_with_external_gap` |
-| `Security review` | Security review rows in `implementation-ledger.md`; fixed GitHub API authorization behavior; schema proof-summary hardening. | `pass_local_with_external_gap` |
+| `Security review` | Security review rows in `implementation-ledger.md`; fixed GitHub API authorization behavior, GitHub OIDC endpoint validation, and schema proof-summary hardening. | `pass_local_with_external_gap` |
 | `DX review` | `docs/agent-entrypoint.md`, `docs/reviewer-entrypoint.md`, `docs/ci-check-policy.md`; local command-surface checks recorded in ledger. | `pass_local_with_external_gap` |
 | `UX review` | Packet/report trust-language review rows and docs changes. | `pass_local_with_external_gap` |
 | `полнота документации` | README/docs/schema/example updates plus `docs/spec-drift-register.md`. | `partial` |
@@ -51,8 +51,9 @@ The objective is complete only when all of the following have live evidence:
    line. The absolute function-level MI check now exits 0. Spec 004 explicitly
    forbids claiming an absolute MI pass while historical code remains below the
    threshold; current policy only enforces ratchets.
-2. CI-backed closure is live-state evidence, not checked-in prose. Query PR #43
-   after each push and bind any `verify` pass to the exact head SHA.
+2. CI-backed closure is live-state evidence, not checked-in prose. PR #43
+   `verify` passed for head `a8e581c1352c44ce7298af483b603edf03a9cbc0` in
+   run `25802244015`, but any later source commit needs a fresh query.
 3. Required `manual_external` PR review planes remain open. T040-T042 remain
    open, so no final ready state, named reviewer sign-off, or merge gate can be
    claimed.
@@ -75,7 +76,9 @@ The latest local verification replayed:
 - `(git diff --name-only HEAD; git ls-files --others --exclude-standard) | go run ./tools/mibaselinepolicy -base-ref HEAD`
 - strict CRAP replay using fresh coverage and `tools/crapcheck -strict-less`
 
-All listed local commands exited 0. Absolute function and file MI without
-baselines still exit 1, so overall MI remains an `assessed_gap`.
-PR #43 `verify` state must be live-queried after each push; this checked-in file
-does not by itself prove CI-backed closure for future heads.
+All listed local commands exited 0. The absolute function-MI check without a
+baseline now exits 0 with no output. Absolute file MI without a baseline still
+exits 1 with 15 file-level rows plus the raw `exit status 1` line, so overall
+MI remains an `assessed_gap`. PR #43 `verify` passed for head
+`a8e581c1352c44ce7298af483b603edf03a9cbc0` in run `25802244015`, but this
+checked-in file does not by itself prove CI-backed closure for future heads.
