@@ -50,6 +50,7 @@ authoritative in [Agent Entrypoint](agent-entrypoint.md) and `sdp-trace --help`.
 When reviewing command docs, compare against both.
 
 - `version`, `wrap`, `run`, `dry-run`, `preview`, `doctor`
+- `command-surface`
 - `install repo-observer`
 - `interaction relay`, `interaction import-transcript`, `interaction summarize`
 - `observe setup`, `observe collect`, `observe session`
