@@ -16,8 +16,8 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 29 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1301 stderr rows | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| File MI | 27 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| Function MI | 1288 stderr rows | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -205,6 +205,22 @@ both exit 0, and repository absolute file MI drops to 29 stderr rows while
 absolute function MI remains open at 1301 stderr rows. This is file-MI
 reduction evidence only; repository-wide absolute MI remains open.
 
+The `internal/export` bundle-layout slice split bundle construction, JSON I/O,
+and run-manifest path handling into same-package files without changing the
+public API. Focused `internal/export` tests pass, `internal/export` absolute
+function MI and file MI both exit 0, repository absolute file MI drops to 28
+stderr rows, and absolute function MI drops to 1296 stderr rows. This is
+export-surface MI reduction evidence only; repository-wide absolute MI remains
+open.
+
+The `internal/contract` evidence-contract slice split digest construction,
+validation, and validation field tables into same-package files without changing
+the public API. Focused `internal/contract` tests pass, `internal/contract`
+absolute function MI and file MI both exit 0, repository absolute file MI drops
+to 27 stderr rows, and absolute function MI drops to 1288 stderr rows. This is
+contract-surface MI reduction evidence only; repository-wide absolute MI remains
+open.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/harness_cli.go`
@@ -217,7 +233,6 @@ reduction evidence only; repository-wide absolute MI remains open.
 - `internal/ciartifact/ciartifact.go`
 - `internal/contract/contract.go`
 - `internal/demo/demo.go`
-- `internal/export/export.go`
 - `internal/forensic/forensic.go`
 - `internal/harnessobs/harnessobs.go`
 - `internal/interaction/interaction.go`
