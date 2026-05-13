@@ -16,7 +16,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 18 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| File MI | 17 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
 | Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
@@ -274,6 +274,16 @@ the raw `exit status 1` line. A parallel repoobserver worker output was
 discarded because it introduced a new function-MI failure and multiple file-MI
 misses.
 
+The `internal/witness/witness.go` file-layout slice split GitHub Actions
+witness construction, OIDC fetch/parse/match, artifact hashing, environment
+capture, and record I/O into focused same-package files while preserving the
+public witness API. Focused `internal/witness` tests pass, all new witness split
+files pass absolute file/function MI, `internal/witness/witness.go` is retired
+from the absolute file-MI output, and `internal/witness/profiles.go` remains the
+only witness file-level MI failure. Repository absolute file MI drops to 17
+failure rows plus the raw `exit status 1` line; absolute function MI remains at
+1275 failure rows plus the raw `exit status 1` line.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/main.go`
@@ -293,7 +303,6 @@ misses.
 - `internal/recorder/recorder.go`
 - `internal/repoobserver/repoobserver.go`
 - `internal/witness/profiles.go`
-- `internal/witness/witness.go`
 
 ## Closure Strategy
 
