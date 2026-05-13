@@ -1,7 +1,6 @@
 package trace
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -60,8 +59,4 @@ func newRunLayout(runDir string) RunLayout {
 
 func runLayoutPath(runDir string, name string) string {
 	return filepath.Join(runDir, name)
-}
-
-func EventFileName(sequence int, eventType EventType) string {
-	return fmt.Sprintf("%06d-%s.json", sequence, eventType)
 }

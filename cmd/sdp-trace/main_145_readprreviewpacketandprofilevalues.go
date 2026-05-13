@@ -12,6 +12,7 @@ func readPRReviewPacketAndProfileValues(opts *flagSet) (prreview.Packet, prrevie
 	// Profile is loaded after packet so packet path failures stay first.
 	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
 	if err != nil {
+		// Profile errors return an empty packet so callers do not mix partial inputs.
 		return prreview.Packet{}, prreview.ReviewProfile{}, err
 	}
 	return packet, profile, nil

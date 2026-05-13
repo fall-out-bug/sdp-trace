@@ -34,7 +34,7 @@ Selected coverage floors for this slice:
 | --- | ---: | --- |
 | MVP-critical packages under `internal/trace`, `internal/contract`, `internal/policy`, `internal/export`, `internal/posture`, `internal/harnessobs`, and `internal/verifier` | `>= 75%` package statement coverage | Locally satisfied in the 2026-05-12 run recorded in `specs/004-mvp-readiness-hardening/implementation-ledger.md`; CI records coverage input for CRAP but does not enforce package floors yet. |
 | Changed production packages under `cmd` and `internal` | `>= 75%` package statement coverage | Locally satisfied in the same run. |
-| Go tooling under `tools` | `>= 75%` package statement coverage | Locally satisfied in the 2026-05-12 run after `tools/crapcheck`, `tools/mibaselinepolicy`, and `tools/qualitycheck` refactors; absolute tool MI remains an `assessed_gap`. |
+| Go tooling under `tools` | `>= 75%` package statement coverage | Locally satisfied in the 2026-05-13 run after `tools/crapcheck`, `tools/mibaselinepolicy`, and `tools/qualitycheck` refactors. |
 
 Regenerate `tools/qualitycheck/function-mi-baseline.json` or
 `tools/qualitycheck/file-mi-baseline.json` only as a reviewed ratchet change.
@@ -56,6 +56,12 @@ Raw file-MI threshold failures include `lines`, `cyclo`, and
 `halstead_volume` so remediation can distinguish oversized files from
 high-branching or token-heavy files without treating the metric as an opaque
 score.
+
+As of the 2026-05-13 polish head, absolute file and function MI checks without
+baselines pass locally for Go under `cmd`, `internal`, and `tools` using a
+`70.1` threshold replay for the user-facing `> 70` claim. CI keeps the baseline
+ratchet commands because they are the policy mechanism that prevents future PRs
+from adding or worsening MI exceptions without review.
 
 If GitHub does not report checks for a PR, record CI as `not_assessed`; do not
 treat local verification as a substitute for remote CI evidence. Local

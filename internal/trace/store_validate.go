@@ -21,14 +21,7 @@ func validateRunArtifact(artifact RunArtifact, requireChain bool) error {
 	}
 	return validateRunDirectoryState(artifact.Manifest, artifact.Events, requireChain)
 }
-func validateEventChainIfRequested(events []Event, requireChain bool) error {
-	if !requireChain {
-		// Shape-only validation callers intentionally skip contiguous chain proof.
-		return nil
-	}
-	// Chain validation binds event order and hashes when requested.
-	return ValidateEventChain(events)
-}
+
 func validateManifestEventCount(manifestCount int, eventCount int) error {
 	// validateManifestEventCount preserves run-artifact replay boundaries and on-disk trace semantics.
 	// Keep manifest, event ordering, hash validation, and filesystem effects explicit.
@@ -38,18 +31,7 @@ func validateManifestEventCount(manifestCount int, eventCount int) error {
 	}
 	return nil
 }
-func validateManifestEventChainHead(manifestHead string, events []Event) error {
-	// validateManifestEventChainHead preserves run-artifact replay boundaries and on-disk trace semantics.
-	// Keep manifest, event ordering, hash validation, and filesystem effects explicit.
 
-	if manifestHead == "" || len(events) == 0 {
-		return nil
-	}
-	if events[len(events)-1].EventHash != manifestHead {
-		return fmt.Errorf("run manifest event_chain_head does not match last event hash")
-	}
-	return nil
-}
 func validateRunDirectoryState(manifest RunManifest, events []Event, requireChain bool) error {
 	// validateRunDirectoryState preserves run-artifact replay boundaries and on-disk trace semantics.
 	// Keep manifest, event ordering, hash validation, and filesystem effects explicit.

@@ -24,6 +24,7 @@ func run(args []string, stdout io.Writer, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
+	// Result rendering owns threshold exit semantics after both inputs are joined.
 	return printResults(stdout, stderr, rows, opts.threshold, opts.strictLess)
 }
 

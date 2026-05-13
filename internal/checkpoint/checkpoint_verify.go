@@ -53,6 +53,7 @@ func failShape(result *VerificationResult, reason string) {
 
 func cannotVerify(result *VerificationResult, reason string) {
 
+	// Cannot-verify preserves unresolved proof state without converting it to fail.
 	result.Result = StateCannotVerify
 	result.Reasons = append(result.Reasons, reason)
 }

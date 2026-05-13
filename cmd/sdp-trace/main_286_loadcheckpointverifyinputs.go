@@ -17,6 +17,7 @@ func loadCheckpointVerifyInputs(opts *flagSet, stderr io.Writer) (checkpoint.Sig
 	}
 	policy, err := readCheckpointPolicy(opts.stringValue("policy"))
 	if err != nil {
+		// Policy errors are usage failures for this command, not verifier results.
 		fmt.Fprintln(stderr, err)
 		return checkpoint.SignedCheckpoint{}, nil, 1, false
 	}

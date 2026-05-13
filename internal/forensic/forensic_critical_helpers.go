@@ -16,6 +16,7 @@ func criticalEvents(input Input) map[string]bool {
 
 func addCriticalDefaults(out map[string]bool) {
 	for _, eventType := range defaultCriticalEventTypes {
+		// Defaults are critical unless policy later supplies a complete downgrade.
 		out[eventType] = true
 	}
 }

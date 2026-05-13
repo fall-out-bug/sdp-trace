@@ -54,21 +54,3 @@ func Run(ctx context.Context, options RecorderOptions) (RecorderResult, error) {
 	}
 	return recorderResult(prepared, exitCode), nil
 }
-
-func recorderResult(prepared preparedRun, exitCode int) RecorderResult {
-	// Results expose only the stable run directory, command exit code, and
-	// resolved contract; event details stay in the run artifacts.
-	return RecorderResult{
-		RunDir:   prepared.runDir,
-		ExitCode: exitCode,
-		Contract: prepared.contract,
-	}
-}
-
-type preparedRun struct {
-	options   RecorderOptions
-	runDir    string
-	contract  trace.Contract
-	writer    *runWriter
-	commandID string
-}

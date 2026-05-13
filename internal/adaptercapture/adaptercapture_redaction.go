@@ -32,6 +32,7 @@ func redactionMetadataConditionForEvent(event AdapterEvent) Condition {
 }
 
 func hasForbiddenRedactionMetadata(event AdapterEvent) bool {
+	// Any persisted raw flag or secret-like reference fails the redaction boundary.
 	return event.SensitiveMetadataPersisted ||
 		containsSecret(event.GatewayEvidenceRef) ||
 		stringSliceContainsSecret(event.ProviderRefs)

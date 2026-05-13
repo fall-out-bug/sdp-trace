@@ -1,8 +1,6 @@
 package main
 
-import (
-	"strings"
-)
+import "strings"
 
 func (f *flagSet) consumeArg(args []string, idx *int, rest *[]string) (bool, error) {
 	arg := args[*idx]
@@ -17,5 +15,6 @@ func (f *flagSet) consumeArg(args []string, idx *int, rest *[]string) (bool, err
 		return false, nil
 	}
 	flag, flagValue, hasValue := splitFlag(arg)
+	// Flag value consumption may advance idx when the value is in the next arg.
 	return false, f.consumeFlag(flag, flagValue, hasValue, args, idx)
 }

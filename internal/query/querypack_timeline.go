@@ -23,6 +23,7 @@ func (b *packBuilder) addRunTimelineRows() {
 }
 
 func (b *packBuilder) addOptionalTimelineRows() {
+	// Optional block rows preserve absence or malformed state without hiding run timeline data.
 	b.addOptionalTimelineRow(b.inputs.forensicPresent, b.inputs.forensicErr, EvidenceFamilyRetention, "block_18", "missing_optional_block_18_forensic_retention_result")
 	b.addOptionalTimelineRow(b.inputs.adapterPresent, b.inputs.adapterErr, EvidenceFamilyAdapterCapture, "block_19", "missing_optional_block_19_adapter_capture_result")
 }

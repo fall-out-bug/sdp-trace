@@ -13,6 +13,7 @@ func topLevel(families []FamilyObservation, index ArtifactIndexResult, safety Ou
 	}
 	if requiredCount == 0 {
 
+		// No required family means the assessment did not exercise a proof surface.
 		return StateNotAssessed
 	}
 	return StatePass
@@ -20,11 +21,13 @@ func topLevel(families []FamilyObservation, index ArtifactIndexResult, safety Ou
 
 func identityOrArtifactCannotVerify(identityCannotVerify bool, families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult) bool {
 
+	// Identity uncertainty is enough to block proof, even if artifact rows pass.
 	return identityCannotVerify || artifactAssessmentHasState(families, index, safety, StateCannotVerify)
 }
 
 func artifactAssessmentHasState(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, state string) bool {
 
+	// Aggregate state checks cover family rows plus index and output-safety summaries.
 	return anyFamilyState(families, state) || index.Result == state || safety.State == state
 }
 

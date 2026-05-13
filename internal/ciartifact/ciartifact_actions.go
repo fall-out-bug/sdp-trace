@@ -24,6 +24,7 @@ func addFamilyActions(set map[string]bool, families []FamilyObservation) {
 
 func addConditionalAction(set map[string]bool, include bool, action string) {
 	if include {
+		// The map deduplicates identical operator actions from multiple evidence rows.
 		set[action] = true
 	}
 }
