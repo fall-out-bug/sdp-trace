@@ -38,5 +38,7 @@ jobs:
           version: v1.62.0
       - name: JSON syntax
         run: jq empty schema/*.json examples/block19-adapter-capture/*.json examples/self-trace/proof-summary.example.json tools/qualitycheck/function-mi-baseline.json tools/qualitycheck/file-mi-baseline.json
+      - name: Docs command surface
+        run: go run ./tools/doccheck
       - name: Whitespace check
         run: git diff --check

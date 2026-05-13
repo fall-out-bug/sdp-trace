@@ -109,6 +109,7 @@ Current command surface:
 
 - `go test -count=1 ./...`
 - `sdp-trace --help`
+- `sdp-trace version`
 - `sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>`
 - `sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>`
 - `sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>`

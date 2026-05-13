@@ -9,6 +9,7 @@ Required CI evidence:
 - `go run ./tools/mibaselinepolicy -base-ref <base-sha>` on pull requests
 - `golangci-lint run ./...`
 - `jq empty schema/*.json examples/block19-adapter-capture/*.json examples/self-trace/proof-summary.example.json tools/qualitycheck/function-mi-baseline.json tools/qualitycheck/file-mi-baseline.json`
+- `go run ./tools/doccheck`
 - `git diff --check`
 
 Quality gate policy:
@@ -25,7 +26,7 @@ Quality gate policy:
 | Security review | trust, path, network, secret, and authority changes reviewed | review-required, not CI-enforced | Any release proof, witness, harness, credential, external input, or path-handling change needs a security review row. Missing evidence is `cannot_verify` if review was required for the slice. |
 | DX review | documented commands match live CLI and failure modes are actionable | review-required, not CI-enforced | Compare affected docs and examples against `go run ./cmd/sdp-trace --help` or subcommand help. Missing command evidence is `cannot_verify` for command-surface changes. |
 | UX review | human-facing packet, report, and explanation output remains readable and non-misleading | review-required, not CI-enforced | For changed rendered output or reviewer/operator workflows, inspect the generated artifact or mark the plane `not_assessed` with rationale. |
-| Docs completeness | command and trust-scope docs updated with behavior changes | review-required, not CI-enforced | For command-surface changes, compare `docs/agent-entrypoint.md` with `go run ./cmd/sdp-trace --help` and update affected docs in the same slice. |
+| Docs completeness | command and trust-scope docs updated with behavior changes | partially CI-enforced by `Docs command surface` | `go run ./tools/doccheck` compares `docs/agent-entrypoint.md` current command surface against `go run ./cmd/sdp-trace --help`. Trust-scope prose and reviewer handoff docs still require review evidence. |
 
 Selected coverage floors for this slice:
 
