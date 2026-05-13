@@ -357,6 +357,9 @@ var validRuleKeys = map[string]bool{
 }
 
 func Observe(opts ObserveOptions) (Run, error) {
+	// Observe keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	ctx, err := prepareObservation(opts)
 	if err != nil {
 		return Run{}, err
@@ -374,6 +377,9 @@ func Observe(opts ObserveOptions) (Run, error) {
 }
 
 func prepareObservation(opts ObserveOptions) (observationContext, error) {
+	// prepareObservation keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, sourcePath, outDir, err := validateObserveOptions(opts)
 	if err != nil {
 		return observationContext{}, err
@@ -391,6 +397,9 @@ func prepareObservation(opts ObserveOptions) (observationContext, error) {
 }
 
 func newObservationContext(opts ObserveOptions, outDir, sourcePath, sourceDigest string, profile Profile, events []Event) observationContext {
+	// newObservationContext keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	return observationContext{
 		outDir:       outDir,
 		sourcePath:   sourcePath,
@@ -403,6 +412,9 @@ func newObservationContext(opts ObserveOptions, outDir, sourcePath, sourceDigest
 }
 
 func validateObserveOptions(opts ObserveOptions) (string, string, string, error) {
+	// validateObserveOptions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireObserveOptions(opts); err != nil {
 		return "", "", "", err
 	}
@@ -411,6 +423,9 @@ func validateObserveOptions(opts ObserveOptions) (string, string, string, error)
 }
 
 func requireObserveOptions(opts ObserveOptions) error {
+	// requireObserveOptions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireNonBlank(opts.ProfilePath, "harness observe requires --profile"); err != nil {
 		return err
 	}
@@ -424,6 +439,9 @@ func requireObserveOptions(opts ObserveOptions) error {
 	return nil
 }
 func resolveObservePaths(opts ObserveOptions) (string, string, string, error) {
+	// resolveObservePaths keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, err := safeExistingFile(opts.ProfilePath)
 	if err != nil {
 		return "", "", "", fmt.Errorf("unsafe profile path: %w", err)
@@ -442,6 +460,9 @@ func resolveObservePaths(opts ObserveOptions) (string, string, string, error) {
 }
 
 func observationTime(now time.Time) time.Time {
+	// observationTime keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if now.IsZero() {
 
 		return time.Now().UTC()
@@ -450,6 +471,9 @@ func observationTime(now time.Time) time.Time {
 }
 
 func loadObservationSource(profilePath, sourcePath string) (Profile, []Event, string, error) {
+	// loadObservationSource keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profile, err := LoadProfile(profilePath)
 	if err != nil {
 		return Profile{}, nil, "", err
@@ -463,6 +487,9 @@ func loadObservationSource(profilePath, sourcePath string) (Profile, []Event, st
 }
 
 func writeObservationEvents(outDir string, events []Event) error {
+	// writeObservationEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, event := range events {
 
 		path := filepath.Join(outDir, "events", event.EventID+".json")
@@ -474,6 +501,9 @@ func writeObservationEvents(outDir string, events []Event) error {
 }
 
 func newObservedRun(ctx observationContext) Run {
+	// newObservedRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return Run{
 		SchemaVersion:      RunSchemaVersion,
@@ -489,6 +519,9 @@ func newObservedRun(ctx observationContext) Run {
 }
 
 func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
+	// SetupSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, outDir, err := validateSessionSetupOptions(opts)
 	if err != nil {
 		return SessionRun{}, err
@@ -502,6 +535,9 @@ func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
 }
 
 func validateSessionSetupOptions(opts SessionSetupOptions) (string, string, error) {
+	// validateSessionSetupOptions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	profilePath, err := resolveSessionSetupProfilePath(opts.ProfilePath)
 	if err != nil {
@@ -514,6 +550,9 @@ func validateSessionSetupOptions(opts SessionSetupOptions) (string, string, erro
 	return profilePath, outDir, nil
 }
 func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []Event {
+	// normalizeOpenCodeRawLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	signals := rawSignals(raw)
 	families := openCodeFamilies(raw, signals)
 	if len(families) == 0 {
@@ -530,6 +569,9 @@ func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []E
 }
 
 func normalizedOpenCodeEvents(ordered []string, observedAt, sourceRef, actor string) []Event {
+	// normalizedOpenCodeEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	events := make([]Event, 0, len(ordered))
 	for _, family := range ordered {
 
@@ -539,6 +581,9 @@ func normalizedOpenCodeEvents(ordered []string, observedAt, sourceRef, actor str
 }
 
 func normalizedOpenCodeEvent(family, observedAt, sourceRef, actor string) Event {
+	// normalizedOpenCodeEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return normalizedEvent(
 		fmt.Sprintf("%s-%s", sourceRef, family),
@@ -550,6 +595,9 @@ func normalizedOpenCodeEvent(family, observedAt, sourceRef, actor string) Event 
 	)
 }
 func openCodeFamilies(raw map[string]any, signals []string) map[string]bool {
+	// openCodeFamilies keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	families := map[string]bool{}
 
 	setFamily(families, "harness", openCodeHarnessFamily(signals))
@@ -579,6 +627,9 @@ func openCodeHarnessFamily(signals []string) bool {
 }
 
 func openCodeInteractionFamily(raw map[string]any, signals []string) bool {
+	// openCodeInteractionFamily keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return hasKey(raw, "role") ||
 		hasSignal(signals, "message", "response", "text") ||
@@ -586,6 +637,9 @@ func openCodeInteractionFamily(raw map[string]any, signals []string) bool {
 }
 
 func openCodeToolFamily(raw map[string]any, signals []string) bool {
+	// openCodeToolFamily keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return hasKey(raw, "tool", "tool_call", "toolcall") ||
 		hasSignal(signals, "tool.call", "tool.result", "tool_use") ||
@@ -593,6 +647,9 @@ func openCodeToolFamily(raw map[string]any, signals []string) bool {
 }
 
 func openCodeMutationFamily(raw map[string]any, signals []string) bool {
+	// openCodeMutationFamily keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") ||
 		hasSignalPrefix(signals, "mutation.") ||
@@ -605,6 +662,9 @@ func openCodeTestFamily(signals []string) bool {
 }
 
 func openCodePhaseFamily(raw map[string]any, signals []string) bool {
+	// openCodePhaseFamily keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return hasKey(raw, "phase") ||
 		hasSignal(signals, "phase") ||
@@ -612,6 +672,9 @@ func openCodePhaseFamily(raw map[string]any, signals []string) bool {
 }
 
 func sortedFamilies(families map[string]bool) []string {
+	// sortedFamilies keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	ordered := make([]string, 0, len(families))
 	for family := range families {
 		ordered = append(ordered, family)
@@ -622,6 +685,9 @@ func sortedFamilies(families map[string]bool) []string {
 }
 
 func openCodeObservedAt(raw map[string]any, now time.Time) string {
+	// openCodeObservedAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	observedAt := findTimestamp(raw)
 	if observedAt == "" {
 
@@ -631,6 +697,9 @@ func openCodeObservedAt(raw map[string]any, now time.Time) string {
 }
 
 func openCodeActor(raw map[string]any) string {
+	// openCodeActor keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if model := findStringByKey(raw, "model", "model_id", "modelid"); model != "" {
 
 		return safeToken(model)
@@ -642,6 +711,9 @@ func openCodeActor(raw map[string]any) string {
 }
 
 func sessionCommandFacts(session SessionRun) []Event {
+	// sessionCommandFacts keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !hasSessionCommandModel(session) {
 
 		return nil
@@ -662,6 +734,9 @@ func hasSessionCommandModel(session SessionRun) bool {
 }
 
 func sessionCommandModelEvent(session SessionRun) Event {
+	// sessionCommandModelEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return normalizedEvent(
 		"session-command-model",
@@ -673,6 +748,9 @@ func sessionCommandModelEvent(session SessionRun) Event {
 	)
 }
 func sessionCommandObservedAt(session SessionRun) string {
+	// sessionCommandObservedAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	observedAt := session.StartTime
 	if observedAt == "" {
 		observedAt = session.CreatedAt
@@ -685,6 +763,9 @@ func sessionCommandObservedAt(session SessionRun) string {
 }
 
 func normalizedEvent(id, family, eventType, observedAt, sourceRef, actor string) Event {
+	// normalizedEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return Event{
 		EventID:            id,
@@ -704,6 +785,9 @@ func rawSignals(value any) []string {
 }
 
 func rawSignalsAt(parentKey string, value any) []string {
+	// rawSignalsAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if signals, ok := rawStructuredSignals(parentKey, value); ok {
 		return signals
 	}
@@ -712,6 +796,9 @@ func rawSignalsAt(parentKey string, value any) []string {
 }
 
 func rawStructuredSignals(parentKey string, value any) ([]string, bool) {
+	// rawStructuredSignals keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch v := value.(type) {
 	case map[string]any:
 
@@ -725,6 +812,9 @@ func rawStructuredSignals(parentKey string, value any) ([]string, bool) {
 }
 
 func rawLeafSignals(parentKey string, value any) []string {
+	// rawLeafSignals keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch v := value.(type) {
 	case string:
 		return rawStringSignals(parentKey, v)
@@ -739,6 +829,9 @@ func rawScalarSignals(value any) []string {
 }
 
 func rawStringSignals(parentKey, value string) []string {
+	// rawStringSignals keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if rawSignalValueKey(parentKey) {
 
 		return []string{strings.ToLower(value)}
@@ -747,6 +840,9 @@ func rawStringSignals(parentKey, value string) []string {
 }
 
 func rawMapSignals(values map[string]any) []string {
+	// rawMapSignals keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parts := make([]string, 0, len(values)*2)
 	for key, child := range values {
 
@@ -757,6 +853,9 @@ func rawMapSignals(values map[string]any) []string {
 }
 
 func rawSliceSignals(parentKey string, values []any) []string {
+	// rawSliceSignals keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parts := make([]string, 0, len(values))
 	for _, child := range values {
 
@@ -766,6 +865,9 @@ func rawSliceSignals(parentKey string, values []any) []string {
 }
 
 func rawSignalValueKey(key string) bool {
+	// rawSignalValueKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch strings.ToLower(key) {
 	case "type", "kind", "event", "event_type", "name", "phase", "role", "provider", "model", "model_id", "status", "tool", "action", "operation":
 
@@ -776,6 +878,9 @@ func rawSignalValueKey(key string) bool {
 }
 
 func hasSignal(signals []string, values ...string) bool {
+	// hasSignal keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	wanted := map[string]bool{}
 	for _, value := range values {
 
@@ -791,6 +896,9 @@ func hasSignal(signals []string, values ...string) bool {
 }
 
 func hasSignalPrefix(signals []string, prefixes ...string) bool {
+	// hasSignalPrefix keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, signal := range signals {
 		for _, prefix := range prefixes {
 
@@ -802,6 +910,9 @@ func hasSignalPrefix(signals []string, prefixes ...string) bool {
 	return false
 }
 func hasKey(value any, keys ...string) bool {
+	// hasKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	wanted := map[string]bool{}
 	for _, key := range keys {
 		wanted[strings.ToLower(key)] = true
@@ -811,6 +922,9 @@ func hasKey(value any, keys ...string) bool {
 }
 
 func hasKeyIn(value any, wanted map[string]bool) bool {
+	// hasKeyIn keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch v := value.(type) {
 	case map[string]any:
 		return hasKeyInMap(v, wanted)
@@ -822,6 +936,9 @@ func hasKeyIn(value any, wanted map[string]bool) bool {
 }
 
 func hasKeyInMap(values map[string]any, wanted map[string]bool) bool {
+	// hasKeyInMap keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for key, child := range values {
 
 		if wanted[strings.ToLower(key)] || hasKeyIn(child, wanted) {
@@ -832,6 +949,9 @@ func hasKeyInMap(values map[string]any, wanted map[string]bool) bool {
 }
 
 func hasKeyInSlice(values []any, wanted map[string]bool) bool {
+	// hasKeyInSlice keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, child := range values {
 
 		if hasKeyIn(child, wanted) {
@@ -841,6 +961,9 @@ func hasKeyInSlice(values []any, wanted map[string]bool) bool {
 	return false
 }
 func findStringByKey(value any, keys ...string) string {
+	// findStringByKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	wanted := map[string]bool{}
 	for _, key := range keys {
 		wanted[strings.ToLower(key)] = true
@@ -850,6 +973,9 @@ func findStringByKey(value any, keys ...string) string {
 }
 
 func findByKeyIn[T any](value any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	// findByKeyIn keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var zero T
 	switch v := value.(type) {
 	case map[string]any:
@@ -862,6 +988,9 @@ func findByKeyIn[T any](value any, wanted map[string]bool, match func(any) (T, b
 }
 
 func findByKeyInMap[T any](value map[string]any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	// findByKeyInMap keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var zero T
 	for key, child := range value {
 
@@ -876,6 +1005,9 @@ func findByKeyInMap[T any](value map[string]any, wanted map[string]bool, match f
 }
 
 func matchWantedKey[T any](key string, value any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	// matchWantedKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var zero T
 	if !wanted[strings.ToLower(key)] {
 
@@ -885,6 +1017,9 @@ func matchWantedKey[T any](key string, value any, wanted map[string]bool, match 
 }
 
 func findByKeyInSlice[T any](value []any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
+	// findByKeyInSlice keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var zero T
 	for _, child := range value {
 
@@ -896,6 +1031,9 @@ func findByKeyInSlice[T any](value []any, wanted map[string]bool, match func(any
 }
 
 func findStringByKeyIn(value any, wanted map[string]bool) string {
+	// findStringByKeyIn keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	matchingString := func(value any) (string, bool) {
 		s, ok := value.(string)
 		return s, ok && strings.TrimSpace(s) != ""
@@ -909,6 +1047,9 @@ func findStringByKeyIn(value any, wanted map[string]bool) string {
 }
 
 func findTimestamp(raw map[string]any) string {
+	// findTimestamp keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, key := range []string{"time", "timestamp", "created_at", "observed_at"} {
 
 		if observedAt := timestampForKey(raw, key); observedAt != "" {
@@ -919,6 +1060,9 @@ func findTimestamp(raw map[string]any) string {
 }
 
 func timestampForKey(raw map[string]any, key string) string {
+	// timestampForKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if observedAt := stringTimestampForKey(raw, key); observedAt != "" {
 		return observedAt
 	}
@@ -929,6 +1073,9 @@ func timestampForKey(raw map[string]any, key string) string {
 	return ""
 }
 func stringTimestampForKey(raw map[string]any, key string) string {
+	// stringTimestampForKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	value := findStringByKey(raw, key)
 	if value == "" {
 		return ""
@@ -942,6 +1089,9 @@ func stringTimestampForKey(raw map[string]any, key string) string {
 }
 
 func findNumberByKey(value any, keys ...string) (float64, bool) {
+	// findNumberByKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	wanted := map[string]bool{}
 	for _, key := range keys {
 		wanted[strings.ToLower(key)] = true
@@ -951,6 +1101,9 @@ func findNumberByKey(value any, keys ...string) (float64, bool) {
 }
 
 func findNumberByKeyIn(value any, wanted map[string]bool) (float64, bool) {
+	// findNumberByKeyIn keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	matchNumber := func(value any) (float64, bool) {
 		switch n := value.(type) {
 		case float64:
@@ -967,6 +1120,9 @@ func findNumberByKeyIn(value any, wanted map[string]bool) (float64, bool) {
 }
 
 func unixMillisTimestamp(value float64) string {
+	// unixMillisTimestamp keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if value <= 0 || value <= 1_000_000_000 {
 
 		return ""
@@ -978,6 +1134,9 @@ func unixMillisTimestamp(value float64) string {
 }
 
 func nativeMutationTool(raw map[string]any) bool {
+	// nativeMutationTool keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	tool := strings.ToLower(findStringByKey(raw, "tool"))
 	switch tool {
 	case "edit", "write", "patch", "apply_patch", "update", "delete":
@@ -989,6 +1148,9 @@ func nativeMutationTool(raw map[string]any) bool {
 }
 
 func safeToken(value string) string {
+	// safeToken keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var b strings.Builder
 	for _, r := range value {
 		writeSafeTokenRune(&b, r)
@@ -1005,6 +1167,9 @@ func safeToken(value string) string {
 	return token
 }
 func writeSafeTokenRune(b *strings.Builder, r rune) {
+	// writeSafeTokenRune keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if safeTokenRune(r) {
 		b.WriteRune(r)
 		return
@@ -1018,6 +1183,9 @@ func safeTokenRune(r rune) bool {
 }
 
 func LoadRun(dir string) (Run, []Event, error) {
+	// LoadRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var run Run
 	if err := readJSON(filepath.Join(dir, "run.json"), &run); err != nil {
 		return Run{}, nil, err
@@ -1035,6 +1203,9 @@ func LoadRun(dir string) (Run, []Event, error) {
 }
 
 func readJSON(path string, target any) error {
+	// readJSON keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -1044,6 +1215,9 @@ func readJSON(path string, target any) error {
 }
 
 func validateLoadedRun(run Run) error {
+	// validateLoadedRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if run.SchemaVersion != RunSchemaVersion {
 
 		return fmt.Errorf("unsupported run schema_version: %s", run.SchemaVersion)
@@ -1051,6 +1225,9 @@ func validateLoadedRun(run Run) error {
 	return nil
 }
 func loadRunEvents(dir string, refs []string) ([]Event, error) {
+	// loadRunEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	events := make([]Event, 0, len(refs))
 	for _, ref := range refs {
 
@@ -1064,6 +1241,9 @@ func loadRunEvents(dir string, refs []string) ([]Event, error) {
 }
 
 func loadRunEvent(dir, ref string) (Event, error) {
+	// loadRunEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !safeEventRef(ref) {
 
 		return Event{}, fmt.Errorf("unsafe event ref: %s", ref)
@@ -1082,6 +1262,9 @@ func loadRunEvent(dir, ref string) (Event, error) {
 }
 
 func Summarize(validation Validation) string {
+	// Summarize keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "Harness observation: %s (%s)\n", validation.ValidationState, validation.ReasonCode)
@@ -1097,6 +1280,9 @@ func Summarize(validation Validation) string {
 }
 
 func writeSummaryDimension(b *strings.Builder, dim Dimension) {
+	// writeSummaryDimension keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	required := "optional"
 	if dim.Required {
 
@@ -1107,6 +1293,9 @@ func writeSummaryDimension(b *strings.Builder, dim Dimension) {
 }
 
 func LoadValidation(path string) (Validation, error) {
+	// LoadValidation keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var validation Validation
 	if err := readExistingJSON(path, &validation); err != nil {
 		return Validation{}, err
@@ -1119,6 +1308,9 @@ func LoadValidation(path string) (Validation, error) {
 }
 
 func validateProfile(profile Profile) error {
+	// validateProfile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := validateProfileMetadata(profile); err != nil {
 		return err
 	}
@@ -1130,6 +1322,9 @@ func validateProfile(profile Profile) error {
 }
 
 func validateProfileMetadata(profile Profile) error {
+	// validateProfileMetadata keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := validateProfileIdentity(profile); err != nil {
 		return err
 	}
@@ -1144,6 +1339,9 @@ func validateProfileMetadata(profile Profile) error {
 }
 
 func validateProfileIdentity(profile Profile) error {
+	// validateProfileIdentity keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if profile.SchemaVersion != ProfileSchemaVersion {
 		return fmt.Errorf("unsupported harness profile schema_version: %s", profile.SchemaVersion)
 	}
@@ -1159,6 +1357,9 @@ func validateProfileIdentity(profile Profile) error {
 }
 
 func validateProfileEventFamilies(requiredEventFamilies []string, optionalEventFamilies []string) error {
+	// validateProfileEventFamilies keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := validateFamilyList(requiredEventFamilies); err != nil {
 		return err
 	}
@@ -1166,6 +1367,9 @@ func validateProfileEventFamilies(requiredEventFamilies []string, optionalEventF
 	return validateFamilyList(optionalEventFamilies)
 }
 func validateFamilyList(families []string) error {
+	// validateFamilyList keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, family := range families {
 
 		if !validFamily(family) {
@@ -1175,6 +1379,9 @@ func validateFamilyList(families []string) error {
 	return nil
 }
 func validateProfileDegradationRules(rules map[string]Rule) error {
+	// validateProfileDegradationRules keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for key, rule := range rules {
 
 		if !validRuleKey(key) {
@@ -1192,6 +1399,9 @@ func validDegradationRule(rule Rule) bool {
 }
 
 func readEvents(profile Profile, sourcePath string) ([]Event, string, error) {
+	// readEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	file, err := os.Open(sourcePath)
 	if err != nil {
 		return nil, "", err
@@ -1203,6 +1413,9 @@ func readEvents(profile Profile, sourcePath string) ([]Event, string, error) {
 }
 
 func scanEvents(profile Profile, file io.Reader, maxLine, maxEvents int) ([]Event, string, error) {
+	// scanEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), maxLine)
 	events := []Event{}
@@ -1213,6 +1426,9 @@ func scanEvents(profile Profile, file io.Reader, maxLine, maxEvents int) ([]Even
 }
 
 func scanEventLines(profile Profile, scanner *bufio.Scanner, sourceHash hash.Hash, events []Event, lineNo, maxEvents int) ([]Event, string, error) {
+	// scanEventLines keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for scanner.Scan() {
 
 		lineNo++
@@ -1227,6 +1443,9 @@ func scanEventLines(profile Profile, scanner *bufio.Scanner, sourceHash hash.Has
 }
 
 func appendScannedEvent(events []Event, event Event, ok bool) []Event {
+	// appendScannedEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if ok {
 
 		return append(events, event)
@@ -1235,6 +1454,9 @@ func appendScannedEvent(events []Event, event Event, ok bool) []Event {
 }
 
 func scannedEvents(events []Event, sourceHash hash.Hash, scanErr error) ([]Event, string, error) {
+	// scannedEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if scanErr != nil {
 		return nil, "", scanErr
 	}
@@ -1243,6 +1465,9 @@ func scannedEvents(events []Event, sourceHash hash.Hash, scanErr error) ([]Event
 }
 
 func readEventLine(profile Profile, line []byte, lineNo, eventCount, maxEvents int, sourceHash io.Writer) (Event, bool, error) {
+	// readEventLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if _, err := sourceHash.Write(line); err != nil {
 		return Event{}, false, err
 	}
@@ -1259,6 +1484,9 @@ func readEventLine(profile Profile, line []byte, lineNo, eventCount, maxEvents i
 }
 
 func effectiveEventLimits(limits Limits) (int, int) {
+	// effectiveEventLimits keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	maxLine := limits.MaxLineBytes
 	if maxLine <= 0 {
 		maxLine = DefaultMaxLineBytes
@@ -1272,6 +1500,9 @@ func effectiveEventLimits(limits Limits) (int, int) {
 }
 
 func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
+	// parseEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	event, err := decodeSafeEventLine(line, lineNo)
 	if err != nil {
 		return Event{}, err
@@ -1281,6 +1512,9 @@ func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
 }
 
 func decodeSafeEventLine(line []byte, lineNo int) (Event, error) {
+	// decodeSafeEventLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	raw, err := decodeRawEventLine(line, lineNo)
 	if err != nil {
 		return Event{}, err
@@ -1293,6 +1527,9 @@ func decodeSafeEventLine(line []byte, lineNo int) (Event, error) {
 }
 
 func decodeRawEventLine(line []byte, lineNo int) (map[string]any, error) {
+	// decodeRawEventLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var raw map[string]any
 	if err := json.Unmarshal(line, &raw); err != nil {
 
@@ -1302,6 +1539,9 @@ func decodeRawEventLine(line []byte, lineNo int) (map[string]any, error) {
 }
 
 func decodeEventLine(line []byte, lineNo int) (Event, error) {
+	// decodeEventLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var event Event
 	if err := json.Unmarshal(line, &event); err != nil {
 
@@ -1310,6 +1550,9 @@ func decodeEventLine(line []byte, lineNo int) (Event, error) {
 	return event, nil
 }
 func rejectUnsafeEvent(raw map[string]any, lineNo int) error {
+	// rejectUnsafeEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeField, reason := findUnsafe(raw); unsafeField != "" {
 
 		return fmt.Errorf("source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
@@ -1318,6 +1561,9 @@ func rejectUnsafeEvent(raw map[string]any, lineNo int) error {
 }
 
 func validateParsedEvent(profile Profile, event Event, line []byte, lineNo int) error {
+	// validateParsedEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	expected := digestLine(line)
 	if event.SourceDigest != expected {
 		return fmt.Errorf("source line %d: source_digest_mismatch:%s", lineNo, safeEvent(event.EventID))
@@ -1329,6 +1575,9 @@ func validateParsedEvent(profile Profile, event Event, line []byte, lineNo int) 
 	return nil
 }
 func validateEvent(profile Profile, event Event) error {
+	// validateEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := validateEventIdentity(profile, event); err != nil {
 		return err
 	}
@@ -1343,6 +1592,9 @@ func validateEvent(profile Profile, event Event) error {
 }
 
 func validateEventIdentity(profile Profile, event Event) error {
+	// validateEventIdentity keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, check := range eventIdentityChecks(profile, event) {
 
 		if !check.ok {
@@ -1353,6 +1605,9 @@ func validateEventIdentity(profile Profile, event Event) error {
 }
 
 func eventIdentityChecks(profile Profile, event Event) []eventRefCheck {
+	// eventIdentityChecks keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return []eventRefCheck{
 		{safeFileIDPattern.MatchString(event.EventID), "unsafe event_id"},
@@ -1363,6 +1618,9 @@ func eventIdentityChecks(profile Profile, event Event) []eventRefCheck {
 }
 
 func validateObservedAt(value string) error {
+	// validateObservedAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if value == "" {
 
 		return nil
@@ -1374,6 +1632,9 @@ func validateObservedAt(value string) error {
 }
 
 func validateEventRefs(event Event) error {
+	// validateEventRefs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, check := range eventRefChecks(event) {
 
 		if !check.ok {
@@ -1384,6 +1645,9 @@ func validateEventRefs(event Event) error {
 }
 
 func eventRefChecks(event Event) []eventRefCheck {
+	// eventRefChecks keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return []eventRefCheck{
 		{safeRef(event.SourceRef), "unsafe source_ref"},
@@ -1395,6 +1659,9 @@ func eventRefChecks(event Event) []eventRefCheck {
 }
 
 func validateEventContent(event Event) error {
+	// validateEventContent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !validContentState(event.ContentState) {
 
 		return errors.New("invalid content_state")
@@ -1403,6 +1670,9 @@ func validateEventContent(event Event) error {
 }
 
 func validateUnavailableFields(fields []UnavailableField) error {
+	// validateUnavailableFields keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, field := range fields {
 
 		if !validUnavailableField(field) {
@@ -1413,6 +1683,9 @@ func validateUnavailableFields(fields []UnavailableField) error {
 }
 
 func validUnavailableField(field UnavailableField) bool {
+	// validUnavailableField keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return safeIDPattern.MatchString(field.Field) &&
 		field.State == StateNotAssessed &&
@@ -1420,6 +1693,9 @@ func validUnavailableField(field UnavailableField) bool {
 }
 
 func evaluate(profile Profile, run Run, events []Event) Validation {
+	// evaluate keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	dimensions := evaluationDimensions(profile, events)
 	state, reason := compose(dimensions)
 	if run.EventSchemaVersion != profile.EventSchemaVersion {
@@ -1429,6 +1705,9 @@ func evaluate(profile Profile, run Run, events []Event) Validation {
 	return validationFromEvaluation(profile, dimensions, len(events), state, reason)
 }
 func validationFromEvaluation(profile Profile, dimensions []Dimension, eventCount int, state, reason string) Validation {
+	// validationFromEvaluation keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	validation := Validation{
 		SchemaVersion:      ValidationSchemaVersion,
@@ -1448,6 +1727,9 @@ func validationFromEvaluation(profile Profile, dimensions []Dimension, eventCoun
 }
 
 func evaluationDimensions(profile Profile, events []Event) []Dimension {
+	// evaluationDimensions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	counts := eventFamilyCounts(events)
 	dimensions, required := requiredDimensions(profile.RequiredEventFamilies, counts)
 	dimensions = append(dimensions, optionalDimensions(profile.OptionalEventFamilies, required, counts)...)
@@ -1457,6 +1739,9 @@ func evaluationDimensions(profile Profile, events []Event) []Dimension {
 }
 
 func eventFamilyCounts(events []Event) map[string]int {
+	// eventFamilyCounts keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	counts := map[string]int{}
 	for _, event := range events {
 
@@ -1466,6 +1751,9 @@ func eventFamilyCounts(events []Event) map[string]int {
 }
 
 func requiredDimensions(families []string, counts map[string]int) ([]Dimension, map[string]bool) {
+	// requiredDimensions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	required := map[string]bool{}
 	dimensions := make([]Dimension, 0, len(families))
 	for _, family := range families {
@@ -1477,6 +1765,9 @@ func requiredDimensions(families []string, counts map[string]int) ([]Dimension, 
 }
 
 func optionalDimensions(families []string, required map[string]bool, counts map[string]int) []Dimension {
+	// optionalDimensions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	dimensions := []Dimension{}
 	for _, family := range families {
 		if !required[family] {
@@ -1488,6 +1779,9 @@ func optionalDimensions(families []string, required map[string]bool, counts map[
 }
 
 func sortDimensions(dimensions []Dimension) {
+	// sortDimensions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	sort.Slice(dimensions, func(i, j int) bool {
 		if dimensions[i].Required != dimensions[j].Required {
@@ -1497,6 +1791,9 @@ func sortDimensions(dimensions []Dimension) {
 	})
 }
 func dimension(family string, required bool, count int) Dimension {
+	// dimension keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if count > 0 {
 		return Dimension{Family: family, Required: required, State: StatePass, ReasonCode: "event_family_observed", EventCount: count}
 	}
@@ -1509,6 +1806,9 @@ func dimension(family string, required bool, count int) Dimension {
 }
 
 func compose(dimensions []Dimension) (string, string) {
+	// compose keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	state := StatePass
 	reason := "all_required_dimensions_observed"
 	for _, dim := range dimensions {
@@ -1531,6 +1831,9 @@ func rank(state string) int {
 }
 
 func safeExistingFile(path string) (string, error) {
+	// safeExistingFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return safeExistingPath(path, existingPathSpec{
 		traversalError: "path must be relative local file without traversal",
@@ -1540,6 +1843,9 @@ func safeExistingFile(path string) (string, error) {
 }
 
 func safeExistingDir(path string) (string, error) {
+	// safeExistingDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return safeExistingPath(path, existingPathSpec{
 		traversalError: "path must be relative local directory without traversal",
@@ -1548,6 +1854,9 @@ func safeExistingDir(path string) (string, error) {
 	})
 }
 func safeExistingPath(path string, spec existingPathSpec) (string, error) {
+	// safeExistingPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	cleanPath, err := sanitizeExistingPath(path, spec.traversalError)
 	if err != nil {
@@ -1566,6 +1875,9 @@ func safeExistingPath(path string, spec existingPathSpec) (string, error) {
 }
 
 func resolveExistingAbsolutePath(path string) (string, error) {
+	// resolveExistingAbsolutePath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
 		return "", err
@@ -1575,6 +1887,9 @@ func resolveExistingAbsolutePath(path string) (string, error) {
 }
 
 func sanitizeExistingPath(path, traversalError string) (string, error) {
+	// sanitizeExistingPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
 		return "", errors.New(traversalError)
 	}
@@ -1583,6 +1898,9 @@ func sanitizeExistingPath(path, traversalError string) (string, error) {
 }
 
 func relativeWorkingDirectoryPath(abs string) (string, error) {
+	// relativeWorkingDirectoryPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	rel, err := relativePathFromWorkingDirectory(abs)
 	if err != nil {
 		return "", err
@@ -1595,6 +1913,9 @@ func relativeWorkingDirectoryPath(abs string) (string, error) {
 }
 
 func ensureExpectedPathType(path string, spec existingPathSpec) error {
+	// ensureExpectedPathType keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	info, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -1607,6 +1928,9 @@ func ensureExpectedPathType(path string, spec existingPathSpec) error {
 }
 
 func safeOutFile(path string) (string, error) {
+	// safeOutFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeOutputPath(path) {
 		return "", errors.New("out must be a relative local file without traversal")
 	}
@@ -1628,12 +1952,18 @@ func unsafeOutputPath(path string) bool {
 }
 
 func safeOutputBaseName(base string) bool {
+	// safeOutputBaseName keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	stem := strings.TrimSuffix(base, filepath.Ext(base))
 
 	return safeFileIDPattern.MatchString(stem) && !strings.ContainsAny(base, `/\`)
 }
 
 func safeParentDir(path string) (string, error) {
+	// safeParentDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	clean, err := normalizePotentialParentPath(path)
 	if err != nil {
@@ -1649,6 +1979,9 @@ func safeParentDir(path string) (string, error) {
 }
 
 func normalizePotentialParentPath(path string) (string, error) {
+	// normalizePotentialParentPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if path == "" {
 
 		path = "."
@@ -1660,6 +1993,9 @@ func normalizePotentialParentPath(path string) (string, error) {
 }
 
 func validatePotentialParentPath(path string) error {
+	// validatePotentialParentPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafePotentialParentPath(path) {
 
 		return errors.New("parent path must be relative local directory without traversal")
@@ -1670,6 +2006,9 @@ func unsafePotentialParentPath(path string) bool {
 	return filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..")
 }
 func resolveParentPathWithinWorkingDirectory(clean string) (string, error) {
+	// resolveParentPathWithinWorkingDirectory keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	resolved, err := filepath.EvalSymlinks(clean)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -1682,6 +2021,9 @@ func resolveParentPathWithinWorkingDirectory(clean string) (string, error) {
 }
 
 func resolveMissingParent(clean string) (string, error) {
+	// resolveMissingParent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parent := filepath.Dir(clean)
 	if parent == clean {
 
@@ -1691,6 +2033,9 @@ func resolveMissingParent(clean string) (string, error) {
 }
 
 func ensurePathInsideWorkingDirectory(path string) (string, error) {
+	// ensurePathInsideWorkingDirectory keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	absPath, err := absolutePath(path)
 	if err != nil {
 		return "", err
@@ -1712,6 +2057,9 @@ func absolutePath(path string) (string, error) {
 }
 
 func relativePathFromWorkingDirectory(path string) (string, error) {
+	// relativePathFromWorkingDirectory keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -1721,6 +2069,9 @@ func relativePathFromWorkingDirectory(path string) (string, error) {
 }
 
 func safeOutDir(path string) (string, error) {
+	// safeOutDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeOutputPath(path) {
 		return "", errors.New("out must be a relative local directory without traversal")
 	}
@@ -1730,6 +2081,9 @@ func safeOutDir(path string) (string, error) {
 }
 
 func safeCleanOutDir(clean string) (string, error) {
+	// safeCleanOutDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	exists, err := pathExistsForLstat(clean)
 	if err != nil {
@@ -1746,6 +2100,9 @@ func safeCleanOutDir(clean string) (string, error) {
 }
 
 func pathExistsForLstat(path string) (bool, error) {
+	// pathExistsForLstat keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if _, err := os.Lstat(path); err == nil {
 		return true, nil
 	} else if errors.Is(err, os.ErrNotExist) {
@@ -1757,6 +2114,9 @@ func pathExistsForLstat(path string) (bool, error) {
 }
 
 func ensureOutParentInsideWorkingDirectory(clean string) error {
+	// ensureOutParentInsideWorkingDirectory keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parentEscapes, err := outParentEscapes(clean)
 	if err != nil {
 		return err
@@ -1769,6 +2129,9 @@ func ensureOutParentInsideWorkingDirectory(clean string) error {
 }
 
 func safeExistingOutDir(clean string) (string, error) {
+	// safeExistingOutDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	rel, err := relativeSymlinkTarget(clean)
 	if err != nil {
 		return "", err
@@ -1782,6 +2145,9 @@ func safeExistingOutDir(clean string) (string, error) {
 }
 
 func outParentEscapes(clean string) (bool, error) {
+	// outParentEscapes keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parent := filepath.Dir(clean)
 	for parent != "." && parent != string(filepath.Separator) {
 
@@ -1794,6 +2160,9 @@ func outParentEscapes(clean string) (bool, error) {
 	return false, nil
 }
 func existingParentEscapes(parent string) (bool, bool, error) {
+	// existingParentEscapes keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if _, statErr := os.Lstat(parent); statErr != nil {
 
 		return false, false, nil
@@ -1806,6 +2175,9 @@ func existingParentEscapes(parent string) (bool, bool, error) {
 }
 
 func relativeSymlinkTarget(path string) (string, error) {
+	// relativeSymlinkTarget keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
 		return "", err
@@ -1828,6 +2200,9 @@ func pathEscapesWorkingDirectory(rel string) bool {
 }
 
 func ensureOutDirEmptyOrMissing(clean string) (string, error) {
+	// ensureOutDirEmptyOrMissing keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	entries, err := os.ReadDir(clean)
 	if err := validateOutDirEntries(entries, err); err != nil {
 		return "", err
@@ -1836,6 +2211,9 @@ func ensureOutDirEmptyOrMissing(clean string) (string, error) {
 	return clean, nil
 }
 func validateOutDirEntries(entries []os.DirEntry, err error) error {
+	// validateOutDirEntries keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err == nil && len(entries) > 0 {
 		return errors.New("harness observe refuses existing non-empty --out")
 	}
@@ -1844,6 +2222,9 @@ func validateOutDirEntries(entries []os.DirEntry, err error) error {
 }
 
 func ignorableMissingOutDir(err error) error {
+	// ignorableMissingOutDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 
 		return nil
@@ -1852,6 +2233,9 @@ func ignorableMissingOutDir(err error) error {
 }
 
 func writeJSON(path string, value any) error {
+	// writeJSON keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -1865,6 +2249,9 @@ func writeJSON(path string, value any) error {
 }
 
 func eventRefs(events []Event) []string {
+	// eventRefs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	refs := make([]string, 0, len(events))
 	for _, event := range events {
 
@@ -1875,6 +2262,9 @@ func eventRefs(events []Event) []string {
 }
 
 func safeEventRef(ref string) bool {
+	// safeEventRef keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeEventRefPath(ref) {
 		return false
 	}
@@ -1892,6 +2282,9 @@ func unsafeEventRefPath(ref string) bool {
 }
 
 func digestLine(line []byte) string {
+	// digestLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var raw map[string]any
 	if err := json.Unmarshal(line, &raw); err == nil {
 		raw["source_digest"] = ""
@@ -1908,6 +2301,9 @@ func digestLine(line []byte) string {
 }
 
 func validationDigest(validation Validation) string {
+	// validationDigest keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	copy := validation
 	copy.ValidationDigest = ""
 
@@ -1917,12 +2313,18 @@ func validationDigest(validation Validation) string {
 }
 
 func digestCommand(command []string) string {
+	// digestCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	data, _ := json.Marshal(command)
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }
 func extractCommandModel(command []string) string {
+	// extractCommandModel keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if shellCommand := shellCommandString(command); shellCommand != "" {
 
 		if model := extractCommandModelArgs(shellFields(shellCommand)); model != "" {
@@ -1933,6 +2335,9 @@ func extractCommandModel(command []string) string {
 }
 
 func shellCommandString(command []string) string {
+	// shellCommandString keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !shellCommandShape(command) {
 		return ""
 	}
@@ -1949,6 +2354,9 @@ func shellCommandShape(command []string) bool {
 }
 
 func extractCommandModelArgs(args []string) string {
+	// extractCommandModelArgs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for i, arg := range args {
 
 		if model, matched := commandModelArg(args, i, arg); matched {
@@ -1959,6 +2367,9 @@ func extractCommandModelArgs(args []string) string {
 }
 
 func commandModelArg(args []string, i int, arg string) (string, bool) {
+	// commandModelArg keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if arg == "--model" || arg == "-m" {
 
 		return nextCommandModelArg(args, i), true
@@ -1970,6 +2381,9 @@ func commandModelArg(args []string, i int, arg string) (string, bool) {
 }
 
 func nextCommandModelArg(args []string, i int) string {
+	// nextCommandModelArg keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if i+1 >= len(args) {
 		return ""
 	}
@@ -1978,6 +2392,9 @@ func nextCommandModelArg(args []string, i int) string {
 }
 
 func prefixedCommandModelArg(arg string) (string, bool) {
+	// prefixedCommandModelArg keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, prefix := range []string{"--model=", "-m="} {
 		if strings.HasPrefix(arg, prefix) {
 
@@ -1991,6 +2408,9 @@ func prefixedCommandModelArg(arg string) (string, bool) {
 // controlled sh -c wrapper. It is not a general shell parser; model values still
 // have to pass safeCommandModel before they become retained facts.
 func shellFields(command string) []string {
+	// shellFields keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	scanner := shellFieldScanner{}
 	for _, r := range command {
@@ -1999,6 +2419,9 @@ func shellFields(command string) []string {
 	return scanner.finish()
 }
 func (scanner *shellFieldScanner) scan(r rune) {
+	// scan keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if scanner.consumeEscaped(r) {
 		return
 	}
@@ -2015,6 +2438,9 @@ func (scanner *shellFieldScanner) scan(r rune) {
 }
 
 func (scanner *shellFieldScanner) consumeEscaped(r rune) bool {
+	// consumeEscaped keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !scanner.escaped {
 		return false
 	}
@@ -2032,6 +2458,9 @@ func (scanner *shellFieldScanner) startsEscape(r rune) bool {
 }
 
 func (scanner *shellFieldScanner) consumeQuoted(r rune) bool {
+	// consumeQuoted keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if scanner.quote == 0 {
 		return false
 	}
@@ -2045,6 +2474,9 @@ func (scanner *shellFieldScanner) consumeQuoted(r rune) bool {
 }
 
 func (scanner *shellFieldScanner) consumeUnquoted(r rune) {
+	// consumeUnquoted keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch {
 	case shellQuote(r):
 
@@ -2060,6 +2492,9 @@ func shellQuote(r rune) bool {
 }
 
 func (scanner *shellFieldScanner) finish() []string {
+	// finish keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if scanner.escaped {
 
 		scanner.current.WriteRune('\\')
@@ -2069,6 +2504,9 @@ func (scanner *shellFieldScanner) finish() []string {
 }
 
 func (scanner *shellFieldScanner) flush() {
+	// flush keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if scanner.current.Len() == 0 {
 		return
 	}
@@ -2082,6 +2520,9 @@ func shellFieldSeparator(r rune) bool {
 }
 
 func safeCommandModel(model string) string {
+	// safeCommandModel keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	model = strings.TrimSpace(model)
 	if unsafeCommandModelIdentity(model) {
 		return ""
@@ -2109,6 +2550,9 @@ func unsafeCommandModelPath(model string) bool {
 }
 
 func digestFile(path string) string {
+	// digestFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -2119,6 +2563,9 @@ func digestFile(path string) string {
 }
 
 func sourceCommit() string {
+	// sourceCommit keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	cmd := exec.Command("git", "rev-parse", "--verify", "HEAD")
 	data, err := cmd.Output()
 	if err != nil {
@@ -2152,6 +2599,9 @@ func findUnsafeAt(path string, value any) (string, string) {
 }
 
 func findUnsafeValueAt(path string, value any, rawEvent bool) (string, string) {
+	// findUnsafeValueAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch v := value.(type) {
 	case map[string]any:
 		return findUnsafeMapAt(path, v, rawEvent)
@@ -2164,6 +2614,9 @@ func findUnsafeValueAt(path string, value any, rawEvent bool) (string, string) {
 	return "", ""
 }
 func resolveSessionSetupProfilePath(profilePath string) (string, error) {
+	// resolveSessionSetupProfilePath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if strings.TrimSpace(profilePath) == "" {
 		return "", errors.New("observe setup requires --profile")
 	}
@@ -2176,6 +2629,9 @@ func resolveSessionSetupProfilePath(profilePath string) (string, error) {
 }
 
 func resolveSessionSetupOutDir(outDir string) (string, error) {
+	// resolveSessionSetupOutDir keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if strings.TrimSpace(outDir) == "" {
 		return "", errors.New("observe setup requires --out")
 	}
@@ -2183,6 +2639,9 @@ func resolveSessionSetupOutDir(outDir string) (string, error) {
 	return safeOutDir(outDir)
 }
 func setupSessionRun(profilePath, outDir string, now time.Time, rawCommand string) (SessionRun, error) {
+	// setupSessionRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profile, err := prepareSessionRun(profilePath, outDir)
 	if err != nil {
 		return SessionRun{}, err
@@ -2202,6 +2661,9 @@ func setupSessionRun(profilePath, outDir string, now time.Time, rawCommand strin
 }
 
 func prepareSessionRun(profilePath, outDir string) (SessionProfile, error) {
+	// prepareSessionRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profile, err := LoadSessionProfile(profilePath)
 	if err != nil {
 		return SessionProfile{}, err
@@ -2214,6 +2676,9 @@ func prepareSessionRun(profilePath, outDir string) (SessionProfile, error) {
 }
 
 func newSessionRunWithCommand(profile SessionProfile, now time.Time, rawCommand string) SessionRun {
+	// newSessionRunWithCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	run := newSessionRun(profile, sessionRunTime(now))
 	setSessionCommand(&run, rawCommand)
@@ -2221,6 +2686,9 @@ func newSessionRunWithCommand(profile SessionProfile, now time.Time, rawCommand 
 }
 
 func setSessionCommand(run *SessionRun, rawCommand string) {
+	// setSessionCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if strings.TrimSpace(rawCommand) == "" {
 		return
 	}
@@ -2235,6 +2703,9 @@ func setSessionCommand(run *SessionRun, rawCommand string) {
 }
 
 func sessionRunTime(now time.Time) time.Time {
+	// sessionRunTime keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if now.IsZero() {
 
 		return time.Now().UTC()
@@ -2247,6 +2718,9 @@ func writeSessionJSON(path string, run SessionRun) error {
 }
 
 func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
+	// CollectSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	ctx, err := prepareSessionCollection(opts)
 	if err != nil {
 		return SessionRun{}, Run{}, err
@@ -2263,6 +2737,9 @@ func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
 }
 
 func prepareSessionCollection(opts SessionCollectOptions) (sessionCollectionContext, error) {
+	// prepareSessionCollection keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, runDir, err := validateSessionCollectOptions(opts)
 	if err != nil {
 		return sessionCollectionContext{}, err
@@ -2272,6 +2749,9 @@ func prepareSessionCollection(opts SessionCollectOptions) (sessionCollectionCont
 }
 
 func loadSessionCollection(profilePath, runDir string, now time.Time) (sessionCollectionContext, error) {
+	// loadSessionCollection keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profile, session, err := loadSessionCollectionInputs(profilePath, runDir)
 	if err != nil {
 		return sessionCollectionContext{}, err
@@ -2286,6 +2766,9 @@ func loadSessionCollection(profilePath, runDir string, now time.Time) (sessionCo
 }
 
 func newSessionCollectionContext(profilePath, runDir string, now time.Time, profile SessionProfile, session SessionRun, harnessProfilePath string, harnessProfile Profile) sessionCollectionContext {
+	// newSessionCollectionContext keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return sessionCollectionContext{
 		profilePath:        profilePath,
@@ -2299,6 +2782,9 @@ func newSessionCollectionContext(profilePath, runDir string, now time.Time, prof
 }
 
 func sessionCollectionTime(now time.Time) time.Time {
+	// sessionCollectionTime keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if now.IsZero() {
 
 		return time.Now().UTC()
@@ -2306,6 +2792,9 @@ func sessionCollectionTime(now time.Time) time.Time {
 	return now
 }
 func loadSessionCollectionInputs(profilePath, runDir string) (SessionProfile, SessionRun, error) {
+	// loadSessionCollectionInputs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profile, err := LoadSessionProfile(profilePath)
 	if err != nil {
 		return SessionProfile{}, SessionRun{}, err
@@ -2323,6 +2812,9 @@ func loadSessionCollectionInputs(profilePath, runDir string) (SessionProfile, Se
 	return profile, session, nil
 }
 func findUnsafeMapAt(path string, values map[string]any, rawEvent bool) (string, string) {
+	// findUnsafeMapAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for key, child := range values {
 
 		if field, reason := findUnsafeMapChild(path, key, child, rawEvent); field != "" {
@@ -2333,6 +2825,9 @@ func findUnsafeMapAt(path string, values map[string]any, rawEvent bool) (string,
 }
 
 func findUnsafeMapChild(path, key string, child any, rawEvent bool) (string, string) {
+	// findUnsafeMapChild keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	childPath := childPath(path, key)
 	reason, skip := unsafeMapFieldReason(childPath, strings.ToLower(key), child, rawEvent)
 	if reason != "" {
@@ -2346,6 +2841,9 @@ func findUnsafeMapChild(path, key string, child any, rawEvent bool) (string, str
 }
 
 func childPath(parent, key string) string {
+	// childPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if parent == "" {
 
 		return key
@@ -2354,6 +2852,9 @@ func childPath(parent, key string) string {
 }
 
 func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, bool) {
+	// unsafeMapFieldReason keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if skippableRawEventField(path, key, value, rawEvent) {
 		return "", true
 	}
@@ -2368,6 +2869,9 @@ func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, b
 }
 
 func skippableRawEventField(path, key string, value any, rawEvent bool) bool {
+	// skippableRawEventField keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return rawEvent &&
 		(unretainedRawToolInputField(path, key, value) ||
@@ -2375,6 +2879,9 @@ func skippableRawEventField(path, key string, value any, rawEvent bool) bool {
 }
 
 func unretainedRawToolInputField(path, key string, value any) bool {
+	// unretainedRawToolInputField keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if key != "prompt" {
 		return false
 	}
@@ -2390,6 +2897,9 @@ func unretainedRawToolInputField(path, key string, value any) bool {
 }
 
 func unretainedRawBodyField(key string) bool {
+	// unretainedRawBodyField keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch key {
 	case "text", "content", "input", "output", "stdout", "stderr":
 
@@ -2400,6 +2910,9 @@ func unretainedRawBodyField(key string) bool {
 }
 
 func structuredRawBody(value any) bool {
+	// structuredRawBody keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch value.(type) {
 	case map[string]any:
 
@@ -2410,6 +2923,9 @@ func structuredRawBody(value any) bool {
 }
 
 func findUnsafeSliceAt(path string, values []any, rawEvent bool) (string, string) {
+	// findUnsafeSliceAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for i, child := range values {
 
 		if field, reason := findUnsafeValueAt(fmt.Sprintf("%s[%d]", path, i), child, rawEvent); field != "" {
@@ -2420,6 +2936,9 @@ func findUnsafeSliceAt(path string, values []any, rawEvent bool) (string, string
 }
 
 func findUnsafeStringAt(path, value string, rawEvent bool) (string, string) {
+	// findUnsafeStringAt keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if strings.TrimSpace(value) == "" {
 
 		return "", ""
@@ -2430,6 +2949,9 @@ func findUnsafeStringAt(path, value string, rawEvent bool) (string, string) {
 	return "", ""
 }
 func unsafeStringReason(path, value string, rawEvent bool) string {
+	// unsafeStringReason keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeStringPath(value, rawEvent) {
 		return "unsafe_path_or_private_path"
 	}
@@ -2456,6 +2978,9 @@ func unsafePathValue(value string) bool {
 }
 
 func unsafeEncodedToken(path, value string, rawEvent bool) bool {
+	// unsafeEncodedToken keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if safeEncodedTokenExemption(path, value, rawEvent) {
 		return false
 	}
@@ -2472,6 +2997,9 @@ func rawEventPathLikeField(path string, rawEvent bool) bool {
 }
 
 func rawPathLikeField(path string) bool {
+	// rawPathLikeField keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch rawPathFieldName(path) {
 	case "path", "file", "filepath", "file_path", "dir", "directory", "cwd":
 
@@ -2482,6 +3010,9 @@ func rawPathLikeField(path string) bool {
 }
 
 func rawPathFieldName(path string) string {
+	// rawPathFieldName keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	field := path
 	if idx := strings.LastIndex(field, "."); idx >= 0 {
 		field = field[idx+1:]
@@ -2493,6 +3024,9 @@ func rawPathFieldName(path string) string {
 	return strings.ToLower(field)
 }
 func unsafeURL(raw string) bool {
+	// unsafeURL keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parsed, err := url.Parse(raw)
 	if err != nil || parsed.Scheme == "" {
 		return false
@@ -2505,6 +3039,9 @@ func unsafeURL(raw string) bool {
 }
 
 func queryHasAuthKey(values url.Values) bool {
+	// queryHasAuthKey keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for key := range values {
 
 		if authQueryKeys[strings.ToLower(key)] {
@@ -2515,6 +3052,9 @@ func queryHasAuthKey(values url.Values) bool {
 }
 
 func digestField(path string) bool {
+	// digestField keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	last := path
 	if idx := strings.LastIndex(last, "."); idx >= 0 {
 
@@ -2544,6 +3084,9 @@ func safeRef(ref string) bool {
 }
 
 func safeOperationRef(ref string) bool {
+	// safeOperationRef keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if operationRefPrefix(ref) {
 
 		return safePrefixedOperationRef(ref)
@@ -2559,6 +3102,9 @@ func safePrefixedOperationRef(ref string) bool {
 	return !strings.Contains(ref, "..") && !strings.Contains(ref, "://") && len(ref) <= 256
 }
 func safeEvent(eventID string) string {
+	// safeEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if safeIDPattern.MatchString(eventID) {
 		return eventID
 	}
@@ -2571,6 +3117,9 @@ func nonAuthority() string {
 }
 
 func DecodeValidation(r io.Reader) (Validation, error) {
+	// DecodeValidation keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var validation Validation
 	if err := json.NewDecoder(r).Decode(&validation); err != nil {
 
@@ -2579,6 +3128,9 @@ func DecodeValidation(r io.Reader) (Validation, error) {
 	return validation, nil
 }
 func validateSessionCollectOptions(opts SessionCollectOptions) (string, string, error) {
+	// validateSessionCollectOptions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireSessionCollectOptions(opts); err != nil {
 		return "", "", err
 	}
@@ -2596,6 +3148,9 @@ func validateSessionCollectOptions(opts SessionCollectOptions) (string, string, 
 }
 
 func requireSessionCollectOptions(opts SessionCollectOptions) error {
+	// requireSessionCollectOptions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireNonBlank(opts.ProfilePath, "observe collect requires --profile"); err != nil {
 		return err
 	}
@@ -2607,6 +3162,9 @@ func requireSessionCollectOptions(opts SessionCollectOptions) error {
 }
 
 func loadHarnessProfile(profilePath string, profile SessionProfile) (string, Profile, error) {
+	// loadHarnessProfile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	harnessProfilePath, err := safeProfileRelativeFile(profilePath, profile.HarnessProfilePath)
 	if err != nil {
@@ -2620,6 +3178,9 @@ func loadHarnessProfile(profilePath string, profile SessionProfile) (string, Pro
 }
 
 func resolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+	// resolveSessionEventSource keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
 	if err == nil {
@@ -2629,6 +3190,9 @@ func resolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
 }
 
 func resolveMissingSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+	// resolveMissingSessionEventSource keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if ctx.profile.RawEventFormat == "" {
 
 		return "", errSessionSourceUnavailable
@@ -2637,6 +3201,9 @@ func resolveMissingSessionEventSource(ctx *sessionCollectionContext) (string, er
 }
 
 func normalizeAndResolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+	// normalizeAndResolveSessionEventSource keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	if normalizeErr := normalizeSessionRawEvents(ctx); normalizeErr != nil {
 		return "", normalizeErr
@@ -2649,12 +3216,18 @@ func normalizeAndResolveSessionEventSource(ctx *sessionCollectionContext) (strin
 }
 
 func resolvedSessionEventSource(ctx *sessionCollectionContext) (string, bool) {
+	// resolvedSessionEventSource keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
 	return sourcePath, err == nil
 }
 
 func normalizeSessionRawEvents(ctx *sessionCollectionContext) error {
+	// normalizeSessionRawEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	rawPath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.RawEventSourcePath)
 	if err != nil {
 		return fmt.Errorf("raw_event_source_path invalid: %w", err)
@@ -2673,6 +3246,9 @@ func normalizeSessionRawEvents(ctx *sessionCollectionContext) error {
 }
 
 func markSessionSourceUnavailable(ctx sessionCollectionContext) (SessionRun, Run, error) {
+	// markSessionSourceUnavailable keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	session := unavailableSession(ctx)
 
 	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
@@ -2682,6 +3258,9 @@ func markSessionSourceUnavailable(ctx sessionCollectionContext) (SessionRun, Run
 	return session, unavailableObservedRun(ctx), nil
 }
 func unavailableSession(ctx sessionCollectionContext) SessionRun {
+	// unavailableSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	session := ctx.session
 
 	session.CollectionState = StateCannotVerify
@@ -2691,6 +3270,9 @@ func unavailableSession(ctx sessionCollectionContext) SessionRun {
 }
 
 func unavailableObservedRun(ctx sessionCollectionContext) Run {
+	// unavailableObservedRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	return Run{
 		SchemaVersion:      RunSchemaVersion,
 		ProfileID:          ctx.harnessProfile.ProfileID,
@@ -2704,6 +3286,9 @@ func unavailableObservedRun(ctx sessionCollectionContext) Run {
 }
 
 func collectSessionSource(ctx sessionCollectionContext, sourcePath string) (SessionRun, Run, error) {
+	// collectSessionSource keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	observedDir := filepath.Join(ctx.runDir, "observed")
 	if err := os.MkdirAll(observedDir, 0o755); err != nil {
 		return SessionRun{}, Run{}, err
@@ -2721,6 +3306,9 @@ func collectSessionSource(ctx sessionCollectionContext, sourcePath string) (Sess
 }
 
 func writeObservedRun(observedDir string, events []Event, observed Run) error {
+	// writeObservedRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	if err := writeObservedEvents(observedDir, events); err != nil {
 		return err
@@ -2729,6 +3317,9 @@ func writeObservedRun(observedDir string, events []Event, observed Run) error {
 }
 
 func writeObservedEvents(observedDir string, events []Event) error {
+	// writeObservedEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, event := range events {
 
 		if err := writeJSON(filepath.Join(observedDir, "events", event.EventID+".json"), event); err != nil {
@@ -2738,6 +3329,9 @@ func writeObservedEvents(observedDir string, events []Event) error {
 	return nil
 }
 func observedRun(ctx sessionCollectionContext, sourcePath, sourceDigest string, events []Event) Run {
+	// observedRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return Run{
 		SchemaVersion:      RunSchemaVersion,
@@ -2753,6 +3347,9 @@ func observedRun(ctx sessionCollectionContext, sourcePath, sourceDigest string, 
 }
 
 func finalizeCollectedSession(ctx sessionCollectionContext, observedDir string, observed Run) (SessionRun, Run, error) {
+	// finalizeCollectedSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	session := ctx.session
 	session.ObservedRunDir = filepath.ToSlash("observed")
 	session.OutputDigest = digestFile(filepath.Join(observedDir, "run.json"))
@@ -2770,6 +3367,9 @@ func finalizeCollectedSession(ctx sessionCollectionContext, observedDir string, 
 }
 
 func RunSession(opts SessionOptions) (SessionRun, Run, error) {
+	// RunSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	session, err := setupRunnableSession(opts)
 	if err != nil {
 		return SessionRun{}, Run{}, err
@@ -2783,6 +3383,9 @@ func RunSession(opts SessionOptions) (SessionRun, Run, error) {
 }
 
 func setupRunnableSession(opts SessionOptions) (SessionRun, error) {
+	// setupRunnableSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireSessionCommand(opts.Command); err != nil {
 		return SessionRun{}, err
 	}
@@ -2791,6 +3394,9 @@ func setupRunnableSession(opts SessionOptions) (SessionRun, error) {
 }
 
 func runObservedCommand(command []string, session *SessionRun) (observedCommandResult, error) {
+	// runObservedCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	cmd := discardedCommand(command)
 	setSessionProcessCommand(session, command, time.Now().UTC())
 
@@ -2804,6 +3410,9 @@ func runObservedCommand(command []string, session *SessionRun) (observedCommandR
 }
 
 func requireSessionCommand(command []string) error {
+	// requireSessionCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if len(command) == 0 {
 
 		return errors.New("observe session requires command after --")
@@ -2811,6 +3420,9 @@ func requireSessionCommand(command []string) error {
 	return nil
 }
 func collectFinishedSession(opts SessionOptions, session SessionRun, waitErr error, end time.Time) (SessionRun, Run, error) {
+	// collectFinishedSession keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := writeFinishedSession(opts.OutDir, &session, end); err != nil {
 		return SessionRun{}, Run{}, err
 	}
@@ -2831,6 +3443,9 @@ func writeFinishedSession(outDir string, session *SessionRun, end time.Time) err
 }
 
 func discardedCommand(command []string) *exec.Cmd {
+	// discardedCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Stdin = nil
@@ -2840,6 +3455,9 @@ func discardedCommand(command []string) *exec.Cmd {
 }
 
 func setSessionProcessCommand(session *SessionRun, command []string, start time.Time) {
+	// setSessionProcessCommand keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	session.CommandDigest = digestCommand(command)
 	session.CommandDigestState = StatePass
@@ -2851,6 +3469,9 @@ func setSessionProcessCommand(session *SessionRun, command []string, start time.
 }
 
 func startSessionProcess(cmd *exec.Cmd, session *SessionRun) error {
+	// startSessionProcess keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -2861,6 +3482,9 @@ func startSessionProcess(cmd *exec.Cmd, session *SessionRun) error {
 }
 
 func Validate(opts ValidateOptions) (Validation, error) {
+	// Validate keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, runDir, outPath, err := validateValidateInputs(opts)
 	if err != nil {
 		return Validation{}, err
@@ -2879,6 +3503,9 @@ func Validate(opts ValidateOptions) (Validation, error) {
 }
 
 func validateValidateInputs(opts ValidateOptions) (string, string, string, error) {
+	// validateValidateInputs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireValidateOptions(opts); err != nil {
 		return "", "", "", err
 	}
@@ -2887,6 +3514,9 @@ func validateValidateInputs(opts ValidateOptions) (string, string, string, error
 }
 
 func requireValidateOptions(opts ValidateOptions) error {
+	// requireValidateOptions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireNonBlank(opts.ProfilePath, "harness validate requires --profile"); err != nil {
 		return err
 	}
@@ -2898,6 +3528,9 @@ func requireValidateOptions(opts ValidateOptions) error {
 }
 
 func requireNonBlank(value, message string) error {
+	// requireNonBlank keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if strings.TrimSpace(value) == "" {
 
 		return errors.New(message)
@@ -2905,6 +3538,9 @@ func requireNonBlank(value, message string) error {
 	return nil
 }
 func resolveValidateInputs(opts ValidateOptions) (string, string, string, error) {
+	// resolveValidateInputs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, runDir, err := resolveValidateSourcePaths(opts)
 	if err != nil {
 		return "", "", "", err
@@ -2918,6 +3554,9 @@ func resolveValidateInputs(opts ValidateOptions) (string, string, string, error)
 }
 
 func resolveValidateSourcePaths(opts ValidateOptions) (string, string, error) {
+	// resolveValidateSourcePaths keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	profilePath, err := safeExistingFile(opts.ProfilePath)
 	if err != nil {
@@ -2931,6 +3570,9 @@ func resolveValidateSourcePaths(opts ValidateOptions) (string, string, error) {
 }
 
 func resolveValidateOutPath(outPath string) (string, error) {
+	// resolveValidateOutPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if outPath == "" {
 
 		return "", nil
@@ -2942,6 +3584,9 @@ func resolveValidateOutPath(outPath string) (string, error) {
 	return safeOut, nil
 }
 func evaluationFromRun(profile Profile, runDir string) Validation {
+	// evaluationFromRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	run, events, err := LoadRun(runDir)
 	if err != nil {
 
@@ -2951,6 +3596,9 @@ func evaluationFromRun(profile Profile, runDir string) Validation {
 }
 
 func fallbackSourceUnavailable(profile Profile) Validation {
+	// fallbackSourceUnavailable keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	validation := Validation{
 		SchemaVersion:      ValidationSchemaVersion,
@@ -2967,6 +3615,9 @@ func fallbackSourceUnavailable(profile Profile) Validation {
 }
 
 func writeValidationIfRequested(outPath string, validation Validation) error {
+	// writeValidationIfRequested keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if outPath == "" {
 
 		return nil
@@ -2975,6 +3626,9 @@ func writeValidationIfRequested(outPath string, validation Validation) error {
 }
 
 func LoadProfile(path string) (Profile, error) {
+	// LoadProfile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var profile Profile
 
 	if err := readExistingJSON(path, &profile); err != nil {
@@ -2987,6 +3641,9 @@ func LoadProfile(path string) (Profile, error) {
 }
 
 func LoadSessionProfile(path string) (SessionProfile, error) {
+	// LoadSessionProfile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var profile SessionProfile
 
 	if err := readExistingJSONStrict(path, &profile); err != nil {
@@ -2999,6 +3656,9 @@ func LoadSessionProfile(path string) (SessionProfile, error) {
 }
 
 func validateSessionProfile(profile *SessionProfile) error {
+	// validateSessionProfile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	if err := validateSessionProfileIdentity(*profile); err != nil {
 		return err
@@ -3014,6 +3674,9 @@ func validateSessionProfile(profile *SessionProfile) error {
 }
 
 func validateSessionProfileIdentity(profile SessionProfile) error {
+	// validateSessionProfileIdentity keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if profile.SchemaVersion != SessionProfileSchemaVersion {
 		return fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
 	}
@@ -3025,6 +3688,9 @@ func validateSessionProfileIdentity(profile SessionProfile) error {
 }
 
 func validateSessionProfilePaths(profile SessionProfile) error {
+	// validateSessionProfilePaths keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := validateRequiredSessionPaths(profile); err != nil {
 		return err
 	}
@@ -3033,6 +3699,9 @@ func validateSessionProfilePaths(profile SessionProfile) error {
 }
 
 func validateRequiredSessionPaths(profile SessionProfile) error {
+	// validateRequiredSessionPaths keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := requireNonBlank(profile.HarnessProfilePath, "session profile requires harness_profile_path"); err != nil {
 		return err
 	}
@@ -3044,6 +3713,9 @@ func validateRequiredSessionPaths(profile SessionProfile) error {
 }
 
 func validateRawEventConfig(profile SessionProfile) error {
+	// validateRawEventConfig keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	hasFormat := profile.RawEventFormat != ""
 	hasSource := strings.TrimSpace(profile.RawEventSourcePath) != ""
 
@@ -3055,6 +3727,9 @@ func validateRawEventConfig(profile SessionProfile) error {
 }
 
 func validateRawEventPair(hasFormat, hasSource bool) error {
+	// validateRawEventPair keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	switch {
 	case hasFormat == hasSource:
@@ -3070,6 +3745,9 @@ func unsupportedRawEventFormat(format string) bool {
 	return format != "" && format != OpenCodeJSONLRawFormat
 }
 func normalizeSessionStreamCapture(profile *SessionProfile) error {
+	// normalizeSessionStreamCapture keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	defaultSessionStreamCapture(profile)
 	if profile.StreamCapture == "disabled" {
 		return nil
@@ -3079,6 +3757,9 @@ func normalizeSessionStreamCapture(profile *SessionProfile) error {
 }
 
 func defaultSessionStreamCapture(profile *SessionProfile) {
+	// defaultSessionStreamCapture keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if profile.StreamCapture == "" {
 
 		profile.StreamCapture = "disabled"
@@ -3086,6 +3767,9 @@ func defaultSessionStreamCapture(profile *SessionProfile) {
 }
 
 func unsupportedSessionStreamCapture(mode string) error {
+	// unsupportedSessionStreamCapture keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch mode {
 	case ContentDigestOnly, ContentRetainedSafe:
 
@@ -3096,6 +3780,9 @@ func unsupportedSessionStreamCapture(mode string) error {
 }
 
 func validateSessionSetupActions(actions []SessionSetupAction) error {
+	// validateSessionSetupActions keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if len(actions) > 3 {
 		return errors.New("too many setup actions")
 	}
@@ -3109,6 +3796,9 @@ func validateSessionSetupActions(actions []SessionSetupAction) error {
 }
 
 func validateSessionSetupAction(action SessionSetupAction) error {
+	// validateSessionSetupAction keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !safeIDPattern.MatchString(action.ID) {
 		return errors.New("unsafe setup action id")
 	}
@@ -3122,6 +3812,9 @@ func validateSessionSetupAction(action SessionSetupAction) error {
 }
 
 func validateSessionIsolationRules(rules []SessionIsolationRule) error {
+	// validateSessionIsolationRules keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for _, rule := range rules {
 
 		if err := validateSessionIsolationRule(rule); err != nil {
@@ -3132,6 +3825,9 @@ func validateSessionIsolationRules(rules []SessionIsolationRule) error {
 }
 
 func validateSessionIsolationRule(rule SessionIsolationRule) error {
+	// validateSessionIsolationRule keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !safeIDPattern.MatchString(rule.ID) {
 		return errors.New("unsafe isolation rule id")
 	}
@@ -3146,6 +3842,9 @@ func validateSessionIsolationRule(rule SessionIsolationRule) error {
 }
 
 func validateIsolationRulePattern(pattern string) error {
+	// validateIsolationRulePattern keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeIsolationRulePattern(pattern) {
 
 		return errors.New("unsafe isolation rule pattern")
@@ -3158,6 +3857,9 @@ func unsafeIsolationRulePattern(pattern string) bool {
 }
 
 func validateIsolationRuleKind(kind string) error {
+	// validateIsolationRuleKind keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	switch kind {
 	case "ignore_line", "json_read_deny":
@@ -3168,6 +3870,9 @@ func validateIsolationRuleKind(kind string) error {
 }
 
 func installIsolationRules(profilePath string, rules []SessionIsolationRule) ([]SessionIsolationResult, error) {
+	// installIsolationRules keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	results := make([]SessionIsolationResult, 0, len(rules))
 	for _, rule := range rules {
 
@@ -3186,6 +3891,9 @@ func installIsolationRules(profilePath string, rules []SessionIsolationRule) ([]
 }
 
 func resolveIsolationRuleTarget(profilePath string, rule SessionIsolationRule) (SessionIsolationRule, error) {
+	// resolveIsolationRuleTarget keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	targetPath, err := safeProfileRelativeIsolationFile(profilePath, rule.TargetPath)
 	if err != nil {
@@ -3195,6 +3903,9 @@ func resolveIsolationRuleTarget(profilePath string, rule SessionIsolationRule) (
 	return rule, nil
 }
 func safeProfileRelativeIsolationFile(profilePath, relPath string) (string, error) {
+	// safeProfileRelativeIsolationFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeProfileRelativePath(relPath) {
 		return "", errors.New("profile relative isolation path must be local without traversal")
 	}
@@ -3210,6 +3921,9 @@ func safeProfileRelativeIsolationFile(profilePath, relPath string) (string, erro
 }
 
 func cleanProfileRelativePath(profilePath, relPath string) string {
+	// cleanProfileRelativePath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	baseDir := filepath.Dir(profilePath)
 	if baseDir == "." {
@@ -3219,6 +3933,9 @@ func cleanProfileRelativePath(profilePath, relPath string) string {
 }
 
 func validateIsolationParent(clean string) error {
+	// validateIsolationParent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	parent := filepath.Dir(clean)
 	if err := validatePotentialParentPath(parent); err != nil {
 		return err
@@ -3228,6 +3945,9 @@ func validateIsolationParent(clean string) error {
 }
 
 func validateIsolationFilename(base string) error {
+	// validateIsolationFilename keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if strings.TrimSpace(base) == "" || strings.ContainsAny(base, `/\`) {
 
 		return errors.New("unsafe isolation filename")
@@ -3235,6 +3955,9 @@ func validateIsolationFilename(base string) error {
 	return nil
 }
 func installIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
+	// installIsolationRule keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := ensureIsolationRule(rule); err != nil {
 		return SessionIsolationResult{}, err
 	}
@@ -3243,6 +3966,9 @@ func installIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, er
 }
 
 func ensureIsolationRule(rule SessionIsolationRule) error {
+	// ensureIsolationRule keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	installer, ok := isolationRuleInstallers[rule.Kind]
 	if !ok {
 
@@ -3252,6 +3978,9 @@ func ensureIsolationRule(rule SessionIsolationRule) error {
 }
 
 func ensureLineFileRule(path, line string) error {
+	// ensureLineFileRule keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	lines, err := readOptionalLines(path)
 	if err != nil {
 		return err
@@ -3267,6 +3996,9 @@ func ensureLineFileRule(path, line string) error {
 }
 
 func readOptionalLines(path string) ([]string, error) {
+	// readOptionalLines keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
 
@@ -3283,6 +4015,9 @@ func readOptionalLines(path string) ([]string, error) {
 }
 
 func writeLines(path string, lines []string) error {
+	// writeLines keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -3291,6 +4026,9 @@ func writeLines(path string, lines []string) error {
 }
 
 func ensureJSONReadDenyRule(path, pattern string) error {
+	// ensureJSONReadDenyRule keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	config, err := readOptionalJSONObject(path)
 	if err != nil {
@@ -3301,6 +4039,9 @@ func ensureJSONReadDenyRule(path, pattern string) error {
 }
 
 func readOptionalJSONObject(path string) (map[string]any, error) {
+	// readOptionalJSONObject keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return optionalJSONObjectReadError(err)
@@ -3310,6 +4051,9 @@ func readOptionalJSONObject(path string) (map[string]any, error) {
 }
 
 func optionalJSONObjectReadError(err error) (map[string]any, error) {
+	// optionalJSONObjectReadError keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if errors.Is(err, os.ErrNotExist) {
 
 		return map[string]any{}, nil
@@ -3317,6 +4061,9 @@ func optionalJSONObjectReadError(err error) (map[string]any, error) {
 	return nil, err
 }
 func parseOptionalJSONObject(data []byte) (map[string]any, error) {
+	// parseOptionalJSONObject keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	config := map[string]any{}
 	if blankJSON(data) {
 
@@ -3333,6 +4080,9 @@ func blankJSON(data []byte) bool {
 }
 
 func setJSONReadDeny(config map[string]any, pattern string) {
+	// setJSONReadDeny keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	permission := ensureObject(config, "permission")
 	read := ensureObject(permission, "read")
 
@@ -3340,6 +4090,9 @@ func setJSONReadDeny(config map[string]any, pattern string) {
 }
 
 func ensureObject(parent map[string]any, key string) map[string]any {
+	// ensureObject keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if child, ok := parent[key].(map[string]any); ok {
 		return child
 	}
@@ -3350,6 +4103,9 @@ func ensureObject(parent map[string]any, key string) map[string]any {
 }
 
 func verifyIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
+	// verifyIsolationRule keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	result := initialIsolationResult(rule)
 	ok, err := isolationRulePresent(rule)
@@ -3362,6 +4118,9 @@ func verifyIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, err
 }
 
 func applyIsolationReadback(result *SessionIsolationResult, ok bool) {
+	// applyIsolationReadback keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if !ok {
 
 		result.State = StateCannotVerify
@@ -3370,6 +4129,9 @@ func applyIsolationReadback(result *SessionIsolationResult, ok bool) {
 }
 
 func setIsolationDigest(result *SessionIsolationResult, path string) {
+	// setIsolationDigest keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if digest := digestFile(path); digest != "" {
 
 		result.SHA256 = digest
@@ -3377,6 +4139,9 @@ func setIsolationDigest(result *SessionIsolationResult, path string) {
 }
 
 func initialIsolationResult(rule SessionIsolationRule) SessionIsolationResult {
+	// initialIsolationResult keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return SessionIsolationResult{
 		ID:         rule.ID,
@@ -3389,6 +4154,9 @@ func initialIsolationResult(rule SessionIsolationRule) SessionIsolationResult {
 }
 
 func isolationRulePresent(rule SessionIsolationRule) (bool, error) {
+	// isolationRulePresent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	switch rule.Kind {
 	case "ignore_line":
 		return lineIsolationRulePresent(rule.TargetPath, rule.Pattern)
@@ -3400,6 +4168,9 @@ func isolationRulePresent(rule SessionIsolationRule) (bool, error) {
 	}
 }
 func lineIsolationRulePresent(path, pattern string) (bool, error) {
+	// lineIsolationRulePresent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	lines, err := readOptionalLines(path)
 	if err != nil {
 		return false, err
@@ -3427,6 +4198,9 @@ func jsonReadDenyRulePresent(path, pattern string) (bool, error) {
 }
 
 func LoadSessionRun(path string) (SessionRun, error) {
+	// LoadSessionRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	var run SessionRun
 
 	if err := readExistingJSON(path, &run); err != nil {
@@ -3439,6 +4213,9 @@ func LoadSessionRun(path string) (SessionRun, error) {
 }
 
 func validateLoadedSessionRun(run SessionRun) error {
+	// validateLoadedSessionRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if run.SchemaVersion != SessionRunSchemaVersion {
 		return fmt.Errorf("unsupported session schema_version %q", run.SchemaVersion)
 	}
@@ -3449,6 +4226,9 @@ func validateLoadedSessionRun(run SessionRun) error {
 	return nil
 }
 func readExistingJSON(path string, target any) error {
+	// readExistingJSON keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	safePath, err := safeExistingFile(path)
 	if err != nil {
 		return err
@@ -3462,6 +4242,9 @@ func readExistingJSON(path string, target any) error {
 }
 
 func readExistingJSONStrict(path string, target any) error {
+	// readExistingJSONStrict keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	safePath, err := safeExistingFile(path)
 	if err != nil {
 		return err
@@ -3475,6 +4258,9 @@ func readExistingJSONStrict(path string, target any) error {
 }
 
 func decodeStrictJSON(data []byte, target any) error {
+	// decodeStrictJSON keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -3490,6 +4276,9 @@ func decodeStrictJSON(data []byte, target any) error {
 }
 
 func newSessionRun(profile SessionProfile, now time.Time) SessionRun {
+	// newSessionRun keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	actionIDs := sessionSetupActionIDs(profile)
 	commit, commitState := currentSourceCommitState()
@@ -3497,6 +4286,9 @@ func newSessionRun(profile SessionProfile, now time.Time) SessionRun {
 }
 
 func newSessionRunRecord(profile SessionProfile, now time.Time, actionIDs []string, commit, commitState string) SessionRun {
+	// newSessionRunRecord keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return SessionRun{
 		SchemaVersion:      SessionRunSchemaVersion,
@@ -3520,6 +4312,9 @@ func newSessionRunRecord(profile SessionProfile, now time.Time, actionIDs []stri
 }
 
 func sessionSetupActionIDs(profile SessionProfile) []string {
+	// sessionSetupActionIDs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	actionIDs := make([]string, 0, len(profile.SetupActions))
 	for _, action := range profile.SetupActions {
 
@@ -3531,6 +4326,9 @@ func sessionSetupActionIDs(profile SessionProfile) []string {
 }
 
 func currentSourceCommitState() (string, string) {
+	// currentSourceCommitState keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	commit := sourceCommit()
 	if commit == "" {
 
@@ -3540,6 +4338,9 @@ func currentSourceCommitState() (string, string) {
 }
 
 func readEventsFromPath(profilePath, sourcePath string) ([]Event, string, error) {
+	// readEventsFromPath keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	profile, err := LoadProfile(profilePath)
 	if err != nil {
@@ -3549,6 +4350,9 @@ func readEventsFromPath(profilePath, sourcePath string) ([]Event, string, error)
 }
 
 func safeProfileRelativeFile(profilePath, relPath string) (string, error) {
+	// safeProfileRelativeFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeProfileRelativePath(relPath) {
 		return "", errors.New("profile relative path must be local without traversal")
 	}
@@ -3560,6 +4364,9 @@ func safeProfileRelativeFile(profilePath, relPath string) (string, error) {
 	return safeExistingFile(filepath.Join(baseDir, relPath))
 }
 func safeProfileRelativeOutFile(profilePath, relPath string) (string, error) {
+	// safeProfileRelativeOutFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeProfileRelativePath(relPath) {
 		return "", errors.New("profile relative output path must be local without traversal")
 	}
@@ -3576,6 +4383,9 @@ func unsafeProfileRelativePath(path string) bool {
 	return filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..")
 }
 func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, now time.Time) error {
+	// normalizeRawEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	if err := validateRawNormalizationInputs(format, rawPath, outPath); err != nil {
 		return err
@@ -3588,6 +4398,9 @@ func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, n
 }
 
 func validateRawNormalizationInputs(format, rawPath, outPath string) error {
+	// validateRawNormalizationInputs keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if format != OpenCodeJSONLRawFormat {
 		return errors.New("unsupported raw_event_format")
 	}
@@ -3599,6 +4412,9 @@ func validateRawNormalizationInputs(format, rawPath, outPath string) error {
 }
 
 func rawNormalizationTime(now time.Time) time.Time {
+	// rawNormalizationTime keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if now.IsZero() {
 
 		return time.Now().UTC()
@@ -3607,6 +4423,9 @@ func rawNormalizationTime(now time.Time) time.Time {
 }
 
 func normalizedOpenCodeRawEvents(rawPath string, sessionFacts []Event, now time.Time) ([]Event, error) {
+	// normalizedOpenCodeRawEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	file, err := os.Open(rawPath)
 	if err != nil {
 		return nil, err
@@ -3617,6 +4436,9 @@ func normalizedOpenCodeRawEvents(rawPath string, sessionFacts []Event, now time.
 }
 
 func scanOpenCodeRawEvents(file io.Reader, sessionFacts []Event, now time.Time) ([]Event, error) {
+	// scanOpenCodeRawEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), DefaultMaxLineBytes)
 	lineNo := 0
@@ -3636,6 +4458,9 @@ func scanOpenCodeRawEvents(file io.Reader, sessionFacts []Event, now time.Time) 
 }
 
 func appendNormalizedRawLine(events []Event, line []byte, lineNo int, now time.Time) ([]Event, error) {
+	// appendNormalizedRawLine keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	lineEvents, err := normalizeOpenCodeRawLineBytes(line, lineNo, now)
 	if err != nil {
 		return nil, err
@@ -3645,6 +4470,9 @@ func appendNormalizedRawLine(events []Event, line []byte, lineNo int, now time.T
 }
 
 func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Event, error) {
+	// normalizeOpenCodeRawLineBytes keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if blankJSONLLine(line) {
 		return nil, nil
 	}
@@ -3663,6 +4491,9 @@ func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Ev
 }
 
 func rejectUnsafeRawEvent(raw map[string]any, lineNo int) error {
+	// rejectUnsafeRawEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if unsafeField, reason := findUnsafeRawEvent(raw); unsafeField != "" {
 
 		return fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
@@ -3671,6 +4502,9 @@ func rejectUnsafeRawEvent(raw map[string]any, lineNo int) error {
 }
 
 func addNormalizedSourceDigests(events []Event) ([]Event, error) {
+	// addNormalizedSourceDigests keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	for i := range events {
 		data, err := json.Marshal(events[i])
 		if err != nil {
@@ -3687,6 +4521,9 @@ func blankJSONLLine(line []byte) bool {
 }
 
 func writeNormalizedEvents(outPath string, events []Event) error {
+	// writeNormalizedEvents keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	out, err := createNormalizedEventsFile(outPath)
 	if err != nil {
 		return err
@@ -3701,6 +4538,9 @@ func writeNormalizedEvents(outPath string, events []Event) error {
 	return nil
 }
 func createNormalizedEventsFile(outPath string) (*os.File, error) {
+	// createNormalizedEventsFile keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return nil, err
@@ -3709,6 +4549,9 @@ func createNormalizedEventsFile(outPath string) (*os.File, error) {
 }
 
 func writeNormalizedEvent(out io.Writer, event Event) error {
+	// writeNormalizedEvent keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err
