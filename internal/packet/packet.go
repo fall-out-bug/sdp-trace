@@ -1531,15 +1531,54 @@ func rowIDForRef(rows map[string]Row, ref string) string {
 	// rowIDForRef keeps packet evidence explicit and replay-bound.
 	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
 	// This helper validates or projects packet data; it does not create external proof.
-	for id, row := range rows {
-		for _, rowRef := range row.EvidenceRefs {
+	if id := requiredRowIDForRef(rows, ref); id != "" {
+		return id
+	}
+	return extensionRowIDForRef(rows, ref)
+}
 
-			if rowRef == ref {
-				return id
-			}
+func requiredRowIDForRef(rows map[string]Row, ref string) string {
+	// Required rows define the canonical packet row order used when a retained
+	// evidence ref supports more than one row.
+	for _, id := range RequiredRows {
+		if rowHasRef(rows[id], ref) {
+			return id
 		}
 	}
 	return ""
+}
+
+func extensionRowIDForRef(rows map[string]Row, ref string) string {
+	// Extension rows are scanned only after the fixed packet contract rows so
+	// custom rows cannot steal contradiction attribution from required rows.
+	for _, id := range sortedRowIDs(rows) {
+		if !requiredRow(id) && rowHasRef(rows[id], ref) {
+			return id
+		}
+	}
+	return ""
+}
+
+func sortedRowIDs(rows map[string]Row) []string {
+	// Non-required extension rows are outside the fixed packet contract, so keep
+	// their fallback lookup stable by sorting ids before scanning for a ref.
+	ids := make([]string, 0, len(rows))
+	for id := range rows {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
+func rowHasRef(row Row, ref string) bool {
+	// Evidence refs are exact identifiers; contradiction attribution must not
+	// infer aliases or prefixes when selecting a row.
+	for _, rowRef := range row.EvidenceRefs {
+		if rowRef == ref {
+			return true
+		}
+	}
+	return false
 }
 func gapForRow(gaps []ResidualGap, rowID string) bool {
 	// gapForRow keeps packet evidence explicit and replay-bound.

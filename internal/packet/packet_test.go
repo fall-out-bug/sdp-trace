@@ -188,6 +188,14 @@ func TestValidateContradictionRequiresPartialAndGap(t *testing.T) {
 	}
 }
 
+func TestRowIDForRefUsesRequiredRowOrder(t *testing.T) {
+	bundle := validBundle()
+	rows := rowsByID(bundle.Packet.Rows)
+	if got := rowIDForRef(rows, "git:change"); got != "PC-CHANGE" {
+		t.Fatalf("rowIDForRef(shared ref) = %q, want PC-CHANGE", got)
+	}
+}
+
 func TestValidateRejectsProjectionMarkedCanonicalOverArtifact(t *testing.T) {
 	bundle := validBundle()
 	bundle.Packet.Projection = Projection{Kind: "github_pr_comment", Canonical: true}
@@ -416,6 +424,14 @@ func validGitHubInput() GitHubPREvidenceInput {
 
 func refreshPacketDigest(bundle *Bundle) {
 	bundle.Manifest.PacketDigest = PacketDigest(bundle.Packet)
+}
+
+func rowsByID(rows []Row) map[string]Row {
+	byID := map[string]Row{}
+	for _, row := range rows {
+		byID[row.ID] = row
+	}
+	return byID
 }
 
 func writeJSONForTest(t *testing.T, path string, value any) {
