@@ -91,6 +91,12 @@ func TestBuildkiteEnvelopePassesWithBoundArtifacts(t *testing.T) {
 	}
 }
 
+func TestBuildProfileRejectsUnsupportedKind(t *testing.T) {
+	if _, err := BuildProfile("unsupported", t.TempDir(), "", ProfileOptions{}); err == nil || !strings.Contains(err.Error(), "unsupported witness kind") {
+		t.Fatalf("BuildProfile unsupported error = %v", err)
+	}
+}
+
 func TestBuildkiteWithoutEnvelopeCannotUpgradeFromEnvironment(t *testing.T) {
 	clearProviderEnv(t)
 	root := writeRunRoot(t)

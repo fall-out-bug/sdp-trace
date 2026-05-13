@@ -1,13 +1,18 @@
 # Core Concepts
 
-`sdp-trace` is intentionally small. It defines the trust contract around delivery, not the delivery workflow itself.
+`sdp-trace` is intentionally small. It defines the trust contract around
+delivery, not the delivery workflow itself.
+
+The practical question is always the same: what can be replayed, who produced
+it, what is missing, and who owns the next decision?
 
 ## Spec
 
 The intended behavior and acceptance criteria for a change.
 
-The spec may come from SpecKit, gsd, Superpowers, Oh My OpenAgent, an issue, a
-product brief, a ticket, or a human-written note.
+The spec may come from SpecKit, an issue, a product brief, a ticket, or a
+human-written note. Tool-specific mappings belong in compatibility and
+integration docs, not in the core vocabulary.
 
 ## Plan
 
@@ -19,8 +24,8 @@ Plans are useful evidence because they establish what work was expected before c
 
 An executable unit of work.
 
-It may map to a ticket, bead, checklist item, GSD task, or workflow step. In
-`sdp-trace`, it is just a task.
+It may map to a ticket, checklist item, or workflow step. In `sdp-trace`, it is
+just a task.
 
 ## Change
 
@@ -73,6 +78,8 @@ Examples:
 - generated code is identified
 - docs were updated when public behavior changed
 
+`sdp-trace` may record gate facts, but the gate owner remains external.
+
 ## External Verdict
 
 The externally produced gate or policy outcome:
@@ -80,13 +87,21 @@ The externally produced gate or policy outcome:
 - `pass`: evidence satisfies the gate
 - `warn`: evidence exists but risk remains
 - `fail`: evidence proves the gate is not satisfied
-- `not_assessed`: evidence is missing or insufficient
+- `not_assessed`: the gate was outside the selected scope or intentionally not
+  evaluated in this run
+- `cannot_verify`: the selected gate could not be verified because required
+  evidence, environment, freshness, or consistency was missing
+
+Missing required evidence for a selected gate is `cannot_verify` or `fail`, not
+`pass`. Missing optional or out-of-scope evidence is `not_assessed`.
 
 ## Assessment Input
 
-A package of evidence, observations, metric streams, accountability, `not_assessed` gaps, and external verdict inputs prepared for a policy consumer.
+A package of evidence, observations, metric streams, accountability,
+`not_assessed` gaps, and external verdict inputs prepared for a policy consumer.
 
-`sdp-trace` owns assessment input structure. It does not decide whether the package passes a policy.
+`sdp-trace` owns assessment input structure. It does not decide whether the
+package passes a policy.
 
 ## Accountability
 

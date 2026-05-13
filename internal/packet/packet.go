@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"crypto/sha256"
+
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ const (
 	PacketSchemaVersion = "change-evidence-packet.v0"
 	BundleSchemaVersion = "evidence-bundle-manifest.v0"
 
+	// Row states are explicit trust states, not numeric health levels.
 	StatePass         = "pass"
 	StatePartial      = "partial"
 	StateFail         = "fail"
@@ -27,6 +29,8 @@ const (
 	ProjectionCanonical    = "canonical_markdown_artifact"
 )
 
+// RequiredRows is the fixed packet contract; unknown rows cannot silently
+// extend the trust surface.
 var RequiredRows = []string{
 	"PC-CHANGE",
 	"PC-INITIATOR",
@@ -51,6 +55,7 @@ var states = map[string]bool{
 }
 
 var missingReasonStates = map[string]bool{
+
 	StatePartial:      true,
 	StateFail:         true,
 	StateCannotVerify: true,
@@ -59,6 +64,7 @@ var missingReasonStates = map[string]bool{
 }
 
 var packetStates = map[string]bool{
+
 	"draft":        true,
 	"review_ready": true,
 	"reviewed":     true,
@@ -71,6 +77,7 @@ var authoringMethods = map[string]bool{
 }
 
 var retainedForms = map[string]bool{
+
 	"raw":          true,
 	"redacted":     true,
 	"digest_only":  true,
@@ -79,6 +86,7 @@ var retainedForms = map[string]bool{
 }
 
 var redactionStatuses = map[string]bool{
+
 	"not_needed":      true,
 	"redacted":        true,
 	"digest_only":     true,
@@ -87,6 +95,7 @@ var redactionStatuses = map[string]bool{
 }
 
 var theaterReasonCodes = map[string]bool{
+
 	"agent_claimed_verification": true,
 	"unbound_intent":             true,
 	"ci_theater":                 true,
@@ -94,6 +103,8 @@ var theaterReasonCodes = map[string]bool{
 	"prompt_contamination":       true,
 }
 
+// requiredDecisions keeps approval accountability explicit and separate from
+// packet evidence organization.
 var requiredDecisions = []string{"merge", "release", "risk_acceptance", "security_review"}
 
 type Packet struct {
@@ -130,7 +141,6 @@ type Projection struct {
 	Canonical   bool   `json:"canonical"`
 	ArtifactRef string `json:"artifact_ref,omitempty"`
 }
-
 type Row struct {
 	ID           string   `json:"id"`
 	State        string   `json:"state"`
@@ -173,6 +183,7 @@ type BundleManifest struct {
 }
 
 type BundleEntry struct {
+	// Ref is the stable evidence namespace used by packet rows and findings.
 	Ref                string   `json:"ref"`
 	SourceClass        string   `json:"source_class"`
 	Digest             string   `json:"digest,omitempty"`
@@ -204,6 +215,8 @@ type Bundle struct {
 }
 
 type GitHubPREvidenceInput struct {
+	// GitHub input is source evidence for generation; it is not accepted as a
+	// verdict until rows and manifest refs are built and validated.
 	SchemaVersion          string              `json:"schema_version"`
 	PR                     GitHubPR            `json:"pr"`
 	CommitRange            GitHubCommitRange   `json:"commit_range"`
@@ -264,7 +277,6 @@ type GitHubCommitRange struct {
 	Head            string `json:"head"`
 	ChangedFilesRef string `json:"changed_files_ref,omitempty"`
 }
-
 type GitHubCheck struct {
 	Name         string   `json:"name"`
 	URL          string   `json:"url"`
@@ -291,7 +303,25 @@ type Validation struct {
 	Errors []string `json:"errors,omitempty"`
 }
 
+type demoFirstPacketChecker struct {
+	bundle     Bundle
+	now        time.Time
+	rows       map[string]Row
+	entryByRef map[string]BundleEntry
+	errors     []string
+}
+
+type bundleValidator struct {
+	bundle        Bundle
+	now           time.Time
+	entryByRef    map[string]BundleEntry
+	resolverByRef map[string]string
+	rows          map[string]Row
+	errors        []string
+}
+
 func LoadBundle(path string) (Bundle, error) {
+
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return Bundle{}, err
@@ -304,6 +334,7 @@ func LoadBundle(path string) (Bundle, error) {
 }
 
 func LoadGitHubInput(path string) (GitHubPREvidenceInput, error) {
+
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return GitHubPREvidenceInput{}, err
@@ -316,11 +347,27 @@ func LoadGitHubInput(path string) (GitHubPREvidenceInput, error) {
 }
 
 func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bundle {
+
 	packetID := fmt.Sprintf("github-pr-%d-change-evidence-packet", input.PR.Number)
 	bundleID := fmt.Sprintf("%s-bundle", packetID)
+
 	entries := githubEntries(input)
 	rows := githubRows(input)
-	packet := Packet{
+	packet := githubPacket(input, generatedAt, packetID, bundleID, rows)
+	packet = appendPromptBoundaryFinding(packet, input.PromptBoundary)
+	if len(input.IntegrationActions) > 0 {
+
+		if packet.Extensions == nil {
+			packet.Extensions = map[string]any{}
+		}
+		packet.Extensions["integration_actions"] = input.IntegrationActions
+	}
+	return Bundle{Packet: packet, Manifest: githubBundleManifest(bundleID, packet, entries)}
+}
+
+func githubPacket(input GitHubPREvidenceInput, generatedAt time.Time, packetID, bundleID string, rows []Row) Packet {
+
+	return Packet{
 		PacketVersion:   PacketSchemaVersion,
 		PacketID:        packetID,
 		SourceChange:    githubSourceChange(input),
@@ -336,8 +383,12 @@ func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bu
 		DecisionOwners:  defaultDecisionOwners(),
 		NonApproval:     "This packet does not approve merge, release, compliance, production trust, semantic correctness, or signed external trust.",
 	}
-	classification := ClassifyPromptBoundary(input.PromptBoundary)
+}
+
+func appendPromptBoundaryFinding(packet Packet, boundary PromptBoundary) Packet {
+	classification := ClassifyPromptBoundary(boundary)
 	if classification.Verdict == "contaminated" {
+
 		packet.TheaterFindings = append(packet.TheaterFindings, TheaterFinding{
 			ReasonCode:          "prompt_contamination",
 			State:               StateFail,
@@ -346,48 +397,33 @@ func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bu
 			TriggerEvidenceRefs: []string{"prompt:boundary"},
 		})
 	}
-	if len(input.IntegrationActions) > 0 {
-		if packet.Extensions == nil {
-			packet.Extensions = map[string]any{}
-		}
-		packet.Extensions["integration_actions"] = input.IntegrationActions
-	}
-	return Bundle{
-		Packet: packet,
-		Manifest: BundleManifest{
-			SchemaVersion: BundleSchemaVersion,
-			BundleID:      bundleID,
-			PacketDigest:  PacketDigest(packet),
-			Entries:       entries,
-		},
+	return packet
+}
+func githubBundleManifest(bundleID string, packet Packet, entries []BundleEntry) BundleManifest {
+
+	return BundleManifest{
+		SchemaVersion: BundleSchemaVersion,
+		BundleID:      bundleID,
+		PacketDigest:  PacketDigest(packet),
+		Entries:       entries,
 	}
 }
 
 func ClassifyPromptBoundary(boundary PromptBoundary) PromptBoundaryClassification {
 	text := strings.TrimSpace(boundary.Text)
 	if text != "" {
-		lower := strings.ToLower(text)
-		for _, phrase := range forbiddenRecorderDutyPhrases() {
-			if strings.Contains(lower, phrase) {
-				return PromptBoundaryClassification{
-					Verdict:          "contaminated",
-					RouteProofEffect: StateFail,
-					Reasons:          []string{"developer prompt contains recorder-duty phrase: " + phrase},
-				}
-			}
-		}
-		return PromptBoundaryClassification{Verdict: "clean", RouteProofEffect: StatePass}
+
+		return classifyPromptText(text)
 	}
-	if strings.TrimSpace(boundary.Digest) == "" &&
-		strings.TrimSpace(boundary.CaptureActor) == "" &&
-		strings.TrimSpace(boundary.CapturedAt) == "" &&
-		strings.TrimSpace(boundary.CaptureMethod) == "" {
+	return classifyPromptMetadata(boundary)
+}
+
+func classifyPromptMetadata(boundary PromptBoundary) PromptBoundaryClassification {
+	if promptBoundaryMetadataMissing(boundary) {
 		return PromptBoundaryClassification{Verdict: "missing", RouteProofEffect: StateCannotVerify, Reasons: []string{"prompt boundary evidence missing"}}
 	}
-	if strings.TrimSpace(boundary.Digest) != "" &&
-		strings.TrimSpace(boundary.CaptureActor) != "" &&
-		strings.TrimSpace(boundary.CapturedAt) != "" &&
-		strings.TrimSpace(boundary.CaptureMethod) != "" {
+	if promptBoundaryMetadataComplete(boundary) {
+
 		if _, err := time.Parse(time.RFC3339, boundary.CapturedAt); err == nil {
 			return PromptBoundaryClassification{Verdict: "digest_only", RouteProofEffect: StatePartial, Reasons: []string{"prompt text unavailable; digest metadata retained"}}
 		}
@@ -395,7 +431,39 @@ func ClassifyPromptBoundary(boundary PromptBoundary) PromptBoundaryClassificatio
 	return PromptBoundaryClassification{Verdict: "malformed", RouteProofEffect: StateCannotVerify, Reasons: []string{"prompt boundary metadata malformed"}}
 }
 
+func classifyPromptText(text string) PromptBoundaryClassification {
+	lower := strings.ToLower(text)
+	for _, phrase := range forbiddenRecorderDutyPhrases() {
+
+		if strings.Contains(lower, phrase) {
+			return PromptBoundaryClassification{
+				Verdict:          "contaminated",
+				RouteProofEffect: StateFail,
+				Reasons:          []string{"developer prompt contains recorder-duty phrase: " + phrase},
+			}
+		}
+	}
+	return PromptBoundaryClassification{Verdict: "clean", RouteProofEffect: StatePass}
+}
+
+func promptBoundaryMetadataMissing(boundary PromptBoundary) bool {
+
+	return strings.TrimSpace(boundary.Digest) == "" &&
+		strings.TrimSpace(boundary.CaptureActor) == "" &&
+		strings.TrimSpace(boundary.CapturedAt) == "" &&
+		strings.TrimSpace(boundary.CaptureMethod) == ""
+}
+
+func promptBoundaryMetadataComplete(boundary PromptBoundary) bool {
+
+	return strings.TrimSpace(boundary.Digest) != "" &&
+		strings.TrimSpace(boundary.CaptureActor) != "" &&
+		strings.TrimSpace(boundary.CapturedAt) != "" &&
+		strings.TrimSpace(boundary.CaptureMethod) != ""
+}
+
 func forbiddenRecorderDutyPhrases() []string {
+
 	return []string{
 		"sdp-trace",
 		".sdp-trace",
@@ -410,9 +478,117 @@ func forbiddenRecorderDutyPhrases() []string {
 		"claim verification",
 	}
 }
+func renderCleanTheater(out *bytes.Buffer, theater Row) {
 
+	fmt.Fprintf(out, "| none | %s | none | %s | PC-THEATER row | %s |\n\n", theater.State, md(theater.Summary), md(theater.Reason))
+}
+
+func renderTheaterFinding(out *bytes.Buffer, finding TheaterFinding) {
+
+	fmt.Fprintf(out, "| %s | %s | %s | %s | %s | %s |\n", finding.ReasonCode, finding.State, md(finding.Severity), md(finding.Finding), md(strings.Join(finding.TriggerEvidenceRefs, ", ")), md(finding.RequiredClosureEvidence))
+}
+
+func rowByID(rows []Row, id string) Row {
+	for _, row := range rows {
+		if row.ID == id {
+
+			return row
+		}
+	}
+	return Row{ID: id, State: StateCannotVerify, Summary: "row missing", Reason: "row missing"}
+}
+
+func renderDecisions(out *bytes.Buffer, owners []DecisionOwner) {
+
+	fmt.Fprintf(out, "## Decision Ownership\n\n")
+	fmt.Fprintf(out, "| decision | owner | state | reason |\n| --- | --- | --- | --- |\n")
+	for _, owner := range owners {
+		fmt.Fprintf(out, "| %s | %s | %s | %s |\n", md(owner.Decision), md(owner.Owner), owner.State, md(owner.Reason))
+	}
+	fmt.Fprintln(out)
+}
+
+func renderEvidence(out *bytes.Buffer, manifest BundleManifest) {
+	fmt.Fprintf(out, "## Evidence Bundle\n\n")
+	fmt.Fprintf(out, "Manifest: `%s`\n\n", md(manifest.BundleID))
+	fmt.Fprintf(out, "| ref | source class | retained form | redaction status | resolver |\n| --- | --- | --- | --- | --- |\n")
+	for _, entry := range manifest.Entries {
+
+		resolver := entry.Resolver
+		if resolver == "" {
+
+			resolver = resolverFromList(manifest.Resolvers, entry.Ref)
+		}
+		fmt.Fprintf(out, "| %s | %s | %s | %s | %s |\n", md(entry.Ref), md(entry.SourceClass), md(entry.RetainedForm), md(entry.RedactionStatus), md(resolver))
+	}
+	fmt.Fprintln(out)
+}
+func renderResidualGaps(out *bytes.Buffer, gaps []ResidualGap) {
+
+	fmt.Fprintf(out, "## Residual Gaps\n\n")
+	if len(gaps) == 0 {
+		renderNoResidualGaps(out)
+		return
+	}
+	renderResidualGapRows(out, gaps)
+}
+
+func renderNoResidualGaps(out *bytes.Buffer) {
+
+	fmt.Fprintf(out, "No residual gaps recorded beyond row states.\n\n")
+}
+
+func renderResidualGapRows(out *bytes.Buffer, gaps []ResidualGap) {
+
+	fmt.Fprintf(out, "| row id | state | reason | closure evidence |\n| --- | --- | --- | --- |\n")
+	for _, gap := range gaps {
+		fmt.Fprintf(out, "| %s | %s | %s | %s |\n", gap.RowID, gap.State, md(gap.Reason), md(gap.ClosureEvidence))
+	}
+	fmt.Fprintln(out)
+}
+
+func renderNonProof(out *bytes.Buffer, packet Packet) {
+
+	fmt.Fprintf(out, "## What This Packet Does Not Prove\n\n")
+	if strings.TrimSpace(packet.NonApproval) != "" {
+		fmt.Fprintf(out, "%s\n\n", packet.NonApproval)
+		return
+	}
+	fmt.Fprintf(out, "This packet does not approve merge, release, compliance, production trust, semantic correctness, or signed external trust.\n\n")
+}
+
+func requiredRowIndex(id string) int {
+	for i, required := range RequiredRows {
+		if id == required {
+
+			return i
+		}
+	}
+	return len(RequiredRows)
+}
+
+func resolverFromList(resolvers []ResolverEntry, ref string) string {
+	for _, resolver := range resolvers {
+		if resolver.Ref == ref {
+
+			return resolver.Resolver
+		}
+	}
+	return ""
+}
+
+func md(value string) string {
+
+	value = strings.ReplaceAll(value, "\n", " ")
+	value = strings.ReplaceAll(value, "|", "\\|")
+	if strings.TrimSpace(value) == "" {
+		return "none"
+	}
+	return value
+}
 func PacketDigest(packet Packet) string {
 	clone := packet
+
 	raw, err := json.Marshal(clone)
 	if err != nil {
 		return ""
@@ -422,6 +598,7 @@ func PacketDigest(packet Packet) string {
 }
 
 func Validate(bundle Bundle, now time.Time) Validation {
+
 	validator := bundleValidator{
 		bundle:        bundle,
 		now:           now,
@@ -432,6 +609,7 @@ func Validate(bundle Bundle, now time.Time) Validation {
 }
 
 func CheckDemoFirstPacket(bundle Bundle, now time.Time) Validation {
+
 	validation := Validate(bundle, now)
 	check := demoFirstPacketChecker{
 		bundle:     bundle,
@@ -443,16 +621,9 @@ func CheckDemoFirstPacket(bundle Bundle, now time.Time) Validation {
 	return check.validate()
 }
 
-type demoFirstPacketChecker struct {
-	bundle     Bundle
-	now        time.Time
-	rows       map[string]Row
-	entryByRef map[string]BundleEntry
-	errors     []string
-}
-
 func (c *demoFirstPacketChecker) validate() Validation {
 	c.index()
+
 	c.requireToolGenerated()
 	c.requirePassOrPartialRows(4)
 	c.requireRowEvidence("PC-CHANGE")
@@ -469,6 +640,7 @@ func (c *demoFirstPacketChecker) validate() Validation {
 
 func (c *demoFirstPacketChecker) requireToolGenerated() {
 	if c.bundle.Packet.AuthoringMethod != AuthoringToolGenerated {
+
 		c.add("demo first-packet gate requires tool_generated authoring_method, got %s", c.bundle.Packet.AuthoringMethod)
 	}
 }
@@ -478,17 +650,18 @@ func (c *demoFirstPacketChecker) index() {
 		c.rows[row.ID] = row
 	}
 	for _, entry := range c.bundle.Manifest.Entries {
+
 		c.entryByRef[entry.Ref] = entry
 	}
 }
-
 func (c *demoFirstPacketChecker) requirePassOrPartialRows(minimum int) {
 	count := 0
 	for _, row := range c.rows {
-		if row.State == StatePass || row.State == StatePartial {
+		if passOrPartial(row.State) {
 			count++
 		}
 	}
+
 	if count < minimum {
 		c.add("demo first-packet gate requires at least %d pass or partial rows, got %d", minimum, count)
 	}
@@ -500,9 +673,15 @@ func (c *demoFirstPacketChecker) requireRowEvidence(rowID string) {
 		c.add("demo first-packet gate requires %s retained evidence refs", rowID)
 		return
 	}
-	for _, ref := range row.EvidenceRefs {
+
+	c.requireUsableRowEvidenceRefs(rowID, row.EvidenceRefs)
+}
+
+func (c *demoFirstPacketChecker) requireUsableRowEvidenceRefs(rowID string, refs []string) {
+	for _, ref := range refs {
 		entry, ok := c.entryByRef[ref]
 		if !ok {
+
 			continue
 		}
 		if !demoUsableEntry(entry, c.now) {
@@ -512,53 +691,87 @@ func (c *demoFirstPacketChecker) requireRowEvidence(rowID string) {
 }
 
 func (c *demoFirstPacketChecker) requireAgentRouteEvidence() {
-	row := c.rows["PC-AGENT-ROUTE"]
-	if row.State != StatePass && row.State != StatePartial {
-		c.add("demo first-packet gate requires PC-AGENT-ROUTE must be pass or partial, got %s", row.State)
+
+	refs, ok := c.agentRouteEvidenceRefs()
+	if !ok {
 		return
 	}
-	if len(row.EvidenceRefs) == 0 {
-		c.add("demo first-packet gate requires PC-AGENT-ROUTE retained evidence refs")
+	if c.hasUsableAgentRouteEvidence(refs) {
 		return
-	}
-	for _, ref := range row.EvidenceRefs {
-		entry := c.entryByRef[ref]
-		if entry.SourceClass == "harness" && demoUsableEntry(entry, c.now) && demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry) {
-			return
-		}
 	}
 	c.add("demo first-packet gate requires PC-AGENT-ROUTE evidence from retained structured OpenCode/GSD/MiniMax harness route observation")
+}
+
+func (c *demoFirstPacketChecker) agentRouteEvidenceRefs() ([]string, bool) {
+	row := c.rows["PC-AGENT-ROUTE"]
+	if !passOrPartial(row.State) {
+		c.add("demo first-packet gate requires PC-AGENT-ROUTE must be pass or partial, got %s", row.State)
+		return nil, false
+	}
+
+	if len(row.EvidenceRefs) == 0 {
+		c.add("demo first-packet gate requires PC-AGENT-ROUTE retained evidence refs")
+		return nil, false
+	}
+	return row.EvidenceRefs, true
+}
+
+func (c *demoFirstPacketChecker) hasUsableAgentRouteEvidence(refs []string) bool {
+	for _, ref := range refs {
+		if c.usableAgentRouteEntry(ref) {
+
+			return true
+		}
+	}
+	return false
+}
+
+func (c *demoFirstPacketChecker) usableAgentRouteEntry(ref string) bool {
+	entry := c.entryByRef[ref]
+	return entry.SourceClass == "harness" && demoUsableEntry(entry, c.now) && demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry)
+}
+
+func passOrPartial(state string) bool {
+	return state == StatePass || state == StatePartial
 }
 
 func (c *demoFirstPacketChecker) requireVerificationOrReviewAssessed() {
 	if rowAssessed(c.rows["PC-VERIFICATION"]) || rowAssessed(c.rows["PC-REVIEW"]) {
 		return
 	}
+
 	c.add("demo first-packet gate requires PC-VERIFICATION or PC-REVIEW to be pass, partial, or fail")
 }
 
 func rowAssessed(row Row) bool {
 	return row.State == StatePass || row.State == StatePartial || row.State == StateFail
 }
-
 func (c *demoFirstPacketChecker) requireCannotVerifyClosureCap() {
-	unclosed := 0
-	for _, row := range c.rows {
-		if row.State != StateCannotVerify {
-			continue
-		}
-		if !gapForRowWithClosure(c.bundle.Packet.ResidualGaps, row.ID) {
-			unclosed++
-		}
-	}
+
+	unclosed := c.cannotVerifyRowsWithoutClosure()
 	if unclosed > 1 {
 		c.add("demo first-packet gate allows at most one cannot_verify row without closure path, got %d", unclosed)
 	}
 }
 
+func (c *demoFirstPacketChecker) cannotVerifyRowsWithoutClosure() int {
+	unclosed := 0
+	for _, row := range c.rows {
+		if row.State != StateCannotVerify {
+			continue
+		}
+
+		if !gapForRowWithClosure(c.bundle.Packet.ResidualGaps, row.ID) {
+			unclosed++
+		}
+	}
+	return unclosed
+}
+
 func gapForRowWithClosure(gaps []ResidualGap, rowID string) bool {
 	for _, gap := range gaps {
 		if gap.RowID == rowID && strings.TrimSpace(gap.ClosureEvidence) != "" {
+
 			return true
 		}
 	}
@@ -568,49 +781,42 @@ func gapForRowWithClosure(gaps []ResidualGap, rowID string) bool {
 func (c *demoFirstPacketChecker) add(format string, args ...any) {
 	c.errors = append(c.errors, fmt.Sprintf(format, args...))
 }
-
 func demoUsableEntry(entry BundleEntry, now time.Time) bool {
-	if strings.TrimSpace(entry.Resolver) == "" || strings.TrimSpace(entry.Digest) == "" {
-		return false
-	}
-	if entryExpired(entry, now) {
-		return false
-	}
-	if passRefUnverifiable(entry) {
-		return false
-	}
-	return true
+
+	return entryHasResolverAndDigest(entry) && !entryExpired(entry, now) && !passRefUnverifiable(entry)
+}
+
+func entryHasResolverAndDigest(entry BundleEntry) bool {
+	return strings.TrimSpace(entry.Resolver) != "" && strings.TrimSpace(entry.Digest) != ""
 }
 
 func demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry BundleEntry) bool {
-	if entry.EvidenceKind != "harness_route_observation" {
+	if entry.EvidenceKind != "harness_route_observation" || syntheticEntryDigest(entry) {
 		return false
 	}
-	if syntheticEntryDigest(entry) {
-		return false
-	}
+
+	return hasOpenCodeGSDMiniMax(entry.ObservedComponents)
+}
+
+func hasOpenCodeGSDMiniMax(observed []string) bool {
 	components := map[string]bool{}
-	for _, component := range entry.ObservedComponents {
+	for _, component := range observed {
+
 		components[strings.ToLower(strings.TrimSpace(component))] = true
 	}
-	return components["opencode"] && components["gsd"] &&
-		(components["minimax"] || components["minimax-m2.5"] || components["minimax-m2"])
+	return components["opencode"] && components["gsd"] && hasMiniMaxComponent(components)
+}
+
+func hasMiniMaxComponent(components map[string]bool) bool {
+	return components["minimax"] || components["minimax-m2.5"] || components["minimax-m2"]
 }
 
 func syntheticEntryDigest(entry BundleEntry) bool {
 	return strings.TrimSpace(entry.Digest) == "" || entry.Digest == digestPlaceholder(entry.Ref+entry.Resolver)
 }
 
-type bundleValidator struct {
-	bundle        Bundle
-	now           time.Time
-	entryByRef    map[string]BundleEntry
-	resolverByRef map[string]string
-	rows          map[string]Row
-	errors        []string
-}
-
 func (v *bundleValidator) validate() Validation {
+
 	v.validateMetadata()
 	v.indexManifest()
 	v.validateRows()
@@ -623,182 +829,349 @@ func (v *bundleValidator) validate() Validation {
 }
 
 func (v *bundleValidator) validateMetadata() {
+
+	v.validateSchemaMetadata()
+	v.validateBundleIdentity()
+	v.validatePacketDigest()
+	v.validatePacketPolicyMetadata()
+}
+
+func (v *bundleValidator) validateSchemaMetadata() {
 	if v.bundle.Packet.PacketVersion != PacketSchemaVersion {
 		v.add("packet.packet_version must be %q", PacketSchemaVersion)
 	}
+
 	if v.bundle.Manifest.SchemaVersion != BundleSchemaVersion {
 		v.add("manifest.schema_version must be %q", BundleSchemaVersion)
 	}
-	if strings.TrimSpace(v.bundle.Packet.PacketID) == "" {
-		v.add("packet.packet_id is required")
-	}
-	if strings.TrimSpace(v.bundle.Packet.BundleRef) == "" {
-		v.add("packet.bundle_ref is required")
-	}
-	if strings.TrimSpace(v.bundle.Manifest.BundleID) == "" {
-		v.add("manifest.bundle_id is required")
-	}
+}
+
+func (v *bundleValidator) validateBundleIdentity() {
+	v.requireNonEmpty(v.bundle.Packet.PacketID, "packet.packet_id is required")
+	v.requireNonEmpty(v.bundle.Packet.BundleRef, "packet.bundle_ref is required")
+	v.requireNonEmpty(v.bundle.Manifest.BundleID, "manifest.bundle_id is required")
+
 	if v.bundle.Packet.BundleRef != "" && v.bundle.Manifest.BundleID != "" && v.bundle.Packet.BundleRef != v.bundle.Manifest.BundleID {
 		v.add("packet.bundle_ref %q must match manifest.bundle_id %q", v.bundle.Packet.BundleRef, v.bundle.Manifest.BundleID)
 	}
+}
+
+func (v *bundleValidator) requireNonEmpty(value string, message string) {
+	if strings.TrimSpace(value) == "" {
+
+		v.add("%s", message)
+	}
+}
+
+func (v *bundleValidator) validatePacketDigest() {
 	if strings.TrimSpace(v.bundle.Manifest.PacketDigest) == "" {
 		v.add("manifest.packet_digest is required")
 	} else if digest := PacketDigest(v.bundle.Packet); digest != "" && v.bundle.Manifest.PacketDigest != digest {
+
 		v.add("manifest.packet_digest does not match packet content")
 	}
-	if strings.TrimSpace(v.bundle.Packet.NonApproval) == "" {
-		v.add("packet.non_approval is required")
-	}
-	if !packetStates[v.bundle.Packet.PacketState] {
-		v.add("packet.packet_state has unknown value %q", v.bundle.Packet.PacketState)
-	}
-	if !authoringMethods[v.bundle.Packet.AuthoringMethod] {
-		v.add("packet.authoring_method has unknown value %q", v.bundle.Packet.AuthoringMethod)
-	}
-	if v.bundle.Packet.Projection.Canonical && v.bundle.Packet.Projection.Kind != ProjectionCanonical {
+}
+
+func (v *bundleValidator) validatePacketPolicyMetadata() {
+
+	v.requireNonEmpty(v.bundle.Packet.NonApproval, "packet.non_approval is required")
+	v.requireKnown(packetStates, v.bundle.Packet.PacketState, "packet.packet_state has unknown value %q")
+	v.requireKnown(authoringMethods, v.bundle.Packet.AuthoringMethod, "packet.authoring_method has unknown value %q")
+	v.validateProjectionMetadata()
+}
+
+func (v *bundleValidator) validateProjectionMetadata() {
+	projection := v.bundle.Packet.Projection
+	if invalidCanonicalProjection(projection) {
+
 		v.add("canonical projection must be %q", ProjectionCanonical)
 	}
-	if !v.bundle.Packet.Projection.Canonical && strings.TrimSpace(v.bundle.Packet.Projection.ArtifactRef) == "" {
+	if missingNonCanonicalArtifactRef(projection) {
 		v.add("non-canonical packet projection requires artifact_ref for canonical uploaded packet")
 	}
 }
 
+func invalidCanonicalProjection(projection Projection) bool {
+	return projection.Canonical && projection.Kind != ProjectionCanonical
+}
+
+func missingNonCanonicalArtifactRef(projection Projection) bool {
+	return !projection.Canonical && strings.TrimSpace(projection.ArtifactRef) == ""
+}
+
+func (v *bundleValidator) requireKnown(known map[string]bool, value string, format string) {
+	if !known[value] {
+
+		v.add(format, value)
+	}
+}
+
 func (v *bundleValidator) indexManifest() {
+	v.indexManifestEntries()
+	v.indexResolverEntries()
+}
+func (v *bundleValidator) indexManifestEntries() {
 	for _, entry := range v.bundle.Manifest.Entries {
-		if strings.TrimSpace(entry.Ref) == "" {
-			v.add("manifest entry has empty ref")
-			continue
-		}
-		if !retainedForms[entry.RetainedForm] {
-			v.add("manifest entry %q has unknown retained_form %q", entry.Ref, entry.RetainedForm)
-		}
-		if !redactionStatuses[entry.RedactionStatus] {
-			v.add("manifest entry %q has unknown redaction_status %q", entry.Ref, entry.RedactionStatus)
-		}
-		v.entryByRef[entry.Ref] = entry
-		if strings.TrimSpace(entry.Resolver) != "" {
-			v.resolverByRef[entry.Ref] = entry.Resolver
+		if v.indexManifestEntry(entry) {
+
+			v.entryByRef[entry.Ref] = entry
+			if strings.TrimSpace(entry.Resolver) != "" {
+				v.resolverByRef[entry.Ref] = entry.Resolver
+			}
 		}
 	}
+}
+
+func (v *bundleValidator) indexResolverEntries() {
 	for _, resolver := range v.bundle.Manifest.Resolvers {
-		if strings.TrimSpace(resolver.Ref) != "" {
-			v.resolverByRef[resolver.Ref] = resolver.Resolver
-		}
+
+		v.indexResolverEntry(resolver)
+	}
+}
+
+func (v *bundleValidator) indexResolverEntry(resolver ResolverEntry) {
+	if strings.TrimSpace(resolver.Ref) == "" {
+		return
+	}
+
+	v.resolverByRef[resolver.Ref] = resolver.Resolver
+}
+
+func (v *bundleValidator) indexManifestEntry(entry BundleEntry) bool {
+	if strings.TrimSpace(entry.Ref) == "" {
+		v.add("manifest entry has empty ref")
+		return false
+	}
+
+	v.validateManifestEntryEnums(entry)
+	return true
+}
+
+func (v *bundleValidator) validateManifestEntryEnums(entry BundleEntry) {
+
+	if !retainedForms[entry.RetainedForm] {
+		v.add("manifest entry %q has unknown retained_form %q", entry.Ref, entry.RetainedForm)
+	}
+	if !redactionStatuses[entry.RedactionStatus] {
+		v.add("manifest entry %q has unknown redaction_status %q", entry.Ref, entry.RedactionStatus)
 	}
 }
 
 func (v *bundleValidator) validateRows() {
 	rows := map[string]Row{}
-	for _, row := range v.bundle.Packet.Rows {
-		if !requiredRow(row.ID) {
-			v.add("unknown row id %q", row.ID)
-			continue
-		}
-		if rows[row.ID].ID != "" {
-			v.add("duplicate row id %q", row.ID)
-		}
-		rows[row.ID] = row
-		v.validateRow(row)
-	}
-	for _, id := range RequiredRows {
-		if rows[id].ID == "" {
-			v.add("missing required row %q", id)
-		}
-	}
+	v.indexRows(rows)
+	v.requireRowsPresent(rows)
 	v.rows = rows
+
 	v.validateContradictions(rows)
 	v.validateResidualCoverage(rows)
 }
 
+func (v *bundleValidator) indexRows(rows map[string]Row) {
+	for _, row := range v.bundle.Packet.Rows {
+		if v.validateRowID(row.ID, rows) {
+
+			rows[row.ID] = row
+			v.validateRow(row)
+		}
+	}
+}
+
+func (v *bundleValidator) requireRowsPresent(rows map[string]Row) {
+	for _, id := range RequiredRows {
+		if rows[id].ID == "" {
+
+			v.add("missing required row %q", id)
+		}
+	}
+}
+
+func (v *bundleValidator) validateRowID(rowID string, rows map[string]Row) bool {
+
+	if !requiredRow(rowID) {
+		v.add("unknown row id %q", rowID)
+		return false
+	}
+	if rows[rowID].ID != "" {
+		v.add("duplicate row id %q", rowID)
+	}
+	return true
+}
+
 func (v *bundleValidator) validateRow(row Row) {
-	if !states[row.State] {
-		v.add("%s has unknown state %q", row.ID, row.State)
-	}
-	if strings.TrimSpace(row.Summary) == "" {
-		v.add("%s requires summary", row.ID)
-	}
-	if strings.TrimSpace(row.Owner) == "" {
-		v.add("%s requires owner", row.ID)
-	}
+
+	v.validateRowRequiredFields(row)
+	v.validateRowReason(row)
+	v.validatePassRowEvidence(row)
+	v.validateRowEvidenceRefs(row)
+}
+
+func (v *bundleValidator) validateRowReason(row Row) {
+
 	if missingReasonStates[row.State] && strings.TrimSpace(row.Reason) == "" {
 		v.add("%s state %s requires reason", row.ID, row.State)
 	}
+}
+
+func (v *bundleValidator) validatePassRowEvidence(row Row) {
 	if row.State == StatePass && len(row.EvidenceRefs) == 0 {
+
 		v.add("%s pass requires retained evidence refs", row.ID)
 	}
+}
+
+func (v *bundleValidator) validateRowEvidenceRefs(row Row) {
 	for _, ref := range row.EvidenceRefs {
+
 		v.validateEvidenceRef(row.ID, row.State, ref)
+	}
+}
+
+func (v *bundleValidator) validateRowRequiredFields(row Row) {
+	v.validateRowState(row)
+	v.validateRowSummary(row)
+	v.validateRowOwner(row)
+}
+
+func (v *bundleValidator) validateRowState(row Row) {
+	if !states[row.State] {
+
+		v.add("%s has unknown state %q", row.ID, row.State)
+	}
+}
+func (v *bundleValidator) validateRowSummary(row Row) {
+	if strings.TrimSpace(row.Summary) == "" {
+
+		v.add("%s requires summary", row.ID)
+	}
+}
+
+func (v *bundleValidator) validateRowOwner(row Row) {
+	if strings.TrimSpace(row.Owner) == "" {
+
+		v.add("%s requires owner", row.ID)
 	}
 }
 
 func (v *bundleValidator) validateEvidenceRef(rowID, state, ref string) {
 	entry, ok := v.entryByRef[ref]
 	if !ok {
+
 		v.add("%s evidence ref %q is absent from manifest", rowID, ref)
 		return
 	}
 	if strings.TrimSpace(v.resolverByRef[ref]) == "" {
+
 		v.add("%s evidence ref %q has no resolver entry", rowID, ref)
 	}
-	if state == StatePass && entryExpired(entry, v.now) {
+	if state != StatePass {
+		return
+	}
+	v.validatePassEvidenceRef(rowID, ref, entry)
+}
+func (v *bundleValidator) validatePassEvidenceRef(rowID, ref string, entry BundleEntry) {
+
+	if entryExpired(entry, v.now) {
 		v.add("%s pass cites expired artifact ref %q", rowID, ref)
 	}
-	if state == StatePass && passRefUnverifiable(entry) {
+	if passRefUnverifiable(entry) {
 		v.add("%s pass cites unverifiable artifact ref %q", rowID, ref)
 	}
 }
 
 func (v *bundleValidator) validateContradictions(rows map[string]Row) {
 	for _, entry := range v.entryByRef {
-		rowID := entry.ContradictsRowID
-		if rowID == "" {
-			rowID = rowIDForRef(rows, entry.Ref)
-		}
-		if entry.ContradictsRef == "" || rowID == "" {
-			continue
-		}
-		row := rows[rowID]
-		if row.State != StatePartial {
-			v.add("%s has contradictory evidence but state is %s, want partial", rowID, row.State)
-		}
-		if !gapForRow(v.bundle.Packet.ResidualGaps, rowID) {
-			v.add("%s contradictory evidence requires residual gap explanation", rowID)
-		}
+
+		v.validateContradiction(rows, entry)
 	}
+}
+
+func (v *bundleValidator) validateContradiction(rows map[string]Row, entry BundleEntry) {
+
+	rowID := contradictionRowID(rows, entry)
+	if !hasContradictionTarget(entry, rowID) {
+		return
+	}
+	row := rows[rowID]
+	v.validateContradictionState(rowID, row)
+	v.validateContradictionGap(rowID)
+}
+
+func hasContradictionTarget(entry BundleEntry, rowID string) bool {
+
+	return entry.ContradictsRef != "" && rowID != ""
+}
+
+func (v *bundleValidator) validateContradictionState(rowID string, row Row) {
+	if row.State != StatePartial {
+
+		v.add("%s has contradictory evidence but state is %s, want partial", rowID, row.State)
+	}
+}
+
+func (v *bundleValidator) validateContradictionGap(rowID string) {
+	if !gapForRow(v.bundle.Packet.ResidualGaps, rowID) {
+
+		v.add("%s contradictory evidence requires residual gap explanation", rowID)
+	}
+}
+
+func contradictionRowID(rows map[string]Row, entry BundleEntry) string {
+	if entry.ContradictsRowID != "" {
+
+		return entry.ContradictsRowID
+	}
+	return rowIDForRef(rows, entry.Ref)
 }
 
 func (v *bundleValidator) validateFindingsAndGaps() {
+
 	v.validateTheaterState()
 	v.validateDecisionOwners()
 	for _, finding := range v.bundle.Packet.TheaterFindings {
-		if strings.TrimSpace(finding.ReasonCode) == "" {
-			v.add("theater finding requires reason_code")
-		} else if !theaterReasonCodes[finding.ReasonCode] {
-			v.add("theater finding has unknown reason_code %q", finding.ReasonCode)
-		}
-		for _, ref := range finding.TriggerEvidenceRefs {
-			v.validateEvidenceRef("theater finding "+finding.ReasonCode, StatePartial, ref)
-		}
+		v.validateTheaterFinding(finding)
 	}
 	for _, gap := range v.bundle.Packet.ResidualGaps {
-		if !requiredRow(gap.RowID) {
-			v.add("residual gap has unknown row id %q", gap.RowID)
-		}
-		if strings.TrimSpace(gap.Reason) == "" {
-			v.add("residual gap for %s requires reason", gap.RowID)
-		}
+		v.validateResidualGap(gap)
 	}
 }
 
+func (v *bundleValidator) validateTheaterFinding(finding TheaterFinding) {
+	if strings.TrimSpace(finding.ReasonCode) == "" {
+		v.add("theater finding requires reason_code")
+	} else if !theaterReasonCodes[finding.ReasonCode] {
+		v.add("theater finding has unknown reason_code %q", finding.ReasonCode)
+	}
+	for _, ref := range finding.TriggerEvidenceRefs {
+
+		v.validateEvidenceRef("theater finding "+finding.ReasonCode, StatePartial, ref)
+	}
+}
+
+func (v *bundleValidator) validateResidualGap(gap ResidualGap) {
+
+	if !requiredRow(gap.RowID) {
+		v.add("residual gap has unknown row id %q", gap.RowID)
+	}
+	if strings.TrimSpace(gap.Reason) == "" {
+		v.add("residual gap for %s requires reason", gap.RowID)
+	}
+}
 func (v *bundleValidator) validateResidualCoverage(rows map[string]Row) {
 	for _, row := range rows {
-		if row.ID == "PC-RESIDUAL-GAPS" || row.State == StatePass {
+		if residualCoverageExempt(row) {
 			continue
 		}
+
 		if !gapForRow(v.bundle.Packet.ResidualGaps, row.ID) {
 			v.add("%s non-pass row requires residual gap explanation", row.ID)
 		}
 	}
+}
+
+func residualCoverageExempt(row Row) bool {
+
+	return row.ID == "PC-RESIDUAL-GAPS" || row.State == StatePass
 }
 
 func (v *bundleValidator) validateTheaterState() {
@@ -806,37 +1179,79 @@ func (v *bundleValidator) validateTheaterState() {
 	if len(v.bundle.Packet.TheaterFindings) == 0 {
 		return
 	}
+
 	if row.State == StatePass {
 		v.add("PC-THEATER cannot be pass when theater findings are present")
 	}
-	if row.State != StatePartial && row.State != StateFail && row.State != StateCannotVerify {
+	if !theaterFindingState(row.State) {
 		v.add("PC-THEATER with theater findings must be partial, fail, or cannot_verify")
 	}
 }
 
+func theaterFindingState(state string) bool {
+	return state == StatePartial || state == StateFail || state == StateCannotVerify
+}
+
 func (v *bundleValidator) validateDecisionOwners() {
 	owners := map[string]DecisionOwner{}
+	v.indexDecisionOwners(owners)
+
+	v.requireDecisionOwners(owners)
+}
+
+func (v *bundleValidator) indexDecisionOwners(owners map[string]DecisionOwner) {
 	for _, owner := range v.bundle.Packet.DecisionOwners {
-		decision := strings.TrimSpace(owner.Decision)
-		if decision == "" {
-			v.add("decision owner requires decision")
-			continue
-		}
-		owners[decision] = owner
-		if strings.TrimSpace(owner.Owner) == "" {
-			v.add("decision %s requires owner", decision)
-		}
-		if !states[owner.State] {
-			v.add("decision %s has unknown state %q", decision, owner.State)
-		}
-		if missingReasonStates[owner.State] && strings.TrimSpace(owner.Reason) == "" {
-			v.add("decision %s state %s requires reason", decision, owner.State)
+		if decision := v.validateDecisionOwner(owner); decision != "" {
+
+			owners[decision] = owner
 		}
 	}
+}
+
+func (v *bundleValidator) requireDecisionOwners(owners map[string]DecisionOwner) {
 	for _, decision := range requiredDecisions {
 		if owners[decision].Decision == "" {
+
 			v.add("missing decision owner %q", decision)
 		}
+	}
+}
+
+func (v *bundleValidator) validateDecisionOwner(owner DecisionOwner) string {
+
+	decision := strings.TrimSpace(owner.Decision)
+	if decision == "" {
+		v.add("decision owner requires decision")
+		return ""
+	}
+	v.validateNamedDecisionOwner(decision, owner)
+	return decision
+}
+func (v *bundleValidator) validateNamedDecisionOwner(decision string, owner DecisionOwner) {
+
+	v.validateDecisionOwnerName(decision, owner)
+	v.validateDecisionOwnerState(decision, owner)
+	v.validateDecisionOwnerReason(decision, owner)
+}
+
+func (v *bundleValidator) validateDecisionOwnerName(decision string, owner DecisionOwner) {
+	if strings.TrimSpace(owner.Owner) == "" {
+
+		v.add("decision %s requires owner", decision)
+	}
+}
+
+func (v *bundleValidator) validateDecisionOwnerState(decision string, owner DecisionOwner) {
+	if !states[owner.State] {
+
+		v.add("decision %s has unknown state %q", decision, owner.State)
+	}
+}
+
+func (v *bundleValidator) validateDecisionOwnerReason(decision string, owner DecisionOwner) {
+	if missingReasonStates[owner.State] && strings.TrimSpace(owner.Reason) == "" {
+
+		v.add("decision %s state %s requires reason", decision, owner.State)
 	}
 }
 
@@ -847,6 +1262,7 @@ func (v *bundleValidator) add(format string, args ...any) {
 func requiredRow(id string) bool {
 	for _, required := range RequiredRows {
 		if id == required {
+
 			return true
 		}
 	}
@@ -856,6 +1272,7 @@ func requiredRow(id string) bool {
 func rowIDForRef(rows map[string]Row, ref string) string {
 	for id, row := range rows {
 		for _, rowRef := range row.EvidenceRefs {
+
 			if rowRef == ref {
 				return id
 			}
@@ -863,10 +1280,10 @@ func rowIDForRef(rows map[string]Row, ref string) string {
 	}
 	return ""
 }
-
 func gapForRow(gaps []ResidualGap, rowID string) bool {
 	for _, gap := range gaps {
 		if gap.RowID == rowID && strings.TrimSpace(gap.Reason) != "" {
+
 			return true
 		}
 	}
@@ -879,6 +1296,7 @@ func entryExpired(entry BundleEntry, now time.Time) bool {
 	}
 	expiresAt, err := time.Parse(time.RFC3339, entry.ExpiresAt)
 	if err != nil {
+
 		return true
 	}
 	return !expiresAt.After(now)
@@ -886,12 +1304,18 @@ func entryExpired(entry BundleEntry, now time.Time) bool {
 
 func passRefUnverifiable(entry BundleEntry) bool {
 	if entry.RedactionStatus == StateCannotVerify || entry.RetainedForm == "not_retained" {
+
 		return true
 	}
-	switch entry.ArtifactAccess {
+	return artifactAccessUnverifiable(entry.ArtifactAccess)
+}
+
+func artifactAccessUnverifiable(access string) bool {
+	switch access {
 	case "", "present":
 		return false
 	case "expired", "inaccessible", "malformed", "not_assessed", StateCannotVerify:
+
 		return true
 	default:
 		return false
@@ -899,6 +1323,7 @@ func passRefUnverifiable(entry BundleEntry) bool {
 }
 
 func githubSourceChange(input GitHubPREvidenceInput) SourceChange {
+
 	return SourceChange{
 		Repository:  input.PR.URL,
 		ChangeID:    fmt.Sprintf("PR-%d", input.PR.Number),
@@ -913,6 +1338,7 @@ func githubSourceChange(input GitHubPREvidenceInput) SourceChange {
 func githubRows(input GitHubPREvidenceInput) []Row {
 	change := githubChangeRow(input)
 	mutation := githubMutationRow(input)
+
 	return []Row{
 		change,
 		githubInitiatorRow(input),
@@ -930,6 +1356,7 @@ func githubRows(input GitHubPREvidenceInput) []Row {
 
 func githubChangeRow(input GitHubPREvidenceInput) Row {
 	if strings.TrimSpace(input.CommitRange.Base) == "" || strings.TrimSpace(input.CommitRange.Head) == "" {
+
 		return githubRow("PC-CHANGE", StateCannotVerify, "Change-host metadata is retained but commit range is incomplete.", []string{"github:pr"}, "missing commit range base or head")
 	}
 	return githubRow("PC-CHANGE", StatePass, "Change-host metadata and commit range are retained.", []string{"github:pr", "git:commit-range"}, "")
@@ -937,6 +1364,7 @@ func githubChangeRow(input GitHubPREvidenceInput) Row {
 
 func githubMutationRow(input GitHubPREvidenceInput) Row {
 	if strings.TrimSpace(input.CommitRange.Base) == "" || strings.TrimSpace(input.CommitRange.Head) == "" {
+
 		return githubRow("PC-MUTATION", StateCannotVerify, "Commit range is incomplete.", nil, "missing commit range base or head")
 	}
 	return githubRow("PC-MUTATION", StatePass, "Commit range and changed files are retained.", []string{"git:commit-range"}, "")
@@ -944,6 +1372,7 @@ func githubMutationRow(input GitHubPREvidenceInput) Row {
 
 func githubInitiatorRow(input GitHubPREvidenceInput) Row {
 	if input.PR.BodyRef != "" {
+
 		return githubRow("PC-INITIATOR", StatePartial, "PR body task source is retained.", []string{"github:pr-body"}, "PR body is weaker than a dedicated issue binding")
 	}
 	return githubRow("PC-INITIATOR", StateNotAssessed, "No task or initiator evidence was provided.", nil, "missing PR body, issue, or retained task artifact")
@@ -951,45 +1380,123 @@ func githubInitiatorRow(input GitHubPREvidenceInput) Row {
 
 func githubAgentRouteRow(input GitHubPREvidenceInput) Row {
 	classification := ClassifyPromptBoundary(input.PromptBoundary)
-	if input.RequirePromptBoundary && classification.RouteProofEffect == StateFail {
-		return githubRow("PC-AGENT-ROUTE", StateFail, "Developer prompt contains recorder duties.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
+	if row, ok := promptBoundaryRouteFailureRow(input.RequirePromptBoundary, classification); ok {
+		return row
 	}
-	if input.RequirePromptBoundary && classification.RouteProofEffect == StateCannotVerify {
-		return githubRow("PC-AGENT-ROUTE", StateCannotVerify, "Prompt boundary evidence cannot verify developer-route independence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
-	}
+
 	if len(input.AgentRouteRefs) > 0 {
-		if input.RequirePromptBoundary && classification.RouteProofEffect == StatePartial {
-			return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs and digest-only prompt boundary are retained.", []string{"agent:route", "prompt:boundary"}, "prompt text is unavailable; digest-only boundary supports partial route proof")
-		}
-		return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs are retained.", []string{"agent:route"}, "route refs are input refs, not a complete observed delegation chain")
+		return githubAgentRouteRefsRow(input.RequirePromptBoundary, classification)
 	}
 	return githubRow("PC-AGENT-ROUTE", StateNotAssessed, "Agent route evidence was not provided.", nil, "missing OpenCode/GSD observation ref")
+}
+func githubAgentRouteRefsRow(requirePromptBoundary bool, classification PromptBoundaryClassification) Row {
+
+	if requirePromptBoundary && classification.RouteProofEffect == StatePartial {
+		return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs and digest-only prompt boundary are retained.", []string{"agent:route", "prompt:boundary"}, "prompt text is unavailable; digest-only boundary supports partial route proof")
+	}
+	return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs are retained.", []string{"agent:route"}, "route refs are input refs, not a complete observed delegation chain")
+}
+
+func promptBoundaryRouteFailureRow(required bool, classification PromptBoundaryClassification) (Row, bool) {
+	if !required {
+
+		return Row{}, false
+	}
+	return promptBoundaryRouteProofFailureRow(classification)
+}
+func promptBoundaryRouteProofFailureRow(classification PromptBoundaryClassification) (Row, bool) {
+	if classification.RouteProofEffect == StateFail {
+
+		return githubPromptBoundaryRouteFailRow(classification), true
+	}
+	return promptBoundaryRouteCannotVerifyRow(classification)
+}
+
+func promptBoundaryRouteCannotVerifyRow(classification PromptBoundaryClassification) (Row, bool) {
+	if classification.RouteProofEffect != StateCannotVerify {
+		return Row{}, false
+	}
+
+	return githubPromptBoundaryRouteCannotVerifyRow(classification), true
+}
+
+func githubPromptBoundaryRouteFailRow(classification PromptBoundaryClassification) Row {
+	return githubRow("PC-AGENT-ROUTE", StateFail, "Developer prompt contains recorder duties.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
+}
+
+func githubPromptBoundaryRouteCannotVerifyRow(classification PromptBoundaryClassification) Row {
+	return githubRow("PC-AGENT-ROUTE", StateCannotVerify, "Prompt boundary evidence cannot verify developer-route independence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
 }
 
 func githubVerificationRow(input GitHubPREvidenceInput) Row {
 	classification := ClassifyPromptBoundary(input.PromptBoundary)
-	if input.RequirePromptBoundary && (classification.RouteProofEffect == StateFail || classification.RouteProofEffect == StateCannotVerify) {
-		return githubRow("PC-VERIFICATION", StateCannotVerify, "Verification cannot pass without clean or partially retained prompt-boundary evidence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; "))
+	if row, ok := githubVerificationCannotVerifyRow(input, classification); ok {
+		return row
 	}
-	if len(input.Checks) == 0 {
-		return githubRow("PC-VERIFICATION", StateCannotVerify, "No GitHub check evidence was provided.", nil, "missing GitHub check or workflow run evidence")
-	}
-	if input.RequirePromptBoundary && strings.TrimSpace(input.WorkflowRunID) == "" {
-		return githubRow("PC-VERIFICATION", StateCannotVerify, "No current workflow run id was provided.", []string{"github:check"}, "missing workflow run id for CI-owned packet generation")
-	}
+
 	if !checksHaveRetainedArtifactRefs(input) {
 		return githubRow("PC-VERIFICATION", StatePartial, "GitHub check evidence is retained without retained artifact binding.", []string{"github:check"}, "GitHub CI green is not verification pass without retained artifact evidence")
 	}
-	for _, check := range input.Checks {
-		if check.Conclusion != "success" {
-			return githubRow("PC-VERIFICATION", StatePartial, "GitHub checks include non-success conclusions.", []string{"github:check"}, "not all retained checks concluded success")
-		}
+	if !checksSucceeded(input.Checks) {
+		return githubRow("PC-VERIFICATION", StatePartial, "GitHub checks include non-success conclusions.", []string{"github:check"}, "not all retained checks concluded success")
 	}
+	return githubVerificationPassRow(input)
+}
+
+func githubVerificationPassRow(input GitHubPREvidenceInput) Row {
 	refs := append([]string{"github:check"}, artifactEvidenceRefs(input)...)
 	if strings.TrimSpace(input.WorkflowRunID) != "" {
+
 		return githubRow("PC-VERIFICATION", StatePass, "GitHub check and retained artifact evidence are retained for workflow run "+input.WorkflowRunID+".", refs, "")
 	}
 	return githubRow("PC-VERIFICATION", StatePass, "GitHub check and retained artifact evidence are retained.", refs, "")
+}
+
+func githubVerificationCannotVerifyRow(input GitHubPREvidenceInput, classification PromptBoundaryClassification) (Row, bool) {
+
+	if row, ok := githubPromptBoundaryVerificationCannotVerifyRow(input.RequirePromptBoundary, classification); ok {
+		return row, true
+	}
+	return githubCheckVerificationCannotVerifyRow(input)
+}
+
+func githubPromptBoundaryVerificationCannotVerifyRow(required bool, classification PromptBoundaryClassification) (Row, bool) {
+	if promptBoundaryBlocksVerification(required, classification) {
+
+		return githubRow("PC-VERIFICATION", StateCannotVerify, "Verification cannot pass without clean or partially retained prompt-boundary evidence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; ")), true
+	}
+	return Row{}, false
+}
+
+func githubCheckVerificationCannotVerifyRow(input GitHubPREvidenceInput) (Row, bool) {
+	if len(input.Checks) == 0 {
+
+		return githubRow("PC-VERIFICATION", StateCannotVerify, "No GitHub check evidence was provided.", nil, "missing GitHub check or workflow run evidence"), true
+	}
+	if missingRequiredWorkflowRunID(input) {
+
+		return githubRow("PC-VERIFICATION", StateCannotVerify, "No current workflow run id was provided.", []string{"github:check"}, "missing workflow run id for CI-owned packet generation"), true
+	}
+	return Row{}, false
+}
+
+func missingRequiredWorkflowRunID(input GitHubPREvidenceInput) bool {
+	return input.RequirePromptBoundary && strings.TrimSpace(input.WorkflowRunID) == ""
+}
+
+func promptBoundaryBlocksVerification(required bool, classification PromptBoundaryClassification) bool {
+
+	return required && (classification.RouteProofEffect == StateFail || classification.RouteProofEffect == StateCannotVerify)
+}
+
+func checksSucceeded(checks []GitHubCheck) bool {
+	for _, check := range checks {
+		if check.Conclusion != "success" {
+
+			return false
+		}
+	}
+	return true
 }
 
 func artifactEvidenceRefs(input GitHubPREvidenceInput) []string {
@@ -999,6 +1506,7 @@ func artifactEvidenceRefs(input GitHubPREvidenceInput) []string {
 		for _, ref := range check.ArtifactRefs {
 			artifactRef := "artifact:" + ref
 			if !seen[artifactRef] {
+
 				refs = append(refs, artifactRef)
 				seen[artifactRef] = true
 			}
@@ -1008,31 +1516,46 @@ func artifactEvidenceRefs(input GitHubPREvidenceInput) []string {
 }
 
 func checksHaveRetainedArtifactRefs(input GitHubPREvidenceInput) bool {
-	artifacts := map[string]bool{}
-	for _, artifact := range input.Artifacts {
-		if strings.TrimSpace(artifact.Name) != "" && artifact.RetainedForm != "not_retained" {
-			artifacts[artifact.Name] = true
-		}
-	}
+	artifacts := retainedArtifactNames(input.Artifacts)
 	for _, check := range input.Checks {
-		if len(check.ArtifactRefs) == 0 {
+
+		if !checkHasRetainedArtifactRefs(check, artifacts) {
 			return false
 		}
-		for _, ref := range check.ArtifactRefs {
-			if !artifacts[ref] {
-				return false
-			}
+	}
+	return true
+}
+func checkHasRetainedArtifactRefs(check GitHubCheck, artifacts map[string]bool) bool {
+	if len(check.ArtifactRefs) == 0 {
+
+		return false
+	}
+	for _, ref := range check.ArtifactRefs {
+		if !artifacts[ref] {
+
+			return false
 		}
 	}
 	return true
 }
 
+func retainedArtifactNames(artifacts []GitHubArtifact) map[string]bool {
+	names := map[string]bool{}
+	for _, artifact := range artifacts {
+
+		if strings.TrimSpace(artifact.Name) != "" && artifact.RetainedForm != "not_retained" {
+			names[artifact.Name] = true
+		}
+	}
+	return names
+}
 func githubReviewRow(input GitHubPREvidenceInput) Row {
 	if len(input.Reviews) == 0 {
 		return githubRow("PC-REVIEW", StateNotAssessed, "Review evidence was not provided.", nil, "missing GitHub review or retained external review")
 	}
 	for _, review := range input.Reviews {
 		if review.State != StatePass {
+
 			return githubRow("PC-REVIEW", StatePartial, "Review evidence is retained with non-pass state.", []string{"github:review"}, "review evidence did not fully pass")
 		}
 	}
@@ -1040,47 +1563,97 @@ func githubReviewRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubRow(id, state, summary string, refs []string, reason string) Row {
+
 	return Row{ID: id, State: state, Summary: summary, EvidenceRefs: refs, Reason: reason, Owner: "maintainer"}
 }
 
 func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
-	entries := []BundleEntry{
+	entries := githubBaseEntries(input)
+
+	entries = append(entries, githubPromptBoundaryEntries(input)...)
+	entries = append(entries, githubPRBodyEntries(input)...)
+	entries = append(entries, githubAgentRouteEntries(input)...)
+	entries = append(entries, githubCheckEntries(input)...)
+	entries = append(entries, githubReviewEntries(input)...)
+	entries = append(entries, githubArtifactEntries(input)...)
+	entries = append(entries, githubIntegrationEntries(input)...)
+	return entries
+}
+
+func githubBaseEntries(input GitHubPREvidenceInput) []BundleEntry {
+
+	return []BundleEntry{
 		authorityEntry(bundleEntry("github:pr", "change_host", input.PR.URL, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
 		authorityEntry(bundleEntry("git:commit-range", "git", input.CommitRange.Base+".."+input.CommitRange.Head, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
 		authorityEntry(bundleEntry("theater:builder", "witness", "sdp-trace packet build-pr", "raw"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
 		authorityEntry(bundleEntry("decision:owners", "manual", "default generated decision owners", "raw"), "operator", "operator_authored", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
 		authorityEntry(bundleEntry("gap:generated", "manual", "generated residual gaps", "raw"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
 	}
+}
+
+func githubPromptBoundaryEntries(input GitHubPREvidenceInput) []BundleEntry {
 	if input.RequirePromptBoundary || strings.TrimSpace(input.PromptBoundary.Text) != "" || strings.TrimSpace(input.PromptBoundary.Digest) != "" {
-		entries = append(entries, authorityEntry(bundleEntry("prompt:boundary", "harness", promptBoundaryResolver(input.PromptBoundary), promptBoundaryRetainedForm(input.PromptBoundary)), "recorder", "recorder_owned", "sdp-trace recorder run", "external_retained_artifact", input.PromptBoundary.Digest))
+
+		return []BundleEntry{authorityEntry(bundleEntry("prompt:boundary", "harness", promptBoundaryResolver(input.PromptBoundary), promptBoundaryRetainedForm(input.PromptBoundary)), "recorder", "recorder_owned", "sdp-trace recorder run", "external_retained_artifact", input.PromptBoundary.Digest)}
 	}
+	return nil
+}
+
+func githubPRBodyEntries(input GitHubPREvidenceInput) []BundleEntry {
 	if input.PR.BodyRef != "" {
-		entries = append(entries, authorityEntry(bundleEntry("github:pr-body", "change_host", input.PR.BodyRef, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID))
+
+		return []BundleEntry{authorityEntry(bundleEntry("github:pr-body", "change_host", input.PR.BodyRef, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)}
 	}
+	return nil
+}
+
+func githubAgentRouteEntries(input GitHubPREvidenceInput) []BundleEntry {
 	if len(input.AgentRouteRefs) > 0 {
 		entry := bundleEntry("agent:route", "harness", strings.Join(input.AgentRouteRefs, ", "), "external_ref")
 		if strings.TrimSpace(input.AgentRouteDigest) != "" {
+
 			entry.Digest = input.AgentRouteDigest
 		}
 		entry.EvidenceKind = input.AgentRouteEvidenceKind
 		entry.ObservedComponents = input.AgentRouteComponents
 		entry = authorityEntry(entry, "recorder", "recorder_owned", "sdp-trace recorder run", "external_retained_artifact", input.AgentRouteDigest)
-		entries = append(entries, entry)
+		return []BundleEntry{entry}
 	}
+	return nil
+}
+
+func githubCheckEntries(input GitHubPREvidenceInput) []BundleEntry {
 	if len(input.Checks) > 0 {
-		entries = append(entries, authorityEntry(bundleEntry("github:check", "ci", checkResolvers(input.Checks), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID))
+
+		return []BundleEntry{authorityEntry(bundleEntry("github:check", "ci", checkResolvers(input.Checks), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)}
 	}
+	return nil
+}
+
+func githubReviewEntries(input GitHubPREvidenceInput) []BundleEntry {
 	if len(input.Reviews) > 0 {
-		entries = append(entries, authorityEntry(bundleEntry("github:review", "review", reviewResolvers(input.Reviews), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID))
+
+		return []BundleEntry{authorityEntry(bundleEntry("github:review", "review", reviewResolvers(input.Reviews), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)}
 	}
+	return nil
+}
+
+func githubArtifactEntries(input GitHubPREvidenceInput) []BundleEntry {
+	entries := []BundleEntry{}
 	for _, artifact := range input.Artifacts {
 		entry := bundleEntry("artifact:"+artifact.Name, "ci", artifact.Resolver, artifact.RetainedForm)
 		entry.ExpiresAt = artifact.ExpiresAt
 		entry.Digest = artifact.Digest
+
 		entry = authorityEntry(entry, "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)
 		entries = append(entries, entry)
 	}
+	return entries
+}
+func githubIntegrationEntries(input GitHubPREvidenceInput) []BundleEntry {
+	entries := []BundleEntry{}
 	for _, action := range input.IntegrationActions {
+
 		entry := bundleEntry("integration:"+action.Kind, "manual", action.Resolver, "external_ref")
 		entry = authorityEntry(entry, "integration", "integration_authored", action.Actor, "github_workflow_run", input.WorkflowRunID)
 		entries = append(entries, entry)
@@ -1089,6 +1662,7 @@ func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func authorityEntry(entry BundleEntry, actor, writeAuthority, generatedBy, sourceCommitState, sourceRef string) BundleEntry {
+
 	entry.Actor = actor
 	entry.WriteAuthority = writeAuthority
 	entry.GeneratedBy = generatedBy
@@ -1102,12 +1676,14 @@ func promptBoundaryResolver(boundary PromptBoundary) string {
 		return "prompt:text-retained"
 	}
 	if strings.TrimSpace(boundary.Digest) != "" {
+
 		return "prompt:digest:" + boundary.Digest
 	}
 	return "prompt:missing"
 }
 
 func promptBoundaryRetainedForm(boundary PromptBoundary) string {
+
 	if strings.TrimSpace(boundary.Text) != "" {
 		return "redacted"
 	}
@@ -1119,6 +1695,7 @@ func promptBoundaryRetainedForm(boundary PromptBoundary) string {
 
 func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
 	resolver = redactSecretLike(resolver)
+
 	return BundleEntry{
 		Ref:             ref,
 		SourceClass:     sourceClass,
@@ -1129,10 +1706,10 @@ func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
 		ArtifactAccess:  "present",
 	}
 }
-
 func redactSecretLike(value string) string {
 	redacted := value
 	for _, marker := range []string{"SECRET", "TOKEN", "Authorization:"} {
+
 		if strings.Contains(strings.ToUpper(redacted), strings.ToUpper(marker)) {
 			return "[redacted-secret]"
 		}
@@ -1146,12 +1723,14 @@ func residualGapsForRows(rows []Row) []ResidualGap {
 		if row.State == StatePass || row.ID == "PC-RESIDUAL-GAPS" {
 			continue
 		}
+
 		gaps = append(gaps, ResidualGap{RowID: row.ID, State: row.State, Reason: row.Reason, ClosureEvidence: "provide retained evidence for " + row.ID})
 	}
 	return gaps
 }
 
 func defaultDecisionOwners() []DecisionOwner {
+
 	return []DecisionOwner{
 		{Decision: "merge", Owner: "maintainer", State: StateNotAssessed, Reason: "packet is not approval"},
 		{Decision: "release", Owner: "release owner", State: StateNotAssessed, Reason: "packet is not release approval"},
@@ -1163,6 +1742,7 @@ func defaultDecisionOwners() []DecisionOwner {
 func checkResolvers(checks []GitHubCheck) string {
 	values := []string{}
 	for _, check := range checks {
+
 		values = append(values, check.Name+"="+check.URL)
 	}
 	return strings.Join(values, ", ")
@@ -1171,6 +1751,7 @@ func checkResolvers(checks []GitHubCheck) string {
 func reviewResolvers(reviews []GitHubReview) string {
 	values := []string{}
 	for _, review := range reviews {
+
 		values = append(values, review.Reviewer+"="+review.Resolver)
 	}
 	return strings.Join(values, ", ")
@@ -1182,11 +1763,17 @@ func digestPlaceholder(value string) string {
 }
 
 func RenderMarkdown(bundle Bundle) (string, error) {
-	validation := Validate(bundle, time.Now().UTC())
-	if validation.State != StatePass {
-		return "", errors.New(strings.Join(validation.Errors, "; "))
+
+	packet, err := renderablePacket(bundle)
+	if err != nil {
+		return "", err
 	}
-	packet := bundle.Packet
+	return renderPacketMarkdown(packet, bundle.Manifest), nil
+}
+func renderPacketMarkdown(packet Packet, manifest BundleManifest) string {
+	// Rendering is a projection of already-validated packet and manifest data;
+	// it does not reclassify evidence or compute approval.
+	// Section order mirrors reviewer flow from scope to evidence to gaps.
 	var out bytes.Buffer
 	fmt.Fprintf(&out, "# Change Evidence Packet v0\n\n")
 	fmt.Fprintf(&out, "This packet is evidence organization, not merge, release, compliance, production trust, or quality approval.\n\n")
@@ -1195,13 +1782,24 @@ func RenderMarkdown(bundle Bundle) (string, error) {
 	renderRows(&out, packet.Rows)
 	renderTheater(&out, packet)
 	renderDecisions(&out, packet.DecisionOwners)
-	renderEvidence(&out, bundle.Manifest)
+	renderEvidence(&out, manifest)
 	renderResidualGaps(&out, packet.ResidualGaps)
 	renderNonProof(&out, packet)
-	return out.String(), nil
+	return out.String()
+}
+
+func renderablePacket(bundle Bundle) (Packet, error) {
+
+	validation := Validate(bundle, time.Now().UTC())
+	if validation.State != StatePass {
+
+		return Packet{}, errors.New(strings.Join(validation.Errors, "; "))
+	}
+	return bundle.Packet, nil
 }
 
 func renderExecutiveSummary(out *bytes.Buffer, packet Packet) {
+
 	fmt.Fprintf(out, "## Executive Summary\n\n")
 	fmt.Fprintf(out, "- Source change: %s %s.\n", packet.SourceChange.Repository, packet.SourceChange.ChangeID)
 	fmt.Fprintf(out, "- Packet state: %s.\n", packet.PacketState)
@@ -1211,9 +1809,18 @@ func renderExecutiveSummary(out *bytes.Buffer, packet Packet) {
 }
 
 func renderMetadata(out *bytes.Buffer, packet Packet) {
+
 	fmt.Fprintf(out, "## Packet Metadata\n\n")
 	fmt.Fprintf(out, "| field | value |\n| --- | --- |\n")
-	fields := [][2]string{
+	for _, field := range packetMetadataFields(packet) {
+		fmt.Fprintf(out, "| %s | %s |\n", field[0], md(field[1]))
+	}
+	fmt.Fprintln(out)
+}
+
+func packetMetadataFields(packet Packet) [][2]string {
+
+	return [][2]string{
 		{"packet_id", packet.PacketID},
 		{"schema", packet.PacketVersion},
 		{"generated_from", packet.SourceChange.URL},
@@ -1224,16 +1831,14 @@ func renderMetadata(out *bytes.Buffer, packet Packet) {
 		{"bundle_ref", packet.BundleRef},
 		{"packet_state", packet.PacketState},
 	}
-	for _, field := range fields {
-		fmt.Fprintf(out, "| %s | %s |\n", field[0], md(field[1]))
-	}
-	fmt.Fprintln(out)
 }
 
 func renderRows(out *bytes.Buffer, rows []Row) {
+
 	fmt.Fprintf(out, "## Required Rows\n\n")
 	fmt.Fprintf(out, "| row id | state | answer | evidence refs | gap / next evidence | owner |\n| --- | --- | --- | --- | --- | --- |\n")
 	ordered := append([]Row(nil), rows...)
+
 	sort.SliceStable(ordered, func(i, j int) bool {
 		return requiredRowIndex(ordered[i].ID) < requiredRowIndex(ordered[j].ID)
 	})
@@ -1248,96 +1853,16 @@ func renderRows(out *bytes.Buffer, rows []Row) {
 }
 
 func renderTheater(out *bytes.Buffer, packet Packet) {
+
 	fmt.Fprintf(out, "## Theater Findings\n\n")
 	fmt.Fprintf(out, "| reason code | state | severity | finding | trigger evidence | required closure evidence |\n| --- | --- | --- | --- | --- | --- |\n")
 	theater := rowByID(packet.Rows, "PC-THEATER")
 	if len(packet.TheaterFindings) == 0 {
-		fmt.Fprintf(out, "| none | %s | none | %s | PC-THEATER row | %s |\n\n", theater.State, md(theater.Summary), md(theater.Reason))
+		renderCleanTheater(out, theater)
 		return
 	}
 	for _, finding := range packet.TheaterFindings {
-		fmt.Fprintf(out, "| %s | %s | %s | %s | %s | %s |\n", finding.ReasonCode, finding.State, md(finding.Severity), md(finding.Finding), md(strings.Join(finding.TriggerEvidenceRefs, ", ")), md(finding.RequiredClosureEvidence))
+		renderTheaterFinding(out, finding)
 	}
 	fmt.Fprintln(out)
-}
-
-func rowByID(rows []Row, id string) Row {
-	for _, row := range rows {
-		if row.ID == id {
-			return row
-		}
-	}
-	return Row{ID: id, State: StateCannotVerify, Summary: "row missing", Reason: "row missing"}
-}
-
-func renderDecisions(out *bytes.Buffer, owners []DecisionOwner) {
-	fmt.Fprintf(out, "## Decision Ownership\n\n")
-	fmt.Fprintf(out, "| decision | owner | state | reason |\n| --- | --- | --- | --- |\n")
-	for _, owner := range owners {
-		fmt.Fprintf(out, "| %s | %s | %s | %s |\n", md(owner.Decision), md(owner.Owner), owner.State, md(owner.Reason))
-	}
-	fmt.Fprintln(out)
-}
-
-func renderEvidence(out *bytes.Buffer, manifest BundleManifest) {
-	fmt.Fprintf(out, "## Evidence Bundle\n\n")
-	fmt.Fprintf(out, "Manifest: `%s`\n\n", md(manifest.BundleID))
-	fmt.Fprintf(out, "| ref | source class | retained form | redaction status | resolver |\n| --- | --- | --- | --- | --- |\n")
-	for _, entry := range manifest.Entries {
-		resolver := entry.Resolver
-		if resolver == "" {
-			resolver = resolverFromList(manifest.Resolvers, entry.Ref)
-		}
-		fmt.Fprintf(out, "| %s | %s | %s | %s | %s |\n", md(entry.Ref), md(entry.SourceClass), md(entry.RetainedForm), md(entry.RedactionStatus), md(resolver))
-	}
-	fmt.Fprintln(out)
-}
-
-func renderResidualGaps(out *bytes.Buffer, gaps []ResidualGap) {
-	fmt.Fprintf(out, "## Residual Gaps\n\n")
-	if len(gaps) == 0 {
-		fmt.Fprintf(out, "No residual gaps recorded beyond row states.\n\n")
-		return
-	}
-	fmt.Fprintf(out, "| row id | state | reason | closure evidence |\n| --- | --- | --- | --- |\n")
-	for _, gap := range gaps {
-		fmt.Fprintf(out, "| %s | %s | %s | %s |\n", gap.RowID, gap.State, md(gap.Reason), md(gap.ClosureEvidence))
-	}
-	fmt.Fprintln(out)
-}
-
-func renderNonProof(out *bytes.Buffer, packet Packet) {
-	fmt.Fprintf(out, "## What This Packet Does Not Prove\n\n")
-	if strings.TrimSpace(packet.NonApproval) != "" {
-		fmt.Fprintf(out, "%s\n\n", packet.NonApproval)
-		return
-	}
-	fmt.Fprintf(out, "This packet does not approve merge, release, compliance, production trust, semantic correctness, or signed external trust.\n\n")
-}
-
-func requiredRowIndex(id string) int {
-	for i, required := range RequiredRows {
-		if id == required {
-			return i
-		}
-	}
-	return len(RequiredRows)
-}
-
-func resolverFromList(resolvers []ResolverEntry, ref string) string {
-	for _, resolver := range resolvers {
-		if resolver.Ref == ref {
-			return resolver.Resolver
-		}
-	}
-	return ""
-}
-
-func md(value string) string {
-	value = strings.ReplaceAll(value, "\n", " ")
-	value = strings.ReplaceAll(value, "|", "\\|")
-	if strings.TrimSpace(value) == "" {
-		return "none"
-	}
-	return value
 }

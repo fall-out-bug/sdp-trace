@@ -13,12 +13,19 @@ OpenCode, MiniMax, Kotlin, or Bazel support.
 
 From a clean checkout, run:
 
-1. `go test ./...`
-2. `sdp-trace --help`
-3. `sdp-trace validate-fixtures examples/agentic-sdlc`
-4. Create or inspect a run with `sdp-trace wrap --name smoke -- /bin/echo ok`.
-5. Verify that run with `sdp-trace verify <run-dir>`.
-6. If documentation changed, compare command examples against `sdp-trace --help`.
+1. `go test -count=1 ./...`
+2. For a source checkout, define `sdp_trace() { go run ./cmd/sdp-trace "$@"; }`.
+   After installing a release binary, use `sdp-trace` directly.
+3. `sdp_trace --help` for a source checkout, or `sdp-trace --help` for a release binary.
+4. `sdp_trace validate-fixtures examples/agentic-sdlc` for a source checkout, or `sdp-trace validate-fixtures examples/agentic-sdlc` for a release binary.
+5. Create or inspect a run with
+   `sdp_trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok`
+   for a source checkout, or the same command with `sdp-trace` after installing
+   a release binary.
+6. Verify that run with `sdp_trace verify .sdp-trace-runs/smoke` or
+   `sdp-trace verify .sdp-trace-runs/smoke`.
+7. If documentation changed, compare command examples against `sdp_trace --help`
+   or `sdp-trace --help`.
 
 External production trust is not part of this quick path. Use a live
 `external_production_trust` profile path before making production trust claims.
@@ -36,18 +43,25 @@ scope, and exit-code contract. The short exit summary is:
 If any command returns exit code `3`, inspect the emitted reason and do not
 upgrade the state in prose.
 
-## Shared Command Surface
+## Reviewer Command Surface
 
-The current top-level command set is:
+This is the reviewer subset for fast orientation. The full command surface is
+authoritative in [Agent Entrypoint](agent-entrypoint.md) and `sdp-trace --help`.
+When reviewing command docs, compare against both.
 
-- `wrap`, `run`, `dry-run`, `preview`, `doctor`
+- `version`, `wrap`, `run`, `dry-run`, `preview`, `doctor`
+- `install repo-observer`
+- `interaction relay`, `interaction import-transcript`, `interaction summarize`
 - `observe setup`, `observe collect`, `observe session`
 - `harness observe`, `harness validate`, `harness summarize`
+- `envelope summarize`
 - `verify`, `explain`, `query`
 - `query-pack`, `query-pack explain`
-- `export cross-repo-posture`, `export cross-repo-posture explain`
+- `export cross-repo-posture`, `export cross-repo-posture explain`, `export telemetry`
 - `assess`, `assess preview`, `assess explain`
-- `report`, `gate`, `witness`, `release-proof`, `pr-review`, `validate-fixtures`
+- `report`, `gate`, `witness`, `release-proof`, `pr-review`
+- `packet build-pr`, `packet build-github`, `packet validate`, `packet check-demo`, `packet render`
+- `validate-fixtures`
 
 Current assessment profiles:
 

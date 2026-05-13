@@ -5,10 +5,10 @@ working specs and historical implementation records.
 
 ## First-Time Path
 
-1. [Agent Onboarding](agent-onboarding.md): the single link to give a coding
+1. [Install](install.md): binary-first setup plus source-checkout commands.
+2. [Core Concepts](concepts.md): vocabulary and product boundary.
+3. [Agent Onboarding](agent-onboarding.md): the single link to give a coding
    agent before it works in this repository.
-2. [Install](install.md): binary-first setup; Go is not required at runtime.
-3. [Core Concepts](concepts.md): vocabulary and product boundary.
 4. [Agent Entrypoint](agent-entrypoint.md): current command, state, trust-scope,
    authority-scope, and exit-code contract.
 5. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path and
@@ -16,6 +16,21 @@ working specs and historical implementation records.
 6. [Harness Integration](harness-integration.md): how existing workflows feed
    trace evidence without being replaced.
 7. [Schema Reference](../schema/README.md): the portable JSON contracts.
+
+## Reader Shortcuts
+
+- New contributor: read onboarding, concepts, and the agent entrypoint before
+  editing files.
+- Reviewer: start with the reviewer entrypoint, then inspect the evidence
+  policy and relevant examples.
+- Harness maintainer: read harness integration, flight recorder, and schema
+  reference.
+- Engineering leader: read the repository README, run the reviewer five-minute
+  verification path, then inspect the adoption guide, CI check policy, and
+  accountability model.
+
+The same product boundary applies to every path: `sdp-trace` structures
+evidence and gaps; it does not approve changes.
 
 ## Governance And Rollout Docs
 
@@ -31,6 +46,7 @@ working specs and historical implementation records.
 
 - [Harness Integration](harness-integration.md)
 - [Claim Authoring](claim-authoring.md)
+- [Spec Drift Register](spec-drift-register.md)
 - [Contract Release Signing](contract-release-signing.md)
 - [Process Metric Catalog](process-metric-catalog.md)
 - [Flight Recorder](flight-recorder.md)

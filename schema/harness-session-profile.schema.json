@@ -7,8 +7,7 @@
     "schema_version",
     "profile_id",
     "harness_profile_path",
-    "event_source_path",
-    "stream_capture"
+    "event_source_path"
   ],
   "properties": {
     "schema_version": { "const": "harness-session-profile-v1" },

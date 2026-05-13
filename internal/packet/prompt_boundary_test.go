@@ -58,6 +58,76 @@ func TestClassifyPromptBoundary(t *testing.T) {
 	}
 }
 
+func TestPromptBoundaryEntryMetadata(t *testing.T) {
+	text := PromptBoundary{Text: "Implement feature"}
+	if got := promptBoundaryResolver(text); got != "prompt:text-retained" {
+		t.Fatalf("text resolver = %q", got)
+	}
+	if got := promptBoundaryRetainedForm(text); got != "redacted" {
+		t.Fatalf("text retained form = %q", got)
+	}
+
+	digest := PromptBoundary{Digest: "sha256:abc"}
+	if got := promptBoundaryResolver(digest); got != "prompt:digest:sha256:abc" {
+		t.Fatalf("digest resolver = %q", got)
+	}
+	if got := promptBoundaryRetainedForm(digest); got != "digest_only" {
+		t.Fatalf("digest retained form = %q", got)
+	}
+
+	missing := PromptBoundary{}
+	if got := promptBoundaryResolver(missing); got != "prompt:missing" {
+		t.Fatalf("missing resolver = %q", got)
+	}
+	if got := promptBoundaryRetainedForm(missing); got != "not_retained" {
+		t.Fatalf("missing retained form = %q", got)
+	}
+}
+
+func TestBuildGitHubPromptBoundaryRequiredBlocksAgentRoute(t *testing.T) {
+	tests := []struct {
+		name     string
+		boundary PromptBoundary
+		want     string
+	}{
+		{
+			name:     "contaminated text fails route",
+			boundary: PromptBoundary{Text: "Implement feature and update packet rows."},
+			want:     StateFail,
+		},
+		{
+			name:     "missing boundary cannot verify route",
+			boundary: PromptBoundary{},
+			want:     StateCannotVerify,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := validGitHubInput()
+			input.RequirePromptBoundary = true
+			input.PromptBoundary = tt.boundary
+			bundle := BuildFromGitHubInput(input, testTime())
+			row := rowByID(bundle.Packet.Rows, "PC-AGENT-ROUTE")
+			if row.State != tt.want {
+				t.Fatalf("agent route state = %s, want %s: %+v", row.State, tt.want, row)
+			}
+		})
+	}
+}
+
+func TestResolverFromList(t *testing.T) {
+	resolvers := []ResolverEntry{
+		{Ref: "artifact:a", Resolver: "a.zip"},
+		{Ref: "artifact:b", Resolver: "b.zip"},
+	}
+	if got := resolverFromList(resolvers, "artifact:b"); got != "b.zip" {
+		t.Fatalf("resolver = %q", got)
+	}
+	if got := resolverFromList(resolvers, "artifact:c"); got != "" {
+		t.Fatalf("missing resolver = %q", got)
+	}
+}
+
 func TestBuildFromGitHubInputRedactsSecretLikeResolvers(t *testing.T) {
 	bundle := BuildFromGitHubInput(GitHubPREvidenceInput{
 		PR:          GitHubPR{Number: 1, URL: "https://github.com/example/repo/pull/1", BaseRef: "main", HeadRef: "feature", HeadSHA: "head"},

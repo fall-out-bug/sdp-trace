@@ -67,9 +67,9 @@ implementation/PR phases it may be extended by implementation and PR review
 ledgers.
 
 **CRAP score** means Change Risk Anti-Patterns score for a function:
-`CRAP = CC * (1 - coverage/100)^2 + CC`, where `CC` is cyclomatic complexity and
-coverage is function-level test coverage. `gocyclo` alone is not a CRAP gate; it
-is only one input.
+`CRAP = CC^2 * (1 - coverage/100)^3 + CC`, where `CC` is cyclomatic complexity
+and coverage is function-level test coverage. `gocyclo` alone is not a CRAP gate;
+it is only one input.
 
 **Evidence state labels**:
 
@@ -122,12 +122,18 @@ Initial thresholds for this block:
 - complexity/CRAP: establish a per-function CRAP baseline from cyclomatic
   complexity and function coverage before decomposition; after the first
   hardening pass no production function may remain above `gocyclo -over 15 .`
-  unless recorded as an `assessed_gap`, and the first ratchet milestone must
-  target `gocyclo -over 10` plus lower CRAP scores for the refactored functions;
-- cognitive complexity: if `gocognit` is enforced in this block, the initial
-  threshold must be explicit in the implementation ledger; otherwise cognitive
-  complexity enforcement remains `not_assessed` and is not part of the readiness
-  claim;
+  unless recorded as an `assessed_gap`; after the first ratchet milestone,
+  production functions must also pass the reviewed `gocyclo -over 10` equivalent
+  gate unless recorded as an `assessed_gap`;
+- cognitive complexity: if enforced in this block, the threshold must be
+  explicit in the implementation ledger; otherwise cognitive complexity
+  enforcement remains `not_assessed` and is not part of the readiness claim;
+- Maintainability Index: absolute function/file MI `> 70` may not be claimed
+  while historical code remains below threshold. The implementation may enforce
+  an MI ratchet in CI only if the baseline is checked in, schema-versioned,
+  regenerated only by reviewed ratchet changes, and documented as an exception
+  set rather than proof that MI passed. New below-threshold functions and
+  regressions against the baseline must fail the ratchet gate.
 - coverage: record a pre-change per-package and per-function baseline for all
   MVP-critical packages; `internal/contract`, `internal/policy`,
   `internal/export`, and `internal/posture` each need focused happy/error path
@@ -138,12 +144,16 @@ Initial thresholds for this block:
 
 Minimum gate set:
 
-- `go test ./...`
-- `go test ./... -coverprofile=<file>` with package-level coverage review
+- `go test -count=1 ./...`
+- `go test -count=1 ./... -coverprofile=<file>` with package-level coverage review
 - per-function CRAP baseline and post-change CRAP review from coverage plus
   cyclomatic complexity
 - `golangci-lint run ./...`
 - selected `gocyclo` and `gocognit` thresholds
+- function-level MI ratchet against a checked-in baseline, or MI remains
+  `assessed_gap` with no pass claim
+- file-level MI ratchet against a checked-in baseline, or MI remains
+  `assessed_gap` with no pass claim
 - `jq empty schema/*.json` plus changed JSON examples
 - `git diff --check HEAD`
 
@@ -158,8 +168,8 @@ must be recorded in the block ledger before readiness can be claimed.
 
 Passed local checks:
 
-- `go test ./...`
-- `go test ./... -coverprofile=/tmp/sdp-trace-cover.out`
+- `go test -count=1 ./...`
+- `go test -count=1 ./... -coverprofile=/tmp/sdp-trace-cover.out`
 - `jq empty schema/*.json`
 - `git diff --check HEAD`
 

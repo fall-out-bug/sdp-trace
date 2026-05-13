@@ -1,9 +1,9 @@
 {
   "id": "contract-release-verification-block-18-19-source-bound",
   "schema_version": "0.1.0",
-  "artifact_role": "verifier_output",
+  "artifact_role": "untrusted_example",
   "trust_scope": "source_bound_local_release",
-  "release_verification_state": "pass",
+  "release_verification_state": "not_assessed",
   "manifest_ref": "examples/contract-foundation/contract-manifest.example.json",
   "manifest_digest": "0f1be76e61a421a6249cc43b204a03b35bbb8a81d5322165b3198a2414205110",
   "manifest_digest_status": "matched",

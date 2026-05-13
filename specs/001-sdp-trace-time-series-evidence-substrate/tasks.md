@@ -138,7 +138,7 @@
 - [x] T068 [US4] Run Socratic review and obtain explicit consensus before implementing Block 04 code or changing release artifacts (Beads mirror: `sdp-trace-cdn.21`)
 - [x] T069 [US4] Run pi review for Block 04 specs and implementation, register every finding in Beads, and close every valid finding including P3/minor items (Beads mirror: `sdp-trace-cdn.21`)
 - [x] T070 [US4] Stale historical closure retired: Block 04's old `npm` and script verifier commands are preserved as historical evidence only, and current closure is bounded by Go-first tests, JSON syntax checks, diff checks, and current release-proof output. External production trust remains `not_assessed`; removed source-bound finalization scripts are not current verifier evidence. (Beads mirror: `sdp-trace-cdn.21`)
-<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=pass; profile=repo_baseline; evidence=file:retired-research-artifact -->
+<!-- sdp-trace-claim: claim=task_closed; subject=T070; state=stale; profile=repo_baseline; evidence=state:claim_tags_consistent -->
 
 **Checkpoint**: Block 04 implementation artifacts exist, but current closure is stale until T070 is re-verified by live commands. External trust remains `not_assessed` unless real Sigstore/Rekor or accepted customer PKI evidence is committed.
 

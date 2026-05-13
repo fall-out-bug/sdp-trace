@@ -17,7 +17,7 @@ These schemas define the portable `sdp-trace` contract.
 | `provenance-record.schema.json` | Records actor/model/harness/tool provenance and payload digests. |
 | `observation.schema.json` | Records evidence-backed observations without policy verdicts. |
 | `metric-stream.schema.json` | Records process movement across windows without interpretation labels. |
-| `external-verdict-input.schema.json` | Records externally produced verdicts or quality assertions as external evidence. |
+| `external-verdict-input.schema.json` | Records externally produced gate, readiness, override, or custom verdicts as external evidence. |
 | `assessment-input.schema.json` | Packages trace evidence for an external policy consumer. |
 | `flight-recorder-event.schema.json` | Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
 | `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
@@ -32,7 +32,7 @@ These schemas define the portable `sdp-trace` contract.
 | `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
 | `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |
 | `evidence-bundle.schema.json` | Compatibility schema for reviewable proof bundles. |
-| `gate-verdict.schema.json` | Compatibility schema for externally recorded gate results with explicit `origin: "external"`. |
+| `gate-verdict.schema.json` | Compatibility schema for portable gate results, including `cannot_verify`/`not_assessed` rationale, evidence requirements, and external policy references. |
 | `decision-record.schema.json` | Compatibility schema for final human or external automated decisions. |
 | `authority-envelope.schema.json` | Declares selected actor/task authority without embedding downstream policy consequences. |
 | `observed-action.schema.json` | Records observed review, mutation, harness, gateway, and custom events with source evidence refs. |

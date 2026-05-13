@@ -2,11 +2,12 @@ package query
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
+
 	"github.com/fall_out_bug/sdp-trace/internal/verifier"
+	"os"
+	"path/filepath"
 )
 
 const (
@@ -34,8 +35,10 @@ type CaptureDepthSummary struct {
 func MissingEvidence(runDir string) ([]byte, error) {
 	artifactPath := filepath.Join(runDir, "verifier", "missing-evidence-table.json")
 	if _, err := os.Stat(artifactPath); err == nil {
+
 		return os.ReadFile(artifactPath)
 	}
+
 	_, table, _, err := verifier.VerifyRun(runDir)
 	if err != nil {
 		return nil, err
@@ -53,8 +56,10 @@ func MissingEvidence(runDir string) ([]byte, error) {
 func CaptureDepth(runDir string) ([]byte, error) {
 	var run adaptercapture.RunEvidence
 	if err := readJSON(filepath.Join(runDir, "run.json"), &run); err != nil {
+
 		return nil, err
 	}
+
 	result := adaptercapture.Evaluate(adaptercapture.Input{Run: run})
 	summary := CaptureDepthSummary{
 		Query:                  QueryCaptureDepth,
@@ -62,20 +67,23 @@ func CaptureDepth(runDir string) ([]byte, error) {
 		TopLevelAssessment:     "not_emitted_for_query",
 		TaskSupersessionCount:  run.TaskSupersessionCount,
 		UnverifiedTaskExpanded: run.UnverifiedTaskExpanded,
-		MissingAdapterEvents:   missingAdapterEvents(run),
-		UnsupportedObservers:   append([]string{}, run.UnsupportedEventTypes...),
-		UnverifiedClaims:       unverifiedClaims(result.AdapterCaptureConditions),
-		Conditions:             result.AdapterCaptureConditions,
-		Reasons:                result.Reasons,
+
+		MissingAdapterEvents: missingAdapterEvents(run),
+		UnsupportedObservers: append([]string{}, run.UnsupportedEventTypes...),
+		UnverifiedClaims:     unverifiedClaims(result.AdapterCaptureConditions),
+
+		Conditions: result.AdapterCaptureConditions,
+		Reasons:    result.Reasons,
 	}
+
 	return json.MarshalIndent(summary, "", "  ")
 }
-
 func unverifiedClaims(conditions []adaptercapture.Condition) []string {
 	out := []string{}
 	for _, condition := range conditions {
 		switch condition.State {
 		case adaptercapture.StateCannotVerify, adaptercapture.StateNotAssessed, adaptercapture.StateMissingTelemetry, adaptercapture.StateNotIntegrated, adaptercapture.StateUnsupported, adaptercapture.StateRetentionLimited:
+
 			out = append(out, condition.ID)
 		}
 	}
@@ -85,11 +93,13 @@ func unverifiedClaims(conditions []adaptercapture.Condition) []string {
 func missingAdapterEvents(run adaptercapture.RunEvidence) []string {
 	seen := map[string]bool{}
 	for _, event := range run.AdapterEvents {
+
 		seen[event.EventType] = true
 	}
 	missing := []string{}
 	for _, required := range run.RequiredEventTypes {
 		if !seen[required] {
+
 			missing = append(missing, required)
 		}
 	}
@@ -97,6 +107,7 @@ func missingAdapterEvents(run adaptercapture.RunEvidence) []string {
 }
 
 func readJSON(path string, target any) error {
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err

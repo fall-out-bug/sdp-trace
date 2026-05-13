@@ -27,6 +27,8 @@ type RunLayout struct {
 
 // NewRunLayout creates all child directories and returns paths.
 func NewRunLayout(runDir string) (RunLayout, error) {
+	// The run layout is materialized before writing events so recorder and
+	// verifier artifacts have stable sibling directories.
 	layout := newRunLayout(runDir)
 	for _, dir := range []string{layout.EventsDir, layout.ArtifactsDir, layout.VerifierDir, layout.ExportDir} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -37,6 +39,8 @@ func NewRunLayout(runDir string) (RunLayout, error) {
 }
 
 func newRunLayout(runDir string) RunLayout {
+	// Layout paths are pure derivations from the run directory; callers decide
+	// whether to create or read them.
 	return RunLayout{
 		RunFilePath:  filepath.Join(runDir, "run.json"),
 		EventsDir:    filepath.Join(runDir, "events"),
@@ -53,6 +57,8 @@ func EventFileName(sequence int, eventType EventType) string {
 
 // WriteEvent stores a deterministic event file under events/.
 func (layout RunLayout) WriteEvent(event Event) error {
+	// Defaults are applied before the event file name is derived so sequence and
+	// type-driven paths match the persisted payload.
 	event = event.EnsureDefaults()
 	filename := EventFileName(event.Sequence, event.EventType)
 	path := filepath.Join(layout.EventsDir, filename)
@@ -65,6 +71,8 @@ func (layout RunLayout) WriteEvent(event Event) error {
 
 // WriteRun writes run manifest under run.json.
 func (layout RunLayout) WriteRun(manifest RunManifest) error {
+	// The manifest is written as reviewable JSON; callers own the decision to
+	// update chain-head fields before writing.
 	encoded, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		return err
@@ -81,6 +89,8 @@ type RunArtifact struct {
 
 // OpenRunArtifact loads the manifest and events from disk.
 func OpenRunArtifact(runDir string) (RunArtifact, error) {
+	// Opening a run is read-only and does not create missing directories or
+	// repair malformed artifacts.
 	layout := newRunLayout(runDir)
 	manifestData, err := os.ReadFile(layout.RunFilePath)
 	if err != nil {
@@ -90,15 +100,25 @@ func OpenRunArtifact(runDir string) (RunArtifact, error) {
 }
 
 func openRunArtifactWithManifest(layout RunLayout, manifestData []byte) (RunArtifact, error) {
+	// Manifest JSON is decoded before event files so run identity and contract
+	// context are available with the loaded event chain.
+	// The manifest is returned with the raw event list; validation remains an
+	// explicit caller choice.
+	// Event directory read failures are surfaced unchanged because missing run
+	// artifacts are structural evidence gaps.
 	var manifest RunManifest
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
 		return RunArtifact{}, err
 	}
 
+	// Directory entries are read after manifest decode so malformed manifests
+	// fail before any event-chain interpretation begins.
 	entries, err := os.ReadDir(layout.EventsDir)
 	if err != nil {
 		return RunArtifact{}, err
 	}
+	// Event parsing is delegated so ordering and per-event validation are shared
+	// with direct chain validation tests.
 	events, err := readRunEvents(layout.EventsDir, entries)
 	if err != nil {
 		return RunArtifact{}, err
@@ -113,6 +133,10 @@ func openRunArtifactWithManifest(layout RunLayout, manifestData []byte) (RunArti
 
 // AppendRunEvent appends one local event to an existing run artifact and updates the run manifest chain head.
 func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, observedBy string) (Event, error) {
+	// Appends are based on the currently persisted chain, then the manifest is
+	// advanced only after the new event file is written.
+	// The function does not infer missing prior events; it appends after whatever
+	// OpenRunArtifact can read.
 	artifact, err := OpenRunArtifact(runDir)
 	if err != nil {
 		return Event{}, err
@@ -128,6 +152,8 @@ func AppendRunEvent(runDir string, eventType EventType, payload map[string]any, 
 }
 
 func appendRunEventManifest(artifact RunArtifact, event Event) (Event, error) {
+	// Event count and both chain heads are advanced together so manifest readers
+	// see one latest event boundary.
 	artifact.Manifest.EventCount = event.Sequence + 1
 	artifact.Manifest.EventChainHead = event.EventHash
 	artifact.Manifest.FinalChainHead = event.EventHash
@@ -138,6 +164,12 @@ func appendRunEventManifest(artifact RunArtifact, event Event) (Event, error) {
 }
 
 func newAppendedRunEvent(artifact RunArtifact, eventType EventType, payload map[string]any, observedBy string) (Event, error) {
+	// New event identity includes run ID, event type, sequence, and current time;
+	// the chain link itself is still verified by PrevEventHash/EventHash.
+	// ObservedBy is copied into the event so later reviewers can distinguish
+	// local append provenance from command payload content.
+	// Sequence is derived from loaded events rather than manifest count so the
+	// append follows the replayed event files.
 	event := Event{
 		SchemaVersion: SchemaVersion,
 		RunID:         artifact.Manifest.RunID,
@@ -154,11 +186,16 @@ func newAppendedRunEvent(artifact RunArtifact, eventType EventType, payload map[
 		EventPayload: payload,
 		ObservedBy:   observedBy,
 	}
+	// Hashing happens before persistence so the event file and manifest can be
+	// written with a complete chain head.
+	// PayloadDigest is computed through the event helper as part of that hash.
 	return event.WithComputedEventHash()
 }
 
 func appendedPrevHash(events []Event) string {
 	if len(events) == 0 {
+		// The first event links to the explicit null sentinel so chain replay
+		// never depends on an absent predecessor.
 		return NullEventHash
 	}
 	return events[len(events)-1].EventHash
@@ -166,6 +203,8 @@ func appendedPrevHash(events []Event) string {
 
 // ValidateRunDirectory checks that run.json and event files are parseable.
 func ValidateRunDirectory(path string, requireChain bool) error {
+	// Run-directory validation replays the persisted manifest and event files;
+	// callers choose whether that includes contiguous chain verification.
 	runArtifact, err := OpenRunArtifact(path)
 	if err != nil {
 		return err
@@ -177,11 +216,15 @@ func validateRunArtifact(artifact RunArtifact, requireChain bool) error {
 	if err := artifact.Manifest.Validate(); err != nil {
 		return err
 	}
+	// Manifest validation checks shape first; directory state then binds the
+	// manifest to retained events and optional chain replay.
 	return validateRunDirectoryState(artifact.Manifest, artifact.Events, requireChain)
 }
 
 func validateEventChainIfRequested(events []Event, requireChain bool) error {
 	if !requireChain {
+		// Some callers validate artifact shape without requiring a contiguous
+		// event-chain proof.
 		return nil
 	}
 	return ValidateEventChain(events)
@@ -189,12 +232,15 @@ func validateEventChainIfRequested(events []Event, requireChain bool) error {
 
 func validateManifestEventCount(manifestCount int, eventCount int) error {
 	if manifestCount != 0 && manifestCount != eventCount {
+		// A zero manifest count is legacy/unknown; non-zero counts are binding.
 		return fmt.Errorf("event_count mismatch: run.json=%d files=%d", manifestCount, eventCount)
 	}
 	return nil
 }
 
 func validateManifestEventChainHead(manifestHead string, events []Event) error {
+	// Empty chain heads remain allowed for legacy or partial manifests; a present
+	// head must match the final retained event.
 	if manifestHead == "" || len(events) == 0 {
 		return nil
 	}
@@ -205,6 +251,8 @@ func validateManifestEventChainHead(manifestHead string, events []Event) error {
 }
 
 func validateRunDirectoryState(manifest RunManifest, events []Event, requireChain bool) error {
+	// Directory validation binds three facts: optional chain integrity, manifest
+	// event count, and manifest chain head.
 	if err := validateEventChainIfRequested(events, requireChain); err != nil {
 		return err
 	}
@@ -216,6 +264,8 @@ func validateRunDirectoryState(manifest RunManifest, events []Event, requireChai
 
 // readRunEvents loads and sorts every *.json file in events/.
 func readRunEvents(eventsDir string, entries []fs.DirEntry) ([]Event, error) {
+	// Event files are sorted by stable names before validation so replay order is
+	// filesystem-independent.
 	jsonFiles := eventJSONFiles(eventsDir, entries)
 	events := make([]Event, 0, len(jsonFiles))
 	for _, path := range jsonFiles {
@@ -230,6 +280,8 @@ func readRunEvents(eventsDir string, entries []fs.DirEntry) ([]Event, error) {
 
 // ValidateEventChain checks that hashes and prev-event links are consistent.
 func ValidateEventChain(events []Event) error {
+	// Chain replay starts at the null sentinel and advances only through verified
+	// event hashes.
 	prevEventHash := NullEventHash
 	for i, event := range events {
 		if err := validateChainEvent(i, event, prevEventHash); err != nil {
@@ -241,6 +293,7 @@ func ValidateEventChain(events []Event) error {
 }
 
 func eventJSONFiles(eventsDir string, entries []fs.DirEntry) []string {
+	// Non-event files are ignored; only JSON event files participate in replay.
 	jsonFiles := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		if isEventJSON(entry) {
@@ -256,6 +309,10 @@ func isEventJSON(entry fs.DirEntry) bool {
 }
 
 func readRunEvent(path string) (Event, error) {
+	// Each event is validated as it is loaded so callers never receive malformed
+	// run-chain material as trusted input.
+	// Chain placement is intentionally checked later, after all event files are
+	// sorted.
 	payload, err := os.ReadFile(path)
 	if err != nil {
 		return Event{}, err
@@ -271,6 +328,8 @@ func readRunEvent(path string) (Event, error) {
 }
 
 func validateChainEvent(index int, event Event, prevEventHash string) error {
+	// Event hash, payload digest, sequence, and previous link are checked in one
+	// replay step for precise integrity errors.
 	computed, err := event.WithComputedEventHash()
 	if err != nil {
 		return fmt.Errorf("event %d (%s) hash generation failed: %w", index, event.EventID, err)
@@ -286,12 +345,15 @@ func validateChainEvent(index int, event Event, prevEventHash string) error {
 
 func validateEventHash(index int, event Event, computedHash string) error {
 	if event.EventHash != computedHash {
+		// Report both hashes so integrity failures are independently replayable.
 		return fmt.Errorf("event %d (%s) event_hash mismatch: expected %s got %s", index, event.EventID, computedHash, event.EventHash)
 	}
 	return nil
 }
 
 func validateEventPosition(index int, event Event, prevEventHash string) error {
+	// Sequence is zero-based file order; PrevEventHash binds this position to
+	// the previous verified event.
 	if event.Sequence != index {
 		return fmt.Errorf("event %d has non-zero-based sequence %d", index, event.Sequence)
 	}
@@ -303,6 +365,8 @@ func validateEventPosition(index int, event Event, prevEventHash string) error {
 
 // CopyArtifactFile copies a verifier/export artifact into a run directory.
 func CopyArtifactFile(src, dst string) error {
+	// Copying is byte-preserving; provenance and digest interpretation live in
+	// the caller's manifest or verifier artifact.
 	input, err := os.Open(src)
 	if err != nil {
 		return err
@@ -312,6 +376,10 @@ func CopyArtifactFile(src, dst string) error {
 }
 
 func copyArtifactReader(input io.Reader, dst string) error {
+	// The destination is fsynced after copy so retained artifacts are durable
+	// before callers reference them in proof material.
+	// Directory creation is local to the destination path and does not imply
+	// artifact trust.
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}

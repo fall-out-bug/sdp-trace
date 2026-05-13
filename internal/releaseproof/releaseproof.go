@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -113,68 +114,246 @@ type ArtifactIssue struct {
 	Actual   string `json:"actual,omitempty"`
 }
 
+type manifestData struct {
+	manifest Manifest
+	ref      string
+	digest   [sha256.Size]byte
+}
+
+type verificationState struct {
+	sourceCommit   string
+	state          string
+	commitStatus   string
+	artifactStatus string
+	artifactCounts ArtifactCounts
+	artifactIssues []ArtifactIssue
+	sourceReason   string
+}
+
+type verificationInput struct {
+	manifestData
+	verificationState
+	verificationTime time.Time
+}
+
 func Evaluate(repoRoot, manifestPath string, now time.Time) (Verification, error) {
-	manifestBytes, err := os.ReadFile(filepath.Join(repoRoot, manifestPath))
+	// Evaluation has three trust phases: load bounded manifest evidence,
+	// compare it to the source commit, then render a conservative verdict.
+	manifestData, err := loadManifest(repoRoot, manifestPath)
 	if err != nil {
 		return Verification{}, err
 	}
+	state := evaluateManifestState(repoRoot, manifestData.manifest)
+	return buildVerification(verificationInput{
+		manifestData:      manifestData,
+		verificationState: state,
+		verificationTime:  now,
+	}), nil
+}
+
+func loadManifest(repoRoot, manifestPath string) (manifestData, error) {
+	// Resolve the manifest through the repository boundary before hashing so
+	// the verification record names the same relative file that was read.
+	manifestRel, manifestBytes, err := loadManifestBytes(repoRoot, manifestPath)
+	if err != nil {
+		return manifestData{}, err
+	}
 	var manifest Manifest
 	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
-		return Verification{}, err
+		return manifestData{}, err
 	}
-	manifestSourceCommit := strings.TrimSpace(manifest.SourceCommit)
-	state := StatePass
-	commitStatus, reason := sourceCommitState(repoRoot, manifestSourceCommit)
-	if commitStatus == StatusMissing {
-		state = StateCannotVerify
-	}
-	counts, issues, artifactStatus, artifactReason := artifactVerificationState(repoRoot, manifestSourceCommit, manifest.Artifacts, state)
-	state, reason = combineState(state, reason, artifactStatus, artifactReason)
-	state, commitStatus, reason = applyDirtyState(repoRoot, state, commitStatus, reason)
-	manifestDigest := sha256.Sum256(manifestBytes)
-	return Verification{
-		ID:                         "contract-release-verification-block-18-19-source-bound",
-		SchemaVersion:              SchemaVersion,
-		ArtifactRole:               "verifier_output",
-		TrustScope:                 TrustScope,
-		ReleaseVerificationState:   state,
-		ManifestRef:                manifestPath,
-		ManifestDigest:             hex.EncodeToString(manifestDigest[:]),
-		ManifestDigestStatus:       StatusMatched,
-		ArtifactDigestStatus:       artifactStatus,
-		SignatureProfile:           manifest.SigningProfile,
-		SignatureStatus:            StatusNotAssessed,
-		IdentityPolicyRef:          manifest.TrustedIdentityPolicyRef,
-		IdentityPolicyStatus:       StatusNotAssessed,
-		SourceCommit:               manifestSourceCommit,
-		SourceCommitStatus:         commitStatus,
-		SourceCommitArtifactStatus: artifactStatus,
-		SourceCommitArtifactCounts: counts,
-		ExternalTrustProfile:       StatusNotAssessed,
-		ExternalAttestationRef:     nil,
-		TransparencyEvidenceRef:    nil,
-		SourceURIStatus:            StatusNotAssessed,
-		ProtectedRefStatus:         StatusNotAssessed,
-		WorkflowIdentityStatus:     StatusNotAssessed,
-		ApprovalStatus:             StatusNotAssessed,
-		ProductionReleaseVerified: ProofStateBoolean{
-			State:  StatusNotAssessed,
-			Value:  nil,
-			Reason: "Production release verification requires external attestation in addition to source-bound local checks.",
-		},
-		TransparencyLogStatus:    StatusNotAssessed,
-		FreshnessStatus:          StatusNotAssessed,
-		VerifiedAt:               now.UTC().Format(time.RFC3339),
-		TrustedContractRelease:   false,
-		PrivateEquivalentProfile: "not_assessed",
-		Accountability:           manifest.Accountability,
-		SourceCommitReason:       reason,
-		ExternalTrustReason:      "external production trust is not assessed by the local source-bound profile",
-		ArtifactIssues:           issues,
+	// The digest is computed over the exact bytes accepted for parsing.
+	return manifestData{
+		manifest: manifest,
+		ref:      manifestRel,
+		digest:   sha256.Sum256(manifestBytes),
 	}, nil
 }
 
+func evaluateManifestState(repoRoot string, manifest Manifest) verificationState {
+	// Source-commit status is the root local proof; artifact checks depend on
+	// that immutable source boundary being available.
+	manifestSourceCommit := strings.TrimSpace(manifest.SourceCommit)
+	commitStatus, reason := sourceCommitState(repoRoot, manifestSourceCommit)
+	state := initialReleaseState(commitStatus)
+	// Artifact results and dirty-check state can only lower confidence.
+	counts, issues, artifactStatus, artifactReason := artifactVerificationState(repoRoot, manifestSourceCommit, manifest.Artifacts, state)
+	state, reason = combineState(state, reason, artifactStatus, artifactReason)
+	// Dirty checkout evidence is local structural evidence, not source proof.
+	state, commitStatus, reason = applyDirtyState(repoRoot, state, commitStatus, reason)
+	// Keep the rendered verification fields separate from decision logic.
+	return verificationState{
+		sourceCommit:   manifestSourceCommit,
+		state:          state,
+		commitStatus:   commitStatus,
+		artifactStatus: artifactStatus,
+		artifactCounts: counts,
+		artifactIssues: issues,
+		sourceReason:   reason,
+	}
+}
+
+func initialReleaseState(commitStatus string) string {
+	// A missing source commit breaks the immutable source boundary before any
+	// artifact digest can be trusted as release proof.
+	if commitStatus == StatusMissing {
+		return StateCannotVerify
+	}
+	return StatePass
+}
+
+func buildVerification(input verificationInput) Verification {
+	// Build the public proof in groups matching the trust boundaries above.
+	result := baseVerification(input)
+	applyManifestEvidence(&result, input)
+	applySourceEvidence(&result, input.verificationState)
+	applyExternalTrustDefaults(&result)
+	applyReleaseTrustDefaults(&result)
+	return result
+}
+
+func baseVerification(input verificationInput) Verification {
+	// These fields identify the verifier output before any evidence-specific
+	// status is attached.
+	return Verification{
+		ID:                       "contract-release-verification-block-18-19-source-bound",
+		SchemaVersion:            SchemaVersion,
+		ArtifactRole:             "verifier_output",
+		TrustScope:               TrustScope,
+		ReleaseVerificationState: input.state,
+		VerifiedAt:               input.verificationTime.UTC().Format(time.RFC3339),
+	}
+}
+
+func applyManifestEvidence(result *Verification, input verificationInput) {
+	// Manifest evidence is local and byte-bound: reference, digest, signature
+	// profile, identity policy, and accountability all come from one payload.
+	result.ManifestRef = input.ref
+	result.ManifestDigest = hex.EncodeToString(input.digest[:])
+	result.ManifestDigestStatus = StatusMatched
+	result.SignatureProfile = input.manifest.SigningProfile
+	result.SignatureStatus = StatusNotAssessed
+	result.IdentityPolicyRef = input.manifest.TrustedIdentityPolicyRef
+	result.IdentityPolicyStatus = StatusNotAssessed
+	result.Accountability = input.manifest.Accountability
+}
+
+func applySourceEvidence(result *Verification, state verificationState) {
+	// Source evidence records only what was checked against the manifest's
+	// source commit; it does not make external production claims.
+	result.ArtifactDigestStatus = state.artifactStatus
+	result.SourceCommit = state.sourceCommit
+	result.SourceCommitStatus = state.commitStatus
+	result.SourceCommitArtifactStatus = state.artifactStatus
+	result.SourceCommitArtifactCounts = state.artifactCounts
+	result.SourceCommitReason = state.sourceReason
+	result.ArtifactIssues = state.artifactIssues
+}
+
+func applyExternalTrustDefaults(result *Verification) {
+	// External production controls are intentionally outside this local source
+	// profile, so each related field stays explicitly not_assessed.
+	result.ExternalTrustProfile = StatusNotAssessed
+	result.ExternalAttestationRef = nil
+	result.TransparencyEvidenceRef = nil
+	result.SourceURIStatus = StatusNotAssessed
+	result.ProtectedRefStatus = StatusNotAssessed
+	result.WorkflowIdentityStatus = StatusNotAssessed
+	result.ApprovalStatus = StatusNotAssessed
+}
+
+func applyReleaseTrustDefaults(result *Verification) {
+	// Local source proof is not equivalent to release authorization.
+	result.ProductionReleaseVerified = productionReleaseNotAssessed()
+	result.TransparencyLogStatus = StatusNotAssessed
+	result.FreshnessStatus = StatusNotAssessed
+	result.TrustedContractRelease = false
+	result.PrivateEquivalentProfile = "not_assessed"
+	result.ExternalTrustReason = "external production trust is not assessed by the local source-bound profile"
+}
+
+func productionReleaseNotAssessed() ProofStateBoolean {
+	// The boolean value is absent because this profile does not inspect
+	// production attestation evidence.
+	return ProofStateBoolean{
+		State:  StatusNotAssessed,
+		Value:  nil,
+		Reason: "Production release verification requires external attestation in addition to source-bound local checks.",
+	}
+}
+
+func loadManifestBytes(repoRoot, manifestPath string) (string, []byte, error) {
+	// Normalize and resolve before reading so ManifestRef and ManifestDigest
+	// describe the same repository-contained file.
+	manifestRel, err := cleanRepoRelativePath(manifestPath)
+	if err != nil {
+		return "", nil, err
+	}
+	manifestAbs, err := resolveRepoFile(repoRoot, manifestRel)
+	if err != nil {
+		return "", nil, err
+	}
+	manifestBytes, err := os.ReadFile(manifestAbs)
+	return manifestRel, manifestBytes, err
+}
+
+func resolveRepoFile(repoRoot, relPath string) (string, error) {
+	// Resolve symlinks before the containment check so a repository-relative
+	// path cannot point at a file outside the repository.
+	root, target, err := resolvedRepoAndTarget(repoRoot, relPath)
+	if err != nil {
+		return "", err
+	}
+	relative, err := filepath.Rel(root, target)
+	if err != nil {
+		return "", err
+	}
+	if repoRelativePathInside(relative) {
+		return target, nil
+	}
+	return "", fmt.Errorf("manifest path %q resolves outside repository", relPath)
+}
+
+func repoRelativePathInside(relative string) bool {
+	// filepath.Rel may return "." for the repository root; everything else
+	// must stay below the root without a leading parent traversal.
+	return relative == "." || (!strings.HasPrefix(relative, ".."+string(filepath.Separator)) && relative != "..")
+}
+
+func resolvedRepoAndTarget(repoRoot, relPath string) (string, string, error) {
+	// Compare canonical paths so symlinked roots and symlinked manifests use
+	// the same filesystem view during containment checks.
+	root, err := filepath.EvalSymlinks(repoRoot)
+	if err != nil {
+		return "", "", err
+	}
+	target, err := filepath.EvalSymlinks(filepath.Join(repoRoot, relPath))
+	if err != nil {
+		return "", "", err
+	}
+	return root, target, nil
+}
+
+func cleanRepoRelativePath(path string) (string, error) {
+	// The manifest reference is stored as portable slash-separated repository
+	// relative data; absolute or parent paths are never accepted as evidence.
+	clean := filepath.Clean(strings.TrimSpace(path))
+	if clean == "." || clean == "" {
+		return "", errors.New("manifest path is required")
+	}
+	if unsafeRepoRelativePath(clean) {
+		return "", fmt.Errorf("manifest path must be repository-relative: %s", path)
+	}
+	return filepath.ToSlash(clean), nil
+}
+
+func unsafeRepoRelativePath(clean string) bool {
+	return filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator))
+}
+
 func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
+	// The source commit is the anchor for every source-bound artifact check; if
+	// it cannot resolve locally, artifact claims stay unverified.
 	if sourceCommit == "" {
 		return StatusMissing, "manifest source_commit is missing"
 	}
@@ -185,6 +364,8 @@ func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
 }
 
 func artifactVerificationState(repoRoot, sourceCommit string, artifacts []ManifestArtifact, state string) (ArtifactCounts, []ArtifactIssue, string, string) {
+	// Do not inspect artifacts when the source anchor is absent; that would turn
+	// missing source proof into misleading artifact evidence.
 	if state == StateCannotVerify {
 		return ArtifactCounts{}, nil, StatusNotAssessed, "manifest artifacts were not checked because source_commit cannot be verified"
 	}
@@ -194,6 +375,8 @@ func artifactVerificationState(repoRoot, sourceCommit string, artifacts []Manife
 }
 
 func artifactState(counts ArtifactCounts) (string, string) {
+	// Missing artifact paths are reported before digest mismatches because the
+	// verifier cannot compare bytes that were not present in the source commit.
 	if counts.Missing > 0 {
 		return StatusMissing, "manifest artifact paths are missing from the current source checkout"
 	}
@@ -204,6 +387,8 @@ func artifactState(counts ArtifactCounts) (string, string) {
 }
 
 func combineState(state, reason, artifactStatus, artifactReason string) (string, string) {
+	// Artifact verification can only lower confidence; it never upgrades a
+	// missing source commit or previously unverified release proof.
 	if state == StateCannotVerify || artifactStatus == StatusMatched {
 		return state, reason
 	}
@@ -211,6 +396,8 @@ func combineState(state, reason, artifactStatus, artifactReason string) (string,
 }
 
 func applyDirtyState(repoRoot, state, commitStatus, reason string) (string, string, string) {
+	// A dirty checkout is local structural evidence only, so it blocks a source
+	// match without turning external trust green.
 	if state == StateCannotVerify || !worktreeDirty(repoRoot) {
 		return state, commitStatus, reason
 	}
@@ -218,39 +405,75 @@ func applyDirtyState(repoRoot, state, commitStatus, reason string) (string, stri
 }
 
 func artifactCounts(repoRoot, sourceCommit string, artifacts []ManifestArtifact) (ArtifactCounts, []ArtifactIssue) {
+	// Count every manifest artifact against the immutable source commit; each
+	// issue keeps the manifest path so reports stay source-bound and auditable.
+	// Checked counts manifest obligations, not successful reads, so missing
+	// artifacts are visible in both the denominator and issue list.
 	counts := ArtifactCounts{Checked: len(artifacts)}
+	// Issues are sparse: matched artifacts stay represented by Checked, while
+	// only missing or mismatched obligations get explicit rows.
 	issues := []ArtifactIssue{}
 	for _, artifact := range artifacts {
-		path := filepath.Clean(artifact.Path)
-		data, err := artifactBytes(repoRoot, sourceCommit, path)
-		if err != nil {
-			counts.Missing++
-			issues = append(issues, ArtifactIssue{Path: artifact.Path, Issue: StatusMissing, Expected: artifact.SHA256})
+		issue, ok := artifactIssue(repoRoot, sourceCommit, artifact)
+		if !ok {
 			continue
 		}
-		sum := sha256.Sum256(data)
-		actual := hex.EncodeToString(sum[:])
-		if !strings.EqualFold(actual, artifact.SHA256) {
-			counts.Mismatched++
-			issues = append(issues, ArtifactIssue{Path: artifact.Path, Issue: StatusMismatch, Expected: artifact.SHA256, Actual: actual})
-		}
+		countArtifactIssue(&counts, issue)
+		issues = append(issues, issue)
 	}
 	return counts, issues
 }
 
+func countArtifactIssue(counts *ArtifactCounts, issue ArtifactIssue) {
+	// Only replay failures change the aggregate counters; matched artifacts are
+	// already represented by Checked.
+	switch issue.Issue {
+	case StatusMissing:
+		counts.Missing++
+	case StatusMismatch:
+		counts.Mismatched++
+	}
+}
+
+func artifactIssue(repoRoot, sourceCommit string, artifact ManifestArtifact) (ArtifactIssue, bool) {
+	// Clean the path used for git object lookup, but keep the original
+	// manifest path in issues so reports match the signed obligation text.
+	path := filepath.Clean(artifact.Path)
+	data, err := artifactBytes(repoRoot, sourceCommit, path)
+	if err != nil {
+		// Missing source-commit bytes are stronger than digest mismatch because
+		// there is no artifact content to compare.
+		return ArtifactIssue{Path: artifact.Path, Issue: StatusMissing, Expected: artifact.SHA256}, true
+	}
+	sum := sha256.Sum256(data)
+	actual := hex.EncodeToString(sum[:])
+	// Hex case is formatting, not proof content; compare digest values
+	// case-insensitively while reporting the canonical lowercase actual.
+	if strings.EqualFold(actual, artifact.SHA256) {
+		return ArtifactIssue{}, false
+	}
+	return ArtifactIssue{Path: artifact.Path, Issue: StatusMismatch, Expected: artifact.SHA256, Actual: actual}, true
+}
+
 func sourceCommitExists(repoRoot, sourceCommit string) bool {
+	// Git object resolution is the immutable-source boundary for this local
+	// verifier; a missing object keeps the release verdict at cannot_verify.
 	cmd := exec.Command("git", "cat-file", "-e", sourceCommit+"^{commit}")
 	cmd.Dir = repoRoot
 	return cmd.Run() == nil
 }
 
 func artifactBytes(repoRoot, sourceCommit, path string) ([]byte, error) {
+	// Read artifacts from the manifest source commit, not the dirty checkout,
+	// so local edits cannot satisfy source-bound release proof.
 	cmd := exec.Command("git", "show", sourceCommit+":"+path)
 	cmd.Dir = repoRoot
 	return cmd.Output()
 }
 
 func worktreeDirty(repoRoot string) bool {
+	// Treat git status failures as dirty so command failures cannot accidentally
+	// promote a source-bound proof.
 	cmd := exec.Command("git", "status", "--porcelain")
 	cmd.Dir = repoRoot
 	out, err := cmd.Output()
@@ -261,6 +484,8 @@ func worktreeDirty(repoRoot string) bool {
 }
 
 func Write(path string, result Verification) error {
+	// Persist verifier output as stable pretty JSON because downstream evidence
+	// checks compare the proof artifact as a reviewable file.
 	payload, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return err
@@ -273,6 +498,8 @@ func Write(path string, result Verification) error {
 }
 
 func Read(path string) (Verification, error) {
+	// Include the proof path in parse errors so malformed evidence can be traced
+	// back to the exact artifact under review.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Verification{}, err
@@ -285,6 +512,8 @@ func Read(path string) (Verification, error) {
 }
 
 func RepoRoot(dir string) (string, error) {
+	// Git decides the repository root for source-bound proof; callers should not
+	// infer it from process working-directory assumptions.
 	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
 	cmd.Dir = dir
 	out, err := cmd.Output()

@@ -3,10 +3,65 @@ package policy
 import (
 	"encoding/json"
 	"errors"
-	"os"
-
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
+
+	"os"
 )
+
+// LoadPolicy loads and validates a policy file.
+func LoadPolicy(path string) (AuthorityPolicy, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return AuthorityPolicy{}, err
+	}
+	// Policy bytes are decoded before validation so callers never receive a
+	// partially trusted authority policy.
+	var loaded AuthorityPolicy
+	if err := json.Unmarshal(raw, &loaded); err != nil {
+		return AuthorityPolicy{}, err
+	}
+	if err := loaded.Validate(); err != nil {
+		return AuthorityPolicy{}, err
+	}
+	return loaded, nil
+}
+
+// Validate checks policy invariants required before verifier use.
+func (policy AuthorityPolicy) Validate() error {
+
+	return firstPolicyError(
+		requiredString(policy.SchemaVersion, "schema_version is required"),
+		requiredString(policy.PolicyID, "policy_id is required"),
+		requiredList(policy.AllowedSigners, "at least one allowed signer is required"),
+		requiredList(policy.AllowedWitnessProfiles, "at least one allowed witness profile is required"),
+	)
+}
+
+func requiredString(value, message string) error {
+	if value != "" {
+		return nil
+	}
+
+	return errors.New(message)
+}
+
+func requiredList[T any](values []T, message string) error {
+	if len(values) > 0 {
+		return nil
+	}
+
+	return errors.New(message)
+}
+
+func firstPolicyError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+
+			return err
+		}
+	}
+	return nil
+}
 
 // AuthorityPolicy is the loaded and validated authority policy for adapters, signers, and witness scopes.
 type AuthorityPolicy struct {
@@ -60,55 +115,6 @@ type AuthorityPolicyValidator struct {
 	policy AuthorityPolicy
 }
 
-// LoadPolicy loads and validates a policy file.
-func LoadPolicy(path string) (AuthorityPolicy, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return AuthorityPolicy{}, err
-	}
-	var loaded AuthorityPolicy
-	if err := json.Unmarshal(raw, &loaded); err != nil {
-		return AuthorityPolicy{}, err
-	}
-	if err := loaded.Validate(); err != nil {
-		return AuthorityPolicy{}, err
-	}
-	return loaded, nil
-}
-
-// Validate checks policy invariants required before verifier use.
-func (policy AuthorityPolicy) Validate() error {
-	return firstPolicyError(
-		requiredString(policy.SchemaVersion, "schema_version is required"),
-		requiredString(policy.PolicyID, "policy_id is required"),
-		requiredList(policy.AllowedSigners, "at least one allowed signer is required"),
-		requiredList(policy.AllowedWitnessProfiles, "at least one allowed witness profile is required"),
-	)
-}
-
-func requiredString(value, message string) error {
-	if value != "" {
-		return nil
-	}
-	return errors.New(message)
-}
-
-func requiredList[T any](values []T, message string) error {
-	if len(values) > 0 {
-		return nil
-	}
-	return errors.New(message)
-}
-
-func firstPolicyError(errs ...error) error {
-	for _, err := range errs {
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // NewAuthorityPolicyValidator builds a read-only validator.
 func NewAuthorityPolicyValidator(policy AuthorityPolicy) AuthorityPolicyValidator {
 	return AuthorityPolicyValidator{policy: policy}
@@ -118,6 +124,7 @@ func NewAuthorityPolicyValidator(policy AuthorityPolicy) AuthorityPolicyValidato
 func (v AuthorityPolicyValidator) CanAdapterEmit(adapterID string, eventType trace.EventType) bool {
 	for _, adapter := range v.policy.AllowedAdapters {
 		if adapterCanEmit(adapter, adapterID, string(eventType)) {
+
 			return true
 		}
 	}
@@ -125,15 +132,14 @@ func (v AuthorityPolicyValidator) CanAdapterEmit(adapterID string, eventType tra
 }
 
 func adapterCanEmit(adapter AdapterAuthorityEntry, adapterID, eventType string) bool {
-	return adapter.AdapterID == adapterID &&
-		adapter.AllowedByPolicy &&
-		stringInList(adapter.AllowedEventTypes, eventType)
+	return adapter.AdapterID == adapterID && adapter.AllowedByPolicy && stringInList(adapter.AllowedEventTypes, eventType)
 }
 
 // SignerAllowed checks whether a signer/profile tuple is permitted.
 func (v AuthorityPolicyValidator) SignerAllowed(signerID string, profileID string) bool {
 	for _, signer := range v.policy.AllowedSigners {
 		if signerAllowedForProfile(signer, signerID, profileID) {
+
 			return true
 		}
 	}
@@ -141,9 +147,7 @@ func (v AuthorityPolicyValidator) SignerAllowed(signerID string, profileID strin
 }
 
 func signerAllowedForProfile(signer SignerAuthorityEntry, signerID, profileID string) bool {
-	return signer.SignerID == signerID &&
-		signer.ScopeAllowed("signer") &&
-		signer.ProfileID == profileID
+	return signer.SignerID == signerID && signer.ScopeAllowed("signer") && signer.ProfileID == profileID
 }
 
 // WitnessProfileAllowed checks whether witness profile is trusted by policy.
@@ -163,6 +167,7 @@ func (signer SignerAuthorityEntry) ScopeAllowed(scope string) bool {
 func stringInList(values []string, needle string) bool {
 	for _, value := range values {
 		if value == needle {
+
 			return true
 		}
 	}

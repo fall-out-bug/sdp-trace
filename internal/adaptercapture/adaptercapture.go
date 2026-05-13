@@ -155,38 +155,50 @@ type Condition struct {
 }
 
 func Evaluate(input Input) AssessmentResult {
-	conditions := []Condition{
-		contractCondition(input.Run),
-		identityCondition(input.Run),
-		runBindingCondition(input.Run),
-		taskDriftCondition(input.Run),
-		toolDepthCondition(input.Run),
-		fileMutationCondition(input.Run),
-		modelIdentityCondition(input.Run),
-		testProvenanceCondition(input.Run),
-		providerRefsCondition(input.Run),
-		redactionMetadataCondition(input.Run),
-		overclaimCondition(input.Run),
+	conditions := adapterCaptureConditions(input.Run)
+	result := adapterCaptureAssessmentResult(conditions)
+	if result.AdapterCaptureAssessment != StatePass {
+
+		result.TrustScope = TrustScopeLocal
 	}
-	result := AssessmentResult{
+
+	result.Reasons = reasons(conditions)
+	result.NextActions = nextActions(conditions)
+	return result
+}
+
+func adapterCaptureConditions(run RunEvidence) []Condition {
+
+	return []Condition{
+		contractCondition(run),
+		identityCondition(run),
+		runBindingCondition(run),
+		taskDriftCondition(run),
+		toolDepthCondition(run),
+		fileMutationCondition(run),
+		modelIdentityCondition(run),
+		testProvenanceCondition(run),
+		providerRefsCondition(run),
+		redactionMetadataCondition(run),
+		overclaimCondition(run),
+	}
+}
+
+func adapterCaptureAssessmentResult(conditions []Condition) AssessmentResult {
+
+	return AssessmentResult{
 		SchemaVersion:            SchemaVersion,
 		SelectedProfile:          ProfileAdapterCapture,
 		AdapterCaptureAssessment: topLevel(conditions),
 		TrustScope:               TrustScopeAdapter,
 		AdapterCaptureConditions: conditions,
 	}
-	if result.AdapterCaptureAssessment != StatePass {
-		result.TrustScope = TrustScopeLocal
-	}
-	result.Reasons = reasons(conditions)
-	result.NextActions = nextActions(conditions)
-	return result
 }
-
 func contractCondition(run RunEvidence) Condition {
 	if len(run.AdapterEvents) == 0 {
 		return cannotVerify("adapter_event_contract_valid", "adapter_events_missing", "adapter event evidence is missing", "Supply same-chain adapter events or an adapter bundle.")
 	}
+
 	return contractConditionFromEvents(run.AdapterEvents)
 }
 
@@ -194,9 +206,11 @@ func contractConditionFromEvents(events []AdapterEvent) Condition {
 	seen := map[string]bool{}
 	for _, event := range events {
 		if adapterEventIsMalformed(event) {
+
 			return fail("adapter_event_contract_valid", "adapter_event_malformed", "adapter event is missing required contract fields", "Emit schema-valid adapter events with producer, adapter, type, and digest fields.")
 		}
 		if hasDuplicateCorrelationKey(seen, event) {
+
 			return cannotVerify("adapter_event_contract_valid", "conflicting_adapter_events", "multiple adapter events share a correlation key", "Deduplicate adapter events or make conflicts explicit.")
 		}
 	}
@@ -217,10 +231,12 @@ func missingAdapterEventPayload(event AdapterEvent) bool {
 
 func hasDuplicateCorrelationKey(seen map[string]bool, event AdapterEvent) bool {
 	if event.CorrelationRef == "" {
+
 		return false
 	}
 	key := contractCorrelationKey(event)
 	if seen[key] {
+
 		return true
 	}
 	seen[key] = true
@@ -234,6 +250,7 @@ func contractCorrelationKey(event AdapterEvent) string {
 func identityCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
 		if condition, ok := identityConditionForEvent(event); ok {
+
 			return condition
 		}
 	}
@@ -242,9 +259,11 @@ func identityCondition(run RunEvidence) Condition {
 
 func identityConditionForEvent(event AdapterEvent) (Condition, bool) {
 	if adapterIdentityMissing(event) {
+
 		return cannotVerify("adapter_identity_visible", "adapter_identity_missing", "adapter or producer identity is missing", "Record adapter and producer identity."), true
 	}
 	if !validIdentityBinding(event.IdentityBinding) {
+
 		return cannotVerify("adapter_identity_visible", "adapter_identity_unclassified", "adapter identity binding state is not classified", "Classify adapter identity as self_asserted or bound."), true
 	}
 	return Condition{}, false
@@ -260,6 +279,7 @@ func validIdentityBinding(binding string) bool {
 
 func runBindingCondition(run RunEvidence) Condition {
 	if runIdentityMissing(run) {
+
 		return cannotVerify("run_binding_established", "run_binding_missing", "run id or nonce is missing", "Record run id and run nonce before assessing adapter capture.")
 	}
 	for _, event := range run.AdapterEvents {
@@ -278,6 +298,12 @@ func adapterEventRunBindingCondition(run RunEvidence, event AdapterEvent) Condit
 	if adapterEventRunIdentityMismatch(run, event) {
 		return fail("run_binding_established", "run_binding_mismatch", "adapter event contradicts run id or nonce", "Use adapter events bound to the selected run.")
 	}
+
+	return adapterEventBindingModeCondition(run, event)
+}
+
+func adapterEventBindingModeCondition(run RunEvidence, event AdapterEvent) Condition {
+
 	switch event.BindingMode {
 	case BindingSameChain:
 		return sameChainBindingCondition(run, event)
@@ -294,9 +320,11 @@ func adapterEventRunIdentityMismatch(run RunEvidence, event AdapterEvent) bool {
 
 func sameChainBindingCondition(run RunEvidence, event AdapterEvent) Condition {
 	if eventAfterRunClosure(run, event.Sequence) {
+
 		return cannotVerify("run_binding_established", "late_adapter_event", "adapter event appears after run closure", "Do not use late adapter events to satisfy capture-depth assessment.")
 	}
 	if sameChainDigestMissing(event) {
+
 		return cannotVerify("run_binding_established", "same_chain_digest_missing", "same-chain adapter event lacks hash linkage", "Record prev_event_hash and event_hash.")
 	}
 	return Condition{}
@@ -312,15 +340,18 @@ func sameChainDigestMissing(event AdapterEvent) bool {
 
 func adapterBundleBindingCondition(run RunEvidence, event AdapterEvent) Condition {
 	if adapterBundleUnbound(run.AdapterBundle, event) {
+
 		return cannotVerify("run_binding_established", "adapter_bundle_unbound", "adapter bundle is not bound to the selected run", "Bind the adapter bundle head digest into the run artifact.")
 	}
 	if run.RunClosedSequence > 0 && run.AdapterBundle.ReferencedSequence > run.RunClosedSequence {
+
 		return cannotVerify("run_binding_established", "late_adapter_bundle", "adapter bundle was first referenced after run closure", "Reference adapter bundles before run closure.")
 	}
 	return Condition{}
 }
 
 func adapterBundleUnbound(bundle *AdapterBundle, event AdapterEvent) bool {
+
 	return bundle == nil ||
 		event.AdapterBundleHeadDigest == "" ||
 		event.AdapterBundleHeadDigest != bundle.HeadDigest ||
@@ -329,6 +360,7 @@ func adapterBundleUnbound(bundle *AdapterBundle, event AdapterEvent) bool {
 
 func taskDriftCondition(run RunEvidence) Condition {
 	if !run.TaskDriftAssessed {
+
 		return Condition{ID: "task_drift_visible", State: StateNotAssessed, ReasonCode: "task_drift_not_assessed", Reason: "task drift assessment was not selected", NextAction: "Assess task locks and task_superseded events."}
 	}
 	if taskSupersessionActorMissing(run.AdapterEvents) {
@@ -341,12 +373,14 @@ func taskDriftPassCondition(supersessionCount int) Condition {
 	if supersessionCount == 0 {
 		return pass("task_drift_visible", "no_supersessions_observed", "task drift was assessed and no supersessions were observed")
 	}
+
 	return pass("task_drift_visible", "task_supersessions_visible", "task supersessions include visible attribution and digest evidence")
 }
 
 func taskSupersessionActorMissing(events []AdapterEvent) bool {
 	for _, event := range events {
 		if event.EventType == "task_superseded" && event.ActorAttributionState == "" {
+
 			return true
 		}
 	}
@@ -356,8 +390,10 @@ func taskSupersessionActorMissing(events []AdapterEvent) bool {
 func toolDepthCondition(run RunEvidence) Condition {
 	if hasRequired(run, "tool_call") && !hasEvent(run.AdapterEvents, "tool_call") {
 		if unsupported(run, "tool_call") {
+
 			return Condition{ID: "tool_call_depth_visible", State: StateUnsupported, ReasonCode: "tool_event_unsupported", Reason: "adapter declares no tool-call capability", NextAction: "Use an adapter with tool-call capture capability."}
 		}
+
 		return Condition{ID: "tool_call_depth_visible", State: StateMissingTelemetry, ReasonCode: "tool_event_missing", Reason: "required tool-call adapter event is missing", NextAction: "Capture tool_call adapter events or mark the observer unsupported."}
 	}
 	return pass("tool_call_depth_visible", "tool_call_depth_visible", "required tool-call families are captured or not required")
@@ -366,6 +402,7 @@ func toolDepthCondition(run RunEvidence) Condition {
 func fileMutationCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
 		if fileMutationCorrelationMissing(event) {
+
 			return cannotVerify("file_mutation_correlated", "file_mutation_source_missing", "file mutation is not correlated with source baseline and run id", "Record source baseline and run id correlation for file mutation events.")
 		}
 	}
@@ -379,19 +416,19 @@ func fileMutationCorrelationMissing(event AdapterEvent) bool {
 func modelIdentityCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
 		if modelIdentityOverclaimed(run, event) {
+
 			return fail("model_identity_not_overclaimed", "gateway_identity_overclaimed", "model identity is claimed as gateway-observed without bound gateway evidence", "Keep model identity harness_observed or bind gateway evidence.")
 		}
 	}
 	if !run.GatewayIntegrated {
+
 		return Condition{ID: "model_identity_not_overclaimed", State: StateNotIntegrated, ReasonCode: "gateway_not_integrated", Reason: "gateway provenance is not integrated", NextAction: "Integrate gateway evidence before claiming gateway-observed model identity."}
 	}
 	return pass("model_identity_not_overclaimed", "model_identity_not_overclaimed", "model identity provenance stays within available gateway evidence")
 }
 
 func modelIdentityOverclaimed(run RunEvidence, event AdapterEvent) bool {
-	return event.EventType == "model_call_observed" &&
-		event.ModelIdentityProvenance == "gateway_observed" &&
-		!gatewayModelIdentityBound(run, event)
+	return event.EventType == "model_call_observed" && event.ModelIdentityProvenance == "gateway_observed" && !gatewayModelIdentityBound(run, event)
 }
 
 func gatewayModelIdentityBound(run RunEvidence, event AdapterEvent) bool {
@@ -400,6 +437,7 @@ func gatewayModelIdentityBound(run RunEvidence, event AdapterEvent) bool {
 
 func testProvenanceCondition(run RunEvidence) Condition {
 	if event, ok := firstEvent(run.AdapterEvents, "test_observed"); ok {
+
 		return testProvenanceEventCondition(event)
 	}
 	if hasRequired(run, "test_observed") {
@@ -411,6 +449,7 @@ func testProvenanceCondition(run RunEvidence) Condition {
 func firstEvent(events []AdapterEvent, eventType string) (AdapterEvent, bool) {
 	for _, event := range events {
 		if event.EventType == eventType {
+
 			return event, true
 		}
 	}
@@ -421,6 +460,12 @@ func testProvenanceEventCondition(event AdapterEvent) Condition {
 	if testProvenanceExecuted(event.TestProvenance) {
 		return pass("test_provenance_not_overclaimed", "test_provenance_executed", "test evidence is bound to CI or wrapper execution")
 	}
+
+	return nonExecutedTestProvenanceCondition(event)
+}
+
+func nonExecutedTestProvenanceCondition(event AdapterEvent) Condition {
+
 	switch event.TestProvenance {
 	case "agent_reported":
 		return reportedTestCondition(event, "agent_reported_test_not_executed", "agent-reported tests are claimed as executed evidence", "agent-reported test evidence is visible but non-executed")
@@ -437,6 +482,7 @@ func testProvenanceExecuted(provenance string) bool {
 
 func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReason string) Condition {
 	if event.ExecutedEvidenceClaimed {
+
 		return fail("test_provenance_not_overclaimed", failCode, failReason, "Bind test evidence to CI or wrapper execution.")
 	}
 	return cannotVerify("test_provenance_not_overclaimed", "test_execution_unverified", cannotReason, "Capture CI or wrapper-executed test evidence.")
@@ -444,9 +490,11 @@ func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReaso
 
 func providerRefsCondition(run RunEvidence) Condition {
 	if providerRefsContainSecret(run.ProviderRefs) {
+
 		return fail("provider_refs_portable", "provider_ref_contains_secret", "provider-neutral reference contains credential-like material", "Persist canonical token-free provider references.")
 	}
 	if adapterEventsProviderRefsContainSecret(run.AdapterEvents) {
+
 		return fail("provider_refs_portable", "provider_ref_contains_secret", "event-level provider reference contains credential-like material", "Persist canonical token-free provider references.")
 	}
 	return pass("provider_refs_portable", "provider_refs_portable", "provider references are portable and token-free")
@@ -455,6 +503,7 @@ func providerRefsCondition(run RunEvidence) Condition {
 func providerRefsContainSecret(refs []ProviderRef) bool {
 	for _, ref := range refs {
 		if providerRefContainsSecret(ref) {
+
 			return true
 		}
 	}
@@ -464,6 +513,7 @@ func providerRefsContainSecret(refs []ProviderRef) bool {
 func adapterEventsProviderRefsContainSecret(events []AdapterEvent) bool {
 	for _, event := range events {
 		if eventProviderRefsContainSecret(event) {
+
 			return true
 		}
 	}
@@ -481,6 +531,7 @@ func eventProviderRefsContainSecret(event AdapterEvent) bool {
 func redactionMetadataCondition(run RunEvidence) Condition {
 	for _, event := range run.AdapterEvents {
 		if condition := redactionMetadataConditionForEvent(event); condition.State != "" {
+
 			return condition
 		}
 	}
@@ -489,12 +540,15 @@ func redactionMetadataCondition(run RunEvidence) Condition {
 
 func redactionMetadataConditionForEvent(event AdapterEvent) Condition {
 	if hasForbiddenRedactionMetadata(event) {
+
 		return fail("redaction_metadata_consistent", "forbidden_adapter_metadata_persisted", "adapter metadata contains forbidden raw or credential-like material", "Redact adapter metadata before persistence.")
 	}
 	if missingRequiredRedactionMetadata(event) {
+
 		return cannotVerify("redaction_metadata_consistent", "redaction_metadata_missing", "sensitive adapter event lacks redaction policy or retention metadata", "Record Block 18 redaction policy and retention mode metadata.")
 	}
 	if hasInvalidRetentionMode(event) {
+
 		return fail("redaction_metadata_consistent", "invalid_retention_mode", "adapter event declares a non-FR-054 retention mode", "Use FR-054 retention modes.")
 	}
 	return Condition{}
@@ -516,9 +570,11 @@ func hasInvalidRetentionMode(event AdapterEvent) bool {
 
 func overclaimCondition(run RunEvidence) Condition {
 	if eventFamiliesOverclaim(run.EventFamilySummaries) {
+
 		return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "capture-depth output claims reconstruction without sufficient evidence", "Emit a visible capture-depth cap for insufficient evidence.")
 	}
 	if adapterEventsOverclaim(run.AdapterEvents) {
+
 		return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "adapter event claims reconstruction beyond captured and retained evidence", "Emit a visible cap annotation or lower the claim.")
 	}
 	return pass("capture_depth_not_overclaimed", "capture_depth_not_overclaimed", "capture-depth output does not exceed available evidence")
@@ -527,6 +583,7 @@ func overclaimCondition(run RunEvidence) Condition {
 func eventFamiliesOverclaim(summaries []EventFamilyState) bool {
 	for _, summary := range summaries {
 		if eventFamilyOverclaims(summary) {
+
 			return true
 		}
 	}
@@ -536,6 +593,7 @@ func eventFamiliesOverclaim(summaries []EventFamilyState) bool {
 func adapterEventsOverclaim(events []AdapterEvent) bool {
 	for _, event := range events {
 		if adapterEventOverclaims(event) {
+
 			return true
 		}
 	}
@@ -549,33 +607,41 @@ func eventFamilyOverclaims(summary EventFamilyState) bool {
 }
 
 func eventFamilyInsufficient(summary EventFamilyState) bool {
-	switch summary.State {
-	case StateMissingTelemetry, StateUnsupported, StateNotIntegrated, StateNotAssessed, StateCannotVerify, StateRetentionLimited:
-		return true
-	}
-	return summary.RetentionMode == RetentionDigestOnly || summary.RetentionMode == RetentionNotAssessed
+	return insufficientEventFamilyStates[summary.State] || insufficientRetentionModes[summary.RetentionMode]
+}
+
+var insufficientEventFamilyStates = map[string]bool{
+	StateMissingTelemetry: true,
+	StateUnsupported:      true,
+	StateNotIntegrated:    true,
+	StateNotAssessed:      true,
+	StateCannotVerify:     true,
+	StateRetentionLimited: true,
+}
+
+var insufficientRetentionModes = map[string]bool{
+	RetentionDigestOnly:  true,
+	RetentionNotAssessed: true,
 }
 
 func adapterEventOverclaims(event AdapterEvent) bool {
-	return event.ReconstructableClaimed &&
-		adapterEventInsufficient(event) &&
-		event.CapAnnotation == ""
+	return event.ReconstructableClaimed && adapterEventInsufficient(event) && event.CapAnnotation == ""
 }
 
 func adapterEventInsufficient(event AdapterEvent) bool {
-	return event.CaptureState != "captured" ||
-		event.RetentionMode == RetentionDigestOnly ||
-		event.RetentionMode == RetentionNotAssessed
+	return event.CaptureState != "captured" || insufficientRetentionModes[event.RetentionMode]
 }
 
 func topLevel(conditions []Condition) string {
 	highest := StatePass
 	for _, condition := range conditions {
 		if condition.State == StateFail {
+
 			return StateFail
 		}
 		switch condition.State {
 		case StateCannotVerify, StateNotAssessed, StateMissingTelemetry, StateNotIntegrated, StateUnsupported, StateRetentionLimited:
+
 			highest = StateCannotVerify
 		}
 	}
@@ -586,6 +652,7 @@ func reasons(conditions []Condition) []string {
 	out := []string{}
 	for _, condition := range conditions {
 		if condition.State != StatePass {
+
 			out = append(out, condition.ReasonCode+": "+condition.Reason)
 		}
 	}
@@ -596,6 +663,7 @@ func reasons(conditions []Condition) []string {
 func nextActions(conditions []Condition) []string {
 	set := map[string]bool{}
 	for _, condition := range conditions {
+
 		addNextAction(set, condition)
 	}
 	out := []string{}
@@ -608,6 +676,7 @@ func nextActions(conditions []Condition) []string {
 
 func addNextAction(set map[string]bool, condition Condition) {
 	if condition.State != StatePass && condition.NextAction != "" {
+
 		set[condition.NextAction] = true
 	}
 }
@@ -615,6 +684,7 @@ func addNextAction(set map[string]bool, condition Condition) {
 func hasRequired(run RunEvidence, eventType string) bool {
 	for _, required := range run.RequiredEventTypes {
 		if required == eventType {
+
 			return true
 		}
 	}
@@ -624,6 +694,7 @@ func hasRequired(run RunEvidence, eventType string) bool {
 func unsupported(run RunEvidence, eventType string) bool {
 	for _, unsupported := range run.UnsupportedEventTypes {
 		if unsupported == eventType {
+
 			return true
 		}
 	}
@@ -633,6 +704,7 @@ func unsupported(run RunEvidence, eventType string) bool {
 func hasEvent(events []AdapterEvent, eventType string) bool {
 	for _, event := range events {
 		if event.EventType == eventType {
+
 			return true
 		}
 	}
@@ -640,58 +712,67 @@ func hasEvent(events []AdapterEvent, eventType string) bool {
 }
 
 func sensitiveEvent(eventType string) bool {
-	switch eventType {
-	case "tool_call", "command_started", "model_call_observed", "test_observed":
-		return true
-	default:
-		return false
-	}
+	return sensitiveEventTypes[eventType]
+}
+
+var sensitiveEventTypes = map[string]bool{
+	"tool_call":           true,
+	"command_started":     true,
+	"model_call_observed": true,
+	"test_observed":       true,
 }
 
 func validRetentionMode(mode string) bool {
-	switch mode {
-	case RetentionDigestOnly, RetentionSanitizedExcerpt, RetentionEncryptedRawRef, RetentionExternalArtifactRef, RetentionNotAssessed:
-		return true
-	default:
-		return false
-	}
+	return validRetentionModes[mode]
+}
+
+var validRetentionModes = map[string]bool{
+	RetentionDigestOnly:          true,
+	RetentionSanitizedExcerpt:    true,
+	RetentionEncryptedRawRef:     true,
+	RetentionExternalArtifactRef: true,
+	RetentionNotAssessed:         true,
 }
 
 func containsSecret(value string) bool {
 	if value == "" {
 		return false
 	}
-	needles := []string{
-		"secret-token",
-		"password=",
-		"token=",
-		"bearer ",
-		"access_token=",
-		"credential=",
-		"oidc_token",
-		"session_id=",
-		"raw prompt",
-		"raw_prompt",
-		"raw response",
-		"raw_response",
-		"raw_review_body",
-		"tool_input_body",
-		"tool_output_body",
-		"model_request_payload",
-		"model_response_payload",
-		"adapter_config_raw",
-	}
-	for _, needle := range needles {
+
+	for _, needle := range secretMarkers {
 		if containsFold(value, needle) {
+
 			return true
 		}
 	}
 	return false
 }
 
+var secretMarkers = []string{
+	"secret-token",
+	"password=",
+	"token=",
+	"bearer ",
+	"access_token=",
+	"credential=",
+	"oidc_token",
+	"session_id=",
+	"raw prompt",
+	"raw_prompt",
+	"raw response",
+	"raw_response",
+	"raw_review_body",
+	"tool_input_body",
+	"tool_output_body",
+	"model_request_payload",
+	"model_response_payload",
+	"adapter_config_raw",
+}
+
 func stringSliceContainsSecret(values []string) bool {
 	for _, value := range values {
 		if containsSecret(value) {
+
 			return true
 		}
 	}
@@ -721,72 +802,153 @@ func ValidTestInput() Input {
 }
 
 func validInput() Input {
+
 	runID := "adapter-run-1"
 	nonce := "nonce-1"
 	source := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	policy := "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-	return Input{Run: RunEvidence{
+	return Input{Run: validRunEvidence(runID, nonce, source, policy)}
+}
+
+func validRunEvidence(runID, nonce, source, policy string) RunEvidence {
+
+	run := validRunHeader(runID, nonce, source, policy)
+	run.AdapterEvents = validAdapterEvents(runID, nonce, source, policy)
+	run.ProviderRefs = validProviderRefs(source)
+	run.EventFamilySummaries = validEventFamilySummaries()
+	return run
+}
+
+func validRunHeader(runID, nonce, source, policy string) RunEvidence {
+
+	return RunEvidence{
 		RunID:                 runID,
 		RunNonce:              nonce,
 		SourceBaseline:        source,
 		RunClosedSequence:     20,
-		RequiredEventTypes:    []string{"run_started", "task_locked", "tool_call", "command_started", "file_mutation", "model_call_observed", "test_observed", "run_closed"},
+		RequiredEventTypes:    validRequiredEventTypes(),
 		RedactionPolicyDigest: policy,
 		GatewayIntegrated:     true,
 		GatewayEvidenceBound:  true,
 		TaskDriftAssessed:     true,
-		AdapterEvents: []AdapterEvent{
-			validEvent("evt-run", "run_started", 1, runID, nonce, source, policy),
-			validEvent("evt-task", "task_locked", 2, runID, nonce, source, policy),
-			validEvent("evt-tool", "tool_call", 3, runID, nonce, source, policy),
-			validEvent("evt-command", "command_started", 4, runID, nonce, source, policy),
-			validEvent("evt-file", "file_mutation", 5, runID, nonce, source, policy),
-			validEvent("evt-model", "model_call_observed", 6, runID, nonce, source, policy),
-			validEvent("evt-test", "test_observed", 7, runID, nonce, source, policy),
-			validEvent("evt-close", "run_closed", 8, runID, nonce, source, policy),
-		},
-		ProviderRefs:         []ProviderRef{{SourceRef: "repo:generic/source", SourceCommit: source, ChangeRef: "change:42", ReviewRef: "review:7", Producer: "generic_git_host", ObservedAt: "2026-05-07T10:00:00Z"}},
-		EventFamilySummaries: []EventFamilyState{{EventFamily: "tool_call", State: StatePass, RetentionMode: RetentionSanitizedExcerpt, Reconstructable: true}},
-	}}
+	}
+}
+
+func validRequiredEventTypes() []string {
+	return []string{"run_started", "task_locked", "tool_call", "command_started", "file_mutation", "model_call_observed", "test_observed", "run_closed"}
+}
+
+func validAdapterEvents(runID, nonce, source, policy string) []AdapterEvent {
+	out := make([]AdapterEvent, 0, len(validEventSpecs))
+	for _, spec := range validEventSpecs {
+
+		out = append(out, validEvent(spec.id, spec.eventType, spec.sequence, runID, nonce, source, policy))
+	}
+	return out
+}
+
+type validEventSpec struct {
+	id        string
+	eventType string
+	sequence  int
+}
+
+var validEventSpecs = []validEventSpec{
+	{id: "evt-run", eventType: "run_started", sequence: 1},
+	{id: "evt-task", eventType: "task_locked", sequence: 2},
+	{id: "evt-tool", eventType: "tool_call", sequence: 3},
+	{id: "evt-command", eventType: "command_started", sequence: 4},
+	{id: "evt-file", eventType: "file_mutation", sequence: 5},
+	{id: "evt-model", eventType: "model_call_observed", sequence: 6},
+	{id: "evt-test", eventType: "test_observed", sequence: 7},
+	{id: "evt-close", eventType: "run_closed", sequence: 8},
+}
+
+func validProviderRefs(source string) []ProviderRef {
+	return []ProviderRef{{SourceRef: "repo:generic/source", SourceCommit: source, ChangeRef: "change:42", ReviewRef: "review:7", Producer: "generic_git_host", ObservedAt: "2026-05-07T10:00:00Z"}}
+}
+
+func validEventFamilySummaries() []EventFamilyState {
+	return []EventFamilyState{{EventFamily: "tool_call", State: StatePass, RetentionMode: RetentionSanitizedExcerpt, Reconstructable: true}}
 }
 
 func validEvent(id, eventType string, sequence int, runID, nonce, source, policy string) AdapterEvent {
-	event := AdapterEvent{
-		EventID:                 id,
-		EventType:               eventType,
-		ProducerIdentity:        "adapter:generic",
-		AdapterIdentity:         "adapter:generic",
-		IdentityBinding:         IdentityBound,
-		ProvenanceScope:         "adapter_observed",
-		CaptureState:            "captured",
-		RunID:                   runID,
-		RunNonce:                nonce,
-		SourceBaseline:          source,
-		BindingMode:             BindingSameChain,
-		Sequence:                sequence,
-		PrevEventHash:           "1111111111111111111111111111111111111111111111111111111111111111",
-		EventHash:               "2222222222222222222222222222222222222222222222222222222222222222",
-		CorrelationRef:          "corr:" + id,
-		EventPayloadDigest:      "3333333333333333333333333333333333333333333333333333333333333333",
-		RedactionPolicyDigest:   policy,
-		RetentionMode:           RetentionSanitizedExcerpt,
-		ActorAttributionState:   "bound",
-		ModelIdentityProvenance: "gateway_observed",
-		TestProvenance:          "ci_executed",
-		ExecutedEvidenceClaimed: eventType == "test_observed",
-		ToolFamily:              "edit",
-	}
+
+	seed := validEventSeed{id: id, eventType: eventType, sequence: sequence, runID: runID, nonce: nonce, source: source, policy: policy}
+	event := baseValidEvent(seed)
 	if digestOnlyValidEvent(eventType) {
+
 		event.RetentionMode = RetentionDigestOnly
 	}
 	return event
 }
 
+type validEventSeed struct {
+	id        string
+	eventType string
+	sequence  int
+	runID     string
+	nonce     string
+	source    string
+	policy    string
+}
+
+func baseValidEvent(seed validEventSeed) AdapterEvent {
+
+	event := AdapterEvent{}
+	setValidEventIdentity(&event, seed)
+	setValidEventBinding(&event, seed)
+	setValidEventEvidence(&event, seed)
+	setValidEventClaims(&event, seed.eventType)
+	return event
+}
+
+func setValidEventIdentity(event *AdapterEvent, seed validEventSeed) {
+
+	event.EventID = seed.id
+	event.EventType = seed.eventType
+	event.ProducerIdentity = "adapter:generic"
+	event.AdapterIdentity = "adapter:generic"
+	event.IdentityBinding = IdentityBound
+	event.ProvenanceScope = "adapter_observed"
+}
+
+func setValidEventBinding(event *AdapterEvent, seed validEventSeed) {
+
+	event.RunID = seed.runID
+	event.RunNonce = seed.nonce
+	event.SourceBaseline = seed.source
+	event.BindingMode = BindingSameChain
+	event.Sequence = seed.sequence
+	event.PrevEventHash = "1111111111111111111111111111111111111111111111111111111111111111"
+	event.EventHash = "2222222222222222222222222222222222222222222222222222222222222222"
+}
+
+func setValidEventEvidence(event *AdapterEvent, seed validEventSeed) {
+
+	event.CaptureState = "captured"
+	event.CorrelationRef = "corr:" + seed.id
+	event.EventPayloadDigest = "3333333333333333333333333333333333333333333333333333333333333333"
+	event.RedactionPolicyDigest = seed.policy
+	event.RetentionMode = RetentionSanitizedExcerpt
+}
+
+func setValidEventClaims(event *AdapterEvent, eventType string) {
+
+	event.ActorAttributionState = "bound"
+	event.ModelIdentityProvenance = "gateway_observed"
+	event.TestProvenance = "ci_executed"
+	event.ExecutedEvidenceClaimed = eventType == "test_observed"
+	event.ToolFamily = "edit"
+}
+
 func digestOnlyValidEvent(eventType string) bool {
-	switch eventType {
-	case "run_started", "task_locked", "run_closed", "file_mutation":
-		return true
-	default:
-		return false
-	}
+	return digestOnlyValidEvents[eventType]
+}
+
+var digestOnlyValidEvents = map[string]bool{
+	"run_started":   true,
+	"task_locked":   true,
+	"run_closed":    true,
+	"file_mutation": true,
 }

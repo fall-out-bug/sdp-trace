@@ -239,6 +239,83 @@ func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 	}
 }
 
+func TestPostureHelperCoverageForMovementAndSafety(t *testing.T) {
+	validMovement := MovementRow{
+		ID:                  "movement.0001",
+		MetricID:            "missing_telemetry_rows",
+		MetricVersion:       ProfileVer,
+		DimensionKey:        "repo:current",
+		CurrentValue:        1,
+		PreviousValue:       0,
+		ComparisonBasis:     "previous_window",
+		Comparable:          true,
+		NonComparableReason: "",
+	}
+	if malformedMovementIdentity(validMovement) {
+		t.Fatalf("valid movement identity reported malformed")
+	}
+	invalidMovement := validMovement
+	invalidMovement.MetricVersion = "future"
+	if !malformedMovementIdentity(invalidMovement) {
+		t.Fatalf("invalid movement identity reported valid")
+	}
+	if malformedMovementSummaryReasons(map[string]int{"non_comparable_missing_window": 1}) {
+		t.Fatalf("valid movement summary reason reported malformed")
+	}
+	if !malformedMovementSummaryReasons(map[string]int{"future_reason": 1}) {
+		t.Fatalf("unknown movement summary reason reported valid")
+	}
+	if err := malformedRowError(false, "bad"); err != nil {
+		t.Fatalf("unexpected row error: %v", err)
+	}
+	if err := malformedRowError(true, "bad"); err == nil {
+		t.Fatalf("expected row error")
+	}
+}
+
+func TestPostureHelperCoverageForMetricAndPathBoundaries(t *testing.T) {
+	row := query.QueryPackRow{EvidenceState: query.RowStateUnsupported}
+	if !unsupportedObserverMetricMatches(row, PostureSignal{}, false) {
+		t.Fatalf("unsupported row did not match unsupported observer metric")
+	}
+	signal := PostureSignal{ObserverState: "unsupported"}
+	if !unsupportedObserverMetricMatches(query.QueryPackRow{}, signal, true) {
+		t.Fatalf("unsupported signal did not match unsupported observer metric")
+	}
+	if unsupportedObserverMetricMatches(query.QueryPackRow{}, signal, false) {
+		t.Fatalf("signal matched without signal presence")
+	}
+	if unsafeInputLabel(RepositoryWindow{InputID: "input-1", TimeWindow: "2026-w02"}) {
+		t.Fatalf("safe input label reported unsafe")
+	}
+	if !unsafeInputLabel(RepositoryWindow{InputID: "https://example.invalid/input", TimeWindow: "2026-w02"}) {
+		t.Fatalf("unsafe input label reported safe")
+	}
+	for _, value := range []string{"https://example.invalid/query.json", "C:/repo/query.json", "/repo/query.json", "../query.json"} {
+		if !hasUnsafeSelectionPathPrefix(value) {
+			t.Fatalf("unsafe selection path prefix reported safe: %s", value)
+		}
+	}
+	if hasUnsafeSelectionPathPrefix("relative/query.json") {
+		t.Fatalf("relative selection path reported unsafe")
+	}
+}
+
+func TestPostureHelperCoverageForDigestAndTrustCopies(t *testing.T) {
+	if got := shortDigest(strings.Repeat("a", 64)); got != strings.Repeat("a", 16) {
+		t.Fatalf("short digest = %q", got)
+	}
+	if got := shortDigest("abc"); got != "not_assessed0000" {
+		t.Fatalf("short missing digest = %q", got)
+	}
+	source := map[string]int{"trusted": 1}
+	copied := copyTrust(source)
+	copied["trusted"] = 2
+	if source["trusted"] != 1 {
+		t.Fatalf("copyTrust aliased source map")
+	}
+}
+
 func TestBuildRefusesUnsafeLabels(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)

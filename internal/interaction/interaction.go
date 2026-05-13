@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"io"
 	"os"
 	"os/exec"
@@ -156,7 +157,6 @@ type RelayOptions struct {
 	Command     []string
 	Now         time.Time
 }
-
 type ImportOptions struct {
 	TaskID      string
 	Source      string
@@ -215,7 +215,39 @@ type Envelope struct {
 	UpdatedAt       string   `json:"updated_at"`
 }
 
+type traceAssessment struct {
+	completeness string
+	assessment   string
+	notAssessed  []string
+	cannotVerify []string
+}
+
+type traceCounts struct {
+	events         int
+	friction       map[string]int
+	corrections    int
+	planRejections int
+	clarifications int
+	unreferenced   int
+}
+
+type traceSummaryCounter struct {
+	frictionCounts             map[string]int
+	correctionsAfterAssignment int
+	planRejectionCount         int
+	clarificationCount         int
+	unreferencedCount          int
+	assignmentObserved         bool
+}
+
+type envelopeRefCounts struct {
+	run, source, task, promise, interaction int
+	operation, llm, tool, mutation          int
+	stage, friction                         int
+}
+
 func Relay(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stderr io.Writer) (Trace, int, error) {
+
 	opts = normalizeRelay(opts)
 	if len(opts.Command) == 0 {
 		return Trace{}, 0, errors.New("interaction relay requires forward command after --")
@@ -224,6 +256,7 @@ func Relay(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stde
 }
 
 func relayWithCommand(ctx context.Context, opts RelayOptions, stdin io.Reader, stdout, stderr io.Writer) (Trace, int, error) {
+
 	body, err := readBody(stdin)
 	if err != nil {
 		return Trace{}, 0, err
@@ -241,13 +274,14 @@ func relayWithCommand(ctx context.Context, opts RelayOptions, stdin io.Reader, s
 }
 
 func writeRelayTrace(path string, trace Trace, event Event, body []byte) error {
+
 	if err := WriteContentBlobs(path, trace, map[string][]byte{event.InteractionID: body}); err != nil {
 		return err
 	}
 	return WriteTrace(path, trace)
 }
-
 func ImportTranscript(opts ImportOptions) (Trace, error) {
+
 	opts = normalizeImport(opts)
 	if err := validateImportOptions(opts); err != nil {
 		return Trace{}, err
@@ -264,6 +298,7 @@ func ImportTranscript(opts ImportOptions) (Trace, error) {
 }
 
 func validateImportOptions(opts ImportOptions) error {
+
 	if opts.Source != SourcePreclassifiedTranscript {
 		return errors.New("interaction import-transcript requires --source preclassified-transcript-import")
 	}
@@ -277,6 +312,7 @@ func validateImportOptions(opts ImportOptions) error {
 }
 
 func importTranscriptEvents(opts ImportOptions) ([]Event, error) {
+
 	events, err := readJSONLEvents(opts.EventsJSONL)
 	if err != nil {
 		return nil, err
@@ -288,6 +324,7 @@ func importTranscriptEvents(opts ImportOptions) ([]Event, error) {
 }
 
 func normalizeTranscriptEvents(events []Event, opts ImportOptions) error {
+
 	if len(events) == 0 {
 		return errors.New("interaction import-transcript requires at least one event")
 	}
@@ -300,6 +337,7 @@ func normalizeTranscriptEvents(events []Event, opts ImportOptions) error {
 }
 
 func normalizeTranscriptEvent(event *Event, opts ImportOptions) error {
+
 	if err := validateTranscriptEventTask(*event, opts); err != nil {
 		return err
 	}
@@ -315,12 +353,14 @@ func normalizeTranscriptEvent(event *Event, opts ImportOptions) error {
 
 func validateTranscriptEventTask(event Event, opts ImportOptions) error {
 	if event.TaskID != opts.TaskID {
+
 		return fmt.Errorf("event task_id %q does not match import task_id", event.TaskID)
 	}
 	return nil
 }
 
 func validateTranscriptEventSource(event Event) error {
+
 	if event.Source.SourceType == SourceAgentReported {
 		return errors.New("agent-reported interaction is not accepted as event evidence")
 	}
@@ -331,6 +371,7 @@ func validateTranscriptEventSource(event Event) error {
 }
 
 func NewObservedEvent(opts RelayOptions, body []byte, sequence int) (Event, error) {
+
 	if err := validateObservedEventOptions(opts); err != nil {
 		return Event{}, err
 	}
@@ -344,10 +385,12 @@ func validateObservedEventOptions(opts RelayOptions) error {
 	if err := validateObservedEventIDs(opts); err != nil {
 		return err
 	}
+
 	return validateObservedEventCatalog(opts)
 }
 
 func validateObservedEventIDs(opts RelayOptions) error {
+
 	if err := validateSafeID("task_id", opts.TaskID); err != nil {
 		return err
 	}
@@ -356,15 +399,15 @@ func validateObservedEventIDs(opts RelayOptions) error {
 	}
 	return validateObservedActorID(opts)
 }
-
 func validateObservedActorID(opts RelayOptions) error {
 	if opts.ActorID == "" {
+
 		opts.ActorID = opts.ActorType
 	}
 	return validateSafeID("actor_id", opts.ActorID)
 }
-
 func validateObservedEventCatalog(opts RelayOptions) error {
+
 	if !validActorType(opts.ActorType) {
 		return fmt.Errorf("unsupported actor_type %q", opts.ActorType)
 	}
@@ -375,40 +418,88 @@ func validateObservedEventCatalog(opts RelayOptions) error {
 }
 
 func observedEvent(opts RelayOptions, body []byte, sequence int) Event {
+
 	if opts.ActorID == "" {
 		opts.ActorID = opts.ActorType
 	}
 	id := "ix-" + randomHex(12)
-	sum := sha256.Sum256(body)
 	now := opts.Now.UTC().Format(time.RFC3339)
+
+	return observedEventRecord(opts, body, id, sequence, now)
+}
+
+func observedEventRecord(opts RelayOptions, body []byte, id string, sequence int, now string) Event {
+
+	event := observedEventIdentity(opts, id, sequence)
+	event.Source = observedRelaySource()
+	applyObservedEventContent(&event, opts.TaskID, id, body)
+	applyObservedEventAssessment(&event, now)
+	return event
+}
+
+func observedEventIdentity(opts RelayOptions, id string, sequence int) Event {
+
 	return Event{
-		SchemaVersion:          SchemaVersion,
-		InteractionID:          id,
-		TaskID:                 opts.TaskID,
-		OperationID:            opts.OperationID,
-		StageID:                opts.StageID,
-		SourceID:               DefaultRelaySourceID,
-		SourceSequence:         sequence,
-		EventType:              opts.EventType,
-		FrictionClass:          frictionClass(opts.EventType),
-		Actor:                  Actor{ID: opts.ActorID, ActorType: opts.ActorType},
-		Target:                 opts.Target,
-		Source:                 Source{SourceType: SourceObservedControlChannel, SourceID: DefaultRelaySourceID, SourceVersion: SchemaVersion},
-		ContentRef:             fmt.Sprintf("sdp://interaction/%s/%s", opts.TaskID, id),
-		ContentDigest:          hex.EncodeToString(sum[:]),
-		DigestAlgorithm:        DigestAlgorithmSHA256,
-		Retention:              RetentionSanitizedExcerpt,
-		State:                  StateUnreferenced,
-		ObservedBeforeDelivery: true,
-		ChannelExclusivity:     ChannelExclusivityNotAssessed,
-		CompletenessState:      CompletenessComplete,
-		Redaction:              Redaction{PolicyRef: DefaultRedactionPolicyRef, FindingCount: 0},
-		ObservedAt:             now,
-		CreatedAt:              now,
+		SchemaVersion: SchemaVersion,
+		InteractionID: id,
+
+		TaskID:      opts.TaskID,
+		OperationID: opts.OperationID,
+		StageID:     opts.StageID,
+
+		SourceID:       DefaultRelaySourceID,
+		SourceSequence: sequence,
+
+		EventType:     opts.EventType,
+		FrictionClass: frictionClass(opts.EventType),
+
+		Actor:  Actor{ID: opts.ActorID, ActorType: opts.ActorType},
+		Target: opts.Target,
 	}
 }
 
+func applyObservedEventContent(event *Event, taskID, id string, body []byte) {
+
+	event.ContentRef = interactionContentRef(taskID, id)
+	event.ContentDigest = interactionSHA256Hex(body)
+	event.DigestAlgorithm = DigestAlgorithmSHA256
+}
+
+func applyObservedEventAssessment(event *Event, now string) {
+
+	event.Retention = RetentionSanitizedExcerpt
+	event.State = StateUnreferenced
+	event.ObservedBeforeDelivery = true
+	event.ChannelExclusivity = ChannelExclusivityNotAssessed
+	event.CompletenessState = CompletenessComplete
+	event.Redaction = defaultRedaction()
+
+	event.ObservedAt = now
+	event.CreatedAt = now
+}
+
+func observedRelaySource() Source {
+
+	return Source{SourceType: SourceObservedControlChannel, SourceID: DefaultRelaySourceID, SourceVersion: SchemaVersion}
+}
+
+func interactionContentRef(taskID, interactionID string) string {
+
+	return fmt.Sprintf("sdp://interaction/%s/%s", taskID, interactionID)
+}
+
+func defaultRedaction() Redaction {
+
+	return Redaction{PolicyRef: DefaultRedactionPolicyRef, FindingCount: 0}
+}
+
+func interactionSHA256Hex(body []byte) string {
+	sum := sha256.Sum256(body)
+	return hex.EncodeToString(sum[:])
+}
+
 func NewTrace(taskID, sourceType string, events []Event, now time.Time) Trace {
+
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
@@ -419,18 +510,11 @@ func NewTrace(taskID, sourceType string, events []Event, now time.Time) Trace {
 	return traceFromAssessment(taskID, sourceType, events, now, state)
 }
 
-type traceAssessment struct {
-	completeness string
-	assessment   string
-	notAssessed  []string
-	cannotVerify []string
-}
-
 func newTraceAssessment() *traceAssessment {
 	return &traceAssessment{completeness: CompletenessComplete, assessment: "assessed"}
 }
-
 func (state *traceAssessment) applyCompleteness(completeness string) {
+
 	switch completeness {
 	case CompletenessCannotVerify:
 		state.markCannotVerify()
@@ -442,12 +526,14 @@ func (state *traceAssessment) applyCompleteness(completeness string) {
 }
 
 func (state *traceAssessment) markCannotVerify() {
+
 	state.assessment = StateNotAssessed
 	state.completeness = CompletenessCannotVerify
 	state.cannotVerify = append(state.cannotVerify, "source completeness cannot be verified")
 }
 
 func (state *traceAssessment) markNotAssessed() {
+
 	if state.completeness != CompletenessCannotVerify {
 		state.assessment = StateNotAssessed
 		state.completeness = CompletenessNotAssessed
@@ -457,12 +543,13 @@ func (state *traceAssessment) markNotAssessed() {
 
 func (state *traceAssessment) markPartial() {
 	if state.completeness == CompletenessComplete {
+
 		state.assessment = "partial"
 		state.completeness = CompletenessPartial
 	}
 }
-
 func traceFromAssessment(taskID, sourceType string, events []Event, now time.Time, state *traceAssessment) Trace {
+
 	stamp := now.UTC().Format(time.RFC3339)
 	return Trace{
 		SchemaVersion:     SchemaVersion,
@@ -480,6 +567,7 @@ func traceFromAssessment(taskID, sourceType string, events []Event, now time.Tim
 }
 
 func ValidateEvent(event Event) error {
+
 	return firstValidationError(
 		func() error { return validateEventIdentity(event) },
 		func() error { return validateEventCatalog(event) },
@@ -491,6 +579,7 @@ func ValidateEvent(event Event) error {
 }
 
 func firstValidationError(checks ...func() error) error {
+
 	for _, check := range checks {
 		if err := check(); err != nil {
 			return err
@@ -500,6 +589,7 @@ func firstValidationError(checks ...func() error) error {
 }
 
 func validateEventIdentity(event Event) error {
+
 	if event.SchemaVersion != SchemaVersion {
 		return errors.New("interaction event has unsupported schema_version")
 	}
@@ -511,6 +601,7 @@ func validateEventIdentity(event Event) error {
 
 func validateEventPrimaryIDs(event Event) error {
 	if err := validateSafeID("interaction_id", event.InteractionID); err != nil {
+
 		return err
 	}
 	return validateSafeID("task_id", event.TaskID)
@@ -518,6 +609,7 @@ func validateEventPrimaryIDs(event Event) error {
 
 func validateEventOptionalIDs(event Event) error {
 	if err := validateOptionalSafeID("operation_id", event.OperationID); err != nil {
+
 		return err
 	}
 	return validateOptionalSafeID("stage_id", event.StageID)
@@ -525,12 +617,14 @@ func validateEventOptionalIDs(event Event) error {
 
 func validateOptionalSafeID(label, value string) error {
 	if value == "" {
+
 		return nil
 	}
 	return validateSafeID(label, value)
 }
 
 func validateEventCatalog(event Event) error {
+
 	if err := validateSafeID("actor.id", event.Actor.ID); err != nil {
 		return err
 	}
@@ -542,8 +636,8 @@ func validateEventCatalog(event Event) error {
 	}
 	return validateEventRetentionStates(event)
 }
-
 func validateEventTypeAndFriction(event Event) error {
+
 	if !validEventType(event.EventType) {
 		return fmt.Errorf("unsupported event_type %q", event.EventType)
 	}
@@ -554,6 +648,7 @@ func validateEventTypeAndFriction(event Event) error {
 }
 
 func validateEventActorAndState(event Event) error {
+
 	if !validActorType(event.Actor.ActorType) {
 		return fmt.Errorf("unsupported actor_type %q", event.Actor.ActorType)
 	}
@@ -564,6 +659,7 @@ func validateEventActorAndState(event Event) error {
 }
 
 func validateEventRetentionStates(event Event) error {
+
 	if !validRetention(event.Retention) {
 		return fmt.Errorf("unsupported retention %q", event.Retention)
 	}
@@ -577,6 +673,7 @@ func validateEventRetentionStates(event Event) error {
 }
 
 func validateEventSource(event Event) error {
+
 	if !validSourceType(event.Source.SourceType) {
 		return fmt.Errorf("unsupported source_type %q", event.Source.SourceType)
 	}
@@ -590,17 +687,20 @@ func validateEventContent(event Event) error {
 	if err := validateEventDigest(event); err != nil {
 		return err
 	}
+
 	return validateEventContentRef(event)
 }
 
 func validateEventDigest(event Event) error {
 	if event.DigestAlgorithm != DigestAlgorithmSHA256 || !sha256Pattern.MatchString(event.ContentDigest) {
+
 		return errors.New("interaction event requires sha256 content digest")
 	}
 	return nil
 }
 
 func validateEventContentRef(event Event) error {
+
 	if err := validateContentRefFormat(event.ContentRef); err != nil {
 		return err
 	}
@@ -609,15 +709,16 @@ func validateEventContentRef(event Event) error {
 	}
 	return nil
 }
-
 func validateContentRefFormat(contentRef string) error {
 	if contentRef != "" && !contentRefPattern.MatchString(contentRef) {
+
 		return fmt.Errorf("unsupported content_ref %q", contentRef)
 	}
 	return nil
 }
 
 func validateEventTiming(event Event) error {
+
 	if _, err := time.Parse(time.RFC3339, event.ObservedAt); err != nil {
 		return errors.New("observed_at must be RFC3339")
 	}
@@ -632,12 +733,14 @@ func validateEventTiming(event Event) error {
 
 func validateEventRefs(event Event) error {
 	if err := validateReferenceRefs(event.ReferenceRefs); err != nil {
+
 		return err
 	}
 	return validateLLMRefs(event.LLMRefs)
 }
 
 func validateReferenceRefs(refs []string) error {
+
 	for _, ref := range refs {
 		if !validReference(ref) {
 			return fmt.Errorf("unsupported reference_ref %q", ref)
@@ -647,6 +750,7 @@ func validateReferenceRefs(refs []string) error {
 }
 
 func validateLLMRefs(refs []LLMRef) error {
+
 	for _, ref := range refs {
 		if !validLLMLinkageState(ref.LinkageState) {
 			return fmt.Errorf("unsupported llm linkage_state %q", ref.LinkageState)
@@ -658,8 +762,8 @@ func validateLLMRefs(refs []LLMRef) error {
 func validLLMLinkageState(state string) bool {
 	return state == StateNotAssessed || state == StateCannotVerify || state == StateReferenced
 }
-
 func WriteTrace(path string, trace Trace) error {
+
 	if strings.TrimSpace(path) == "" {
 		return errors.New("interaction command requires --out")
 	}
@@ -674,6 +778,7 @@ func WriteTrace(path string, trace Trace) error {
 }
 
 func WriteContentBlobs(tracePath string, trace Trace, bodies map[string][]byte) error {
+
 	for _, event := range trace.Events {
 		body, ok := bodies[event.InteractionID]
 		if !ok {
@@ -687,6 +792,7 @@ func WriteContentBlobs(tracePath string, trace Trace, bodies map[string][]byte) 
 }
 
 func writeContentBlob(tracePath string, event Event, body []byte) error {
+
 	sum := sha256.Sum256(body)
 	if event.ContentDigest != hex.EncodeToString(sum[:]) {
 		return fmt.Errorf("content digest mismatch for %s", event.InteractionID)
@@ -699,6 +805,8 @@ func writeContentBlob(tracePath string, event Event, body []byte) error {
 }
 
 func ReadTrace(path string) (Trace, error) {
+	// Reads validate immediately so callers never receive structurally invalid
+	// trace data as trusted input.
 	var trace Trace
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -714,6 +822,7 @@ func ReadTrace(path string) (Trace, error) {
 }
 
 func ValidateTrace(trace Trace) error {
+
 	if trace.SchemaVersion != SchemaVersion {
 		return errors.New("interaction trace has unsupported schema_version")
 	}
@@ -727,6 +836,7 @@ func ValidateTrace(trace Trace) error {
 }
 
 func validateTraceHeader(trace Trace) error {
+
 	if err := validateSafeID("task_id", trace.TaskID); err != nil {
 		return err
 	}
@@ -740,6 +850,7 @@ func validateTraceHeader(trace Trace) error {
 }
 
 func validateTraceEvents(trace Trace) error {
+
 	for _, event := range trace.Events {
 		if event.TaskID != trace.TaskID {
 			return errors.New("interaction trace event task_id mismatch")
@@ -750,8 +861,8 @@ func validateTraceEvents(trace Trace) error {
 	}
 	return nil
 }
-
 func SummarizeTrace(trace Trace) Summary {
+
 	summary := newTraceSummaryCounter()
 	for _, event := range trace.Events {
 		summarizeTraceEvent(event, summary)
@@ -760,29 +871,40 @@ func SummarizeTrace(trace Trace) Summary {
 	if !summary.assignmentObserved {
 		notAssessed = append(notAssessed, "task_assignment event absent; post-assignment correction count is not assessed")
 	}
+
+	return traceSummary(trace, summary, notAssessed)
+}
+func traceSummary(trace Trace, summary *traceSummaryCounter, notAssessed []string) Summary {
+
+	counts := traceSummaryCounts(trace, summary)
 	return Summary{
-		SchemaVersion:          SchemaVersion,
-		TaskID:                 trace.TaskID,
-		TraceID:                trace.TraceID,
-		AssessmentState:        trace.AssessmentState,
-		EventCount:             len(trace.Events),
-		FrictionCounts:         summary.frictionCounts,
-		CorrectionAfterTask:    summary.correctionsAfterAssignment,
-		PlanRejectionCount:     summary.planRejectionCount,
-		ClarificationTurnCount: summary.clarificationCount,
-		UnreferencedEventCount: summary.unreferencedCount,
-		NotAssessed:            notAssessed,
-		CannotVerify:           trace.CannotVerify,
+		SchemaVersion:   SchemaVersion,
+		TaskID:          trace.TaskID,
+		TraceID:         trace.TraceID,
+		AssessmentState: trace.AssessmentState,
+
+		EventCount:             counts.events,
+		FrictionCounts:         counts.friction,
+		CorrectionAfterTask:    counts.corrections,
+		PlanRejectionCount:     counts.planRejections,
+		ClarificationTurnCount: counts.clarifications,
+		UnreferencedEventCount: counts.unreferenced,
+
+		NotAssessed:  notAssessed,
+		CannotVerify: trace.CannotVerify,
 	}
 }
 
-type traceSummaryCounter struct {
-	frictionCounts             map[string]int
-	correctionsAfterAssignment int
-	planRejectionCount         int
-	clarificationCount         int
-	unreferencedCount          int
-	assignmentObserved         bool
+func traceSummaryCounts(trace Trace, summary *traceSummaryCounter) traceCounts {
+
+	return traceCounts{
+		events:         len(trace.Events),
+		friction:       summary.frictionCounts,
+		corrections:    summary.correctionsAfterAssignment,
+		planRejections: summary.planRejectionCount,
+		clarifications: summary.clarificationCount,
+		unreferenced:   summary.unreferencedCount,
+	}
 }
 
 func newTraceSummaryCounter() *traceSummaryCounter {
@@ -792,6 +914,7 @@ func newTraceSummaryCounter() *traceSummaryCounter {
 }
 
 func summarizeTraceEvent(event Event, summary *traceSummaryCounter) {
+
 	summary.frictionCounts[event.FrictionClass]++
 	if event.EventType == "task_assignment" {
 		summary.assignmentObserved = true
@@ -802,6 +925,7 @@ func summarizeTraceEvent(event Event, summary *traceSummaryCounter) {
 }
 
 func summarizeTraceEventTypeCounters(eventType string, summary *traceSummaryCounter) {
+
 	switch eventType {
 	case "plan_rejected":
 		summary.planRejectionCount++
@@ -813,6 +937,7 @@ func summarizeTraceEventTypeCounters(eventType string, summary *traceSummaryCoun
 }
 
 func summarizeTraceReferenceAndCorrection(event Event, summary *traceSummaryCounter) {
+
 	if eventIsUnreferenced(event) {
 		summary.unreferencedCount++
 	}
@@ -826,6 +951,7 @@ func eventIsUnreferenced(event Event) bool {
 }
 
 func isPostAssignmentCorrection(eventType string) bool {
+
 	switch eventType {
 	case "corrective_feedback", "boundary_violation", "evidence_correction":
 		return true
@@ -835,6 +961,8 @@ func isPostAssignmentCorrection(eventType string) bool {
 }
 
 func ReadEnvelope(path string) (Envelope, error) {
+	// Envelopes are validated on read for the same reason traces are: consumers
+	// should not summarize invalid reference bundles.
 	var envelope Envelope
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -850,6 +978,7 @@ func ReadEnvelope(path string) (Envelope, error) {
 }
 
 func ValidateEnvelope(envelope Envelope) error {
+
 	if envelope.SchemaVersion != SchemaVersion {
 		return errors.New("delivery envelope has unsupported schema_version")
 	}
@@ -864,12 +993,13 @@ func ValidateEnvelope(envelope Envelope) error {
 
 func validateEnvelopeIdentity(envelope Envelope) error {
 	if err := validateSafeID("task_id", envelope.TaskID); err != nil {
+
 		return err
 	}
 	return validateSafeID("envelope_id", envelope.EnvelopeID)
 }
-
 func validateEnvelopeRunRefs(refs []string) error {
+
 	for _, ref := range refs {
 		if !runRefPattern.MatchString(ref) {
 			return fmt.Errorf("unsupported run_ref %q", ref)
@@ -879,6 +1009,7 @@ func validateEnvelopeRunRefs(refs []string) error {
 }
 
 func validateEnvelopeRefs(envelope Envelope) error {
+
 	for _, refs := range envelopeReferenceGroups(envelope) {
 		for _, ref := range refs {
 			if !validReference(ref) {
@@ -888,34 +1019,73 @@ func validateEnvelopeRefs(envelope Envelope) error {
 	}
 	return nil
 }
-
 func envelopeReferenceGroups(envelope Envelope) [][]string {
 	return [][]string{envelope.OperationRefs, envelope.ToolRefs, envelope.MutationRefs, envelope.LLMRefs, envelope.InteractionRefs, envelope.PromiseRefs, envelope.StageRefs, envelope.FrictionRefs, envelope.TaskRefs, envelope.SourceRefs}
 }
 
 func SummarizeEnvelope(envelope Envelope) Summary {
+
+	return envelopeSummary(envelope, envelopeReferenceCounts(envelope))
+}
+
+func envelopeSummary(envelope Envelope, counts envelopeRefCounts) Summary {
+
 	return Summary{
-		SchemaVersion:       SchemaVersion,
-		TaskID:              envelope.TaskID,
-		EnvelopeID:          envelope.EnvelopeID,
-		AssessmentState:     envelope.AssessmentState,
-		RunRefCount:         len(envelope.RunRefs),
-		SourceRefCount:      len(envelope.SourceRefs),
-		TaskRefCount:        len(envelope.TaskRefs),
-		PromiseRefCount:     len(envelope.PromiseRefs),
-		InteractionRefCount: len(envelope.InteractionRefs),
-		OperationRefCount:   len(envelope.OperationRefs),
-		LLMRefCount:         len(envelope.LLMRefs),
-		ToolRefCount:        len(envelope.ToolRefs),
-		MutationRefCount:    len(envelope.MutationRefs),
-		StageRefCount:       len(envelope.StageRefs),
-		FrictionRefCount:    len(envelope.FrictionRefs),
-		NotAssessed:         envelope.NotAssessed,
-		CannotVerify:        envelope.CannotVerify,
+		SchemaVersion: SchemaVersion,
+
+		TaskID:     envelope.TaskID,
+		EnvelopeID: envelope.EnvelopeID,
+
+		AssessmentState: envelope.AssessmentState,
+
+		RunRefCount:         counts.run,
+		SourceRefCount:      counts.source,
+		TaskRefCount:        counts.task,
+		PromiseRefCount:     counts.promise,
+		InteractionRefCount: counts.interaction,
+		OperationRefCount:   counts.operation,
+		LLMRefCount:         counts.llm,
+		ToolRefCount:        counts.tool,
+		MutationRefCount:    counts.mutation,
+		StageRefCount:       counts.stage,
+		FrictionRefCount:    counts.friction,
+
+		NotAssessed:  envelope.NotAssessed,
+		CannotVerify: envelope.CannotVerify,
 	}
 }
 
+func envelopeReferenceCounts(envelope Envelope) envelopeRefCounts {
+
+	counts := primaryEnvelopeReferenceCounts(envelope)
+	addExecutionEnvelopeReferenceCounts(&counts, envelope)
+	return counts
+}
+
+func primaryEnvelopeReferenceCounts(envelope Envelope) envelopeRefCounts {
+
+	run := len(envelope.RunRefs)
+	source := len(envelope.SourceRefs)
+	task := len(envelope.TaskRefs)
+	promise := len(envelope.PromiseRefs)
+
+	return envelopeRefCounts{run: run, source: source, task: task, promise: promise}
+}
+
+func addExecutionEnvelopeReferenceCounts(counts *envelopeRefCounts, envelope Envelope) {
+
+	counts.interaction = len(envelope.InteractionRefs)
+	counts.operation = len(envelope.OperationRefs)
+	counts.llm = len(envelope.LLMRefs)
+	counts.tool = len(envelope.ToolRefs)
+
+	counts.mutation = len(envelope.MutationRefs)
+	counts.stage = len(envelope.StageRefs)
+	counts.friction = len(envelope.FrictionRefs)
+}
+
 func normalizeRelay(opts RelayOptions) RelayOptions {
+
 	opts.TaskID = strings.TrimSpace(opts.TaskID)
 	opts.ActorType = strings.TrimSpace(opts.ActorType)
 	opts.ActorID = strings.TrimSpace(opts.ActorID)
@@ -924,6 +1094,20 @@ func normalizeRelay(opts RelayOptions) RelayOptions {
 	opts.OperationID = strings.TrimSpace(opts.OperationID)
 	opts.StageID = strings.TrimSpace(opts.StageID)
 	opts.Out = strings.TrimSpace(opts.Out)
+	return defaultRelayOptions(opts)
+}
+
+func defaultRelayOptions(opts RelayOptions) RelayOptions {
+
+	opts = defaultRelayStrings(opts)
+	if opts.Now.IsZero() {
+		opts.Now = time.Now().UTC()
+	}
+	return opts
+}
+
+func defaultRelayStrings(opts RelayOptions) RelayOptions {
+
 	if opts.ActorType == "" {
 		opts.ActorType = "human_user"
 	}
@@ -933,13 +1117,10 @@ func normalizeRelay(opts RelayOptions) RelayOptions {
 	if opts.EventType == "" {
 		opts.EventType = "corrective_feedback"
 	}
-	if opts.Now.IsZero() {
-		opts.Now = time.Now().UTC()
-	}
 	return opts
 }
-
 func normalizeImport(opts ImportOptions) ImportOptions {
+
 	opts.TaskID = strings.TrimSpace(opts.TaskID)
 	opts.Source = strings.TrimSpace(opts.Source)
 	opts.SourceRef = strings.TrimSpace(opts.SourceRef)
@@ -952,6 +1133,10 @@ func normalizeImport(opts ImportOptions) ImportOptions {
 }
 
 func readBody(stdin io.Reader) ([]byte, error) {
+	// Empty stdin is rejected because a relay event without content would have no
+	// observed interaction payload to hash.
+	// The limit reader detects oversize bodies without buffering unbounded
+	// interaction content.
 	var buf bytes.Buffer
 	limited := io.LimitReader(stdin, MaxBodyBytes+1)
 	if _, err := buf.ReadFrom(limited); err != nil {
@@ -968,6 +1153,7 @@ func readBody(stdin io.Reader) ([]byte, error) {
 }
 
 func readJSONLEvents(path string) ([]Event, error) {
+
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -975,8 +1161,8 @@ func readJSONLEvents(path string) ([]Event, error) {
 	defer file.Close()
 	return scanJSONLEvents(file)
 }
-
 func scanJSONLEvents(file *os.File) ([]Event, error) {
+
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), MaxBodyBytes*4)
 	events := make([]Event, 0)
@@ -994,6 +1180,8 @@ func scanJSONLEvents(file *os.File) ([]Event, error) {
 }
 
 func appendJSONLEventLine(events []Event, text string) ([]Event, error) {
+	// Blank JSONL records are skipped without advancing source sequence because
+	// they are not evidence rows.
 	var event Event
 	keep, err := parseJSONLEventLine(text, &event)
 	if err != nil || !keep {
@@ -1003,6 +1191,7 @@ func appendJSONLEventLine(events []Event, text string) ([]Event, error) {
 }
 
 func parseJSONLEventLine(text string, event *Event) (bool, error) {
+
 	line := strings.TrimSpace(text)
 	if line == "" {
 		return false, nil
@@ -1014,6 +1203,7 @@ func parseJSONLEventLine(text string, event *Event) (bool, error) {
 }
 
 func validateOrdering(events []Event) error {
+
 	last := map[string]int{}
 	seen := map[string]bool{}
 	for _, event := range events {
@@ -1028,6 +1218,7 @@ func validateOrdering(events []Event) error {
 }
 
 func runForward(ctx context.Context, command []string, body []byte, stdout, stderr io.Writer) (int, error) {
+
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Stdin = bytes.NewReader(body)
 	cmd.Stdout = stdout
@@ -1044,6 +1235,7 @@ func runForward(ctx context.Context, command []string, body []byte, stdout, stde
 }
 
 func validateSafeID(label, value string) error {
+
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return fmt.Errorf("%s is required", label)
@@ -1053,8 +1245,8 @@ func validateSafeID(label, value string) error {
 	}
 	return nil
 }
-
 func unsafeCount(body []byte) int {
+
 	text := string(body)
 	count := 0
 	for _, pattern := range []*regexp.Regexp{privatePathPattern, tokenPattern, authURLPattern} {
@@ -1064,6 +1256,7 @@ func unsafeCount(body []byte) int {
 }
 
 func randomHex(n int) string {
+
 	buf := make([]byte, n)
 	if _, err := rand.Read(buf); err != nil {
 		sum := sha256.Sum256([]byte(fmt.Sprintf("%d", time.Now().UnixNano())))
@@ -1073,6 +1266,7 @@ func randomHex(n int) string {
 }
 
 func validActorType(value string) bool {
+
 	switch value {
 	case "human_user", "human_role", "human_group", "ai_agent", "model", "system", "tool", "organization", "other":
 		return true
@@ -1082,6 +1276,7 @@ func validActorType(value string) bool {
 }
 
 func validSourceType(value string) bool {
+
 	switch value {
 	case SourceObservedControlChannel, SourcePreclassifiedTranscript:
 		return true
@@ -1095,6 +1290,7 @@ func validEventType(value string) bool {
 }
 
 func validRetention(value string) bool {
+
 	switch value {
 	case RetentionDigestOnly, RetentionSanitizedExcerpt, RetentionEncryptedRawRef, RetentionExternalArtifactRef, RetentionNotAssessed:
 		return true
@@ -1104,6 +1300,7 @@ func validRetention(value string) bool {
 }
 
 func validCompleteness(value string) bool {
+
 	switch value {
 	case CompletenessComplete, CompletenessPartial, CompletenessNotAssessed, CompletenessCannotVerify:
 		return true
@@ -1113,6 +1310,7 @@ func validCompleteness(value string) bool {
 }
 
 func validChannelExclusivity(value string) bool {
+
 	switch value {
 	case ChannelExclusivityNotAssessed, StateReferenced, StateCannotVerify:
 		return true
@@ -1120,8 +1318,8 @@ func validChannelExclusivity(value string) bool {
 		return false
 	}
 }
-
 func validEventState(value string) bool {
+
 	switch value {
 	case StateObserved, StateReferenced, StateUnreferenced, StateNotAssessed, StateCannotVerify, "redacted":
 		return true
@@ -1135,6 +1333,7 @@ func frictionClass(eventType string) string {
 }
 
 func validReference(ref string) bool {
+
 	if strings.TrimSpace(ref) == "" || strings.Contains(ref, " ") {
 		return false
 	}
@@ -1145,10 +1344,12 @@ func validReference(ref string) bool {
 }
 
 func contentBlobPath(tracePath string, event Event) string {
+
 	return filepath.Join(filepath.Dir(tracePath), "interactions", event.TaskID, event.InteractionID+".txt")
 }
 
 func EventTypes() []string {
+
 	values := []string{
 		"task_assignment",
 		"clarification_request",

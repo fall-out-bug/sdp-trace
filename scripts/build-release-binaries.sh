@@ -35,8 +35,14 @@ build_one windows arm64
 
 (
   cd "$OUT_DIR"
-  find . -maxdepth 1 -type f -name "sdp-trace_${VERSION}_*" ! -name "*.sha256" \
-    -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
+  for artifact in sdp-trace_"$VERSION"_*; do
+    case "$artifact" in
+      *.sha256) continue ;;
+    esac
+    if [[ -f "$artifact" ]]; then
+      sha256sum "$artifact"
+    fi
+  done | sort > SHA256SUMS
 )
 
 printf 'built sdp-trace %s into %s\n' "$VERSION" "$OUT_DIR"

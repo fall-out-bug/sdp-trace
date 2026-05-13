@@ -4,6 +4,7 @@
 .sdp-trace-runs/
 benchmarks/repos/
 dist/
+dist-local/
 tmp/
 node_modules/
 examples/pilot-fixtures/**/MODULE.bazel.lock

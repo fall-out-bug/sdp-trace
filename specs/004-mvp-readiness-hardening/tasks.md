@@ -28,9 +28,10 @@
 
 ## Phase 3: Gate Baseline, Lint, And Small Hygiene Fixes
 
-- [x] T014 Define the initial measurable CRAP, cyclomatic complexity, cognitive complexity, and coverage gates before decomposition starts.
+- [x] T014 Define the initial measurable CRAP, cyclomatic complexity, cognitive complexity, MI ratchet, and coverage gates before decomposition starts.
 - [x] T015 Record pre-change per-package coverage baseline for all MVP-critical packages.
 - [x] T016 Record pre-change per-function CRAP baseline using function coverage plus cyclomatic complexity, or explicitly mark CRAP computation `assessed_gap` and block CRAP readiness claims.
+- [x] T016a Record function/file-level MI baselines and ratchets or explicitly mark absolute MI `>70` as `assessed_gap` and block MI pass claims.
 - [x] T017 Fix `internal/authority/authority.go` ineffectual assignment found by `golangci-lint`; if changed package coverage is below the selected floor, add a focused test for the changed path.
 - [x] T018 Fix `internal/telemetry/prometheus.go` `gosimple` append-loop findings; if changed package coverage is below the selected floor, add a focused test for the changed path.
 - [x] T019 Run `golangci-lint run ./...` and record result.
@@ -51,12 +52,12 @@
 - [x] T028 Add focused tests for `internal/posture` primary happy/error paths for validated export behavior.
 - [x] T029 Add focused tests for refactored harness observation behavior.
 - [x] T030 Add focused tests for `internal/verifier` MVP-critical happy/error paths, or remove it from MVP claim surface.
-- [x] T031 Run `go test ./... -coverprofile` and record package-level and function-level coverage deltas.
+- [x] T031 Run `go test -count=1 ./... -coverprofile` and record package-level and function-level coverage deltas.
 
 ## Phase 6: CI And Verification
 
 - [x] T032 Add stable CI steps for lint/complexity/coverage gates, or record missing CI enforcement as `assessed_gap` with a concrete follow-up.
-- [x] T033 Run `go test ./...`.
+- [x] T033 Run `go test -count=1 ./...`.
 - [x] T034 Run `jq empty schema/*.json` plus changed JSON examples.
 - [x] T035 Run `git diff --check HEAD`.
 - [x] T036 Run docs freshness check or manual command-surface comparison and record evidence, including the exact comparison method.

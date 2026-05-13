@@ -58,6 +58,12 @@ func TestCRAPHelperEdges(t *testing.T) {
 	if got := stringItems([]any{"sdp", 1, "trace"}); strings.Join(got, ",") != "sdp,trace" {
 		t.Fatalf("stringItems = %v", got)
 	}
+	if got := audienceString([]any{"sdp-trace", "other"}); got != "sdp-trace,other" {
+		t.Fatalf("audienceString list = %q", got)
+	}
+	if got := audienceString("sdp-trace"); got != "sdp-trace" {
+		t.Fatalf("audienceString scalar = %q", got)
+	}
 
 	root := t.TempDir()
 	for name, payload := range map[string]string{
@@ -284,7 +290,7 @@ func completeGitHubEnv() map[string]string {
 		"GITHUB_REPOSITORY":              "org/repo",
 		"GITHUB_REF":                     "refs/heads/main",
 		"GITHUB_SERVER_URL":              "https://github.com",
-		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://pipelines.actions.githubusercontent.com/token",
+		"ACTIONS_ID_TOKEN_REQUEST_URL":   "https://token.actions.githubusercontent.com/token",
 		"ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
 	}
 }
@@ -362,6 +368,21 @@ func TestFetchGitHubOIDCTokenInvalidRequestHost(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "unexpected oidc request host: malicious.example") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestFetchGitHubOIDCTokenRejectsSiblingHostAndHTTP(t *testing.T) {
+	for _, requestURL := range []string{
+		"https://evilactions.githubusercontent.com/token",
+		"https://pipelines.actions.githubusercontent.com/token",
+		"http://token.actions.githubusercontent.com/token",
+	} {
+		_, err := FetchGitHubOIDCToken(map[string]string{
+			"ACTIONS_ID_TOKEN_REQUEST_URL": requestURL,
+		})
+		if err == nil {
+			t.Fatalf("expected %s to be rejected", requestURL)
+		}
 	}
 }
 

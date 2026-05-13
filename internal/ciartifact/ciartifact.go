@@ -63,6 +63,19 @@ var familyOrder = []string{
 	"change_ci",
 }
 
+var validFamilies = map[string]bool{
+	"run":            true,
+	"report":         true,
+	"witness":        true,
+	"provenance":     true,
+	"evidence":       true,
+	"trace":          true,
+	"artifact_index": true,
+	"redaction_scan": true,
+	"review":         true,
+	"change_ci":      true,
+}
+
 type Manifest struct {
 	SchemaVersion    string              `json:"schema_version"`
 	SelectedProfile  string              `json:"selected_profile"`
@@ -170,38 +183,73 @@ type OutputSafetyResult struct {
 }
 
 func Evaluate(manifest Manifest) ObservationResult {
+
 	source, sourceSafe := sanitizeSource(manifest.SelectedSource)
 	run, runSafe := sanitizeRun(manifest.SelectedRun)
-	reqs := requirements(manifest.RequiredFamilies)
-	families := evaluateFamilies(reqs, manifest.ArtifactFamilies)
-	index := evaluateIndex(manifest.ArtifactIndex)
-	safety := evaluateSafety(manifest.OutputSafety)
+	inputs := evaluatedManifestInputs(manifest)
 	identityCannotVerify := !sourceSafe || !runSafe
-	state := topLevel(families, index, safety, len(reqs), identityCannotVerify)
+	state := topLevel(inputs.families, inputs.index, inputs.safety, len(inputs.reqs), identityCannotVerify)
+	return observationResult(manifest, source, run, inputs, state, identityCannotVerify)
+}
+func observationResult(manifest Manifest, source SourceIdentity, run RunIdentity, inputs evaluatedInputs, state string, identityCannotVerify bool) ObservationResult {
+
+	result := baseObservationResult(manifest, source, run, inputs, state)
+	addObservationGaps(&result, inputs, identityCannotVerify)
+	return result
+}
+
+func baseObservationResult(manifest Manifest, source SourceIdentity, run RunIdentity, inputs evaluatedInputs, state string) ObservationResult {
 	result := ObservationResult{
 		SchemaVersion:            SchemaVersion,
 		SelectedProfile:          ProfileCIArtifactObservation,
 		AuthorityScope:           safeAuthorityScope(manifest.AuthorityScope),
 		ArtifactObservationState: state,
-		SelectedSource:           source,
-		SelectedRun:              run,
-		ProducerScope:            aggregateProducerScope(families),
-		ArtifactAccessState:      aggregateAccessState(families),
-		RequiredFamilies:         orderedRequirements(reqs),
-		ArtifactFamilies:         families,
-		Bindings:                 bindingSummary(families),
-		ArtifactIndex:            index,
-		OutputSafety:             safety,
-		SafetyRuleset:            defaultSafetyRuleset(manifest.SafetyRuleset),
+
+		SelectedSource: source,
+		SelectedRun:    run,
+
+		ProducerScope:       aggregateProducerScope(inputs.families),
+		ArtifactAccessState: aggregateAccessState(inputs.families),
+		RequiredFamilies:    orderedRequirements(inputs.reqs),
+		ArtifactFamilies:    inputs.families,
+
+		Bindings:      bindingSummary(inputs.families),
+		ArtifactIndex: inputs.index,
+		OutputSafety:  inputs.safety,
+
+		SafetyRuleset: defaultSafetyRuleset(manifest.SafetyRuleset),
 	}
-	result.Reasons = reasons(families, index, safety, identityCannotVerify)
-	result.NextActions = nextActions(families, index, safety, identityCannotVerify)
 	return result
+}
+
+func addObservationGaps(result *ObservationResult, inputs evaluatedInputs, identityCannotVerify bool) {
+
+	result.Reasons = reasons(inputs.families, inputs.index, inputs.safety, identityCannotVerify)
+	result.NextActions = nextActions(inputs.families, inputs.index, inputs.safety, identityCannotVerify)
+}
+
+type evaluatedInputs struct {
+	reqs     map[string]FamilyRequirement
+	families []FamilyObservation
+	index    ArtifactIndexResult
+	safety   OutputSafetyResult
+}
+
+func evaluatedManifestInputs(manifest Manifest) evaluatedInputs {
+
+	reqs := requirements(manifest.RequiredFamilies)
+	return evaluatedInputs{
+		reqs:     reqs,
+		families: evaluateFamilies(reqs, manifest.ArtifactFamilies),
+		index:    evaluateIndex(manifest.ArtifactIndex),
+		safety:   evaluateSafety(manifest.OutputSafety),
+	}
 }
 
 func requirements(input []FamilyRequirement) map[string]FamilyRequirement {
 	reqs := map[string]FamilyRequirement{}
 	for _, req := range input {
+
 		family := canonicalFamily(req.Family)
 		if family == "" {
 			continue
@@ -214,6 +262,7 @@ func requirements(input []FamilyRequirement) map[string]FamilyRequirement {
 }
 
 func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) []FamilyObservation {
+
 	observed := observedFamilies(inputs)
 	out, seen := requiredFamilyObservations(reqs, observed)
 	for _, family := range extraFamilies(observed, seen) {
@@ -225,6 +274,7 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 func observedFamilies(inputs []FamilyInput) map[string]FamilyInput {
 	observed := map[string]FamilyInput{}
 	for _, input := range inputs {
+
 		input.Family = canonicalFamily(input.Family)
 		if !validFamily(input.Family) {
 			continue
@@ -232,12 +282,14 @@ func observedFamilies(inputs []FamilyInput) map[string]FamilyInput {
 		input.ProducerScope = safeProducerScope(input.ProducerScope)
 		input.ArtifactAccessState = safeAccessState(input.ArtifactAccessState)
 		input.BindingState = safeBindingState(input.BindingState)
+
 		observed[input.Family] = input
 	}
 	return observed
 }
 
 func requiredFamilyObservations(reqs map[string]FamilyRequirement, observed map[string]FamilyInput) ([]FamilyObservation, map[string]bool) {
+
 	seen := map[string]bool{}
 	out := make([]FamilyObservation, 0, len(reqs)+len(observed))
 	for _, family := range familyOrder {
@@ -253,6 +305,7 @@ func extraFamilies(observed map[string]FamilyInput, seen map[string]bool) []stri
 	var extra []string
 	for family := range observed {
 		if !seen[family] {
+
 			extra = append(extra, family)
 		}
 	}
@@ -261,29 +314,52 @@ func extraFamilies(observed map[string]FamilyInput, seen map[string]bool) []stri
 }
 
 func evaluateFamily(req FamilyRequirement, input FamilyInput, required bool) FamilyObservation {
-	producer := safeProducerScope(input.ProducerScope)
-	access := familyAccessState(input)
-	binding := familyBindingState(input)
-	result := initialFamilyObservation(req, input, required, producer, access, binding)
+
+	state := familyInputState(input)
+	result := initialFamilyObservation(req, input, required, state.producer, state.access, state.binding)
 	if !required {
+
 		return result
 	}
+	markRequiredFamilyObserved(&result)
+	if applyAccessResult(&result, state.access) {
+
+		return result
+	}
+	if applyRequiredProducerResult(&result, req.RequiredProducerScope, state.producer) {
+
+		return result
+	}
+	applyBindingResult(&result, state.binding)
+	return result
+}
+
+type familyInput struct {
+	producer string
+	access   string
+	binding  string
+}
+
+func familyInputState(input FamilyInput) familyInput {
+
+	return familyInput{
+		producer: safeProducerScope(input.ProducerScope),
+		access:   familyAccessState(input),
+		binding:  familyBindingState(input),
+	}
+}
+
+func markRequiredFamilyObserved(result *FamilyObservation) {
+
 	result.FamilyState = StatePass
 	result.ReasonCode = "family_observed"
 	result.Reason = "required artifact family was observed with selected proof level"
 	result.NextAction = ""
-	if applyAccessResult(&result, access) {
-		return result
-	}
-	if applyRequiredProducerResult(&result, req.RequiredProducerScope, producer) {
-		return result
-	}
-	applyBindingResult(&result, binding)
-	return result
 }
 
 func familyAccessState(input FamilyInput) string {
 	if input.ArtifactAccessState == "" {
+
 		return AccessAbsent
 	}
 	return safeAccessState(input.ArtifactAccessState)
@@ -291,6 +367,7 @@ func familyAccessState(input FamilyInput) string {
 
 func familyBindingState(input FamilyInput) string {
 	if input.BindingState == "" {
+
 		return BindingAbsent
 	}
 	return safeBindingState(input.BindingState)
@@ -299,8 +376,10 @@ func familyBindingState(input FamilyInput) string {
 func initialFamilyObservation(req FamilyRequirement, input FamilyInput, required bool, producer, access, binding string) FamilyObservation {
 	family := req.Family
 	if family == "" {
+
 		family = input.Family
 	}
+
 	return FamilyObservation{
 		Family:              family,
 		Required:            required,
@@ -339,6 +418,7 @@ var bindingResults = map[string]familyOutcome{
 
 func applyAccessResult(result *FamilyObservation, access string) bool {
 	if outcome, ok := accessResults[access]; ok {
+
 		setFamilyResult(result, outcome)
 	}
 	return result.FamilyState != StatePass
@@ -348,19 +428,23 @@ func applyRequiredProducerResult(result *FamilyObservation, requiredProducer, pr
 	requiresCIUploaded := requiredProducer == ProducerCIUploaded
 	producerIsCIUploaded := producer == ProducerCIUploaded
 	if !requiresCIUploaded || producerIsCIUploaded {
+
 		return false
 	}
+
 	setFamilyResult(result, familyOutcome{StateCannotVerify, lowerAuthorityReason(producer), "artifact family was observed below the selected CI-uploaded proof level", "Provide CI-uploaded artifact evidence for the selected family."})
 	return true
 }
 
 func applyBindingResult(result *FamilyObservation, binding string) {
 	if outcome, ok := bindingResults[binding]; ok {
+
 		setFamilyResult(result, outcome)
 	}
 }
 
 func setFamilyResult(result *FamilyObservation, outcome familyOutcome) {
+
 	result.FamilyState = outcome.state
 	result.ReasonCode = outcome.code
 	result.Reason = outcome.reason
@@ -368,11 +452,13 @@ func setFamilyResult(result *FamilyObservation, outcome familyOutcome) {
 }
 
 func evaluateIndex(input ArtifactIndexInput) ArtifactIndexResult {
+
 	state := defaultString(input.State, IndexNotAssessed)
 	if outcome, ok := indexOutcomes[state]; ok {
 		return ArtifactIndexResult{State: state, Result: outcome.state, ReasonCode: outcome.code, Reason: outcome.reason}
 	}
 	outcome := indexOutcomes[IndexUnverifiable]
+
 	return ArtifactIndexResult{State: IndexUnverifiable, Result: outcome.state, ReasonCode: outcome.code, Reason: "artifact index state is unrecognized under selected profile"}
 }
 
@@ -386,9 +472,11 @@ var indexOutcomes = map[string]familyOutcome{
 }
 
 func evaluateSafety(input OutputSafetyInput) OutputSafetyResult {
+
 	state := defaultString(input.State, StateNotAssessed)
 	outcome, ok := safetyOutcomes[state]
 	if !ok {
+
 		state = StateCannotVerify
 		outcome = familyOutcome{StateCannotVerify, "output_safety_cannot_verify", "observation output safety state is unrecognized under selected profile", ""}
 	}
@@ -404,28 +492,34 @@ var safetyOutcomes = map[string]familyOutcome{
 
 func topLevel(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, requiredCount int, identityCannotVerify bool) string {
 	if artifactAssessmentHasState(families, index, safety, StateFail) {
+
 		return StateFail
 	}
 	if identityOrArtifactCannotVerify(identityCannotVerify, families, index, safety) {
+
 		return StateCannotVerify
 	}
 	if requiredCount == 0 {
+
 		return StateNotAssessed
 	}
 	return StatePass
 }
 
 func identityOrArtifactCannotVerify(identityCannotVerify bool, families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult) bool {
+
 	return identityCannotVerify || artifactAssessmentHasState(families, index, safety, StateCannotVerify)
 }
 
 func artifactAssessmentHasState(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, state string) bool {
+
 	return anyFamilyState(families, state) || index.Result == state || safety.State == state
 }
 
 func anyFamilyState(families []FamilyObservation, state string) bool {
 	for _, family := range families {
 		if family.FamilyState == state {
+
 			return true
 		}
 	}
@@ -434,6 +528,7 @@ func anyFamilyState(families []FamilyObservation, state string) bool {
 
 func reasons(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
 	set := map[string]bool{}
+
 	addFamilyReasons(set, families)
 	addVisibleReason(set, index.Result, index.ReasonCode, index.Reason)
 	addVisibleReason(set, safety.State, safety.ReasonCode, safety.Reason)
@@ -443,12 +538,14 @@ func reasons(families []FamilyObservation, index ArtifactIndexResult, safety Out
 
 func addFamilyReasons(set map[string]bool, families []FamilyObservation) {
 	for _, family := range families {
+
 		addVisibleReason(set, family.FamilyState, family.ReasonCode, family.Reason)
 	}
 }
 
 func addVisibleReason(set map[string]bool, state, code, reason string) {
 	if familyReasonVisible(state) {
+
 		set[code+": "+reason] = true
 	}
 }
@@ -465,6 +562,7 @@ func familyReasonVisible(state string) bool {
 
 func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
 	set := map[string]bool{}
+
 	addFamilyActions(set, families)
 	addConditionalAction(set, resultNeedsAction(index.Result), "Regenerate or supply a verifier-readable artifact index.")
 	addConditionalAction(set, resultNeedsAction(safety.State), "Use the recorded safety ruleset id to remove unsafe artifact output before rerun.")
@@ -474,6 +572,7 @@ func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety
 
 func addFamilyActions(set map[string]bool, families []FamilyObservation) {
 	for _, family := range families {
+
 		addConditionalAction(set, family.NextAction != "", family.NextAction)
 	}
 }
@@ -489,10 +588,12 @@ func resultNeedsAction(state string) bool {
 }
 
 func bindingSummary(families []FamilyObservation) BindingSummary {
+
 	sourceRun := BindingNotAssessed
 	producer := BindingNotAssessed
 	for _, family := range families {
 		if !family.Required {
+
 			continue
 		}
 		sourceRun = worseBinding(sourceRun, family.BindingState)
@@ -503,6 +604,7 @@ func bindingSummary(families []FamilyObservation) BindingSummary {
 
 func producerBindingState(family FamilyObservation) string {
 	if family.RequiredProducer == ProducerCIUploaded && family.ProducerScope != ProducerCIUploaded {
+
 		return BindingMismatch
 	}
 	return BindingMatched
@@ -510,6 +612,7 @@ func producerBindingState(family FamilyObservation) string {
 
 func worseBinding(current, candidate string) string {
 	if bindingRank(candidate) > bindingRank(current) {
+
 		return candidate
 	}
 	return current
@@ -519,6 +622,7 @@ func bindingRank(state string) int {
 	if rank, ok := bindingRanks[state]; ok {
 		return rank
 	}
+
 	return 1
 }
 
@@ -533,6 +637,7 @@ func aggregateProducerScope(families []FamilyObservation) string {
 	set := map[string]bool{}
 	for _, family := range families {
 		if family.Required {
+
 			set[family.ProducerScope] = true
 		}
 	}
@@ -543,6 +648,7 @@ func aggregateAccessState(families []FamilyObservation) string {
 	set := map[string]bool{}
 	for _, family := range families {
 		if family.Required {
+
 			set[family.ArtifactAccessState] = true
 		}
 	}
@@ -551,17 +657,21 @@ func aggregateAccessState(families []FamilyObservation) string {
 
 func aggregate(set map[string]bool, empty string) string {
 	if len(set) == 0 {
+
 		return empty
 	}
 	if len(set) == 1 {
 		for value := range set {
+
 			return value
 		}
 	}
+
 	return "mixed"
 }
 
 func orderedRequirements(reqs map[string]FamilyRequirement) []FamilyRequirement {
+
 	out := make([]FamilyRequirement, 0, len(reqs))
 	for _, family := range familyOrder {
 		if req, ok := reqs[family]; ok {
@@ -572,50 +682,58 @@ func orderedRequirements(reqs map[string]FamilyRequirement) []FamilyRequirement 
 }
 
 func lowerAuthorityReason(producer string) string {
-	switch producer {
-	case ProducerCheckedIn:
-		return "checked_in_claim_contradicts_ci_artifacts"
-	case ProducerAgentReported:
-		return "agent_reported_claim_without_observed_family"
-	case ProducerExternalArtifactRef:
-		return "external_artifact_ref_unverifiable"
-	default:
-		return "lower_authority_producer_scope"
+	if reason, ok := lowerAuthorityReasons[producer]; ok {
+		return reason
 	}
+
+	return "lower_authority_producer_scope"
+}
+
+var lowerAuthorityReasons = map[string]string{
+	ProducerCheckedIn:           "checked_in_claim_contradicts_ci_artifacts",
+	ProducerAgentReported:       "agent_reported_claim_without_observed_family",
+	ProducerExternalArtifactRef: "external_artifact_ref_unverifiable",
 }
 
 func canonicalFamily(family string) string {
 	family = strings.TrimSpace(family)
 	if family == "pr_ci" {
+
 		return "change_ci"
 	}
 	return family
 }
 
 func validFamily(family string) bool {
-	for _, allowed := range familyOrder {
-		if family == allowed {
-			return true
-		}
-	}
-	return false
+	return validFamilies[family]
 }
 
 func safeProducerScope(value string) string {
-	switch value {
-	case ProducerCIUploaded, ProducerCheckedIn, ProducerLocalGenerated, ProducerAgentReported, ProducerHarnessObserved, ProducerExternalArtifactRef, ProducerNotAssessed:
+	if validProducerScopes[value] {
 		return value
-	default:
-		return ProducerNotAssessed
 	}
+
+	return ProducerNotAssessed
+}
+
+var validProducerScopes = map[string]bool{
+	ProducerCIUploaded:          true,
+	ProducerCheckedIn:           true,
+	ProducerLocalGenerated:      true,
+	ProducerAgentReported:       true,
+	ProducerHarnessObserved:     true,
+	ProducerExternalArtifactRef: true,
+	ProducerNotAssessed:         true,
 }
 
 func safeRequiredProducerScope(value string) string {
 	if strings.TrimSpace(value) == "" {
+
 		return ProducerCIUploaded
 	}
 	scope := safeProducerScope(value)
 	if scope == ProducerNotAssessed && value != ProducerNotAssessed {
+
 		return ProducerCIUploaded
 	}
 	return scope
@@ -625,6 +743,7 @@ func safeAuthorityScope(value string) string {
 	if safeToken(value) {
 		return defaultString(value, AuthorityScopeObservation)
 	}
+
 	return AuthorityScopeObservation
 }
 
@@ -633,24 +752,43 @@ func safeToken(value string) bool {
 }
 
 func safeAccessState(value string) string {
-	switch value {
-	case AccessPresent, AccessAbsent, AccessPartial, AccessExpired, AccessInaccessible, AccessMalformed, AccessUnsafe, AccessNotAssessed, AccessCannotVerify:
+	if validAccessStates[value] {
 		return value
-	default:
-		return AccessCannotVerify
 	}
+
+	return AccessCannotVerify
+}
+
+var validAccessStates = map[string]bool{
+	AccessPresent:      true,
+	AccessAbsent:       true,
+	AccessPartial:      true,
+	AccessExpired:      true,
+	AccessInaccessible: true,
+	AccessMalformed:    true,
+	AccessUnsafe:       true,
+	AccessNotAssessed:  true,
+	AccessCannotVerify: true,
 }
 
 func safeBindingState(value string) string {
-	switch value {
-	case BindingMatched, BindingMismatch, BindingAbsent, BindingUnverifiable, BindingNotAssessed:
+	if validBindingStates[value] {
 		return value
-	default:
-		return BindingUnverifiable
 	}
+
+	return BindingUnverifiable
+}
+
+var validBindingStates = map[string]bool{
+	BindingMatched:      true,
+	BindingMismatch:     true,
+	BindingAbsent:       true,
+	BindingUnverifiable: true,
+	BindingNotAssessed:  true,
 }
 
 func sanitizeSource(input SourceIdentity) (SourceIdentity, bool) {
+
 	repository, repositoryOK := sanitizeSourceField(input.Repository, func(value string) bool { return safeIdentityToken(value, "/._-") })
 	ref, refOK := sanitizeSourceField(input.Ref, safeRef)
 	commitSHA, commitOK := sanitizeSourceField(input.CommitSHA, safeCommitSHA)
@@ -661,6 +799,7 @@ func sanitizeSourceField(value string, valid func(string) bool) (string, bool) {
 	if value == "" || valid(value) {
 		return value, true
 	}
+
 	return "", false
 }
 
@@ -669,6 +808,7 @@ func safeCommitSHA(value string) bool {
 }
 
 func sanitizeRun(input RunIdentity) (RunIdentity, bool) {
+
 	out := RunIdentity{}
 	var okProvider, okRunID, okRunAttempt, okWorkflowID, okJobID bool
 	out.Provider, okProvider = sanitizeRunField(input.Provider, "._-")
@@ -683,12 +823,14 @@ func sanitizeRunField(value, extra string) (string, bool) {
 	if value == "" || safeIdentityToken(value, extra) {
 		return value, true
 	}
+
 	return "", false
 }
 
 func allTrue(values ...bool) bool {
 	for _, value := range values {
 		if !value {
+
 			return false
 		}
 	}
@@ -700,12 +842,14 @@ func safeRef(value string) bool {
 		return true
 	}
 	if !safeRefPrefix(value) {
+
 		return false
 	}
 	return safeIdentityToken(value, "/._-")
 }
 
 func safeRefPrefix(value string) bool {
+
 	return strings.HasPrefix(value, "refs/heads/") ||
 		strings.HasPrefix(value, "refs/tags/") ||
 		strings.HasPrefix(value, "refs/pull/") ||
@@ -717,9 +861,11 @@ func safeIdentityToken(value, extra string) bool {
 		return true
 	}
 	if !safeIdentityTokenLength(value) {
+
 		return false
 	}
 	if unsafeIdentityValue(value) {
+
 		return false
 	}
 	return safeIdentityTokenCharacters(value, extra)
@@ -732,6 +878,7 @@ func safeIdentityTokenLength(value string) bool {
 func safeIdentityTokenCharacters(value, extra string) bool {
 	for _, r := range value {
 		if !safeIdentityTokenRune(r, extra) {
+
 			return false
 		}
 	}
@@ -747,33 +894,48 @@ func safeIdentityTokenAlnum(r rune) bool {
 }
 
 func unsafeIdentityValue(value string) bool {
+
 	lower := strings.ToLower(value)
-	for _, marker := range []string{
-		"token=",
-		"access_token",
-		"oidc_token",
-		"bearer",
-		"private_artifact_url",
-		"raw prompt",
-		"raw response",
-		"raw_job_log",
-		"begin_private_key",
-		"begin-private-key",
-		"eyj",
-	} {
+
+	if containsUnsafeIdentityMarker(lower) {
+		return true
+	}
+
+	return strings.HasPrefix(value, "/") || strings.HasPrefix(value, "~")
+}
+
+func containsUnsafeIdentityMarker(lower string) bool {
+	for _, marker := range unsafeIdentityMarkers {
 		if strings.Contains(lower, marker) {
+
 			return true
 		}
 	}
-	return strings.HasPrefix(value, "/") || strings.HasPrefix(value, "~")
+	return false
+}
+
+var unsafeIdentityMarkers = []string{
+	"token=",
+	"access_token",
+	"oidc_token",
+	"bearer",
+	"private_artifact_url",
+	"raw prompt",
+	"raw response",
+	"raw_job_log",
+	"begin_private_key",
+	"begin-private-key",
+	"eyj",
 }
 
 func safeHex(value string, length int) bool {
 	if len(value) != length {
+
 		return false
 	}
 	for _, r := range value {
 		if !isHexRune(r) {
+
 			return false
 		}
 	}
@@ -785,6 +947,7 @@ func isHexRune(r rune) bool {
 }
 
 func safeClasses(input []string) []string {
+
 	allowed := map[string]bool{
 		"token_like": true, "jwt_token": true, "private_key": true,
 		"cloud_credential": true, "provider_token": true,
@@ -795,6 +958,7 @@ func safeClasses(input []string) []string {
 	var out []string
 	for _, value := range input {
 		if allowed[value] {
+
 			out = append(out, value)
 		}
 	}
@@ -804,9 +968,11 @@ func safeClasses(input []string) []string {
 
 func defaultSafetyRuleset(input SafetyRuleset) SafetyRuleset {
 	if !safeToken(input.ID) {
+
 		input.ID = SafetyRulesetDefault
 	}
 	if !safeHex(input.SHA256, 64) {
+
 		sum := sha256.Sum256([]byte(defaultSafetyRulesetContent()))
 		input.SHA256 = hex.EncodeToString(sum[:])
 	}
@@ -814,6 +980,7 @@ func defaultSafetyRuleset(input SafetyRuleset) SafetyRuleset {
 }
 
 func defaultSafetyRulesetContent() string {
+
 	return strings.Join([]string{
 		SafetyRulesetDefault,
 		"token_like",
@@ -831,12 +998,14 @@ func defaultSafetyRulesetContent() string {
 
 func defaultString(value, fallback string) string {
 	if strings.TrimSpace(value) == "" {
+
 		return fallback
 	}
 	return value
 }
 
 func sortedKeys(set map[string]bool) []string {
+
 	out := make([]string, 0, len(set))
 	for value := range set {
 		out = append(out, value)

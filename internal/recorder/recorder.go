@@ -8,17 +8,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+
 	"fmt"
+
+	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"io"
 	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
+
 	"syscall"
 	"time"
-
-	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
 const defaultBaseOutputDir = ".sdp-trace-runs"
@@ -46,19 +48,26 @@ func Run(ctx context.Context, options RecorderOptions) (RecorderResult, error) {
 	if len(options.Command) == 0 {
 		return RecorderResult{}, errors.New("missing command")
 	}
+
 	prepared, err := prepareRun(options)
 	if err != nil {
 		return RecorderResult{}, err
 	}
+
 	exitCode, signal := runCommand(ctx, options.Command, prepared.options.Env, prepared.writer)
 	if err := finishRun(prepared.writer, prepared.commandID, exitCode, signal, prepared.options); err != nil {
 		return RecorderResult{}, err
 	}
+	return recorderResult(prepared, exitCode), nil
+}
+
+func recorderResult(prepared preparedRun, exitCode int) RecorderResult {
+
 	return RecorderResult{
 		RunDir:   prepared.runDir,
 		ExitCode: exitCode,
 		Contract: prepared.contract,
-	}, nil
+	}
 }
 
 type preparedRun struct {
@@ -74,6 +83,7 @@ func prepareRun(options RecorderOptions) (preparedRun, error) {
 	if err != nil {
 		return preparedRun{}, err
 	}
+
 	options.Env = ifNilCopy(os.Environ())
 	commandID, err := startRecordedCommand(writer, options, contract)
 	if err != nil {
@@ -83,10 +93,12 @@ func prepareRun(options RecorderOptions) (preparedRun, error) {
 }
 
 func prepareRunFiles(options RecorderOptions) (string, trace.Contract, *runWriter, error) {
+
 	runDir, err := prepareRunDir(options.OutputDir)
 	if err != nil {
 		return "", trace.Contract{}, nil, err
 	}
+
 	contract, err := resolveRecorderContract(options.ContractPath, options.UseDefaultContract)
 	if err != nil {
 		return "", trace.Contract{}, nil, err
@@ -103,6 +115,7 @@ func initializedRunWriter(runDir string, contract trace.Contract, options Record
 	if err != nil {
 		return nil, err
 	}
+
 	if err := initializeRunWriter(writer, options, contract); err != nil {
 		return nil, err
 	}
@@ -115,12 +128,14 @@ func resolveRecorderContract(contractPath string, useDefault bool) (trace.Contra
 		return trace.Contract{}, err
 	}
 	if contract.ContractID == "" {
+
 		return trace.Contract{}, errors.New("contract missing identifier")
 	}
 	return contract, nil
 }
 
 func startRecordedCommand(writer *runWriter, options RecorderOptions, contract trace.Contract) (string, error) {
+
 	if err := appendRunStartEvents(writer, options, contract); err != nil {
 		return "", err
 	}
@@ -133,6 +148,7 @@ func startRecordedCommand(writer *runWriter, options RecorderOptions, contract t
 
 func initializeRunWriter(writer *runWriter, options RecorderOptions, contract trace.Contract) error {
 	if options.ContractPath != "" {
+
 		writer.manifest.ContractPath = options.ContractPath
 		writer.manifest.ContractDigest = trace.SHA256Hex(string(mustMarshalJSON(contract)))
 	}
@@ -145,6 +161,7 @@ func finishRun(writer *runWriter, commandID string, exitCode int, signal string,
 	}
 	closureState := trace.ClosureStateCompleted
 	if exitCode != 0 {
+
 		closureState = trace.ClosureStateCommandFailure
 	}
 	if err := appendRunClosed(writer, commandID, closureState); err != nil {
@@ -155,6 +172,7 @@ func finishRun(writer *runWriter, commandID string, exitCode int, signal string,
 
 func prepareRunDir(outputDir string) (string, error) {
 	if outputDir != "" {
+
 		return outputDir, ensureFreshOutputDir(outputDir)
 	}
 	if err := os.MkdirAll(defaultBaseOutputDir, 0o755); err != nil {
@@ -164,6 +182,7 @@ func prepareRunDir(outputDir string) (string, error) {
 }
 
 func appendRunStartEvents(writer *runWriter, options RecorderOptions, contract trace.Contract) error {
+
 	if err := writer.appendEvent(trace.EventRecorderAttached, trace.RecorderAttachedPayload{
 		RecorderVersion: trace.RecorderVersion,
 		RunNonce:        fmt.Sprintf("run-nonce-%s", writer.manifest.RunID),
@@ -171,6 +190,7 @@ func appendRunStartEvents(writer *runWriter, options RecorderOptions, contract t
 	}); err != nil {
 		return err
 	}
+
 	return writer.appendEvent(trace.EventRunStarted, trace.RunStartedPayload{
 		TaskRef:        options.Task,
 		Command:        commandName(options.Command),
@@ -181,6 +201,7 @@ func appendRunStartEvents(writer *runWriter, options RecorderOptions, contract t
 }
 
 func appendCommandStarted(writer *runWriter, options RecorderOptions, commandID string) error {
+
 	return writer.appendEvent(trace.EventCommandStarted, trace.CommandStartedPayload{
 		RecordedCommandPayload: trace.RecordedCommandPayload{
 			CommandID: commandID,
@@ -194,6 +215,7 @@ func appendCommandStarted(writer *runWriter, options RecorderOptions, commandID 
 }
 
 func appendCommandFinished(writer *runWriter, options RecorderOptions, commandID string, exitCode int, signal string) error {
+
 	return writer.appendEvent(trace.EventCommandFinished, trace.CommandFinishedPayload{
 		RecordedCommandPayload: trace.RecordedCommandPayload{
 			CommandID: commandID,
@@ -207,6 +229,7 @@ func appendCommandFinished(writer *runWriter, options RecorderOptions, commandID
 }
 
 func appendRunClosed(writer *runWriter, commandID, closureState string) error {
+
 	return writer.appendEvent(trace.EventRunClosed, trace.RunClosedPayload{
 		ChainHead:     writer.lastEventHash(),
 		ClosureState:  closureState,
@@ -219,6 +242,7 @@ func appendRunClosed(writer *runWriter, commandID, closureState string) error {
 func resolveContract(contractPath string, useDefault bool) (trace.Contract, error) {
 	if contractPath == "" {
 		if useDefault {
+
 			return trace.DefaultContract, nil
 		}
 		return trace.Contract{}, errors.New("contract required unless --use-default-contract is set")
@@ -229,12 +253,14 @@ func resolveContract(contractPath string, useDefault bool) (trace.Contract, erro
 func ensureFreshOutputDir(runDir string) error {
 	entries, err := os.ReadDir(runDir)
 	if os.IsNotExist(err) {
+
 		return nil
 	}
 	if err != nil {
 		return err
 	}
 	if len(entries) > 0 {
+
 		return fmt.Errorf("output directory must be empty: %s", runDir)
 	}
 	return nil
@@ -259,12 +285,14 @@ type hashWriter struct {
 func (h *hashWriter) Write(p []byte) (int, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
 	return h.buf.Write(p)
 }
 
 func (h *hashWriter) Digest() string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
 	sum := sha256.Sum256(h.buf.Bytes())
 	return hex.EncodeToString(sum[:])
 }
@@ -274,23 +302,9 @@ func newRunWriter(runDir string, contract trace.Contract, task string) (*runWrit
 		return nil, err
 	}
 
-	runID := randomHex(16)
-	manifest := trace.RunManifest{
-		SchemaVersion:   trace.SchemaVersion,
-		RunID:           runID,
-		RecorderVersion: trace.RecorderVersion,
-		CreatedAt:       time.Now().UTC().Format(time.RFC3339Nano),
-		Task:            task,
-		ContractID:      contract.ContractID,
-		SourceSnapshot:  "",
-		SourceState:     "",
-		EventCount:      0,
-		ClosureState:    trace.ClosureStateUnknown,
-		ContractPath:    "",
-		ContractDigest:  trace.SHA256Hex(string(mustMarshalJSON(contract))),
-	}
-
+	manifest := initialRunManifest(contract, task)
 	sourceDigest, sourceState := trace.LocalSourceSnapshot(currentWorkingDir())
+
 	manifest.SourceSnapshot = sourceDigest
 	manifest.SourceState = sourceState
 
@@ -301,8 +315,37 @@ func newRunWriter(runDir string, contract trace.Contract, task string) (*runWrit
 	}, nil
 }
 
+func initialRunManifest(contract trace.Contract, task string) trace.RunManifest {
+
+	manifest := baseRunManifest(contract.ContractID, task)
+	manifest.ContractDigest = trace.SHA256Hex(string(mustMarshalJSON(contract)))
+	return manifest
+}
+
+func baseRunManifest(contractID, task string) trace.RunManifest {
+
+	return trace.RunManifest{
+		SchemaVersion:   trace.SchemaVersion,
+		RunID:           randomHex(16),
+		RecorderVersion: trace.RecorderVersion,
+		CreatedAt:       time.Now().UTC().Format(time.RFC3339Nano),
+
+		Task:       task,
+		ContractID: contractID,
+
+		SourceSnapshot: "",
+		SourceState:    "",
+
+		EventCount:     0,
+		ClosureState:   trace.ClosureStateUnknown,
+		ContractPath:   "",
+		ContractDigest: "",
+	}
+}
+
 func createRunLayoutDirs(runDir string) error {
 	for _, rel := range []string{"events", "artifacts", "verifier", "export"} {
+
 		if err := os.MkdirAll(filepath.Join(runDir, rel), 0o755); err != nil {
 			return err
 		}
@@ -315,42 +358,66 @@ func (w *runWriter) appendEvent(eventType trace.EventType, payload any) error {
 	if err != nil {
 		return err
 	}
-	event := trace.Event{
+	event := w.newEvent(eventType, payloadMap)
+	computed, err := event.WithComputedEventHash()
+	if err != nil {
+
+		return err
+	}
+	if err := w.persistEvent(computed, eventType); err != nil {
+
+		return err
+	}
+	w.advanceEventHead(computed)
+
+	return w.writeManifest()
+}
+
+func (w *runWriter) newEvent(eventType trace.EventType, payloadMap map[string]any) trace.Event {
+
+	return trace.Event{
 		SchemaVersion: trace.SchemaVersion,
 		RunID:         w.manifest.RunID,
-		EventID:       randomHex(24),
-		Sequence:      w.sequence,
-		EventType:     eventType,
-		Timestamp:     time.Now().UTC().Format(time.RFC3339Nano),
+
+		EventID:   randomHex(24),
+		Sequence:  w.sequence,
+		EventType: eventType,
+		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
+
 		PrevEventHash: w.lastHash,
 		HashAlgorithm: trace.HashAlgSHA256,
-		Canonicalization: trace.Canonicalization{
-			Algorithm: trace.CanonicalSchemaAlgo,
-			Version:   trace.CanonicalAlgoV,
-		},
-		EventPayload: payloadMap,
-		ObservedBy:   "local_recorder",
+
+		Canonicalization: canonicalization(),
+		EventPayload:     payloadMap,
+		ObservedBy:       "local_recorder",
+	}.EnsureDefaults()
+}
+
+func canonicalization() trace.Canonicalization {
+
+	return trace.Canonicalization{
+		Algorithm: trace.CanonicalSchemaAlgo,
+		Version:   trace.CanonicalAlgoV,
 	}
-	event = event.EnsureDefaults()
-	eventHash, err := event.WithComputedEventHash()
-	if err != nil {
-		return err
-	}
-	event = eventHash
+}
+
+func (w *runWriter) persistEvent(event trace.Event, eventType trace.EventType) error {
 
 	filename := filepath.Join(w.runDir, "events", eventFilename(event.Sequence, eventType))
-	if err := writeIndentedJSON(filename, event); err != nil {
-		return err
-	}
+	return writeIndentedJSON(filename, event)
+}
+
+func (w *runWriter) advanceEventHead(event trace.Event) {
+
 	w.sequence++
 	w.lastHash = event.EventHash
 	w.events = append(w.events, event)
-	return w.writeManifest()
 }
 
 func (w *runWriter) writeManifest() error {
 	w.manifest.EventCount = w.sequence
 	if w.sequence > 0 {
+
 		w.manifest.EventChainHead = w.lastHash
 		w.manifest.FinalChainHead = w.lastHash
 	}
@@ -363,9 +430,11 @@ func (w *runWriter) finalize(closureState string) error {
 	if err := w.writeManifest(); err != nil {
 		return err
 	}
+
 	if err := writeText(filepath.Join(w.runDir, "artifacts", "stdout.digest"), w.stdoutDigest()+"\n"); err != nil {
 		return err
 	}
+
 	return writeText(filepath.Join(w.runDir, "artifacts", "stderr.digest"), w.stderrDigest()+"\n")
 }
 
@@ -384,10 +453,10 @@ func (w *runWriter) lastEventHash() string {
 func (w *runWriter) eventCount() int {
 	return len(w.events)
 }
-
 func runCommand(ctx context.Context, command []string, env []string, writer *runWriter) (int, string) {
 	cmd := recordedCommand(ctx, command, env, writer)
 	if err := cmd.Start(); err != nil {
+
 		return 1, "start_failed"
 	}
 	return waitCommand(ctx, cmd)
@@ -397,6 +466,7 @@ func recordedCommand(ctx context.Context, command []string, env []string, writer
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Env = env
 	cmd.Stdin = os.Stdin
+
 	cmd.Stdout = io.MultiWriter(os.Stdout, &writer.stdoutHash)
 	cmd.Stderr = io.MultiWriter(os.Stderr, &writer.stderrHash)
 	return cmd
@@ -408,9 +478,11 @@ func waitCommand(ctx context.Context, cmd *exec.Cmd) (int, string) {
 		return 0, ""
 	}
 	if exitErr, ok := err.(*exec.ExitError); ok {
+
 		return exitErr.ExitCode(), processSignal(exitErr.ProcessState)
 	}
 	if ctx.Err() != nil {
+
 		return 1, "context_cancelled"
 	}
 	return 1, ""
@@ -422,6 +494,7 @@ func processSignal(processState *os.ProcessState) string {
 	}
 	status, ok := processState.Sys().(syscall.WaitStatus)
 	if !ok {
+
 		return ""
 	}
 	return status.Signal().String()
@@ -436,6 +509,7 @@ func eventFilename(sequence int, eventType trace.EventType) string {
 }
 
 func toEventPayload(payload any) (map[string]any, error) {
+
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -446,6 +520,7 @@ func toEventPayload(payload any) (map[string]any, error) {
 	}
 	payloadMap, ok := decoded.(map[string]any)
 	if !ok {
+
 		return nil, fmt.Errorf("event payload must be a JSON object")
 	}
 	return payloadMap, nil
@@ -455,6 +530,7 @@ func commandName(command []string) string {
 	if len(command) == 0 {
 		return ""
 	}
+
 	return filepath.Base(command[0])
 }
 
@@ -466,6 +542,7 @@ func currentWorkingDir() string {
 func mustMarshalJSON(value any) []byte {
 	data, err := json.Marshal(value)
 	if err != nil {
+
 		return []byte("{}")
 	}
 	return data
@@ -476,6 +553,7 @@ func writeIndentedJSON(path string, value any) error {
 	if err != nil {
 		return err
 	}
+
 	return os.WriteFile(path, data, 0o644)
 }
 
@@ -485,6 +563,7 @@ func writeText(path string, value string) error {
 
 func ifNilCopy(values []string) []string {
 	if values == nil {
+
 		return []string{}
 	}
 	return append([]string{}, values...)
@@ -496,6 +575,7 @@ func randomHex(length int) string {
 	for i := range out {
 		v, err := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
 		if err != nil {
+
 			return fmt.Sprintf("fallback-%x", time.Now().UnixNano())
 		}
 		out[i] = alphabet[v.Int64()]

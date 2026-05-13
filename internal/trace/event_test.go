@@ -3,6 +3,7 @@ package trace
 import (
 	"bytes"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -55,6 +56,13 @@ func TestWriteNumericScalarReflectDispatch(t *testing.T) {
 				t.Fatalf("empty numeric output")
 			}
 		})
+	}
+}
+
+func TestWriteReflectedNumericScalarRejectsNonNumeric(t *testing.T) {
+	var buf bytes.Buffer
+	if writeReflectedNumericScalar(&buf, reflect.ValueOf("not-number")) {
+		t.Fatalf("string reflected value was accepted")
 	}
 }
 

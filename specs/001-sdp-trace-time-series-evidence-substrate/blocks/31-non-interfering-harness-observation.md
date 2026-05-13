@@ -1,7 +1,8 @@
 # Block 31: Non-Interfering Harness Observation
 
-Status: Draft spec. Implementation is blocked until Socratic review is complete
-and the reviewed direction is explicitly approved.
+Status: Partially implemented. Socratic review and focused T226 re-review are
+recorded; the generic harness observation path exists, but T226 remains open
+until a customer-usable first-run OpenCode/GSD observation path is validated.
 
 Parent artifacts:
 

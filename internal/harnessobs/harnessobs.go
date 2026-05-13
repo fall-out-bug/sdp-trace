@@ -2,17 +2,22 @@ package harnessobs
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+
 	"errors"
 	"fmt"
+
 	"hash"
 	"io"
 	"net/url"
+
 	"os"
 	"os/exec"
 	"path/filepath"
+
 	"regexp"
 	"sort"
 	"strings"
@@ -158,7 +163,6 @@ type ObserveOptions struct {
 	OutDir      string
 	Now         time.Time
 }
-
 type SessionProfile struct {
 	SchemaVersion      string                 `json:"schema_version"`
 	ProfileID          string                 `json:"profile_id"`
@@ -212,6 +216,8 @@ type SessionRun struct {
 	CreatedAt          string                   `json:"created_at"`
 }
 
+// SessionIsolationResult records the live readback result of a setup rule; it
+// is evidence about the local setup artifact, not proof that a harness obeyed it.
 type SessionIsolationResult struct {
 	ID         string `json:"id"`
 	Kind       string `json:"kind"`
@@ -248,21 +254,6 @@ type ValidateOptions struct {
 	OutPath     string
 }
 
-func Observe(opts ObserveOptions) (Run, error) {
-	ctx, err := prepareObservation(opts)
-	if err != nil {
-		return Run{}, err
-	}
-	if err := writeObservationEvents(ctx.outDir, ctx.events); err != nil {
-		return Run{}, err
-	}
-	run := newObservedRun(ctx)
-	if err := writeJSON(filepath.Join(ctx.outDir, "run.json"), run); err != nil {
-		return Run{}, err
-	}
-	return run, nil
-}
-
 type observationContext struct {
 	outDir       string
 	sourcePath   string
@@ -272,57 +263,177 @@ type observationContext struct {
 	events       []Event
 }
 
+type sessionCollectionContext struct {
+	profilePath        string
+	runDir             string
+	now                time.Time
+	profile            SessionProfile
+	session            SessionRun
+	harnessProfile     Profile
+	harnessProfilePath string
+}
+
+type observedCommandResult struct {
+	waitErr error
+	end     time.Time
+}
+
+var isolationRuleInstallers = map[string]func(string, string) error{
+	"ignore_line":    ensureLineFileRule,
+	"json_read_deny": ensureJSONReadDenyRule,
+}
+
+type eventRefCheck struct {
+	ok  bool
+	err string
+}
+
+var stateRank = map[string]int{
+	StateFail:         4,
+	StateCannotVerify: 3,
+	StateNotAssessed:  2,
+	StatePass:         1,
+}
+
+type existingPathSpec struct {
+	traversalError string
+	requireDir     bool
+	typeError      string
+}
+type shellFieldScanner struct {
+	fields  []string
+	current strings.Builder
+	quote   rune
+	escaped bool
+}
+
+var digestFieldNames = map[string]bool{
+	"source_digest":     true,
+	"validation_digest": true,
+	"commit_digest":     true,
+	"envelope_digest":   true,
+	"payload_digest":    true,
+	"sha256":            true,
+}
+
+var validFamilies = map[string]bool{
+
+	"harness":     true,
+	"model":       true,
+	"interaction": true,
+	"phase":       true,
+	"review":      true,
+	"tool":        true,
+	"mutation":    true,
+	"test":        true,
+	"pr":          true,
+	"merge":       true,
+	"gap":         true,
+}
+
+var validContentStates = map[string]bool{
+	ContentRedacted:      true,
+	ContentDigestOnly:    true,
+	ContentRetainedSafe:  true,
+	ContentNotApplicable: true,
+}
+
+var validStates = map[string]bool{
+
+	StatePass:         true,
+	StateFail:         true,
+	StateCannotVerify: true,
+	StateNotAssessed:  true,
+}
+
+var validRuleKeys = map[string]bool{
+	"missing_required_family": true,
+	"missing_optional_family": true,
+	"source_unavailable":      true,
+	"unsafe_input":            true,
+	"digest_mismatch":         true,
+	"schema_version_mismatch": true,
+	"cross_link_conflict":     true,
+}
+
+func Observe(opts ObserveOptions) (Run, error) {
+	ctx, err := prepareObservation(opts)
+	if err != nil {
+		return Run{}, err
+	}
+
+	if err := writeObservationEvents(ctx.outDir, ctx.events); err != nil {
+		return Run{}, err
+	}
+	run := newObservedRun(ctx)
+
+	if err := writeJSON(filepath.Join(ctx.outDir, "run.json"), run); err != nil {
+		return Run{}, err
+	}
+	return run, nil
+}
+
 func prepareObservation(opts ObserveOptions) (observationContext, error) {
 	profilePath, sourcePath, outDir, err := validateObserveOptions(opts)
 	if err != nil {
 		return observationContext{}, err
 	}
+
 	profile, events, sourceDigest, err := loadObservationSource(profilePath, sourcePath)
 	if err != nil {
 		return observationContext{}, err
 	}
+
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return observationContext{}, err
 	}
+	return newObservationContext(opts, outDir, sourcePath, sourceDigest, profile, events), nil
+}
+
+func newObservationContext(opts ObserveOptions, outDir, sourcePath, sourceDigest string, profile Profile, events []Event) observationContext {
 	return observationContext{
 		outDir:       outDir,
 		sourcePath:   sourcePath,
 		sourceDigest: sourceDigest,
 		now:          observationTime(opts.Now),
-		profile:      profile,
-		events:       events,
-	}, nil
+
+		profile: profile,
+		events:  events,
+	}
 }
 
 func validateObserveOptions(opts ObserveOptions) (string, string, string, error) {
 	if err := requireObserveOptions(opts); err != nil {
 		return "", "", "", err
 	}
+
 	return resolveObservePaths(opts)
 }
 
 func requireObserveOptions(opts ObserveOptions) error {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return errors.New("harness observe requires --profile")
+	if err := requireNonBlank(opts.ProfilePath, "harness observe requires --profile"); err != nil {
+		return err
 	}
-	if strings.TrimSpace(opts.SourcePath) == "" {
-		return errors.New("harness observe requires --source")
+
+	if err := requireNonBlank(opts.SourcePath, "harness observe requires --source"); err != nil {
+		return err
 	}
-	if strings.TrimSpace(opts.OutDir) == "" {
-		return errors.New("harness observe requires --out")
+	if err := requireNonBlank(opts.OutDir, "harness observe requires --out"); err != nil {
+		return err
 	}
 	return nil
 }
-
 func resolveObservePaths(opts ObserveOptions) (string, string, string, error) {
 	profilePath, err := safeExistingFile(opts.ProfilePath)
 	if err != nil {
 		return "", "", "", fmt.Errorf("unsafe profile path: %w", err)
 	}
+
 	sourcePath, err := safeExistingFile(opts.SourcePath)
 	if err != nil {
 		return "", "", "", fmt.Errorf("unsafe source path: %w", err)
 	}
+
 	outDir, err := safeOutDir(opts.OutDir)
 	if err != nil {
 		return "", "", "", err
@@ -332,6 +443,7 @@ func resolveObservePaths(opts ObserveOptions) (string, string, string, error) {
 
 func observationTime(now time.Time) time.Time {
 	if now.IsZero() {
+
 		return time.Now().UTC()
 	}
 	return now
@@ -342,6 +454,7 @@ func loadObservationSource(profilePath, sourcePath string) (Profile, []Event, st
 	if err != nil {
 		return Profile{}, nil, "", err
 	}
+
 	events, sourceDigest, err := readEvents(profile, sourcePath)
 	if err != nil {
 		return Profile{}, nil, "", err
@@ -351,6 +464,7 @@ func loadObservationSource(profilePath, sourcePath string) (Profile, []Event, st
 
 func writeObservationEvents(outDir string, events []Event) error {
 	for _, event := range events {
+
 		path := filepath.Join(outDir, "events", event.EventID+".json")
 		if err := writeJSON(path, event); err != nil {
 			return err
@@ -360,6 +474,7 @@ func writeObservationEvents(outDir string, events []Event) error {
 }
 
 func newObservedRun(ctx observationContext) Run {
+
 	return Run{
 		SchemaVersion:      RunSchemaVersion,
 		ProfileID:          ctx.profile.ProfileID,
@@ -378,6 +493,7 @@ func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
 	if err != nil {
 		return SessionRun{}, err
 	}
+
 	run, err := setupSessionRun(profilePath, outDir, opts.Now, opts.Command)
 	if err != nil {
 		return SessionRun{}, err
@@ -386,6 +502,7 @@ func SetupSession(opts SessionSetupOptions) (SessionRun, error) {
 }
 
 func validateSessionSetupOptions(opts SessionSetupOptions) (string, string, error) {
+
 	profilePath, err := resolveSessionSetupProfilePath(opts.ProfilePath)
 	if err != nil {
 		return "", "", err
@@ -396,1039 +513,45 @@ func validateSessionSetupOptions(opts SessionSetupOptions) (string, string, erro
 	}
 	return profilePath, outDir, nil
 }
-
-func resolveSessionSetupProfilePath(profilePath string) (string, error) {
-	if strings.TrimSpace(profilePath) == "" {
-		return "", errors.New("observe setup requires --profile")
-	}
-	safePath, err := safeExistingFile(profilePath)
-	if err != nil {
-		return "", fmt.Errorf("unsafe profile path: %w", err)
-	}
-	return safePath, nil
-}
-
-func resolveSessionSetupOutDir(outDir string) (string, error) {
-	if strings.TrimSpace(outDir) == "" {
-		return "", errors.New("observe setup requires --out")
-	}
-	return safeOutDir(outDir)
-}
-
-func setupSessionRun(profilePath, outDir string, now time.Time, rawCommand string) (SessionRun, error) {
-	profile, err := LoadSessionProfile(profilePath)
-	if err != nil {
-		return SessionRun{}, err
-	}
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return SessionRun{}, err
-	}
-	run := newSessionRunWithCommand(profile, now, rawCommand)
-	results, err := installIsolationRules(profilePath, profile.IsolationRules)
-	if err != nil {
-		return SessionRun{}, err
-	}
-	run.IsolationResults = results
-	if err := writeSessionJSON(filepath.Join(outDir, "session.json"), run); err != nil {
-		return SessionRun{}, err
-	}
-	return run, nil
-}
-
-func newSessionRunWithCommand(profile SessionProfile, now time.Time, rawCommand string) SessionRun {
-	run := newSessionRun(profile, sessionRunTime(now))
-	setSessionCommand(&run, rawCommand)
-	return run
-}
-
-func setSessionCommand(run *SessionRun, rawCommand string) {
-	if strings.TrimSpace(rawCommand) == "" {
-		return
-	}
-	command := []string{rawCommand}
-	run.CommandDigest = digestCommand(command)
-	run.CommandDigestState = StatePass
-	if model := extractCommandModel(command); model != "" {
-		run.CommandModel = model
-		run.CommandModelState = StatePass
-	}
-}
-
-func sessionRunTime(now time.Time) time.Time {
-	if now.IsZero() {
-		return time.Now().UTC()
-	}
-	return now
-}
-
-func writeSessionJSON(path string, run SessionRun) error {
-	return writeJSON(path, run)
-}
-
-func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
-	ctx, err := prepareSessionCollection(opts)
-	if err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	sourcePath, err := resolveSessionEventSource(&ctx)
-	if err != nil {
-		if !errors.Is(err, errSessionSourceUnavailable) {
-			return SessionRun{}, Run{}, err
-		}
-		return markSessionSourceUnavailable(ctx)
-	}
-	return collectSessionSource(ctx, sourcePath)
-}
-
-type sessionCollectionContext struct {
-	profilePath        string
-	runDir             string
-	now                time.Time
-	profile            SessionProfile
-	session            SessionRun
-	harnessProfile     Profile
-	harnessProfilePath string
-}
-
-func prepareSessionCollection(opts SessionCollectOptions) (sessionCollectionContext, error) {
-	profilePath, runDir, err := validateSessionCollectOptions(opts)
-	if err != nil {
-		return sessionCollectionContext{}, err
-	}
-	return loadSessionCollection(profilePath, runDir, opts.Now)
-}
-
-func loadSessionCollection(profilePath, runDir string, now time.Time) (sessionCollectionContext, error) {
-	profile, session, err := loadSessionCollectionInputs(profilePath, runDir)
-	if err != nil {
-		return sessionCollectionContext{}, err
-	}
-	harnessProfilePath, harnessProfile, err := loadHarnessProfile(profilePath, profile)
-	if err != nil {
-		return sessionCollectionContext{}, err
-	}
-	if now.IsZero() {
-		now = time.Now().UTC()
-	}
-	return sessionCollectionContext{
-		profilePath:        profilePath,
-		runDir:             runDir,
-		now:                now,
-		profile:            profile,
-		session:            session,
-		harnessProfile:     harnessProfile,
-		harnessProfilePath: harnessProfilePath,
-	}, nil
-}
-
-func loadSessionCollectionInputs(profilePath, runDir string) (SessionProfile, SessionRun, error) {
-	profile, err := LoadSessionProfile(profilePath)
-	if err != nil {
-		return SessionProfile{}, SessionRun{}, err
-	}
-	session, err := LoadSessionRun(filepath.Join(runDir, "session.json"))
-	if err != nil {
-		return SessionProfile{}, SessionRun{}, err
-	}
-	if session.ProfileID != profile.ProfileID {
-		return SessionProfile{}, SessionRun{}, errors.New("session profile mismatch")
-	}
-	return profile, session, nil
-}
-
-func validateSessionCollectOptions(opts SessionCollectOptions) (string, string, error) {
-	if err := requireSessionCollectOptions(opts); err != nil {
-		return "", "", err
-	}
-	profilePath, err := safeExistingFile(opts.ProfilePath)
-	if err != nil {
-		return "", "", fmt.Errorf("unsafe profile path: %w", err)
-	}
-	runDir, err := safeExistingDir(opts.RunDir)
-	if err != nil {
-		return "", "", fmt.Errorf("unsafe run path: %w", err)
-	}
-	return profilePath, runDir, nil
-}
-
-func requireSessionCollectOptions(opts SessionCollectOptions) error {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return errors.New("observe collect requires --profile")
-	}
-	if strings.TrimSpace(opts.RunDir) == "" {
-		return errors.New("observe collect requires --run")
-	}
-	return nil
-}
-
-func loadHarnessProfile(profilePath string, profile SessionProfile) (string, Profile, error) {
-	harnessProfilePath, err := safeProfileRelativeFile(profilePath, profile.HarnessProfilePath)
-	if err != nil {
-		return "", Profile{}, fmt.Errorf("unsafe harness profile path: %w", err)
-	}
-	harnessProfile, err := LoadProfile(harnessProfilePath)
-	if err != nil {
-		return "", Profile{}, err
-	}
-	return harnessProfilePath, harnessProfile, nil
-}
-
-func resolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
-	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
-	if err == nil {
-		return sourcePath, nil
-	}
-	return resolveMissingSessionEventSource(ctx)
-}
-
-func resolveMissingSessionEventSource(ctx *sessionCollectionContext) (string, error) {
-	if ctx.profile.RawEventFormat == "" {
-		return "", errSessionSourceUnavailable
-	}
-	return normalizeAndResolveSessionEventSource(ctx)
-}
-
-func normalizeAndResolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
-	if normalizeErr := normalizeSessionRawEvents(ctx); normalizeErr != nil {
-		return "", normalizeErr
-	}
-	sourcePath, ok := resolvedSessionEventSource(ctx)
-	if !ok {
-		return "", errSessionSourceUnavailable
-	}
-	return sourcePath, nil
-}
-
-func resolvedSessionEventSource(ctx *sessionCollectionContext) (string, bool) {
-	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
-	return sourcePath, err == nil
-}
-
-func normalizeSessionRawEvents(ctx *sessionCollectionContext) error {
-	rawPath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.RawEventSourcePath)
-	if err != nil {
-		return fmt.Errorf("raw_event_source_path invalid: %w", err)
-	}
-	normalizedPath, err := safeProfileRelativeOutFile(ctx.profilePath, ctx.profile.EventSourcePath)
-	if err != nil {
-		return err
-	}
-	if err := normalizeRawEvents(ctx.profile.RawEventFormat, rawPath, normalizedPath, sessionCommandFacts(ctx.session), ctx.now); err != nil {
-		return err
-	}
-	ctx.session.NormalizedDigest = digestFile(normalizedPath)
-	return nil
-}
-
-func markSessionSourceUnavailable(ctx sessionCollectionContext) (SessionRun, Run, error) {
-	session := ctx.session
-	session.CollectionState = StateCannotVerify
-	session.CollectionReason = "source_unavailable"
-	session.EndTime = ctx.now.Format(time.RFC3339)
-	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	return session, Run{
-		SchemaVersion:      RunSchemaVersion,
-		ProfileID:          ctx.harnessProfile.ProfileID,
-		HarnessFamily:      ctx.harnessProfile.HarnessFamily,
-		EventSchemaVersion: ctx.harnessProfile.EventSchemaVersion,
-		SourcePath:         filepath.Base(ctx.profile.EventSourcePath),
-		EventCount:         0,
-		CreatedAt:          ctx.now.Format(time.RFC3339),
-	}, nil
-}
-
-func collectSessionSource(ctx sessionCollectionContext, sourcePath string) (SessionRun, Run, error) {
-	observedDir := filepath.Join(ctx.runDir, "observed")
-	if err := os.MkdirAll(observedDir, 0o755); err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	events, sourceDigest, err := readEventsFromPath(ctx.harnessProfilePath, sourcePath)
-	if err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	observed := observedRun(ctx, sourcePath, sourceDigest, events)
-	if err := writeObservedRun(observedDir, events, observed); err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	return finalizeCollectedSession(ctx, observedDir, observed)
-}
-
-func writeObservedRun(observedDir string, events []Event, observed Run) error {
-	if err := writeObservedEvents(observedDir, events); err != nil {
-		return err
-	}
-	return writeJSON(filepath.Join(observedDir, "run.json"), observed)
-}
-
-func writeObservedEvents(observedDir string, events []Event) error {
-	for _, event := range events {
-		if err := writeJSON(filepath.Join(observedDir, "events", event.EventID+".json"), event); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func observedRun(ctx sessionCollectionContext, sourcePath, sourceDigest string, events []Event) Run {
-	return Run{
-		SchemaVersion:      RunSchemaVersion,
-		ProfileID:          ctx.harnessProfile.ProfileID,
-		HarnessFamily:      ctx.harnessProfile.HarnessFamily,
-		EventSchemaVersion: ctx.harnessProfile.EventSchemaVersion,
-		SourcePath:         filepath.Base(sourcePath),
-		SourceDigest:       sourceDigest,
-		EventCount:         len(events),
-		EventRefs:          eventRefs(events),
-		CreatedAt:          ctx.now.Format(time.RFC3339),
-	}
-}
-
-func finalizeCollectedSession(ctx sessionCollectionContext, observedDir string, observed Run) (SessionRun, Run, error) {
-	session := ctx.session
-	session.ObservedRunDir = filepath.ToSlash("observed")
-	session.OutputDigest = digestFile(filepath.Join(observedDir, "run.json"))
-	session.CollectionState = StatePass
-	session.CollectionReason = "source_collected"
-	if session.EndTime == "" {
-		session.EndTime = ctx.now.Format(time.RFC3339)
-	}
-	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	return session, observed, nil
-}
-
-func RunSession(opts SessionOptions) (SessionRun, Run, error) {
-	if len(opts.Command) == 0 {
-		return SessionRun{}, Run{}, errors.New("observe session requires command after --")
-	}
-	session, err := SetupSession(SessionSetupOptions{ProfilePath: opts.ProfilePath, OutDir: opts.OutDir, Now: opts.Now})
-	if err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	cmd := discardedCommand(opts.Command)
-	setSessionProcessCommand(&session, opts.Command, time.Now().UTC())
-	if err := startSessionProcess(cmd, &session); err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	waitErr := cmd.Wait()
-	end := time.Now().UTC()
-	return collectFinishedSession(opts, session, waitErr, end)
-}
-
-func collectFinishedSession(opts SessionOptions, session SessionRun, waitErr error, end time.Time) (SessionRun, Run, error) {
-	if err := writeFinishedSession(opts.OutDir, &session, end); err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	collected, observed, err := CollectSession(SessionCollectOptions{ProfilePath: opts.ProfilePath, RunDir: opts.OutDir, Now: end})
-	if err != nil {
-		return SessionRun{}, Run{}, err
-	}
-	if waitErr != nil {
-		return collected, observed, waitErr
-	}
-	return collected, observed, nil
-}
-
-func writeFinishedSession(outDir string, session *SessionRun, end time.Time) error {
-	session.EndTime = end.Format(time.RFC3339)
-	return writeJSON(filepath.Join(outDir, "session.json"), *session)
-}
-
-func discardedCommand(command []string) *exec.Cmd {
-	cmd := exec.Command(command[0], command[1:]...)
-	cmd.Stdin = nil
-	cmd.Stdout = io.Discard
-	cmd.Stderr = io.Discard
-	return cmd
-}
-
-func setSessionProcessCommand(session *SessionRun, command []string, start time.Time) {
-	session.CommandDigest = digestCommand(command)
-	session.CommandDigestState = StatePass
-	if model := extractCommandModel(command); model != "" {
-		session.CommandModel = model
-		session.CommandModelState = StatePass
-	}
-	session.StartTime = start.Format(time.RFC3339)
-}
-
-func startSessionProcess(cmd *exec.Cmd, session *SessionRun) error {
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	session.ProcessID = cmd.Process.Pid
-	session.ProcessIDState = StatePass
-	return nil
-}
-
-func Validate(opts ValidateOptions) (Validation, error) {
-	profilePath, runDir, outPath, err := validateValidateInputs(opts)
-	if err != nil {
-		return Validation{}, err
-	}
-	profile, err := LoadProfile(profilePath)
-	if err != nil {
-		return Validation{}, err
-	}
-	validation := evaluationFromRun(profile, runDir)
-	if err := writeValidationIfRequested(outPath, validation); err != nil {
-		return Validation{}, err
-	}
-	return validation, nil
-}
-
-func validateValidateInputs(opts ValidateOptions) (string, string, string, error) {
-	if err := requireValidateOptions(opts); err != nil {
-		return "", "", "", err
-	}
-	return resolveValidateInputs(opts)
-}
-
-func requireValidateOptions(opts ValidateOptions) error {
-	if strings.TrimSpace(opts.ProfilePath) == "" {
-		return errors.New("harness validate requires --profile")
-	}
-	if strings.TrimSpace(opts.RunDir) == "" {
-		return errors.New("harness validate requires --run")
-	}
-	return nil
-}
-
-func resolveValidateInputs(opts ValidateOptions) (string, string, string, error) {
-	profilePath, runDir, err := resolveValidateSourcePaths(opts)
-	if err != nil {
-		return "", "", "", err
-	}
-	outPath, err := resolveValidateOutPath(opts.OutPath)
-	if err != nil {
-		return "", "", "", err
-	}
-	return profilePath, runDir, outPath, nil
-}
-
-func resolveValidateSourcePaths(opts ValidateOptions) (string, string, error) {
-	profilePath, err := safeExistingFile(opts.ProfilePath)
-	if err != nil {
-		return "", "", fmt.Errorf("unsafe profile path: %w", err)
-	}
-	runDir, err := safeExistingDir(opts.RunDir)
-	if err != nil {
-		return "", "", fmt.Errorf("unsafe run path: %w", err)
-	}
-	return profilePath, runDir, nil
-}
-
-func resolveValidateOutPath(outPath string) (string, error) {
-	if outPath == "" {
-		return "", nil
-	}
-	safeOut, err := safeOutFile(outPath)
-	if err != nil {
-		return "", fmt.Errorf("unsafe out path: %w", err)
-	}
-	return safeOut, nil
-}
-
-func evaluationFromRun(profile Profile, runDir string) Validation {
-	run, events, err := LoadRun(runDir)
-	if err != nil {
-		return fallbackSourceUnavailable(profile)
-	}
-	return evaluate(profile, run, events)
-}
-
-func fallbackSourceUnavailable(profile Profile) Validation {
-	validation := Validation{
-		SchemaVersion:      ValidationSchemaVersion,
-		ProfileID:          profile.ProfileID,
-		HarnessFamily:      profile.HarnessFamily,
-		EventSchemaVersion: profile.EventSchemaVersion,
-		ValidationState:    StateCannotVerify,
-		ReasonCode:         "source_unavailable",
-		NonAuthority:       nonAuthority(),
-	}
-	validation.ValidationDigest = validationDigest(validation)
-	return validation
-}
-
-func writeValidationIfRequested(outPath string, validation Validation) error {
-	if outPath == "" {
-		return nil
-	}
-	return writeJSON(outPath, validation)
-}
-
-func LoadProfile(path string) (Profile, error) {
-	var profile Profile
-	if err := readExistingJSON(path, &profile); err != nil {
-		return Profile{}, err
-	}
-	if err := validateProfile(profile); err != nil {
-		return Profile{}, err
-	}
-	return profile, nil
-}
-
-func LoadSessionProfile(path string) (SessionProfile, error) {
-	var profile SessionProfile
-	if err := readExistingJSON(path, &profile); err != nil {
-		return SessionProfile{}, err
-	}
-	if err := validateSessionProfile(&profile); err != nil {
-		return SessionProfile{}, err
-	}
-	return profile, nil
-}
-
-func validateSessionProfile(profile *SessionProfile) error {
-	if err := validateSessionProfileIdentity(*profile); err != nil {
-		return err
-	}
-	if err := normalizeSessionStreamCapture(profile); err != nil {
-		return err
-	}
-	if err := validateSessionSetupActions(profile.SetupActions); err != nil {
-		return err
-	}
-	return validateSessionIsolationRules(profile.IsolationRules)
-}
-
-func validateSessionProfileIdentity(profile SessionProfile) error {
-	if profile.SchemaVersion != SessionProfileSchemaVersion {
-		return fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
-	}
-	if !safeIDPattern.MatchString(profile.ProfileID) {
-		return errors.New("unsafe session profile_id")
-	}
-	return validateSessionProfilePaths(profile)
-}
-
-func validateSessionProfilePaths(profile SessionProfile) error {
-	if err := validateRequiredSessionPaths(profile); err != nil {
-		return err
-	}
-	return validateRawEventConfig(profile)
-}
-
-func validateRequiredSessionPaths(profile SessionProfile) error {
-	if strings.TrimSpace(profile.HarnessProfilePath) == "" {
-		return errors.New("session profile requires harness_profile_path")
-	}
-	if strings.TrimSpace(profile.EventSourcePath) == "" {
-		return errors.New("session profile requires event_source_path")
-	}
-	return nil
-}
-
-func validateRawEventConfig(profile SessionProfile) error {
-	hasFormat := profile.RawEventFormat != ""
-	hasSource := strings.TrimSpace(profile.RawEventSourcePath) != ""
-	if unsupportedRawEventFormat(profile.RawEventFormat) {
-		return errors.New("unsupported raw_event_format")
-	}
-	return validateRawEventPair(hasFormat, hasSource)
-}
-
-func validateRawEventPair(hasFormat, hasSource bool) error {
-	switch {
-	case hasFormat == hasSource:
-		return nil
-	case hasFormat:
-		return errors.New("raw_event_source_path required for raw_event_format")
-	default:
-		return errors.New("raw_event_format required for raw_event_source_path")
-	}
-}
-
-func unsupportedRawEventFormat(format string) bool {
-	return format != "" && format != OpenCodeJSONLRawFormat
-}
-
-func normalizeSessionStreamCapture(profile *SessionProfile) error {
-	if profile.StreamCapture == "" {
-		profile.StreamCapture = "disabled"
-	}
-	switch profile.StreamCapture {
-	case "disabled":
-		return nil
-	case ContentDigestOnly, ContentRetainedSafe:
-		return errors.New("stream_capture mode not implemented")
-	default:
-		return errors.New("unsupported stream_capture")
-	}
-}
-
-func validateSessionSetupActions(actions []SessionSetupAction) error {
-	if len(actions) > 3 {
-		return errors.New("too many setup actions")
-	}
-	for _, action := range actions {
-		if err := validateSessionSetupAction(action); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func validateSessionSetupAction(action SessionSetupAction) error {
-	if !safeIDPattern.MatchString(action.ID) {
-		return errors.New("unsafe setup action id")
-	}
-	switch action.Kind {
-	case "init", "profile", "wrapper", "hook", "context_isolation":
-		return nil
-	default:
-		return errors.New("unsupported setup action kind")
-	}
-}
-
-func validateSessionIsolationRules(rules []SessionIsolationRule) error {
-	for _, rule := range rules {
-		if err := validateSessionIsolationRule(rule); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func validateSessionIsolationRule(rule SessionIsolationRule) error {
-	if !safeIDPattern.MatchString(rule.ID) {
-		return errors.New("unsafe isolation rule id")
-	}
-	if strings.TrimSpace(rule.Pattern) == "" || strings.Contains(rule.Pattern, "\n") || strings.Contains(rule.Pattern, "\r") {
-		return errors.New("unsafe isolation rule pattern")
-	}
-	if unsafeProfileRelativePath(rule.TargetPath) {
-		return errors.New("unsafe isolation target path")
-	}
-	switch rule.Kind {
-	case "ignore_line", "json_read_deny":
-		return nil
-	default:
-		return errors.New("unsupported isolation rule kind")
-	}
-}
-
-func installIsolationRules(profilePath string, rules []SessionIsolationRule) ([]SessionIsolationResult, error) {
-	results := make([]SessionIsolationResult, 0, len(rules))
-	for _, rule := range rules {
-		resolvedRule, err := resolveIsolationRuleTarget(profilePath, rule)
-		if err != nil {
-			return nil, err
-		}
-		result, err := installIsolationRule(resolvedRule)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, result)
-	}
-	return results, nil
-}
-
-func resolveIsolationRuleTarget(profilePath string, rule SessionIsolationRule) (SessionIsolationRule, error) {
-	targetPath, err := safeProfileRelativeIsolationFile(profilePath, rule.TargetPath)
-	if err != nil {
-		return SessionIsolationRule{}, err
-	}
-	rule.TargetPath = targetPath
-	return rule, nil
-}
-
-func safeProfileRelativeIsolationFile(profilePath, relPath string) (string, error) {
-	if unsafeProfileRelativePath(relPath) {
-		return "", errors.New("profile relative isolation path must be local without traversal")
-	}
-	baseDir := filepath.Dir(profilePath)
-	if baseDir == "." {
-		baseDir = ""
-	}
-	path := filepath.Join(baseDir, relPath)
-	clean := filepath.Clean(path)
-	parent := filepath.Dir(clean)
-	if err := validatePotentialParentPath(parent); err != nil {
-		return "", err
-	}
-	if err := ensureOutParentInsideWorkingDirectory(parent); err != nil {
-		return "", err
-	}
-	base := filepath.Base(clean)
-	if strings.TrimSpace(base) == "" || strings.ContainsAny(base, `/\`) {
-		return "", errors.New("unsafe isolation filename")
-	}
-	return clean, nil
-}
-
-func installIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
-	if err := ensureIsolationRule(rule); err != nil {
-		return SessionIsolationResult{}, err
-	}
-	return verifyIsolationRule(rule)
-}
-
-func ensureIsolationRule(rule SessionIsolationRule) error {
-	switch rule.Kind {
-	case "ignore_line":
-		return ensureLineFileRule(rule.TargetPath, rule.Pattern)
-	case "json_read_deny":
-		return ensureJSONReadDenyRule(rule.TargetPath, rule.Pattern)
-	default:
-		return errors.New("unsupported isolation rule kind")
-	}
-}
-
-func ensureLineFileRule(path, line string) error {
-	lines, err := readOptionalLines(path)
-	if err != nil {
-		return err
-	}
-	for _, existing := range lines {
-		if existing == line {
-			return nil
-		}
-	}
-	lines = append(lines, line)
-	return writeLines(path, lines)
-}
-
-func readOptionalLines(path string) ([]string, error) {
-	data, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	text := strings.TrimRight(string(data), "\n")
-	if text == "" {
-		return nil, nil
-	}
-	return strings.Split(text, "\n"), nil
-}
-
-func writeLines(path string, lines []string) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
-}
-
-func ensureJSONReadDenyRule(path, pattern string) error {
-	config := map[string]any{}
-	data, err := os.ReadFile(path)
-	if err == nil && len(strings.TrimSpace(string(data))) > 0 {
-		if err := json.Unmarshal(data, &config); err != nil {
-			return err
-		}
-	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	permission := ensureObject(config, "permission")
-	read := ensureObject(permission, "read")
-	read[pattern] = "deny"
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return writeJSON(path, config)
-}
-
-func ensureObject(parent map[string]any, key string) map[string]any {
-	if child, ok := parent[key].(map[string]any); ok {
-		return child
-	}
-	child := map[string]any{}
-	parent[key] = child
-	return child
-}
-
-func verifyIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
-	result := SessionIsolationResult{
-		ID:         rule.ID,
-		Kind:       rule.Kind,
-		TargetPath: filepath.ToSlash(rule.TargetPath),
-		Pattern:    rule.Pattern,
-		State:      StatePass,
-		ReasonCode: "isolation_rule_verified",
-	}
-	ok, err := isolationRulePresent(rule)
-	if err != nil {
-		return SessionIsolationResult{}, err
-	}
-	if !ok {
-		result.State = StateCannotVerify
-		result.ReasonCode = "isolation_rule_absent"
-	}
-	if digest := digestFile(rule.TargetPath); digest != "" {
-		result.SHA256 = digest
-	}
-	return result, nil
-}
-
-func isolationRulePresent(rule SessionIsolationRule) (bool, error) {
-	switch rule.Kind {
-	case "ignore_line":
-		lines, err := readOptionalLines(rule.TargetPath)
-		if err != nil {
-			return false, err
-		}
-		for _, line := range lines {
-			if line == rule.Pattern {
-				return true, nil
-			}
-		}
-		return false, nil
-	case "json_read_deny":
-		var config struct {
-			Permission struct {
-				Read map[string]string `json:"read"`
-			} `json:"permission"`
-		}
-		if err := readExistingJSON(rule.TargetPath, &config); err != nil {
-			return false, err
-		}
-		return config.Permission.Read[rule.Pattern] == "deny", nil
-	default:
-		return false, errors.New("unsupported isolation rule kind")
-	}
-}
-
-func LoadSessionRun(path string) (SessionRun, error) {
-	var run SessionRun
-	if err := readExistingJSON(path, &run); err != nil {
-		return SessionRun{}, err
-	}
-	if err := validateLoadedSessionRun(run); err != nil {
-		return SessionRun{}, err
-	}
-	return run, nil
-}
-
-func validateLoadedSessionRun(run SessionRun) error {
-	if run.SchemaVersion != SessionRunSchemaVersion {
-		return fmt.Errorf("unsupported session schema_version %q", run.SchemaVersion)
-	}
-	if !safeIDPattern.MatchString(run.ProfileID) {
-		return errors.New("unsafe session profile_id")
-	}
-	return nil
-}
-
-func readExistingJSON(path string, target any) error {
-	safePath, err := safeExistingFile(path)
-	if err != nil {
-		return err
-	}
-	data, err := os.ReadFile(safePath)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, target)
-}
-
-func newSessionRun(profile SessionProfile, now time.Time) SessionRun {
-	actionIDs := make([]string, 0, len(profile.SetupActions))
-	for _, action := range profile.SetupActions {
-		actionIDs = append(actionIDs, action.ID)
-	}
-	sort.Strings(actionIDs)
-	commit := sourceCommit()
-	commitState := StatePass
-	if commit == "" {
-		commitState = StateCannotVerify
-	}
-	return SessionRun{
-		SchemaVersion:      SessionRunSchemaVersion,
-		ProfileID:          profile.ProfileID,
-		HarnessProfilePath: profile.HarnessProfilePath,
-		EventSourcePath:    profile.EventSourcePath,
-		RawEventSourcePath: profile.RawEventSourcePath,
-		RawEventFormat:     profile.RawEventFormat,
-		SetupActionIDs:     actionIDs,
-		CommandDigestState: StateCannotVerify,
-		ProcessIDState:     StateCannotVerify,
-		SourceCommit:       commit,
-		SourceCommitState:  commitState,
-		CollectionState:    StateCannotVerify,
-		CollectionReason:   "not_collected",
-		CreatedAt:          now.Format(time.RFC3339),
-	}
-}
-
-func readEventsFromPath(profilePath, sourcePath string) ([]Event, string, error) {
-	profile, err := LoadProfile(profilePath)
-	if err != nil {
-		return nil, "", err
-	}
-	return readEvents(profile, sourcePath)
-}
-
-func safeProfileRelativeFile(profilePath, relPath string) (string, error) {
-	if unsafeProfileRelativePath(relPath) {
-		return "", errors.New("profile relative path must be local without traversal")
-	}
-	baseDir := filepath.Dir(profilePath)
-	if baseDir == "." {
-		return safeExistingFile(relPath)
-	}
-	return safeExistingFile(filepath.Join(baseDir, relPath))
-}
-
-func safeProfileRelativeOutFile(profilePath, relPath string) (string, error) {
-	if unsafeProfileRelativePath(relPath) {
-		return "", errors.New("profile relative output path must be local without traversal")
-	}
-	baseDir := filepath.Dir(profilePath)
-	if baseDir == "." {
-		return safeOutFile(relPath)
-	}
-	return safeOutFile(filepath.Join(baseDir, relPath))
-}
-
-func unsafeProfileRelativePath(path string) bool {
-	return filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..")
-}
-
-func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, now time.Time) error {
-	if format != OpenCodeJSONLRawFormat {
-		return errors.New("unsupported raw_event_format")
-	}
-	if now.IsZero() {
-		now = time.Now().UTC()
-	}
-	if filepath.Clean(rawPath) == filepath.Clean(outPath) {
-		return errors.New("raw_event_source_path and event_source_path must be different files")
-	}
-	events, err := normalizedOpenCodeRawEvents(rawPath, sessionFacts, now)
-	if err != nil {
-		return err
-	}
-	return writeNormalizedEvents(outPath, events)
-}
-
-func normalizedOpenCodeRawEvents(rawPath string, sessionFacts []Event, now time.Time) ([]Event, error) {
-	file, err := os.Open(rawPath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 64*1024), DefaultMaxLineBytes)
-	lineNo := 0
-	events := append([]Event{}, sessionFacts...)
-	for scanner.Scan() {
-		lineNo++
-		var err error
-		events, err = appendNormalizedRawLine(events, scanner.Bytes(), lineNo, now)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return events, scanner.Err()
-}
-
-func appendNormalizedRawLine(events []Event, line []byte, lineNo int, now time.Time) ([]Event, error) {
-	lineEvents, err := normalizeOpenCodeRawLineBytes(line, lineNo, now)
-	if err != nil {
-		return nil, err
-	}
-	return append(events, lineEvents...), nil
-}
-
-func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Event, error) {
-	if blankJSONLLine(line) {
-		return nil, nil
-	}
-	var raw map[string]any
-	if err := json.Unmarshal(line, &raw); err != nil {
-		return nil, fmt.Errorf("raw source line %d: malformed_jsonl", lineNo)
-	}
-	if err := rejectUnsafeRawEvent(raw, lineNo); err != nil {
-		return nil, err
-	}
-	events := normalizeOpenCodeRawLine(raw, lineNo, now)
-	return addNormalizedSourceDigests(events)
-}
-
-func rejectUnsafeRawEvent(raw map[string]any, lineNo int) error {
-	if unsafeField, reason := findUnsafeRawEvent(raw); unsafeField != "" {
-		return fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
-	}
-	return nil
-}
-
-func addNormalizedSourceDigests(events []Event) ([]Event, error) {
-	for i := range events {
-		data, err := json.Marshal(events[i])
-		if err != nil {
-			return nil, err
-		}
-		events[i].SourceDigest = digestLine(data)
-	}
-	return events, nil
-}
-
-func blankJSONLLine(line []byte) bool {
-	return len(strings.TrimSpace(string(line))) == 0
-}
-
-func writeNormalizedEvents(outPath string, events []Event) error {
-	out, err := createNormalizedEventsFile(outPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	for _, event := range events {
-		if err := writeNormalizedEvent(out, event); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func createNormalizedEventsFile(outPath string) (*os.File, error) {
-	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
-		return nil, err
-	}
-	return os.Create(outPath)
-}
-
-func writeNormalizedEvent(out io.Writer, event Event) error {
-	data, err := json.Marshal(event)
-	if err != nil {
-		return err
-	}
-	_, err = out.Write(append(data, '\n'))
-	return err
-}
-
 func normalizeOpenCodeRawLine(raw map[string]any, lineNo int, now time.Time) []Event {
 	signals := rawSignals(raw)
 	families := openCodeFamilies(raw, signals)
 	if len(families) == 0 {
+
 		return nil
 	}
+
 	ordered := sortedFamilies(families)
 	observedAt := openCodeObservedAt(raw, now)
 	actor := openCodeActor(raw)
+
 	sourceRef := fmt.Sprintf("raw-%06d", lineNo)
+	return normalizedOpenCodeEvents(ordered, observedAt, sourceRef, actor)
+}
+
+func normalizedOpenCodeEvents(ordered []string, observedAt, sourceRef, actor string) []Event {
 	events := make([]Event, 0, len(ordered))
 	for _, family := range ordered {
-		events = append(events, normalizedEvent(
-			fmt.Sprintf("%s-%s", sourceRef, family),
-			family,
-			family+"_observed",
-			observedAt,
-			sourceRef,
-			actor,
-		))
+
+		events = append(events, normalizedOpenCodeEvent(family, observedAt, sourceRef, actor))
 	}
 	return events
 }
 
+func normalizedOpenCodeEvent(family, observedAt, sourceRef, actor string) Event {
+
+	return normalizedEvent(
+		fmt.Sprintf("%s-%s", sourceRef, family),
+		family,
+		family+"_observed",
+		observedAt,
+		sourceRef,
+		actor,
+	)
+}
 func openCodeFamilies(raw map[string]any, signals []string) map[string]bool {
 	families := map[string]bool{}
+
 	setFamily(families, "harness", openCodeHarnessFamily(signals))
 	setFamily(families, "model", hasKey(raw, "model", "model_id", "modelid", "provider"))
 	setFamily(families, "interaction", openCodeInteractionFamily(raw, signals))
@@ -1438,7 +561,9 @@ func openCodeFamilies(raw map[string]any, signals []string) map[string]bool {
 	setFamily(families, "phase", openCodePhaseFamily(raw, signals))
 	setFamily(families, "review", hasSignal(signals, "review") || hasSignalPrefix(signals, "review."))
 	setFamily(families, "pr", hasSignal(signals, "pull_request", "pull request") || hasSignalPrefix(signals, "pr.", "pr_"))
+
 	setFamily(families, "merge", hasSignal(signals, "merge") || hasSignalPrefix(signals, "merge."))
+
 	return families
 }
 
@@ -1454,18 +579,21 @@ func openCodeHarnessFamily(signals []string) bool {
 }
 
 func openCodeInteractionFamily(raw map[string]any, signals []string) bool {
+
 	return hasKey(raw, "role") ||
 		hasSignal(signals, "message", "response", "text") ||
 		hasSignalPrefix(signals, "message.", "response.")
 }
 
 func openCodeToolFamily(raw map[string]any, signals []string) bool {
+
 	return hasKey(raw, "tool", "tool_call", "toolcall") ||
 		hasSignal(signals, "tool.call", "tool.result", "tool_use") ||
 		hasSignalPrefix(signals, "tool.")
 }
 
 func openCodeMutationFamily(raw map[string]any, signals []string) bool {
+
 	return hasSignal(signals, "file.write", "file.edit", "file.patch", "file.delete", "mutation") ||
 		hasSignalPrefix(signals, "mutation.") ||
 		nativeMutationTool(raw)
@@ -1477,6 +605,7 @@ func openCodeTestFamily(signals []string) bool {
 }
 
 func openCodePhaseFamily(raw map[string]any, signals []string) bool {
+
 	return hasKey(raw, "phase") ||
 		hasSignal(signals, "phase") ||
 		hasSignalPrefix(signals, "phase.", "gsd.", "gsd_")
@@ -1487,6 +616,7 @@ func sortedFamilies(families map[string]bool) []string {
 	for family := range families {
 		ordered = append(ordered, family)
 	}
+
 	sort.Strings(ordered)
 	return ordered
 }
@@ -1494,6 +624,7 @@ func sortedFamilies(families map[string]bool) []string {
 func openCodeObservedAt(raw map[string]any, now time.Time) string {
 	observedAt := findTimestamp(raw)
 	if observedAt == "" {
+
 		return now.Format(time.RFC3339)
 	}
 	return observedAt
@@ -1501,6 +632,7 @@ func openCodeObservedAt(raw map[string]any, now time.Time) string {
 
 func openCodeActor(raw map[string]any) string {
 	if model := findStringByKey(raw, "model", "model_id", "modelid"); model != "" {
+
 		return safeToken(model)
 	}
 	if provider := findStringByKey(raw, "provider"); provider != "" {
@@ -1510,38 +642,50 @@ func openCodeActor(raw map[string]any) string {
 }
 
 func sessionCommandFacts(session SessionRun) []Event {
-	if session.CommandModelState != StatePass || strings.TrimSpace(session.CommandModel) == "" {
+	if !hasSessionCommandModel(session) {
+
 		return nil
 	}
-	observedAt := sessionCommandObservedAt(session)
-	event := normalizedEvent(
-		"session-command-model",
-		"model",
-		"model_observed",
-		observedAt,
-		"session-command",
-		safeToken(session.CommandModel),
-	)
+	event := sessionCommandModelEvent(session)
 	data, err := json.Marshal(event)
 	if err != nil {
 		return nil
 	}
+
 	event.SourceDigest = digestLine(data)
+
 	return []Event{event}
 }
 
+func hasSessionCommandModel(session SessionRun) bool {
+	return session.CommandModelState == StatePass && strings.TrimSpace(session.CommandModel) != ""
+}
+
+func sessionCommandModelEvent(session SessionRun) Event {
+
+	return normalizedEvent(
+		"session-command-model",
+		"model",
+		"model_observed",
+		sessionCommandObservedAt(session),
+		"session-command",
+		safeToken(session.CommandModel),
+	)
+}
 func sessionCommandObservedAt(session SessionRun) string {
 	observedAt := session.StartTime
 	if observedAt == "" {
 		observedAt = session.CreatedAt
 	}
 	if _, err := time.Parse(time.RFC3339, observedAt); err != nil {
+
 		return time.Now().UTC().Format(time.RFC3339)
 	}
 	return observedAt
 }
 
 func normalizedEvent(id, family, eventType, observedAt, sourceRef, actor string) Event {
+
 	return Event{
 		EventID:            id,
 		EventSchemaVersion: EventSchemaVersion,
@@ -1560,20 +704,43 @@ func rawSignals(value any) []string {
 }
 
 func rawSignalsAt(parentKey string, value any) []string {
+	if signals, ok := rawStructuredSignals(parentKey, value); ok {
+		return signals
+	}
+
+	return rawLeafSignals(parentKey, value)
+}
+
+func rawStructuredSignals(parentKey string, value any) ([]string, bool) {
 	switch v := value.(type) {
 	case map[string]any:
-		return rawMapSignals(v)
+
+		return rawMapSignals(v), true
 	case []any:
-		return rawSliceSignals(parentKey, v)
+
+		return rawSliceSignals(parentKey, v), true
+	default:
+		return nil, false
+	}
+}
+
+func rawLeafSignals(parentKey string, value any) []string {
+	switch v := value.(type) {
 	case string:
 		return rawStringSignals(parentKey, v)
 	default:
-		return []string{strings.ToLower(fmt.Sprint(v))}
+
+		return rawScalarSignals(v)
 	}
+}
+
+func rawScalarSignals(value any) []string {
+	return []string{strings.ToLower(fmt.Sprint(value))}
 }
 
 func rawStringSignals(parentKey, value string) []string {
 	if rawSignalValueKey(parentKey) {
+
 		return []string{strings.ToLower(value)}
 	}
 	return nil
@@ -1582,6 +749,7 @@ func rawStringSignals(parentKey, value string) []string {
 func rawMapSignals(values map[string]any) []string {
 	parts := make([]string, 0, len(values)*2)
 	for key, child := range values {
+
 		parts = append(parts, strings.ToLower(key))
 		parts = append(parts, rawSignalsAt(key, child)...)
 	}
@@ -1591,6 +759,7 @@ func rawMapSignals(values map[string]any) []string {
 func rawSliceSignals(parentKey string, values []any) []string {
 	parts := make([]string, 0, len(values))
 	for _, child := range values {
+
 		parts = append(parts, rawSignalsAt(parentKey, child)...)
 	}
 	return parts
@@ -1599,6 +768,7 @@ func rawSliceSignals(parentKey string, values []any) []string {
 func rawSignalValueKey(key string) bool {
 	switch strings.ToLower(key) {
 	case "type", "kind", "event", "event_type", "name", "phase", "role", "provider", "model", "model_id", "status", "tool", "action", "operation":
+
 		return true
 	default:
 		return false
@@ -1608,8 +778,10 @@ func rawSignalValueKey(key string) bool {
 func hasSignal(signals []string, values ...string) bool {
 	wanted := map[string]bool{}
 	for _, value := range values {
+
 		wanted[strings.ToLower(value)] = true
 	}
+
 	for _, signal := range signals {
 		if wanted[signal] {
 			return true
@@ -1621,6 +793,7 @@ func hasSignal(signals []string, values ...string) bool {
 func hasSignalPrefix(signals []string, prefixes ...string) bool {
 	for _, signal := range signals {
 		for _, prefix := range prefixes {
+
 			if strings.HasPrefix(signal, strings.ToLower(prefix)) {
 				return true
 			}
@@ -1628,12 +801,12 @@ func hasSignalPrefix(signals []string, prefixes ...string) bool {
 	}
 	return false
 }
-
 func hasKey(value any, keys ...string) bool {
 	wanted := map[string]bool{}
 	for _, key := range keys {
 		wanted[strings.ToLower(key)] = true
 	}
+
 	return hasKeyIn(value, wanted)
 }
 
@@ -1644,11 +817,13 @@ func hasKeyIn(value any, wanted map[string]bool) bool {
 	case []any:
 		return hasKeyInSlice(v, wanted)
 	}
+
 	return false
 }
 
 func hasKeyInMap(values map[string]any, wanted map[string]bool) bool {
 	for key, child := range values {
+
 		if wanted[strings.ToLower(key)] || hasKeyIn(child, wanted) {
 			return true
 		}
@@ -1658,18 +833,19 @@ func hasKeyInMap(values map[string]any, wanted map[string]bool) bool {
 
 func hasKeyInSlice(values []any, wanted map[string]bool) bool {
 	for _, child := range values {
+
 		if hasKeyIn(child, wanted) {
 			return true
 		}
 	}
 	return false
 }
-
 func findStringByKey(value any, keys ...string) string {
 	wanted := map[string]bool{}
 	for _, key := range keys {
 		wanted[strings.ToLower(key)] = true
 	}
+
 	return findStringByKeyIn(value, wanted)
 }
 
@@ -1681,12 +857,14 @@ func findByKeyIn[T any](value any, wanted map[string]bool, match func(any) (T, b
 	case []any:
 		return findByKeyInSlice(v, wanted, match)
 	}
+
 	return zero, false
 }
 
 func findByKeyInMap[T any](value map[string]any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
 	var zero T
 	for key, child := range value {
+
 		if found, ok := matchWantedKey(key, child, wanted, match); ok {
 			return found, true
 		}
@@ -1700,6 +878,7 @@ func findByKeyInMap[T any](value map[string]any, wanted map[string]bool, match f
 func matchWantedKey[T any](key string, value any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
 	var zero T
 	if !wanted[strings.ToLower(key)] {
+
 		return zero, false
 	}
 	return match(value)
@@ -1708,6 +887,7 @@ func matchWantedKey[T any](key string, value any, wanted map[string]bool, match 
 func findByKeyInSlice[T any](value []any, wanted map[string]bool, match func(any) (T, bool)) (T, bool) {
 	var zero T
 	for _, child := range value {
+
 		if found, ok := findByKeyIn(child, wanted, match); ok {
 			return found, true
 		}
@@ -1720,6 +900,7 @@ func findStringByKeyIn(value any, wanted map[string]bool) string {
 		s, ok := value.(string)
 		return s, ok && strings.TrimSpace(s) != ""
 	}
+
 	s, ok := findByKeyIn(value, wanted, matchingString)
 	if !ok {
 		return ""
@@ -1729,6 +910,7 @@ func findStringByKeyIn(value any, wanted map[string]bool) string {
 
 func findTimestamp(raw map[string]any) string {
 	for _, key := range []string{"time", "timestamp", "created_at", "observed_at"} {
+
 		if observedAt := timestampForKey(raw, key); observedAt != "" {
 			return observedAt
 		}
@@ -1740,12 +922,12 @@ func timestampForKey(raw map[string]any, key string) string {
 	if observedAt := stringTimestampForKey(raw, key); observedAt != "" {
 		return observedAt
 	}
+
 	if value, ok := findNumberByKey(raw, key); ok {
 		return unixMillisTimestamp(value)
 	}
 	return ""
 }
-
 func stringTimestampForKey(raw map[string]any, key string) string {
 	value := findStringByKey(raw, key)
 	if value == "" {
@@ -1753,6 +935,7 @@ func stringTimestampForKey(raw map[string]any, key string) string {
 	}
 	parsed, err := time.Parse(time.RFC3339, value)
 	if err != nil {
+
 		return ""
 	}
 	return parsed.UTC().Format(time.RFC3339)
@@ -1763,6 +946,7 @@ func findNumberByKey(value any, keys ...string) (float64, bool) {
 	for _, key := range keys {
 		wanted[strings.ToLower(key)] = true
 	}
+
 	return findNumberByKeyIn(value, wanted)
 }
 
@@ -1770,6 +954,7 @@ func findNumberByKeyIn(value any, wanted map[string]bool) (float64, bool) {
 	matchNumber := func(value any) (float64, bool) {
 		switch n := value.(type) {
 		case float64:
+
 			return n, true
 		case int:
 			return float64(n), true
@@ -1777,11 +962,13 @@ func findNumberByKeyIn(value any, wanted map[string]bool) (float64, bool) {
 			return 0, false
 		}
 	}
+
 	return findByKeyIn(value, wanted, matchNumber)
 }
 
 func unixMillisTimestamp(value float64) string {
 	if value <= 0 || value <= 1_000_000_000 {
+
 		return ""
 	}
 	if value > 1_000_000_000_000 {
@@ -1794,6 +981,7 @@ func nativeMutationTool(raw map[string]any) bool {
 	tool := strings.ToLower(findStringByKey(raw, "tool"))
 	switch tool {
 	case "edit", "write", "patch", "apply_patch", "update", "delete":
+
 		return true
 	default:
 		return false
@@ -1805,21 +993,23 @@ func safeToken(value string) string {
 	for _, r := range value {
 		writeSafeTokenRune(&b, r)
 		if b.Len() >= 128 {
+
 			break
 		}
 	}
 	token := strings.Trim(b.String(), "-_.:")
 	if token == "" {
+
 		return "opencode"
 	}
 	return token
 }
-
 func writeSafeTokenRune(b *strings.Builder, r rune) {
 	if safeTokenRune(r) {
 		b.WriteRune(r)
 		return
 	}
+
 	b.WriteByte('-')
 }
 
@@ -1832,9 +1022,11 @@ func LoadRun(dir string) (Run, []Event, error) {
 	if err := readJSON(filepath.Join(dir, "run.json"), &run); err != nil {
 		return Run{}, nil, err
 	}
+
 	if err := validateLoadedRun(run); err != nil {
 		return Run{}, nil, err
 	}
+
 	events, err := loadRunEvents(dir, run.EventRefs)
 	if err != nil {
 		return Run{}, nil, err
@@ -1843,6 +1035,7 @@ func LoadRun(dir string) (Run, []Event, error) {
 }
 
 func readJSON(path string, target any) error {
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -1852,14 +1045,15 @@ func readJSON(path string, target any) error {
 
 func validateLoadedRun(run Run) error {
 	if run.SchemaVersion != RunSchemaVersion {
+
 		return fmt.Errorf("unsupported run schema_version: %s", run.SchemaVersion)
 	}
 	return nil
 }
-
 func loadRunEvents(dir string, refs []string) ([]Event, error) {
 	events := make([]Event, 0, len(refs))
 	for _, ref := range refs {
+
 		event, err := loadRunEvent(dir, ref)
 		if err != nil {
 			return nil, err
@@ -1871,8 +1065,10 @@ func loadRunEvents(dir string, refs []string) ([]Event, error) {
 
 func loadRunEvent(dir, ref string) (Event, error) {
 	if !safeEventRef(ref) {
+
 		return Event{}, fmt.Errorf("unsafe event ref: %s", ref)
 	}
+
 	data, err := os.ReadFile(filepath.Join(dir, ref))
 	if err != nil {
 		return Event{}, err
@@ -1881,25 +1077,33 @@ func loadRunEvent(dir, ref string) (Event, error) {
 	if err := json.Unmarshal(data, &event); err != nil {
 		return Event{}, err
 	}
+
 	return event, nil
 }
 
 func Summarize(validation Validation) string {
 	var b strings.Builder
+
 	fmt.Fprintf(&b, "Harness observation: %s (%s)\n", validation.ValidationState, validation.ReasonCode)
 	fmt.Fprintf(&b, "Profile: %s\n", validation.ProfileID)
 	fmt.Fprintf(&b, "Event schema: %s\n", validation.EventSchemaVersion)
 	fmt.Fprintf(&b, "Events: %d\n", validation.EventCount)
 	fmt.Fprintln(&b, "Dimensions:")
 	for _, dim := range validation.Dimensions {
-		required := "optional"
-		if dim.Required {
-			required = "required"
-		}
-		fmt.Fprintf(&b, "- %s [%s]: %s (%s), events=%d\n", dim.Family, required, dim.State, dim.ReasonCode, dim.EventCount)
+		writeSummaryDimension(&b, dim)
 	}
 	fmt.Fprintf(&b, "Boundary: %s\n", nonAuthority())
 	return b.String()
+}
+
+func writeSummaryDimension(b *strings.Builder, dim Dimension) {
+	required := "optional"
+	if dim.Required {
+
+		required = "required"
+	}
+
+	fmt.Fprintf(b, "- %s [%s]: %s (%s), events=%d\n", dim.Family, required, dim.State, dim.ReasonCode, dim.EventCount)
 }
 
 func LoadValidation(path string) (Validation, error) {
@@ -1907,6 +1111,7 @@ func LoadValidation(path string) (Validation, error) {
 	if err := readExistingJSON(path, &validation); err != nil {
 		return Validation{}, err
 	}
+
 	if validation.SchemaVersion != ValidationSchemaVersion {
 		return Validation{}, fmt.Errorf("unsupported validation schema_version: %s", validation.SchemaVersion)
 	}
@@ -1917,6 +1122,7 @@ func validateProfile(profile Profile) error {
 	if err := validateProfileMetadata(profile); err != nil {
 		return err
 	}
+
 	if err := validateProfileEventFamilies(profile.RequiredEventFamilies, profile.OptionalEventFamilies); err != nil {
 		return err
 	}
@@ -1930,6 +1136,7 @@ func validateProfileMetadata(profile Profile) error {
 	if profile.EventSchemaVersion != EventSchemaVersion {
 		return errors.New("unsupported event_schema_version")
 	}
+
 	if len(profile.RequiredEventFamilies) == 0 {
 		return errors.New("profile requires at least one required_event_family")
 	}
@@ -1940,9 +1147,11 @@ func validateProfileIdentity(profile Profile) error {
 	if profile.SchemaVersion != ProfileSchemaVersion {
 		return fmt.Errorf("unsupported harness profile schema_version: %s", profile.SchemaVersion)
 	}
+
 	if !safeIDPattern.MatchString(profile.ProfileID) {
 		return errors.New("unsafe profile_id")
 	}
+
 	if !safeIDPattern.MatchString(profile.HarnessFamily) {
 		return errors.New("unsafe harness_family")
 	}
@@ -1953,20 +1162,21 @@ func validateProfileEventFamilies(requiredEventFamilies []string, optionalEventF
 	if err := validateFamilyList(requiredEventFamilies); err != nil {
 		return err
 	}
+
 	return validateFamilyList(optionalEventFamilies)
 }
-
 func validateFamilyList(families []string) error {
 	for _, family := range families {
+
 		if !validFamily(family) {
 			return fmt.Errorf("unsupported event family: %s", family)
 		}
 	}
 	return nil
 }
-
 func validateProfileDegradationRules(rules map[string]Rule) error {
 	for key, rule := range rules {
+
 		if !validRuleKey(key) {
 			return fmt.Errorf("unsupported degradation rule: %s", key)
 		}
@@ -1987,6 +1197,7 @@ func readEvents(profile Profile, sourcePath string) ([]Event, string, error) {
 		return nil, "", err
 	}
 	defer file.Close()
+
 	maxLine, maxEvents := effectiveEventLimits(profile.Limits)
 	return scanEvents(profile, file, maxLine, maxEvents)
 }
@@ -1996,25 +1207,38 @@ func scanEvents(profile Profile, file io.Reader, maxLine, maxEvents int) ([]Even
 	scanner.Buffer(make([]byte, 0, 64*1024), maxLine)
 	events := []Event{}
 	sourceHash := sha256.New()
+
 	lineNo := 0
+	return scanEventLines(profile, scanner, sourceHash, events, lineNo, maxEvents)
+}
+
+func scanEventLines(profile Profile, scanner *bufio.Scanner, sourceHash hash.Hash, events []Event, lineNo, maxEvents int) ([]Event, string, error) {
 	for scanner.Scan() {
+
 		lineNo++
 		line := scanner.Bytes()
 		event, ok, err := readEventLine(profile, line, lineNo, len(events), maxEvents, sourceHash)
 		if err != nil {
 			return nil, "", err
 		}
-		if ok {
-			events = append(events, event)
-		}
+		events = appendScannedEvent(events, event, ok)
 	}
 	return scannedEvents(events, sourceHash, scanner.Err())
+}
+
+func appendScannedEvent(events []Event, event Event, ok bool) []Event {
+	if ok {
+
+		return append(events, event)
+	}
+	return events
 }
 
 func scannedEvents(events []Event, sourceHash hash.Hash, scanErr error) ([]Event, string, error) {
 	if scanErr != nil {
 		return nil, "", scanErr
 	}
+
 	return events, hex.EncodeToString(sourceHash.Sum(nil)), nil
 }
 
@@ -2023,9 +1247,11 @@ func readEventLine(profile Profile, line []byte, lineNo, eventCount, maxEvents i
 		return Event{}, false, err
 	}
 	if blankJSONLLine(line) {
+
 		return Event{}, false, nil
 	}
 	if eventCount >= maxEvents {
+
 		return Event{}, false, fmt.Errorf("source line %d: event limit exceeded", lineNo)
 	}
 	event, err := parseEvent(profile, line, lineNo)
@@ -2039,6 +1265,7 @@ func effectiveEventLimits(limits Limits) (int, int) {
 	}
 	maxEvents := limits.MaxEvents
 	if maxEvents <= 0 {
+
 		maxEvents = DefaultMaxEvents
 	}
 	return maxLine, maxEvents
@@ -2049,6 +1276,7 @@ func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
 	if err != nil {
 		return Event{}, err
 	}
+
 	return event, validateParsedEvent(profile, event, line, lineNo)
 }
 
@@ -2057,6 +1285,7 @@ func decodeSafeEventLine(line []byte, lineNo int) (Event, error) {
 	if err != nil {
 		return Event{}, err
 	}
+
 	if err := rejectUnsafeEvent(raw, lineNo); err != nil {
 		return Event{}, err
 	}
@@ -2066,6 +1295,7 @@ func decodeSafeEventLine(line []byte, lineNo int) (Event, error) {
 func decodeRawEventLine(line []byte, lineNo int) (map[string]any, error) {
 	var raw map[string]any
 	if err := json.Unmarshal(line, &raw); err != nil {
+
 		return nil, fmt.Errorf("source line %d: malformed_jsonl", lineNo)
 	}
 	return raw, nil
@@ -2074,13 +1304,14 @@ func decodeRawEventLine(line []byte, lineNo int) (map[string]any, error) {
 func decodeEventLine(line []byte, lineNo int) (Event, error) {
 	var event Event
 	if err := json.Unmarshal(line, &event); err != nil {
+
 		return Event{}, fmt.Errorf("source line %d: malformed_event", lineNo)
 	}
 	return event, nil
 }
-
 func rejectUnsafeEvent(raw map[string]any, lineNo int) error {
 	if unsafeField, reason := findUnsafe(raw); unsafeField != "" {
+
 		return fmt.Errorf("source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
 	}
 	return nil
@@ -2091,16 +1322,17 @@ func validateParsedEvent(profile Profile, event Event, line []byte, lineNo int) 
 	if event.SourceDigest != expected {
 		return fmt.Errorf("source line %d: source_digest_mismatch:%s", lineNo, safeEvent(event.EventID))
 	}
+
 	if err := validateEvent(profile, event); err != nil {
 		return fmt.Errorf("source line %d: %w", lineNo, err)
 	}
 	return nil
 }
-
 func validateEvent(profile Profile, event Event) error {
 	if err := validateEventIdentity(profile, event); err != nil {
 		return err
 	}
+
 	if err := validateEventRefs(event); err != nil {
 		return err
 	}
@@ -2111,23 +1343,28 @@ func validateEvent(profile Profile, event Event) error {
 }
 
 func validateEventIdentity(profile Profile, event Event) error {
-	if !safeFileIDPattern.MatchString(event.EventID) {
-		return errors.New("unsafe event_id")
-	}
-	if event.EventSchemaVersion != profile.EventSchemaVersion {
-		return errors.New("schema_version_mismatch")
-	}
-	if !validFamily(event.EventFamily) {
-		return errors.New("unsupported event_family")
-	}
-	if !safeIDPattern.MatchString(event.EventType) {
-		return errors.New("unsafe event_type")
+	for _, check := range eventIdentityChecks(profile, event) {
+
+		if !check.ok {
+			return errors.New(check.err)
+		}
 	}
 	return validateObservedAt(event.ObservedAt)
 }
 
+func eventIdentityChecks(profile Profile, event Event) []eventRefCheck {
+
+	return []eventRefCheck{
+		{safeFileIDPattern.MatchString(event.EventID), "unsafe event_id"},
+		{event.EventSchemaVersion == profile.EventSchemaVersion, "schema_version_mismatch"},
+		{validFamily(event.EventFamily), "unsupported event_family"},
+		{safeIDPattern.MatchString(event.EventType), "unsafe event_type"},
+	}
+}
+
 func validateObservedAt(value string) error {
 	if value == "" {
+
 		return nil
 	}
 	if _, err := time.Parse(time.RFC3339, value); err != nil {
@@ -2138,6 +1375,7 @@ func validateObservedAt(value string) error {
 
 func validateEventRefs(event Event) error {
 	for _, check := range eventRefChecks(event) {
+
 		if !check.ok {
 			return errors.New(check.err)
 		}
@@ -2145,12 +1383,8 @@ func validateEventRefs(event Event) error {
 	return nil
 }
 
-type eventRefCheck struct {
-	ok  bool
-	err string
-}
-
 func eventRefChecks(event Event) []eventRefCheck {
+
 	return []eventRefCheck{
 		{safeRef(event.SourceRef), "unsafe source_ref"},
 		{sha256Pattern.MatchString(event.SourceDigest), "invalid source_digest"},
@@ -2162,6 +1396,7 @@ func eventRefChecks(event Event) []eventRefCheck {
 
 func validateEventContent(event Event) error {
 	if !validContentState(event.ContentState) {
+
 		return errors.New("invalid content_state")
 	}
 	return nil
@@ -2169,6 +1404,7 @@ func validateEventContent(event Event) error {
 
 func validateUnavailableFields(fields []UnavailableField) error {
 	for _, field := range fields {
+
 		if !validUnavailableField(field) {
 			return errors.New("invalid unavailable_fields")
 		}
@@ -2177,6 +1413,7 @@ func validateUnavailableFields(fields []UnavailableField) error {
 }
 
 func validUnavailableField(field UnavailableField) bool {
+
 	return safeIDPattern.MatchString(field.Field) &&
 		field.State == StateNotAssessed &&
 		safeIDPattern.MatchString(field.ReasonCode)
@@ -2186,19 +1423,26 @@ func evaluate(profile Profile, run Run, events []Event) Validation {
 	dimensions := evaluationDimensions(profile, events)
 	state, reason := compose(dimensions)
 	if run.EventSchemaVersion != profile.EventSchemaVersion {
+
 		state, reason = StateCannotVerify, "schema_version_mismatch"
 	}
+	return validationFromEvaluation(profile, dimensions, len(events), state, reason)
+}
+func validationFromEvaluation(profile Profile, dimensions []Dimension, eventCount int, state, reason string) Validation {
+
 	validation := Validation{
 		SchemaVersion:      ValidationSchemaVersion,
 		ProfileID:          profile.ProfileID,
 		HarnessFamily:      profile.HarnessFamily,
 		EventSchemaVersion: profile.EventSchemaVersion,
-		ValidationState:    state,
-		ReasonCode:         reason,
-		Dimensions:         dimensions,
-		EventCount:         len(events),
-		NonAuthority:       nonAuthority(),
+
+		ValidationState: state,
+		ReasonCode:      reason,
+		Dimensions:      dimensions,
+		EventCount:      eventCount,
+		NonAuthority:    nonAuthority(),
 	}
+
 	validation.ValidationDigest = validationDigest(validation)
 	return validation
 }
@@ -2207,6 +1451,7 @@ func evaluationDimensions(profile Profile, events []Event) []Dimension {
 	counts := eventFamilyCounts(events)
 	dimensions, required := requiredDimensions(profile.RequiredEventFamilies, counts)
 	dimensions = append(dimensions, optionalDimensions(profile.OptionalEventFamilies, required, counts)...)
+
 	sortDimensions(dimensions)
 	return dimensions
 }
@@ -2214,6 +1459,7 @@ func evaluationDimensions(profile Profile, events []Event) []Dimension {
 func eventFamilyCounts(events []Event) map[string]int {
 	counts := map[string]int{}
 	for _, event := range events {
+
 		counts[event.EventFamily]++
 	}
 	return counts
@@ -2223,6 +1469,7 @@ func requiredDimensions(families []string, counts map[string]int) ([]Dimension, 
 	required := map[string]bool{}
 	dimensions := make([]Dimension, 0, len(families))
 	for _, family := range families {
+
 		required[family] = true
 		dimensions = append(dimensions, dimension(family, true, counts[family]))
 	}
@@ -2233,6 +1480,7 @@ func optionalDimensions(families []string, required map[string]bool, counts map[
 	dimensions := []Dimension{}
 	for _, family := range families {
 		if !required[family] {
+
 			dimensions = append(dimensions, dimension(family, false, counts[family]))
 		}
 	}
@@ -2240,6 +1488,7 @@ func optionalDimensions(families []string, required map[string]bool, counts map[
 }
 
 func sortDimensions(dimensions []Dimension) {
+
 	sort.Slice(dimensions, func(i, j int) bool {
 		if dimensions[i].Required != dimensions[j].Required {
 			return dimensions[i].Required
@@ -2247,11 +1496,11 @@ func sortDimensions(dimensions []Dimension) {
 		return dimensions[i].Family < dimensions[j].Family
 	})
 }
-
 func dimension(family string, required bool, count int) Dimension {
 	if count > 0 {
 		return Dimension{Family: family, Required: required, State: StatePass, ReasonCode: "event_family_observed", EventCount: count}
 	}
+
 	reason := "optional_event_family_absent"
 	if required {
 		reason = "required_event_family_absent"
@@ -2264,8 +1513,10 @@ func compose(dimensions []Dimension) (string, string) {
 	reason := "all_required_dimensions_observed"
 	for _, dim := range dimensions {
 		if !dim.Required {
+
 			continue
 		}
+
 		if rank(dim.State) > rank(state) {
 			state = dim.State
 			reason = dim.ReasonCode
@@ -2275,17 +1526,12 @@ func compose(dimensions []Dimension) (string, string) {
 }
 
 func rank(state string) int {
+
 	return stateRank[state]
 }
 
-var stateRank = map[string]int{
-	StateFail:         4,
-	StateCannotVerify: 3,
-	StateNotAssessed:  2,
-	StatePass:         1,
-}
-
 func safeExistingFile(path string) (string, error) {
+
 	return safeExistingPath(path, existingPathSpec{
 		traversalError: "path must be relative local file without traversal",
 		requireDir:     false,
@@ -2294,24 +1540,20 @@ func safeExistingFile(path string) (string, error) {
 }
 
 func safeExistingDir(path string) (string, error) {
+
 	return safeExistingPath(path, existingPathSpec{
 		traversalError: "path must be relative local directory without traversal",
 		requireDir:     true,
 		typeError:      "path must be a directory",
 	})
 }
-
-type existingPathSpec struct {
-	traversalError string
-	requireDir     bool
-	typeError      string
-}
-
 func safeExistingPath(path string, spec existingPathSpec) (string, error) {
+
 	cleanPath, err := sanitizeExistingPath(path, spec.traversalError)
 	if err != nil {
 		return "", err
 	}
+
 	abs, err := resolveExistingAbsolutePath(cleanPath)
 	if err != nil {
 		return "", err
@@ -2328,6 +1570,7 @@ func resolveExistingAbsolutePath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return absolutePath(resolved)
 }
 
@@ -2335,6 +1578,7 @@ func sanitizeExistingPath(path, traversalError string) (string, error) {
 	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
 		return "", errors.New(traversalError)
 	}
+
 	return filepath.Clean(path), nil
 }
 
@@ -2344,6 +1588,7 @@ func relativeWorkingDirectoryPath(abs string) (string, error) {
 		return "", err
 	}
 	if pathEscapesWorkingDirectory(rel) {
+
 		return "", errors.New("path escapes working directory")
 	}
 	return rel, nil
@@ -2357,6 +1602,7 @@ func ensureExpectedPathType(path string, spec existingPathSpec) error {
 	if info.IsDir() == spec.requireDir {
 		return nil
 	}
+
 	return errors.New(spec.typeError)
 }
 
@@ -2364,6 +1610,7 @@ func safeOutFile(path string) (string, error) {
 	if unsafeOutputPath(path) {
 		return "", errors.New("out must be a relative local file without traversal")
 	}
+
 	parent, err := safeParentDir(filepath.Dir(path))
 	if err != nil {
 		return "", err
@@ -2372,6 +1619,7 @@ func safeOutFile(path string) (string, error) {
 	if !safeOutputBaseName(base) {
 		return "", errors.New("unsafe output filename")
 	}
+
 	return filepath.Join(parent, base), nil
 }
 
@@ -2381,10 +1629,12 @@ func unsafeOutputPath(path string) bool {
 
 func safeOutputBaseName(base string) bool {
 	stem := strings.TrimSuffix(base, filepath.Ext(base))
+
 	return safeFileIDPattern.MatchString(stem) && !strings.ContainsAny(base, `/\`)
 }
 
 func safeParentDir(path string) (string, error) {
+
 	clean, err := normalizePotentialParentPath(path)
 	if err != nil {
 		return "", err
@@ -2399,39 +1649,33 @@ func safeParentDir(path string) (string, error) {
 }
 
 func normalizePotentialParentPath(path string) (string, error) {
-	path = defaultRelativeParentPath(path)
+	if path == "" {
+
+		path = "."
+	}
 	if err := validatePotentialParentPath(path); err != nil {
 		return "", err
 	}
 	return filepath.Clean(path), nil
 }
 
-func defaultRelativeParentPath(path string) string {
-	if path == "" {
-		return "."
-	}
-	return path
-}
-
 func validatePotentialParentPath(path string) error {
-	if filepath.IsAbs(path) {
-		return errors.New("parent path must be relative local directory without traversal")
-	}
-	if strings.Contains(path, "://") {
-		return errors.New("parent path must be relative local directory without traversal")
-	}
-	if strings.Contains(path, "..") {
+	if unsafePotentialParentPath(path) {
+
 		return errors.New("parent path must be relative local directory without traversal")
 	}
 	return nil
 }
-
+func unsafePotentialParentPath(path string) bool {
+	return filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..")
+}
 func resolveParentPathWithinWorkingDirectory(clean string) (string, error) {
 	resolved, err := filepath.EvalSymlinks(clean)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return "", err
 		}
+
 		return resolveMissingParent(clean)
 	}
 	return resolved, nil
@@ -2440,6 +1684,7 @@ func resolveParentPathWithinWorkingDirectory(clean string) (string, error) {
 func resolveMissingParent(clean string) (string, error) {
 	parent := filepath.Dir(clean)
 	if parent == clean {
+
 		return "", os.ErrNotExist
 	}
 	return resolveParentPathWithinWorkingDirectory(parent)
@@ -2455,8 +1700,10 @@ func ensurePathInsideWorkingDirectory(path string) (string, error) {
 		return "", err
 	}
 	if pathEscapesWorkingDirectory(rel) {
+
 		return "", errors.New("parent path escapes working directory")
 	}
+
 	return rel, nil
 }
 
@@ -2469,18 +1716,21 @@ func relativePathFromWorkingDirectory(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return filepath.Rel(cwd, path)
 }
 
 func safeOutDir(path string) (string, error) {
-	if filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..") {
+	if unsafeOutputPath(path) {
 		return "", errors.New("out must be a relative local directory without traversal")
 	}
+
 	clean := filepath.Clean(path)
 	return safeCleanOutDir(clean)
 }
 
 func safeCleanOutDir(clean string) (string, error) {
+
 	exists, err := pathExistsForLstat(clean)
 	if err != nil {
 		return "", err
@@ -2488,6 +1738,7 @@ func safeCleanOutDir(clean string) (string, error) {
 	if exists {
 		return safeExistingOutDir(clean)
 	}
+
 	if err := ensureOutParentInsideWorkingDirectory(clean); err != nil {
 		return "", err
 	}
@@ -2500,6 +1751,7 @@ func pathExistsForLstat(path string) (bool, error) {
 	} else if errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	} else {
+
 		return false, err
 	}
 }
@@ -2510,6 +1762,7 @@ func ensureOutParentInsideWorkingDirectory(clean string) error {
 		return err
 	}
 	if parentEscapes {
+
 		return errors.New("out parent path escapes working directory")
 	}
 	return nil
@@ -2521,16 +1774,17 @@ func safeExistingOutDir(clean string) (string, error) {
 		return "", err
 	}
 	if pathEscapesWorkingDirectory(rel) {
+
 		return "", errors.New("out path escapes working directory")
 	}
-	// Preserve the original behavior: when --out is a symlink, check the
-	// resolved target directory for emptiness, not the symlink entry itself.
+
 	return ensureOutDirEmptyOrMissing(rel)
 }
 
 func outParentEscapes(clean string) (bool, error) {
 	parent := filepath.Dir(clean)
 	for parent != "." && parent != string(filepath.Separator) {
+
 		found, escapes, err := existingParentEscapes(parent)
 		if found {
 			return escapes, err
@@ -2539,9 +1793,9 @@ func outParentEscapes(clean string) (bool, error) {
 	}
 	return false, nil
 }
-
 func existingParentEscapes(parent string) (bool, bool, error) {
 	if _, statErr := os.Lstat(parent); statErr != nil {
+
 		return false, false, nil
 	}
 	rel, err := relativeSymlinkTarget(parent)
@@ -2556,10 +1810,12 @@ func relativeSymlinkTarget(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
+
 	abs, err := filepath.Abs(resolved)
 	if err != nil {
 		return "", err
@@ -2576,18 +1832,20 @@ func ensureOutDirEmptyOrMissing(clean string) (string, error) {
 	if err := validateOutDirEntries(entries, err); err != nil {
 		return "", err
 	}
+
 	return clean, nil
 }
-
 func validateOutDirEntries(entries []os.DirEntry, err error) error {
 	if err == nil && len(entries) > 0 {
 		return errors.New("harness observe refuses existing non-empty --out")
 	}
+
 	return ignorableMissingOutDir(err)
 }
 
 func ignorableMissingOutDir(err error) error {
 	if err == nil || errors.Is(err, os.ErrNotExist) {
+
 		return nil
 	}
 	return err
@@ -2597,6 +1855,7 @@ func writeJSON(path string, value any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
+
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		return err
@@ -2608,6 +1867,7 @@ func writeJSON(path string, value any) error {
 func eventRefs(events []Event) []string {
 	refs := make([]string, 0, len(events))
 	for _, event := range events {
+
 		refs = append(refs, filepath.ToSlash(filepath.Join("events", event.EventID+".json")))
 	}
 	sort.Strings(refs)
@@ -2621,11 +1881,13 @@ func safeEventRef(ref string) bool {
 	if !strings.HasPrefix(ref, "events/") || !strings.HasSuffix(ref, ".json") {
 		return false
 	}
+
 	id := strings.TrimSuffix(strings.TrimPrefix(ref, "events/"), ".json")
 	return safeFileIDPattern.MatchString(id)
 }
 
 func unsafeEventRefPath(ref string) bool {
+
 	return strings.Contains(ref, "\\") || strings.Contains(ref, "..") || filepath.IsAbs(ref)
 }
 
@@ -2635,10 +1897,12 @@ func digestLine(line []byte) string {
 		raw["source_digest"] = ""
 		canonical, err := json.Marshal(raw)
 		if err == nil {
+
 			sum := sha256.Sum256(canonical)
 			return hex.EncodeToString(sum[:])
 		}
 	}
+
 	sum := sha256.Sum256(line)
 	return hex.EncodeToString(sum[:])
 }
@@ -2646,19 +1910,21 @@ func digestLine(line []byte) string {
 func validationDigest(validation Validation) string {
 	copy := validation
 	copy.ValidationDigest = ""
+
 	data, _ := json.Marshal(copy)
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }
 
 func digestCommand(command []string) string {
+
 	data, _ := json.Marshal(command)
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }
-
 func extractCommandModel(command []string) string {
 	if shellCommand := shellCommandString(command); shellCommand != "" {
+
 		if model := extractCommandModelArgs(shellFields(shellCommand)); model != "" {
 			return model
 		}
@@ -2674,6 +1940,7 @@ func shellCommandString(command []string) string {
 	if base != "sh" && base != "bash" {
 		return ""
 	}
+
 	return command[2]
 }
 
@@ -2683,6 +1950,7 @@ func shellCommandShape(command []string) bool {
 
 func extractCommandModelArgs(args []string) string {
 	for i, arg := range args {
+
 		if model, matched := commandModelArg(args, i, arg); matched {
 			return model
 		}
@@ -2692,6 +1960,7 @@ func extractCommandModelArgs(args []string) string {
 
 func commandModelArg(args []string, i int, arg string) (string, bool) {
 	if arg == "--model" || arg == "-m" {
+
 		return nextCommandModelArg(args, i), true
 	}
 	if model, ok := prefixedCommandModelArg(arg); ok {
@@ -2704,12 +1973,14 @@ func nextCommandModelArg(args []string, i int) string {
 	if i+1 >= len(args) {
 		return ""
 	}
+
 	return safeCommandModel(args[i+1])
 }
 
 func prefixedCommandModelArg(arg string) (string, bool) {
 	for _, prefix := range []string{"--model=", "-m="} {
 		if strings.HasPrefix(arg, prefix) {
+
 			return safeCommandModel(strings.TrimPrefix(arg, prefix)), true
 		}
 	}
@@ -2720,31 +1991,26 @@ func prefixedCommandModelArg(arg string) (string, bool) {
 // controlled sh -c wrapper. It is not a general shell parser; model values still
 // have to pass safeCommandModel before they become retained facts.
 func shellFields(command string) []string {
+
 	scanner := shellFieldScanner{}
 	for _, r := range command {
 		scanner.scan(r)
 	}
 	return scanner.finish()
 }
-
-type shellFieldScanner struct {
-	fields  []string
-	current strings.Builder
-	quote   rune
-	escaped bool
-}
-
 func (scanner *shellFieldScanner) scan(r rune) {
 	if scanner.consumeEscaped(r) {
 		return
 	}
 	if scanner.startsEscape(r) {
+
 		scanner.escaped = true
 		return
 	}
 	if scanner.consumeQuoted(r) {
 		return
 	}
+
 	scanner.consumeUnquoted(r)
 }
 
@@ -2753,6 +2019,7 @@ func (scanner *shellFieldScanner) consumeEscaped(r rune) bool {
 		return false
 	}
 	if r != '\n' {
+
 		scanner.current.WriteRune('\\')
 		scanner.current.WriteRune(r)
 	}
@@ -2769,6 +2036,7 @@ func (scanner *shellFieldScanner) consumeQuoted(r rune) bool {
 		return false
 	}
 	if r == scanner.quote {
+
 		scanner.quote = 0
 		return true
 	}
@@ -2778,7 +2046,8 @@ func (scanner *shellFieldScanner) consumeQuoted(r rune) bool {
 
 func (scanner *shellFieldScanner) consumeUnquoted(r rune) {
 	switch {
-	case r == '\'' || r == '"':
+	case shellQuote(r):
+
 		scanner.quote = r
 	case shellFieldSeparator(r):
 		scanner.flush()
@@ -2786,9 +2055,13 @@ func (scanner *shellFieldScanner) consumeUnquoted(r rune) {
 		scanner.current.WriteRune(r)
 	}
 }
+func shellQuote(r rune) bool {
+	return r == '\'' || r == '"'
+}
 
 func (scanner *shellFieldScanner) finish() []string {
 	if scanner.escaped {
+
 		scanner.current.WriteRune('\\')
 	}
 	scanner.flush()
@@ -2799,6 +2072,7 @@ func (scanner *shellFieldScanner) flush() {
 	if scanner.current.Len() == 0 {
 		return
 	}
+
 	scanner.fields = append(scanner.fields, scanner.current.String())
 	scanner.current.Reset()
 }
@@ -2816,6 +2090,7 @@ func safeCommandModel(model string) string {
 		return ""
 	}
 	if len(model) > 128 {
+
 		return ""
 	}
 	return model
@@ -2834,6 +2109,7 @@ func unsafeCommandModelPath(model string) bool {
 }
 
 func digestFile(path string) string {
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
@@ -2848,18 +2124,22 @@ func sourceCommit() string {
 	if err != nil {
 		return ""
 	}
+
 	commit := strings.TrimSpace(string(data))
 	if regexp.MustCompile(`^[a-f0-9]{40}$`).MatchString(commit) {
+
 		return commit
 	}
 	return ""
 }
 
 func findUnsafe(value any) (string, string) {
+
 	return findUnsafeAt("", value)
 }
 
 func findUnsafeRawEvent(value any) (string, string) {
+
 	return findUnsafeRawEventAt("", value)
 }
 
@@ -2880,28 +2160,194 @@ func findUnsafeValueAt(path string, value any, rawEvent bool) (string, string) {
 	case string:
 		return findUnsafeStringAt(path, v, rawEvent)
 	}
+
 	return "", ""
 }
+func resolveSessionSetupProfilePath(profilePath string) (string, error) {
+	if strings.TrimSpace(profilePath) == "" {
+		return "", errors.New("observe setup requires --profile")
+	}
 
+	safePath, err := safeExistingFile(profilePath)
+	if err != nil {
+		return "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+	return safePath, nil
+}
+
+func resolveSessionSetupOutDir(outDir string) (string, error) {
+	if strings.TrimSpace(outDir) == "" {
+		return "", errors.New("observe setup requires --out")
+	}
+
+	return safeOutDir(outDir)
+}
+func setupSessionRun(profilePath, outDir string, now time.Time, rawCommand string) (SessionRun, error) {
+	profile, err := prepareSessionRun(profilePath, outDir)
+	if err != nil {
+		return SessionRun{}, err
+	}
+
+	run := newSessionRunWithCommand(profile, now, rawCommand)
+	results, err := installIsolationRules(profilePath, profile.IsolationRules)
+	if err != nil {
+		return SessionRun{}, err
+	}
+	run.IsolationResults = results
+
+	if err := writeSessionJSON(filepath.Join(outDir, "session.json"), run); err != nil {
+		return SessionRun{}, err
+	}
+	return run, nil
+}
+
+func prepareSessionRun(profilePath, outDir string) (SessionProfile, error) {
+	profile, err := LoadSessionProfile(profilePath)
+	if err != nil {
+		return SessionProfile{}, err
+	}
+
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return SessionProfile{}, err
+	}
+	return profile, nil
+}
+
+func newSessionRunWithCommand(profile SessionProfile, now time.Time, rawCommand string) SessionRun {
+
+	run := newSessionRun(profile, sessionRunTime(now))
+	setSessionCommand(&run, rawCommand)
+	return run
+}
+
+func setSessionCommand(run *SessionRun, rawCommand string) {
+	if strings.TrimSpace(rawCommand) == "" {
+		return
+	}
+
+	command := []string{rawCommand}
+	run.CommandDigest = digestCommand(command)
+	run.CommandDigestState = StatePass
+	if model := extractCommandModel(command); model != "" {
+		run.CommandModel = model
+		run.CommandModelState = StatePass
+	}
+}
+
+func sessionRunTime(now time.Time) time.Time {
+	if now.IsZero() {
+
+		return time.Now().UTC()
+	}
+	return now
+}
+
+func writeSessionJSON(path string, run SessionRun) error {
+	return writeJSON(path, run)
+}
+
+func CollectSession(opts SessionCollectOptions) (SessionRun, Run, error) {
+	ctx, err := prepareSessionCollection(opts)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+
+	sourcePath, err := resolveSessionEventSource(&ctx)
+	if err != nil {
+		if !errors.Is(err, errSessionSourceUnavailable) {
+			return SessionRun{}, Run{}, err
+		}
+		return markSessionSourceUnavailable(ctx)
+	}
+	return collectSessionSource(ctx, sourcePath)
+}
+
+func prepareSessionCollection(opts SessionCollectOptions) (sessionCollectionContext, error) {
+	profilePath, runDir, err := validateSessionCollectOptions(opts)
+	if err != nil {
+		return sessionCollectionContext{}, err
+	}
+
+	return loadSessionCollection(profilePath, runDir, opts.Now)
+}
+
+func loadSessionCollection(profilePath, runDir string, now time.Time) (sessionCollectionContext, error) {
+	profile, session, err := loadSessionCollectionInputs(profilePath, runDir)
+	if err != nil {
+		return sessionCollectionContext{}, err
+	}
+
+	harnessProfilePath, harnessProfile, err := loadHarnessProfile(profilePath, profile)
+	if err != nil {
+		return sessionCollectionContext{}, err
+	}
+	now = sessionCollectionTime(now)
+	return newSessionCollectionContext(profilePath, runDir, now, profile, session, harnessProfilePath, harnessProfile), nil
+}
+
+func newSessionCollectionContext(profilePath, runDir string, now time.Time, profile SessionProfile, session SessionRun, harnessProfilePath string, harnessProfile Profile) sessionCollectionContext {
+
+	return sessionCollectionContext{
+		profilePath:        profilePath,
+		runDir:             runDir,
+		now:                now,
+		profile:            profile,
+		session:            session,
+		harnessProfile:     harnessProfile,
+		harnessProfilePath: harnessProfilePath,
+	}
+}
+
+func sessionCollectionTime(now time.Time) time.Time {
+	if now.IsZero() {
+
+		return time.Now().UTC()
+	}
+	return now
+}
+func loadSessionCollectionInputs(profilePath, runDir string) (SessionProfile, SessionRun, error) {
+	profile, err := LoadSessionProfile(profilePath)
+	if err != nil {
+		return SessionProfile{}, SessionRun{}, err
+	}
+
+	session, err := LoadSessionRun(filepath.Join(runDir, "session.json"))
+	if err != nil {
+		return SessionProfile{}, SessionRun{}, err
+	}
+	if session.ProfileID != profile.ProfileID {
+
+		return SessionProfile{}, SessionRun{}, errors.New("session profile mismatch")
+	}
+
+	return profile, session, nil
+}
 func findUnsafeMapAt(path string, values map[string]any, rawEvent bool) (string, string) {
 	for key, child := range values {
-		childPath := childPath(path, key)
-		reason, skip := unsafeMapFieldReason(childPath, strings.ToLower(key), child, rawEvent)
-		if reason != "" {
-			return childPath, reason
-		}
-		if skip {
-			continue
-		}
-		if field, reason := findUnsafeValueAt(childPath, child, rawEvent); field != "" {
+
+		if field, reason := findUnsafeMapChild(path, key, child, rawEvent); field != "" {
 			return field, reason
 		}
 	}
 	return "", ""
 }
 
+func findUnsafeMapChild(path, key string, child any, rawEvent bool) (string, string) {
+	childPath := childPath(path, key)
+	reason, skip := unsafeMapFieldReason(childPath, strings.ToLower(key), child, rawEvent)
+	if reason != "" {
+		return childPath, reason
+	}
+	if skip {
+
+		return "", ""
+	}
+	return findUnsafeValueAt(childPath, child, rawEvent)
+}
+
 func childPath(parent, key string) string {
 	if parent == "" {
+
 		return key
 	}
 	return parent + "." + key
@@ -2912,6 +2358,7 @@ func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, b
 		return "", true
 	}
 	if rawFieldNames[key] {
+
 		return "forbidden_raw_field", false
 	}
 	if sensitiveFieldNames[key] {
@@ -2921,6 +2368,7 @@ func unsafeMapFieldReason(path, key string, value any, rawEvent bool) (string, b
 }
 
 func skippableRawEventField(path, key string, value any, rawEvent bool) bool {
+
 	return rawEvent &&
 		(unretainedRawToolInputField(path, key, value) ||
 			(unretainedRawBodyField(key) && !structuredRawBody(value)))
@@ -2933,6 +2381,7 @@ func unretainedRawToolInputField(path, key string, value any) bool {
 	if _, ok := value.(string); !ok {
 		return false
 	}
+
 	segments := strings.Split(path, ".")
 	if len(segments) < 3 {
 		return false
@@ -2943,6 +2392,7 @@ func unretainedRawToolInputField(path, key string, value any) bool {
 func unretainedRawBodyField(key string) bool {
 	switch key {
 	case "text", "content", "input", "output", "stdout", "stderr":
+
 		return true
 	default:
 		return false
@@ -2952,6 +2402,7 @@ func unretainedRawBodyField(key string) bool {
 func structuredRawBody(value any) bool {
 	switch value.(type) {
 	case map[string]any:
+
 		return true
 	default:
 		return false
@@ -2960,6 +2411,7 @@ func structuredRawBody(value any) bool {
 
 func findUnsafeSliceAt(path string, values []any, rawEvent bool) (string, string) {
 	for i, child := range values {
+
 		if field, reason := findUnsafeValueAt(fmt.Sprintf("%s[%d]", path, i), child, rawEvent); field != "" {
 			return field, reason
 		}
@@ -2969,6 +2421,7 @@ func findUnsafeSliceAt(path string, values []any, rawEvent bool) (string, string
 
 func findUnsafeStringAt(path, value string, rawEvent bool) (string, string) {
 	if strings.TrimSpace(value) == "" {
+
 		return "", ""
 	}
 	if reason := unsafeStringReason(path, value, rawEvent); reason != "" {
@@ -2976,12 +2429,12 @@ func findUnsafeStringAt(path, value string, rawEvent bool) (string, string) {
 	}
 	return "", ""
 }
-
 func unsafeStringReason(path, value string, rawEvent bool) string {
 	if unsafeStringPath(value, rawEvent) {
 		return "unsafe_path_or_private_path"
 	}
 	if unsafeURL(value) {
+
 		return "authenticated_url"
 	}
 	if unsafeStringToken(path, value, rawEvent) {
@@ -3003,37 +2456,49 @@ func unsafePathValue(value string) bool {
 }
 
 func unsafeEncodedToken(path, value string, rawEvent bool) bool {
-	if digestField(path) || sha256Pattern.MatchString(value) {
+	if safeEncodedTokenExemption(path, value, rawEvent) {
 		return false
 	}
-	if rawEvent && rawPathLikeField(path) {
-		return false
-	}
+
 	return base64TokenPattern.MatchString(value)
 }
 
+func safeEncodedTokenExemption(path, value string, rawEvent bool) bool {
+	return digestField(path) || sha256Pattern.MatchString(value) || rawEventPathLikeField(path, rawEvent)
+}
+
+func rawEventPathLikeField(path string, rawEvent bool) bool {
+	return rawEvent && rawPathLikeField(path)
+}
+
 func rawPathLikeField(path string) bool {
-	field := path
-	if idx := strings.LastIndex(field, "."); idx >= 0 {
-		field = field[idx+1:]
-	}
-	if idx := strings.LastIndex(field, "["); idx >= 0 {
-		field = field[:idx]
-	}
-	switch strings.ToLower(field) {
+	switch rawPathFieldName(path) {
 	case "path", "file", "filepath", "file_path", "dir", "directory", "cwd":
+
 		return true
 	default:
 		return false
 	}
 }
 
+func rawPathFieldName(path string) string {
+	field := path
+	if idx := strings.LastIndex(field, "."); idx >= 0 {
+		field = field[idx+1:]
+	}
+	if idx := strings.LastIndex(field, "["); idx >= 0 {
+
+		field = field[:idx]
+	}
+	return strings.ToLower(field)
+}
 func unsafeURL(raw string) bool {
 	parsed, err := url.Parse(raw)
 	if err != nil || parsed.Scheme == "" {
 		return false
 	}
 	if parsed.User != nil {
+
 		return true
 	}
 	return queryHasAuthKey(parsed.Query())
@@ -3041,6 +2506,7 @@ func unsafeURL(raw string) bool {
 
 func queryHasAuthKey(values url.Values) bool {
 	for key := range values {
+
 		if authQueryKeys[strings.ToLower(key)] {
 			return true
 		}
@@ -3051,50 +2517,26 @@ func queryHasAuthKey(values url.Values) bool {
 func digestField(path string) bool {
 	last := path
 	if idx := strings.LastIndex(last, "."); idx >= 0 {
+
 		last = last[idx+1:]
 	}
-	switch last {
-	case "source_digest", "validation_digest", "commit_digest", "envelope_digest", "payload_digest", "sha256":
-		return true
-	default:
-		return false
-	}
+	return digestFieldNames[last]
 }
 
 func validFamily(family string) bool {
-	switch family {
-	case "harness", "model", "interaction", "phase", "review", "tool", "mutation", "test", "pr", "merge", "gap":
-		return true
-	default:
-		return false
-	}
-}
-
-func validContentState(state string) bool {
-	switch state {
-	case ContentRedacted, ContentDigestOnly, ContentRetainedSafe, ContentNotApplicable:
-		return true
-	default:
-		return false
-	}
+	return validFamilies[family]
 }
 
 func validState(state string) bool {
-	switch state {
-	case StatePass, StateFail, StateCannotVerify, StateNotAssessed:
-		return true
-	default:
-		return false
-	}
+	return validStates[state]
+}
+
+func validContentState(state string) bool {
+	return validContentStates[state]
 }
 
 func validRuleKey(key string) bool {
-	switch key {
-	case "missing_required_family", "missing_optional_family", "source_unavailable", "unsafe_input", "digest_mismatch", "schema_version_mismatch", "cross_link_conflict":
-		return true
-	default:
-		return false
-	}
+	return validRuleKeys[key]
 }
 
 func safeRef(ref string) bool {
@@ -3102,16 +2544,25 @@ func safeRef(ref string) bool {
 }
 
 func safeOperationRef(ref string) bool {
-	if strings.HasPrefix(ref, "adapter-run:") || strings.HasPrefix(ref, "delivery-trace:") {
-		return !strings.Contains(ref, "..") && !strings.Contains(ref, "://") && len(ref) <= 256
+	if operationRefPrefix(ref) {
+
+		return safePrefixedOperationRef(ref)
 	}
 	return safeRef(ref)
 }
 
+func operationRefPrefix(ref string) bool {
+	return strings.HasPrefix(ref, "adapter-run:") || strings.HasPrefix(ref, "delivery-trace:")
+}
+
+func safePrefixedOperationRef(ref string) bool {
+	return !strings.Contains(ref, "..") && !strings.Contains(ref, "://") && len(ref) <= 256
+}
 func safeEvent(eventID string) string {
 	if safeIDPattern.MatchString(eventID) {
 		return eventID
 	}
+
 	return "unknown_event"
 }
 
@@ -3122,7 +2573,1147 @@ func nonAuthority() string {
 func DecodeValidation(r io.Reader) (Validation, error) {
 	var validation Validation
 	if err := json.NewDecoder(r).Decode(&validation); err != nil {
+
 		return Validation{}, err
 	}
 	return validation, nil
+}
+func validateSessionCollectOptions(opts SessionCollectOptions) (string, string, error) {
+	if err := requireSessionCollectOptions(opts); err != nil {
+		return "", "", err
+	}
+
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+
+	runDir, err := safeExistingDir(opts.RunDir)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe run path: %w", err)
+	}
+	return profilePath, runDir, nil
+}
+
+func requireSessionCollectOptions(opts SessionCollectOptions) error {
+	if err := requireNonBlank(opts.ProfilePath, "observe collect requires --profile"); err != nil {
+		return err
+	}
+
+	if err := requireNonBlank(opts.RunDir, "observe collect requires --run"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func loadHarnessProfile(profilePath string, profile SessionProfile) (string, Profile, error) {
+
+	harnessProfilePath, err := safeProfileRelativeFile(profilePath, profile.HarnessProfilePath)
+	if err != nil {
+		return "", Profile{}, fmt.Errorf("unsafe harness profile path: %w", err)
+	}
+	harnessProfile, err := LoadProfile(harnessProfilePath)
+	if err != nil {
+		return "", Profile{}, err
+	}
+	return harnessProfilePath, harnessProfile, nil
+}
+
+func resolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+
+	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	if err == nil {
+		return sourcePath, nil
+	}
+	return resolveMissingSessionEventSource(ctx)
+}
+
+func resolveMissingSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+	if ctx.profile.RawEventFormat == "" {
+
+		return "", errSessionSourceUnavailable
+	}
+	return normalizeAndResolveSessionEventSource(ctx)
+}
+
+func normalizeAndResolveSessionEventSource(ctx *sessionCollectionContext) (string, error) {
+
+	if normalizeErr := normalizeSessionRawEvents(ctx); normalizeErr != nil {
+		return "", normalizeErr
+	}
+	sourcePath, ok := resolvedSessionEventSource(ctx)
+	if !ok {
+		return "", errSessionSourceUnavailable
+	}
+	return sourcePath, nil
+}
+
+func resolvedSessionEventSource(ctx *sessionCollectionContext) (string, bool) {
+
+	sourcePath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	return sourcePath, err == nil
+}
+
+func normalizeSessionRawEvents(ctx *sessionCollectionContext) error {
+	rawPath, err := safeProfileRelativeFile(ctx.profilePath, ctx.profile.RawEventSourcePath)
+	if err != nil {
+		return fmt.Errorf("raw_event_source_path invalid: %w", err)
+	}
+
+	normalizedPath, err := safeProfileRelativeOutFile(ctx.profilePath, ctx.profile.EventSourcePath)
+	if err != nil {
+		return err
+	}
+	if err := normalizeRawEvents(ctx.profile.RawEventFormat, rawPath, normalizedPath, sessionCommandFacts(ctx.session), ctx.now); err != nil {
+		return err
+	}
+
+	ctx.session.NormalizedDigest = digestFile(normalizedPath)
+	return nil
+}
+
+func markSessionSourceUnavailable(ctx sessionCollectionContext) (SessionRun, Run, error) {
+	session := unavailableSession(ctx)
+
+	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+
+	return session, unavailableObservedRun(ctx), nil
+}
+func unavailableSession(ctx sessionCollectionContext) SessionRun {
+	session := ctx.session
+
+	session.CollectionState = StateCannotVerify
+	session.CollectionReason = "source_unavailable"
+	session.EndTime = ctx.now.Format(time.RFC3339)
+	return session
+}
+
+func unavailableObservedRun(ctx sessionCollectionContext) Run {
+	return Run{
+		SchemaVersion:      RunSchemaVersion,
+		ProfileID:          ctx.harnessProfile.ProfileID,
+		HarnessFamily:      ctx.harnessProfile.HarnessFamily,
+		EventSchemaVersion: ctx.harnessProfile.EventSchemaVersion,
+
+		SourcePath: filepath.Base(ctx.profile.EventSourcePath),
+		EventCount: 0,
+		CreatedAt:  ctx.now.Format(time.RFC3339),
+	}
+}
+
+func collectSessionSource(ctx sessionCollectionContext, sourcePath string) (SessionRun, Run, error) {
+	observedDir := filepath.Join(ctx.runDir, "observed")
+	if err := os.MkdirAll(observedDir, 0o755); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+
+	events, sourceDigest, err := readEventsFromPath(ctx.harnessProfilePath, sourcePath)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	observed := observedRun(ctx, sourcePath, sourceDigest, events)
+	if err := writeObservedRun(observedDir, events, observed); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	return finalizeCollectedSession(ctx, observedDir, observed)
+}
+
+func writeObservedRun(observedDir string, events []Event, observed Run) error {
+
+	if err := writeObservedEvents(observedDir, events); err != nil {
+		return err
+	}
+	return writeJSON(filepath.Join(observedDir, "run.json"), observed)
+}
+
+func writeObservedEvents(observedDir string, events []Event) error {
+	for _, event := range events {
+
+		if err := writeJSON(filepath.Join(observedDir, "events", event.EventID+".json"), event); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func observedRun(ctx sessionCollectionContext, sourcePath, sourceDigest string, events []Event) Run {
+
+	return Run{
+		SchemaVersion:      RunSchemaVersion,
+		ProfileID:          ctx.harnessProfile.ProfileID,
+		HarnessFamily:      ctx.harnessProfile.HarnessFamily,
+		EventSchemaVersion: ctx.harnessProfile.EventSchemaVersion,
+		SourcePath:         filepath.Base(sourcePath),
+		SourceDigest:       sourceDigest,
+		EventCount:         len(events),
+		EventRefs:          eventRefs(events),
+		CreatedAt:          ctx.now.Format(time.RFC3339),
+	}
+}
+
+func finalizeCollectedSession(ctx sessionCollectionContext, observedDir string, observed Run) (SessionRun, Run, error) {
+	session := ctx.session
+	session.ObservedRunDir = filepath.ToSlash("observed")
+	session.OutputDigest = digestFile(filepath.Join(observedDir, "run.json"))
+
+	session.CollectionState = StatePass
+	session.CollectionReason = "source_collected"
+
+	if session.EndTime == "" {
+		session.EndTime = ctx.now.Format(time.RFC3339)
+	}
+	if err := writeJSON(filepath.Join(ctx.runDir, "session.json"), session); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	return session, observed, nil
+}
+
+func RunSession(opts SessionOptions) (SessionRun, Run, error) {
+	session, err := setupRunnableSession(opts)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	commandResult, err := runObservedCommand(opts.Command, &session)
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+
+	return collectFinishedSession(opts, session, commandResult.waitErr, commandResult.end)
+}
+
+func setupRunnableSession(opts SessionOptions) (SessionRun, error) {
+	if err := requireSessionCommand(opts.Command); err != nil {
+		return SessionRun{}, err
+	}
+
+	return SetupSession(SessionSetupOptions{ProfilePath: opts.ProfilePath, OutDir: opts.OutDir, Now: opts.Now})
+}
+
+func runObservedCommand(command []string, session *SessionRun) (observedCommandResult, error) {
+	cmd := discardedCommand(command)
+	setSessionProcessCommand(session, command, time.Now().UTC())
+
+	if err := startSessionProcess(cmd, session); err != nil {
+		return observedCommandResult{}, err
+	}
+	waitErr := cmd.Wait()
+
+	end := time.Now().UTC()
+	return observedCommandResult{waitErr: waitErr, end: end}, nil
+}
+
+func requireSessionCommand(command []string) error {
+	if len(command) == 0 {
+
+		return errors.New("observe session requires command after --")
+	}
+	return nil
+}
+func collectFinishedSession(opts SessionOptions, session SessionRun, waitErr error, end time.Time) (SessionRun, Run, error) {
+	if err := writeFinishedSession(opts.OutDir, &session, end); err != nil {
+		return SessionRun{}, Run{}, err
+	}
+
+	collected, observed, err := CollectSession(SessionCollectOptions{ProfilePath: opts.ProfilePath, RunDir: opts.OutDir, Now: end})
+	if err != nil {
+		return SessionRun{}, Run{}, err
+	}
+	if waitErr != nil {
+		return collected, observed, waitErr
+	}
+	return collected, observed, nil
+}
+
+func writeFinishedSession(outDir string, session *SessionRun, end time.Time) error {
+	session.EndTime = end.Format(time.RFC3339)
+	return writeJSON(filepath.Join(outDir, "session.json"), *session)
+}
+
+func discardedCommand(command []string) *exec.Cmd {
+
+	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Stdin = nil
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	return cmd
+}
+
+func setSessionProcessCommand(session *SessionRun, command []string, start time.Time) {
+
+	session.CommandDigest = digestCommand(command)
+	session.CommandDigestState = StatePass
+	if model := extractCommandModel(command); model != "" {
+		session.CommandModel = model
+		session.CommandModelState = StatePass
+	}
+	session.StartTime = start.Format(time.RFC3339)
+}
+
+func startSessionProcess(cmd *exec.Cmd, session *SessionRun) error {
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	session.ProcessID = cmd.Process.Pid
+	session.ProcessIDState = StatePass
+	return nil
+}
+
+func Validate(opts ValidateOptions) (Validation, error) {
+	profilePath, runDir, outPath, err := validateValidateInputs(opts)
+	if err != nil {
+		return Validation{}, err
+	}
+
+	profile, err := LoadProfile(profilePath)
+	if err != nil {
+		return Validation{}, err
+	}
+	validation := evaluationFromRun(profile, runDir)
+
+	if err := writeValidationIfRequested(outPath, validation); err != nil {
+		return Validation{}, err
+	}
+	return validation, nil
+}
+
+func validateValidateInputs(opts ValidateOptions) (string, string, string, error) {
+	if err := requireValidateOptions(opts); err != nil {
+		return "", "", "", err
+	}
+
+	return resolveValidateInputs(opts)
+}
+
+func requireValidateOptions(opts ValidateOptions) error {
+	if err := requireNonBlank(opts.ProfilePath, "harness validate requires --profile"); err != nil {
+		return err
+	}
+
+	if err := requireNonBlank(opts.RunDir, "harness validate requires --run"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func requireNonBlank(value, message string) error {
+	if strings.TrimSpace(value) == "" {
+
+		return errors.New(message)
+	}
+	return nil
+}
+func resolveValidateInputs(opts ValidateOptions) (string, string, string, error) {
+	profilePath, runDir, err := resolveValidateSourcePaths(opts)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	outPath, err := resolveValidateOutPath(opts.OutPath)
+	if err != nil {
+		return "", "", "", err
+	}
+	return profilePath, runDir, outPath, nil
+}
+
+func resolveValidateSourcePaths(opts ValidateOptions) (string, string, error) {
+
+	profilePath, err := safeExistingFile(opts.ProfilePath)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe profile path: %w", err)
+	}
+	runDir, err := safeExistingDir(opts.RunDir)
+	if err != nil {
+		return "", "", fmt.Errorf("unsafe run path: %w", err)
+	}
+	return profilePath, runDir, nil
+}
+
+func resolveValidateOutPath(outPath string) (string, error) {
+	if outPath == "" {
+
+		return "", nil
+	}
+	safeOut, err := safeOutFile(outPath)
+	if err != nil {
+		return "", fmt.Errorf("unsafe out path: %w", err)
+	}
+	return safeOut, nil
+}
+func evaluationFromRun(profile Profile, runDir string) Validation {
+	run, events, err := LoadRun(runDir)
+	if err != nil {
+
+		return fallbackSourceUnavailable(profile)
+	}
+	return evaluate(profile, run, events)
+}
+
+func fallbackSourceUnavailable(profile Profile) Validation {
+
+	validation := Validation{
+		SchemaVersion:      ValidationSchemaVersion,
+		ProfileID:          profile.ProfileID,
+		HarnessFamily:      profile.HarnessFamily,
+		EventSchemaVersion: profile.EventSchemaVersion,
+		ValidationState:    StateCannotVerify,
+		ReasonCode:         "source_unavailable",
+		NonAuthority:       nonAuthority(),
+	}
+	validation.ValidationDigest = validationDigest(validation)
+
+	return validation
+}
+
+func writeValidationIfRequested(outPath string, validation Validation) error {
+	if outPath == "" {
+
+		return nil
+	}
+	return writeJSON(outPath, validation)
+}
+
+func LoadProfile(path string) (Profile, error) {
+	var profile Profile
+
+	if err := readExistingJSON(path, &profile); err != nil {
+		return Profile{}, err
+	}
+	if err := validateProfile(profile); err != nil {
+		return Profile{}, err
+	}
+	return profile, nil
+}
+
+func LoadSessionProfile(path string) (SessionProfile, error) {
+	var profile SessionProfile
+
+	if err := readExistingJSONStrict(path, &profile); err != nil {
+		return SessionProfile{}, err
+	}
+	if err := validateSessionProfile(&profile); err != nil {
+		return SessionProfile{}, err
+	}
+	return profile, nil
+}
+
+func validateSessionProfile(profile *SessionProfile) error {
+
+	if err := validateSessionProfileIdentity(*profile); err != nil {
+		return err
+	}
+
+	if err := normalizeSessionStreamCapture(profile); err != nil {
+		return err
+	}
+	if err := validateSessionSetupActions(profile.SetupActions); err != nil {
+		return err
+	}
+	return validateSessionIsolationRules(profile.IsolationRules)
+}
+
+func validateSessionProfileIdentity(profile SessionProfile) error {
+	if profile.SchemaVersion != SessionProfileSchemaVersion {
+		return fmt.Errorf("unsupported session profile schema_version %q", profile.SchemaVersion)
+	}
+
+	if !safeIDPattern.MatchString(profile.ProfileID) {
+		return errors.New("unsafe session profile_id")
+	}
+	return validateSessionProfilePaths(profile)
+}
+
+func validateSessionProfilePaths(profile SessionProfile) error {
+	if err := validateRequiredSessionPaths(profile); err != nil {
+		return err
+	}
+
+	return validateRawEventConfig(profile)
+}
+
+func validateRequiredSessionPaths(profile SessionProfile) error {
+	if err := requireNonBlank(profile.HarnessProfilePath, "session profile requires harness_profile_path"); err != nil {
+		return err
+	}
+
+	if err := requireNonBlank(profile.EventSourcePath, "session profile requires event_source_path"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateRawEventConfig(profile SessionProfile) error {
+	hasFormat := profile.RawEventFormat != ""
+	hasSource := strings.TrimSpace(profile.RawEventSourcePath) != ""
+
+	if unsupportedRawEventFormat(profile.RawEventFormat) {
+		return errors.New("unsupported raw_event_format")
+	}
+
+	return validateRawEventPair(hasFormat, hasSource)
+}
+
+func validateRawEventPair(hasFormat, hasSource bool) error {
+
+	switch {
+	case hasFormat == hasSource:
+		return nil
+	case hasFormat:
+		return errors.New("raw_event_source_path required for raw_event_format")
+	default:
+		return errors.New("raw_event_format required for raw_event_source_path")
+	}
+}
+
+func unsupportedRawEventFormat(format string) bool {
+	return format != "" && format != OpenCodeJSONLRawFormat
+}
+func normalizeSessionStreamCapture(profile *SessionProfile) error {
+	defaultSessionStreamCapture(profile)
+	if profile.StreamCapture == "disabled" {
+		return nil
+	}
+
+	return unsupportedSessionStreamCapture(profile.StreamCapture)
+}
+
+func defaultSessionStreamCapture(profile *SessionProfile) {
+	if profile.StreamCapture == "" {
+
+		profile.StreamCapture = "disabled"
+	}
+}
+
+func unsupportedSessionStreamCapture(mode string) error {
+	switch mode {
+	case ContentDigestOnly, ContentRetainedSafe:
+
+		return errors.New("stream_capture mode not implemented")
+	default:
+		return errors.New("unsupported stream_capture")
+	}
+}
+
+func validateSessionSetupActions(actions []SessionSetupAction) error {
+	if len(actions) > 3 {
+		return errors.New("too many setup actions")
+	}
+
+	for _, action := range actions {
+		if err := validateSessionSetupAction(action); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateSessionSetupAction(action SessionSetupAction) error {
+	if !safeIDPattern.MatchString(action.ID) {
+		return errors.New("unsafe setup action id")
+	}
+
+	switch action.Kind {
+	case "init", "profile", "wrapper", "hook", "context_isolation":
+		return nil
+	default:
+		return errors.New("unsupported setup action kind")
+	}
+}
+
+func validateSessionIsolationRules(rules []SessionIsolationRule) error {
+	for _, rule := range rules {
+
+		if err := validateSessionIsolationRule(rule); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateSessionIsolationRule(rule SessionIsolationRule) error {
+	if !safeIDPattern.MatchString(rule.ID) {
+		return errors.New("unsafe isolation rule id")
+	}
+
+	if err := validateIsolationRulePattern(rule.Pattern); err != nil {
+		return err
+	}
+	if unsafeProfileRelativePath(rule.TargetPath) {
+		return errors.New("unsafe isolation target path")
+	}
+	return validateIsolationRuleKind(rule.Kind)
+}
+
+func validateIsolationRulePattern(pattern string) error {
+	if unsafeIsolationRulePattern(pattern) {
+
+		return errors.New("unsafe isolation rule pattern")
+	}
+	return nil
+}
+
+func unsafeIsolationRulePattern(pattern string) bool {
+	return strings.TrimSpace(pattern) == "" || strings.Contains(pattern, "\n") || strings.Contains(pattern, "\r")
+}
+
+func validateIsolationRuleKind(kind string) error {
+
+	switch kind {
+	case "ignore_line", "json_read_deny":
+		return nil
+	default:
+		return errors.New("unsupported isolation rule kind")
+	}
+}
+
+func installIsolationRules(profilePath string, rules []SessionIsolationRule) ([]SessionIsolationResult, error) {
+	results := make([]SessionIsolationResult, 0, len(rules))
+	for _, rule := range rules {
+
+		resolvedRule, err := resolveIsolationRuleTarget(profilePath, rule)
+		if err != nil {
+			return nil, err
+		}
+
+		result, err := installIsolationRule(resolvedRule)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
+func resolveIsolationRuleTarget(profilePath string, rule SessionIsolationRule) (SessionIsolationRule, error) {
+
+	targetPath, err := safeProfileRelativeIsolationFile(profilePath, rule.TargetPath)
+	if err != nil {
+		return SessionIsolationRule{}, err
+	}
+	rule.TargetPath = targetPath
+	return rule, nil
+}
+func safeProfileRelativeIsolationFile(profilePath, relPath string) (string, error) {
+	if unsafeProfileRelativePath(relPath) {
+		return "", errors.New("profile relative isolation path must be local without traversal")
+	}
+
+	clean := cleanProfileRelativePath(profilePath, relPath)
+	if err := validateIsolationParent(clean); err != nil {
+		return "", err
+	}
+	if err := validateIsolationFilename(filepath.Base(clean)); err != nil {
+		return "", err
+	}
+	return clean, nil
+}
+
+func cleanProfileRelativePath(profilePath, relPath string) string {
+
+	baseDir := filepath.Dir(profilePath)
+	if baseDir == "." {
+		baseDir = ""
+	}
+	return filepath.Clean(filepath.Join(baseDir, relPath))
+}
+
+func validateIsolationParent(clean string) error {
+	parent := filepath.Dir(clean)
+	if err := validatePotentialParentPath(parent); err != nil {
+		return err
+	}
+
+	return ensureOutParentInsideWorkingDirectory(parent)
+}
+
+func validateIsolationFilename(base string) error {
+	if strings.TrimSpace(base) == "" || strings.ContainsAny(base, `/\`) {
+
+		return errors.New("unsafe isolation filename")
+	}
+	return nil
+}
+func installIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
+	if err := ensureIsolationRule(rule); err != nil {
+		return SessionIsolationResult{}, err
+	}
+
+	return verifyIsolationRule(rule)
+}
+
+func ensureIsolationRule(rule SessionIsolationRule) error {
+	installer, ok := isolationRuleInstallers[rule.Kind]
+	if !ok {
+
+		return errors.New("unsupported isolation rule kind")
+	}
+	return installer(rule.TargetPath, rule.Pattern)
+}
+
+func ensureLineFileRule(path, line string) error {
+	lines, err := readOptionalLines(path)
+	if err != nil {
+		return err
+	}
+
+	for _, existing := range lines {
+		if existing == line {
+			return nil
+		}
+	}
+	lines = append(lines, line)
+	return writeLines(path, lines)
+}
+
+func readOptionalLines(path string) ([]string, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	text := strings.TrimRight(string(data), "\n")
+	if text == "" {
+		return nil, nil
+	}
+	return strings.Split(text, "\n"), nil
+}
+
+func writeLines(path string, lines []string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+}
+
+func ensureJSONReadDenyRule(path, pattern string) error {
+
+	config, err := readOptionalJSONObject(path)
+	if err != nil {
+		return err
+	}
+	setJSONReadDeny(config, pattern)
+	return writeJSON(path, config)
+}
+
+func readOptionalJSONObject(path string) (map[string]any, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return optionalJSONObjectReadError(err)
+	}
+
+	return parseOptionalJSONObject(data)
+}
+
+func optionalJSONObjectReadError(err error) (map[string]any, error) {
+	if errors.Is(err, os.ErrNotExist) {
+
+		return map[string]any{}, nil
+	}
+	return nil, err
+}
+func parseOptionalJSONObject(data []byte) (map[string]any, error) {
+	config := map[string]any{}
+	if blankJSON(data) {
+
+		return config, nil
+	}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func blankJSON(data []byte) bool {
+	return strings.TrimSpace(string(data)) == ""
+}
+
+func setJSONReadDeny(config map[string]any, pattern string) {
+	permission := ensureObject(config, "permission")
+	read := ensureObject(permission, "read")
+
+	read[pattern] = "deny"
+}
+
+func ensureObject(parent map[string]any, key string) map[string]any {
+	if child, ok := parent[key].(map[string]any); ok {
+		return child
+	}
+
+	child := map[string]any{}
+	parent[key] = child
+	return child
+}
+
+func verifyIsolationRule(rule SessionIsolationRule) (SessionIsolationResult, error) {
+
+	result := initialIsolationResult(rule)
+	ok, err := isolationRulePresent(rule)
+	if err != nil {
+		return SessionIsolationResult{}, err
+	}
+	applyIsolationReadback(&result, ok)
+	setIsolationDigest(&result, rule.TargetPath)
+	return result, nil
+}
+
+func applyIsolationReadback(result *SessionIsolationResult, ok bool) {
+	if !ok {
+
+		result.State = StateCannotVerify
+		result.ReasonCode = "isolation_rule_absent"
+	}
+}
+
+func setIsolationDigest(result *SessionIsolationResult, path string) {
+	if digest := digestFile(path); digest != "" {
+
+		result.SHA256 = digest
+	}
+}
+
+func initialIsolationResult(rule SessionIsolationRule) SessionIsolationResult {
+
+	return SessionIsolationResult{
+		ID:         rule.ID,
+		Kind:       rule.Kind,
+		TargetPath: filepath.ToSlash(rule.TargetPath),
+		Pattern:    rule.Pattern,
+		State:      StatePass,
+		ReasonCode: "isolation_rule_verified",
+	}
+}
+
+func isolationRulePresent(rule SessionIsolationRule) (bool, error) {
+	switch rule.Kind {
+	case "ignore_line":
+		return lineIsolationRulePresent(rule.TargetPath, rule.Pattern)
+	case "json_read_deny":
+		return jsonReadDenyRulePresent(rule.TargetPath, rule.Pattern)
+	default:
+
+		return false, errors.New("unsupported isolation rule kind")
+	}
+}
+func lineIsolationRulePresent(path, pattern string) (bool, error) {
+	lines, err := readOptionalLines(path)
+	if err != nil {
+		return false, err
+	}
+
+	for _, line := range lines {
+		if line == pattern {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func jsonReadDenyRulePresent(path, pattern string) (bool, error) {
+	// Decode only the subtree needed for this isolation proof.
+	var config struct {
+		Permission struct {
+			Read map[string]string `json:"read"`
+		} `json:"permission"`
+	}
+	if err := readExistingJSON(path, &config); err != nil {
+		return false, err
+	}
+	return config.Permission.Read[pattern] == "deny", nil
+}
+
+func LoadSessionRun(path string) (SessionRun, error) {
+	var run SessionRun
+
+	if err := readExistingJSON(path, &run); err != nil {
+		return SessionRun{}, err
+	}
+	if err := validateLoadedSessionRun(run); err != nil {
+		return SessionRun{}, err
+	}
+	return run, nil
+}
+
+func validateLoadedSessionRun(run SessionRun) error {
+	if run.SchemaVersion != SessionRunSchemaVersion {
+		return fmt.Errorf("unsupported session schema_version %q", run.SchemaVersion)
+	}
+
+	if !safeIDPattern.MatchString(run.ProfileID) {
+		return errors.New("unsafe session profile_id")
+	}
+	return nil
+}
+func readExistingJSON(path string, target any) error {
+	safePath, err := safeExistingFile(path)
+	if err != nil {
+		return err
+	}
+
+	data, err := os.ReadFile(safePath)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, target)
+}
+
+func readExistingJSONStrict(path string, target any) error {
+	safePath, err := safeExistingFile(path)
+	if err != nil {
+		return err
+	}
+
+	data, err := os.ReadFile(safePath)
+	if err != nil {
+		return err
+	}
+	return decodeStrictJSON(data, target)
+}
+
+func decodeStrictJSON(data []byte, target any) error {
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		return err
+	}
+	// A second decode distinguishes trailing JSON from ordinary EOF.
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		return errors.New("strict JSON input contains trailing data")
+	}
+	return nil
+}
+
+func newSessionRun(profile SessionProfile, now time.Time) SessionRun {
+
+	actionIDs := sessionSetupActionIDs(profile)
+	commit, commitState := currentSourceCommitState()
+	return newSessionRunRecord(profile, now, actionIDs, commit, commitState)
+}
+
+func newSessionRunRecord(profile SessionProfile, now time.Time, actionIDs []string, commit, commitState string) SessionRun {
+
+	return SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          profile.ProfileID,
+		HarnessProfilePath: profile.HarnessProfilePath,
+		EventSourcePath:    profile.EventSourcePath,
+
+		RawEventSourcePath: profile.RawEventSourcePath,
+		RawEventFormat:     profile.RawEventFormat,
+		SetupActionIDs:     actionIDs,
+
+		CommandDigestState: StateCannotVerify,
+		ProcessIDState:     StateCannotVerify,
+		SourceCommit:       commit,
+		SourceCommitState:  commitState,
+
+		CollectionState:  StateCannotVerify,
+		CollectionReason: "not_collected",
+		CreatedAt:        now.Format(time.RFC3339),
+	}
+}
+
+func sessionSetupActionIDs(profile SessionProfile) []string {
+	actionIDs := make([]string, 0, len(profile.SetupActions))
+	for _, action := range profile.SetupActions {
+
+		actionIDs = append(actionIDs, action.ID)
+	}
+
+	sort.Strings(actionIDs)
+	return actionIDs
+}
+
+func currentSourceCommitState() (string, string) {
+	commit := sourceCommit()
+	if commit == "" {
+
+		return "", StateCannotVerify
+	}
+	return commit, StatePass
+}
+
+func readEventsFromPath(profilePath, sourcePath string) ([]Event, string, error) {
+
+	profile, err := LoadProfile(profilePath)
+	if err != nil {
+		return nil, "", err
+	}
+	return readEvents(profile, sourcePath)
+}
+
+func safeProfileRelativeFile(profilePath, relPath string) (string, error) {
+	if unsafeProfileRelativePath(relPath) {
+		return "", errors.New("profile relative path must be local without traversal")
+	}
+
+	baseDir := filepath.Dir(profilePath)
+	if baseDir == "." {
+		return safeExistingFile(relPath)
+	}
+	return safeExistingFile(filepath.Join(baseDir, relPath))
+}
+func safeProfileRelativeOutFile(profilePath, relPath string) (string, error) {
+	if unsafeProfileRelativePath(relPath) {
+		return "", errors.New("profile relative output path must be local without traversal")
+	}
+
+	baseDir := filepath.Dir(profilePath)
+	if baseDir == "." {
+		return safeOutFile(relPath)
+	}
+	return safeOutFile(filepath.Join(baseDir, relPath))
+}
+
+func unsafeProfileRelativePath(path string) bool {
+
+	return filepath.IsAbs(path) || strings.Contains(path, "://") || strings.Contains(path, "..")
+}
+func normalizeRawEvents(format, rawPath, outPath string, sessionFacts []Event, now time.Time) error {
+
+	if err := validateRawNormalizationInputs(format, rawPath, outPath); err != nil {
+		return err
+	}
+	events, err := normalizedOpenCodeRawEvents(rawPath, sessionFacts, rawNormalizationTime(now))
+	if err != nil {
+		return err
+	}
+	return writeNormalizedEvents(outPath, events)
+}
+
+func validateRawNormalizationInputs(format, rawPath, outPath string) error {
+	if format != OpenCodeJSONLRawFormat {
+		return errors.New("unsupported raw_event_format")
+	}
+
+	if filepath.Clean(rawPath) == filepath.Clean(outPath) {
+		return errors.New("raw_event_source_path and event_source_path must be different files")
+	}
+	return nil
+}
+
+func rawNormalizationTime(now time.Time) time.Time {
+	if now.IsZero() {
+
+		return time.Now().UTC()
+	}
+	return now
+}
+
+func normalizedOpenCodeRawEvents(rawPath string, sessionFacts []Event, now time.Time) ([]Event, error) {
+	file, err := os.Open(rawPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	return scanOpenCodeRawEvents(file, sessionFacts, now)
+}
+
+func scanOpenCodeRawEvents(file io.Reader, sessionFacts []Event, now time.Time) ([]Event, error) {
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), DefaultMaxLineBytes)
+	lineNo := 0
+
+	events := append([]Event{}, sessionFacts...)
+	for scanner.Scan() {
+		lineNo++
+		var err error
+
+		events, err = appendNormalizedRawLine(events, scanner.Bytes(), lineNo, now)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return events, scanner.Err()
+}
+
+func appendNormalizedRawLine(events []Event, line []byte, lineNo int, now time.Time) ([]Event, error) {
+	lineEvents, err := normalizeOpenCodeRawLineBytes(line, lineNo, now)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(events, lineEvents...), nil
+}
+
+func normalizeOpenCodeRawLineBytes(line []byte, lineNo int, now time.Time) ([]Event, error) {
+	if blankJSONLLine(line) {
+		return nil, nil
+	}
+	// Decode as a generic map first so unsafe provider fields can be rejected
+	// before typed event construction drops unknown data.
+	var raw map[string]any
+	if err := json.Unmarshal(line, &raw); err != nil {
+		return nil, fmt.Errorf("raw source line %d: malformed_jsonl", lineNo)
+	}
+
+	if err := rejectUnsafeRawEvent(raw, lineNo); err != nil {
+		return nil, err
+	}
+	events := normalizeOpenCodeRawLine(raw, lineNo, now)
+	return addNormalizedSourceDigests(events)
+}
+
+func rejectUnsafeRawEvent(raw map[string]any, lineNo int) error {
+	if unsafeField, reason := findUnsafeRawEvent(raw); unsafeField != "" {
+
+		return fmt.Errorf("raw source line %d: unsafe_input:%s:%s", lineNo, unsafeField, reason)
+	}
+	return nil
+}
+
+func addNormalizedSourceDigests(events []Event) ([]Event, error) {
+	for i := range events {
+		data, err := json.Marshal(events[i])
+		if err != nil {
+			return nil, err
+		}
+
+		events[i].SourceDigest = digestLine(data)
+	}
+	return events, nil
+}
+
+func blankJSONLLine(line []byte) bool {
+	return len(strings.TrimSpace(string(line))) == 0
+}
+
+func writeNormalizedEvents(outPath string, events []Event) error {
+	out, err := createNormalizedEventsFile(outPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	for _, event := range events {
+
+		if err := writeNormalizedEvent(out, event); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func createNormalizedEventsFile(outPath string) (*os.File, error) {
+
+	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+		return nil, err
+	}
+	return os.Create(outPath)
+}
+
+func writeNormalizedEvent(out io.Writer, event Event) error {
+	data, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	_, err = out.Write(append(data, '\n'))
+	return err
 }

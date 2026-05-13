@@ -33,6 +33,54 @@ func TestEvaluateRejectsDigestOnlyCriticalEvidenceWithCap(t *testing.T) {
 	}
 }
 
+func TestCriticalEventMatchesPolicyOrExplicitImportance(t *testing.T) {
+	critical := map[string]bool{"gate.verdict": true}
+	if !criticalEvent(critical, EventRetention{EventType: "gate.verdict"}) {
+		t.Fatal("policy critical event was not critical")
+	}
+	if !criticalEvent(critical, EventRetention{EventType: "task.note", ForensicImportance: "critical"}) {
+		t.Fatal("explicitly critical event was not critical")
+	}
+	if criticalEvent(critical, EventRetention{EventType: "task.note"}) {
+		t.Fatal("noncritical event was critical")
+	}
+}
+
+func TestMissingCriticalRawReferenceConditionRequiresReference(t *testing.T) {
+	if condition, ok := missingCriticalRawReferenceCondition(EventRetention{RawReference: &RawReference{}}); ok {
+		t.Fatalf("condition = %+v", condition)
+	}
+
+	condition, ok := missingCriticalRawReferenceCondition(EventRetention{})
+	if !ok {
+		t.Fatal("missing raw reference did not produce condition")
+	}
+	if condition.State != StateCannotVerify || condition.ReasonCode != "raw_reference_missing" {
+		t.Fatalf("condition = %+v", condition)
+	}
+}
+
+func TestNextActionsDeduplicatesNonPassingActions(t *testing.T) {
+	conditions := []Condition{
+		{State: StatePass, NextAction: "ignored passing action"},
+		{State: StateCannotVerify, NextAction: "bind evidence"},
+		{State: StateFail, NextAction: "bind evidence"},
+		{State: StateNotAssessed},
+		{State: StateFail, NextAction: "capture audit"},
+	}
+
+	actions := nextActions(conditions)
+	want := []string{"bind evidence", "capture audit"}
+	if len(actions) != len(want) {
+		t.Fatalf("actions = %#v", actions)
+	}
+	for i := range want {
+		if actions[i] != want[i] {
+			t.Fatalf("actions = %#v", actions)
+		}
+	}
+}
+
 func TestEvaluateCannotVerifyUnverifiableRawReferenceAccess(t *testing.T) {
 	input := validInput()
 	input.Run.Events[1].RawReference.AccessState = AccessStateRestricted

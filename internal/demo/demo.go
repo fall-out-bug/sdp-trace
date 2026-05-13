@@ -4,17 +4,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+
 	"errors"
 	"fmt"
+	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
+	"github.com/fall_out_bug/sdp-trace/internal/trace"
+
+	"github.com/fall_out_bug/sdp-trace/internal/verifier"
 	"os"
 	"path/filepath"
+
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
-	"github.com/fall_out_bug/sdp-trace/internal/trace"
-	"github.com/fall_out_bug/sdp-trace/internal/verifier"
 )
 
 const (
@@ -155,7 +157,6 @@ type WitnessExpectation struct {
 	RunID        string
 	RunArtifacts []WitnessArtifactDigest
 }
-
 type WitnessSummary struct {
 	Kind            string                  `json:"kind"`
 	Status          string                  `json:"status"`
@@ -198,8 +199,40 @@ type ReportArtifacts struct {
 	Timeline         string
 }
 
+var runVerdictCounters = map[trace.VerifierVerdict]func(*Summary){
+	trace.VerdictObserved:     func(summary *Summary) { summary.ObservedCount++ },
+	trace.VerdictFail:         func(summary *Summary) { summary.FailedCount++ },
+	trace.VerdictCannotVerify: func(summary *Summary) { summary.CannotVerifyCount++ },
+	trace.VerdictNotAssessed:  func(summary *Summary) { summary.NotAssessedCount++ },
+}
+
+var checkpointGateStates = map[string]string{
+	checkpoint.StatePass:          GatePass,
+	checkpoint.StateFail:          GateFail,
+	checkpoint.StateCannotVerify:  GateCannotVerify,
+	checkpoint.StateNotIntegrated: GateCannotVerify,
+	checkpoint.StateNotAssessed:   GateNotAssessed,
+	"":                            GateNotAssessed,
+}
+
+type witnessScalarBinding struct {
+	label    string
+	expected string
+	actual   string
+}
+
+var gateSeverityByState = map[string]int{
+	GateFail:             4,
+	GateMissingTelemetry: 4,
+	GateCannotVerify:     3,
+	GateNotAssessed:      2,
+	GatePass:             1,
+}
+
 func WriteReport(target, outDir, contractPath string) (ReportArtifacts, error) {
+
 	if strings.TrimSpace(outDir) == "" {
+
 		return ReportArtifacts{}, errors.New("report requires --out <dir>")
 	}
 	rows, contract, err := verifiedRowsForContract(target, contractPath)
@@ -217,10 +250,12 @@ func persistReportArtifacts(outDir string, artifacts ReportArtifacts) error {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
+
 	return writeReportArtifacts(outDir, artifacts)
 }
 
 func verifiedRowsForContract(target, contractPath string) ([]RunRow, trace.Contract, error) {
+
 	contract, err := trace.LoadContract(contractPath)
 	if err != nil {
 		return nil, trace.Contract{}, err
@@ -233,6 +268,7 @@ func verifiedRowsForContract(target, contractPath string) ([]RunRow, trace.Contr
 }
 
 func writeReportArtifacts(outDir string, artifacts ReportArtifacts) error {
+
 	writes := []struct {
 		name  string
 		value any
@@ -243,13 +279,15 @@ func writeReportArtifacts(outDir string, artifacts ReportArtifacts) error {
 	}
 	for _, write := range writes {
 		if err := writeJSON(filepath.Join(outDir, write.name), write.value); err != nil {
+
 			return err
 		}
 	}
+
 	return os.WriteFile(filepath.Join(outDir, "timeline.md"), []byte(artifacts.Timeline), 0o644)
 }
-
 func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (GateResult, error) {
+
 	if strings.TrimSpace(outPath) == "" {
 		return GateResult{}, errors.New("gate requires --out <file>")
 	}
@@ -258,6 +296,7 @@ func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (Ga
 		return GateResult{}, err
 	}
 	result := EvaluateGate(rows, contract)
+
 	result = applyOptionalWitness(result, target, witnessPaths)
 	if err := persistGateResult(outPath, result); err != nil {
 		return GateResult{}, err
@@ -266,6 +305,7 @@ func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (Ga
 }
 
 func persistGateResult(outPath string, result GateResult) error {
+
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return err
 	}
@@ -273,6 +313,7 @@ func persistGateResult(outPath string, result GateResult) error {
 }
 
 func applyOptionalWitness(result GateResult, target string, witnessPaths []string) GateResult {
+
 	witnessPath, ok := firstWitnessPath(witnessPaths)
 	if !ok {
 		return result
@@ -288,12 +329,14 @@ func applyOptionalWitness(result GateResult, target string, witnessPaths []strin
 
 func firstWitnessPath(witnessPaths []string) (string, bool) {
 	if len(witnessPaths) == 0 || strings.TrimSpace(witnessPaths[0]) == "" {
+
 		return "", false
 	}
 	return witnessPaths[0], true
 }
 
 func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
+
 	runDirs, err := DiscoverRunDirs(target)
 	if err != nil {
 		return nil, err
@@ -306,6 +349,7 @@ func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
 }
 
 func verifiedRow(runDir string, contract trace.Contract) RunRow {
+
 	result, table, audit, verifyErr := verifier.VerifyRun(runDir)
 	if verifyErr != nil && result.Reason == "" {
 		result.Reason = verifyErr.Error()
@@ -317,6 +361,7 @@ func verifiedRow(runDir string, contract trace.Contract) RunRow {
 }
 
 func verifierArtifactWriteFailure(runDir, runID string, err error) trace.VerifierResult {
+
 	return trace.VerifierResult{
 		RunID:         runID,
 		RunDir:        runDir,
@@ -333,14 +378,248 @@ func DiscoverRunDirs(root string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	sort.Strings(runDirs)
 	if len(runDirs) == 0 {
 		return nil, errors.New("no run directories found")
 	}
 	return runDirs, nil
 }
+func hashFile(path string) (string, error) {
+	data, err := os.ReadFile(path)
 
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:]), err
+}
+
+func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) []OverrideRequest {
+
+	requests := make([]OverrideRequest, 0)
+	for _, event := range events {
+		if event.EventType != trace.EventPolicyOverrideRequested {
+			continue
+		}
+		requests = append(requests, overrideRequestFromEvent(event, contract))
+	}
+	sortOverrideRequests(requests)
+	return requests
+}
+func overrideRequestFromEvent(event trace.Event, contract trace.Contract) OverrideRequest {
+
+	request := OverrideRequest{
+		OverrideID: payloadString(event, "override_id"),
+		State:      GatePass,
+		CreatedAt:  payloadString(event, "created_at"),
+	}
+	request.State, request.Reason = overrideRequestFieldState(event)
+
+	request.State, request.Reason = overrideRequestReferenceState(event, contract, request.State, request.Reason)
+	return request
+}
+
+func sortOverrideRequests(requests []OverrideRequest) {
+
+	sort.SliceStable(requests, func(i, j int) bool {
+		if requests[i].CreatedAt != requests[j].CreatedAt {
+			return requests[i].CreatedAt < requests[j].CreatedAt
+		}
+		return requests[i].OverrideID < requests[j].OverrideID
+	})
+}
+
+func overrideRequestFieldState(event trace.Event) (string, string) {
+
+	for _, field := range []string{"override_id", "producer", "origin", "requested_by", "reason", "source_ref", "scope", "created_at"} {
+		if strings.TrimSpace(payloadString(event, field)) == "" {
+			return GateCannotVerify, fmt.Sprintf("override request missing %s", field)
+		}
+	}
+	return GatePass, ""
+}
+
+func overrideRequestReferenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+
+	state, reason = overrideRequestRequiredRunState(event, contract, state, reason)
+	return overrideRequestEvidenceState(event, contract, state, reason)
+}
+
+func overrideRequestRequiredRunState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+
+	for _, id := range payloadStringSlice(event, "affected_required_runs") {
+		if !contractHasRequiredRun(contract, id) {
+			state = GateCannotVerify
+			reason = fmt.Sprintf("override request references unknown required run %s", id)
+		}
+	}
+	return state, reason
+}
+
+func overrideRequestEvidenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+
+	for _, id := range payloadStringSlice(event, "affected_evidence") {
+		if !contractHasEvidence(contract, id) {
+			state = GateCannotVerify
+			reason = fmt.Sprintf("override request references unknown evidence %s", id)
+		}
+	}
+	return state, reason
+}
+
+func payloadStringSlice(event trace.Event, key string) []string {
+
+	value := payloadValue(event, key)
+	if value == nil {
+		return nil
+	}
+	return payloadAnyStringSlice(value)
+}
+
+func payloadAnyStringSlice(value any) []string {
+
+	switch typed := value.(type) {
+	case []string:
+		return typed
+	case []any:
+		return stringItems(typed)
+	default:
+		return nil
+	}
+}
+
+func stringItems(items []any) []string {
+
+	values := make([]string, 0, len(items))
+	for _, item := range items {
+		values = appendStringItem(values, item)
+	}
+	return values
+}
+
+func appendStringItem(values []string, item any) []string {
+	if text, ok := item.(string); ok {
+
+		return append(values, text)
+	}
+	return values
+}
+
+func contractHasRequiredRun(contract trace.Contract, id string) bool {
+
+	for _, required := range contract.RequiredRuns {
+		if required.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func contractHasEvidence(contract trace.Contract, id string) bool {
+
+	for _, required := range contract.RequiredEvidence {
+		if required.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func worseGateState(current, next string) string {
+	if gateSeverity(next) > gateSeverity(current) {
+
+		return next
+	}
+	return current
+}
+func gateSeverity(state string) int {
+	return gateSeverityByState[state]
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+
+			return true
+		}
+	}
+	return false
+}
+func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
+
+	observed := observedEvidenceKinds(rows)
+	missing := make([]string, 0)
+	for _, requirement := range contract.RequiredEvidence {
+		if requirement.ID == "" || observed[requirement.ID] {
+			continue
+		}
+		missing = append(missing, requirement.ID)
+	}
+	return missing
+}
+
+func observedEvidenceKinds(rows []RunRow) map[string]bool {
+
+	observed := map[string]bool{}
+	for _, row := range rows {
+		if rowHasObservedEvidenceKind(row) {
+			observed[row.Kind] = true
+		}
+	}
+	return observed
+}
+
+func rowHasObservedEvidenceKind(row RunRow) bool {
+
+	return row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved
+}
+
+func buildTimeline(rows []RunRow) string {
+	// Timeline output is derived from sanitized row fields and escapes table
+	// delimiters so command text cannot corrupt Markdown structure.
+	var builder strings.Builder
+	builder.WriteString("# SDP Trace Timeline\n\n")
+
+	builder.WriteString("| Run | Kind | Result | Trust Scope | Command | Exit |\n")
+	builder.WriteString("|-----|------|--------|-------------|---------|------|\n")
+	for _, row := range rows {
+		builder.WriteString(timelineRow(row))
+	}
+	return builder.String()
+}
+
+func timelineRow(row RunRow) string {
+
+	return fmt.Sprintf("| %s | %s | %s | %s | %s | %s |\n",
+		escapeMD(row.Name),
+		escapeMD(row.Kind),
+		escapeMD(string(row.Result)),
+		escapeMD(string(row.TrustScope)),
+		escapeMD(row.Command),
+		escapeMD(timelineExit(row)),
+	)
+}
+
+func timelineExit(row RunRow) string {
+	if row.ExitCode == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%d", *row.ExitCode)
+}
+
+func escapeMD(value string) string {
+	return strings.ReplaceAll(value, "|", "\\|")
+}
+
+func writeJSON(path string, value any) error {
+
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
+}
 func discoverRunDirsUnder(root string) ([]string, error) {
+
 	if err := ensureRunRootDir(root); err != nil {
 		return nil, err
 	}
@@ -351,12 +630,14 @@ func discoverRunDirsUnder(root string) ([]string, error) {
 }
 
 func collectRunDirs(root string) ([]string, error) {
+
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return nil, err
 	}
 	runDirs := make([]string, 0)
 	for _, entry := range entries {
+
 		path := filepath.Join(root, entry.Name())
 		if isRunDirCandidate(entry, path) {
 			runDirs = append(runDirs, path)
@@ -366,6 +647,7 @@ func collectRunDirs(root string) ([]string, error) {
 }
 
 func ensureRunRootDir(root string) error {
+
 	info, err := os.Stat(root)
 	if err != nil {
 		return err
@@ -377,18 +659,25 @@ func ensureRunRootDir(root string) error {
 }
 
 func isRunDirCandidate(entry os.DirEntry, path string) bool {
-	if !entry.IsDir() {
-		return false
-	}
-	return hasRunManifest(path)
+	return entry.IsDir() && hasRunManifest(path)
 }
-
 func hasRunManifest(path string) bool {
 	_, err := os.Stat(filepath.Join(path, "run.json"))
 	return err == nil
 }
 
 func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
+
+	return ReportArtifacts{
+		Summary:          buildSummary(rows),
+		EvidenceTable:    EvidenceTable{Runs: rows},
+		MissingTelemetry: buildMissingTelemetry(rows, contract),
+		Timeline:         buildTimeline(rows),
+	}
+}
+
+func buildSummary(rows []RunRow) Summary {
+
 	summary := Summary{
 		GeneratedAt:      time.Now().UTC().Format(time.RFC3339Nano),
 		RunCount:         len(rows),
@@ -397,24 +686,27 @@ func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
 		AuditGradeReason: "local observed evidence has no CI/OIDC witness or external witness checkpoint",
 		Runs:             rows,
 	}
+
 	summary.applyRunVerdictCounts(rows)
-	return ReportArtifacts{
-		Summary:       summary,
-		EvidenceTable: EvidenceTable{Runs: rows},
-		MissingTelemetry: MissingTelemetry{
-			MissingAuditEvidence:   []string{"ci_oidc_witness", "external_witness_checkpoint"},
-			MissingHarnessEvidence: missingContractEvidence(rows, contract),
-			Notes: []string{
-				"raw stdout and stderr are not copied into demo report artifacts",
-				"contract evidence is matched from redacted event metadata only",
-			},
+	return summary
+}
+
+func buildMissingTelemetry(rows []RunRow, contract trace.Contract) MissingTelemetry {
+	return MissingTelemetry{
+
+		MissingAuditEvidence:   []string{"ci_oidc_witness", "external_witness_checkpoint"},
+		MissingHarnessEvidence: missingContractEvidence(rows, contract),
+		Notes: []string{
+
+			"raw stdout and stderr are not copied into demo report artifacts",
+			"contract evidence is matched from redacted event metadata only",
 		},
-		Timeline: buildTimeline(rows),
 	}
 }
 
 func (summary *Summary) applyRunVerdictCounts(rows []RunRow) {
 	for _, row := range rows {
+
 		summary.applyRunVerdictCount(row.Result)
 	}
 }
@@ -422,18 +714,13 @@ func (summary *Summary) applyRunVerdictCounts(rows []RunRow) {
 func (summary *Summary) applyRunVerdictCount(verdict trace.VerifierVerdict) {
 	counter := runVerdictCounters[verdict]
 	if counter != nil {
+
 		counter(summary)
 	}
 }
 
-var runVerdictCounters = map[trace.VerifierVerdict]func(*Summary){
-	trace.VerdictObserved:     func(summary *Summary) { summary.ObservedCount++ },
-	trace.VerdictFail:         func(summary *Summary) { summary.FailedCount++ },
-	trace.VerdictCannotVerify: func(summary *Summary) { summary.CannotVerifyCount++ },
-	trace.VerdictNotAssessed:  func(summary *Summary) { summary.NotAssessedCount++ },
-}
-
 func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
+
 	result := newGateResult(rows, contract)
 	observedEvidence := applyRunRows(&result, rows)
 	applyRequiredRuns(&result, rows, contract)
@@ -443,19 +730,22 @@ func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
 }
 
 func newGateResult(rows []RunRow, contract trace.Contract) GateResult {
+
 	return GateResult{
-		SchemaVersion:        GateSchemaVersion,
-		GeneratedAt:          time.Now().UTC().Format(time.RFC3339),
-		LocalGate:            GatePass,
-		CIWitnessGate:        GateCannotVerify,
-		AuditGradeGate:       GateCannotVerify,
-		GateMode:             gateMode(contract),
-		TrustCap:             string(trace.TrustScopeLocalObserved),
-		Reasons:              []string{},
-		NextActions:          []string{},
-		RequiredRuns:         []RequiredRunResult{},
-		RequiredEvidence:     requiredEvidenceIDs(contract),
-		ObservedEvidence:     []string{},
+		SchemaVersion:  GateSchemaVersion,
+		GeneratedAt:    time.Now().UTC().Format(time.RFC3339),
+		LocalGate:      GatePass,
+		CIWitnessGate:  GateCannotVerify,
+		AuditGradeGate: GateCannotVerify,
+		GateMode:       gateMode(contract),
+		TrustCap:       string(trace.TrustScopeLocalObserved),
+
+		Reasons:          []string{},
+		NextActions:      []string{},
+		RequiredRuns:     []RequiredRunResult{},
+		RequiredEvidence: requiredEvidenceIDs(contract),
+		ObservedEvidence: []string{},
+
 		GateConditions:       []GateCondition{},
 		MissingAuditEvidence: []string{"ci_oidc_witness", "external_witness_checkpoint"},
 		WitnessBindings:      []WitnessBinding{},
@@ -465,14 +755,15 @@ func newGateResult(rows []RunRow, contract trace.Contract) GateResult {
 }
 
 func applyRunRows(result *GateResult, rows []RunRow) map[string]bool {
+
 	observedEvidence := map[string]bool{}
 	for _, row := range rows {
 		applyRunRow(result, observedEvidence, row)
 	}
 	return observedEvidence
 }
-
 func applyRunRow(result *GateResult, observedEvidence map[string]bool, row RunRow) {
+
 	result.OverrideRequests = append(result.OverrideRequests, row.OverrideRequests...)
 	markObservedEvidence(observedEvidence, row)
 	applyRowResult(result, row)
@@ -481,12 +772,13 @@ func applyRunRow(result *GateResult, observedEvidence map[string]bool, row RunRo
 
 func markObservedEvidence(observedEvidence map[string]bool, row RunRow) {
 	if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
+
 		observedEvidence[row.Kind] = true
 	}
 }
-
 func applyRowResult(result *GateResult, row RunRow) {
 	if row.Result != trace.VerdictObserved {
+
 		result.LocalGate = GateFail
 		result.Reasons = append(result.Reasons, fmt.Sprintf("%s result is %s, expected observed", row.Name, row.Result))
 	}
@@ -494,12 +786,14 @@ func applyRowResult(result *GateResult, row RunRow) {
 
 func applyRowClosure(result *GateResult, row RunRow) {
 	if row.ClosureState != trace.ClosureStateCompleted {
+
 		result.LocalGate = GateFail
 		result.Reasons = append(result.Reasons, fmt.Sprintf("%s closure_state is %s", row.Name, row.ClosureState))
 	}
 }
 
 func applyRequiredRuns(result *GateResult, rows []RunRow, contract trace.Contract) {
+
 	result.RequiredRuns = evaluateRequiredRuns(rows, contract)
 	for _, requiredRun := range result.RequiredRuns {
 		applyRequiredRun(result, requiredRun)
@@ -507,12 +801,15 @@ func applyRequiredRuns(result *GateResult, rows []RunRow, contract trace.Contrac
 }
 
 func applyRequiredRun(result *GateResult, requiredRun RequiredRunResult) {
+
 	switch requiredRun.State {
 	case GateMissingTelemetry:
+
 		result.LocalGate = worseGateState(result.LocalGate, GateFail)
 		result.Reasons = append(result.Reasons, requiredRun.Reasons...)
 		result.NextActions = append(result.NextActions, fmt.Sprintf("Run required wrapper %s through sdp-trace before evaluating advisory gate.", requiredRun.WrapperName))
 	case GateCannotVerify:
+
 		result.LocalGate = worseGateState(result.LocalGate, GateCannotVerify)
 		result.Reasons = append(result.Reasons, requiredRun.Reasons...)
 	case GateFail:
@@ -522,6 +819,7 @@ func applyRequiredRun(result *GateResult, requiredRun RequiredRunResult) {
 }
 
 func applyRequiredEvidence(result *GateResult, contract trace.Contract, observedEvidence map[string]bool) {
+
 	for _, requirement := range contract.RequiredEvidence {
 		if observedEvidence[requirement.ID] {
 			result.ObservedEvidence = append(result.ObservedEvidence, requirement.ID)
@@ -533,6 +831,7 @@ func applyRequiredEvidence(result *GateResult, contract trace.Contract, observed
 }
 
 func finalizeGateResult(result *GateResult) {
+
 	result.GateConditions = gateConditions(*result)
 	if len(result.Reasons) == 0 {
 		result.Reasons = append(result.Reasons, "local contract evidence is complete for the local gate")
@@ -543,7 +842,16 @@ func finalizeGateResult(result *GateResult) {
 }
 
 func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input ProtectedGateInput) GateResult {
+
 	result := EvaluateGate(rows, contract)
+	applyProtectedGateContext(&result, input)
+	applyProtectedConditionResults(&result, input)
+
+	return result
+}
+
+func applyProtectedGateContext(result *GateResult, input ProtectedGateInput) {
+
 	result.SchemaVersion = GateSchemaVersionBlock16
 	result.SelectedProfile = GateProfileProtected
 	result.ProtectedGate = GatePass
@@ -551,10 +859,15 @@ func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input Protect
 	result.Witness = input.Witness
 	result.CIWitnessGate = protectedCIWitnessGate(input)
 	result.TrustCap = protectedTrustCap(input, result.CIWitnessGate)
-	result.GateConditions = gateConditions(result)
+
+	result.GateConditions = gateConditions(*result)
 	result.CheckpointVerification = &input.Checkpoint
-	result.ProtectedConditions = protectedConditions(result, input)
+}
+
+func applyProtectedConditionResults(result *GateResult, input ProtectedGateInput) {
+	result.ProtectedConditions = protectedConditions(*result, input)
 	for _, condition := range result.ProtectedConditions {
+
 		if condition.ID == "override_does_not_upgrade_profile" {
 			continue
 		}
@@ -562,10 +875,10 @@ func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input Protect
 	}
 	result.Reasons = append(result.Reasons, protectedReasons(result.ProtectedConditions)...)
 	result.NextActions = append(result.NextActions, protectedNextActions(result.ProtectedConditions)...)
-	return result
 }
 
 func protectedCIWitnessGate(input ProtectedGateInput) string {
+
 	if input.Witness == nil {
 		return GateCannotVerify
 	}
@@ -574,13 +887,14 @@ func protectedCIWitnessGate(input ProtectedGateInput) string {
 }
 
 func protectedTrustCap(input ProtectedGateInput, ciWitnessGate string) string {
+
 	if trustCap := protectedCheckpointTrustCap(input.Checkpoint.TrustScope); trustCap != "" {
 		return trustCap
 	}
 	return nonCheckpointProtectedTrustCap(input.Checkpoint.TrustScope, ciWitnessGate)
 }
-
 func nonCheckpointProtectedTrustCap(checkpointTrustScope, ciWitnessGate string) string {
+
 	if ciWitnessGate == GatePass {
 		return "ci_witnessed"
 	}
@@ -591,6 +905,7 @@ func nonCheckpointProtectedTrustCap(checkpointTrustScope, ciWitnessGate string) 
 }
 
 func protectedCheckpointTrustCap(trustScope string) string {
+
 	for _, candidate := range []string{checkpoint.TrustScopeCISigned, checkpoint.TrustScopeLocalSigned} {
 		if trustScope == candidate {
 			return candidate
@@ -598,42 +913,40 @@ func protectedCheckpointTrustCap(trustScope string) string {
 	}
 	return ""
 }
-
 func protectedConditions(result GateResult, input ProtectedGateInput) []ProtectedCondition {
-	conditions := map[string]ProtectedCondition{
-		"protected_profile_explicitly_selected": {
-			ID:         "protected_profile_explicitly_selected",
-			State:      GatePass,
-			ReasonCode: "protected_profile_selected",
-			Reason:     "protected profile was explicitly selected",
-		},
-		"all_required_runs_present":         protectedConditionFromGateCondition(result.GateConditions, "all_required_runs_present"),
-		"all_required_evidence_observed":    protectedConditionFromGateCondition(result.GateConditions, "all_required_evidence_observed"),
-		"ci_witness_bound":                  protectedCIWitnessCondition(input),
-		"witness_freshness_valid":           protectedWitnessFreshnessCondition(input),
-		"checkpoint_signature_valid":        protectedCheckpointSignatureCondition(input.Checkpoint),
-		"checkpoint_run_binding_valid":      protectedCheckpointBindingCondition(input.Checkpoint),
-		"checkpoint_signer_authorized":      protectedSignerCondition(input),
-		"protected_trust_scope_satisfied":   protectedTrustScopeCondition(input),
-		"override_does_not_upgrade_profile": protectedOverrideCondition(result.OverrideRequests),
+
+	return []ProtectedCondition{
+		protectedProfileSelectedCondition(),
+
+		protectedConditionFromGateCondition(result.GateConditions, "all_required_runs_present"),
+		protectedConditionFromGateCondition(result.GateConditions, "all_required_evidence_observed"),
+
+		protectedCIWitnessCondition(input),
+		protectedWitnessFreshnessCondition(input),
+
+		protectedCheckpointSignatureCondition(input.Checkpoint),
+		protectedCheckpointBindingCondition(input.Checkpoint),
+		protectedSignerCondition(input),
+		protectedTrustScopeCondition(input),
+		protectedOverrideCondition(result.OverrideRequests),
 	}
-	ordered := make([]ProtectedCondition, 0, len(protectedConditionIDs))
-	for _, id := range protectedConditionIDs {
-		ordered = append(ordered, conditions[id])
+}
+
+func protectedProfileSelectedCondition() ProtectedCondition {
+
+	return ProtectedCondition{
+		ID:         "protected_profile_explicitly_selected",
+		State:      GatePass,
+		ReasonCode: "protected_profile_selected",
+		Reason:     "protected profile was explicitly selected",
 	}
-	return ordered
 }
 
 func protectedConditionFromGateCondition(conditions []GateCondition, id string) ProtectedCondition {
+
 	for _, condition := range conditions {
 		if condition.ID == id {
-			code := "condition_pass"
-			next := ""
-			if condition.State != GatePass {
-				code = id + "_not_satisfied"
-				next = "Supply the required run and evidence before evaluating protected profile."
-			}
-			return ProtectedCondition{ID: id, State: condition.State, ReasonCode: code, Reason: condition.Reason, NextAction: next}
+			return protectedConditionFromLocalGate(id, condition)
 		}
 	}
 	return ProtectedCondition{
@@ -645,7 +958,21 @@ func protectedConditionFromGateCondition(conditions []GateCondition, id string) 
 	}
 }
 
+func protectedConditionFromLocalGate(id string, condition GateCondition) ProtectedCondition {
+
+	code := "condition_pass"
+	next := ""
+	if condition.State != GatePass {
+
+		code = id + "_not_satisfied"
+		next = "Supply the required run and evidence before evaluating protected profile."
+	}
+
+	return ProtectedCondition{ID: id, State: condition.State, ReasonCode: code, Reason: condition.Reason, NextAction: next}
+}
+
 func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
+
 	if input.Witness == nil {
 		return missingCIWitnessCondition()
 	}
@@ -656,12 +983,14 @@ func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
 
 func protectedCIWitnessFields(state string, reasons []string) (string, string, string) {
 	if state == GatePass {
+
 		return "ci_witness_bound", "CI witness source and artifact bindings match protected profile input", ""
 	}
 	return protectedCIWitnessNonPassFields(state, reasons)
 }
 
 func protectedCIWitnessNonPassFields(state string, reasons []string) (string, string, string) {
+
 	reason := strings.Join(reasons, "; ")
 	if state == GateFail {
 		return "ci_witness_mismatch", reason, "Fix the CI witness source or artifact binding mismatch."
@@ -670,6 +999,7 @@ func protectedCIWitnessNonPassFields(state string, reasons []string) (string, st
 }
 
 func missingCIWitnessCondition() ProtectedCondition {
+
 	return ProtectedCondition{
 		ID:         "ci_witness_bound",
 		State:      GateCannotVerify,
@@ -680,26 +1010,30 @@ func missingCIWitnessCondition() ProtectedCondition {
 }
 
 func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondition {
+
 	generatedAt, ok := protectedWitnessGeneratedAt(input.Witness)
 	if !ok {
 		return witnessFreshnessCannotVerify("missing_witness_freshness", "CI witness generated_at is required for protected freshness evaluation", "Supply CI witness evidence with generated_at freshness data.")
 	}
 	return protectedWitnessFreshnessAt(generatedAt, input.Now)
 }
-
 func protectedWitnessGeneratedAt(witness *WitnessSummary) (string, bool) {
 	if witness == nil || strings.TrimSpace(witness.GeneratedAt) == "" {
+
 		return "", false
 	}
 	return witness.GeneratedAt, true
 }
 
 func protectedWitnessFreshnessAt(generatedAtText string, now time.Time) ProtectedCondition {
+
 	generatedAt, err := time.Parse(time.RFC3339, generatedAtText)
 	if err != nil {
+
 		return witnessFreshnessCannotVerify("invalid_witness_freshness", "CI witness generated_at cannot be parsed", "Regenerate CI witness evidence with an RFC3339 generated_at timestamp.")
 	}
 	if now.IsZero() {
+
 		now = time.Now().UTC()
 	}
 	if condition, ok := invalidWitnessFreshnessCondition(generatedAt, now); ok {
@@ -714,6 +1048,7 @@ func protectedWitnessFreshnessAt(generatedAtText string, now time.Time) Protecte
 }
 
 func invalidWitnessFreshnessCondition(generatedAt, now time.Time) (ProtectedCondition, bool) {
+
 	if generatedAt.After(now.Add(5 * time.Minute)) {
 		return witnessFreshnessFail("witness_from_future", "CI witness generated_at is after the verifier time window", "Regenerate CI witness evidence in the selected CI run."), true
 	}
@@ -730,8 +1065,8 @@ func witnessFreshnessCannotVerify(code, reason, next string) ProtectedCondition 
 func witnessFreshnessFail(code, reason, next string) ProtectedCondition {
 	return witnessFreshnessCondition(GateFail, code, reason, next)
 }
-
 func witnessFreshnessCondition(state, code, reason, next string) ProtectedCondition {
+
 	return ProtectedCondition{
 		ID:         "witness_freshness_valid",
 		State:      state,
@@ -742,6 +1077,7 @@ func witnessFreshnessCondition(state, code, reason, next string) ProtectedCondit
 }
 
 func protectedCheckpointSignatureCondition(result checkpoint.VerificationResult) ProtectedCondition {
+
 	if result.SignatureState == checkpoint.StatePass && result.PayloadDigestState != checkpoint.StateFail {
 		return ProtectedCondition{ID: "checkpoint_signature_valid", State: GatePass, ReasonCode: "checkpoint_signature_valid", Reason: "checkpoint signature verification passed"}
 	}
@@ -755,8 +1091,10 @@ func protectedCheckpointSignatureCondition(result checkpoint.VerificationResult)
 }
 
 func protectedCheckpointBindingCondition(result checkpoint.VerificationResult) ProtectedCondition {
+
 	state := GatePass
 	for _, candidate := range []string{result.RunBindingState, result.ChainBindingState, result.SourceBindingState, result.NonceBindingState} {
+
 		state = worseProtectedState(state, mapCheckpointState(candidate))
 	}
 	if state == GatePass {
@@ -772,20 +1110,18 @@ func protectedCheckpointBindingCondition(result checkpoint.VerificationResult) P
 }
 
 func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
+
 	if !input.PolicyProvided {
-		return ProtectedCondition{
-			ID:         "checkpoint_signer_authorized",
-			State:      GateCannotVerify,
-			ReasonCode: "missing_policy",
-			Reason:     "trusted-checkpoint policy is required for protected profile",
-			NextAction: "Supply a trusted-checkpoint policy for the protected signer.",
-		}
+		return missingSignerPolicyCondition()
 	}
 	state := mapCheckpointState(input.Checkpoint.SignerAuthorityState)
+
 	if protectedSignerPass(state, input.Checkpoint.TrustScope) {
+
 		return ProtectedCondition{ID: "checkpoint_signer_authorized", State: GatePass, ReasonCode: "checkpoint_signer_authorized", Reason: "checkpoint signer is authorized for CI signed protected profile"}
 	}
 	if protectedSignerLocalOnly(state, input.Checkpoint.TrustScope) {
+
 		state = GateFail
 	}
 	return ProtectedCondition{
@@ -797,6 +1133,16 @@ func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
 	}
 }
 
+func missingSignerPolicyCondition() ProtectedCondition {
+
+	return ProtectedCondition{
+		ID:         "checkpoint_signer_authorized",
+		State:      GateCannotVerify,
+		ReasonCode: "missing_policy",
+		Reason:     "trusted-checkpoint policy is required for protected profile",
+		NextAction: "Supply a trusted-checkpoint policy for the protected signer.",
+	}
+}
 func protectedSignerPass(state, trustScope string) bool {
 	return state == GatePass && trustScope == checkpoint.TrustScopeCISigned
 }
@@ -806,6 +1152,7 @@ func protectedSignerLocalOnly(state, trustScope string) bool {
 }
 
 func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
+
 	if !input.PolicyProvided {
 		return ProtectedCondition{
 			ID:         "protected_trust_scope_satisfied",
@@ -822,6 +1169,7 @@ func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
 }
 
 func protectedCheckpointCanUseWitness(input ProtectedGateInput) bool {
+
 	return input.Checkpoint.Result == checkpoint.StatePass &&
 		input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned &&
 		input.Checkpoint.SignerAuthorityState == checkpoint.StatePass &&
@@ -829,9 +1177,11 @@ func protectedCheckpointCanUseWitness(input ProtectedGateInput) bool {
 }
 
 func protectedWitnessTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
+
 	witnessState, _ := witnessBindingState(*input.Witness, input.WitnessExpectation)
 	freshness := protectedWitnessFreshnessCondition(input)
 	if witnessState == GatePass && freshness.State == GatePass {
+
 		return ProtectedCondition{ID: "protected_trust_scope_satisfied", State: GatePass, ReasonCode: "protected_trust_scope_satisfied", Reason: "CI signed checkpoint and CI witness binding satisfy protected profile"}
 	}
 	state := worseProtectedState(witnessState, freshness.State)
@@ -847,6 +1197,7 @@ func protectedWitnessTrustScopeCondition(input ProtectedGateInput) ProtectedCond
 func protectedInsufficientTrustScopeCondition(trustScope string) ProtectedCondition {
 	code := "protected_trust_scope_not_satisfied"
 	if trustScope == checkpoint.TrustScopeLocalSigned {
+
 		code = "local_signed_not_protected"
 	}
 	return ProtectedCondition{
@@ -857,13 +1208,15 @@ func protectedInsufficientTrustScopeCondition(trustScope string) ProtectedCondit
 		NextAction: "Provide CI signed checkpoint evidence with matching CI witness binding.",
 	}
 }
-
 func protectedOverrideCondition(overrides []OverrideRequest) ProtectedCondition {
+
 	if len(overrides) == 0 {
 		return ProtectedCondition{ID: "override_does_not_upgrade_profile", State: GatePass, ReasonCode: "no_override_present", Reason: "no override request is available to upgrade the profile"}
 	}
 	for _, override := range overrides {
+
 		if override.State != GatePass {
+
 			return ProtectedCondition{
 				ID:         "override_does_not_upgrade_profile",
 				State:      GateCannotVerify,
@@ -880,20 +1233,13 @@ func mapCheckpointState(state string) string {
 	if mapped, ok := checkpointGateStates[state]; ok {
 		return mapped
 	}
-	return GateCannotVerify
-}
 
-var checkpointGateStates = map[string]string{
-	checkpoint.StatePass:          GatePass,
-	checkpoint.StateFail:          GateFail,
-	checkpoint.StateCannotVerify:  GateCannotVerify,
-	checkpoint.StateNotIntegrated: GateCannotVerify,
-	checkpoint.StateNotAssessed:   GateNotAssessed,
-	"":                            GateNotAssessed,
+	return GateCannotVerify
 }
 
 func worseProtectedState(current, next string) string {
 	if protectedSeverity(next) > protectedSeverity(current) {
+
 		return next
 	}
 	return current
@@ -902,6 +1248,7 @@ func worseProtectedState(current, next string) string {
 func topLevelProtectedState(state string) string {
 	switch state {
 	case GateMissingTelemetry, "not_integrated":
+
 		return GateCannotVerify
 	default:
 		return state
@@ -909,6 +1256,7 @@ func topLevelProtectedState(state string) string {
 }
 
 func protectedSeverity(state string) int {
+
 	return severityByState(map[string]int{
 		GateFail:             5,
 		GateCannotVerify:     4,
@@ -918,12 +1266,13 @@ func protectedSeverity(state string) int {
 		GatePass:             1,
 	}, state)
 }
-
 func severityByState(values map[string]int, state string) int {
+
 	return values[state]
 }
 
 func protectedReasons(conditions []ProtectedCondition) []string {
+
 	ordered := orderedProtectedConditionsBySeverity(conditions)
 	reasons := make([]string, 0, len(ordered))
 	for _, condition := range ordered {
@@ -936,6 +1285,7 @@ func protectedReasons(conditions []ProtectedCondition) []string {
 }
 
 func protectedNextActions(conditions []ProtectedCondition) []string {
+
 	ordered := orderedProtectedConditionsBySeverity(conditions)
 	actions := make([]string, 0, len(ordered))
 	for _, condition := range ordered {
@@ -947,15 +1297,18 @@ func protectedNextActions(conditions []ProtectedCondition) []string {
 }
 
 func orderedProtectedConditionsBySeverity(conditions []ProtectedCondition) []ProtectedCondition {
+
 	ordered := append([]ProtectedCondition(nil), conditions...)
 	positions := map[string]int{}
 	for i, id := range protectedConditionIDs {
+
 		positions[id] = i
 	}
 	sort.SliceStable(ordered, func(i, j int) bool {
 		left := protectedSeverity(ordered[i].State)
 		right := protectedSeverity(ordered[j].State)
 		if left != right {
+
 			return left > right
 		}
 		return positions[ordered[i].ID] < positions[ordered[j].ID]
@@ -964,20 +1317,24 @@ func orderedProtectedConditionsBySeverity(conditions []ProtectedCondition) []Pro
 }
 
 func EvaluateGateWithWitness(rows []RunRow, contract trace.Contract, witnessPath string) GateResult {
+
 	return applyWitness(EvaluateGate(rows, contract), witnessPath)
 }
 
 func EvaluateGateWithWitnessContext(rows []RunRow, contract trace.Contract, witnessPath string, expected WitnessExpectation) GateResult {
+
 	return applyWitnessWithExpectation(EvaluateGate(rows, contract), witnessPath, expected)
 }
 
 func PreviewWitnessBinding(witnessPath, target string) (bool, []string) {
+
 	record, err := loadWitnessSummary(witnessPath)
 	if err != nil {
 		return false, []string{err.Error()}
 	}
 	expected, err := witnessExpectationFromTarget(target)
 	if err != nil {
+
 		return true, []string{err.Error()}
 	}
 	state, reasons := witnessBindingState(record, expected)
@@ -988,7 +1345,21 @@ func PreviewWitnessBinding(witnessPath, target string) (bool, []string) {
 }
 
 func rowFromRun(runDir string, result trace.VerifierResult, contract trace.Contract) RunRow {
-	row := RunRow{
+
+	row := rowFromVerifierResult(runDir, result)
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+
+		row.Kind = "unmatched"
+		row.KindReason = "run artifact could not be loaded"
+		return row
+	}
+	applyRunArtifact(&row, artifact, contract)
+	return row
+}
+func rowFromVerifierResult(runDir string, result trace.VerifierResult) RunRow {
+
+	return RunRow{
 		Name:          filepath.Base(runDir),
 		RunID:         result.RunID,
 		Result:        result.Result,
@@ -996,30 +1367,31 @@ func rowFromRun(runDir string, result trace.VerifierResult, contract trace.Contr
 		Completeness:  result.Completeness,
 		Replayability: result.Replayability,
 		Reason:        result.Reason,
-		ClosureState:  trace.ClosureStateUnknown,
+
+		ClosureState: trace.ClosureStateUnknown,
 	}
-	artifact, err := trace.OpenRunArtifact(runDir)
-	if err != nil {
-		row.Kind = "unmatched"
-		row.KindReason = "run artifact could not be loaded"
-		return row
-	}
+}
+func applyRunArtifact(row *RunRow, artifact trace.RunArtifact, contract trace.Contract) {
 	row.RunID = artifact.Manifest.RunID
 	row.ClosureState = artifact.Manifest.ClosureState
 	commandStarted, commandFinished := commandEvents(artifact.Events)
 	row.OverrideRequests = overrideRequestsFromEvents(artifact.Events, contract)
+
 	row.Command = payloadString(commandStarted, "command")
 	row.WrapperName = payloadString(commandStarted, "wrapper_name")
 	if exitCode, ok := payloadInt(commandFinished, "exit_code"); ok {
+
 		row.ExitCode = &exitCode
 	}
 	row.StdoutDigest = payloadString(commandFinished, "stdout_digest")
 	row.StderrDigest = payloadString(commandFinished, "stderr_digest")
+
 	row.Kind, row.KindReason = classify(artifact.Events, contract.RequiredEvidence)
-	return row
 }
 
 func commandEvents(events []trace.Event) (trace.Event, trace.Event) {
+	// Last-seen command events win, matching replay behavior for append-only
+	// traces that may contain retries.
 	var started trace.Event
 	var finished trace.Event
 	for _, event := range events {
@@ -1034,6 +1406,7 @@ func commandEvents(events []trace.Event) (trace.Event, trace.Event) {
 }
 
 func classify(events []trace.Event, requirements []trace.EvidenceRequirement) (string, string) {
+
 	for _, requirement := range requirements {
 		if evidenceRequirementMatches(events, requirement) {
 			return requirement.ID, "matched contract evidence requirement"
@@ -1043,6 +1416,7 @@ func classify(events []trace.Event, requirements []trace.EvidenceRequirement) (s
 }
 
 func evidenceRequirementMatches(events []trace.Event, requirement trace.EvidenceRequirement) bool {
+
 	if requirement.ID == "" {
 		return false
 	}
@@ -1055,6 +1429,7 @@ func evidenceRequirementMatches(events []trace.Event, requirement trace.Evidence
 }
 
 func eventMatchesRequirement(event trace.Event, requirement trace.EvidenceRequirement) bool {
+
 	if requirement.EventType != "" && event.EventType != trace.EventType(requirement.EventType) {
 		return false
 	}
@@ -1062,6 +1437,7 @@ func eventMatchesRequirement(event trace.Event, requirement trace.EvidenceRequir
 }
 
 func payloadString(event trace.Event, key string) string {
+
 	value := payloadValue(event, key)
 	if value == nil {
 		return ""
@@ -1075,6 +1451,7 @@ func payloadString(event trace.Event, key string) string {
 }
 
 func payloadInt(event trace.Event, key string) (int, bool) {
+
 	value := payloadValue(event, key)
 	if value == nil {
 		return 0, false
@@ -1083,13 +1460,20 @@ func payloadInt(event trace.Event, key string) (int, bool) {
 }
 
 func payloadAnyInt(value any) (int, bool) {
+	if typed, ok := value.(json.Number); ok {
+
+		return jsonNumberInt(typed)
+	}
+	return primitivePayloadInt(value)
+}
+
+func primitivePayloadInt(value any) (int, bool) {
+
 	switch typed := value.(type) {
 	case int:
 		return typed, true
 	case float64:
 		return int(typed), true
-	case json.Number:
-		return jsonNumberInt(typed)
 	default:
 		return 0, false
 	}
@@ -1102,12 +1486,13 @@ func jsonNumberInt(value json.Number) (int, bool) {
 
 func payloadValue(event trace.Event, key string) any {
 	if event.EventPayload == nil {
+
 		return nil
 	}
 	return event.EventPayload[key]
 }
-
 func requiredEvidenceIDs(contract trace.Contract) []string {
+
 	ids := make([]string, 0, len(contract.RequiredEvidence))
 	for _, requirement := range contract.RequiredEvidence {
 		if requirement.ID != "" {
@@ -1116,14 +1501,19 @@ func requiredEvidenceIDs(contract trace.Contract) []string {
 	}
 	return ids
 }
-
 func evaluateRequiredRuns(rows []RunRow, contract trace.Contract) []RequiredRunResult {
+
 	results := make([]RequiredRunResult, 0, len(contract.RequiredRuns))
 	rowsByWrapper := firstRowByWrapper(rows)
 	for _, required := range contract.RequiredRuns {
-		profile := runProfile(required.Profile)
+
+		profile := required.Profile
+		if profile == "" {
+			profile = GateModeObservation
+		}
 		result := requiredRunResultTemplate(required, profile)
 		if row, ok := rowsByWrapper[required.WrapperName]; ok {
+
 			result = matchRequiredRun(row, required, result)
 		}
 		result = applyProtectedFutureConstraint(result, required.ID)
@@ -1133,6 +1523,7 @@ func evaluateRequiredRuns(rows []RunRow, contract trace.Contract) []RequiredRunR
 }
 
 func requiredRunResultTemplate(required trace.RequiredRun, profile string) RequiredRunResult {
+
 	return RequiredRunResult{
 		ID:          required.ID,
 		WrapperName: required.WrapperName,
@@ -1145,6 +1536,7 @@ func requiredRunResultTemplate(required trace.RequiredRun, profile string) Requi
 }
 
 func firstRowByWrapper(rows []RunRow) map[string]RunRow {
+
 	matches := make(map[string]RunRow, len(rows))
 	for _, row := range rows {
 		if _, ok := matches[row.WrapperName]; ok {
@@ -1155,14 +1547,8 @@ func firstRowByWrapper(rows []RunRow) map[string]RunRow {
 	return matches
 }
 
-func runProfile(profile string) string {
-	if profile == "" {
-		return GateModeObservation
-	}
-	return profile
-}
-
 func matchRequiredRun(row RunRow, required trace.RequiredRun, result RequiredRunResult) RequiredRunResult {
+
 	result.MatchedRunID = row.RunID
 	result.State = GatePass
 	result.Reasons = []string{fmt.Sprintf("required run %s matched wrapper %s", required.ID, required.WrapperName)}
@@ -1176,6 +1562,7 @@ func matchRequiredRun(row RunRow, required trace.RequiredRun, result RequiredRun
 }
 
 func missingEvidenceID(row RunRow, requiredEvidence []string) (string, bool) {
+
 	for _, evidenceID := range requiredEvidence {
 		if row.Kind != evidenceID {
 			return evidenceID, true
@@ -1185,12 +1572,14 @@ func missingEvidenceID(row RunRow, requiredEvidence []string) (string, bool) {
 }
 
 func cannotVerifyRequiredRunEvidence(result RequiredRunResult, requiredID, evidenceID string) RequiredRunResult {
+
 	result.State = GateCannotVerify
 	result.Reasons = []string{fmt.Sprintf("required run %s missing evidence %s", requiredID, evidenceID)}
 	return result
 }
 
 func cannotVerifyRequiredRun(result RequiredRunResult, requiredID, runName string) RequiredRunResult {
+
 	result.State = GateCannotVerify
 	result.Reasons = []string{fmt.Sprintf("required run %s cannot verify from run %s", requiredID, runName)}
 	return result
@@ -1200,16 +1589,19 @@ func applyProtectedFutureConstraint(result RequiredRunResult, requiredID string)
 	if result.Profile != GateModeProtectedFuture {
 		return result
 	}
+
 	return cannotVerifyRequiredRunReason(result, requiredID, "requests protected_future profile, which cannot verify before signed checkpoint evidence exists")
 }
 
 func cannotVerifyRequiredRunReason(result RequiredRunResult, requiredID, reason string) RequiredRunResult {
+
 	result.State = GateCannotVerify
 	result.Reasons = []string{fmt.Sprintf("required run %s %s", requiredID, reason)}
 	return result
 }
 
 func gateMode(contract trace.Contract) string {
+
 	mode := GateModeObservation
 	for _, required := range contract.RequiredRuns {
 		switch required.Profile {
@@ -1221,8 +1613,8 @@ func gateMode(contract trace.Contract) string {
 	}
 	return mode
 }
-
 func gateConditions(result GateResult) []GateCondition {
+
 	requiredRunsState := requiredRunsGateState(result.RequiredRuns)
 	requiredEvidenceState := requiredEvidenceGateState(result.RequiredEvidence, result.ObservedEvidence)
 	return []GateCondition{
@@ -1234,6 +1626,7 @@ func gateConditions(result GateResult) []GateCondition {
 }
 
 func requiredRunsGateState(requiredRuns []RequiredRunResult) string {
+
 	state := GatePass
 	for _, run := range requiredRuns {
 		if run.State != GatePass {
@@ -1244,6 +1637,7 @@ func requiredRunsGateState(requiredRuns []RequiredRunResult) string {
 }
 
 func requiredEvidenceGateState(requiredEvidence, observedEvidence []string) string {
+
 	for _, id := range requiredEvidence {
 		if !containsString(observedEvidence, id) {
 			return GateFail
@@ -1253,10 +1647,11 @@ func requiredEvidenceGateState(requiredEvidence, observedEvidence []string) stri
 }
 
 func applyWitness(result GateResult, witnessPath string) GateResult {
+
 	return applyWitnessWithExpectation(result, witnessPath, WitnessExpectation{})
 }
-
 func applyWitnessWithExpectation(result GateResult, witnessPath string, expected WitnessExpectation) GateResult {
+
 	record, err := loadWitnessSummary(witnessPath)
 	if err != nil {
 		result.CIWitnessGate = GateCannotVerify
@@ -1265,6 +1660,7 @@ func applyWitnessWithExpectation(result GateResult, witnessPath string, expected
 	}
 	result.Witness = &record
 	if ciWitnessVerified(record) {
+
 		return applyVerifiedCIWitness(result, record, expected)
 	}
 	result.CIWitnessGate = GateCannotVerify
@@ -1274,10 +1670,12 @@ func applyWitnessWithExpectation(result GateResult, witnessPath string, expected
 }
 
 func ciWitnessVerified(record WitnessSummary) bool {
+
 	return record.Kind == "github-actions" && record.Status == GatePass && record.TrustScope == "ci_witnessed"
 }
 
 func applyVerifiedCIWitness(result GateResult, record WitnessSummary, expected WitnessExpectation) GateResult {
+
 	if bindingState, bindingReasons := witnessBindingState(record, expected); bindingState != GatePass {
 		result.CIWitnessGate = bindingState
 		result.Reasons = append(result.Reasons, bindingReasons...)
@@ -1288,6 +1686,7 @@ func applyVerifiedCIWitness(result GateResult, record WitnessSummary, expected W
 		result.GateConditions = gateConditions(result)
 		return result
 	}
+
 	result.CIWitnessGate = GatePass
 	result.MissingAuditEvidence = []string{"external_witness_checkpoint"}
 	result.GateConditions = gateConditions(result)
@@ -1295,6 +1694,8 @@ func applyVerifiedCIWitness(result GateResult, record WitnessSummary, expected W
 }
 
 func loadWitnessSummary(path string) (WitnessSummary, error) {
+	// Witness files are parsed into the portable demo summary shape before any
+	// binding decision is made.
 	var record WitnessSummary
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -1307,6 +1708,7 @@ func loadWitnessSummary(path string) (WitnessSummary, error) {
 }
 
 func witnessBindingState(record WitnessSummary, expected WitnessExpectation) (string, []string) {
+
 	for _, binding := range witnessScalarBindings(record, expected) {
 		if state, reasons := validateWitnessScalarBinding(binding); state != GatePass {
 			return state, reasons
@@ -1315,13 +1717,8 @@ func witnessBindingState(record WitnessSummary, expected WitnessExpectation) (st
 	return witnessArtifactBindingState(record.RunArtifacts, expected.RunArtifacts)
 }
 
-type witnessScalarBinding struct {
-	label    string
-	expected string
-	actual   string
-}
-
 func witnessScalarBindings(record WitnessSummary, expected WitnessExpectation) []witnessScalarBinding {
+
 	return []witnessScalarBinding{
 		{label: "repository", expected: expected.Repository, actual: record.Source.Repository},
 		{label: "ref", expected: expected.Ref, actual: record.Source.Ref},
@@ -1331,6 +1728,7 @@ func witnessScalarBindings(record WitnessSummary, expected WitnessExpectation) [
 }
 
 func validateWitnessScalarBinding(binding witnessScalarBinding) (string, []string) {
+
 	if binding.expected == "" {
 		return GatePass, nil
 	}
@@ -1342,8 +1740,8 @@ func validateWitnessScalarBinding(binding witnessScalarBinding) (string, []strin
 	}
 	return GatePass, nil
 }
-
 func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (string, []string) {
+
 	expectedArtifacts := witnessArtifactsByPath(expected)
 	seenArtifacts := map[string]bool{}
 	for _, artifact := range actual {
@@ -1356,6 +1754,7 @@ func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (stri
 }
 
 func missingWitnessArtifactState(expectedArtifacts map[string]string, seenArtifacts map[string]bool) (string, []string) {
+
 	for path := range expectedArtifacts {
 		if !seenArtifacts[path] {
 			return GateCannotVerify, []string{fmt.Sprintf("ci witness artifact %s is missing from witness", path)}
@@ -1365,6 +1764,7 @@ func missingWitnessArtifactState(expectedArtifacts map[string]string, seenArtifa
 }
 
 func witnessArtifactsByPath(artifacts []WitnessArtifactDigest) map[string]string {
+
 	byPath := map[string]string{}
 	for _, artifact := range artifacts {
 		byPath[artifact.Path] = artifact.SHA256
@@ -1373,6 +1773,7 @@ func witnessArtifactsByPath(artifacts []WitnessArtifactDigest) map[string]string
 }
 
 func validateWitnessArtifact(artifact WitnessArtifactDigest, expected map[string]string) (string, []string) {
+
 	expectedDigest, ok := expected[artifact.Path]
 	if !ok {
 		return GateCannotVerify, []string{fmt.Sprintf("ci witness artifact %s is not present in current gate input", artifact.Path)}
@@ -1384,12 +1785,14 @@ func validateWitnessArtifact(artifact WitnessArtifactDigest, expected map[string
 }
 
 func witnessExpectationFromTarget(target string) (WitnessExpectation, error) {
+
 	runDirs, err := DiscoverRunDirs(target)
 	if err != nil {
 		return WitnessExpectation{}, err
 	}
 	artifacts := make([]WitnessArtifactDigest, 0, len(runDirs))
 	for _, runDir := range runDirs {
+
 		artifact, err := witnessRunArtifactDigest(runDir)
 		if err != nil {
 			return WitnessExpectation{}, err
@@ -1400,209 +1803,10 @@ func witnessExpectationFromTarget(target string) (WitnessExpectation, error) {
 }
 
 func witnessRunArtifactDigest(runDir string) (WitnessArtifactDigest, error) {
+
 	digest, err := hashFile(filepath.Join(runDir, "run.json"))
 	return WitnessArtifactDigest{
 		Path:   filepath.ToSlash(filepath.Join(filepath.Base(runDir), "run.json")),
 		SHA256: digest,
 	}, err
-}
-
-func hashFile(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	sum := sha256.Sum256(data)
-	return hex.EncodeToString(sum[:]), err
-}
-
-func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) []OverrideRequest {
-	requests := make([]OverrideRequest, 0)
-	for _, event := range events {
-		if event.EventType != trace.EventPolicyOverrideRequested {
-			continue
-		}
-		request := OverrideRequest{
-			OverrideID: payloadString(event, "override_id"),
-			State:      GatePass,
-			CreatedAt:  payloadString(event, "created_at"),
-		}
-		request.State, request.Reason = overrideRequestFieldState(event)
-		request.State, request.Reason = overrideRequestReferenceState(event, contract, request.State, request.Reason)
-		requests = append(requests, request)
-	}
-	sort.SliceStable(requests, func(i, j int) bool {
-		if requests[i].CreatedAt != requests[j].CreatedAt {
-			return requests[i].CreatedAt < requests[j].CreatedAt
-		}
-		return requests[i].OverrideID < requests[j].OverrideID
-	})
-	return requests
-}
-
-func overrideRequestFieldState(event trace.Event) (string, string) {
-	for _, field := range []string{"override_id", "producer", "origin", "requested_by", "reason", "source_ref", "scope", "created_at"} {
-		if strings.TrimSpace(payloadString(event, field)) == "" {
-			return GateCannotVerify, fmt.Sprintf("override request missing %s", field)
-		}
-	}
-	return GatePass, ""
-}
-
-func overrideRequestReferenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
-	state, reason = overrideRequestRequiredRunState(event, contract, state, reason)
-	return overrideRequestEvidenceState(event, contract, state, reason)
-}
-
-func overrideRequestRequiredRunState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
-	for _, id := range payloadStringSlice(event, "affected_required_runs") {
-		if !contractHasRequiredRun(contract, id) {
-			state = GateCannotVerify
-			reason = fmt.Sprintf("override request references unknown required run %s", id)
-		}
-	}
-	return state, reason
-}
-
-func overrideRequestEvidenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
-	for _, id := range payloadStringSlice(event, "affected_evidence") {
-		if !contractHasEvidence(contract, id) {
-			state = GateCannotVerify
-			reason = fmt.Sprintf("override request references unknown evidence %s", id)
-		}
-	}
-	return state, reason
-}
-
-func payloadStringSlice(event trace.Event, key string) []string {
-	value := payloadValue(event, key)
-	if value == nil {
-		return nil
-	}
-	switch typed := value.(type) {
-	case []string:
-		return typed
-	case []any:
-		return stringItems(typed)
-	default:
-		return nil
-	}
-}
-
-func stringItems(items []any) []string {
-	values := make([]string, 0, len(items))
-	for _, item := range items {
-		values = appendStringItem(values, item)
-	}
-	return values
-}
-
-func appendStringItem(values []string, item any) []string {
-	if text, ok := item.(string); ok {
-		return append(values, text)
-	}
-	return values
-}
-
-func contractHasRequiredRun(contract trace.Contract, id string) bool {
-	for _, required := range contract.RequiredRuns {
-		if required.ID == id {
-			return true
-		}
-	}
-	return false
-}
-
-func contractHasEvidence(contract trace.Contract, id string) bool {
-	for _, required := range contract.RequiredEvidence {
-		if required.ID == id {
-			return true
-		}
-	}
-	return false
-}
-
-func worseGateState(current, next string) string {
-	if gateSeverity(next) > gateSeverity(current) {
-		return next
-	}
-	return current
-}
-
-func gateSeverity(state string) int {
-	return gateSeverityByState[state]
-}
-
-var gateSeverityByState = map[string]int{
-	GateFail:             4,
-	GateMissingTelemetry: 4,
-	GateCannotVerify:     3,
-	GateNotAssessed:      2,
-	GatePass:             1,
-}
-
-func containsString(values []string, target string) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
-}
-
-func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
-	observed := observedEvidenceKinds(rows)
-	missing := make([]string, 0)
-	for _, requirement := range contract.RequiredEvidence {
-		if requirement.ID == "" || observed[requirement.ID] {
-			continue
-		}
-		missing = append(missing, requirement.ID)
-	}
-	return missing
-}
-
-func observedEvidenceKinds(rows []RunRow) map[string]bool {
-	observed := map[string]bool{}
-	for _, row := range rows {
-		if rowHasObservedEvidenceKind(row) {
-			observed[row.Kind] = true
-		}
-	}
-	return observed
-}
-
-func rowHasObservedEvidenceKind(row RunRow) bool {
-	return row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved
-}
-
-func buildTimeline(rows []RunRow) string {
-	var builder strings.Builder
-	builder.WriteString("# SDP Trace Timeline\n\n")
-	builder.WriteString("| Run | Kind | Result | Trust Scope | Command | Exit |\n")
-	builder.WriteString("|-----|------|--------|-------------|---------|------|\n")
-	for _, row := range rows {
-		exit := ""
-		if row.ExitCode != nil {
-			exit = fmt.Sprintf("%d", *row.ExitCode)
-		}
-		builder.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s |\n",
-			escapeMD(row.Name),
-			escapeMD(row.Kind),
-			escapeMD(string(row.Result)),
-			escapeMD(string(row.TrustScope)),
-			escapeMD(row.Command),
-			escapeMD(exit),
-		))
-	}
-	return builder.String()
-}
-
-func escapeMD(value string) string {
-	return strings.ReplaceAll(value, "|", "\\|")
-}
-
-func writeJSON(path string, value any) error {
-	data, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0o644)
 }

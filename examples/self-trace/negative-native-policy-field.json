@@ -771,8 +771,8 @@
       "producer": "pi-minimax-crisis-judge",
       "producer_type": "reviewer",
       "origin": "external",
-      "verdict_kind": "quality_score",
-      "verdict_value": "pass for revised roadmap honesty; product proof remains blocked by self-trace and self-attestation implementation",
+      "verdict_kind": "gate",
+      "verdict_value": "pass for revised roadmap honesty as external review evidence; product proof remains blocked by self-trace and self-attestation implementation",
       "policy_ref": "specs/001-sdp-trace-time-series-evidence-substrate/blocks/01-crisis-self-proof-judge-result.json",
       "generated_at": "2026-04-30T20:50:00Z",
       "artifact": {

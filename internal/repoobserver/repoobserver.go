@@ -141,6 +141,8 @@ type targetFile struct {
 }
 
 func Doctor(opts Options) (Status, error) {
+	// Doctor is read-only: it reports local structural setup without installing
+	// generated observer files.
 	opts, err := normalizeOptions(opts)
 	if err != nil {
 		return Status{}, err
@@ -153,6 +155,8 @@ func Doctor(opts Options) (Status, error) {
 }
 
 func Install(opts Options) (Status, error) {
+	// Install builds a preview first so --write callers can still receive the
+	// same surface model after mutations are applied.
 	opts, err := normalizeOptions(opts)
 	if err != nil {
 		return Status{}, err
@@ -168,6 +172,8 @@ func Install(opts Options) (Status, error) {
 }
 
 func installWriteMode(opts Options, status Status) (Status, error) {
+	// Preserve mutation summaries across the post-write rescan so the final
+	// status shows both resulting surfaces and what changed.
 	summary, err := writeInstallFiles(opts)
 	status.ForceDiffSummary = summary
 	if err != nil {
@@ -179,6 +185,10 @@ func installWriteMode(opts Options, status Status) (Status, error) {
 }
 
 func WriteJSON(path string, status Status) error {
+	// Empty output paths are optional CLI sinks; nonempty paths get stable,
+	// newline-terminated JSON for review artifacts.
+	// The writer does not re-evaluate status; callers own the observation or
+	// install pass that produced it.
 	if strings.TrimSpace(path) == "" {
 		return nil
 	}
@@ -194,6 +204,8 @@ func WriteJSON(path string, status Status) error {
 }
 
 func LoadConfig(repoRoot string) (Config, error) {
+	// Config is local structural input; malformed config is unsafe because it
+	// could mislabel repository identity or profile.
 	data, err := os.ReadFile(filepath.Join(repoRoot, ".sdp-trace", "config.json"))
 	if err != nil {
 		return Config{}, err
@@ -206,6 +218,8 @@ func LoadConfig(repoRoot string) (Config, error) {
 }
 
 func HumanTable(status Status) string {
+	// Human output keeps install and proof state separate instead of compressing
+	// them into a single health score.
 	var b strings.Builder
 	writeHumanTableHeader(&b, status)
 	writeHumanTableSurfaces(&b, status.Surfaces)
@@ -215,6 +229,8 @@ func HumanTable(status Status) string {
 }
 
 func normalizeOptions(opts Options) (Options, error) {
+	// Defaults, absolute paths, and repository identity all pass through one
+	// normalization path before any observation or install work.
 	opts = withDefaultProfile(opts)
 	if err := validateProfile(opts.Profile); err != nil {
 		return Options{}, err
@@ -229,6 +245,8 @@ func normalizeOptions(opts Options) (Options, error) {
 
 func withDefaultProfile(opts Options) Options {
 	if strings.TrimSpace(opts.Profile) == "" {
+		// Empty profile selects the only portable repo-observer contract rather
+		// than leaving behavior harness-specific.
 		opts.Profile = ProfileGithubActionsGitHooksV1
 	}
 	return opts
@@ -236,12 +254,18 @@ func withDefaultProfile(opts Options) Options {
 
 func validateProfile(profile string) error {
 	if profile != ProfileGithubActionsGitHooksV1 {
+		// Unknown profiles would imply setup semantics this portable tool cannot
+		// verify.
 		return fmt.Errorf("repo observer requires --profile %s", ProfileGithubActionsGitHooksV1)
 	}
 	return nil
 }
 
 func withAbsoluteRepoRoot(opts Options) (Options, error) {
+	// Blank roots are resolved through git and then made absolute for later
+	// containment checks.
+	// The absolute path is local structural evidence only and is rendered as an
+	// abstract repository root in user-facing status.
 	if strings.TrimSpace(opts.RepoRoot) == "" {
 		root, err := repoRoot(".")
 		if err != nil {
@@ -259,6 +283,8 @@ func withAbsoluteRepoRoot(opts Options) (Options, error) {
 
 func withDefaultNow(opts Options) Options {
 	if opts.Now.IsZero() {
+		// Repo observations use wall-clock UTC in normal runs, while tests inject
+		// time for deterministic status output.
 		opts.Now = time.Now().UTC()
 	}
 	return opts
@@ -266,12 +292,16 @@ func withDefaultNow(opts Options) Options {
 
 func withConfiguredRepositoryID(opts Options) (Options, error) {
 	if opts.RepositoryID != "" {
+		// Explicit repository identity wins over local config so callers can
+		// bind observations to the intended source.
 		return opts, nil
 	}
 	return withConfigFileRepositoryID(opts)
 }
 
 func withConfigFileRepositoryID(opts Options) (Options, error) {
+	// Missing config is allowed for first install/doctor runs; the caller can
+	// still use a derived repository ID.
 	config, err := LoadConfig(opts.RepoRoot)
 	if errors.Is(err, os.ErrNotExist) {
 		return opts, nil
@@ -287,6 +317,7 @@ func withConfigFileRepositoryID(opts Options) (Options, error) {
 
 func validateConfig(config Config) (Config, error) {
 	if config.Profile != "" && config.Profile != ProfileGithubActionsGitHooksV1 {
+		// Config files cannot opt into unimplemented observer profiles.
 		return Config{}, fmt.Errorf("%s: unsupported repo observer profile in .sdp-trace/config.json", ReasonUnsafeOutputRefused)
 	}
 	return config, validateRepositoryID(config.RepositoryID, "repository id in .sdp-trace/config.json must match [A-Za-z0-9_.-]+")
@@ -294,12 +325,16 @@ func validateConfig(config Config) (Config, error) {
 
 func validateRepositoryID(repositoryID, message string) error {
 	if repositoryID != "" && !safeIDPattern.MatchString(repositoryID) {
+		// Repository IDs are rendered in reports and config, so reject unsafe
+		// labels at the boundary.
 		return fmt.Errorf("%s: %s", ReasonUnsafeOutputRefused, message)
 	}
 	return nil
 }
 
 func writeHumanTableHeader(b *strings.Builder, status Status) {
+	// The repository root is represented abstractly; absolute checkout paths are
+	// not part of the portable status table.
 	fmt.Fprintf(b, "Profile: %s\n", status.Profile)
 	fmt.Fprintf(b, "Repository: %s\n", status.RepositoryID)
 	fmt.Fprintf(b, "Install state: %s\n", status.InstallState)
@@ -310,11 +345,16 @@ func writeHumanTableHeader(b *strings.Builder, status Status) {
 
 func writeHumanTableSurfaces(b *strings.Builder, surfaces []Surface) {
 	for _, surface := range surfaces {
+		// Render every surface independently so install and proof gaps remain
+		// inspectable instead of being collapsed into a health score.
 		writeHumanTableSurface(b, surface)
 	}
 }
 
 func writeHumanTableSurface(b *strings.Builder, surface Surface) {
+	// Empty remediation renders as "-" so absence of an action is explicit.
+	// The table prints install and proof states side by side to avoid implying
+	// that installed means verified.
 	action := surface.NextAction
 	if action == "" {
 		action = "-"
@@ -330,6 +370,8 @@ func writeHumanTableSurface(b *strings.Builder, surface Surface) {
 }
 
 func writeHumanTableDiffSummary(b *strings.Builder, summary []DiffSummary) {
+	// Force summaries intentionally expose safe digests/counts, not full file
+	// content.
 	if len(summary) == 0 {
 		return
 	}
@@ -340,6 +382,8 @@ func writeHumanTableDiffSummary(b *strings.Builder, summary []DiffSummary) {
 }
 
 func writeHumanTableDiffItem(b *strings.Builder, item DiffSummary) {
+	// Diff summaries contain safe action/digest metadata only; file contents are
+	// intentionally omitted from the human table.
 	fmt.Fprintf(b, "- %s: %s", item.Path, item.Action)
 	if item.Before != "" || item.After != "" {
 		fmt.Fprintf(b, " [%s -> %s]", item.Before, item.After)
@@ -351,6 +395,18 @@ func writeHumanTableDiffItem(b *strings.Builder, item DiffSummary) {
 }
 
 func buildStatus(opts Options, installPreview bool) (Status, error) {
+	// Derived repository identity is a sanitized local fallback, not externally
+	// signed source proof.
+	// Status generation is a snapshot; it does not persist files unless Install
+	// enters write mode.
+	// Git metadata is captured as strings and may be empty when local git cannot
+	// provide it.
+	// Aggregate states are derived from surface rows after any preview action
+	// text is applied.
+	// Gaps and next actions are derived from the same surface slice to keep JSON
+	// fields consistent.
+	// GeneratedAt uses the normalized clock so tests and CLI output can replay
+	// deterministic snapshots.
 	repoID := opts.RepositoryID
 	if repoID == "" {
 		repoID = derivedRepositoryID(opts.RepoRoot)
@@ -359,24 +415,65 @@ func buildStatus(opts Options, installPreview bool) (Status, error) {
 	if installPreview {
 		applyInstallPreviewActions(surfaces)
 	}
-	status := Status{
+	return statusFromSurfaces(opts, repoID, surfaces), nil
+}
+
+func statusFromSurfaces(opts Options, repoID string, surfaces []Surface) Status {
+	// Aggregate install/proof states, gaps, and actions are all derived from the
+	// same surface snapshot to avoid prose-only closure over missing evidence.
+	gitHead, gitBranch := statusGitRefs(opts.RepoRoot)
+	state := surfaceStatusState(surfaces)
+	return Status{
 		SchemaVersion:     SchemaVersion,
 		Profile:           opts.Profile,
 		RepositoryID:      repoID,
 		RepositoryRootRef: "current_repository",
-		GitHead:           gitOutput(opts.RepoRoot, "rev-parse", "--verify", "HEAD"),
-		GitBranch:         gitOutput(opts.RepoRoot, "branch", "--show-current"),
-		InstallState:      aggregateInstallState(surfaces),
-		ProofState:        aggregateProofState(surfaces),
-		Surfaces:          surfaces,
-		Gaps:              gapsFor(surfaces),
-		NextActions:       nextActionsFor(surfaces),
-		GeneratedAt:       opts.Now.Format(time.RFC3339),
+		// Git fields are observations from this checkout, not immutable source
+		// proof.
+		GitHead:   gitHead,
+		GitBranch: gitBranch,
+		// Aggregate states are derived, never hand-authored.
+		InstallState: state.install,
+		ProofState:   state.proof,
+		Surfaces:     surfaces,
+		// Gaps and actions preserve the same surface evidence used for verdicts.
+		Gaps:        state.gaps,
+		NextActions: state.actions,
+		GeneratedAt: opts.Now.Format(time.RFC3339),
 	}
-	return status, nil
+}
+
+type surfaceState struct {
+	install string
+	proof   string
+	gaps    []Gap
+	actions []NextAction
+}
+
+func surfaceStatusState(surfaces []Surface) surfaceState {
+	// Every aggregate field is recomputed from measured surfaces, not from task
+	// checkboxes or generated prose.
+	return surfaceState{
+		install: aggregateInstallState(surfaces),
+		proof:   aggregateProofState(surfaces),
+		gaps:    gapsFor(surfaces),
+		actions: nextActionsFor(surfaces),
+	}
+}
+
+func statusGitRefs(repoRoot string) (string, string) {
+	// Git refs are local structural observations; empty strings mean git could
+	// not provide that field during this snapshot.
+	return gitOutput(repoRoot, "rev-parse", "--verify", "HEAD"),
+		gitOutput(repoRoot, "branch", "--show-current")
 }
 
 func buildSurfaces(opts Options) []Surface {
+	// Stable ordering keeps JSON and human output diffable across repeated runs.
+	// Each surface reports a separate trust boundary instead of contributing to
+	// an opaque health score.
+	// Local hook, config, CI workflow, and non-applicable profile surfaces are
+	// listed together so gaps stay visible.
 	return []Surface{
 		repositoryIdentitySurface(opts),
 		hooksPathSurface(opts),
@@ -395,6 +492,8 @@ func buildSurfaces(opts Options) []Surface {
 }
 
 func applyInstallPreviewActions(surfaces []Surface) {
+	// Preview rewrites only remediation text; it does not change measured
+	// install/proof state.
 	for i := range surfaces {
 		if surfaces[i].InstallState == StateFail && strings.HasPrefix(surfaces[i].NextAction, "run install") {
 			surfaces[i].NextAction = "rerun with --write to install this surface"
@@ -404,12 +503,18 @@ func applyInstallPreviewActions(surfaces []Surface) {
 
 func repositoryIdentitySurface(opts Options) Surface {
 	if opts.RepositoryID != "" {
+		// Caller-supplied identity binds the observation to an intended source,
+		// but it is still local structural evidence rather than external proof.
 		return surface(SurfaceRepositoryIdentity, StatePass, StateNotAssessed, ScopeLocalStructural, "caller_supplied_repository_id", ReasonManualStepRequired, "", "")
 	}
+	// A sanitized origin hash avoids leaking remotes while keeping the identity
+	// surface inspectable for follow-up binding work.
 	return surface(SurfaceRepositoryIdentity, StatePass, StateNotAssessed, ScopeLocalStructural, "sanitized_origin_hash", ReasonManualStepRequired, "", "")
 }
 
 func hooksPathSurface(opts Options) Surface {
+	// core.hooksPath is checkout-local git config, so it can prove installation
+	// shape but not committed repository proof.
 	value := strings.TrimSpace(gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath"))
 	if value == ".githooks" {
 		return surface(SurfaceHooksPath, StatePass, StateNotAssessed, ScopeLocalStructural, "git_config:core.hooksPath", ReasonHooksPathSet, "core.hooksPath=.githooks", "")
@@ -421,6 +526,8 @@ func hooksPathSurface(opts Options) Surface {
 }
 
 func hookSurface(opts Options, name, surfaceID string) Surface {
+	// Hook existence is local structure; proof remains not_assessed until hook
+	// output is observed from a git operation.
 	rel := filepath.Join(".githooks", name)
 	path := filepath.Join(opts.RepoRoot, rel)
 	info, err := os.Stat(path)
@@ -434,6 +541,7 @@ func hookSurface(opts Options, name, surfaceID string) Surface {
 }
 
 func presentHookSurface(info os.FileInfo, surfaceID, rel string) Surface {
+	// A non-executable hook is present but cannot be verified as runnable.
 	if info.IsDir() {
 		return surface(surfaceID, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonHookScriptAbsent, rel, "install generated hook script")
 	}
@@ -445,6 +553,8 @@ func presentHookSurface(info os.FileInfo, surfaceID, rel string) Surface {
 }
 
 func generatedFileSurface(opts Options, rel, surfaceID string) Surface {
+	// Generated file presence is an install signal only; proof still requires an
+	// observed run or CI artifact.
 	path := filepath.Join(opts.RepoRoot, rel)
 	_, err := os.Stat(path)
 	if err == nil {
@@ -457,6 +567,8 @@ func generatedFileSurface(opts Options, rel, surfaceID string) Surface {
 }
 
 func gitignoreSurface(opts Options) Surface {
+	// Only the managed sdp-trace marker block is inspected; unrelated ignore
+	// rules are outside this surface.
 	rel := ".gitignore"
 	data, err := os.ReadFile(filepath.Join(opts.RepoRoot, rel))
 	if err == nil {
@@ -470,6 +582,7 @@ func gitignoreSurface(opts Options) Surface {
 
 func gitignoreContentSurface(rel, data string) Surface {
 	if strings.Contains(data, "# sdp-trace begin") && strings.Contains(data, "# sdp-trace end") {
+		// Marker presence proves only local ignore configuration, not CI proof.
 		return surface(SurfaceGitignore, StatePass, StateNotAssessed, ScopeLocalStructural, "filesystem:.gitignore", ReasonAlreadyInstalled, rel, "")
 	}
 	return missingGitignoreSurface(rel)
@@ -480,6 +593,7 @@ func missingGitignoreSurface(rel string) Surface {
 }
 
 func ciWorkflowSurface(opts Options) Surface {
+	// A checked-in workflow is not proof that CI has executed it.
 	rel := filepath.Join(".github", "workflows", "sdp-trace-observe.yml")
 	_, err := os.ReadFile(filepath.Join(opts.RepoRoot, rel))
 	if err == nil {
@@ -492,12 +606,16 @@ func ciWorkflowSurface(opts Options) Surface {
 
 func missingCIWorkflowSurface(rel string, err error) Surface {
 	if errors.Is(err, os.ErrNotExist) {
+		// Missing workflow is an install gap; unreadable workflow paths below are
+		// cannot_verify because the local filesystem state could not be replayed.
 		return surface(SurfaceCIWorkflow, StateFail, StateNotAssessed, ScopeLocalStructural, "filesystem:"+rel, ReasonCIWorkflowAbsent, rel, "install GitHub Actions observer workflow")
 	}
 	return surface(SurfaceCIWorkflow, StateCannotVerify, StateCannotVerify, ScopeLocalStructural, "filesystem:"+rel, ReasonUnsafeOutputRefused, rel, "fix unreadable workflow path")
 }
 
 func ciArtifactUploadSurface(opts Options) Surface {
+	// Workflow upload declaration is local structure; uploaded artifacts need a
+	// real CI run inspection.
 	rel := filepath.Join(".github", "workflows", "sdp-trace-observe.yml")
 	data, err := os.ReadFile(filepath.Join(opts.RepoRoot, rel))
 	if err == nil && strings.Contains(string(data), "actions/upload-artifact") {
@@ -507,6 +625,8 @@ func ciArtifactUploadSurface(opts Options) Surface {
 }
 
 func missingCIArtifactUploadSurface(rel string, err error) Surface {
+	// Absence of upload-artifact configuration is an install gap; unreadable
+	// workflow state is cannot_verify because local structure could not replay.
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIArtifactUpload, StateFail, StateNotAssessed, ScopeCIUploaded, "workflow_declaration:"+rel, ReasonCIArtifactUploadAbsent, rel, "declare CI artifact upload in observer workflow")
 	}
@@ -514,6 +634,8 @@ func missingCIArtifactUploadSurface(rel string, err error) Surface {
 }
 
 func ciArtifactBundleSurface(opts Options) Surface {
+	// Local CI artifact directories are only structural unless downloaded and
+	// bound to CI artifact storage.
 	rel := filepath.Join(".sdp-trace", "ci")
 	path := filepath.Join(opts.RepoRoot, rel)
 	entries, err := os.ReadDir(path)
@@ -524,6 +646,8 @@ func ciArtifactBundleSurface(opts Options) Surface {
 }
 
 func missingCIArtifactBundleSurface(rel string, err error) Surface {
+	// Missing local CI artifacts is not a failure by itself; it means CI evidence
+	// has not been inspected for this profile.
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return surface(SurfaceCIArtifactBundleObservation, StateNotAssessed, StateNotAssessed, ScopeCIUploaded, "filesystem:"+rel, ReasonCIArtifactBundleNotObserved, rel, "run CI and inspect uploaded artifact bundle")
 	}
@@ -543,6 +667,8 @@ func localWrappedCommandsSurface() Surface {
 }
 
 func surface(id, install, proof, scope, source, reason, ref, action string) Surface {
+	// Sanitization happens at construction so every renderer receives the same
+	// safe observed ref.
 	return Surface{
 		SurfaceID:      id,
 		InstallState:   install,
@@ -556,6 +682,8 @@ func surface(id, install, proof, scope, source, reason, ref, action string) Surf
 }
 
 func aggregateInstallState(surfaces []Surface) string {
+	// Cannot_verify dominates install aggregation because unsafe surfaces could
+	// not be inspected.
 	state := StatePass
 	for _, s := range surfaces {
 		if s.InstallState == StateCannotVerify {
@@ -569,6 +697,8 @@ func aggregateInstallState(surfaces []Surface) string {
 }
 
 func aggregateProofState(surfaces []Surface) string {
+	// Empty or partially unassessed proof surfaces keep aggregate proof from
+	// passing.
 	if len(surfaces) == 0 {
 		return StateNotAssessed
 	}
@@ -583,6 +713,7 @@ func aggregateProofState(surfaces []Surface) string {
 }
 
 func gapsFor(surfaces []Surface) []Gap {
+	// Every non-passing surface remains visible as a gap with a concrete reason.
 	gaps := make([]Gap, 0)
 	for _, s := range surfaces {
 		gap, ok := gapForSurface(s)
@@ -599,6 +730,8 @@ func combineProofState(current, next string) string {
 }
 
 func combinedProofState(current, next string) string {
+	// Proof aggregation is monotonic: cannot_verify outranks fail, and
+	// not_assessed prevents a clean pass.
 	if proofStateDominates(next) {
 		return StateCannotVerify
 	}
@@ -618,12 +751,16 @@ func proofStateFails(state string) bool {
 
 func combineNonFailingProofState(current, next string) string {
 	if current == StatePass && next == StateNotAssessed {
+		// Any not_assessed proof surface prevents an aggregate pass unless a
+		// stronger fail/cannot_verify state already dominated.
 		return StateNotAssessed
 	}
 	return current
 }
 
 func gapForSurface(s Surface) (Gap, bool) {
+	// Agent-prompt gaps get a custom explanation because prompt cooperation is
+	// not repository setup proof.
 	if s.InstallState == StatePass && s.ProofState == StatePass {
 		return Gap{}, false
 	}
@@ -643,19 +780,22 @@ func agentPromptGap(s Surface) Gap {
 
 func gapDetail(s Surface) string {
 	if s.NextAction != "" {
+		// Prefer concrete remediation over terse reason codes in human summaries.
 		return s.NextAction
 	}
 	return s.ReasonCode
 }
 
 func nextActionsFor(surfaces []Surface) []NextAction {
+	// Stable sorting makes remediation output deterministic for docs and tests.
+	// Empty actions are omitted so already-satisfied surfaces do not create
+	// misleading follow-up work.
 	actions := make([]NextAction, 0)
 	for _, s := range surfaces {
 		if s.NextAction == "" {
 			continue
 		}
-		blocking := s.InstallState == StateFail || s.InstallState == StateCannotVerify || s.ProofState == StateCannotVerify
-		actions = append(actions, NextAction{SurfaceID: s.SurfaceID, ActionText: s.NextAction, Blocking: blocking})
+		actions = append(actions, nextActionForSurface(s))
 	}
 	sort.SliceStable(actions, func(i, j int) bool {
 		return actions[i].SurfaceID < actions[j].SurfaceID
@@ -663,7 +803,19 @@ func nextActionsFor(surfaces []Surface) []NextAction {
 	return actions
 }
 
+func nextActionForSurface(s Surface) NextAction {
+	return NextAction{SurfaceID: s.SurfaceID, ActionText: s.NextAction, Blocking: surfaceActionBlocking(s)}
+}
+
+func surfaceActionBlocking(s Surface) bool {
+	return s.InstallState == StateFail || s.InstallState == StateCannotVerify || s.ProofState == StateCannotVerify
+}
+
 func writeInstallFiles(opts Options) ([]DiffSummary, error) {
+	// Validate hooksPath before writing any files because changing it affects
+	// all local git hook execution.
+	// Repository files are written before hooksPath is changed so a failed file
+	// write does not partially redirect local hooks.
 	if err := ensureNoUnsafeHooksPath(opts); err != nil {
 		return nil, err
 	}
@@ -680,6 +832,9 @@ func writeInstallFiles(opts Options) ([]DiffSummary, error) {
 }
 
 func writeInstallTargets(opts Options) ([]DiffSummary, error) {
+	// Generated config and generated docs share one repository ID for internal
+	// consistency.
+	// Summaries accumulate only safe path/action/digest facts from each target.
 	repoID := opts.RepositoryID
 	if repoID == "" {
 		repoID = derivedRepositoryID(opts.RepoRoot)
@@ -696,6 +851,10 @@ func writeInstallTargets(opts Options) ([]DiffSummary, error) {
 }
 
 func appendHooksPathSummary(opts Options, summaries []DiffSummary) ([]DiffSummary, error) {
+	// hooksPath changes are local git config mutations and are summarized
+	// separately from repository file writes.
+	// Existing non-default hook paths are summarized only in force mode after the
+	// caller has accepted replacement.
 	previousHooksPath := strings.TrimSpace(gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath"))
 	if opts.Force && isDifferentHooksPath(previousHooksPath) {
 		summaries = append(summaries, DiffSummary{
@@ -717,6 +876,8 @@ func isDifferentHooksPath(path string) bool {
 }
 
 func ensureNoUnsafeHooksPath(opts Options) error {
+	// Existing non-.githooks values require --force so user hook configuration is
+	// not silently replaced.
 	value := strings.TrimSpace(gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath"))
 	if value == "" || value == ".githooks" || opts.Force {
 		return nil
@@ -725,6 +886,10 @@ func ensureNoUnsafeHooksPath(opts Options) error {
 }
 
 func writeTarget(opts Options, target targetFile) ([]DiffSummary, error) {
+	// Every generated target is resolved through containment checks before any
+	// read or write.
+	// Existing files and new files take separate paths so force-mode overwrite
+	// policy cannot affect first-time installs.
 	path, err := safeTargetPath(opts, target)
 	if err != nil {
 		return nil, err
@@ -740,6 +905,8 @@ func writeTarget(opts Options, target targetFile) ([]DiffSummary, error) {
 }
 
 func safeTargetPath(opts Options, target targetFile) (string, error) {
+	// Clean plus Rel prevents generated target paths from escaping the selected
+	// repository root.
 	path := filepath.Clean(filepath.Join(opts.RepoRoot, target.path))
 	rel, relErr := filepath.Rel(opts.RepoRoot, path)
 	if targetPathEscapes(rel, relErr) {
@@ -750,12 +917,14 @@ func safeTargetPath(opts Options, target targetFile) (string, error) {
 
 func targetPathEscapes(rel string, relErr error) bool {
 	if relErr != nil {
+		// Failed relative-path calculation is treated as containment failure.
 		return true
 	}
 	return invalidRelativeTarget(rel)
 }
 
 func invalidRelativeTarget(rel string) bool {
+	// Install targets must resolve to concrete files below the repository root.
 	if rel == "." || rel == ".." {
 		return true
 	}
@@ -767,12 +936,16 @@ func invalidRelativeTarget(rel string) bool {
 
 func targetMode(target targetFile) os.FileMode {
 	if target.executable {
+		// Hook targets must retain executable mode; documentation targets must
+		// not be made executable.
 		return 0o755
 	}
 	return 0o644
 }
 
 func writeExistingTarget(opts Options, target targetFile, path string, mode os.FileMode, existing, data []byte) ([]DiffSummary, error) {
+	// Differing files are overwritten only with --force after backup/diff summary
+	// protections are available.
 	if string(existing) == target.content {
 		if target.executable {
 			return nil, os.Chmod(path, mode)
@@ -786,6 +959,12 @@ func writeExistingTarget(opts Options, target targetFile, path string, mode os.F
 }
 
 func overwriteTarget(target targetFile, path string, mode os.FileMode, existing, data []byte) ([]DiffSummary, error) {
+	// Backup first, then write; this gives force mode a local recovery path.
+	// The summary stores only digests, byte counts, and line counts for safe
+	// review.
+	// Directory creation still happens after backup so existing content is
+	// protected before the replacement write.
+	// The replacement write uses the same target mode as first-time generation.
 	if err := os.WriteFile(path+".bak", existing, 0o644); err != nil {
 		return nil, fmt.Errorf("%s: backup failed for %s", ReasonUnsafeOutputRefused, target.path)
 	}
@@ -807,10 +986,16 @@ func writeNewTarget(path string, data []byte, mode os.FileMode) ([]DiffSummary, 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
 	}
+	// New generated files do not need a force diff summary because there is no
+	// previous repository content to overwrite.
 	return nil, os.WriteFile(path, data, mode)
 }
 
 func updateGitignore(opts Options) ([]DiffSummary, error) {
+	// .gitignore handling is limited to the managed block and never interprets
+	// unrelated patterns as proof.
+	// Missing .gitignore can be created without force because no user content is
+	// overwritten.
 	path := filepath.Join(opts.RepoRoot, ".gitignore")
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -828,6 +1013,8 @@ func updateGitignore(opts Options) ([]DiffSummary, error) {
 }
 
 func locateGitignoreBlock(text string) (int, int) {
+	// Both markers must be ordered correctly before the block is considered
+	// manageable.
 	start := strings.Index(text, gitignoreBeginMarker)
 	if start < 0 {
 		return -1, -1
@@ -840,6 +1027,14 @@ func locateGitignoreBlock(text string) (int, int) {
 }
 
 func updateSdpTraceGitignoreBlock(opts Options, path, text string, data []byte, start, end int) ([]DiffSummary, error) {
+	// Replacing an existing managed block requires --force and a backup because
+	// the user may have edited it.
+	// Exact generated block matches are idempotent and produce no summary.
+	// Replacement preserves all text before and after the managed marker range.
+	// The backup stores the full previous .gitignore, not just the managed block.
+	// Diff summaries again use digest/size metadata rather than raw ignore
+	// content.
+	// Force mode is the only path that can replace a divergent managed block.
 	current := text[start:end]
 	if current == strings.TrimSuffix(gitignoreBlock, "\n") {
 		return nil, nil
@@ -851,17 +1046,25 @@ func updateSdpTraceGitignoreBlock(opts Options, path, text string, data []byte, 
 		return nil, fmt.Errorf("%s: backup failed for .gitignore", ReasonUnsafeOutputRefused)
 	}
 	next := text[:start] + strings.TrimSuffix(gitignoreBlock, "\n") + text[end:]
+	return replacedGitignoreBlockSummary(data, next), os.WriteFile(path, []byte(next), 0o644)
+}
+
+func replacedGitignoreBlockSummary(before []byte, next string) []DiffSummary {
+	// The summary is digest and count metadata only; the managed ignore content
+	// is not copied into force-mode review output.
 	return []DiffSummary{{
 		Path:    ".gitignore",
 		Action:  "replace_sdp_trace_block",
-		Before:  contentSummary(data),
+		Before:  contentSummary(before),
 		After:   contentSummary([]byte(next)),
 		Summary: "replace marked sdp-trace gitignore block using safe byte and line counts",
 		Backup:  ".gitignore.bak",
-	}}, os.WriteFile(path, []byte(next), 0o644)
+	}}
 }
 
 func appendGitignoreMarker(path, text string) ([]DiffSummary, error) {
+	// Preserve existing ignore content and append a clean newline boundary before
+	// the managed block.
 	if strings.TrimSpace(text) != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
@@ -870,6 +1073,8 @@ func appendGitignoreMarker(path, text string) ([]DiffSummary, error) {
 }
 
 func installTargets(opts Options, repoID string) []targetFile {
+	// Generated files stay portable: hooks, local config/docs, and a GitHub
+	// workflow declaration only.
 	return []targetFile{
 		{path: ".sdp-trace/README.md", content: sdpTraceReadme()},
 		{path: ".sdp-trace/config.json", content: sdpTraceConfig(opts, repoID)},
@@ -881,6 +1086,8 @@ func installTargets(opts Options, repoID string) []targetFile {
 }
 
 func sdpTraceReadme() string {
+	// The generated README states the evidence boundary beside generated files so
+	// future agents do not treat local hooks as external proof.
 	return `# sdp-trace repository observer
 
 This directory is generated by ` + "`sdp-trace install repo-observer --profile github-actions-git-hooks-v1 --write`" + `.
@@ -892,29 +1099,59 @@ evidence only when the selected profile can inspect the uploaded artifact bundle
 }
 
 func sdpTraceConfig(opts Options, repoID string) string {
+	// Config records installed paths and trust boundary metadata, not a proof
+	// claim.
+	// Installed file paths are sorted so repeated installs produce stable config
+	// output.
+	// The local_config_note calls out core.hooksPath as checkout-local state.
+	// InstalledFiles is generated from a manifest-only target list so content
+	// changes do not affect config shape.
+	// JSON marshal errors are impossible for this map shape, so generation keeps
+	// the helper signature simple.
+	// The generated config is an install manifest, not a verifier result.
+	payload := sdpTraceConfigPayload(opts, repoID)
+	data, _ := json.MarshalIndent(payload, "", "  ")
+	return string(data) + "\n"
+}
+
+func sdpTraceConfigPayload(opts Options, repoID string) map[string]any {
+	// Generated config is local structural metadata. CI proof remains
+	// not_assessed until a later artifact-observation path binds uploaded output.
+	return map[string]any{
+		"schema_version":   "sdp-trace-repo-observer-config-v1",
+		"profile":          opts.Profile,
+		"repository_id":    repoID,
+		"trust_boundary":   "local_structural_until_ci_artifact_observed",
+		"installed_files":  sdpTraceConfigPaths(),
+		"install_metadata": sdpTraceInstallMetadata(),
+	}
+}
+
+func sdpTraceConfigPaths() []string {
+	// Installed file paths are an index of generated surfaces, not proof that
+	// those surfaces have executed.
 	paths := make([]string, 0)
 	for _, target := range installTargetsForManifest() {
 		paths = append(paths, target.path)
 	}
 	paths = append(paths, ".gitignore:# sdp-trace begin")
 	sort.Strings(paths)
-	payload := map[string]any{
-		"schema_version":  "sdp-trace-repo-observer-config-v1",
-		"profile":         opts.Profile,
-		"repository_id":   repoID,
-		"trust_boundary":  "local_structural_until_ci_artifact_observed",
-		"installed_files": paths,
-		"install_metadata": map[string]string{
-			"generated_by":      "sdp-trace install repo-observer",
-			"template_version":  SchemaVersion,
-			"local_config_note": "core.hooksPath is local checkout configuration",
-		},
+	return paths
+}
+
+func sdpTraceInstallMetadata() map[string]string {
+	// Local core.hooksPath is called out explicitly because it is checkout-local
+	// configuration and not committed repository evidence.
+	return map[string]string{
+		"generated_by":      "sdp-trace install repo-observer",
+		"template_version":  SchemaVersion,
+		"local_config_note": "core.hooksPath is local checkout configuration",
 	}
-	data, _ := json.MarshalIndent(payload, "", "  ")
-	return string(data) + "\n"
 }
 
 func installTargetsForManifest() []targetFile {
+	// Manifest targets omit content so the config stays a compact structural
+	// index.
 	return []targetFile{
 		{path: ".sdp-trace/README.md"},
 		{path: ".sdp-trace/config.json"},
@@ -926,6 +1163,8 @@ func installTargetsForManifest() []targetFile {
 }
 
 func hookScript(name string) string {
+	// Hooks collect metadata and diagnostics only; they do not enforce
+	// sdp-trace policy or block user operations.
 	return `#!/usr/bin/env bash
 set -euo pipefail
 
@@ -949,6 +1188,7 @@ git diff --check > "$out_dir/diff-check.txt" 2>&1 || true
 }
 
 func contentSummary(data []byte) string {
+	// Force summaries expose digest/size metadata instead of raw file content.
 	sum := sha256.Sum256(data)
 	lines := 0
 	if len(data) > 0 {
@@ -961,6 +1201,16 @@ func contentSummary(data []byte) string {
 }
 
 func githubWorkflow() string {
+	// The generated workflow uploads observations; proof is established only
+	// after inspecting a real CI artifact.
+	// It captures repository metadata and safe status output, not raw secrets or
+	// local hook output.
+	// The workflow is intentionally small and uses shell commands only as a thin
+	// CI metadata launcher.
+	// It uploads `.sdp-trace/ci` as an artifact source for later inspection.
+	// Repository proof remains not_assessed until that uploaded artifact is
+	// inspected by a separate evidence path.
+	// The checkout step is the only third-party action used by this template.
 	return `name: sdp-trace observe
 
 on:
@@ -1005,6 +1255,7 @@ jobs:
 }
 
 func repoRoot(start string) (string, error) {
+	// Git is the source of truth for repository root discovery.
 	out, err := exec.Command("git", "-C", start, "rev-parse", "--show-toplevel").Output()
 	if err != nil {
 		return "", fmt.Errorf("cannot locate git repository root")
@@ -1013,6 +1264,8 @@ func repoRoot(start string) (string, error) {
 }
 
 func gitOutput(root string, args ...string) string {
+	// Missing git data stays an empty observation so doctor can still report the
+	// rest of the surfaces.
 	out, err := exec.Command("git", append([]string{"-C", root}, args...)...).Output()
 	if err != nil {
 		return ""
@@ -1021,6 +1274,7 @@ func gitOutput(root string, args ...string) string {
 }
 
 func runGit(root string, args ...string) error {
+	// Mutating git commands include command output in errors for actionable DX.
 	cmd := exec.Command("git", append([]string{"-C", root}, args...)...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1030,6 +1284,7 @@ func runGit(root string, args ...string) error {
 }
 
 func derivedRepositoryID(root string) string {
+	// Derived IDs hash sanitized remote data to avoid rendering credentials.
 	origin := gitOutput(root, "config", "--get", "remote.origin.url")
 	if strings.TrimSpace(origin) == "" {
 		origin = "current_repository"
@@ -1040,6 +1295,7 @@ func derivedRepositoryID(root string) string {
 }
 
 func sanitizeOrigin(origin string) string {
+	// URL credentials are stripped before repository identity hashing.
 	origin = removeOriginFragment(strings.TrimSpace(origin))
 	hadURLCredentials := hasURLCredentials(origin)
 	origin = removeOriginCredentials(origin)
@@ -1051,28 +1307,42 @@ func sanitizeOrigin(origin string) string {
 
 func removeOriginFragment(origin string) string {
 	if idx := strings.Index(origin, "#"); idx >= 0 {
+		// URL fragments are local navigation hints and not repository identity.
 		return origin[:idx]
 	}
 	return origin
 }
 
 func removeOriginCredentials(origin string) string {
+	// SCP-like and URL remotes encode userinfo differently, so redact both forms.
 	if strings.Contains(origin, "@") && !strings.Contains(origin, "://") {
 		return origin[strings.LastIndex(origin, "@")+1:]
 	}
-	if at := strings.LastIndex(origin, "@"); strings.Contains(origin[:max(at, 0)], "://") && at >= 0 {
-		schemeEnd := strings.Index(origin, "://")
-		return origin[:schemeEnd+3] + origin[at+1:]
+	if originHasURLCredentials(origin) {
+		return originWithoutURLCredentials(origin)
 	}
 	return origin
 }
 
-func hasURLCredentials(origin string) bool {
+func originHasURLCredentials(origin string) bool {
+	// Treat @ as URL credentials only when it appears after a URL scheme.
 	at := strings.LastIndex(origin, "@")
 	return at >= 0 && strings.Contains(origin[:max(at, 0)], "://")
 }
 
+func originWithoutURLCredentials(origin string) string {
+	at := strings.LastIndex(origin, "@")
+	schemeEnd := strings.Index(origin, "://")
+	// Preserve scheme and host while dropping userinfo from the rendered remote.
+	return origin[:schemeEnd+3] + origin[at+1:]
+}
+
+func hasURLCredentials(origin string) bool {
+	return originHasURLCredentials(origin)
+}
+
 func originTail(origin string) string {
+	// Non-credential origins use the final owner/repo-ish path components.
 	origin = strings.ReplaceAll(origin, "\\", "/")
 	parts := strings.Split(origin, "/")
 	if len(parts) > 2 {
@@ -1086,6 +1356,8 @@ func safeRef(ref string) string {
 	if ref == "" {
 		return ""
 	}
+	// Normalize path separators before redacting unsafe config values in
+	// human-facing output.
 	ref = strings.ReplaceAll(ref, "\\", "/")
 	if strings.HasPrefix(ref, "/") || strings.Contains(ref, ":/") {
 		return "unsafe_absolute_path_redacted"

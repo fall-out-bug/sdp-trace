@@ -1,10 +1,5 @@
 package trace
 
-import (
-	"encoding/json"
-	"path/filepath"
-)
-
 // ObservationState classifies why an expected observation is or is not present.
 type ObservationState string
 
@@ -58,30 +53,4 @@ type CommandDescriptor struct {
 	Argc       int                 `json:"argc"`
 	ArgvDigest string              `json:"argv_digest,omitempty"`
 	Retention  RetentionDescriptor `json:"retention"`
-}
-
-// NewCommandDescriptor returns a descriptor safe for payload retention. The
-// raw argv is represented only by argument count and a deterministic digest.
-func NewCommandDescriptor(argv []string) CommandDescriptor {
-	descriptor := CommandDescriptor{
-		Argc: len(argv),
-		Retention: RetentionDescriptor{
-			Mode:        RetentionModeDigestOnly,
-			Description: "argv_digest stores a sha256 digest of the command argv; raw argv is not retained",
-		},
-	}
-	if len(argv) == 0 {
-		return descriptor
-	}
-	descriptor.Executable = filepath.Base(argv[0])
-	descriptor.ArgvDigest = SHA256Hex(mustMarshalJSONStringSlice(argv))
-	return descriptor
-}
-
-func mustMarshalJSONStringSlice(values []string) string {
-	encoded, err := json.Marshal(values)
-	if err != nil {
-		panic(err)
-	}
-	return string(encoded)
 }
