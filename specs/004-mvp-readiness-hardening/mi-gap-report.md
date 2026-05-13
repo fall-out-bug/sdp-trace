@@ -219,7 +219,8 @@ the public API. Focused `internal/contract` tests pass, `internal/contract`
 absolute function MI and file MI both exit 0, repository absolute file MI drops
 to 27 stderr rows, and absolute function MI drops to 1288 stderr rows. This is
 contract-surface MI reduction evidence only; repository-wide absolute MI remains
-open.
+open. The pi worker attempt for this slice timed out and is not counted as
+evidence; the ported implementation was verified locally.
 
 ## File-Level Failures
 
@@ -231,7 +232,6 @@ open.
 - `internal/authority/authority.go`
 - `internal/checkpoint/checkpoint.go`
 - `internal/ciartifact/ciartifact.go`
-- `internal/contract/contract.go`
 - `internal/demo/demo.go`
 - `internal/forensic/forensic.go`
 - `internal/harnessobs/harnessobs.go`
