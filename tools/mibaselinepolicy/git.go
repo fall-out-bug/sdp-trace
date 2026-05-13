@@ -17,3 +17,17 @@ func gitFileExistsAtRef(ref, path string) (bool, error) {
 	}
 	return false, err
 }
+
+func gitCommitExists(ref string) (bool, error) {
+	// rev-parse validates the immutable source boundary before path-level
+	// baseline checks decide whether a missing file is an allowed first baseline.
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", ref+"^{commit}")
+	err := cmd.Run()
+	if err == nil {
+		return true, nil
+	}
+	if _, ok := err.(*exec.ExitError); ok {
+		return false, nil
+	}
+	return false, err
+}

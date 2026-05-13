@@ -35,7 +35,7 @@
     "actor_type": "ai_agent",
     "harness": "codex",
     "tool_name": "rtk",
-    "command": "scripts/validate-contracts.sh",
+    "command": "historical:scripts/validate-contracts.sh",
     "captured_at": "2026-04-30T20:50:00Z",
     "payload_digest": "00e0a2e515feec5f0b8f3a87e942ea316b946e120d3628b77f4900623456cef0",
     "digest_algorithm": "sha256",
@@ -104,7 +104,7 @@
     "context_refs": [
       "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md",
       "docs/claim-authoring.md",
-      "scripts/validate-claim-consistency.mjs"
+      "historical:scripts/validate-claim-consistency.mjs"
     ],
     "captured_at": "2026-05-03T12:50:00Z",
     "payload_digest": "6b69fd276fdba9d37005d282b2464c9470d6cd31b043f75662c08b5fd3f14c4b",
@@ -118,11 +118,11 @@
     "actor_type": "ai_agent",
     "harness": "codex",
     "tool_name": "rtk",
-    "command": "npm test; scripts/verify.sh --profile baseline --allow-dirty --json",
+    "command": "historical:npm test; historical:scripts/verify.sh --profile baseline --allow-dirty --json",
     "context_refs": [
       "scripts/test-verify.sh",
-      "scripts/verify.sh",
-      "scripts/validate-claim-consistency.mjs"
+      "historical:scripts/verify.sh",
+      "historical:scripts/validate-claim-consistency.mjs"
     ],
     "captured_at": "2026-05-03T12:50:00Z",
     "payload_digest": "eae24e1b8f33172a87a54435bd020258b948aa6effcc92cacbfab7587b924e59",
@@ -146,7 +146,7 @@
     "command": "implement Block 07 Slice 2 false-closure repair, Slice 4 package mode split, Slice 3/6 profile surface, and Slice 5 cross-reference validation",
     "context_refs": [
       "specs/001-sdp-trace-time-series-evidence-substrate/blocks/07-minimum-trust-kernel-implementation-plan.md",
-      "scripts/verify.sh",
+      "historical:scripts/verify.sh",
       "scripts/validate-e2e-pilot-package.sh",
       "scripts/validate-cross-references.mjs"
     ],

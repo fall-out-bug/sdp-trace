@@ -23,7 +23,7 @@ The objective is complete only when all of the following have live evidence:
 | DX review | Command docs and examples are checked against live CLI behavior where command surface changed. | `partial`: docs were updated and local checks pass; supplemental PR-level review is in progress and required external plane remains pending. |
 | UX review | Human-facing packets, summaries, reports, and explanations remain readable and do not overclaim. | `partial`: local review completed and supplemental PR-level UX review is in progress; required external plane remains pending. |
 | Documentation completeness | README/docs/schema/example docs cover changed behavior and trust scope without external-trust overclaims. | `partial`: local docs updated; final PR checklist/sign-off remain open. |
-| CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `pass_live_at_observation`: PR #43 `verify` passed for head `a8e581c1352c44ce7298af483b603edf03a9cbc0` in run `25802244015`; this checked-in text is not authority for future heads. |
+| CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `not_assessed_in_file`: checked-in source text is not live CI authority; query PR #43 after each push and bind any `verify` pass to the exact head outside the source-bound commit loop. |
 | MVP ready-state closure | PR opened, PR-level review planes complete, named reviewer sign-off recorded, and merge held until approval. | `partial`: draft PR #43 is open, but final-head CI must be live-queried after each push; required `manual_external` review planes and named sign-off remain open. |
 
 ## Prompt-To-Artifact Checklist
@@ -51,9 +51,9 @@ The objective is complete only when all of the following have live evidence:
    line. The absolute function-level MI check now exits 0. Spec 004 explicitly
    forbids claiming an absolute MI pass while historical code remains below the
    threshold; current policy only enforces ratchets.
-2. CI-backed closure is live-state evidence, not checked-in prose. PR #43
-   `verify` passed for head `a8e581c1352c44ce7298af483b603edf03a9cbc0` in
-   run `25802244015`, but any later source commit needs a fresh query.
+2. CI-backed closure is live-state evidence, not checked-in prose. Query PR #43
+   after each push and bind any `verify` pass to the exact head SHA outside
+   the source-bound commit loop.
 3. Required `manual_external` PR review planes remain open. T040-T042 remain
    open, so no final ready state, named reviewer sign-off, or merge gate can be
    claimed.
@@ -79,6 +79,6 @@ The latest local verification replayed:
 All listed local commands exited 0. The absolute function-MI check without a
 baseline now exits 0 with no output. Absolute file MI without a baseline still
 exits 1 with 15 file-level rows plus the raw `exit status 1` line, so overall
-MI remains an `assessed_gap`. PR #43 `verify` passed for head
-`a8e581c1352c44ce7298af483b603edf03a9cbc0` in run `25802244015`, but this
-checked-in file does not by itself prove CI-backed closure for future heads.
+MI remains an `assessed_gap`. PR #43 `verify` must be live-queried after each
+push; this checked-in file does not by itself prove CI-backed closure for future
+heads.

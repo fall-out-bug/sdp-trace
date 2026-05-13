@@ -76,6 +76,7 @@ func TestPRReviewPacketSynthesizeValidateSummarizeCLI(t *testing.T) {
 			"model_family":    "not_assessed",
 			"model_version":   "not_assessed",
 			"status":          "no_findings",
+			"raw_output_ref":  map[string]any{"id": "raw-run-code", "kind": "reviewer_output", "ref": "runs/run-code.txt", "digest_sha256": strings.Repeat("c", 64), "content_type": "text/plain", "redaction_state": "none"},
 			"findings":        []map[string]any{},
 		}},
 	})
@@ -171,7 +172,8 @@ func TestPRReviewCLIRequiresPacketInputsAndReturnsNonZeroForUnresolved(t *testin
 		"results": []map[string]any{{
 			"review_run_id": "run-code", "packet_digest": packetDigest, "plane": "code_correctness", "role_id": "code", "runner": "manual_external",
 			"requested_model": "not_assessed", "observed_model": "not_assessed", "model_family": "not_assessed", "model_version": "not_assessed", "status": "findings_reported",
-			"findings": []map[string]any{{"id": "F1", "severity": "major", "citation": map[string]any{"context_ref_id": "diff", "diff_hunk_id": "hunk-1"}, "summary": "Missing behavior."}},
+			"raw_output_ref": map[string]any{"id": "raw-run-code", "kind": "reviewer_output", "ref": "runs/run-code.txt", "digest_sha256": strings.Repeat("c", 64), "content_type": "text/plain", "redaction_state": "none"},
+			"findings":       []map[string]any{{"id": "F1", "severity": "major", "citation": map[string]any{"context_ref_id": "diff", "diff_hunk_id": "hunk-1"}, "summary": "Missing behavior."}},
 		}},
 	})
 	ledgerPath := writeJSONForPRReviewTest(t, root, "ledger.json", map[string]any{

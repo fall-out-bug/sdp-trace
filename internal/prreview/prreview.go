@@ -1965,8 +1965,13 @@ func planeResult(result ReviewerResult) PlaneResult {
 	// This helper validates or projects review data; it does not create external proof.
 
 	pr := PlaneResult{Plane: result.Plane, Status: result.Status, RunID: result.ReviewRunID}
-	if reviewerStatusUsable(result.Status) {
+	if reviewerResultUsable(result) {
 		pr.Usable = true
+		return pr
+	}
+	if reviewerStatusUsable(result.Status) {
+		pr.Status = StatusCannotVerify
+		pr.Reason, pr.NextAction = reviewerStatusAction(result.Status)
 		return pr
 	}
 	pr.Reason, pr.NextAction = reviewerStatusAction(result.Status)
@@ -1975,6 +1980,13 @@ func planeResult(result ReviewerResult) PlaneResult {
 
 func reviewerStatusUsable(status string) bool {
 	return status == StatusFindingsReported || status == StatusNoFindings
+}
+
+func reviewerResultUsable(result ReviewerResult) bool {
+	// Usable review coverage requires both a positive reviewer status and retained
+	// raw output evidence. A hand-authored status without a digest-bound output
+	// reference stays unverifiable.
+	return reviewerStatusUsable(result.Status) && result.RawOutputRef != nil
 }
 
 func reviewerStatusAction(status string) (string, string) {
@@ -1991,6 +2003,9 @@ func reviewerStatusAction(status string) (string, string) {
 	}
 	if action, ok := actions[status]; ok {
 		return action[0], action[1]
+	}
+	if reviewerStatusUsable(status) {
+		return "reviewer_output_not_retained", "Attach digest-bound reviewer output before counting this plane."
 	}
 	return "reviewer_cannot_verify", "Replace or rerun the reviewer."
 }

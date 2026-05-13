@@ -42,10 +42,21 @@ func run(args []string, stdin io.Reader, _ io.Writer, stderr io.Writer) int {
 func baselineExistsAtRef(baseRef string) func(string) (bool, error) {
 	// Baseline existence is source-bound to the configured base ref, not the
 	// working tree that may contain local edits.
+	baseChecked := false
 	return func(path string) (bool, error) {
 		// Defer git access until policy knows a baseline matters for the current
 		// changed-file set.
 		// This keeps docs-only changes from requiring unnecessary git lookups.
+		if !baseChecked {
+			ok, err := gitCommitExists(baseRef)
+			if err != nil {
+				return false, err
+			}
+			if !ok {
+				return false, fmt.Errorf("base ref %q cannot be resolved to a commit", baseRef)
+			}
+			baseChecked = true
+		}
 		return gitFileExistsAtRef(baseRef, path)
 	}
 }

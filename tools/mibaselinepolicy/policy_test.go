@@ -183,6 +183,25 @@ func TestRunAllowsFirstBaselineIntroduction(t *testing.T) {
 	})
 }
 
+func TestRunRejectsInvalidBaseRefWhenBaselinePolicyMustInspectSource(t *testing.T) {
+	repo := initGitRepo(t)
+	writeFile(t, repo, "README.md", "repo\n")
+	git(t, repo, "add", ".")
+	git(t, repo, "commit", "-m", "initial")
+	withWorkingDir(t, repo, func() {
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		changed := strings.NewReader("tools/qualitycheck/file-mi-baseline.json\ninternal/packet/packet.go\n")
+		exit := run([]string{"-base-ref", "definitely-not-a-ref"}, changed, &stdout, &stderr)
+		if exit != 1 {
+			t.Fatalf("exit = %d, want policy failure; stdout=%s stderr=%s", exit, stdout.String(), stderr.String())
+		}
+		if !strings.Contains(stderr.String(), "base ref") {
+			t.Fatalf("stderr = %s", stderr.String())
+		}
+	})
+}
+
 func initGitRepo(t *testing.T) string {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
