@@ -27,4 +27,5 @@ var commandHandlers = map[string]commandHandler{
 	"release-proof":     runReleaseProof,
 	"pr-review":         runPRReview,
 	"packet":            runPacket,
+	"command-surface":   runCommandSurface,
 }

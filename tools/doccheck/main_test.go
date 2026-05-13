@@ -76,3 +76,40 @@ func TestCompareCommandSurfaceReportsMissingAndStaleCommands(t *testing.T) {
 		}
 	}
 }
+
+func TestCompareRegistryWithDocsSkipsHelpMetaFlag(t *testing.T) {
+	// The registry does not model --help as a command; docs list it for reader
+	// orientation. The registry/doc comparison must not flag it as stale.
+	doc := strings.Join([]string{
+		"Current command surface:",
+		"",
+		"- `sdp-trace --help`",
+		"- `sdp-trace version`",
+		"",
+		"Do not add aliases",
+	}, "\n")
+	if err := compareRegistryWithDocs(doc); err != nil {
+		if strings.Contains(err.Error(), "sdp-trace --help") {
+			t.Fatalf("compareRegistryWithDocs should skip --help: %v", err)
+		}
+	}
+}
+
+func TestCompareRegistryWithDocsDetectsStaleDocCommand(t *testing.T) {
+	doc := strings.Join([]string{
+		"Current command surface:",
+		"",
+		"- `sdp-trace --help`",
+		"- `sdp-trace version`",
+		"- `sdp-trace stale-command-that-does-not-exist`",
+		"",
+		"Do not add aliases",
+	}, "\n")
+	err := compareRegistryWithDocs(doc)
+	if err == nil {
+		t.Fatal("compareRegistryWithDocs succeeded, want drift error")
+	}
+	if !strings.Contains(err.Error(), "stale") {
+		t.Fatalf("error missing stale drift: %v", err)
+	}
+}

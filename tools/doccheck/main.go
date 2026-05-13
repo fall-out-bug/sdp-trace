@@ -35,5 +35,9 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("read %s: %w", agentEntrypoint, err)
 	}
-	return compareCommandSurface(help, string(doc))
+	docStr := string(doc)
+	if err := compareCommandSurface(help, docStr); err != nil {
+		return err
+	}
+	return compareRegistryWithDocs(docStr)
 }
