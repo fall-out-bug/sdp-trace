@@ -148,6 +148,9 @@ type EvidenceBinding struct {
 }
 
 func ReadPackage(path string) (Package, error) {
+	// ReadPackage keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	var pkg Package
 
 	raw, err := os.ReadFile(path)
@@ -161,6 +164,9 @@ func ReadPackage(path string) (Package, error) {
 }
 
 func Write(path string, result Result) error {
+	// Write keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	raw, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
@@ -171,6 +177,9 @@ func Write(path string, result Result) error {
 }
 
 func Evaluate(pkg Package) Result {
+	// Evaluate keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	env, envState, envReason := selectEnvelope(pkg)
 	actions := sortedObservedActions(pkg.ObservedActions)
@@ -215,6 +224,9 @@ var aggregateStateByRank = []string{
 }
 
 func sortedObservedActions(actions []ObservedAction) []ObservedAction {
+	// sortedObservedActions keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	out := append([]ObservedAction(nil), actions...)
 	sort.Slice(out, func(i, j int) bool { return out[i].EventID < out[j].EventID })
@@ -222,6 +234,9 @@ func sortedObservedActions(actions []ObservedAction) []ObservedAction {
 }
 
 func evaluateActions(pkg Package, env AuthorityEnvelope, envState, envReason string, actions []ObservedAction, bindings []EvidenceBinding) []AuthorityEvaluation {
+	// evaluateActions keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	bindingByEvent := bindingStatesByEvent(bindings)
 	resolution := evidenceResolutionIndex(pkg.EvidenceResolution)
@@ -235,6 +250,9 @@ func evaluateActions(pkg Package, env AuthorityEnvelope, envState, envReason str
 }
 
 func authorityResult(pkg Package, actions []ObservedAction, bindings []EvidenceBinding, evaluations []AuthorityEvaluation, envState string) Result {
+	// authorityResult keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	result := Result{
 		SchemaVersion:            ResultSchemaVersion,
@@ -252,6 +270,9 @@ func authorityResult(pkg Package, actions []ObservedAction, bindings []EvidenceB
 }
 
 func selectEnvelope(pkg Package) (AuthorityEnvelope, string, string) {
+	// selectEnvelope keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	selected := strings.TrimSpace(pkg.SelectedPolicyID)
 	if selected == "" {
 
@@ -261,6 +282,9 @@ func selectEnvelope(pkg Package) (AuthorityEnvelope, string, string) {
 }
 
 func selectMatchingEnvelope(matches []AuthorityEnvelope) (AuthorityEnvelope, string, string) {
+	// selectMatchingEnvelope keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	switch len(matches) {
 	case 0:
@@ -273,6 +297,9 @@ func selectMatchingEnvelope(matches []AuthorityEnvelope) (AuthorityEnvelope, str
 }
 
 func matchingEnvelopes(envelopes []AuthorityEnvelope, selected string) []AuthorityEnvelope {
+	// matchingEnvelopes keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	var matches []AuthorityEnvelope
 	for _, env := range envelopes {
 
@@ -284,6 +311,9 @@ func matchingEnvelopes(envelopes []AuthorityEnvelope, selected string) []Authori
 }
 
 func selectedEnvelope(env AuthorityEnvelope) (AuthorityEnvelope, string, string) {
+	// selectedEnvelope keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if reason := validateEnvelope(env); reason != "" {
 
 		return env, StateCannotVerify, reason
@@ -292,6 +322,9 @@ func selectedEnvelope(env AuthorityEnvelope) (AuthorityEnvelope, string, string)
 }
 
 func validateEnvelope(env AuthorityEnvelope) string {
+	// validateEnvelope keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if env.PolicyID == "" || env.ActorRef == "" || env.TaskID == "" {
 
 		return "authority_envelope_malformed"
@@ -304,6 +337,9 @@ func validateEnvelope(env AuthorityEnvelope) string {
 }
 
 func firstReason(reasons ...string) string {
+	// firstReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, reason := range reasons {
 		if reason != "" {
 
@@ -314,6 +350,9 @@ func firstReason(reasons ...string) string {
 }
 
 func validateTargetRules(env AuthorityEnvelope) string {
+	// validateTargetRules keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, rule := range env.TargetRules {
 
 		if reason := validateTargetRule(env, rule); reason != "" {
@@ -324,6 +363,9 @@ func validateTargetRules(env AuthorityEnvelope) string {
 }
 
 func validateTargetRule(env AuthorityEnvelope, rule TargetRule) string {
+	// validateTargetRule keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if targetRuleMalformed(rule) {
 
 		return "target_rule_malformed"
@@ -348,6 +390,9 @@ func targetRuleConflictsWithTopLevel(env AuthorityEnvelope, rule TargetRule) boo
 }
 
 func validateTargetRuleOverlap(rules []TargetRule) string {
+	// validateTargetRuleOverlap keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for i := range rules {
 
 		if targetRuleConflictsWithAny(rules[i], rules[i+1:]) {
@@ -358,6 +403,9 @@ func validateTargetRuleOverlap(rules []TargetRule) string {
 }
 
 func targetRuleConflictsWithAny(rule TargetRule, others []TargetRule) bool {
+	// targetRuleConflictsWithAny keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, other := range others {
 		if targetRulesConflict(rule, other) {
 
@@ -368,6 +416,9 @@ func targetRuleConflictsWithAny(rule TargetRule, others []TargetRule) bool {
 }
 
 func validateEventSet(allowed, denied []string) string {
+	// validateEventSet keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	return firstReason(
 		unsupportedEventReason(allowed),
@@ -377,6 +428,9 @@ func validateEventSet(allowed, denied []string) string {
 }
 
 func unsupportedEventReason(events []string) string {
+	// unsupportedEventReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, event := range events {
 		if !validEventType(event) {
 
@@ -387,6 +441,9 @@ func unsupportedEventReason(events []string) string {
 }
 
 func allowDenyConflictReason(allowed, denied []string) string {
+	// allowDenyConflictReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if eventSetIntersects(allowed, denied) {
 
 		return "allow_deny_event_conflict"
@@ -399,6 +456,9 @@ func validEventType(event string) bool {
 }
 
 func targetRulesConflict(a, b TargetRule) bool {
+	// targetRulesConflict keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if a.TargetPattern != b.TargetPattern {
 
 		return false
@@ -411,6 +471,9 @@ func eventSetsConflict(aAllowed, aDenied, bAllowed, bDenied []string) bool {
 }
 
 func eventSetIntersects(left, right []string) bool {
+	// eventSetIntersects keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, event := range left {
 		if contains(right, event) {
 
@@ -421,6 +484,9 @@ func eventSetIntersects(left, right []string) bool {
 }
 
 func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) AuthorityEvaluation {
+	// evaluateAction keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	eval := newAuthorityEvaluation(evaluationID, selectedPolicyID, action, eventBindings)
 	eval.MissingAttributes = missingAttributes(eval)
@@ -434,6 +500,9 @@ func evaluateAction(evaluationID, selectedPolicyID string, env AuthorityEnvelope
 }
 
 func newAuthorityEvaluation(evaluationID, selectedPolicyID string, action ObservedAction, eventBindings []EvidenceBinding) AuthorityEvaluation {
+	// newAuthorityEvaluation keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	eval := baseAuthorityEvaluation(evaluationID, selectedPolicyID, action)
 	applyBindingAttribution(&eval, action, eventBindings)
@@ -441,6 +510,9 @@ func newAuthorityEvaluation(evaluationID, selectedPolicyID string, action Observ
 }
 
 func baseAuthorityEvaluation(evaluationID, selectedPolicyID string, action ObservedAction) AuthorityEvaluation {
+	// baseAuthorityEvaluation keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	return AuthorityEvaluation{
 		EvaluationID:     evaluationID,
@@ -457,6 +529,9 @@ func baseAuthorityEvaluation(evaluationID, selectedPolicyID string, action Obser
 }
 
 func applyBindingAttribution(eval *AuthorityEvaluation, action ObservedAction, eventBindings []EvidenceBinding) {
+	// applyBindingAttribution keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if action.SourceType == "harness_log" && action.OperationID != "" {
 
 		eval.ToolAttribution = AttributionVerified
@@ -468,6 +543,9 @@ func applyBindingAttribution(eval *AuthorityEvaluation, action ObservedAction, e
 }
 
 func applyPreDecisionBlockers(eval *AuthorityEvaluation, env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) bool {
+	// applyPreDecisionBlockers keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	state, reason := preDecisionBlocker(env, envState, envReason, action, eventBindings, resolution)
 	if reason == "" {
@@ -479,6 +557,9 @@ func applyPreDecisionBlockers(eval *AuthorityEvaluation, env AuthorityEnvelope, 
 }
 
 func preDecisionBlocker(env AuthorityEnvelope, envState, envReason string, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) (string, string) {
+	// preDecisionBlocker keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if envState != "" {
 
 		return envState, envReason
@@ -494,6 +575,9 @@ func preDecisionBlocker(env AuthorityEnvelope, envState, envReason string, actio
 }
 
 func preDecisionReason(env AuthorityEnvelope, action ObservedAction, eventBindings []EvidenceBinding, resolution map[string]string) (string, string) {
+	// preDecisionReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if state, reason := taskScopeReason(env, action); reason != "" {
 
 		return state, reason
@@ -509,6 +593,9 @@ func preDecisionReason(env AuthorityEnvelope, action ObservedAction, eventBindin
 }
 
 func taskScopeReason(env AuthorityEnvelope, action ObservedAction) (string, string) {
+	// taskScopeReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if env.AuthorityScope == "repository" {
 
 		return "", ""
@@ -524,6 +611,9 @@ func taskScopeReason(env AuthorityEnvelope, action ObservedAction) (string, stri
 }
 
 func applyDecision(eval *AuthorityEvaluation, env AuthorityEnvelope, action ObservedAction, decision matchResult, resolution map[string]string) {
+	// applyDecision keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if decision.state == StateCannotVerify {
 
 		eval.State, eval.ReasonCode = StateCannotVerify, decision.reasonCode
@@ -545,6 +635,9 @@ func applyDecision(eval *AuthorityEvaluation, env AuthorityEnvelope, action Obse
 }
 
 func approvalFailureState(reason string) string {
+	// approvalFailureState keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	if reason == "approval_evidence_missing" {
 		return StateOutsideAuthority
@@ -559,6 +652,9 @@ type matchResult struct {
 }
 
 func matchDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
+	// matchDecision keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	result := topLevelDecision(env, action)
 	matchedTargetState := ""
@@ -578,6 +674,9 @@ func matchDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
 }
 
 func topLevelDecision(env AuthorityEnvelope, action ObservedAction) matchResult {
+	// topLevelDecision keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if contains(env.DeniedEvents, action.EventType) {
 
 		return matchResult{state: StateOutsideAuthority, reasonCode: "event_denied", ruleRef: "denied_events"}
@@ -590,6 +689,9 @@ func topLevelDecision(env AuthorityEnvelope, action ObservedAction) matchResult 
 }
 
 func targetRuleDecision(rule TargetRule, action ObservedAction) (matchResult, string, bool) {
+	// targetRuleDecision keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if !targetMatches(rule.TargetPattern, action.Target) {
 
 		return matchResult{}, "", false
@@ -611,6 +713,9 @@ func targetStatesConflict(previous, next string) bool {
 }
 
 func targetMatches(pattern, target string) bool {
+	// targetMatches keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if pattern == "" || target == "" {
 
 		return false
@@ -628,6 +733,9 @@ func pathMatches(pattern, target string) bool {
 }
 
 func recursivePathMatches(pattern, target string) bool {
+	// recursivePathMatches keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	re := regexp.QuoteMeta(pattern)
 	re = strings.ReplaceAll(re, `\*\*`, `.*`)
@@ -637,6 +745,9 @@ func recursivePathMatches(pattern, target string) bool {
 }
 
 func approvalReason(env AuthorityEnvelope, action ObservedAction, ruleRef string, resolution map[string]string) string {
+	// approvalReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, req := range env.ApprovalRequirements {
 
 		if reason := approvalRequirementReason(req, action, ruleRef, resolution); reason != "" {
@@ -647,6 +758,9 @@ func approvalReason(env AuthorityEnvelope, action ObservedAction, ruleRef string
 }
 
 func approvalRequirementReason(req ApprovalRequirement, action ObservedAction, ruleRef string, resolution map[string]string) string {
+	// approvalRequirementReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if !approvalRequirementApplies(req, action, ruleRef) {
 		return ""
 	}
@@ -663,6 +777,9 @@ func approvalRequirementApplies(req ApprovalRequirement, action ObservedAction, 
 }
 
 func evaluateBindings(inputs []EvidenceBindingInput, actions []ObservedAction) []EvidenceBinding {
+	// evaluateBindings keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	actionIDs := map[string]bool{}
 	for _, action := range actions {
 
@@ -677,6 +794,9 @@ func evaluateBindings(inputs []EvidenceBindingInput, actions []ObservedAction) [
 }
 
 func evaluateBinding(input EvidenceBindingInput, actionIDs map[string]bool) EvidenceBinding {
+	// evaluateBinding keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	state, reason := bindingStateAndReason(input, actionIDs)
 	return EvidenceBinding{
@@ -692,6 +812,9 @@ func evaluateBinding(input EvidenceBindingInput, actionIDs map[string]bool) Evid
 }
 
 func bindingStateAndReason(input EvidenceBindingInput, actionIDs map[string]bool) (string, string) {
+	// bindingStateAndReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if !actionIDs[input.LeftEventID] || !actionIDs[input.RightEventID] {
 
 		return BindingNotAssessed, "binding_source_event_absent"
@@ -700,6 +823,9 @@ func bindingStateAndReason(input EvidenceBindingInput, actionIDs map[string]bool
 }
 
 func knownBindingStateAndReason(state string) (string, string) {
+	// knownBindingStateAndReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	switch state {
 	case BindingVerified:
@@ -712,6 +838,9 @@ func knownBindingStateAndReason(state string) (string, string) {
 }
 
 func bindingStatesByEvent(bindings []EvidenceBinding) map[string][]EvidenceBinding {
+	// bindingStatesByEvent keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	out := map[string][]EvidenceBinding{}
 	for _, binding := range bindings {
 
@@ -722,6 +851,9 @@ func bindingStatesByEvent(bindings []EvidenceBinding) map[string][]EvidenceBindi
 }
 
 func hasVerifiedGatewayBinding(action ObservedAction, bindings []EvidenceBinding) bool {
+	// hasVerifiedGatewayBinding keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, binding := range bindings {
 		if binding.BindingState == BindingVerified && binding.BindingType == "same_gateway_request" {
 
@@ -732,6 +864,9 @@ func hasVerifiedGatewayBinding(action ObservedAction, bindings []EvidenceBinding
 }
 
 func bindingCannotVerify(bindings []EvidenceBinding) bool {
+	// bindingCannotVerify keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, binding := range bindings {
 		if binding.BindingState == BindingCannotVerify {
 
@@ -742,6 +877,9 @@ func bindingCannotVerify(bindings []EvidenceBinding) bool {
 }
 
 func evidenceResolutionIndex(input EvidenceResolution) map[string]string {
+	// evidenceResolutionIndex keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 
 	out := map[string]string{}
 	addEvidenceResolution(out, input.ResolvedExternalRefs, "resolved")
@@ -752,6 +890,9 @@ func evidenceResolutionIndex(input EvidenceResolution) map[string]string {
 }
 
 func addEvidenceResolution(out map[string]string, refs []string, state string) {
+	// addEvidenceResolution keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, ref := range refs {
 
 		out[ref] = state
@@ -759,6 +900,9 @@ func addEvidenceResolution(out map[string]string, refs []string, state string) {
 }
 
 func evidenceRefsReason(refs []string, resolution map[string]string) string {
+	// evidenceRefsReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if len(refs) == 0 {
 
 		return "evidence_ref_missing"
@@ -773,6 +917,9 @@ func evidenceRefsReason(refs []string, resolution map[string]string) string {
 }
 
 func evidenceRefReason(ref string, resolution string) string {
+	// evidenceRefReason keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if malformedEvidenceRef(ref) {
 
 		return "evidence_ref_malformed"
@@ -796,6 +943,9 @@ func unresolvedExternalEvidenceRef(ref string, resolution string) bool {
 }
 
 func aggregateState(evaluations []AuthorityEvaluation, envState string) string {
+	// aggregateState keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if envState == StateCannotVerify {
 
 		return StateCannotVerify
@@ -812,6 +962,9 @@ func aggregateState(evaluations []AuthorityEvaluation, envState string) string {
 }
 
 func highestEvaluationStateRank(evaluations []AuthorityEvaluation) int {
+	// highestEvaluationStateRank keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	highestRank := -1
 	for _, eval := range evaluations {
 		rank, ok := aggregateStatePriority[eval.State]
@@ -824,6 +977,9 @@ func highestEvaluationStateRank(evaluations []AuthorityEvaluation) int {
 }
 
 func resultReasons(result Result) []string {
+	// resultReasons keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	reasons := map[string]bool{}
 	for _, eval := range result.Evaluations {
 
@@ -842,6 +998,9 @@ func addReasonCode(reasons map[string]bool, code string) {
 }
 
 func nextActions(result Result) []string {
+	// nextActions keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if action, ok := authorityStateNextActions[result.AuthorityEvaluationState]; ok {
 		return []string{action}
 	}
@@ -856,6 +1015,9 @@ var authorityStateNextActions = map[string]string{
 }
 
 func actorAttributionState(action ObservedAction) string {
+	// actorAttributionState keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	if strings.TrimSpace(action.ActorID) == "" {
 
 		return AttributionNotAssessed
@@ -870,6 +1032,9 @@ func actorAttributionState(action ObservedAction) string {
 }
 
 func missingAttributes(eval AuthorityEvaluation) []string {
+	// missingAttributes keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	var missing []string
 	if eval.ActorAttribution == AttributionNotAssessed {
 
@@ -887,6 +1052,9 @@ func missingAttributes(eval AuthorityEvaluation) []string {
 }
 
 func sourceCoverage(actions []ObservedAction) []string {
+	// sourceCoverage keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	var sources []string
 	for _, action := range actions {
 
@@ -896,6 +1064,9 @@ func sourceCoverage(actions []ObservedAction) []string {
 }
 
 func safeRefs(refs []string) []string {
+	// safeRefs keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	out := make([]string, 0, len(refs))
 	for _, ref := range refs {
 		if evidenceRefPattern.MatchString(ref) && !unsafeRefPattern.MatchString(ref) {
@@ -907,6 +1078,9 @@ func safeRefs(refs []string) []string {
 }
 
 func contains(values []string, needle string) bool {
+	// contains keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	for _, value := range values {
 		if value == needle {
 
@@ -917,6 +1091,9 @@ func contains(values []string, needle string) bool {
 }
 
 func uniqueStrings(values []string) []string {
+	// uniqueStrings keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	seen := map[string]bool{}
 	var out []string
 	for _, value := range values {
@@ -934,6 +1111,9 @@ func uniqueStrings(values []string) []string {
 }
 
 func mapKeys(values map[string]bool) []string {
+	// mapKeys keeps authority envelope evidence explicit and bounded to observed inputs.
+	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
+	// This helper does not turn local policy data into external trust.
 	out := make([]string, 0, len(values))
 	for key := range values {
 
