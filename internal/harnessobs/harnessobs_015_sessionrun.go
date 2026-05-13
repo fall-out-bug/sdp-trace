@@ -1,0 +1,31 @@
+package harnessobs
+
+type SessionRun struct {
+	SchemaVersion      string                   `json:"schema_version"`
+	ProfileID          string                   `json:"profile_id"`
+	HarnessProfilePath string                   `json:"harness_profile_path"`
+	EventSourcePath    string                   `json:"event_source_path"`
+	RawEventSourcePath string                   `json:"raw_event_source_path,omitempty"`
+	RawEventFormat     string                   `json:"raw_event_format,omitempty"`
+	SetupActionIDs     []string                 `json:"setup_action_ids,omitempty"`
+	IsolationResults   []SessionIsolationResult `json:"isolation_results,omitempty"`
+	CommandDigest      string                   `json:"command_digest,omitempty"`
+	CommandDigestState string                   `json:"command_digest_state,omitempty"`
+	CommandModel       string                   `json:"command_model,omitempty"`
+	CommandModelState  string                   `json:"command_model_state,omitempty"`
+	ProcessID          int                      `json:"process_id,omitempty"`
+	ProcessIDState     string                   `json:"process_id_state,omitempty"`
+	StartTime          string                   `json:"start_time,omitempty"`
+	EndTime            string                   `json:"end_time,omitempty"`
+	SourceCommit       string                   `json:"source_commit,omitempty"`
+	SourceCommitState  string                   `json:"source_commit_state,omitempty"`
+	ObservedRunDir     string                   `json:"observed_run_dir,omitempty"`
+	OutputDigest       string                   `json:"output_digest,omitempty"`
+	NormalizedDigest   string                   `json:"normalized_digest,omitempty"`
+	CollectionState    string                   `json:"collection_state,omitempty"`
+	CollectionReason   string                   `json:"collection_reason,omitempty"`
+	CreatedAt          string                   `json:"created_at"`
+}
+
+// SessionIsolationResult records the live readback result of a setup rule; it
+// is evidence about the local setup artifact, not proof that a harness obeyed it.

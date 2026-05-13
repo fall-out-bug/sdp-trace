@@ -1,0 +1,18 @@
+package harnessobs
+
+func unsafeStringReason(path, value string, rawEvent bool) string {
+	// unsafeStringReason keeps harness observation evidence explicit and replay-bound.
+	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
+	// This helper renders or aggregates harness evidence; it does not create external proof.
+	if unsafeStringPath(value, rawEvent) {
+		return "unsafe_path_or_private_path"
+	}
+	if unsafeURL(value) {
+
+		return "authenticated_url"
+	}
+	if unsafeStringToken(path, value, rawEvent) {
+		return "token_like_value"
+	}
+	return ""
+}
