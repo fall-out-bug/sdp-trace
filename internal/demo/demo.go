@@ -230,6 +230,9 @@ var gateSeverityByState = map[string]int{
 }
 
 func WriteReport(target, outDir, contractPath string) (ReportArtifacts, error) {
+	// WriteReport keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if strings.TrimSpace(outDir) == "" {
 
@@ -247,6 +250,9 @@ func WriteReport(target, outDir, contractPath string) (ReportArtifacts, error) {
 }
 
 func persistReportArtifacts(outDir string, artifacts ReportArtifacts) error {
+	// persistReportArtifacts keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
@@ -255,6 +261,9 @@ func persistReportArtifacts(outDir string, artifacts ReportArtifacts) error {
 }
 
 func verifiedRowsForContract(target, contractPath string) ([]RunRow, trace.Contract, error) {
+	// verifiedRowsForContract keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	contract, err := trace.LoadContract(contractPath)
 	if err != nil {
@@ -268,6 +277,9 @@ func verifiedRowsForContract(target, contractPath string) ([]RunRow, trace.Contr
 }
 
 func writeReportArtifacts(outDir string, artifacts ReportArtifacts) error {
+	// writeReportArtifacts keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	writes := []struct {
 		name  string
@@ -287,6 +299,9 @@ func writeReportArtifacts(outDir string, artifacts ReportArtifacts) error {
 	return os.WriteFile(filepath.Join(outDir, "timeline.md"), []byte(artifacts.Timeline), 0o644)
 }
 func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (GateResult, error) {
+	// WriteGate keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if strings.TrimSpace(outPath) == "" {
 		return GateResult{}, errors.New("gate requires --out <file>")
@@ -305,6 +320,9 @@ func WriteGate(target, outPath, contractPath string, witnessPaths ...string) (Ga
 }
 
 func persistGateResult(outPath string, result GateResult) error {
+	// persistGateResult keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return err
@@ -313,6 +331,9 @@ func persistGateResult(outPath string, result GateResult) error {
 }
 
 func applyOptionalWitness(result GateResult, target string, witnessPaths []string) GateResult {
+	// applyOptionalWitness keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	witnessPath, ok := firstWitnessPath(witnessPaths)
 	if !ok {
@@ -328,6 +349,9 @@ func applyOptionalWitness(result GateResult, target string, witnessPaths []strin
 }
 
 func firstWitnessPath(witnessPaths []string) (string, bool) {
+	// firstWitnessPath keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if len(witnessPaths) == 0 || strings.TrimSpace(witnessPaths[0]) == "" {
 
 		return "", false
@@ -336,6 +360,9 @@ func firstWitnessPath(witnessPaths []string) (string, bool) {
 }
 
 func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
+	// VerifiedRows keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	runDirs, err := DiscoverRunDirs(target)
 	if err != nil {
@@ -349,6 +376,9 @@ func VerifiedRows(target string, contract trace.Contract) ([]RunRow, error) {
 }
 
 func verifiedRow(runDir string, contract trace.Contract) RunRow {
+	// verifiedRow keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result, table, audit, verifyErr := verifier.VerifyRun(runDir)
 	if verifyErr != nil && result.Reason == "" {
@@ -361,6 +391,9 @@ func verifiedRow(runDir string, contract trace.Contract) RunRow {
 }
 
 func verifierArtifactWriteFailure(runDir, runID string, err error) trace.VerifierResult {
+	// verifierArtifactWriteFailure keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return trace.VerifierResult{
 		RunID:         runID,
@@ -374,6 +407,9 @@ func verifierArtifactWriteFailure(runDir, runID string, err error) trace.Verifie
 }
 
 func DiscoverRunDirs(root string) ([]string, error) {
+	// DiscoverRunDirs keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	runDirs, err := discoverRunDirsUnder(root)
 	if err != nil {
 		return nil, err
@@ -386,6 +422,9 @@ func DiscoverRunDirs(root string) ([]string, error) {
 	return runDirs, nil
 }
 func hashFile(path string) (string, error) {
+	// hashFile keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	data, err := os.ReadFile(path)
 
 	sum := sha256.Sum256(data)
@@ -393,6 +432,9 @@ func hashFile(path string) (string, error) {
 }
 
 func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) []OverrideRequest {
+	// overrideRequestsFromEvents keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	requests := make([]OverrideRequest, 0)
 	for _, event := range events {
@@ -405,6 +447,9 @@ func overrideRequestsFromEvents(events []trace.Event, contract trace.Contract) [
 	return requests
 }
 func overrideRequestFromEvent(event trace.Event, contract trace.Contract) OverrideRequest {
+	// overrideRequestFromEvent keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	request := OverrideRequest{
 		OverrideID: payloadString(event, "override_id"),
@@ -418,6 +463,9 @@ func overrideRequestFromEvent(event trace.Event, contract trace.Contract) Overri
 }
 
 func sortOverrideRequests(requests []OverrideRequest) {
+	// sortOverrideRequests keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	sort.SliceStable(requests, func(i, j int) bool {
 		if requests[i].CreatedAt != requests[j].CreatedAt {
@@ -428,6 +476,9 @@ func sortOverrideRequests(requests []OverrideRequest) {
 }
 
 func overrideRequestFieldState(event trace.Event) (string, string) {
+	// overrideRequestFieldState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, field := range []string{"override_id", "producer", "origin", "requested_by", "reason", "source_ref", "scope", "created_at"} {
 		if strings.TrimSpace(payloadString(event, field)) == "" {
@@ -438,12 +489,18 @@ func overrideRequestFieldState(event trace.Event) (string, string) {
 }
 
 func overrideRequestReferenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+	// overrideRequestReferenceState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	state, reason = overrideRequestRequiredRunState(event, contract, state, reason)
 	return overrideRequestEvidenceState(event, contract, state, reason)
 }
 
 func overrideRequestRequiredRunState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+	// overrideRequestRequiredRunState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, id := range payloadStringSlice(event, "affected_required_runs") {
 		if !contractHasRequiredRun(contract, id) {
@@ -455,6 +512,9 @@ func overrideRequestRequiredRunState(event trace.Event, contract trace.Contract,
 }
 
 func overrideRequestEvidenceState(event trace.Event, contract trace.Contract, state string, reason string) (string, string) {
+	// overrideRequestEvidenceState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, id := range payloadStringSlice(event, "affected_evidence") {
 		if !contractHasEvidence(contract, id) {
@@ -466,6 +526,9 @@ func overrideRequestEvidenceState(event trace.Event, contract trace.Contract, st
 }
 
 func payloadStringSlice(event trace.Event, key string) []string {
+	// payloadStringSlice keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	value := payloadValue(event, key)
 	if value == nil {
@@ -475,6 +538,9 @@ func payloadStringSlice(event trace.Event, key string) []string {
 }
 
 func payloadAnyStringSlice(value any) []string {
+	// payloadAnyStringSlice keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	switch typed := value.(type) {
 	case []string:
@@ -487,6 +553,9 @@ func payloadAnyStringSlice(value any) []string {
 }
 
 func stringItems(items []any) []string {
+	// stringItems keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	values := make([]string, 0, len(items))
 	for _, item := range items {
@@ -496,6 +565,9 @@ func stringItems(items []any) []string {
 }
 
 func appendStringItem(values []string, item any) []string {
+	// appendStringItem keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if text, ok := item.(string); ok {
 
 		return append(values, text)
@@ -504,6 +576,9 @@ func appendStringItem(values []string, item any) []string {
 }
 
 func contractHasRequiredRun(contract trace.Contract, id string) bool {
+	// contractHasRequiredRun keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, required := range contract.RequiredRuns {
 		if required.ID == id {
@@ -514,6 +589,9 @@ func contractHasRequiredRun(contract trace.Contract, id string) bool {
 }
 
 func contractHasEvidence(contract trace.Contract, id string) bool {
+	// contractHasEvidence keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, required := range contract.RequiredEvidence {
 		if required.ID == id {
@@ -524,6 +602,9 @@ func contractHasEvidence(contract trace.Contract, id string) bool {
 }
 
 func worseGateState(current, next string) string {
+	// worseGateState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if gateSeverity(next) > gateSeverity(current) {
 
 		return next
@@ -535,6 +616,9 @@ func gateSeverity(state string) int {
 }
 
 func containsString(values []string, target string) bool {
+	// containsString keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	for _, value := range values {
 		if value == target {
 
@@ -544,6 +628,9 @@ func containsString(values []string, target string) bool {
 	return false
 }
 func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
+	// missingContractEvidence keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	observed := observedEvidenceKinds(rows)
 	missing := make([]string, 0)
@@ -557,6 +644,9 @@ func missingContractEvidence(rows []RunRow, contract trace.Contract) []string {
 }
 
 func observedEvidenceKinds(rows []RunRow) map[string]bool {
+	// observedEvidenceKinds keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	observed := map[string]bool{}
 	for _, row := range rows {
@@ -587,6 +677,9 @@ func buildTimeline(rows []RunRow) string {
 }
 
 func timelineRow(row RunRow) string {
+	// timelineRow keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return fmt.Sprintf("| %s | %s | %s | %s | %s | %s |\n",
 		escapeMD(row.Name),
@@ -599,6 +692,9 @@ func timelineRow(row RunRow) string {
 }
 
 func timelineExit(row RunRow) string {
+	// timelineExit keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if row.ExitCode == nil {
 		return ""
 	}
@@ -611,6 +707,9 @@ func escapeMD(value string) string {
 }
 
 func writeJSON(path string, value any) error {
+	// writeJSON keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
@@ -619,6 +718,9 @@ func writeJSON(path string, value any) error {
 	return os.WriteFile(path, data, 0o644)
 }
 func discoverRunDirsUnder(root string) ([]string, error) {
+	// discoverRunDirsUnder keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if err := ensureRunRootDir(root); err != nil {
 		return nil, err
@@ -630,6 +732,9 @@ func discoverRunDirsUnder(root string) ([]string, error) {
 }
 
 func collectRunDirs(root string) ([]string, error) {
+	// collectRunDirs keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	entries, err := os.ReadDir(root)
 	if err != nil {
@@ -647,6 +752,9 @@ func collectRunDirs(root string) ([]string, error) {
 }
 
 func ensureRunRootDir(root string) error {
+	// ensureRunRootDir keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	info, err := os.Stat(root)
 	if err != nil {
@@ -667,6 +775,9 @@ func hasRunManifest(path string) bool {
 }
 
 func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
+	// BuildReport keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return ReportArtifacts{
 		Summary:          buildSummary(rows),
@@ -677,6 +788,9 @@ func BuildReport(rows []RunRow, contract trace.Contract) ReportArtifacts {
 }
 
 func buildSummary(rows []RunRow) Summary {
+	// buildSummary keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	summary := Summary{
 		GeneratedAt:      time.Now().UTC().Format(time.RFC3339Nano),
@@ -692,6 +806,9 @@ func buildSummary(rows []RunRow) Summary {
 }
 
 func buildMissingTelemetry(rows []RunRow, contract trace.Contract) MissingTelemetry {
+	// buildMissingTelemetry keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	return MissingTelemetry{
 
 		MissingAuditEvidence:   []string{"ci_oidc_witness", "external_witness_checkpoint"},
@@ -705,6 +822,9 @@ func buildMissingTelemetry(rows []RunRow, contract trace.Contract) MissingTeleme
 }
 
 func (summary *Summary) applyRunVerdictCounts(rows []RunRow) {
+	// applyRunVerdictCounts keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	for _, row := range rows {
 
 		summary.applyRunVerdictCount(row.Result)
@@ -712,6 +832,9 @@ func (summary *Summary) applyRunVerdictCounts(rows []RunRow) {
 }
 
 func (summary *Summary) applyRunVerdictCount(verdict trace.VerifierVerdict) {
+	// applyRunVerdictCount keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	counter := runVerdictCounters[verdict]
 	if counter != nil {
 
@@ -720,6 +843,9 @@ func (summary *Summary) applyRunVerdictCount(verdict trace.VerifierVerdict) {
 }
 
 func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
+	// EvaluateGate keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result := newGateResult(rows, contract)
 	observedEvidence := applyRunRows(&result, rows)
@@ -730,6 +856,9 @@ func EvaluateGate(rows []RunRow, contract trace.Contract) GateResult {
 }
 
 func newGateResult(rows []RunRow, contract trace.Contract) GateResult {
+	// newGateResult keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return GateResult{
 		SchemaVersion:  GateSchemaVersion,
@@ -755,6 +884,9 @@ func newGateResult(rows []RunRow, contract trace.Contract) GateResult {
 }
 
 func applyRunRows(result *GateResult, rows []RunRow) map[string]bool {
+	// applyRunRows keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	observedEvidence := map[string]bool{}
 	for _, row := range rows {
@@ -763,6 +895,9 @@ func applyRunRows(result *GateResult, rows []RunRow) map[string]bool {
 	return observedEvidence
 }
 func applyRunRow(result *GateResult, observedEvidence map[string]bool, row RunRow) {
+	// applyRunRow keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.OverrideRequests = append(result.OverrideRequests, row.OverrideRequests...)
 	markObservedEvidence(observedEvidence, row)
@@ -771,12 +906,18 @@ func applyRunRow(result *GateResult, observedEvidence map[string]bool, row RunRo
 }
 
 func markObservedEvidence(observedEvidence map[string]bool, row RunRow) {
+	// markObservedEvidence keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if row.Kind != "" && row.Kind != "unmatched" && row.Result == trace.VerdictObserved {
 
 		observedEvidence[row.Kind] = true
 	}
 }
 func applyRowResult(result *GateResult, row RunRow) {
+	// applyRowResult keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if row.Result != trace.VerdictObserved {
 
 		result.LocalGate = GateFail
@@ -785,6 +926,9 @@ func applyRowResult(result *GateResult, row RunRow) {
 }
 
 func applyRowClosure(result *GateResult, row RunRow) {
+	// applyRowClosure keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if row.ClosureState != trace.ClosureStateCompleted {
 
 		result.LocalGate = GateFail
@@ -793,6 +937,9 @@ func applyRowClosure(result *GateResult, row RunRow) {
 }
 
 func applyRequiredRuns(result *GateResult, rows []RunRow, contract trace.Contract) {
+	// applyRequiredRuns keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.RequiredRuns = evaluateRequiredRuns(rows, contract)
 	for _, requiredRun := range result.RequiredRuns {
@@ -801,6 +948,9 @@ func applyRequiredRuns(result *GateResult, rows []RunRow, contract trace.Contrac
 }
 
 func applyRequiredRun(result *GateResult, requiredRun RequiredRunResult) {
+	// applyRequiredRun keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	switch requiredRun.State {
 	case GateMissingTelemetry:
@@ -819,6 +969,9 @@ func applyRequiredRun(result *GateResult, requiredRun RequiredRunResult) {
 }
 
 func applyRequiredEvidence(result *GateResult, contract trace.Contract, observedEvidence map[string]bool) {
+	// applyRequiredEvidence keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, requirement := range contract.RequiredEvidence {
 		if observedEvidence[requirement.ID] {
@@ -831,6 +984,9 @@ func applyRequiredEvidence(result *GateResult, contract trace.Contract, observed
 }
 
 func finalizeGateResult(result *GateResult) {
+	// finalizeGateResult keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.GateConditions = gateConditions(*result)
 	if len(result.Reasons) == 0 {
@@ -842,6 +998,9 @@ func finalizeGateResult(result *GateResult) {
 }
 
 func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input ProtectedGateInput) GateResult {
+	// EvaluateProtectedGate keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result := EvaluateGate(rows, contract)
 	applyProtectedGateContext(&result, input)
@@ -851,6 +1010,9 @@ func EvaluateProtectedGate(rows []RunRow, contract trace.Contract, input Protect
 }
 
 func applyProtectedGateContext(result *GateResult, input ProtectedGateInput) {
+	// applyProtectedGateContext keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.SchemaVersion = GateSchemaVersionBlock16
 	result.SelectedProfile = GateProfileProtected
@@ -865,6 +1027,9 @@ func applyProtectedGateContext(result *GateResult, input ProtectedGateInput) {
 }
 
 func applyProtectedConditionResults(result *GateResult, input ProtectedGateInput) {
+	// applyProtectedConditionResults keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	result.ProtectedConditions = protectedConditions(*result, input)
 	for _, condition := range result.ProtectedConditions {
 
@@ -878,6 +1043,9 @@ func applyProtectedConditionResults(result *GateResult, input ProtectedGateInput
 }
 
 func protectedCIWitnessGate(input ProtectedGateInput) string {
+	// protectedCIWitnessGate keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if input.Witness == nil {
 		return GateCannotVerify
@@ -887,6 +1055,9 @@ func protectedCIWitnessGate(input ProtectedGateInput) string {
 }
 
 func protectedTrustCap(input ProtectedGateInput, ciWitnessGate string) string {
+	// protectedTrustCap keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if trustCap := protectedCheckpointTrustCap(input.Checkpoint.TrustScope); trustCap != "" {
 		return trustCap
@@ -894,6 +1065,9 @@ func protectedTrustCap(input ProtectedGateInput, ciWitnessGate string) string {
 	return nonCheckpointProtectedTrustCap(input.Checkpoint.TrustScope, ciWitnessGate)
 }
 func nonCheckpointProtectedTrustCap(checkpointTrustScope, ciWitnessGate string) string {
+	// nonCheckpointProtectedTrustCap keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if ciWitnessGate == GatePass {
 		return "ci_witnessed"
@@ -905,6 +1079,9 @@ func nonCheckpointProtectedTrustCap(checkpointTrustScope, ciWitnessGate string) 
 }
 
 func protectedCheckpointTrustCap(trustScope string) string {
+	// protectedCheckpointTrustCap keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, candidate := range []string{checkpoint.TrustScopeCISigned, checkpoint.TrustScopeLocalSigned} {
 		if trustScope == candidate {
@@ -914,6 +1091,9 @@ func protectedCheckpointTrustCap(trustScope string) string {
 	return ""
 }
 func protectedConditions(result GateResult, input ProtectedGateInput) []ProtectedCondition {
+	// protectedConditions keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return []ProtectedCondition{
 		protectedProfileSelectedCondition(),
@@ -933,6 +1113,9 @@ func protectedConditions(result GateResult, input ProtectedGateInput) []Protecte
 }
 
 func protectedProfileSelectedCondition() ProtectedCondition {
+	// protectedProfileSelectedCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return ProtectedCondition{
 		ID:         "protected_profile_explicitly_selected",
@@ -943,6 +1126,9 @@ func protectedProfileSelectedCondition() ProtectedCondition {
 }
 
 func protectedConditionFromGateCondition(conditions []GateCondition, id string) ProtectedCondition {
+	// protectedConditionFromGateCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, condition := range conditions {
 		if condition.ID == id {
@@ -959,6 +1145,9 @@ func protectedConditionFromGateCondition(conditions []GateCondition, id string) 
 }
 
 func protectedConditionFromLocalGate(id string, condition GateCondition) ProtectedCondition {
+	// protectedConditionFromLocalGate keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	code := "condition_pass"
 	next := ""
@@ -972,6 +1161,9 @@ func protectedConditionFromLocalGate(id string, condition GateCondition) Protect
 }
 
 func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
+	// protectedCIWitnessCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if input.Witness == nil {
 		return missingCIWitnessCondition()
@@ -982,6 +1174,9 @@ func protectedCIWitnessCondition(input ProtectedGateInput) ProtectedCondition {
 }
 
 func protectedCIWitnessFields(state string, reasons []string) (string, string, string) {
+	// protectedCIWitnessFields keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if state == GatePass {
 
 		return "ci_witness_bound", "CI witness source and artifact bindings match protected profile input", ""
@@ -990,6 +1185,9 @@ func protectedCIWitnessFields(state string, reasons []string) (string, string, s
 }
 
 func protectedCIWitnessNonPassFields(state string, reasons []string) (string, string, string) {
+	// protectedCIWitnessNonPassFields keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	reason := strings.Join(reasons, "; ")
 	if state == GateFail {
@@ -999,6 +1197,9 @@ func protectedCIWitnessNonPassFields(state string, reasons []string) (string, st
 }
 
 func missingCIWitnessCondition() ProtectedCondition {
+	// missingCIWitnessCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return ProtectedCondition{
 		ID:         "ci_witness_bound",
@@ -1010,6 +1211,9 @@ func missingCIWitnessCondition() ProtectedCondition {
 }
 
 func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondition {
+	// protectedWitnessFreshnessCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	generatedAt, ok := protectedWitnessGeneratedAt(input.Witness)
 	if !ok {
@@ -1018,6 +1222,9 @@ func protectedWitnessFreshnessCondition(input ProtectedGateInput) ProtectedCondi
 	return protectedWitnessFreshnessAt(generatedAt, input.Now)
 }
 func protectedWitnessGeneratedAt(witness *WitnessSummary) (string, bool) {
+	// protectedWitnessGeneratedAt keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if witness == nil || strings.TrimSpace(witness.GeneratedAt) == "" {
 
 		return "", false
@@ -1026,6 +1233,9 @@ func protectedWitnessGeneratedAt(witness *WitnessSummary) (string, bool) {
 }
 
 func protectedWitnessFreshnessAt(generatedAtText string, now time.Time) ProtectedCondition {
+	// protectedWitnessFreshnessAt keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	generatedAt, err := time.Parse(time.RFC3339, generatedAtText)
 	if err != nil {
@@ -1048,6 +1258,9 @@ func protectedWitnessFreshnessAt(generatedAtText string, now time.Time) Protecte
 }
 
 func invalidWitnessFreshnessCondition(generatedAt, now time.Time) (ProtectedCondition, bool) {
+	// invalidWitnessFreshnessCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if generatedAt.After(now.Add(5 * time.Minute)) {
 		return witnessFreshnessFail("witness_from_future", "CI witness generated_at is after the verifier time window", "Regenerate CI witness evidence in the selected CI run."), true
@@ -1066,6 +1279,9 @@ func witnessFreshnessFail(code, reason, next string) ProtectedCondition {
 	return witnessFreshnessCondition(GateFail, code, reason, next)
 }
 func witnessFreshnessCondition(state, code, reason, next string) ProtectedCondition {
+	// witnessFreshnessCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return ProtectedCondition{
 		ID:         "witness_freshness_valid",
@@ -1077,6 +1293,9 @@ func witnessFreshnessCondition(state, code, reason, next string) ProtectedCondit
 }
 
 func protectedCheckpointSignatureCondition(result checkpoint.VerificationResult) ProtectedCondition {
+	// protectedCheckpointSignatureCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if result.SignatureState == checkpoint.StatePass && result.PayloadDigestState != checkpoint.StateFail {
 		return ProtectedCondition{ID: "checkpoint_signature_valid", State: GatePass, ReasonCode: "checkpoint_signature_valid", Reason: "checkpoint signature verification passed"}
@@ -1091,6 +1310,9 @@ func protectedCheckpointSignatureCondition(result checkpoint.VerificationResult)
 }
 
 func protectedCheckpointBindingCondition(result checkpoint.VerificationResult) ProtectedCondition {
+	// protectedCheckpointBindingCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	state := GatePass
 	for _, candidate := range []string{result.RunBindingState, result.ChainBindingState, result.SourceBindingState, result.NonceBindingState} {
@@ -1110,6 +1332,9 @@ func protectedCheckpointBindingCondition(result checkpoint.VerificationResult) P
 }
 
 func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
+	// protectedSignerCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if !input.PolicyProvided {
 		return missingSignerPolicyCondition()
@@ -1134,6 +1359,9 @@ func protectedSignerCondition(input ProtectedGateInput) ProtectedCondition {
 }
 
 func missingSignerPolicyCondition() ProtectedCondition {
+	// missingSignerPolicyCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return ProtectedCondition{
 		ID:         "checkpoint_signer_authorized",
@@ -1152,6 +1380,9 @@ func protectedSignerLocalOnly(state, trustScope string) bool {
 }
 
 func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
+	// protectedTrustScopeCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if !input.PolicyProvided {
 		return ProtectedCondition{
@@ -1169,6 +1400,9 @@ func protectedTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
 }
 
 func protectedCheckpointCanUseWitness(input ProtectedGateInput) bool {
+	// protectedCheckpointCanUseWitness keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return input.Checkpoint.Result == checkpoint.StatePass &&
 		input.Checkpoint.TrustScope == checkpoint.TrustScopeCISigned &&
@@ -1177,6 +1411,9 @@ func protectedCheckpointCanUseWitness(input ProtectedGateInput) bool {
 }
 
 func protectedWitnessTrustScopeCondition(input ProtectedGateInput) ProtectedCondition {
+	// protectedWitnessTrustScopeCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	witnessState, _ := witnessBindingState(*input.Witness, input.WitnessExpectation)
 	freshness := protectedWitnessFreshnessCondition(input)
@@ -1195,6 +1432,9 @@ func protectedWitnessTrustScopeCondition(input ProtectedGateInput) ProtectedCond
 }
 
 func protectedInsufficientTrustScopeCondition(trustScope string) ProtectedCondition {
+	// protectedInsufficientTrustScopeCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	code := "protected_trust_scope_not_satisfied"
 	if trustScope == checkpoint.TrustScopeLocalSigned {
 
@@ -1209,6 +1449,9 @@ func protectedInsufficientTrustScopeCondition(trustScope string) ProtectedCondit
 	}
 }
 func protectedOverrideCondition(overrides []OverrideRequest) ProtectedCondition {
+	// protectedOverrideCondition keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if len(overrides) == 0 {
 		return ProtectedCondition{ID: "override_does_not_upgrade_profile", State: GatePass, ReasonCode: "no_override_present", Reason: "no override request is available to upgrade the profile"}
@@ -1230,6 +1473,9 @@ func protectedOverrideCondition(overrides []OverrideRequest) ProtectedCondition 
 }
 
 func mapCheckpointState(state string) string {
+	// mapCheckpointState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if mapped, ok := checkpointGateStates[state]; ok {
 		return mapped
 	}
@@ -1238,6 +1484,9 @@ func mapCheckpointState(state string) string {
 }
 
 func worseProtectedState(current, next string) string {
+	// worseProtectedState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if protectedSeverity(next) > protectedSeverity(current) {
 
 		return next
@@ -1246,6 +1495,9 @@ func worseProtectedState(current, next string) string {
 }
 
 func topLevelProtectedState(state string) string {
+	// topLevelProtectedState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	switch state {
 	case GateMissingTelemetry, "not_integrated":
 
@@ -1256,6 +1508,9 @@ func topLevelProtectedState(state string) string {
 }
 
 func protectedSeverity(state string) int {
+	// protectedSeverity keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return severityByState(map[string]int{
 		GateFail:             5,
@@ -1272,6 +1527,9 @@ func severityByState(values map[string]int, state string) int {
 }
 
 func protectedReasons(conditions []ProtectedCondition) []string {
+	// protectedReasons keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	ordered := orderedProtectedConditionsBySeverity(conditions)
 	reasons := make([]string, 0, len(ordered))
@@ -1285,6 +1543,9 @@ func protectedReasons(conditions []ProtectedCondition) []string {
 }
 
 func protectedNextActions(conditions []ProtectedCondition) []string {
+	// protectedNextActions keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	ordered := orderedProtectedConditionsBySeverity(conditions)
 	actions := make([]string, 0, len(ordered))
@@ -1297,6 +1558,9 @@ func protectedNextActions(conditions []ProtectedCondition) []string {
 }
 
 func orderedProtectedConditionsBySeverity(conditions []ProtectedCondition) []ProtectedCondition {
+	// orderedProtectedConditionsBySeverity keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	ordered := append([]ProtectedCondition(nil), conditions...)
 	positions := map[string]int{}
@@ -1327,6 +1591,9 @@ func EvaluateGateWithWitnessContext(rows []RunRow, contract trace.Contract, witn
 }
 
 func PreviewWitnessBinding(witnessPath, target string) (bool, []string) {
+	// PreviewWitnessBinding keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	record, err := loadWitnessSummary(witnessPath)
 	if err != nil {
@@ -1345,6 +1612,9 @@ func PreviewWitnessBinding(witnessPath, target string) (bool, []string) {
 }
 
 func rowFromRun(runDir string, result trace.VerifierResult, contract trace.Contract) RunRow {
+	// rowFromRun keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	row := rowFromVerifierResult(runDir, result)
 	artifact, err := trace.OpenRunArtifact(runDir)
@@ -1358,6 +1628,9 @@ func rowFromRun(runDir string, result trace.VerifierResult, contract trace.Contr
 	return row
 }
 func rowFromVerifierResult(runDir string, result trace.VerifierResult) RunRow {
+	// rowFromVerifierResult keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return RunRow{
 		Name:          filepath.Base(runDir),
@@ -1372,6 +1645,9 @@ func rowFromVerifierResult(runDir string, result trace.VerifierResult) RunRow {
 	}
 }
 func applyRunArtifact(row *RunRow, artifact trace.RunArtifact, contract trace.Contract) {
+	// applyRunArtifact keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	row.RunID = artifact.Manifest.RunID
 	row.ClosureState = artifact.Manifest.ClosureState
 	commandStarted, commandFinished := commandEvents(artifact.Events)
@@ -1406,6 +1682,9 @@ func commandEvents(events []trace.Event) (trace.Event, trace.Event) {
 }
 
 func classify(events []trace.Event, requirements []trace.EvidenceRequirement) (string, string) {
+	// classify keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, requirement := range requirements {
 		if evidenceRequirementMatches(events, requirement) {
@@ -1416,6 +1695,9 @@ func classify(events []trace.Event, requirements []trace.EvidenceRequirement) (s
 }
 
 func evidenceRequirementMatches(events []trace.Event, requirement trace.EvidenceRequirement) bool {
+	// evidenceRequirementMatches keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if requirement.ID == "" {
 		return false
@@ -1429,6 +1711,9 @@ func evidenceRequirementMatches(events []trace.Event, requirement trace.Evidence
 }
 
 func eventMatchesRequirement(event trace.Event, requirement trace.EvidenceRequirement) bool {
+	// eventMatchesRequirement keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if requirement.EventType != "" && event.EventType != trace.EventType(requirement.EventType) {
 		return false
@@ -1437,6 +1722,9 @@ func eventMatchesRequirement(event trace.Event, requirement trace.EvidenceRequir
 }
 
 func payloadString(event trace.Event, key string) string {
+	// payloadString keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	value := payloadValue(event, key)
 	if value == nil {
@@ -1451,6 +1739,9 @@ func payloadString(event trace.Event, key string) string {
 }
 
 func payloadInt(event trace.Event, key string) (int, bool) {
+	// payloadInt keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	value := payloadValue(event, key)
 	if value == nil {
@@ -1460,6 +1751,9 @@ func payloadInt(event trace.Event, key string) (int, bool) {
 }
 
 func payloadAnyInt(value any) (int, bool) {
+	// payloadAnyInt keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if typed, ok := value.(json.Number); ok {
 
 		return jsonNumberInt(typed)
@@ -1468,6 +1762,9 @@ func payloadAnyInt(value any) (int, bool) {
 }
 
 func primitivePayloadInt(value any) (int, bool) {
+	// primitivePayloadInt keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	switch typed := value.(type) {
 	case int:
@@ -1485,6 +1782,9 @@ func jsonNumberInt(value json.Number) (int, bool) {
 }
 
 func payloadValue(event trace.Event, key string) any {
+	// payloadValue keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if event.EventPayload == nil {
 
 		return nil
@@ -1492,6 +1792,9 @@ func payloadValue(event trace.Event, key string) any {
 	return event.EventPayload[key]
 }
 func requiredEvidenceIDs(contract trace.Contract) []string {
+	// requiredEvidenceIDs keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	ids := make([]string, 0, len(contract.RequiredEvidence))
 	for _, requirement := range contract.RequiredEvidence {
@@ -1502,6 +1805,9 @@ func requiredEvidenceIDs(contract trace.Contract) []string {
 	return ids
 }
 func evaluateRequiredRuns(rows []RunRow, contract trace.Contract) []RequiredRunResult {
+	// evaluateRequiredRuns keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	results := make([]RequiredRunResult, 0, len(contract.RequiredRuns))
 	rowsByWrapper := firstRowByWrapper(rows)
@@ -1523,6 +1829,9 @@ func evaluateRequiredRuns(rows []RunRow, contract trace.Contract) []RequiredRunR
 }
 
 func requiredRunResultTemplate(required trace.RequiredRun, profile string) RequiredRunResult {
+	// requiredRunResultTemplate keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return RequiredRunResult{
 		ID:          required.ID,
@@ -1536,6 +1845,9 @@ func requiredRunResultTemplate(required trace.RequiredRun, profile string) Requi
 }
 
 func firstRowByWrapper(rows []RunRow) map[string]RunRow {
+	// firstRowByWrapper keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	matches := make(map[string]RunRow, len(rows))
 	for _, row := range rows {
@@ -1548,6 +1860,9 @@ func firstRowByWrapper(rows []RunRow) map[string]RunRow {
 }
 
 func matchRequiredRun(row RunRow, required trace.RequiredRun, result RequiredRunResult) RequiredRunResult {
+	// matchRequiredRun keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.MatchedRunID = row.RunID
 	result.State = GatePass
@@ -1562,6 +1877,9 @@ func matchRequiredRun(row RunRow, required trace.RequiredRun, result RequiredRun
 }
 
 func missingEvidenceID(row RunRow, requiredEvidence []string) (string, bool) {
+	// missingEvidenceID keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, evidenceID := range requiredEvidence {
 		if row.Kind != evidenceID {
@@ -1572,6 +1890,9 @@ func missingEvidenceID(row RunRow, requiredEvidence []string) (string, bool) {
 }
 
 func cannotVerifyRequiredRunEvidence(result RequiredRunResult, requiredID, evidenceID string) RequiredRunResult {
+	// cannotVerifyRequiredRunEvidence keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.State = GateCannotVerify
 	result.Reasons = []string{fmt.Sprintf("required run %s missing evidence %s", requiredID, evidenceID)}
@@ -1579,6 +1900,9 @@ func cannotVerifyRequiredRunEvidence(result RequiredRunResult, requiredID, evide
 }
 
 func cannotVerifyRequiredRun(result RequiredRunResult, requiredID, runName string) RequiredRunResult {
+	// cannotVerifyRequiredRun keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.State = GateCannotVerify
 	result.Reasons = []string{fmt.Sprintf("required run %s cannot verify from run %s", requiredID, runName)}
@@ -1586,6 +1910,9 @@ func cannotVerifyRequiredRun(result RequiredRunResult, requiredID, runName strin
 }
 
 func applyProtectedFutureConstraint(result RequiredRunResult, requiredID string) RequiredRunResult {
+	// applyProtectedFutureConstraint keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 	if result.Profile != GateModeProtectedFuture {
 		return result
 	}
@@ -1594,6 +1921,9 @@ func applyProtectedFutureConstraint(result RequiredRunResult, requiredID string)
 }
 
 func cannotVerifyRequiredRunReason(result RequiredRunResult, requiredID, reason string) RequiredRunResult {
+	// cannotVerifyRequiredRunReason keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	result.State = GateCannotVerify
 	result.Reasons = []string{fmt.Sprintf("required run %s %s", requiredID, reason)}
@@ -1601,6 +1931,9 @@ func cannotVerifyRequiredRunReason(result RequiredRunResult, requiredID, reason 
 }
 
 func gateMode(contract trace.Contract) string {
+	// gateMode keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	mode := GateModeObservation
 	for _, required := range contract.RequiredRuns {
@@ -1614,6 +1947,9 @@ func gateMode(contract trace.Contract) string {
 	return mode
 }
 func gateConditions(result GateResult) []GateCondition {
+	// gateConditions keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	requiredRunsState := requiredRunsGateState(result.RequiredRuns)
 	requiredEvidenceState := requiredEvidenceGateState(result.RequiredEvidence, result.ObservedEvidence)
@@ -1626,6 +1962,9 @@ func gateConditions(result GateResult) []GateCondition {
 }
 
 func requiredRunsGateState(requiredRuns []RequiredRunResult) string {
+	// requiredRunsGateState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	state := GatePass
 	for _, run := range requiredRuns {
@@ -1637,6 +1976,9 @@ func requiredRunsGateState(requiredRuns []RequiredRunResult) string {
 }
 
 func requiredEvidenceGateState(requiredEvidence, observedEvidence []string) string {
+	// requiredEvidenceGateState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, id := range requiredEvidence {
 		if !containsString(observedEvidence, id) {
@@ -1651,6 +1993,9 @@ func applyWitness(result GateResult, witnessPath string) GateResult {
 	return applyWitnessWithExpectation(result, witnessPath, WitnessExpectation{})
 }
 func applyWitnessWithExpectation(result GateResult, witnessPath string, expected WitnessExpectation) GateResult {
+	// applyWitnessWithExpectation keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	record, err := loadWitnessSummary(witnessPath)
 	if err != nil {
@@ -1675,6 +2020,9 @@ func ciWitnessVerified(record WitnessSummary) bool {
 }
 
 func applyVerifiedCIWitness(result GateResult, record WitnessSummary, expected WitnessExpectation) GateResult {
+	// applyVerifiedCIWitness keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if bindingState, bindingReasons := witnessBindingState(record, expected); bindingState != GatePass {
 		result.CIWitnessGate = bindingState
@@ -1708,6 +2056,9 @@ func loadWitnessSummary(path string) (WitnessSummary, error) {
 }
 
 func witnessBindingState(record WitnessSummary, expected WitnessExpectation) (string, []string) {
+	// witnessBindingState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for _, binding := range witnessScalarBindings(record, expected) {
 		if state, reasons := validateWitnessScalarBinding(binding); state != GatePass {
@@ -1718,6 +2069,9 @@ func witnessBindingState(record WitnessSummary, expected WitnessExpectation) (st
 }
 
 func witnessScalarBindings(record WitnessSummary, expected WitnessExpectation) []witnessScalarBinding {
+	// witnessScalarBindings keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	return []witnessScalarBinding{
 		{label: "repository", expected: expected.Repository, actual: record.Source.Repository},
@@ -1728,6 +2082,9 @@ func witnessScalarBindings(record WitnessSummary, expected WitnessExpectation) [
 }
 
 func validateWitnessScalarBinding(binding witnessScalarBinding) (string, []string) {
+	// validateWitnessScalarBinding keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	if binding.expected == "" {
 		return GatePass, nil
@@ -1741,6 +2098,9 @@ func validateWitnessScalarBinding(binding witnessScalarBinding) (string, []strin
 	return GatePass, nil
 }
 func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (string, []string) {
+	// witnessArtifactBindingState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	expectedArtifacts := witnessArtifactsByPath(expected)
 	seenArtifacts := map[string]bool{}
@@ -1754,6 +2114,9 @@ func witnessArtifactBindingState(actual, expected []WitnessArtifactDigest) (stri
 }
 
 func missingWitnessArtifactState(expectedArtifacts map[string]string, seenArtifacts map[string]bool) (string, []string) {
+	// missingWitnessArtifactState keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	for path := range expectedArtifacts {
 		if !seenArtifacts[path] {
@@ -1764,6 +2127,9 @@ func missingWitnessArtifactState(expectedArtifacts map[string]string, seenArtifa
 }
 
 func witnessArtifactsByPath(artifacts []WitnessArtifactDigest) map[string]string {
+	// witnessArtifactsByPath keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	byPath := map[string]string{}
 	for _, artifact := range artifacts {
@@ -1773,6 +2139,9 @@ func witnessArtifactsByPath(artifacts []WitnessArtifactDigest) map[string]string
 }
 
 func validateWitnessArtifact(artifact WitnessArtifactDigest, expected map[string]string) (string, []string) {
+	// validateWitnessArtifact keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	expectedDigest, ok := expected[artifact.Path]
 	if !ok {
@@ -1785,6 +2154,9 @@ func validateWitnessArtifact(artifact WitnessArtifactDigest, expected map[string
 }
 
 func witnessExpectationFromTarget(target string) (WitnessExpectation, error) {
+	// witnessExpectationFromTarget keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	runDirs, err := DiscoverRunDirs(target)
 	if err != nil {
@@ -1803,6 +2175,9 @@ func witnessExpectationFromTarget(target string) (WitnessExpectation, error) {
 }
 
 func witnessRunArtifactDigest(runDir string) (WitnessArtifactDigest, error) {
+	// witnessRunArtifactDigest keeps demo gate evidence explicit and replay-bound.
+	// Local rows, contract requirements, witness bindings, protected gates, and artifacts stay separate.
+	// This helper renders or aggregates demo evidence; it does not create external proof.
 
 	digest, err := hashFile(filepath.Join(runDir, "run.json"))
 	return WitnessArtifactDigest{
