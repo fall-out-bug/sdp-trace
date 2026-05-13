@@ -200,6 +200,8 @@ type Condition struct {
 }
 
 func Evaluate(input Input) AssessmentResult {
+	// Evaluation turns managed-adapter evidence into explicit condition states,
+	// never into an opaque health score or implicit managed-mode approval.
 	conditions := managedConditions(input)
 	result := managedAssessmentResult(conditions)
 	if result.ManagedHarnessAssessment != StatePass {
@@ -212,6 +214,8 @@ func Evaluate(input Input) AssessmentResult {
 }
 
 func managedConditions(input Input) []Condition {
+	// Conditions are grouped by authority, observation, and closure so missing
+	// evidence stays separate from failed evidence.
 
 	conditions := managedAuthorityConditions(input)
 	conditions = append(conditions, managedObservationConditions(input)...)
@@ -220,6 +224,8 @@ func managedConditions(input Input) []Condition {
 }
 
 func managedAuthorityConditions(input Input) []Condition {
+	// Authority conditions decide whether the selected adapter was permitted before
+	// observation evidence can be trusted.
 
 	return []Condition{
 		pass("managed_profile_explicitly_selected", "managed_profile_selected", "managed harness profile was explicitly selected"),
@@ -232,6 +238,8 @@ func managedAuthorityConditions(input Input) []Condition {
 }
 
 func managedObservationConditions(input Input) []Condition {
+	// Observation conditions check adapter activity, event coverage, suppression,
+	// bypasses, and witness data without upgrading missing observations.
 
 	return []Condition{
 		adapterActivationCondition(input),
@@ -246,6 +254,8 @@ func managedObservationConditions(input Input) []Condition {
 }
 
 func managedClosureConditions(input Input) []Condition {
+	// Closure conditions bind override and witness evidence after observation checks
+	// have identified the adapter and event surface.
 
 	return []Condition{
 		witnessCondition(input),
@@ -254,6 +264,8 @@ func managedClosureConditions(input Input) []Condition {
 }
 
 func managedAssessmentResult(conditions []Condition) AssessmentResult {
+	// Result assembly keeps condition states, reasons, and next actions tied to the
+	// machine evidence emitted by each managed gate.
 
 	return AssessmentResult{
 		SchemaVersion:            SchemaVersion,
@@ -264,6 +276,8 @@ func managedAssessmentResult(conditions []Condition) AssessmentResult {
 	}
 }
 func policyCondition(policy Policy) Condition {
+	// Policy evidence is required before adapter authorization can be considered
+	// managed rather than local observation.
 	if policy.PolicyID == "" {
 
 		return cannotVerify("managed_policy_loaded", "missing_managed_policy", "managed policy is required", "Supply a managed policy anchored before the run.")
@@ -276,6 +290,8 @@ func policyCondition(policy Policy) Condition {
 }
 
 func registryCondition(registry Registry) Condition {
+	// Registry evidence names whether the adapter exists in the declared registry
+	// instead of treating any selected adapter as trusted.
 	if registry.RegistryID == "" {
 
 		return cannotVerify("adapter_registry_loaded", "missing_adapter_registry", "adapter registry is required", "Supply an adapter registry anchored before the run.")
@@ -288,6 +304,8 @@ func registryCondition(registry Registry) Condition {
 }
 
 func boundaryCondition(input Input) Condition {
+	// Boundary evidence keeps selected adapter identity and task boundary checks
+	// explicit before capability or event coverage is evaluated.
 	boundary := input.Run.ManagedBoundaryEnrolled
 	if boundary == nil {
 
@@ -313,6 +331,9 @@ func boundaryBindingMismatch(boundary ManagedBoundaryEnrolled, input Input) bool
 }
 
 func adapterIdentityCondition(input Input) Condition {
+	// adapterIdentityCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	adapter, ok := selectedAdapter(input)
 	if !ok {
 
@@ -325,6 +346,9 @@ func adapterIdentityCondition(input Input) Condition {
 }
 
 func adapterIdentityAuthorized(input Input, adapter Adapter) bool {
+	// adapterIdentityAuthorized preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if adapter.IdentityState != IdentityVerified {
 
 		return false
@@ -334,6 +358,8 @@ func adapterIdentityAuthorized(input Input, adapter Adapter) bool {
 }
 
 func capabilityCondition(input Input) Condition {
+	// Capability checks compare policy requirements to selected adapter claims
+	// without assuming adapter self-description is sufficient proof.
 	adapter, ok := selectedAdapter(input)
 	if !ok {
 
@@ -343,6 +369,9 @@ func capabilityCondition(input Input) Condition {
 }
 
 func selectedAdapterCapabilityCondition(input Input, adapter Adapter) Condition {
+	// selectedAdapterCapabilityCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	authorized, condition, ok := managedCapabilityPolicy(input, adapter)
 	if !ok {
 		return condition
@@ -358,6 +387,9 @@ func selectedAdapterCapabilityCondition(input Input, adapter Adapter) Condition 
 	return pass("adapter_capabilities_satisfy_contract", "adapter_capabilities_satisfy_contract", "adapter capabilities cover required event types")
 }
 func managedCapabilityPolicy(input Input, adapter Adapter) (AuthorizedAdapter, Condition, bool) {
+	// managedCapabilityPolicy preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	authorized, ok := selectedAuthorizedAdapter(input, adapter)
 	if !ok || len(authorized.CapabilityIDs) == 0 {
 
@@ -367,6 +399,9 @@ func managedCapabilityPolicy(input Input, adapter Adapter) (AuthorizedAdapter, C
 }
 
 func adapterSatisfiesPolicyCapabilities(adapter Adapter, authorized AuthorizedAdapter) bool {
+	// adapterSatisfiesPolicyCapabilities preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	capabilityRefs := stringSet(adapter.CapabilityRefs)
 	capabilityIDs := adapterCapabilityIDs(adapter)
 	for _, capabilityID := range authorized.CapabilityIDs {
@@ -379,6 +414,9 @@ func adapterSatisfiesPolicyCapabilities(adapter Adapter, authorized AuthorizedAd
 }
 
 func adapterCapabilityIDs(adapter Adapter) map[string]bool {
+	// adapterCapabilityIDs preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	capabilityIDs := map[string]bool{}
 	for _, capability := range adapter.Capabilities {
 
@@ -391,6 +429,9 @@ func capabilityDeclared(capabilityID string, refs, ids map[string]bool) bool {
 	return refs[capabilityID] && ids[capabilityID]
 }
 func adapterCapabilitiesCoverEvents(input Input, adapter Adapter, authorized AuthorizedAdapter) bool {
+	// adapterCapabilitiesCoverEvents preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	capEvents := authorizedCapabilityEvents(adapter, authorized)
 	for _, eventType := range requiredEventTypes(input) {
 		if !capEvents[eventType] {
@@ -402,6 +443,9 @@ func adapterCapabilitiesCoverEvents(input Input, adapter Adapter, authorized Aut
 }
 
 func authorizedCapabilityEvents(adapter Adapter, authorized AuthorizedAdapter) map[string]bool {
+	// authorizedCapabilityEvents preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	authorizedCapabilityIDs := stringSet(authorized.CapabilityIDs)
 	capEvents := map[string]bool{}
 	for _, capability := range adapter.Capabilities {
@@ -418,6 +462,9 @@ func authorizedCapabilityEvents(adapter Adapter, authorized AuthorizedAdapter) m
 }
 
 func adapterActivationCondition(input Input) Condition {
+	// adapterActivationCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if input.Run.ManagedBoundaryEnrolled == nil || input.Run.ManagedBoundaryEnrolled.AdapterID == "" {
 
 		return cannotVerify("adapter_activation_observed", "adapter_activation_missing", "adapter activation cannot be verified", "Record adapter activation before child launch.")
@@ -426,6 +473,9 @@ func adapterActivationCondition(input Input) Condition {
 }
 
 func adapterConnectionCondition(input Input) Condition {
+	// adapterConnectionCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if input.Run.AdapterDisconnectObserved {
 		return fail("adapter_connection_continuous", "adapter_disconnect_observed", "adapter disconnected during required managed observation window", "Rerun with continuous managed adapter connection.")
 	}
@@ -434,6 +484,8 @@ func adapterConnectionCondition(input Input) Condition {
 }
 
 func eventGroupCondition(input Input, id, group string) Condition {
+	// Event group checks preserve missing, suppressed, and observed event states as
+	// separate managed-mode evidence outcomes.
 	required := eventTypesForGroup(input, group)
 	if len(required) == 0 {
 
@@ -447,6 +499,9 @@ func eventGroupCondition(input Input, id, group string) Condition {
 }
 
 func allEventsObserved(events []EvidenceEvent, required, scopes []string) bool {
+	// allEventsObserved preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, eventType := range required {
 		if !eventObserved(events, eventType, scopes) {
 
@@ -457,6 +512,9 @@ func allEventsObserved(events []EvidenceEvent, required, scopes []string) bool {
 }
 
 func missingEventGroupCondition(input Input, id, group string) Condition {
+	// missingEventGroupCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	reasonPrefix := group
 	if group == "file" {
 
@@ -469,6 +527,9 @@ func missingEventGroupCondition(input Input, id, group string) Condition {
 }
 
 func suppressedEventGroupCondition(input Input, id, group, reasonPrefix string) (Condition, bool) {
+	// suppressedEventGroupCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	suppressed, valid, satisfies := suppressionForGroup(input, group)
 	if !suppressed {
 
@@ -478,6 +539,9 @@ func suppressedEventGroupCondition(input Input, id, group, reasonPrefix string) 
 }
 
 func validSuppressedEventGroupCondition(id, group, reasonPrefix string, valid, satisfies bool) (Condition, bool) {
+	// validSuppressedEventGroupCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if valid && satisfies {
 
 		return pass(id, reasonPrefix+"_event_suppressed_by_policy", "required "+group+" event is suppressed by policy for this profile"), true
@@ -490,6 +554,8 @@ func validSuppressedEventGroupCondition(id, group, reasonPrefix string, valid, s
 }
 
 func testProvenanceCondition(input Input) Condition {
+	// Test provenance evidence is evaluated independently because observed events
+	// do not prove tests actually ran.
 	if eventObserved(input.Run.TestEvidence, "test_observed", []string{"local_observed", "ci_witnessed"}) {
 
 		return pass("test_provenance_not_agent_reported", "test_provenance_not_agent_reported", "test evidence is wrapper or CI observed")
@@ -502,6 +568,9 @@ func testProvenanceCondition(input Input) Condition {
 }
 
 func suppressionCondition(input Input) Condition {
+	// suppressionCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, suppressed := range input.Run.SuppressedEventGroups {
 		if !suppressionVerified(input.Policy, suppressed) {
 
@@ -512,6 +581,9 @@ func suppressionCondition(input Input) Condition {
 }
 
 func suppressionVerified(policy Policy, suppressed SuppressedEventGroup) bool {
+	// suppressionVerified preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	rule, ok := suppressionRuleForGroup(policy, suppressed.EventGroup)
 
 	return ok &&
@@ -520,6 +592,8 @@ func suppressionVerified(policy Policy, suppressed SuppressedEventGroup) bool {
 		preRunProvenance(rule.PolicyProvenanceSource)
 }
 func bypassCondition(input Input) Condition {
+	// Bypass evidence remains explicit so an intentional bypass cannot look like
+	// a passing managed-adapter observation.
 	if input.Run.BypassObserved {
 		return fail("bypass_not_observed", "bypass_observed", "managed boundary bypass was observed", "Rerun without bypass or lower the claim.")
 	}
@@ -527,6 +601,8 @@ func bypassCondition(input Input) Condition {
 	return pass("bypass_not_observed", "bypass_not_observed", "no managed boundary bypass is observed")
 }
 func witnessCondition(input Input) Condition {
+	// Witness evidence binds managed output back to run/report artifacts rather
+	// than trusting a checked-in witness record by itself.
 	witness := input.Witness
 	if condition, ok := missingManagedWitnessCondition(input.Run, witness); ok {
 		return condition
@@ -539,6 +615,9 @@ func witnessCondition(input Input) Condition {
 }
 
 func missingManagedWitnessCondition(run RunEvidence, witness Witness) (Condition, bool) {
+	// missingManagedWitnessCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if witness.WitnessID == "" {
 
 		return cannotVerify("managed_witness_bound", "managed_witness_missing", "managed witness evidence is required", "Supply managed witness evidence bound to the run."), true
@@ -547,6 +626,9 @@ func missingManagedWitnessCondition(run RunEvidence, witness Witness) (Condition
 }
 
 func invalidManagedWitnessCondition(run RunEvidence, witness Witness) (Condition, bool) {
+	// invalidManagedWitnessCondition preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	switch {
 	case missingManagedWitnessPassState(witness):
 
@@ -568,6 +650,9 @@ func missingWitnessArtifacts(run RunEvidence, witness Witness) bool {
 }
 
 func managedWitnessMismatches(input Input) bool {
+	// managedWitnessMismatches preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	boundary := input.Run.ManagedBoundaryEnrolled
 	if boundary == nil {
 
@@ -577,6 +662,9 @@ func managedWitnessMismatches(input Input) bool {
 }
 
 func managedWitnessBindingMismatch(input Input, boundary ManagedBoundaryEnrolled) bool {
+	// managedWitnessBindingMismatch preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 
 	return !witnessMatchesRun(input.Witness, input.Run) ||
 		!witnessMatchesAuthority(input.Witness, input.Policy, input.Registry) ||
@@ -609,6 +697,8 @@ func witnessMatchesEvents(witness Witness, run RunEvidence, boundary ManagedBoun
 }
 
 func overrideCondition(input Input) Condition {
+	// Override evidence is terminal closure context; it does not erase earlier
+	// adapter, event, or witness failures.
 	if input.Run.OverrideAttemptsTrustUpgrade {
 
 		return fail("override_does_not_upgrade_managed_profile", "override_upgrade_rejected", "override artifact attempts to upgrade managed profile state", "Record override as non-upgrading evidence only.")
@@ -620,6 +710,9 @@ func overrideCondition(input Input) Condition {
 }
 
 func selectedAdapter(input Input) (Adapter, bool) {
+	// selectedAdapter preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if input.Run.ManagedBoundaryEnrolled == nil {
 		return Adapter{}, false
 	}
@@ -633,6 +726,9 @@ func selectedAdapter(input Input) (Adapter, bool) {
 }
 
 func selectedAuthorizedAdapter(input Input, adapter Adapter) (AuthorizedAdapter, bool) {
+	// selectedAuthorizedAdapter preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, allowed := range input.Policy.AuthorizedAdapters {
 		if authorizedAdapterMatches(allowed, adapter) {
 
@@ -643,6 +739,9 @@ func selectedAuthorizedAdapter(input Input, adapter Adapter) (AuthorizedAdapter,
 }
 
 func authorizedAdapterMatches(allowed AuthorizedAdapter, adapter Adapter) bool {
+	// authorizedAdapterMatches preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 
 	return allowed.AdapterID == adapter.AdapterID &&
 		allowed.HarnessID == adapter.HarnessID &&
@@ -650,6 +749,9 @@ func authorizedAdapterMatches(allowed AuthorizedAdapter, adapter Adapter) bool {
 		allowed.DeploymentRef == adapter.DeploymentRef
 }
 func requiredEventTypes(input Input) []string {
+	// requiredEventTypes preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if len(input.Contract.RequiredEventTypes) > 0 {
 
 		return input.Contract.RequiredEventTypes
@@ -658,6 +760,9 @@ func requiredEventTypes(input Input) []string {
 }
 
 func policyRequiredEventTypes(policy Policy) []string {
+	// policyRequiredEventTypes preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	var out []string
 	for _, group := range policy.RequiredEventGroups {
 
@@ -667,6 +772,9 @@ func policyRequiredEventTypes(policy Policy) []string {
 }
 
 func stringSet(values []string) map[string]bool {
+	// stringSet preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	out := map[string]bool{}
 	for _, value := range values {
 
@@ -676,6 +784,9 @@ func stringSet(values []string) map[string]bool {
 }
 
 func eventTypesForGroup(input Input, groupID string) []string {
+	// eventTypesForGroup preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, group := range input.Policy.RequiredEventGroups {
 		if group.ID == groupID {
 
@@ -686,6 +797,9 @@ func eventTypesForGroup(input Input, groupID string) []string {
 }
 
 func acceptableScopesForGroup(input Input, groupID string) []string {
+	// acceptableScopesForGroup preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, group := range input.Policy.RequiredEventGroups {
 		if group.ID == groupID {
 
@@ -695,6 +809,9 @@ func acceptableScopesForGroup(input Input, groupID string) []string {
 	return nil
 }
 func suppressionForGroup(input Input, groupID string) (bool, bool, bool) {
+	// suppressionForGroup preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	suppressed, ok := selectedSuppressedEventGroup(input.Run.SuppressedEventGroups, groupID)
 	if !ok {
 		return false, false, false
@@ -709,6 +826,9 @@ func suppressionForGroup(input Input, groupID string) (bool, bool, bool) {
 }
 
 func selectedSuppressedEventGroup(groups []SuppressedEventGroup, groupID string) (SuppressedEventGroup, bool) {
+	// selectedSuppressedEventGroup preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, suppressed := range groups {
 		if suppressed.EventGroup == groupID {
 
@@ -719,6 +839,9 @@ func selectedSuppressedEventGroup(groups []SuppressedEventGroup, groupID string)
 }
 
 func verifiedSuppressionRule(policy Policy, suppressed SuppressedEventGroup) (SuppressionRule, bool) {
+	// verifiedSuppressionRule preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	rule, ok := suppressionRuleForGroup(policy, suppressed.EventGroup)
 	if !ok || !suppressionVerified(policy, suppressed) {
 
@@ -728,6 +851,9 @@ func verifiedSuppressionRule(policy Policy, suppressed SuppressedEventGroup) (Su
 }
 
 func suppressionRuleForGroup(policy Policy, groupID string) (SuppressionRule, bool) {
+	// suppressionRuleForGroup preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, rule := range policy.SuppressionRules {
 		if rule.EventGroup == groupID {
 
@@ -738,6 +864,9 @@ func suppressionRuleForGroup(policy Policy, groupID string) (SuppressionRule, bo
 }
 
 func eventObserved(events []EvidenceEvent, eventType string, scopes []string) bool {
+	// eventObserved preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	scopeSet := scopeSet(scopes)
 	for _, event := range events {
 		if eventObservedInScope(event, eventType, scopeSet) {
@@ -749,6 +878,9 @@ func eventObserved(events []EvidenceEvent, eventType string, scopes []string) bo
 }
 
 func scopeSet(scopes []string) map[string]bool {
+	// scopeSet preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	scopeSet := map[string]bool{}
 	for _, scope := range scopes {
 
@@ -762,6 +894,9 @@ func eventObservedInScope(event EvidenceEvent, eventType string, scopes map[stri
 }
 
 func preRunProvenance(source string) bool {
+	// preRunProvenance preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	switch source {
 	case "vcs", "ci_config", "human_signed", "customer_policy_equivalent":
 
@@ -772,6 +907,9 @@ func preRunProvenance(source string) bool {
 }
 
 func artifactsMatch(expected, observed []ArtifactDigest) bool {
+	// artifactsMatch preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if len(expected) == 0 || len(observed) == 0 {
 
 		return false
@@ -783,6 +921,9 @@ func artifactsMatch(expected, observed []ArtifactDigest) bool {
 	return len(want) == 0
 }
 func consumeMatchingArtifacts(want map[string]string, observed []ArtifactDigest) bool {
+	// consumeMatchingArtifacts preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	for _, artifact := range observed {
 		if want[artifact.Path] != artifact.SHA256 {
 
@@ -794,6 +935,9 @@ func consumeMatchingArtifacts(want map[string]string, observed []ArtifactDigest)
 }
 
 func artifactDigestsByPath(artifacts []ArtifactDigest) map[string]string {
+	// artifactDigestsByPath preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	want := map[string]string{}
 	for _, artifact := range artifacts {
 
@@ -803,6 +947,8 @@ func artifactDigestsByPath(artifacts []ArtifactDigest) map[string]string {
 }
 
 func topLevel(conditions []Condition) string {
+	// Top-level state reports the strongest non-pass condition without averaging
+	// managed adapter evidence.
 	state := StatePass
 	for _, condition := range conditions {
 
@@ -812,6 +958,9 @@ func topLevel(conditions []Condition) string {
 }
 
 func worse(current, next string) string {
+	// worse preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if severity(next) > severity(current) {
 
 		return topLevelState(next)
@@ -820,6 +969,9 @@ func worse(current, next string) string {
 }
 
 func topLevelState(state string) string {
+	// topLevelState preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	switch state {
 	case StateMissingTelemetry, StateNotIntegrated, StateUnsupported, StateSuppressed:
 
@@ -834,6 +986,9 @@ func severity(state string) int {
 }
 
 func managedSeverityByState(state string) int {
+	// managedSeverityByState preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 
 	return map[string]int{
 		StateFail:         4,
@@ -844,6 +999,8 @@ func managedSeverityByState(state string) int {
 }
 
 func reasons(conditions []Condition) []string {
+	// Reasons are derived from condition IDs and states so prose does not become
+	// independent authority.
 	ordered := orderConditions(conditions)
 	out := []string{}
 	for _, condition := range ordered {
@@ -856,12 +1013,17 @@ func reasons(conditions []Condition) []string {
 }
 
 func nextActions(conditions []Condition) []string {
+	// Next actions point at concrete missing evidence boundaries needed for a
+	// replayable managed-mode verdict.
 
 	ordered := orderConditions(conditions)
 	seen := map[string]bool{}
 	return collectNextActions(ordered, seen)
 }
 func collectNextActions(ordered []Condition, seen map[string]bool) []string {
+	// collectNextActions preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	out := []string{}
 	for _, condition := range ordered {
 		if skipNextAction(condition, seen) {
@@ -879,6 +1041,9 @@ func skipNextAction(condition Condition, seen map[string]bool) bool {
 }
 
 func orderConditions(conditions []Condition) []Condition {
+	// orderConditions preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 
 	index := conditionOrderIndex()
 	ordered := append([]Condition(nil), conditions...)
@@ -889,6 +1054,9 @@ func orderConditions(conditions []Condition) []Condition {
 }
 
 func conditionOrderIndex() map[string]int {
+	// conditionOrderIndex preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	index := map[string]int{}
 	for i, id := range managedConditionIDs {
 
@@ -898,6 +1066,9 @@ func conditionOrderIndex() map[string]int {
 }
 
 func conditionLess(ordered []Condition, index map[string]int, i, j int) bool {
+	// conditionLess preserves managed-adapter evidence as explicit state.
+	// Missing, failed, suppressed, bypassed, and not-assessed inputs stay distinct.
+	// The helper does not convert local adapter data into external proof.
 	if severity(ordered[i].State) != severity(ordered[j].State) {
 
 		return severity(ordered[i].State) > severity(ordered[j].State)
