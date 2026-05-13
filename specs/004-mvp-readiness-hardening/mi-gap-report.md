@@ -16,7 +16,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 32 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| File MI | 29 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
 | Function MI | 1301 stderr rows | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
