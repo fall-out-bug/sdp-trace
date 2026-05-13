@@ -151,6 +151,9 @@ func ForensicsBasicPack(runDir string) (QueryPackResult, error) {
 }
 
 func forensicsBasicPack(inputs packInputs, err error) (QueryPackResult, error) {
+	// forensicsBasicPack keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if err != nil {
 
 		return QueryPackResult{}, err
@@ -159,6 +162,9 @@ func forensicsBasicPack(inputs packInputs, err error) (QueryPackResult, error) {
 }
 
 func buildForensicsBasicPack(inputs packInputs) QueryPackResult {
+	// buildForensicsBasicPack keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	builder := newPackBuilder(inputs)
 	if inputs.runErr != nil {
@@ -175,6 +181,9 @@ func buildForensicsBasicPack(inputs packInputs) QueryPackResult {
 }
 
 func ExplainForensicsPack(result QueryPackResult) string {
+	// ExplainForensicsPack keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var lines []string
 	for _, queryName := range queryOrder {
 
@@ -187,6 +196,9 @@ func ExplainForensicsPack(result QueryPackResult) string {
 }
 
 func loadPackInputs(runDir string) (packInputs, error) {
+	// loadPackInputs keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var run runArtifact
 	runArtifact, err := readPackArtifact(filepath.Join(runDir, "run.json"), "run", "run", true, &run)
 	if err != nil && runArtifact.Role == "" {
@@ -198,6 +210,9 @@ func loadPackInputs(runDir string) (packInputs, error) {
 }
 
 func sortedQueryRows(rows []QueryPackRow) []QueryPackRow {
+	// sortedQueryRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	sorted := append([]QueryPackRow(nil), rows...)
 
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID })
@@ -205,6 +220,9 @@ func sortedQueryRows(rows []QueryPackRow) []QueryPackRow {
 }
 
 func explainQueryRow(queryName string, row QueryPackRow) string {
+	// explainQueryRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	parts := []string{queryName, row.ID, row.EvidenceState, row.EvidenceFamily}
 	parts = append(parts, "source_ref="+row.SourceRef)
@@ -218,6 +236,9 @@ func explainQueryRow(queryName string, row QueryPackRow) string {
 }
 
 func appendOptionalPart(parts []string, key, value string) []string {
+	// appendOptionalPart keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if value == "" {
 
 		return parts
@@ -226,6 +247,9 @@ func appendOptionalPart(parts []string, key, value string) []string {
 }
 
 func loadOptionalPackInputs(runDir string, inputs packInputs) (packInputs, error) {
+	// loadOptionalPackInputs keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var err error
 
 	inputs, err = loadForensicInput(runDir, inputs)
@@ -236,6 +260,9 @@ func loadOptionalPackInputs(runDir string, inputs packInputs) (packInputs, error
 }
 
 func loadForensicInput(runDir string, inputs packInputs) (packInputs, error) {
+	// loadForensicInput keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var forensic assessmentEnvelope
 	artifact, present, err := readOptionalPackArtifact(filepath.Join(runDir, "forensic-retention.assessment-result.json"), "forensic_retention", "forensic_retention", false, &forensic)
 	if err != nil && artifact.Role == "" {
@@ -253,6 +280,9 @@ func loadForensicInput(runDir string, inputs packInputs) (packInputs, error) {
 }
 
 func loadAdapterInput(runDir string, inputs packInputs) (packInputs, error) {
+	// loadAdapterInput keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var adapter assessmentEnvelope
 	artifact, present, err := readOptionalPackArtifact(filepath.Join(runDir, "adapter-capture.assessment-result.json"), "adapter_capture", "adapter_capture", false, &adapter)
 	if err != nil && artifact.Role == "" {
@@ -270,6 +300,9 @@ func loadAdapterInput(runDir string, inputs packInputs) (packInputs, error) {
 }
 
 func readOptionalPackArtifact(path, role, redactedID string, required bool, target any) (QueryPackInputArtifact, bool, error) {
+	// readOptionalPackArtifact keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if _, err := os.Stat(path); err != nil {
 
 		return optionalArtifactStatResult(err, role, redactedID, required)
@@ -280,6 +313,9 @@ func readOptionalPackArtifact(path, role, redactedID string, required bool, targ
 }
 
 func optionalArtifactStatResult(err error, role, redactedID string, required bool) (QueryPackInputArtifact, bool, error) {
+	// optionalArtifactStatResult keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if errors.Is(err, os.ErrNotExist) {
 
 		return QueryPackInputArtifact{}, false, nil
@@ -292,6 +328,9 @@ func optionalArtifactStatResult(err error, role, redactedID string, required boo
 }
 
 func readPackArtifact(path, role, redactedID string, required bool, target any) (QueryPackInputArtifact, error) {
+	// readPackArtifact keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	artifact := QueryPackInputArtifact{
 		Role:             role,
 		PathRedactedID:   redactedID,
@@ -318,6 +357,9 @@ func sha256Hex(payload []byte) string {
 }
 
 func readArtifactSchemaVersion(payload []byte) string {
+	// readArtifactSchemaVersion keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var envelope struct {
 		SchemaVersion string `json:"schema_version"`
 	}
@@ -335,6 +377,9 @@ type packBuilder struct {
 }
 
 func newPackBuilder(inputs packInputs) *packBuilder {
+	// newPackBuilder keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	rows := map[string][]QueryPackRow{}
 	for _, queryName := range queryOrder {
 
@@ -344,6 +389,9 @@ func newPackBuilder(inputs packInputs) *packBuilder {
 }
 
 func (b *packBuilder) result() QueryPackResult {
+	// result keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	return QueryPackResult{
 		SchemaVersion:    QueryPackSchemaVersion,
@@ -359,6 +407,9 @@ func (b *packBuilder) result() QueryPackResult {
 }
 
 func (b *packBuilder) inputArtifacts() []QueryPackInputArtifact {
+	// inputArtifacts keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	artifacts := []QueryPackInputArtifact{b.inputs.runArtifact}
 	artifacts = appendObservedArtifact(artifacts, b.inputs.forensicArtifact)
 	artifacts = appendObservedArtifact(artifacts, b.inputs.adapterArtifact)
@@ -368,6 +419,9 @@ func (b *packBuilder) inputArtifacts() []QueryPackInputArtifact {
 }
 
 func appendObservedArtifact(artifacts []QueryPackInputArtifact, artifact *QueryPackInputArtifact) []QueryPackInputArtifact {
+	// appendObservedArtifact keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if artifact == nil {
 		return artifacts
 	}
@@ -376,6 +430,9 @@ func appendObservedArtifact(artifacts []QueryPackInputArtifact, artifact *QueryP
 }
 
 func (b *packBuilder) outputSafety() QueryPackOutputSafety {
+	// outputSafety keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	return QueryPackOutputSafety{
 		RedactionPolicyDigest:          b.inputs.run.RedactionDigest,
@@ -389,6 +446,9 @@ func (b *packBuilder) addTimelineRows() {
 }
 
 func (b *packBuilder) addRunTimelineRows() {
+	// addRunTimelineRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if len(b.inputs.run.EventRefs) == 0 {
 
 		b.addRow(QueryForensicsTimeline, RowStatePresent, EvidenceFamilyRunChain, "block_09.run.run_id", "", "", "run_timeline_available", "")
@@ -408,6 +468,9 @@ func (b *packBuilder) addOptionalTimelineRows() {
 }
 
 func (b *packBuilder) addOptionalTimelineRow(present bool, inputErr error, family, block, missingReason string) {
+	// addOptionalTimelineRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if !present {
 
 		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, family, block+".condition.missing", "", "", missingReason, family)
@@ -420,6 +483,9 @@ func (b *packBuilder) addOptionalTimelineRow(present bool, inputErr error, famil
 }
 
 func (b *packBuilder) addMalformedRequiredInputRows() {
+	// addMalformedRequiredInputRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	for _, queryName := range queryOrder {
 
 		b.addRow(queryName, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_09.run.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
@@ -427,6 +493,9 @@ func (b *packBuilder) addMalformedRequiredInputRows() {
 }
 
 func (b *packBuilder) addRedactionRows() {
+	// addRedactionRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.forensicPresent {
 
 		b.addRow(QueryForensicsRedactions, RowStateCannotVerify, EvidenceFamilyRedaction, "block_18.condition.missing", "", "", "missing_block_18_forensic_retention_result", "redaction")
@@ -446,6 +515,9 @@ func (b *packBuilder) addRedactionRows() {
 }
 
 func (b *packBuilder) addCaptureRows() {
+	// addCaptureRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.adapterPresent {
 
 		b.addMissingAdapterCaptureRow()
@@ -470,6 +542,9 @@ func (b *packBuilder) addMalformedAdapterCaptureRow() {
 }
 
 func (b *packBuilder) addAdapterCaptureConditionRow(condition assessmentCondition) {
+	// addAdapterCaptureConditionRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	family := familyForAdapterCondition(condition.ID)
 
 	row := b.rowFromCondition(QueryForensicsCaptureDepth, family, "block_19.condition."+safeToken(condition.ID), condition)
@@ -482,6 +557,9 @@ func (b *packBuilder) addGapRows() {
 }
 
 func (b *packBuilder) addVerifierGapRows() {
+	// addVerifierGapRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	for _, key := range sortedVerifierStateKeys(b.inputs.run.VerifierStates) {
 
 		b.addVerifierGapRow(key, b.inputs.run.VerifierStates[key])
@@ -489,6 +567,9 @@ func (b *packBuilder) addVerifierGapRows() {
 }
 
 func sortedVerifierStateKeys(states map[string]verifierState) []string {
+	// sortedVerifierStateKeys keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	keys := make([]string, 0, len(states))
 	for key := range states {
 		keys = append(keys, key)
@@ -499,6 +580,9 @@ func sortedVerifierStateKeys(states map[string]verifierState) []string {
 }
 
 func (b *packBuilder) addVerifierGapRow(key string, state verifierState) {
+	// addVerifierGapRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	rowState := mapSourceState(state.State)
 	if rowState == RowStatePresent {
 
@@ -509,6 +593,9 @@ func (b *packBuilder) addVerifierGapRow(key string, state verifierState) {
 }
 
 func (b *packBuilder) addForensicGapRows() {
+	// addForensicGapRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.forensicPresent {
 
 		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "", "", "missing_optional_block_18_forensic_retention_result", "retention")
@@ -519,6 +606,9 @@ func (b *packBuilder) addForensicGapRows() {
 }
 
 func (b *packBuilder) addAdapterGapRows() {
+	// addAdapterGapRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.adapterPresent {
 
 		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_optional_block_19_adapter_capture_result", "adapter_capture")
@@ -534,6 +624,9 @@ func (b *packBuilder) addUnverifiedClaimRows() {
 }
 
 func (b *packBuilder) addUnverifiedClaimsFor(queryName string) {
+	// addUnverifiedClaimsFor keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	for _, row := range append([]QueryPackRow{}, b.rows[queryName]...) {
 		if row.EvidenceState != RowStatePresent {
 
@@ -543,6 +636,9 @@ func (b *packBuilder) addUnverifiedClaimsFor(queryName string) {
 }
 
 func (b *packBuilder) addSummaryRows() {
+	// addSummaryRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	for _, queryName := range queryOrder {
 		if queryName != QueryForensicsSummary {
 
@@ -552,6 +648,9 @@ func (b *packBuilder) addSummaryRows() {
 }
 
 func (b *packBuilder) addSummaryRow(queryName string) {
+	// addSummaryRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	related := b.relatedRows(queryName)
 	if len(related) == 0 {
 
@@ -563,6 +662,9 @@ func (b *packBuilder) addSummaryRow(queryName string) {
 }
 
 func (b *packBuilder) relatedRows(queryName string) []string {
+	// relatedRows keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var related []string
 	for _, row := range b.rows[queryName] {
 
@@ -572,6 +674,9 @@ func (b *packBuilder) relatedRows(queryName string) []string {
 }
 
 func (b *packBuilder) addReferencedClaim(source QueryPackRow) {
+	// addReferencedClaim keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	row := b.newRow(QueryForensicsUnverifiedClaims, source.EvidenceState, EvidenceFamilyClaim, source.SourceRef, source.SourceConditionID, source.SourceConditionState, source.ReasonCode, source.EvidenceGap)
 	row.RelatedRows = []string{source.ID}
@@ -580,6 +685,9 @@ func (b *packBuilder) addReferencedClaim(source QueryPackRow) {
 }
 
 func (b *packBuilder) rowFromCondition(queryName, family, sourceRef string, condition assessmentCondition) QueryPackRow {
+	// rowFromCondition keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if criticalEvidenceRetentionCap(condition) {
 
 		state := RowStateRetentionLimited
@@ -595,12 +703,18 @@ func (b *packBuilder) rowFromCondition(queryName, family, sourceRef string, cond
 }
 
 func criticalEvidenceRetentionCap(condition assessmentCondition) bool {
+	// criticalEvidenceRetentionCap keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	return condition.ID == "critical_evidence_reconstructable" &&
 		(condition.CappedToRetentionMode != "" || condition.ReasonCode == "critical_evidence_digest_only")
 }
 
 func gapForConditionState(state, family string) string {
+	// gapForConditionState keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if state == RowStatePresent || state == RowStateIssueObserved {
 
 		return ""
@@ -609,6 +723,9 @@ func gapForConditionState(state, family string) string {
 }
 
 func reconstructableForCondition(condition assessmentCondition) *bool {
+	// reconstructableForCondition keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if condition.State == RowStateRetentionLimited || condition.CappedToRetentionMode != "" {
 
 		return falsePointer()
@@ -621,12 +738,18 @@ func falsePointer() *bool {
 	return &falseValue
 }
 func (b *packBuilder) addRow(queryName, state, family, sourceRef, conditionID, conditionState, reasonCode, gap string) {
+	// addRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	row := b.newRow(queryName, state, family, sourceRef, conditionID, conditionState, reasonCode, gap)
 	b.rows[queryName] = append(b.rows[queryName], row)
 }
 
 func (b *packBuilder) newRow(queryName, state, family, sourceRef, conditionID, conditionState, reasonCode, gap string) QueryPackRow {
+	// newRow keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	id := b.nextRowID(queryName)
 	return QueryPackRow{
@@ -664,6 +787,9 @@ var sourceStateRows = map[string]string{
 }
 
 func mapSourceState(state string) string {
+	// mapSourceState keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 
 	if mapped, ok := sourceStateRows[state]; ok {
 		return mapped
@@ -676,6 +802,9 @@ func familyForEvent(eventType string) string {
 }
 
 func familyForForensicCondition(id string) string {
+	// familyForForensicCondition keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	switch {
 	case strings.Contains(id, "redaction"):
 
@@ -689,6 +818,9 @@ func familyForForensicCondition(id string) string {
 }
 
 func familyForAdapterCondition(id string) string {
+	// familyForAdapterCondition keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	if strings.Contains(id, "task") {
 
 		return EvidenceFamilyTask
@@ -697,6 +829,9 @@ func familyForAdapterCondition(id string) string {
 }
 
 func nonTaskAdapterFamily(id string) string {
+	// nonTaskAdapterFamily keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	switch {
 	case strings.Contains(id, "file"):
 
@@ -738,6 +873,9 @@ var verifierFamilyRules = []familyRule{
 }
 
 func firstMatchingFamily(value string, rules []familyRule, fallback string) string {
+	// firstMatchingFamily keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	for _, rule := range rules {
 		if strings.Contains(value, rule.token) {
 
@@ -748,6 +886,9 @@ func firstMatchingFamily(value string, rules []familyRule, fallback string) stri
 }
 
 func safeToken(value string) string {
+	// safeToken keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	sanitized := sanitizeToken(value)
 	if sanitized == "" {
 
@@ -759,6 +900,9 @@ func safeToken(value string) string {
 const safeTokenAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 
 func sanitizeToken(value string) string {
+	// sanitizeToken keeps query-pack rows source-bound to replayed evidence artifacts.
+	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
+	// This helper renders derived query rows; it does not create a new verdict.
 	var builder strings.Builder
 	for _, r := range value {
 		if isSafeTokenChar(r) {
