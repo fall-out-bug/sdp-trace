@@ -17,14 +17,14 @@ The objective is complete only when all of the following have live evidence:
 | Cyclomatic complexity `<= 15` | `go run ./tools/qualitycheck -fail-only -cyclo-over 10 cmd internal tools` exits 0, which is stricter than the requested `<= 15`. | `pass_local`: combined cyclomatic/cognitive gate exited 0. |
 | Maintainability Index `> 70` | Absolute function/file MI check exits 0 without relying on exception baselines. | `assessed_gap`: absolute function MI now exits 0, but absolute file MI still fails with 15 failure rows plus the raw `exit status 1` line. Current local ratchets pass, including the new trace/export/contract/policy/query/observe/harness/packet/telemetry/verifier/releaseproof/witness/repoobserver/recorder split files and the ciartifact/managed/adaptercapture/authority/checkpoint/querypack/forensic/interaction/posture/demo/harnessobs/packet/prreview function-MI passes, but repository-wide absolute MI is not achieved. |
 | Spec drift | Active specs, docs, tasks, and implementation ledger identify changed behavior and remaining gaps. | `partial`: `docs/spec-drift-register.md` records quality, Block 31, Spec 008, stale Node-era, and roadmap gaps. |
-| Work without spec | Every trust-affecting implementation change has a SpecKit delta or is explicitly recorded as `not_assessed`, `cannot_verify`, `assessed_gap`, or `deferred_scope`. | `partial`: current slice has Spec 004 coverage and review rows; PR #43 now has a frozen `pr-review` packet at `pr-review/ec8db52`, but required review planes are still `not_assessed`. |
-| CleanCode / CleanArchitecture | Independent review of changed Go boundaries and complexity, with accepted findings fixed or recorded. | `partial`: local implementation review findings were handled; PR packet `pr-review/ec8db52/validation.json` records `code_correctness` as `not_assessed` until a configured external reviewer result is imported. |
-| Security review | Trust, path, network, secret, authority, and external-input changes reviewed and valid findings fixed. | `partial`: local security review findings were fixed, including the GitHub OIDC endpoint token-boundary fix; required PR-level external review evidence remains `not_assessed`. |
-| DX review | Command docs and examples are checked against live CLI behavior where command surface changed. | `partial`: docs were updated and local checks pass; PR packet `pr-review/ec8db52` exists, but required external review plane evidence remains `not_assessed`. |
-| UX review | Human-facing packets, summaries, reports, and explanations remain readable and do not overclaim. | `partial`: local review completed and the PR packet summary preserves non-approval language; required external review plane evidence remains `not_assessed`. |
+| Work without spec | Every trust-affecting implementation change has a SpecKit delta or is explicitly recorded as `not_assessed`, `cannot_verify`, `assessed_gap`, or `deferred_scope`. | `partial`: current slice has Spec 004 coverage and review rows, but final PR-level evidence is not present. |
+| CleanCode / CleanArchitecture | Independent review of changed Go boundaries and complexity, with accepted findings fixed or recorded. | `partial`: local implementation review findings were handled and supplemental PR-level subagent review is in progress; required `manual_external` profile planes are still pending. |
+| Security review | Trust, path, network, secret, authority, and external-input changes reviewed and valid findings fixed. | `partial`: local security review findings were fixed, including the GitHub OIDC endpoint token-boundary fix; required `manual_external` PR review evidence remains pending. |
+| DX review | Command docs and examples are checked against live CLI behavior where command surface changed. | `partial`: docs were updated and local checks pass; supplemental PR-level review is in progress and required external plane remains pending. |
+| UX review | Human-facing packets, summaries, reports, and explanations remain readable and do not overclaim. | `partial`: local review completed and supplemental PR-level UX review is in progress; required external plane remains pending. |
 | Documentation completeness | README/docs/schema/example docs cover changed behavior and trust scope without external-trust overclaims. | `partial`: local docs updated; final PR checklist/sign-off remain open. |
 | CI-backed closure | GitHub Actions reports the required checks for the final PR head. | `not_assessed_in_file`: checked-in source text is not live CI authority; query PR #43 after each push and bind any `verify` pass to the exact head outside the source-bound commit loop. |
-| MVP ready-state closure | PR opened, PR-level review planes complete, named reviewer sign-off recorded, and merge held until approval. | `partial`: draft PR #43 is open and `pr-review/ec8db52/validation.json` records the current PR-level review state as `not_assessed`; required `manual_external` results and named sign-off remain open. |
+| MVP ready-state closure | PR opened, PR-level review planes complete, named reviewer sign-off recorded, and merge held until approval. | `partial`: draft PR #43 is open, but final-head CI must be live-queried after each push; required `manual_external` review planes and named sign-off remain open. |
 
 ## Prompt-To-Artifact Checklist
 
@@ -54,11 +54,8 @@ The objective is complete only when all of the following have live evidence:
 2. CI-backed closure is live-state evidence, not checked-in prose. Query PR #43
    after each push and bind any `verify` pass to the exact head SHA outside
    the source-bound commit loop.
-3. Required `manual_external` PR review planes remain open. The frozen packet in
-   `specs/004-mvp-readiness-hardening/pr-review/ec8db52/` records
-   `code_correctness`, `trace_evidence_provenance`, and
-   `requirements_vs_implementation` as `not_assessed`, so T040-T042 remain open
-   and no final ready state, named reviewer sign-off, or merge gate can be
+3. Required `manual_external` PR review planes remain open. T040-T042 remain
+   open, so no final ready state, named reviewer sign-off, or merge gate can be
    claimed.
 4. Spec drift remains open for Block 31 first-run harness observation and Spec
    008 PR/final-head evidence. These do not block local quality-gate progress,

@@ -1,0 +1,45 @@
+{
+  "schema_version": "block30-pr-review-validation-v1",
+  "packet_digest": "sha256:520fe035d353e695a23e64838bd492751cdebad0178b9e69f0378b15a6e735f8",
+  "review_coverage_state": "not_assessed",
+  "ci_state": "pass",
+  "authority_scope": "review_record_only",
+  "merge_decision": "not_authorized_by_sdp_trace",
+  "release_decision": "not_authorized_by_sdp_trace",
+  "risk_acceptance": "not_authorized_by_sdp_trace",
+  "plane_results": [
+    {
+      "plane": "code_correctness",
+      "status": "not_assessed",
+      "usable": false,
+      "review_run_id": "run-code-correctness",
+      "reason": "reviewer_not_assessed",
+      "next_action": "Run a configured reviewer or import a usable result for this plane."
+    },
+    {
+      "plane": "requirements_vs_implementation",
+      "status": "not_assessed",
+      "usable": false,
+      "review_run_id": "run-requirements",
+      "reason": "reviewer_not_assessed",
+      "next_action": "Run a configured reviewer or import a usable result for this plane."
+    },
+    {
+      "plane": "trace_evidence_provenance",
+      "status": "not_assessed",
+      "usable": false,
+      "review_run_id": "run-trace-evidence",
+      "reason": "reviewer_not_assessed",
+      "next_action": "Run a configured reviewer or import a usable result for this plane."
+    }
+  ],
+  "findings": [],
+  "reasons": [
+    "code_correctness:not_assessed",
+    "requirements_vs_implementation:not_assessed",
+    "trace_evidence_provenance:not_assessed"
+  ],
+  "next_actions": [
+    "Run a configured reviewer or import a usable result for this plane."
+  ]
+}

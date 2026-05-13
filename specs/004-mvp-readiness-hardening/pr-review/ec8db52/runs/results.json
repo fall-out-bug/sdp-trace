@@ -1,0 +1,54 @@
+{
+  "schema_version": "block30-pr-review-runs-v1",
+  "packet_digest": "sha256:520fe035d353e695a23e64838bd492751cdebad0178b9e69f0378b15a6e735f8",
+  "results": [
+    {
+      "review_run_id": "run-code-correctness",
+      "packet_digest": "sha256:520fe035d353e695a23e64838bd492751cdebad0178b9e69f0378b15a6e735f8",
+      "plane": "code_correctness",
+      "role_id": "code-correctness",
+      "runner": "manual_external",
+      "requested_model": "not_assessed",
+      "observed_model": "not_assessed",
+      "model_family": "not_assessed",
+      "model_version": "not_assessed",
+      "status": "not_assessed",
+      "findings": null,
+      "started_at": "2026-05-13T14:10:47Z",
+      "ended_at": "2026-05-13T14:10:47Z",
+      "reason": "runner_command_not_configured"
+    },
+    {
+      "review_run_id": "run-trace-evidence",
+      "packet_digest": "sha256:520fe035d353e695a23e64838bd492751cdebad0178b9e69f0378b15a6e735f8",
+      "plane": "trace_evidence_provenance",
+      "role_id": "trace-evidence",
+      "runner": "manual_external",
+      "requested_model": "not_assessed",
+      "observed_model": "not_assessed",
+      "model_family": "not_assessed",
+      "model_version": "not_assessed",
+      "status": "not_assessed",
+      "findings": null,
+      "started_at": "2026-05-13T14:10:47Z",
+      "ended_at": "2026-05-13T14:10:47Z",
+      "reason": "runner_command_not_configured"
+    },
+    {
+      "review_run_id": "run-requirements",
+      "packet_digest": "sha256:520fe035d353e695a23e64838bd492751cdebad0178b9e69f0378b15a6e735f8",
+      "plane": "requirements_vs_implementation",
+      "role_id": "requirements",
+      "runner": "manual_external",
+      "requested_model": "not_assessed",
+      "observed_model": "not_assessed",
+      "model_family": "not_assessed",
+      "model_version": "not_assessed",
+      "status": "not_assessed",
+      "findings": null,
+      "started_at": "2026-05-13T14:10:47Z",
+      "ended_at": "2026-05-13T14:10:47Z",
+      "reason": "runner_command_not_configured"
+    }
+  ]
+}
