@@ -236,6 +236,9 @@ type aggregateGroup struct {
 }
 
 func Build(selectionPath string, now time.Time) (ExportResult, error) {
+	// Build keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	selection, err := readSelection(selectionPath)
 	if err != nil {
@@ -261,6 +264,9 @@ type buildInput struct {
 }
 
 func prepareBuildSelectionInput(now time.Time, selection SelectionManifest) (buildInput, error) {
+	// prepareBuildSelectionInput keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	activeKeys, err := validateBuildSelection(selection)
 	if err != nil {
@@ -279,6 +285,9 @@ func prepareBuildSelectionInput(now time.Time, selection SelectionManifest) (bui
 }
 
 func validateBuildSelection(selection SelectionManifest) ([]string, error) {
+	// validateBuildSelection keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if err := validateSelection(selection); err != nil {
 		return nil, err
 	}
@@ -291,6 +300,9 @@ func validateBuildSelection(selection SelectionManifest) ([]string, error) {
 }
 
 func validatedHandoff(handoff map[string]string) (map[string]string, error) {
+	// validatedHandoff keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if handoff == nil {
 
 		handoff = map[string]string{}
@@ -301,6 +313,9 @@ func validatedHandoff(handoff map[string]string) (map[string]string, error) {
 	return handoff, nil
 }
 func ingestRepositories(selection SelectionManifest, activeKeys []string, cutoff time.Time, hasCutoff bool) ([]InputSelection, []RefusalRow, map[string]*aggregateGroup) {
+	// ingestRepositories keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	inputs := []InputSelection{}
 	refusals := []RefusalRow{}
 	groups := map[string]*aggregateGroup{}
@@ -322,6 +337,9 @@ func ingestRepositories(selection SelectionManifest, activeKeys []string, cutoff
 }
 
 func recordRefusedRepository(inputs []InputSelection, refusals []RefusalRow, counter int, repo RepositoryWindow, ingested repositoryIngest) ([]InputSelection, []RefusalRow, int) {
+	// recordRefusedRepository keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	counter++
 	refusals = append(refusals, refusal(counter, repo, ingested.refusalReason, ingested.inputTrustState))
@@ -342,6 +360,9 @@ type repositoryIngest struct {
 }
 
 func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) repositoryIngest {
+	// ingestRepository keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if refusal, ok := repositoryPreflightRefusal(repo, cutoff, hasCutoff); ok {
 		return refusal
@@ -350,6 +371,9 @@ func ingestRepository(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) r
 }
 
 func repositoryPreflightRefusal(repo RepositoryWindow, cutoff time.Time, hasCutoff bool) (repositoryIngest, bool) {
+	// repositoryPreflightRefusal keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if invalidRepositoryLabels(repo) {
 		return refusedInput("unsafe_label", "cannot_verify_input", "", false), true
@@ -377,6 +401,9 @@ func invalidRepositoryInputPaths(repo RepositoryWindow) bool {
 }
 
 func ingestRepositoryArtifacts(repo RepositoryWindow) repositoryIngest {
+	// ingestRepositoryArtifacts keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	digest, err := verifyDigestManifest(repo.ArtifactDigestManifest, repo.QueryPackResult)
 	if err != nil {
@@ -390,6 +417,9 @@ func ingestRepositoryArtifacts(repo RepositoryWindow) repositoryIngest {
 }
 
 func ingestSupportedRepositoryArtifacts(repo RepositoryWindow, digest string, result query.QueryPackResult) repositoryIngest {
+	// ingestSupportedRepositoryArtifacts keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if !isSupportedQueryPack(result) {
 		return refusedInput("malformed_input", "cannot_verify_input", digest, true)
 	}
@@ -412,6 +442,9 @@ func refusedInput(reason, trustState, digest string, recordSelection bool) repos
 }
 
 func addTrustedRepositoryGroup(groups map[string]*aggregateGroup, repo RepositoryWindow, activeKeys []string, result query.QueryPackResult, signals map[string]PostureSignal, digest string) {
+	// addTrustedRepositoryGroup keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	group := trustedAggregateGroup(groups, repo, activeKeys)
 	group.rows = append(group.rows, flattenRows(result)...)
 	group.inputRefs = append(group.inputRefs, repo.InputID)
@@ -424,6 +457,9 @@ func addTrustedRepositoryGroup(groups map[string]*aggregateGroup, repo Repositor
 }
 
 func trustedAggregateGroup(groups map[string]*aggregateGroup, repo RepositoryWindow, activeKeys []string) *aggregateGroup {
+	// trustedAggregateGroup keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	key, dims := dimensionKey(repo, activeKeys)
 	groupKey := repo.TimeWindow + "|" + key
@@ -437,6 +473,9 @@ func trustedAggregateGroup(groups map[string]*aggregateGroup, repo RepositoryWin
 }
 
 func newAggregateGroup(repo RepositoryWindow, key string, dims map[string]string) *aggregateGroup {
+	// newAggregateGroup keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return &aggregateGroup{
 		dimensions:   dims,
@@ -447,6 +486,9 @@ func newAggregateGroup(repo RepositoryWindow, key string, dims map[string]string
 	}
 }
 func buildExportResult(selectionPath string, now time.Time, input buildInput, inputs []InputSelection, metricRows []MetricRow, movementRows []MovementRow, summary MovementSummary, refusals []RefusalRow) ExportResult {
+	// buildExportResult keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	result := exportResultHeader(selectionPath, now, input, metricRows, refusals)
 	result.InputSelection = inputs
@@ -458,6 +500,9 @@ func buildExportResult(selectionPath string, now time.Time, input buildInput, in
 }
 
 func exportResultHeader(selectionPath string, now time.Time, input buildInput, metricRows []MetricRow, refusals []RefusalRow) ExportResult {
+	// exportResultHeader keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return ExportResult{
 
@@ -483,6 +528,8 @@ func exportOutputSafety() OutputSafety {
 func Explain(result ExportResult) (string, error) {
 	// Explanation output is derived from structured rows only, then checked
 	// again so renderer text cannot leak unsafe payload classes.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	var lines []string
 	lines = append(lines, explainHeaderLines(result)...)
 	lines = append(lines, fmt.Sprintf("movement_summary comparable=%d non_comparable=%d", result.MovementSummary.ComparableCount, result.MovementSummary.NonComparableCount))
@@ -499,6 +546,9 @@ func Explain(result ExportResult) (string, error) {
 }
 
 func explainHeaderLines(result ExportResult) []string {
+	// explainHeaderLines keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return []string{
 		"schema_version=" + result.SchemaVersion,
@@ -540,6 +590,9 @@ func explainOutputSafetyLine(class string) string {
 }
 
 func formattedLines[T any](rows []T, format func(T) string) []string {
+	// formattedLines keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	lines := make([]string, 0, len(rows))
 	for _, row := range rows {
@@ -548,6 +601,9 @@ func formattedLines[T any](rows []T, format func(T) string) []string {
 	return lines
 }
 func ValidateExportResult(result ExportResult) error {
+	// ValidateExportResult keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	for _, validate := range exportResultValidators {
 		if err := validate(result); err != nil {
@@ -568,6 +624,9 @@ var exportResultValidators = []func(ExportResult) error{
 }
 
 func validateExportHeader(result ExportResult) error {
+	// validateExportHeader keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if err := validateExportSchemaHeader(result); err != nil {
 		return err
@@ -576,6 +635,9 @@ func validateExportHeader(result ExportResult) error {
 }
 
 func validateExportSchemaHeader(result ExportResult) error {
+	// validateExportSchemaHeader keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if unsupportedExportHeader(result) {
 		return errors.New("unsupported posture export")
@@ -587,6 +649,9 @@ func validateExportSchemaHeader(result ExportResult) error {
 }
 
 func validateExportGeneratedAt(generatedAt string) error {
+	// validateExportGeneratedAt keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if _, err := time.Parse(time.RFC3339, generatedAt); err != nil {
 		return errors.New("malformed posture export generated_at")
@@ -641,6 +706,9 @@ func validateRefusalRows(rows []RefusalRow) error {
 }
 
 func validateRows[T any](rows []T, validate func(T) error) error {
+	// validateRows keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	for _, row := range rows {
 		if err := validate(row); err != nil {
@@ -651,6 +719,9 @@ func validateRows[T any](rows []T, validate func(T) error) error {
 }
 
 func validateExportCollections(result ExportResult) error {
+	// validateExportCollections keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if !validExportGrouping(result.GroupingSetID, result.ActiveGroupingKeys) {
 		return fmt.Errorf("malformed posture export grouping")
 	}
@@ -669,6 +740,9 @@ func validExportGrouping(groupingSet string, keys []string) bool {
 }
 
 func hasRequiredCollections(result ExportResult) bool {
+	// hasRequiredCollections keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	for _, present := range []bool{
 		result.InputSelection != nil,
@@ -703,6 +777,9 @@ func missingInputSelectionFields(item InputSelection) bool {
 }
 
 func validateMetricRow(row MetricRow) error {
+	// validateMetricRow keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if err := validateMetricRowShape(row); err != nil {
 		return err
@@ -714,6 +791,9 @@ func validateMetricRow(row MetricRow) error {
 }
 
 func validateMetricRowShape(row MetricRow) error {
+	// validateMetricRowShape keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if malformedMetricIdentity(row) || malformedMetricCounts(row) || malformedMetricSource(row) {
 		return fmt.Errorf("malformed posture export metric_row")
@@ -741,6 +821,9 @@ func missingMetricTrustSource(row MetricRow) bool {
 	return !validSourceFieldState(row.SourceFieldState) || row.InputTrustStateSummary == nil
 }
 func validateMetricDimensions(dimensions map[string]string) error {
+	// validateMetricDimensions keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	for key, value := range dimensions {
 
 		if !validDimensionName(key) || !safeLabel(value) {
@@ -751,6 +834,9 @@ func validateMetricDimensions(dimensions map[string]string) error {
 }
 
 func validateMetricTrustSummary(summary map[string]int) error {
+	// validateMetricTrustSummary keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	for state, count := range summary {
 
 		if !validInputTrustState(state) || count < 0 {
@@ -781,6 +867,9 @@ func malformedMovementComparison(row MovementRow) bool {
 }
 
 func validateMovementSummary(summary MovementSummary) error {
+	// validateMovementSummary keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if summary.ComparableCount < 0 || summary.NonComparableCount < 0 {
 		return fmt.Errorf("malformed posture export movement_summary")
@@ -792,6 +881,9 @@ func validateMovementSummary(summary MovementSummary) error {
 }
 
 func malformedMovementSummaryReasons(reasons map[string]int) bool {
+	// malformedMovementSummaryReasons keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	for reason, count := range reasons {
 
 		if reason != "non_comparable_missing_window" || count < 0 {
@@ -806,6 +898,9 @@ func validateRefusalRow(row RefusalRow) error {
 }
 
 func malformedRowError(malformed bool, message string) error {
+	// malformedRowError keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if malformed {
 		return errors.New(message)
@@ -857,6 +952,9 @@ var sensitiveClasses = []string{
 }
 
 func validMetricID(value string) bool {
+	// validMetricID keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	for _, item := range metricCatalog {
 
 		if item.id == value {
@@ -867,6 +965,9 @@ func validMetricID(value string) bool {
 }
 
 func validDimensionName(value string) bool {
+	// validDimensionName keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	switch value {
 	case "repo", "team", "service", "harness", "change_type", "time_window":
 
@@ -877,6 +978,9 @@ func validDimensionName(value string) bool {
 }
 
 func validInputTrustState(value string) bool {
+	// validInputTrustState keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	switch value {
 	case "trusted_input", "stale_input", "untrusted_input", "cannot_verify_input", "not_assessed_input":
 
@@ -887,6 +991,9 @@ func validInputTrustState(value string) bool {
 }
 
 func validSourceFieldState(value string) bool {
+	// validSourceFieldState keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	switch value {
 	case "present", "not_assessed", "cannot_verify", "unsupported":
 
@@ -897,6 +1004,9 @@ func validSourceFieldState(value string) bool {
 }
 
 func validComparisonBasis(value string) bool {
+	// validComparisonBasis keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	switch value {
 	case "same_profile_metric_dimension_window", "non_comparable_missing_window":
 
@@ -907,6 +1017,9 @@ func validComparisonBasis(value string) bool {
 }
 
 func validRefusalReason(value string) bool {
+	// validRefusalReason keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	switch value {
 	case "stale_input", "malformed_input", "untrusted_input_digest_mismatch", "unsafe_label",
 		"unsupported_input", "missing_required_input", "missing_optional_input",
@@ -925,6 +1038,9 @@ func readSelection(path string) (SelectionManifest, error) {
 }
 
 func validateSelection(selection SelectionManifest) error {
+	// validateSelection keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if selection.SchemaVersion != SelectionSchemaVersion {
 		return fmt.Errorf("unsupported selection schema")
@@ -939,6 +1055,9 @@ func validateSelection(selection SelectionManifest) error {
 }
 
 func validateSelectionProfile(selection SelectionManifest) error {
+	// validateSelectionProfile keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	switch {
 	case selection.ProfileID != ProfileID:
@@ -954,6 +1073,9 @@ func unsupportedSelectionProfileVersion(version string) bool {
 }
 
 func validateSelectionGrouping(selection SelectionManifest) error {
+	// validateSelectionGrouping keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if len(groupingKeys(selection.GroupingSetID)) == 0 {
 		return fmt.Errorf("unsupported grouping set")
 	}
@@ -965,6 +1087,9 @@ func validateSelectionGrouping(selection SelectionManifest) error {
 }
 
 func validateSelectionRepositories(selection SelectionManifest) error {
+	// validateSelectionRepositories keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if len(selection.Repositories) == 0 {
 		return fmt.Errorf("empty selection")
@@ -987,6 +1112,9 @@ func readJSONFile[T any](path string) (T, error) {
 }
 
 func readSignals(path string) (map[string]PostureSignal, error) {
+	// readSignals keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if strings.TrimSpace(path) == "" {
 
 		return map[string]PostureSignal{}, nil
@@ -999,6 +1127,9 @@ func readSignals(path string) (map[string]PostureSignal, error) {
 }
 
 func readSignalManifest(path string) (SignalManifest, error) {
+	// readSignalManifest keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	manifest, err := readJSONFile[SignalManifest](path)
 	if err != nil {
 		return manifest, err
@@ -1011,6 +1142,9 @@ func readSignalManifest(path string) (SignalManifest, error) {
 }
 
 func validatedSignals(signals []PostureSignal) (map[string]PostureSignal, error) {
+	// validatedSignals keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	out := map[string]PostureSignal{}
 	for _, signal := range signals {
@@ -1029,6 +1163,9 @@ func unsafeSignal(signal PostureSignal) bool {
 }
 
 func verifyDigestManifest(manifestPath, queryPackPath string) (string, error) {
+	// verifyDigestManifest keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	expected, err := expectedDigestForQueryPack(manifestPath, queryPackPath)
 	if err != nil {
@@ -1043,6 +1180,9 @@ func verifyDigestManifest(manifestPath, queryPackPath string) (string, error) {
 }
 
 func expectedDigestForQueryPack(manifestPath, queryPackPath string) (string, error) {
+	// expectedDigestForQueryPack keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	manifest, err := readDigestManifest(manifestPath)
 	if err != nil {
@@ -1054,6 +1194,9 @@ func expectedDigestForQueryPack(manifestPath, queryPackPath string) (string, err
 // checkedDigest enforces the evidence boundary where manifest expectation meets artifact reality.
 // A digest mismatch crosses from unverifiable into untrusted, distinct from missing or malformed.
 func checkedDigest(actual, expected string) (string, error) {
+	// checkedDigest keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if expected != actual {
 		return "", errDigestMismatch
@@ -1062,6 +1205,9 @@ func checkedDigest(actual, expected string) (string, error) {
 }
 
 func readDigestManifest(path string) (DigestManifest, error) {
+	// readDigestManifest keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	var manifest DigestManifest
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -1080,6 +1226,9 @@ func readDigestManifest(path string) (DigestManifest, error) {
 }
 
 func digestForQueryPackFromManifest(manifest DigestManifest, queryPackPath string) (string, error) {
+	// digestForQueryPackFromManifest keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	filename := filepathBase(queryPackPath)
 	for _, artifact := range manifest.Artifacts {
 		if artifact.Role != "query_pack_result" {
@@ -1099,6 +1248,9 @@ func digestArtifactMatchesPath(artifactPath, filename string) bool {
 }
 
 func fileSHA256Hex(path string) (string, error) {
+	// fileSHA256Hex keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	payload, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
@@ -1128,6 +1280,9 @@ var digestErrorReasons = []digestErrorReason{
 // reasonForDigestErr maps digest errors to refusal reasons at the trust boundary.
 // Mismatch is distinct to avoid blurring tamper evidence with cannot-verify failures.
 func reasonForDigestErr(err error) string {
+	// reasonForDigestErr keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	for _, item := range digestErrorReasons {
 		if errors.Is(err, item.err) {
@@ -1140,6 +1295,9 @@ func reasonForDigestErr(err error) string {
 // trustForDigestErr maps digest verification outcomes to trust states at the evidence boundary.
 // Distinguishes tamper evidence (untrusted) from verification failures (cannot_verify).
 func trustForDigestErr(err error) string {
+	// trustForDigestErr keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if errors.Is(err, errDigestMismatch) {
 		return "untrusted_input"
@@ -1148,6 +1306,9 @@ func trustForDigestErr(err error) string {
 }
 
 func flattenRows(result query.QueryPackResult) []query.QueryPackRow {
+	// flattenRows keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	var rows []query.QueryPackRow
 
 	for _, key := range sortedMapKeys(result.QueryRows) {
@@ -1173,6 +1334,9 @@ func buildMetrics(groups map[string]*aggregateGroup) []MetricRow {
 }
 
 func metricForGroup(counter int, def metricDef, group *aggregateGroup) MetricRow {
+	// metricForGroup keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	counts := metricCounts(def, group)
 	sourceRefs, digestHash := metricEvidenceRefs(group)
 
@@ -1188,6 +1352,9 @@ func metricForGroup(counter int, def metricDef, group *aggregateGroup) MetricRow
 }
 
 func metricRowHeader(counter int, def metricDef, group *aggregateGroup) MetricRow {
+	// metricRowHeader keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return MetricRow{
 		ID:            fmt.Sprintf("metric.%04d", counter),
@@ -1201,6 +1368,9 @@ func metricRowHeader(counter int, def metricDef, group *aggregateGroup) MetricRo
 }
 
 func metricEvidenceRefs(group *aggregateGroup) ([]string, string) {
+	// metricEvidenceRefs keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	sourceRefs := sortedStringsCopy(group.inputRefs)
 	digests := sortedStringsCopy(group.digests)
@@ -1208,6 +1378,9 @@ func metricEvidenceRefs(group *aggregateGroup) ([]string, string) {
 }
 
 func sortedStringsCopy(values []string) []string {
+	// sortedStringsCopy keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	out := append([]string(nil), values...)
 	sort.Strings(out)
@@ -1221,6 +1394,9 @@ type metricCount struct {
 }
 
 func metricCounts(def metricDef, group *aggregateGroup) metricCount {
+	// metricCounts keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	counts := metricCount{sourceFieldState: "present"}
 	for _, row := range group.rows {
@@ -1231,6 +1407,9 @@ func metricCounts(def metricDef, group *aggregateGroup) metricCount {
 }
 
 func applyMetricCount(counts *metricCount, def metricDef, row query.QueryPackRow, signal PostureSignal, hasSignal bool) {
+	// applyMetricCount keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if metricMatches(def.id, row, signal, hasSignal) {
 		counts.numerator++
@@ -1250,6 +1429,9 @@ func missingPostureSignalMetric(def metricDef, hasSignal bool) bool {
 }
 
 func metricMatches(metricID string, row query.QueryPackRow, signal PostureSignal, hasSignal bool) bool {
+	// metricMatches keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if expectedState, ok := rowStateMetrics[metricID]; ok {
 		return row.EvidenceState == expectedState
@@ -1258,6 +1440,9 @@ func metricMatches(metricID string, row query.QueryPackRow, signal PostureSignal
 }
 
 func nonRowStateMetricMatches(metricID string, row query.QueryPackRow, signal PostureSignal, hasSignal bool) bool {
+	// nonRowStateMetricMatches keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if metricID == "unsupported_observer_rows" {
 		return unsupportedObserverMetricMatches(row, signal, hasSignal)
@@ -1277,6 +1462,9 @@ func signalMetricMatches(metricID string, signal PostureSignal) bool {
 // metricNotAssessed applies the evidence-boundary rule for not_assessed counts.
 // For row_state metrics, follows row.EvidenceState. For signal metrics, signal absence is not_assessed.
 func metricNotAssessed(def metricDef, row query.QueryPackRow, hasSignal bool) bool {
+	// metricNotAssessed keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if def.source == "posture_signal" {
 
 		return !hasSignal
@@ -1285,6 +1473,9 @@ func metricNotAssessed(def metricDef, row query.QueryPackRow, hasSignal bool) bo
 }
 
 func buildMovements(metrics []MetricRow, currentWindow, previousWindow string) ([]MovementRow, MovementSummary) {
+	// buildMovements keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	byKey := metricsByMovementKey(metrics)
 	keys := sortedMovementKeys(byKey)
 	var rows []MovementRow
@@ -1303,6 +1494,9 @@ func sortedMovementKeys(metrics map[string]map[string]MetricRow) []string {
 }
 
 func sortedMapKeys[T any](items map[string]T) []string {
+	// sortedMapKeys keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -1313,6 +1507,9 @@ func sortedMapKeys[T any](items map[string]T) []string {
 }
 
 func movementRowForKey(index int, key string, rowsByWindow map[string]MetricRow, currentWindow, previousWindow string) MovementRow {
+	// movementRowForKey keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	parts := strings.Split(key, "|")
 	current, hasCurrent := rowsByWindow[currentWindow]
@@ -1331,6 +1528,9 @@ func movementRowForKey(index int, key string, rowsByWindow map[string]MetricRow,
 }
 
 func applyMovementWindowValues(row *MovementRow, current MetricRow, hasCurrent bool, previous MetricRow, hasPrevious bool) {
+	// applyMovementWindowValues keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if hasCurrent {
 		row.CurrentMetricRowRef = current.ID
 		row.CurrentValue = current.Numerator
@@ -1344,6 +1544,9 @@ func applyMovementWindowValues(row *MovementRow, current MetricRow, hasCurrent b
 }
 
 func metricsByMovementKey(metrics []MetricRow) map[string]map[string]MetricRow {
+	// metricsByMovementKey keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	byKey := map[string]map[string]MetricRow{}
 	for _, row := range metrics {
 
@@ -1359,6 +1562,9 @@ func metricsByMovementKey(metrics []MetricRow) map[string]map[string]MetricRow {
 // summarizeMovement applies the threshold rule for movement comparability.
 // Presence of both current and previous window rows is the evidence boundary.
 func summarizeMovement(summary *MovementSummary, row *MovementRow) {
+	// summarizeMovement keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if row.Comparable {
 		summary.ComparableCount++
 		return
@@ -1381,6 +1587,9 @@ func groupingKeys(groupingSet string) []string {
 }
 
 func groupingAllowedByExposure(groupingSet string, exposure []string) bool {
+	// groupingAllowedByExposure keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	allowed := map[string]bool{"time_window": true}
 	for _, key := range exposure {
 		allowed[key] = true
@@ -1395,6 +1604,9 @@ func groupingAllowedByExposure(groupingSet string, exposure []string) bool {
 }
 
 func dimensionKey(repo RepositoryWindow, keys []string) (string, map[string]string) {
+	// dimensionKey keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	values := dimensionValues(repo)
 	dims := map[string]string{}
@@ -1411,6 +1623,9 @@ func dimensionKey(repo RepositoryWindow, keys []string) (string, map[string]stri
 }
 
 func dimensionValues(repo RepositoryWindow) map[string]string {
+	// dimensionValues keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return map[string]string{
 		"repo":        repo.Repo,
@@ -1423,6 +1638,9 @@ func dimensionValues(repo RepositoryWindow) map[string]string {
 }
 
 func validateRepoLabels(repo RepositoryWindow) error {
+	// validateRepoLabels keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	if unsafeInputLabel(repo) {
 		return fmt.Errorf("unsafe label")
 	}
@@ -1448,6 +1666,9 @@ func unsafeInputLabel(repo RepositoryWindow) bool {
 // safeLabel enforces the input trust boundary for identifier syntax.
 // Unsafe output keywords or credential/token terminology crosses the injection boundary.
 func safeLabel(value string) bool {
+	// safeLabel keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if !safeLabelPattern.MatchString(value) {
 		return false
@@ -1463,6 +1684,9 @@ var unsafeOutputKeywords = []string{
 }
 
 func unsafeOutput(value string) bool {
+	// unsafeOutput keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	lower := strings.ToLower(value)
 	if hasUnsafeOutputKeyword(lower) {
 
@@ -1480,6 +1704,9 @@ func unsafeOutput(value string) bool {
 }
 
 func hasUnsafeOutputKeyword(value string) bool {
+	// hasUnsafeOutputKeyword keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	for _, keyword := range unsafeOutputKeywords {
 		if strings.Contains(value, keyword) {
@@ -1490,6 +1717,9 @@ func hasUnsafeOutputKeyword(value string) bool {
 }
 
 func hasUnsafeTokenOrCredential(value string) bool {
+	// hasUnsafeTokenOrCredential keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if strings.Contains(value, "credential_or_token") {
 		return false
@@ -1502,6 +1732,9 @@ func hasUnsafePath(value string) bool {
 }
 
 func unsafeLabel(value string) bool {
+	// unsafeLabel keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	lower := strings.ToLower(value)
 
 	return unsafeOutput(value) ||
@@ -1510,6 +1743,9 @@ func unsafeLabel(value string) bool {
 }
 
 func validateInputPaths(repo RepositoryWindow) error {
+	// validateInputPaths keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	for _, path := range []string{repo.QueryPackResult, repo.ArtifactDigestManifest, repo.PostureSignalManifest} {
 		if strings.TrimSpace(path) == "" {
 			continue
@@ -1528,6 +1764,9 @@ func unsafeSelectionPath(value string) bool {
 }
 
 func hasUnsafeSelectionPathPrefix(clean string) bool {
+	// hasUnsafeSelectionPathPrefix keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return strings.Contains(clean, "://") ||
 		hasWindowsVolume(clean) ||
@@ -1546,6 +1785,9 @@ func isASCIIAlpha(value byte) bool {
 // safeHandoff enforces the export handoff boundary. Keys must be safe labels;
 // values must not contain unsafe output. Crossing this threshold prevents injection.
 func safeHandoff(values map[string]string) bool {
+	// safeHandoff keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 	for key, value := range values {
 
 		if !safeLabel(key) || unsafeOutput(value) {
@@ -1558,6 +1800,9 @@ func safeHandoff(values map[string]string) bool {
 // filepathBase extracts the basename for manifest-artifact matching.
 // Slash normalization ensures Windows-style separators cannot escape the comparison.
 func filepathBase(path string) string {
+	// filepathBase keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	clean := strings.ReplaceAll(path, "\\", "/")
 	parts := strings.Split(clean, "/")
@@ -1565,6 +1810,9 @@ func filepathBase(path string) string {
 }
 
 func parseFreshnessBoundary(value string, now time.Time) (time.Time, bool, error) {
+	// parseFreshnessBoundary keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if strings.TrimSpace(value) == "" {
 		return time.Time{}, false, nil
@@ -1583,6 +1831,9 @@ func parseFreshnessBoundary(value string, now time.Time) (time.Time, bool, error
 // isStale applies the temporal evidence boundary. Parse failures default to stale (safe).
 // InputObservedAt before cutoff crosses the freshness threshold.
 func isStale(value string, cutoff time.Time) bool {
+	// isStale keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	parsed, err := time.Parse(time.RFC3339, value)
 	if err != nil {
@@ -1592,6 +1843,9 @@ func isStale(value string, cutoff time.Time) bool {
 }
 
 func inputSelection(repo RepositoryWindow, digest, trust string) InputSelection {
+	// inputSelection keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return InputSelection{
 		InputID:         repo.InputID,
@@ -1604,6 +1858,9 @@ func inputSelection(repo RepositoryWindow, digest, trust string) InputSelection 
 }
 
 func refusal(counter int, repo RepositoryWindow, reason, trust string) RefusalRow {
+	// refusal keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	return RefusalRow{
 		ID:              fmt.Sprintf("refusal.%04d", counter),
@@ -1622,6 +1879,9 @@ func digestSetHash(digests []string) string {
 // deterministicExportID produces identifiers stable across runs. These are identifiers,
 // not proof digests; they do not carry evidence authority.
 func deterministicExportID(selectionPath string, metrics []MetricRow, refusals []RefusalRow) string {
+	// deterministicExportID keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	sum := sha256.Sum256([]byte(fmt.Sprintf("%s:%d:%d", selectionPath, len(metrics), len(refusals))))
 	return "export:" + hex.EncodeToString(sum[:8])
@@ -1630,6 +1890,9 @@ func deterministicExportID(selectionPath string, metrics []MetricRow, refusals [
 // shortDigest produces a stable redacted identifier. When crossing from verified digest
 // to missing/empty, the evidence boundary requires a placeholder distinct from a real hash.
 func shortDigest(digest string) string {
+	// shortDigest keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	if len(digest) >= 16 {
 		return digest[:16]
@@ -1638,6 +1901,9 @@ func shortDigest(digest string) string {
 }
 
 func copyTrust(in map[string]int) map[string]int {
+	// copyTrust keeps posture export evidence explicit and source-bound.
+	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
+	// This helper aggregates replayed query-pack data; it does not create new proof.
 
 	out := map[string]int{}
 	for key, value := range in {

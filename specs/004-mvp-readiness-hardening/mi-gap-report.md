@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 755 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 666 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -394,6 +394,17 @@ validation, and catalog predicates. Focused `internal/interaction` tests pass,
 from 0.0 to 7.0 while remaining below 70. Repository absolute file MI remains
 15 failure rows plus the raw `exit status 1` line; absolute function MI drops
 to 755 failure rows plus the raw `exit status 1` line.
+
+The `internal/posture/posture.go` in-place trust-boundary comment pass kept
+existing function baseline keys stable while documenting selection validation,
+digest manifest replay, posture signal loading, repository refusal handling,
+trusted aggregation, metric and movement derivation, export validation,
+dimension/catalog validation, output-safety screening, freshness boundaries,
+and deterministic ID rendering. Focused `internal/posture` tests pass,
+`internal/posture` has zero absolute function-MI rows, and file MI remains
+below 70. Repository absolute file MI remains 15 failure rows plus the raw
+`exit status 1` line; absolute function MI drops to 666 failure rows plus the
+raw `exit status 1` line.
 
 ## File-Level Failures
 
