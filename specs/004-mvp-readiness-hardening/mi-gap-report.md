@@ -195,12 +195,20 @@ repo-relative paths under `cmd/sdp-trace` are not truncated during coverage /
 complexity joins. Focused `tools/crapcheck` tests pass, strict CRAP replay now
 passes against `/tmp/sdp-trace-cover-final-local.out`, and both MI ratchet commands
 exit 0. Absolute MI remains open: function MI exits 1 with 1301 stderr rows and
-file MI exits 1 with 32 stderr rows.
+file MI exits 1 with 29 stderr rows.
+
+The `internal/trace` file-layout slice split the trace event, manifest,
+contract, verifier, payload, validation, store, and source-snapshot surfaces
+into same-package files without changing exported APIs. Focused
+`internal/trace` tests pass, `internal/trace` absolute function MI and file MI
+both exit 0, and repository absolute file MI drops to 29 stderr rows while
+absolute function MI remains open at 1301 stderr rows. This is file-MI
+reduction evidence only; repository-wide absolute MI remains open.
 
 ## File-Level Failures
 
-- `cmd/sdp-trace/main.go`
 - `cmd/sdp-trace/harness_cli.go`
+- `cmd/sdp-trace/main.go`
 - `cmd/sdp-trace/observe_cli.go`
 - `cmd/sdp-trace/packet_cli.go`
 - `internal/adaptercapture/adaptercapture.go`
@@ -224,71 +232,9 @@ file MI exits 1 with 32 stderr rows.
 - `internal/releaseproof/releaseproof.go`
 - `internal/repoobserver/repoobserver.go`
 - `internal/telemetry/prometheus.go`
-- `internal/trace/contract.go`
-- `internal/trace/event.go`
-- `internal/trace/safety.go`
-- `internal/trace/store.go`
-- `internal/trace/types.go`
-- `internal/verifier/explain.go`
 - `internal/verifier/verify.go`
 - `internal/witness/profiles.go`
 - `internal/witness/witness.go`
-- `tools/crapcheck/main.go`
-- `tools/crapcheck/path.go`
-- `tools/crapcheck/complexity.go`
-- `tools/crapcheck/complexity_line.go`
-- `tools/crapcheck/coverage.go`
-- `tools/crapcheck/coverage_line.go`
-- `tools/crapcheck/coverage_match.go`
-- `tools/crapcheck/join.go`
-- `tools/crapcheck/report.go`
-- `tools/crapcheck/row_key.go`
-- `tools/crapcheck/rows.go`
-- `tools/crapcheck/score.go`
-- `tools/crapcheck/scoring.go`
-- `tools/mibaselinepolicy/baseline_policy.go`
-- `tools/mibaselinepolicy/changed_files.go`
-- `tools/mibaselinepolicy/flags.go`
-- `tools/mibaselinepolicy/git.go`
-- `tools/mibaselinepolicy/input.go`
-- `tools/mibaselinepolicy/main.go`
-- `tools/mibaselinepolicy/policy.go`
-- `tools/mibaselinepolicy/scope.go`
-- `tools/qualitycheck/analyze_file.go`
-- `tools/qualitycheck/baseline.go`
-- `tools/qualitycheck/baseline_build.go`
-- `tools/qualitycheck/baseline_io.go`
-- `tools/qualitycheck/baseline_read.go`
-- `tools/qualitycheck/boolean.go`
-- `tools/qualitycheck/comments.go`
-- `tools/qualitycheck/complexity.go`
-- `tools/qualitycheck/complexity_clause.go`
-- `tools/qualitycheck/complexity_score.go`
-- `tools/qualitycheck/complexity_statement.go`
-- `tools/qualitycheck/cyclomatic.go`
-- `tools/qualitycheck/discover.go`
-- `tools/qualitycheck/discover_walk.go`
-- `tools/qualitycheck/halstead.go`
-- `tools/qualitycheck/lines.go`
-- `tools/qualitycheck/main.go`
-- `tools/qualitycheck/maintainability.go`
-- `tools/qualitycheck/measure.go`
-- `tools/qualitycheck/measure_file.go`
-- `tools/qualitycheck/measure_function.go`
-- `tools/qualitycheck/metrics.go`
-- `tools/qualitycheck/names.go`
-- `tools/qualitycheck/option_flags.go`
-- `tools/qualitycheck/options.go`
-- `tools/qualitycheck/path.go`
-- `tools/qualitycheck/receiver.go`
-- `tools/qualitycheck/report.go`
-- `tools/qualitycheck/report_baseline.go`
-- `tools/qualitycheck/report_failures.go`
-- `tools/qualitycheck/report_file_mi.go`
-- `tools/qualitycheck/report_function_mi.go`
-- `tools/qualitycheck/report_functions.go`
-- `tools/qualitycheck/round.go`
-- `tools/qualitycheck/source.go`
 
 ## Closure Strategy
 
