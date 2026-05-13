@@ -159,5 +159,31 @@ You may not state external production trust guarantees until
 | Source-bound release review | `sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |
 | Automated PR review evidence | `sdp-trace pr-review check --out review --repo-id <safe-id> --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review-record completeness only; not merge approval |
 
+## Manual External PR Review Handoff
+
+For `manual_external` PR review planes, a usable `findings_reported` or
+`no_findings` status requires retained reviewer output. A bare PR comment or
+hand-edited status is not enough.
+
+Reviewer output must be JSON matching `schema/pr-review-result.schema.json` and
+must echo the packet digest, plane, and role. The review runner records the raw
+output digest as `raw_output_ref`; validation counts the plane only after that
+digest-bound output exists.
+
+Minimum handoff steps:
+
+1. Build or reuse a frozen packet directory with `packet/packet.json`.
+2. Give the reviewer the packet digest, plane, role id, diff ref, context refs,
+   and validation criteria.
+3. Store the reviewer JSON output in a file outside the packet directory.
+4. Use a profile role whose `command` prints that JSON file, then run
+   `sdp-trace pr-review run --packet <packet-dir> --profile <profile> --out <runs-dir>`.
+5. Run `sdp-trace pr-review synthesize`, `validate`, and `summarize` against the
+   resulting run set and ledger.
+
+If the reviewer output is absent, empty, off-task, malformed, lacks retained raw
+output, or targets a different packet digest, record the plane as
+`not_assessed` or `cannot_verify`. Do not treat it as sign-off.
+
 This entrypoint is intentionally minimal and is intended to prevent over-claiming
 from reproducible verifier output.

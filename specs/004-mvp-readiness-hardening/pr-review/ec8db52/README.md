@@ -21,6 +21,16 @@ Primary artifacts:
 - `ledger.json`
 - `validation.json`
 
+Next handoff:
+
+- Give a named reviewer `packet/packet.json`, `packet/inputs/diff.patch`, the
+  listed context refs, and the required plane assignment.
+- The reviewer output must match `schema/pr-review-result.schema.json`.
+- Importing a usable result requires a profile role whose `command` prints that
+  reviewer JSON so `pr-review run` can retain `raw_output_ref`.
+- Re-run `pr-review synthesize`, `validate`, and `summarize` after importing
+  reviewer output.
+
 The large `packet/inputs/diff.patch` file is the local source-bound diff from
 PR base `abf6a79767f5708e2f9c69e4d52eadd5cbeb21c0` to head
 `ec8db521078b1553830c616d72ae7325d41680eb`. It is retained so the packet
