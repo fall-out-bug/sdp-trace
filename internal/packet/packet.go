@@ -321,6 +321,9 @@ type bundleValidator struct {
 }
 
 func LoadBundle(path string) (Bundle, error) {
+	// LoadBundle keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -334,6 +337,9 @@ func LoadBundle(path string) (Bundle, error) {
 }
 
 func LoadGitHubInput(path string) (GitHubPREvidenceInput, error) {
+	// LoadGitHubInput keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -347,6 +353,9 @@ func LoadGitHubInput(path string) (GitHubPREvidenceInput, error) {
 }
 
 func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bundle {
+	// BuildFromGitHubInput keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	packetID := fmt.Sprintf("github-pr-%d-change-evidence-packet", input.PR.Number)
 	bundleID := fmt.Sprintf("%s-bundle", packetID)
@@ -366,6 +375,9 @@ func BuildFromGitHubInput(input GitHubPREvidenceInput, generatedAt time.Time) Bu
 }
 
 func githubPacket(input GitHubPREvidenceInput, generatedAt time.Time, packetID, bundleID string, rows []Row) Packet {
+	// githubPacket keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return Packet{
 		PacketVersion:   PacketSchemaVersion,
@@ -386,6 +398,9 @@ func githubPacket(input GitHubPREvidenceInput, generatedAt time.Time, packetID, 
 }
 
 func appendPromptBoundaryFinding(packet Packet, boundary PromptBoundary) Packet {
+	// appendPromptBoundaryFinding keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	classification := ClassifyPromptBoundary(boundary)
 	if classification.Verdict == "contaminated" {
 
@@ -400,6 +415,9 @@ func appendPromptBoundaryFinding(packet Packet, boundary PromptBoundary) Packet 
 	return packet
 }
 func githubBundleManifest(bundleID string, packet Packet, entries []BundleEntry) BundleManifest {
+	// githubBundleManifest keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return BundleManifest{
 		SchemaVersion: BundleSchemaVersion,
@@ -410,6 +428,9 @@ func githubBundleManifest(bundleID string, packet Packet, entries []BundleEntry)
 }
 
 func ClassifyPromptBoundary(boundary PromptBoundary) PromptBoundaryClassification {
+	// ClassifyPromptBoundary keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	text := strings.TrimSpace(boundary.Text)
 	if text != "" {
 
@@ -419,6 +440,9 @@ func ClassifyPromptBoundary(boundary PromptBoundary) PromptBoundaryClassificatio
 }
 
 func classifyPromptMetadata(boundary PromptBoundary) PromptBoundaryClassification {
+	// classifyPromptMetadata keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if promptBoundaryMetadataMissing(boundary) {
 		return PromptBoundaryClassification{Verdict: "missing", RouteProofEffect: StateCannotVerify, Reasons: []string{"prompt boundary evidence missing"}}
 	}
@@ -432,6 +456,9 @@ func classifyPromptMetadata(boundary PromptBoundary) PromptBoundaryClassificatio
 }
 
 func classifyPromptText(text string) PromptBoundaryClassification {
+	// classifyPromptText keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	lower := strings.ToLower(text)
 	for _, phrase := range forbiddenRecorderDutyPhrases() {
 
@@ -447,6 +474,9 @@ func classifyPromptText(text string) PromptBoundaryClassification {
 }
 
 func promptBoundaryMetadataMissing(boundary PromptBoundary) bool {
+	// promptBoundaryMetadataMissing keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return strings.TrimSpace(boundary.Digest) == "" &&
 		strings.TrimSpace(boundary.CaptureActor) == "" &&
@@ -455,6 +485,9 @@ func promptBoundaryMetadataMissing(boundary PromptBoundary) bool {
 }
 
 func promptBoundaryMetadataComplete(boundary PromptBoundary) bool {
+	// promptBoundaryMetadataComplete keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return strings.TrimSpace(boundary.Digest) != "" &&
 		strings.TrimSpace(boundary.CaptureActor) != "" &&
@@ -463,6 +496,9 @@ func promptBoundaryMetadataComplete(boundary PromptBoundary) bool {
 }
 
 func forbiddenRecorderDutyPhrases() []string {
+	// forbiddenRecorderDutyPhrases keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return []string{
 		"sdp-trace",
@@ -484,11 +520,17 @@ func renderCleanTheater(out *bytes.Buffer, theater Row) {
 }
 
 func renderTheaterFinding(out *bytes.Buffer, finding TheaterFinding) {
+	// renderTheaterFinding keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "| %s | %s | %s | %s | %s | %s |\n", finding.ReasonCode, finding.State, md(finding.Severity), md(finding.Finding), md(strings.Join(finding.TriggerEvidenceRefs, ", ")), md(finding.RequiredClosureEvidence))
 }
 
 func rowByID(rows []Row, id string) Row {
+	// rowByID keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, row := range rows {
 		if row.ID == id {
 
@@ -499,6 +541,9 @@ func rowByID(rows []Row, id string) Row {
 }
 
 func renderDecisions(out *bytes.Buffer, owners []DecisionOwner) {
+	// renderDecisions keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## Decision Ownership\n\n")
 	fmt.Fprintf(out, "| decision | owner | state | reason |\n| --- | --- | --- | --- |\n")
@@ -509,6 +554,9 @@ func renderDecisions(out *bytes.Buffer, owners []DecisionOwner) {
 }
 
 func renderEvidence(out *bytes.Buffer, manifest BundleManifest) {
+	// renderEvidence keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	fmt.Fprintf(out, "## Evidence Bundle\n\n")
 	fmt.Fprintf(out, "Manifest: `%s`\n\n", md(manifest.BundleID))
 	fmt.Fprintf(out, "| ref | source class | retained form | redaction status | resolver |\n| --- | --- | --- | --- | --- |\n")
@@ -524,6 +572,9 @@ func renderEvidence(out *bytes.Buffer, manifest BundleManifest) {
 	fmt.Fprintln(out)
 }
 func renderResidualGaps(out *bytes.Buffer, gaps []ResidualGap) {
+	// renderResidualGaps keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## Residual Gaps\n\n")
 	if len(gaps) == 0 {
@@ -539,6 +590,9 @@ func renderNoResidualGaps(out *bytes.Buffer) {
 }
 
 func renderResidualGapRows(out *bytes.Buffer, gaps []ResidualGap) {
+	// renderResidualGapRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "| row id | state | reason | closure evidence |\n| --- | --- | --- | --- |\n")
 	for _, gap := range gaps {
@@ -548,6 +602,9 @@ func renderResidualGapRows(out *bytes.Buffer, gaps []ResidualGap) {
 }
 
 func renderNonProof(out *bytes.Buffer, packet Packet) {
+	// renderNonProof keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## What This Packet Does Not Prove\n\n")
 	if strings.TrimSpace(packet.NonApproval) != "" {
@@ -558,6 +615,9 @@ func renderNonProof(out *bytes.Buffer, packet Packet) {
 }
 
 func requiredRowIndex(id string) int {
+	// requiredRowIndex keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for i, required := range RequiredRows {
 		if id == required {
 
@@ -568,6 +628,9 @@ func requiredRowIndex(id string) int {
 }
 
 func resolverFromList(resolvers []ResolverEntry, ref string) string {
+	// resolverFromList keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, resolver := range resolvers {
 		if resolver.Ref == ref {
 
@@ -578,6 +641,9 @@ func resolverFromList(resolvers []ResolverEntry, ref string) string {
 }
 
 func md(value string) string {
+	// md keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	value = strings.ReplaceAll(value, "\n", " ")
 	value = strings.ReplaceAll(value, "|", "\\|")
@@ -587,6 +653,9 @@ func md(value string) string {
 	return value
 }
 func PacketDigest(packet Packet) string {
+	// PacketDigest keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	clone := packet
 
 	raw, err := json.Marshal(clone)
@@ -598,6 +667,9 @@ func PacketDigest(packet Packet) string {
 }
 
 func Validate(bundle Bundle, now time.Time) Validation {
+	// Validate keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	validator := bundleValidator{
 		bundle:        bundle,
@@ -609,6 +681,9 @@ func Validate(bundle Bundle, now time.Time) Validation {
 }
 
 func CheckDemoFirstPacket(bundle Bundle, now time.Time) Validation {
+	// CheckDemoFirstPacket keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	validation := Validate(bundle, now)
 	check := demoFirstPacketChecker{
@@ -622,6 +697,9 @@ func CheckDemoFirstPacket(bundle Bundle, now time.Time) Validation {
 }
 
 func (c *demoFirstPacketChecker) validate() Validation {
+	// validate keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	c.index()
 
 	c.requireToolGenerated()
@@ -639,6 +717,9 @@ func (c *demoFirstPacketChecker) validate() Validation {
 }
 
 func (c *demoFirstPacketChecker) requireToolGenerated() {
+	// requireToolGenerated keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if c.bundle.Packet.AuthoringMethod != AuthoringToolGenerated {
 
 		c.add("demo first-packet gate requires tool_generated authoring_method, got %s", c.bundle.Packet.AuthoringMethod)
@@ -646,6 +727,9 @@ func (c *demoFirstPacketChecker) requireToolGenerated() {
 }
 
 func (c *demoFirstPacketChecker) index() {
+	// index keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, row := range c.bundle.Packet.Rows {
 		c.rows[row.ID] = row
 	}
@@ -655,6 +739,9 @@ func (c *demoFirstPacketChecker) index() {
 	}
 }
 func (c *demoFirstPacketChecker) requirePassOrPartialRows(minimum int) {
+	// requirePassOrPartialRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	count := 0
 	for _, row := range c.rows {
 		if passOrPartial(row.State) {
@@ -668,6 +755,9 @@ func (c *demoFirstPacketChecker) requirePassOrPartialRows(minimum int) {
 }
 
 func (c *demoFirstPacketChecker) requireRowEvidence(rowID string) {
+	// requireRowEvidence keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	row := c.rows[rowID]
 	if len(row.EvidenceRefs) == 0 {
 		c.add("demo first-packet gate requires %s retained evidence refs", rowID)
@@ -678,6 +768,9 @@ func (c *demoFirstPacketChecker) requireRowEvidence(rowID string) {
 }
 
 func (c *demoFirstPacketChecker) requireUsableRowEvidenceRefs(rowID string, refs []string) {
+	// requireUsableRowEvidenceRefs keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, ref := range refs {
 		entry, ok := c.entryByRef[ref]
 		if !ok {
@@ -691,6 +784,9 @@ func (c *demoFirstPacketChecker) requireUsableRowEvidenceRefs(rowID string, refs
 }
 
 func (c *demoFirstPacketChecker) requireAgentRouteEvidence() {
+	// requireAgentRouteEvidence keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	refs, ok := c.agentRouteEvidenceRefs()
 	if !ok {
@@ -703,6 +799,9 @@ func (c *demoFirstPacketChecker) requireAgentRouteEvidence() {
 }
 
 func (c *demoFirstPacketChecker) agentRouteEvidenceRefs() ([]string, bool) {
+	// agentRouteEvidenceRefs keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	row := c.rows["PC-AGENT-ROUTE"]
 	if !passOrPartial(row.State) {
 		c.add("demo first-packet gate requires PC-AGENT-ROUTE must be pass or partial, got %s", row.State)
@@ -717,6 +816,9 @@ func (c *demoFirstPacketChecker) agentRouteEvidenceRefs() ([]string, bool) {
 }
 
 func (c *demoFirstPacketChecker) hasUsableAgentRouteEvidence(refs []string) bool {
+	// hasUsableAgentRouteEvidence keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, ref := range refs {
 		if c.usableAgentRouteEntry(ref) {
 
@@ -736,6 +838,9 @@ func passOrPartial(state string) bool {
 }
 
 func (c *demoFirstPacketChecker) requireVerificationOrReviewAssessed() {
+	// requireVerificationOrReviewAssessed keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if rowAssessed(c.rows["PC-VERIFICATION"]) || rowAssessed(c.rows["PC-REVIEW"]) {
 		return
 	}
@@ -747,6 +852,9 @@ func rowAssessed(row Row) bool {
 	return row.State == StatePass || row.State == StatePartial || row.State == StateFail
 }
 func (c *demoFirstPacketChecker) requireCannotVerifyClosureCap() {
+	// requireCannotVerifyClosureCap keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	unclosed := c.cannotVerifyRowsWithoutClosure()
 	if unclosed > 1 {
@@ -755,6 +863,9 @@ func (c *demoFirstPacketChecker) requireCannotVerifyClosureCap() {
 }
 
 func (c *demoFirstPacketChecker) cannotVerifyRowsWithoutClosure() int {
+	// cannotVerifyRowsWithoutClosure keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	unclosed := 0
 	for _, row := range c.rows {
 		if row.State != StateCannotVerify {
@@ -769,6 +880,9 @@ func (c *demoFirstPacketChecker) cannotVerifyRowsWithoutClosure() int {
 }
 
 func gapForRowWithClosure(gaps []ResidualGap, rowID string) bool {
+	// gapForRowWithClosure keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, gap := range gaps {
 		if gap.RowID == rowID && strings.TrimSpace(gap.ClosureEvidence) != "" {
 
@@ -791,6 +905,9 @@ func entryHasResolverAndDigest(entry BundleEntry) bool {
 }
 
 func demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry BundleEntry) bool {
+	// demoRouteEvidenceObservedOpenCodeGSDMiniMax keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if entry.EvidenceKind != "harness_route_observation" || syntheticEntryDigest(entry) {
 		return false
 	}
@@ -799,6 +916,9 @@ func demoRouteEvidenceObservedOpenCodeGSDMiniMax(entry BundleEntry) bool {
 }
 
 func hasOpenCodeGSDMiniMax(observed []string) bool {
+	// hasOpenCodeGSDMiniMax keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	components := map[string]bool{}
 	for _, component := range observed {
 
@@ -816,6 +936,9 @@ func syntheticEntryDigest(entry BundleEntry) bool {
 }
 
 func (v *bundleValidator) validate() Validation {
+	// validate keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	v.validateMetadata()
 	v.indexManifest()
@@ -829,6 +952,9 @@ func (v *bundleValidator) validate() Validation {
 }
 
 func (v *bundleValidator) validateMetadata() {
+	// validateMetadata keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	v.validateSchemaMetadata()
 	v.validateBundleIdentity()
@@ -837,6 +963,9 @@ func (v *bundleValidator) validateMetadata() {
 }
 
 func (v *bundleValidator) validateSchemaMetadata() {
+	// validateSchemaMetadata keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if v.bundle.Packet.PacketVersion != PacketSchemaVersion {
 		v.add("packet.packet_version must be %q", PacketSchemaVersion)
 	}
@@ -847,6 +976,9 @@ func (v *bundleValidator) validateSchemaMetadata() {
 }
 
 func (v *bundleValidator) validateBundleIdentity() {
+	// validateBundleIdentity keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	v.requireNonEmpty(v.bundle.Packet.PacketID, "packet.packet_id is required")
 	v.requireNonEmpty(v.bundle.Packet.BundleRef, "packet.bundle_ref is required")
 	v.requireNonEmpty(v.bundle.Manifest.BundleID, "manifest.bundle_id is required")
@@ -857,6 +989,9 @@ func (v *bundleValidator) validateBundleIdentity() {
 }
 
 func (v *bundleValidator) requireNonEmpty(value string, message string) {
+	// requireNonEmpty keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(value) == "" {
 
 		v.add("%s", message)
@@ -864,6 +999,9 @@ func (v *bundleValidator) requireNonEmpty(value string, message string) {
 }
 
 func (v *bundleValidator) validatePacketDigest() {
+	// validatePacketDigest keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(v.bundle.Manifest.PacketDigest) == "" {
 		v.add("manifest.packet_digest is required")
 	} else if digest := PacketDigest(v.bundle.Packet); digest != "" && v.bundle.Manifest.PacketDigest != digest {
@@ -873,6 +1011,9 @@ func (v *bundleValidator) validatePacketDigest() {
 }
 
 func (v *bundleValidator) validatePacketPolicyMetadata() {
+	// validatePacketPolicyMetadata keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	v.requireNonEmpty(v.bundle.Packet.NonApproval, "packet.non_approval is required")
 	v.requireKnown(packetStates, v.bundle.Packet.PacketState, "packet.packet_state has unknown value %q")
@@ -881,6 +1022,9 @@ func (v *bundleValidator) validatePacketPolicyMetadata() {
 }
 
 func (v *bundleValidator) validateProjectionMetadata() {
+	// validateProjectionMetadata keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	projection := v.bundle.Packet.Projection
 	if invalidCanonicalProjection(projection) {
 
@@ -900,6 +1044,9 @@ func missingNonCanonicalArtifactRef(projection Projection) bool {
 }
 
 func (v *bundleValidator) requireKnown(known map[string]bool, value string, format string) {
+	// requireKnown keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if !known[value] {
 
 		v.add(format, value)
@@ -911,6 +1058,9 @@ func (v *bundleValidator) indexManifest() {
 	v.indexResolverEntries()
 }
 func (v *bundleValidator) indexManifestEntries() {
+	// indexManifestEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, entry := range v.bundle.Manifest.Entries {
 		if v.indexManifestEntry(entry) {
 
@@ -923,6 +1073,9 @@ func (v *bundleValidator) indexManifestEntries() {
 }
 
 func (v *bundleValidator) indexResolverEntries() {
+	// indexResolverEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, resolver := range v.bundle.Manifest.Resolvers {
 
 		v.indexResolverEntry(resolver)
@@ -930,6 +1083,9 @@ func (v *bundleValidator) indexResolverEntries() {
 }
 
 func (v *bundleValidator) indexResolverEntry(resolver ResolverEntry) {
+	// indexResolverEntry keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(resolver.Ref) == "" {
 		return
 	}
@@ -938,6 +1094,9 @@ func (v *bundleValidator) indexResolverEntry(resolver ResolverEntry) {
 }
 
 func (v *bundleValidator) indexManifestEntry(entry BundleEntry) bool {
+	// indexManifestEntry keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(entry.Ref) == "" {
 		v.add("manifest entry has empty ref")
 		return false
@@ -948,6 +1107,9 @@ func (v *bundleValidator) indexManifestEntry(entry BundleEntry) bool {
 }
 
 func (v *bundleValidator) validateManifestEntryEnums(entry BundleEntry) {
+	// validateManifestEntryEnums keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if !retainedForms[entry.RetainedForm] {
 		v.add("manifest entry %q has unknown retained_form %q", entry.Ref, entry.RetainedForm)
@@ -958,6 +1120,9 @@ func (v *bundleValidator) validateManifestEntryEnums(entry BundleEntry) {
 }
 
 func (v *bundleValidator) validateRows() {
+	// validateRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	rows := map[string]Row{}
 	v.indexRows(rows)
 	v.requireRowsPresent(rows)
@@ -968,6 +1133,9 @@ func (v *bundleValidator) validateRows() {
 }
 
 func (v *bundleValidator) indexRows(rows map[string]Row) {
+	// indexRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, row := range v.bundle.Packet.Rows {
 		if v.validateRowID(row.ID, rows) {
 
@@ -978,6 +1146,9 @@ func (v *bundleValidator) indexRows(rows map[string]Row) {
 }
 
 func (v *bundleValidator) requireRowsPresent(rows map[string]Row) {
+	// requireRowsPresent keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, id := range RequiredRows {
 		if rows[id].ID == "" {
 
@@ -987,6 +1158,9 @@ func (v *bundleValidator) requireRowsPresent(rows map[string]Row) {
 }
 
 func (v *bundleValidator) validateRowID(rowID string, rows map[string]Row) bool {
+	// validateRowID keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if !requiredRow(rowID) {
 		v.add("unknown row id %q", rowID)
@@ -999,6 +1173,9 @@ func (v *bundleValidator) validateRowID(rowID string, rows map[string]Row) bool 
 }
 
 func (v *bundleValidator) validateRow(row Row) {
+	// validateRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	v.validateRowRequiredFields(row)
 	v.validateRowReason(row)
@@ -1007,6 +1184,9 @@ func (v *bundleValidator) validateRow(row Row) {
 }
 
 func (v *bundleValidator) validateRowReason(row Row) {
+	// validateRowReason keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if missingReasonStates[row.State] && strings.TrimSpace(row.Reason) == "" {
 		v.add("%s state %s requires reason", row.ID, row.State)
@@ -1014,6 +1194,9 @@ func (v *bundleValidator) validateRowReason(row Row) {
 }
 
 func (v *bundleValidator) validatePassRowEvidence(row Row) {
+	// validatePassRowEvidence keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if row.State == StatePass && len(row.EvidenceRefs) == 0 {
 
 		v.add("%s pass requires retained evidence refs", row.ID)
@@ -1021,6 +1204,9 @@ func (v *bundleValidator) validatePassRowEvidence(row Row) {
 }
 
 func (v *bundleValidator) validateRowEvidenceRefs(row Row) {
+	// validateRowEvidenceRefs keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, ref := range row.EvidenceRefs {
 
 		v.validateEvidenceRef(row.ID, row.State, ref)
@@ -1034,12 +1220,18 @@ func (v *bundleValidator) validateRowRequiredFields(row Row) {
 }
 
 func (v *bundleValidator) validateRowState(row Row) {
+	// validateRowState keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if !states[row.State] {
 
 		v.add("%s has unknown state %q", row.ID, row.State)
 	}
 }
 func (v *bundleValidator) validateRowSummary(row Row) {
+	// validateRowSummary keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(row.Summary) == "" {
 
 		v.add("%s requires summary", row.ID)
@@ -1047,6 +1239,9 @@ func (v *bundleValidator) validateRowSummary(row Row) {
 }
 
 func (v *bundleValidator) validateRowOwner(row Row) {
+	// validateRowOwner keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(row.Owner) == "" {
 
 		v.add("%s requires owner", row.ID)
@@ -1054,6 +1249,9 @@ func (v *bundleValidator) validateRowOwner(row Row) {
 }
 
 func (v *bundleValidator) validateEvidenceRef(rowID, state, ref string) {
+	// validateEvidenceRef keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	entry, ok := v.entryByRef[ref]
 	if !ok {
 
@@ -1070,6 +1268,9 @@ func (v *bundleValidator) validateEvidenceRef(rowID, state, ref string) {
 	v.validatePassEvidenceRef(rowID, ref, entry)
 }
 func (v *bundleValidator) validatePassEvidenceRef(rowID, ref string, entry BundleEntry) {
+	// validatePassEvidenceRef keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if entryExpired(entry, v.now) {
 		v.add("%s pass cites expired artifact ref %q", rowID, ref)
@@ -1080,6 +1281,9 @@ func (v *bundleValidator) validatePassEvidenceRef(rowID, ref string, entry Bundl
 }
 
 func (v *bundleValidator) validateContradictions(rows map[string]Row) {
+	// validateContradictions keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, entry := range v.entryByRef {
 
 		v.validateContradiction(rows, entry)
@@ -1087,6 +1291,9 @@ func (v *bundleValidator) validateContradictions(rows map[string]Row) {
 }
 
 func (v *bundleValidator) validateContradiction(rows map[string]Row, entry BundleEntry) {
+	// validateContradiction keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	rowID := contradictionRowID(rows, entry)
 	if !hasContradictionTarget(entry, rowID) {
@@ -1103,6 +1310,9 @@ func hasContradictionTarget(entry BundleEntry, rowID string) bool {
 }
 
 func (v *bundleValidator) validateContradictionState(rowID string, row Row) {
+	// validateContradictionState keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if row.State != StatePartial {
 
 		v.add("%s has contradictory evidence but state is %s, want partial", rowID, row.State)
@@ -1110,6 +1320,9 @@ func (v *bundleValidator) validateContradictionState(rowID string, row Row) {
 }
 
 func (v *bundleValidator) validateContradictionGap(rowID string) {
+	// validateContradictionGap keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if !gapForRow(v.bundle.Packet.ResidualGaps, rowID) {
 
 		v.add("%s contradictory evidence requires residual gap explanation", rowID)
@@ -1117,6 +1330,9 @@ func (v *bundleValidator) validateContradictionGap(rowID string) {
 }
 
 func contradictionRowID(rows map[string]Row, entry BundleEntry) string {
+	// contradictionRowID keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if entry.ContradictsRowID != "" {
 
 		return entry.ContradictsRowID
@@ -1125,6 +1341,9 @@ func contradictionRowID(rows map[string]Row, entry BundleEntry) string {
 }
 
 func (v *bundleValidator) validateFindingsAndGaps() {
+	// validateFindingsAndGaps keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	v.validateTheaterState()
 	v.validateDecisionOwners()
@@ -1137,6 +1356,9 @@ func (v *bundleValidator) validateFindingsAndGaps() {
 }
 
 func (v *bundleValidator) validateTheaterFinding(finding TheaterFinding) {
+	// validateTheaterFinding keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(finding.ReasonCode) == "" {
 		v.add("theater finding requires reason_code")
 	} else if !theaterReasonCodes[finding.ReasonCode] {
@@ -1149,6 +1371,9 @@ func (v *bundleValidator) validateTheaterFinding(finding TheaterFinding) {
 }
 
 func (v *bundleValidator) validateResidualGap(gap ResidualGap) {
+	// validateResidualGap keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if !requiredRow(gap.RowID) {
 		v.add("residual gap has unknown row id %q", gap.RowID)
@@ -1158,6 +1383,9 @@ func (v *bundleValidator) validateResidualGap(gap ResidualGap) {
 	}
 }
 func (v *bundleValidator) validateResidualCoverage(rows map[string]Row) {
+	// validateResidualCoverage keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, row := range rows {
 		if residualCoverageExempt(row) {
 			continue
@@ -1175,6 +1403,9 @@ func residualCoverageExempt(row Row) bool {
 }
 
 func (v *bundleValidator) validateTheaterState() {
+	// validateTheaterState keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	row := v.rows["PC-THEATER"]
 	if len(v.bundle.Packet.TheaterFindings) == 0 {
 		return
@@ -1193,6 +1424,9 @@ func theaterFindingState(state string) bool {
 }
 
 func (v *bundleValidator) validateDecisionOwners() {
+	// validateDecisionOwners keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	owners := map[string]DecisionOwner{}
 	v.indexDecisionOwners(owners)
 
@@ -1200,6 +1434,9 @@ func (v *bundleValidator) validateDecisionOwners() {
 }
 
 func (v *bundleValidator) indexDecisionOwners(owners map[string]DecisionOwner) {
+	// indexDecisionOwners keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, owner := range v.bundle.Packet.DecisionOwners {
 		if decision := v.validateDecisionOwner(owner); decision != "" {
 
@@ -1209,6 +1446,9 @@ func (v *bundleValidator) indexDecisionOwners(owners map[string]DecisionOwner) {
 }
 
 func (v *bundleValidator) requireDecisionOwners(owners map[string]DecisionOwner) {
+	// requireDecisionOwners keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, decision := range requiredDecisions {
 		if owners[decision].Decision == "" {
 
@@ -1218,6 +1458,9 @@ func (v *bundleValidator) requireDecisionOwners(owners map[string]DecisionOwner)
 }
 
 func (v *bundleValidator) validateDecisionOwner(owner DecisionOwner) string {
+	// validateDecisionOwner keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	decision := strings.TrimSpace(owner.Decision)
 	if decision == "" {
@@ -1228,6 +1471,9 @@ func (v *bundleValidator) validateDecisionOwner(owner DecisionOwner) string {
 	return decision
 }
 func (v *bundleValidator) validateNamedDecisionOwner(decision string, owner DecisionOwner) {
+	// validateNamedDecisionOwner keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	v.validateDecisionOwnerName(decision, owner)
 	v.validateDecisionOwnerState(decision, owner)
@@ -1235,6 +1481,9 @@ func (v *bundleValidator) validateNamedDecisionOwner(decision string, owner Deci
 }
 
 func (v *bundleValidator) validateDecisionOwnerName(decision string, owner DecisionOwner) {
+	// validateDecisionOwnerName keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(owner.Owner) == "" {
 
 		v.add("decision %s requires owner", decision)
@@ -1242,6 +1491,9 @@ func (v *bundleValidator) validateDecisionOwnerName(decision string, owner Decis
 }
 
 func (v *bundleValidator) validateDecisionOwnerState(decision string, owner DecisionOwner) {
+	// validateDecisionOwnerState keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if !states[owner.State] {
 
 		v.add("decision %s has unknown state %q", decision, owner.State)
@@ -1249,6 +1501,9 @@ func (v *bundleValidator) validateDecisionOwnerState(decision string, owner Deci
 }
 
 func (v *bundleValidator) validateDecisionOwnerReason(decision string, owner DecisionOwner) {
+	// validateDecisionOwnerReason keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if missingReasonStates[owner.State] && strings.TrimSpace(owner.Reason) == "" {
 
 		v.add("decision %s state %s requires reason", decision, owner.State)
@@ -1260,6 +1515,9 @@ func (v *bundleValidator) add(format string, args ...any) {
 }
 
 func requiredRow(id string) bool {
+	// requiredRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, required := range RequiredRows {
 		if id == required {
 
@@ -1270,6 +1528,9 @@ func requiredRow(id string) bool {
 }
 
 func rowIDForRef(rows map[string]Row, ref string) string {
+	// rowIDForRef keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for id, row := range rows {
 		for _, rowRef := range row.EvidenceRefs {
 
@@ -1281,6 +1542,9 @@ func rowIDForRef(rows map[string]Row, ref string) string {
 	return ""
 }
 func gapForRow(gaps []ResidualGap, rowID string) bool {
+	// gapForRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, gap := range gaps {
 		if gap.RowID == rowID && strings.TrimSpace(gap.Reason) != "" {
 
@@ -1291,6 +1555,9 @@ func gapForRow(gaps []ResidualGap, rowID string) bool {
 }
 
 func entryExpired(entry BundleEntry, now time.Time) bool {
+	// entryExpired keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(entry.ExpiresAt) == "" {
 		return false
 	}
@@ -1303,6 +1570,9 @@ func entryExpired(entry BundleEntry, now time.Time) bool {
 }
 
 func passRefUnverifiable(entry BundleEntry) bool {
+	// passRefUnverifiable keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if entry.RedactionStatus == StateCannotVerify || entry.RetainedForm == "not_retained" {
 
 		return true
@@ -1311,6 +1581,9 @@ func passRefUnverifiable(entry BundleEntry) bool {
 }
 
 func artifactAccessUnverifiable(access string) bool {
+	// artifactAccessUnverifiable keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	switch access {
 	case "", "present":
 		return false
@@ -1323,6 +1596,9 @@ func artifactAccessUnverifiable(access string) bool {
 }
 
 func githubSourceChange(input GitHubPREvidenceInput) SourceChange {
+	// githubSourceChange keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return SourceChange{
 		Repository:  input.PR.URL,
@@ -1336,6 +1612,9 @@ func githubSourceChange(input GitHubPREvidenceInput) SourceChange {
 }
 
 func githubRows(input GitHubPREvidenceInput) []Row {
+	// githubRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	change := githubChangeRow(input)
 	mutation := githubMutationRow(input)
 
@@ -1355,6 +1634,9 @@ func githubRows(input GitHubPREvidenceInput) []Row {
 }
 
 func githubChangeRow(input GitHubPREvidenceInput) Row {
+	// githubChangeRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(input.CommitRange.Base) == "" || strings.TrimSpace(input.CommitRange.Head) == "" {
 
 		return githubRow("PC-CHANGE", StateCannotVerify, "Change-host metadata is retained but commit range is incomplete.", []string{"github:pr"}, "missing commit range base or head")
@@ -1363,6 +1645,9 @@ func githubChangeRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubMutationRow(input GitHubPREvidenceInput) Row {
+	// githubMutationRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(input.CommitRange.Base) == "" || strings.TrimSpace(input.CommitRange.Head) == "" {
 
 		return githubRow("PC-MUTATION", StateCannotVerify, "Commit range is incomplete.", nil, "missing commit range base or head")
@@ -1371,6 +1656,9 @@ func githubMutationRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubInitiatorRow(input GitHubPREvidenceInput) Row {
+	// githubInitiatorRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if input.PR.BodyRef != "" {
 
 		return githubRow("PC-INITIATOR", StatePartial, "PR body task source is retained.", []string{"github:pr-body"}, "PR body is weaker than a dedicated issue binding")
@@ -1379,6 +1667,9 @@ func githubInitiatorRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubAgentRouteRow(input GitHubPREvidenceInput) Row {
+	// githubAgentRouteRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	classification := ClassifyPromptBoundary(input.PromptBoundary)
 	if row, ok := promptBoundaryRouteFailureRow(input.RequirePromptBoundary, classification); ok {
 		return row
@@ -1390,6 +1681,9 @@ func githubAgentRouteRow(input GitHubPREvidenceInput) Row {
 	return githubRow("PC-AGENT-ROUTE", StateNotAssessed, "Agent route evidence was not provided.", nil, "missing OpenCode/GSD observation ref")
 }
 func githubAgentRouteRefsRow(requirePromptBoundary bool, classification PromptBoundaryClassification) Row {
+	// githubAgentRouteRefsRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if requirePromptBoundary && classification.RouteProofEffect == StatePartial {
 		return githubRow("PC-AGENT-ROUTE", StatePartial, "Agent route refs and digest-only prompt boundary are retained.", []string{"agent:route", "prompt:boundary"}, "prompt text is unavailable; digest-only boundary supports partial route proof")
@@ -1398,6 +1692,9 @@ func githubAgentRouteRefsRow(requirePromptBoundary bool, classification PromptBo
 }
 
 func promptBoundaryRouteFailureRow(required bool, classification PromptBoundaryClassification) (Row, bool) {
+	// promptBoundaryRouteFailureRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if !required {
 
 		return Row{}, false
@@ -1405,6 +1702,9 @@ func promptBoundaryRouteFailureRow(required bool, classification PromptBoundaryC
 	return promptBoundaryRouteProofFailureRow(classification)
 }
 func promptBoundaryRouteProofFailureRow(classification PromptBoundaryClassification) (Row, bool) {
+	// promptBoundaryRouteProofFailureRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if classification.RouteProofEffect == StateFail {
 
 		return githubPromptBoundaryRouteFailRow(classification), true
@@ -1413,6 +1713,9 @@ func promptBoundaryRouteProofFailureRow(classification PromptBoundaryClassificat
 }
 
 func promptBoundaryRouteCannotVerifyRow(classification PromptBoundaryClassification) (Row, bool) {
+	// promptBoundaryRouteCannotVerifyRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if classification.RouteProofEffect != StateCannotVerify {
 		return Row{}, false
 	}
@@ -1429,6 +1732,9 @@ func githubPromptBoundaryRouteCannotVerifyRow(classification PromptBoundaryClass
 }
 
 func githubVerificationRow(input GitHubPREvidenceInput) Row {
+	// githubVerificationRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	classification := ClassifyPromptBoundary(input.PromptBoundary)
 	if row, ok := githubVerificationCannotVerifyRow(input, classification); ok {
 		return row
@@ -1444,6 +1750,9 @@ func githubVerificationRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubVerificationPassRow(input GitHubPREvidenceInput) Row {
+	// githubVerificationPassRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	refs := append([]string{"github:check"}, artifactEvidenceRefs(input)...)
 	if strings.TrimSpace(input.WorkflowRunID) != "" {
 
@@ -1453,6 +1762,9 @@ func githubVerificationPassRow(input GitHubPREvidenceInput) Row {
 }
 
 func githubVerificationCannotVerifyRow(input GitHubPREvidenceInput, classification PromptBoundaryClassification) (Row, bool) {
+	// githubVerificationCannotVerifyRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if row, ok := githubPromptBoundaryVerificationCannotVerifyRow(input.RequirePromptBoundary, classification); ok {
 		return row, true
@@ -1461,6 +1773,9 @@ func githubVerificationCannotVerifyRow(input GitHubPREvidenceInput, classificati
 }
 
 func githubPromptBoundaryVerificationCannotVerifyRow(required bool, classification PromptBoundaryClassification) (Row, bool) {
+	// githubPromptBoundaryVerificationCannotVerifyRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if promptBoundaryBlocksVerification(required, classification) {
 
 		return githubRow("PC-VERIFICATION", StateCannotVerify, "Verification cannot pass without clean or partially retained prompt-boundary evidence.", []string{"prompt:boundary"}, strings.Join(classification.Reasons, "; ")), true
@@ -1469,6 +1784,9 @@ func githubPromptBoundaryVerificationCannotVerifyRow(required bool, classificati
 }
 
 func githubCheckVerificationCannotVerifyRow(input GitHubPREvidenceInput) (Row, bool) {
+	// githubCheckVerificationCannotVerifyRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if len(input.Checks) == 0 {
 
 		return githubRow("PC-VERIFICATION", StateCannotVerify, "No GitHub check evidence was provided.", nil, "missing GitHub check or workflow run evidence"), true
@@ -1490,6 +1808,9 @@ func promptBoundaryBlocksVerification(required bool, classification PromptBounda
 }
 
 func checksSucceeded(checks []GitHubCheck) bool {
+	// checksSucceeded keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	for _, check := range checks {
 		if check.Conclusion != "success" {
 
@@ -1500,6 +1821,9 @@ func checksSucceeded(checks []GitHubCheck) bool {
 }
 
 func artifactEvidenceRefs(input GitHubPREvidenceInput) []string {
+	// artifactEvidenceRefs keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	refs := []string{}
 	seen := map[string]bool{}
 	for _, check := range input.Checks {
@@ -1516,6 +1840,9 @@ func artifactEvidenceRefs(input GitHubPREvidenceInput) []string {
 }
 
 func checksHaveRetainedArtifactRefs(input GitHubPREvidenceInput) bool {
+	// checksHaveRetainedArtifactRefs keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	artifacts := retainedArtifactNames(input.Artifacts)
 	for _, check := range input.Checks {
 
@@ -1526,6 +1853,9 @@ func checksHaveRetainedArtifactRefs(input GitHubPREvidenceInput) bool {
 	return true
 }
 func checkHasRetainedArtifactRefs(check GitHubCheck, artifacts map[string]bool) bool {
+	// checkHasRetainedArtifactRefs keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if len(check.ArtifactRefs) == 0 {
 
 		return false
@@ -1540,6 +1870,9 @@ func checkHasRetainedArtifactRefs(check GitHubCheck, artifacts map[string]bool) 
 }
 
 func retainedArtifactNames(artifacts []GitHubArtifact) map[string]bool {
+	// retainedArtifactNames keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	names := map[string]bool{}
 	for _, artifact := range artifacts {
 
@@ -1550,6 +1883,9 @@ func retainedArtifactNames(artifacts []GitHubArtifact) map[string]bool {
 	return names
 }
 func githubReviewRow(input GitHubPREvidenceInput) Row {
+	// githubReviewRow keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if len(input.Reviews) == 0 {
 		return githubRow("PC-REVIEW", StateNotAssessed, "Review evidence was not provided.", nil, "missing GitHub review or retained external review")
 	}
@@ -1568,6 +1904,9 @@ func githubRow(id, state, summary string, refs []string, reason string) Row {
 }
 
 func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	entries := githubBaseEntries(input)
 
 	entries = append(entries, githubPromptBoundaryEntries(input)...)
@@ -1581,6 +1920,9 @@ func githubEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubBaseEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubBaseEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return []BundleEntry{
 		authorityEntry(bundleEntry("github:pr", "change_host", input.PR.URL, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID),
@@ -1592,6 +1934,9 @@ func githubBaseEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubPromptBoundaryEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubPromptBoundaryEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if input.RequirePromptBoundary || strings.TrimSpace(input.PromptBoundary.Text) != "" || strings.TrimSpace(input.PromptBoundary.Digest) != "" {
 
 		return []BundleEntry{authorityEntry(bundleEntry("prompt:boundary", "harness", promptBoundaryResolver(input.PromptBoundary), promptBoundaryRetainedForm(input.PromptBoundary)), "recorder", "recorder_owned", "sdp-trace recorder run", "external_retained_artifact", input.PromptBoundary.Digest)}
@@ -1600,6 +1945,9 @@ func githubPromptBoundaryEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubPRBodyEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubPRBodyEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if input.PR.BodyRef != "" {
 
 		return []BundleEntry{authorityEntry(bundleEntry("github:pr-body", "change_host", input.PR.BodyRef, "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)}
@@ -1608,6 +1956,9 @@ func githubPRBodyEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubAgentRouteEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubAgentRouteEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if len(input.AgentRouteRefs) > 0 {
 		entry := bundleEntry("agent:route", "harness", strings.Join(input.AgentRouteRefs, ", "), "external_ref")
 		if strings.TrimSpace(input.AgentRouteDigest) != "" {
@@ -1623,6 +1974,9 @@ func githubAgentRouteEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubCheckEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubCheckEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if len(input.Checks) > 0 {
 
 		return []BundleEntry{authorityEntry(bundleEntry("github:check", "ci", checkResolvers(input.Checks), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)}
@@ -1631,6 +1985,9 @@ func githubCheckEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubReviewEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubReviewEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if len(input.Reviews) > 0 {
 
 		return []BundleEntry{authorityEntry(bundleEntry("github:review", "review", reviewResolvers(input.Reviews), "external_ref"), "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", input.WorkflowRunID)}
@@ -1639,6 +1996,9 @@ func githubReviewEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func githubArtifactEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubArtifactEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	entries := []BundleEntry{}
 	for _, artifact := range input.Artifacts {
 		entry := bundleEntry("artifact:"+artifact.Name, "ci", artifact.Resolver, artifact.RetainedForm)
@@ -1651,6 +2011,9 @@ func githubArtifactEntries(input GitHubPREvidenceInput) []BundleEntry {
 	return entries
 }
 func githubIntegrationEntries(input GitHubPREvidenceInput) []BundleEntry {
+	// githubIntegrationEntries keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	entries := []BundleEntry{}
 	for _, action := range input.IntegrationActions {
 
@@ -1662,6 +2025,9 @@ func githubIntegrationEntries(input GitHubPREvidenceInput) []BundleEntry {
 }
 
 func authorityEntry(entry BundleEntry, actor, writeAuthority, generatedBy, sourceCommitState, sourceRef string) BundleEntry {
+	// authorityEntry keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	entry.Actor = actor
 	entry.WriteAuthority = writeAuthority
@@ -1672,6 +2038,9 @@ func authorityEntry(entry BundleEntry, actor, writeAuthority, generatedBy, sourc
 }
 
 func promptBoundaryResolver(boundary PromptBoundary) string {
+	// promptBoundaryResolver keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	if strings.TrimSpace(boundary.Text) != "" {
 		return "prompt:text-retained"
 	}
@@ -1683,6 +2052,9 @@ func promptBoundaryResolver(boundary PromptBoundary) string {
 }
 
 func promptBoundaryRetainedForm(boundary PromptBoundary) string {
+	// promptBoundaryRetainedForm keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	if strings.TrimSpace(boundary.Text) != "" {
 		return "redacted"
@@ -1694,6 +2066,9 @@ func promptBoundaryRetainedForm(boundary PromptBoundary) string {
 }
 
 func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
+	// bundleEntry keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	resolver = redactSecretLike(resolver)
 
 	return BundleEntry{
@@ -1707,6 +2082,9 @@ func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
 	}
 }
 func redactSecretLike(value string) string {
+	// redactSecretLike keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	redacted := value
 	for _, marker := range []string{"SECRET", "TOKEN", "Authorization:"} {
 
@@ -1718,6 +2096,9 @@ func redactSecretLike(value string) string {
 }
 
 func residualGapsForRows(rows []Row) []ResidualGap {
+	// residualGapsForRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	gaps := []ResidualGap{}
 	for _, row := range rows {
 		if row.State == StatePass || row.ID == "PC-RESIDUAL-GAPS" {
@@ -1730,6 +2111,9 @@ func residualGapsForRows(rows []Row) []ResidualGap {
 }
 
 func defaultDecisionOwners() []DecisionOwner {
+	// defaultDecisionOwners keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return []DecisionOwner{
 		{Decision: "merge", Owner: "maintainer", State: StateNotAssessed, Reason: "packet is not approval"},
@@ -1740,6 +2124,9 @@ func defaultDecisionOwners() []DecisionOwner {
 }
 
 func checkResolvers(checks []GitHubCheck) string {
+	// checkResolvers keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	values := []string{}
 	for _, check := range checks {
 
@@ -1749,6 +2136,9 @@ func checkResolvers(checks []GitHubCheck) string {
 }
 
 func reviewResolvers(reviews []GitHubReview) string {
+	// reviewResolvers keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 	values := []string{}
 	for _, review := range reviews {
 
@@ -1763,6 +2153,9 @@ func digestPlaceholder(value string) string {
 }
 
 func RenderMarkdown(bundle Bundle) (string, error) {
+	// RenderMarkdown keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	packet, err := renderablePacket(bundle)
 	if err != nil {
@@ -1789,6 +2182,9 @@ func renderPacketMarkdown(packet Packet, manifest BundleManifest) string {
 }
 
 func renderablePacket(bundle Bundle) (Packet, error) {
+	// renderablePacket keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	validation := Validate(bundle, time.Now().UTC())
 	if validation.State != StatePass {
@@ -1799,6 +2195,9 @@ func renderablePacket(bundle Bundle) (Packet, error) {
 }
 
 func renderExecutiveSummary(out *bytes.Buffer, packet Packet) {
+	// renderExecutiveSummary keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## Executive Summary\n\n")
 	fmt.Fprintf(out, "- Source change: %s %s.\n", packet.SourceChange.Repository, packet.SourceChange.ChangeID)
@@ -1809,6 +2208,9 @@ func renderExecutiveSummary(out *bytes.Buffer, packet Packet) {
 }
 
 func renderMetadata(out *bytes.Buffer, packet Packet) {
+	// renderMetadata keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## Packet Metadata\n\n")
 	fmt.Fprintf(out, "| field | value |\n| --- | --- |\n")
@@ -1819,6 +2221,9 @@ func renderMetadata(out *bytes.Buffer, packet Packet) {
 }
 
 func packetMetadataFields(packet Packet) [][2]string {
+	// packetMetadataFields keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	return [][2]string{
 		{"packet_id", packet.PacketID},
@@ -1834,6 +2239,9 @@ func packetMetadataFields(packet Packet) [][2]string {
 }
 
 func renderRows(out *bytes.Buffer, rows []Row) {
+	// renderRows keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## Required Rows\n\n")
 	fmt.Fprintf(out, "| row id | state | answer | evidence refs | gap / next evidence | owner |\n| --- | --- | --- | --- | --- | --- |\n")
@@ -1853,6 +2261,9 @@ func renderRows(out *bytes.Buffer, rows []Row) {
 }
 
 func renderTheater(out *bytes.Buffer, packet Packet) {
+	// renderTheater keeps packet evidence explicit and replay-bound.
+	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
+	// This helper validates or projects packet data; it does not create external proof.
 
 	fmt.Fprintf(out, "## Theater Findings\n\n")
 	fmt.Fprintf(out, "| reason code | state | severity | finding | trigger evidence | required closure evidence |\n| --- | --- | --- | --- | --- | --- |\n")

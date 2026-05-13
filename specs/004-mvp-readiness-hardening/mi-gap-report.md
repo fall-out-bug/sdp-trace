@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 260 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 123 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -427,6 +427,17 @@ reference rendering. Focused `internal/harnessobs` tests pass,
 below 70. Repository absolute file MI remains 15 failure rows plus the raw
 `exit status 1` line; absolute function MI drops to 260 failure rows plus the
 raw `exit status 1` line.
+
+The `internal/packet/packet.go` in-place trust-boundary comment pass kept
+existing function baseline keys stable while documenting bundle loading, GitHub
+input lowering, prompt-boundary classification, packet digest binding, demo
+first-packet requirements, manifest/resolver evidence references, contradiction
+and residual-gap validation, decision-owner accountability, artifact access
+checks, and markdown rendering as projection. Focused `internal/packet` tests
+pass, `internal/packet` has zero absolute function-MI rows, and file MI
+remains below 70. Repository absolute file MI remains 15 failure rows plus the
+raw `exit status 1` line; absolute function MI drops to 123 failure rows plus
+the raw `exit status 1` line.
 
 ## File-Level Failures
 
