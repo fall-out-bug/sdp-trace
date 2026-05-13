@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1237 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 1175 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -306,6 +306,16 @@ file/function MI, and `internal/recorder/recorder.go` is retired from the
 absolute file-MI output. Repository absolute file MI drops to 15 failure rows
 plus the raw `exit status 1` line; absolute function MI drops to 1237 failure
 rows plus the raw `exit status 1` line.
+
+The `internal/ciartifact/ciartifact.go` in-place trust-boundary comment pass
+kept existing function baseline keys stable while documenting CI artifact
+family evaluation, producer/access/binding aggregation, source/run
+sanitization, output safety, and deterministic safety-ruleset boundaries.
+Focused `internal/ciartifact` tests pass, `internal/ciartifact` has zero
+absolute function-MI rows, and its file MI improves from 4.4 to 18.9 while
+remaining below the absolute file threshold. Repository absolute file MI remains
+15 failure rows plus the raw `exit status 1` line; absolute function MI drops
+to 1175 failure rows plus the raw `exit status 1` line.
 
 ## File-Level Failures
 

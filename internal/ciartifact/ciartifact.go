@@ -183,6 +183,9 @@ type OutputSafetyResult struct {
 }
 
 func Evaluate(manifest Manifest) ObservationResult {
+	// Evaluation starts from the manifest inputs and produces evidence states,
+	// not a scalar health score or an implicit pass claim.
+	// Each later helper keeps missing, unsafe, and contradictory evidence separate.
 
 	source, sourceSafe := sanitizeSource(manifest.SelectedSource)
 	run, runSafe := sanitizeRun(manifest.SelectedRun)
@@ -192,6 +195,8 @@ func Evaluate(manifest Manifest) ObservationResult {
 	return observationResult(manifest, source, run, inputs, state, identityCannotVerify)
 }
 func observationResult(manifest Manifest, source SourceIdentity, run RunIdentity, inputs evaluatedInputs, state string, identityCannotVerify bool) ObservationResult {
+	// Result assembly keeps assessment state, reasons, and next actions aligned.
+	// The output is a replayable CI-artifact observation, not external CI proof.
 
 	result := baseObservationResult(manifest, source, run, inputs, state)
 	addObservationGaps(&result, inputs, identityCannotVerify)
@@ -199,6 +204,8 @@ func observationResult(manifest Manifest, source SourceIdentity, run RunIdentity
 }
 
 func baseObservationResult(manifest Manifest, source SourceIdentity, run RunIdentity, inputs evaluatedInputs, state string) ObservationResult {
+	// The base result begins in cannot_verify until concrete manifest evidence
+	// raises or fails individual artifact-family conditions.
 	result := ObservationResult{
 		SchemaVersion:            SchemaVersion,
 		SelectedProfile:          ProfileCIArtifactObservation,
@@ -223,6 +230,8 @@ func baseObservationResult(manifest Manifest, source SourceIdentity, run RunIden
 }
 
 func addObservationGaps(result *ObservationResult, inputs evaluatedInputs, identityCannotVerify bool) {
+	// Gap rows are attached only after family and safety checks have run.
+	// This avoids presenting skipped checks as successful artifact coverage.
 
 	result.Reasons = reasons(inputs.families, inputs.index, inputs.safety, identityCannotVerify)
 	result.NextActions = nextActions(inputs.families, inputs.index, inputs.safety, identityCannotVerify)
@@ -236,6 +245,8 @@ type evaluatedInputs struct {
 }
 
 func evaluatedManifestInputs(manifest Manifest) evaluatedInputs {
+	// Manifest input evaluation is the boundary where raw manifest fields become
+	// normalized artifact-family observations.
 
 	reqs := requirements(manifest.RequiredFamilies)
 	return evaluatedInputs{
@@ -247,6 +258,8 @@ func evaluatedManifestInputs(manifest Manifest) evaluatedInputs {
 }
 
 func requirements(input []FamilyRequirement) map[string]FamilyRequirement {
+	// Requirements are derived from declared producer and access expectations,
+	// keeping absent declarations distinct from failed declarations.
 	reqs := map[string]FamilyRequirement{}
 	for _, req := range input {
 
@@ -262,6 +275,8 @@ func requirements(input []FamilyRequirement) map[string]FamilyRequirement {
 }
 
 func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) []FamilyObservation {
+	// Family evaluation compares required and observed artifact groups without
+	// collapsing individual family verdicts into an opaque aggregate.
 
 	observed := observedFamilies(inputs)
 	out, seen := requiredFamilyObservations(reqs, observed)
@@ -272,6 +287,8 @@ func evaluateFamilies(reqs map[string]FamilyRequirement, inputs []FamilyInput) [
 }
 
 func observedFamilies(inputs []FamilyInput) map[string]FamilyInput {
+	// Observed families are collected from sanitized manifest data so unsafe labels
+	// cannot become source references in the final assessment.
 	observed := map[string]FamilyInput{}
 	for _, input := range inputs {
 
@@ -289,6 +306,8 @@ func observedFamilies(inputs []FamilyInput) map[string]FamilyInput {
 }
 
 func requiredFamilyObservations(reqs map[string]FamilyRequirement, observed map[string]FamilyInput) ([]FamilyObservation, map[string]bool) {
+	// Required family observations preserve the requested producer scope and access
+	// state before observed artifacts are matched.
 
 	seen := map[string]bool{}
 	out := make([]FamilyObservation, 0, len(reqs)+len(observed))
@@ -302,6 +321,8 @@ func requiredFamilyObservations(reqs map[string]FamilyRequirement, observed map[
 }
 
 func extraFamilies(observed map[string]FamilyInput, seen map[string]bool) []string {
+	// Extra family detection reports unexpected artifact groups without treating
+	// them as proof that required families were covered.
 	var extra []string
 	for family := range observed {
 		if !seen[family] {
@@ -314,6 +335,8 @@ func extraFamilies(observed map[string]FamilyInput, seen map[string]bool) []stri
 }
 
 func evaluateFamily(req FamilyRequirement, input FamilyInput, required bool) FamilyObservation {
+	// A single family verdict is built from access, producer, and binding evidence.
+	// The helper keeps those dimensions independently reviewable.
 
 	state := familyInputState(input)
 	result := initialFamilyObservation(req, input, required, state.producer, state.access, state.binding)
@@ -341,6 +364,9 @@ type familyInput struct {
 }
 
 func familyInputState(input FamilyInput) familyInput {
+	// familyInputState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	return familyInput{
 		producer: safeProducerScope(input.ProducerScope),
@@ -350,6 +376,9 @@ func familyInputState(input FamilyInput) familyInput {
 }
 
 func markRequiredFamilyObserved(result *FamilyObservation) {
+	// markRequiredFamilyObserved keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	result.FamilyState = StatePass
 	result.ReasonCode = "family_observed"
@@ -358,6 +387,9 @@ func markRequiredFamilyObserved(result *FamilyObservation) {
 }
 
 func familyAccessState(input FamilyInput) string {
+	// familyAccessState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if input.ArtifactAccessState == "" {
 
 		return AccessAbsent
@@ -366,6 +398,9 @@ func familyAccessState(input FamilyInput) string {
 }
 
 func familyBindingState(input FamilyInput) string {
+	// familyBindingState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if input.BindingState == "" {
 
 		return BindingAbsent
@@ -374,6 +409,9 @@ func familyBindingState(input FamilyInput) string {
 }
 
 func initialFamilyObservation(req FamilyRequirement, input FamilyInput, required bool, producer, access, binding string) FamilyObservation {
+	// initialFamilyObservation keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	family := req.Family
 	if family == "" {
 
@@ -417,6 +455,9 @@ var bindingResults = map[string]familyOutcome{
 }
 
 func applyAccessResult(result *FamilyObservation, access string) bool {
+	// applyAccessResult keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if outcome, ok := accessResults[access]; ok {
 
 		setFamilyResult(result, outcome)
@@ -425,6 +466,9 @@ func applyAccessResult(result *FamilyObservation, access string) bool {
 }
 
 func applyRequiredProducerResult(result *FamilyObservation, requiredProducer, producer string) bool {
+	// applyRequiredProducerResult keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	requiresCIUploaded := requiredProducer == ProducerCIUploaded
 	producerIsCIUploaded := producer == ProducerCIUploaded
 	if !requiresCIUploaded || producerIsCIUploaded {
@@ -437,6 +481,9 @@ func applyRequiredProducerResult(result *FamilyObservation, requiredProducer, pr
 }
 
 func applyBindingResult(result *FamilyObservation, binding string) {
+	// applyBindingResult keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if outcome, ok := bindingResults[binding]; ok {
 
 		setFamilyResult(result, outcome)
@@ -444,6 +491,9 @@ func applyBindingResult(result *FamilyObservation, binding string) {
 }
 
 func setFamilyResult(result *FamilyObservation, outcome familyOutcome) {
+	// setFamilyResult keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	result.FamilyState = outcome.state
 	result.ReasonCode = outcome.code
@@ -452,6 +502,8 @@ func setFamilyResult(result *FamilyObservation, outcome familyOutcome) {
 }
 
 func evaluateIndex(input ArtifactIndexInput) ArtifactIndexResult {
+	// Index evaluation checks whether the manifest index itself is present and safe
+	// before any artifact-family evidence is trusted.
 
 	state := defaultString(input.State, IndexNotAssessed)
 	if outcome, ok := indexOutcomes[state]; ok {
@@ -472,6 +524,8 @@ var indexOutcomes = map[string]familyOutcome{
 }
 
 func evaluateSafety(input OutputSafetyInput) OutputSafetyResult {
+	// Safety evaluation scans source and run identity fields before they are copied
+	// into human-facing reasons or machine-readable refs.
 
 	state := defaultString(input.State, StateNotAssessed)
 	outcome, ok := safetyOutcomes[state]
@@ -491,6 +545,8 @@ var safetyOutcomes = map[string]familyOutcome{
 }
 
 func topLevel(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, requiredCount int, identityCannotVerify bool) string {
+	// Top-level aggregation reports the worst live evidence state without hiding
+	// lower-level family failures.
 	if artifactAssessmentHasState(families, index, safety, StateFail) {
 
 		return StateFail
@@ -517,6 +573,9 @@ func artifactAssessmentHasState(families []FamilyObservation, index ArtifactInde
 }
 
 func anyFamilyState(families []FamilyObservation, state string) bool {
+	// anyFamilyState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	for _, family := range families {
 		if family.FamilyState == state {
 
@@ -527,6 +586,8 @@ func anyFamilyState(families []FamilyObservation, state string) bool {
 }
 
 func reasons(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
+	// Reasons are derived from the recorded family states so prose follows machine
+	// evidence instead of becoming independent authority.
 	set := map[string]bool{}
 
 	addFamilyReasons(set, families)
@@ -537,6 +598,9 @@ func reasons(families []FamilyObservation, index ArtifactIndexResult, safety Out
 }
 
 func addFamilyReasons(set map[string]bool, families []FamilyObservation) {
+	// addFamilyReasons keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	for _, family := range families {
 
 		addVisibleReason(set, family.FamilyState, family.ReasonCode, family.Reason)
@@ -544,6 +608,9 @@ func addFamilyReasons(set map[string]bool, families []FamilyObservation) {
 }
 
 func addVisibleReason(set map[string]bool, state, code, reason string) {
+	// addVisibleReason keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if familyReasonVisible(state) {
 
 		set[code+": "+reason] = true
@@ -561,6 +628,8 @@ func familyReasonVisible(state string) bool {
 }
 
 func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety OutputSafetyResult, identityCannotVerify bool) []string {
+	// Next actions name the smallest missing or unsafe evidence boundary needed to
+	// move the CI-artifact observation forward.
 	set := map[string]bool{}
 
 	addFamilyActions(set, families)
@@ -571,6 +640,9 @@ func nextActions(families []FamilyObservation, index ArtifactIndexResult, safety
 }
 
 func addFamilyActions(set map[string]bool, families []FamilyObservation) {
+	// addFamilyActions keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	for _, family := range families {
 
 		addConditionalAction(set, family.NextAction != "", family.NextAction)
@@ -588,6 +660,8 @@ func resultNeedsAction(state string) bool {
 }
 
 func bindingSummary(families []FamilyObservation) BindingSummary {
+	// Binding summaries keep producer scope and access state separate because each
+	// can fail independently.
 
 	sourceRun := BindingNotAssessed
 	producer := BindingNotAssessed
@@ -603,6 +677,9 @@ func bindingSummary(families []FamilyObservation) BindingSummary {
 }
 
 func producerBindingState(family FamilyObservation) string {
+	// producerBindingState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if family.RequiredProducer == ProducerCIUploaded && family.ProducerScope != ProducerCIUploaded {
 
 		return BindingMismatch
@@ -611,6 +688,9 @@ func producerBindingState(family FamilyObservation) string {
 }
 
 func worseBinding(current, candidate string) string {
+	// worseBinding keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if bindingRank(candidate) > bindingRank(current) {
 
 		return candidate
@@ -619,6 +699,9 @@ func worseBinding(current, candidate string) string {
 }
 
 func bindingRank(state string) int {
+	// bindingRank keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if rank, ok := bindingRanks[state]; ok {
 		return rank
 	}
@@ -634,6 +717,9 @@ var bindingRanks = map[string]int{
 }
 
 func aggregateProducerScope(families []FamilyObservation) string {
+	// aggregateProducerScope keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	set := map[string]bool{}
 	for _, family := range families {
 		if family.Required {
@@ -645,6 +731,9 @@ func aggregateProducerScope(families []FamilyObservation) string {
 }
 
 func aggregateAccessState(families []FamilyObservation) string {
+	// aggregateAccessState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	set := map[string]bool{}
 	for _, family := range families {
 		if family.Required {
@@ -656,6 +745,8 @@ func aggregateAccessState(families []FamilyObservation) string {
 }
 
 func aggregate(set map[string]bool, empty string) string {
+	// Aggregation preserves cannot_verify and fail precedence rather than averaging
+	// artifact-family outcomes.
 	if len(set) == 0 {
 
 		return empty
@@ -671,6 +762,9 @@ func aggregate(set map[string]bool, empty string) string {
 }
 
 func orderedRequirements(reqs map[string]FamilyRequirement) []FamilyRequirement {
+	// orderedRequirements keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	out := make([]FamilyRequirement, 0, len(reqs))
 	for _, family := range familyOrder {
@@ -682,6 +776,9 @@ func orderedRequirements(reqs map[string]FamilyRequirement) []FamilyRequirement 
 }
 
 func lowerAuthorityReason(producer string) string {
+	// lowerAuthorityReason keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if reason, ok := lowerAuthorityReasons[producer]; ok {
 		return reason
 	}
@@ -696,6 +793,9 @@ var lowerAuthorityReasons = map[string]string{
 }
 
 func canonicalFamily(family string) string {
+	// canonicalFamily keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	family = strings.TrimSpace(family)
 	if family == "pr_ci" {
 
@@ -709,6 +809,9 @@ func validFamily(family string) bool {
 }
 
 func safeProducerScope(value string) string {
+	// safeProducerScope keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if validProducerScopes[value] {
 		return value
 	}
@@ -727,6 +830,9 @@ var validProducerScopes = map[string]bool{
 }
 
 func safeRequiredProducerScope(value string) string {
+	// safeRequiredProducerScope keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if strings.TrimSpace(value) == "" {
 
 		return ProducerCIUploaded
@@ -740,6 +846,9 @@ func safeRequiredProducerScope(value string) string {
 }
 
 func safeAuthorityScope(value string) string {
+	// safeAuthorityScope keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if safeToken(value) {
 		return defaultString(value, AuthorityScopeObservation)
 	}
@@ -752,6 +861,9 @@ func safeToken(value string) bool {
 }
 
 func safeAccessState(value string) string {
+	// safeAccessState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if validAccessStates[value] {
 		return value
 	}
@@ -772,6 +884,9 @@ var validAccessStates = map[string]bool{
 }
 
 func safeBindingState(value string) string {
+	// safeBindingState keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if validBindingStates[value] {
 		return value
 	}
@@ -788,6 +903,9 @@ var validBindingStates = map[string]bool{
 }
 
 func sanitizeSource(input SourceIdentity) (SourceIdentity, bool) {
+	// sanitizeSource keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	repository, repositoryOK := sanitizeSourceField(input.Repository, func(value string) bool { return safeIdentityToken(value, "/._-") })
 	ref, refOK := sanitizeSourceField(input.Ref, safeRef)
@@ -796,6 +914,9 @@ func sanitizeSource(input SourceIdentity) (SourceIdentity, bool) {
 }
 
 func sanitizeSourceField(value string, valid func(string) bool) (string, bool) {
+	// sanitizeSourceField keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if value == "" || valid(value) {
 		return value, true
 	}
@@ -808,6 +929,8 @@ func safeCommitSHA(value string) bool {
 }
 
 func sanitizeRun(input RunIdentity) (RunIdentity, bool) {
+	// Run sanitization strips unsafe identity fields before run metadata can appear
+	// in report surfaces.
 
 	out := RunIdentity{}
 	var okProvider, okRunID, okRunAttempt, okWorkflowID, okJobID bool
@@ -820,6 +943,9 @@ func sanitizeRun(input RunIdentity) (RunIdentity, bool) {
 }
 
 func sanitizeRunField(value, extra string) (string, bool) {
+	// sanitizeRunField keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if value == "" || safeIdentityToken(value, extra) {
 		return value, true
 	}
@@ -828,6 +954,9 @@ func sanitizeRunField(value, extra string) (string, bool) {
 }
 
 func allTrue(values ...bool) bool {
+	// allTrue keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	for _, value := range values {
 		if !value {
 
@@ -838,6 +967,9 @@ func allTrue(values ...bool) bool {
 }
 
 func safeRef(value string) bool {
+	// safeRef keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if value == "" {
 		return true
 	}
@@ -849,6 +981,9 @@ func safeRef(value string) bool {
 }
 
 func safeRefPrefix(value string) bool {
+	// safeRefPrefix keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	return strings.HasPrefix(value, "refs/heads/") ||
 		strings.HasPrefix(value, "refs/tags/") ||
@@ -857,6 +992,8 @@ func safeRefPrefix(value string) bool {
 }
 
 func safeIdentityToken(value, extra string) bool {
+	// Identity tokens are allow-listed because artifact source labels can be echoed
+	// into refs and reasons.
 	if value == "" {
 		return true
 	}
@@ -876,6 +1013,9 @@ func safeIdentityTokenLength(value string) bool {
 }
 
 func safeIdentityTokenCharacters(value, extra string) bool {
+	// safeIdentityTokenCharacters keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	for _, r := range value {
 		if !safeIdentityTokenRune(r, extra) {
 
@@ -894,6 +1034,9 @@ func safeIdentityTokenAlnum(r rune) bool {
 }
 
 func unsafeIdentityValue(value string) bool {
+	// unsafeIdentityValue keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	lower := strings.ToLower(value)
 
@@ -905,6 +1048,9 @@ func unsafeIdentityValue(value string) bool {
 }
 
 func containsUnsafeIdentityMarker(lower string) bool {
+	// containsUnsafeIdentityMarker keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	for _, marker := range unsafeIdentityMarkers {
 		if strings.Contains(lower, marker) {
 
@@ -929,6 +1075,9 @@ var unsafeIdentityMarkers = []string{
 }
 
 func safeHex(value string, length int) bool {
+	// safeHex keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if len(value) != length {
 
 		return false
@@ -947,6 +1096,9 @@ func isHexRune(r rune) bool {
 }
 
 func safeClasses(input []string) []string {
+	// safeClasses keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	allowed := map[string]bool{
 		"token_like": true, "jwt_token": true, "private_key": true,
@@ -967,6 +1119,8 @@ func safeClasses(input []string) []string {
 }
 
 func defaultSafetyRuleset(input SafetyRuleset) SafetyRuleset {
+	// The default safety ruleset is explicit product behavior, not hidden policy.
+	// Callers can compare its digest to understand which checks ran.
 	if !safeToken(input.ID) {
 
 		input.ID = SafetyRulesetDefault
@@ -980,6 +1134,8 @@ func defaultSafetyRuleset(input SafetyRuleset) SafetyRuleset {
 }
 
 func defaultSafetyRulesetContent() string {
+	// Ruleset content stays deterministic so its digest is stable evidence for the
+	// safety rules applied to this observation.
 
 	return strings.Join([]string{
 		SafetyRulesetDefault,
@@ -997,6 +1153,9 @@ func defaultSafetyRulesetContent() string {
 }
 
 func defaultString(value, fallback string) string {
+	// defaultString keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 	if strings.TrimSpace(value) == "" {
 
 		return fallback
@@ -1005,6 +1164,9 @@ func defaultString(value, fallback string) string {
 }
 
 func sortedKeys(set map[string]bool) []string {
+	// sortedKeys keeps CI artifact assessment evidence structured and replayable.
+	// It preserves explicit states instead of turning local manifest data into proof.
+	// Non-pass outcomes remain tied to a concrete source, family, or safety boundary.
 
 	out := make([]string, 0, len(set))
 	for value := range set {
