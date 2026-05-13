@@ -72,3 +72,54 @@ func TestPolicyValidateRequiresWitnessProfiles(t *testing.T) {
 		t.Fatalf("expected witness profile validation error, got %v", err)
 	}
 }
+
+func TestPolicyValidateRequiredFields(t *testing.T) {
+	valid := AuthorityPolicy{
+		SchemaVersion:          "v1",
+		PolicyID:               "policy-a",
+		AllowedSigners:         []SignerAuthorityEntry{{SignerID: "signer-a"}},
+		AllowedWitnessProfiles: []string{"github-actions"},
+	}
+	tests := []struct {
+		name    string
+		policy  AuthorityPolicy
+		wantErr string
+	}{
+		{name: "valid", policy: valid},
+		{
+			name:    "schema",
+			policy:  AuthorityPolicy{PolicyID: valid.PolicyID, AllowedSigners: valid.AllowedSigners, AllowedWitnessProfiles: valid.AllowedWitnessProfiles},
+			wantErr: "schema_version is required",
+		},
+		{
+			name:    "policy",
+			policy:  AuthorityPolicy{SchemaVersion: valid.SchemaVersion, AllowedSigners: valid.AllowedSigners, AllowedWitnessProfiles: valid.AllowedWitnessProfiles},
+			wantErr: "policy_id is required",
+		},
+		{
+			name:    "signers",
+			policy:  AuthorityPolicy{SchemaVersion: valid.SchemaVersion, PolicyID: valid.PolicyID, AllowedWitnessProfiles: valid.AllowedWitnessProfiles},
+			wantErr: "at least one allowed signer is required",
+		},
+		{
+			name:    "witness_profiles",
+			policy:  AuthorityPolicy{SchemaVersion: valid.SchemaVersion, PolicyID: valid.PolicyID, AllowedSigners: valid.AllowedSigners},
+			wantErr: "at least one allowed witness profile is required",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.policy.Validate()
+			if test.wantErr == "" {
+				if err != nil {
+					t.Fatalf("Validate() error = %v", err)
+				}
+				return
+			}
+			if err == nil || err.Error() != test.wantErr {
+				t.Fatalf("Validate() error = %v, want %q", err, test.wantErr)
+			}
+		})
+	}
+}

@@ -16,8 +16,8 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 27 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1288 stderr rows | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| File MI | 24 stderr rows | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| Function MI | 1275 stderr rows | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -222,6 +222,16 @@ contract-surface MI reduction evidence only; repository-wide absolute MI remains
 open. The pi worker attempt for this slice timed out and is not counted as
 evidence; the ported implementation was verified locally.
 
+The `internal/policy` and `internal/query` file-layout slice split authority
+policy loading/validation/validator concerns and capture-depth query helpers
+into same-package files. Focused `internal/policy` and `internal/query` tests
+pass, the new split files pass the MI ratchets, and `internal/policy` plus the
+former `internal/query/query.go` row drop out of the absolute file-MI output.
+Repository absolute file MI drops to 24 stderr rows, and absolute function MI
+drops to 1275 stderr rows. The pi query worker was cancelled because it wrote
+into the main checkout and left new below-threshold rows; the local repairs are
+the counted evidence.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/harness_cli.go`
@@ -238,10 +248,8 @@ evidence; the ported implementation was verified locally.
 - `internal/interaction/interaction.go`
 - `internal/managed/managed.go`
 - `internal/packet/packet.go`
-- `internal/policy/authority.go`
 - `internal/posture/posture.go`
 - `internal/prreview/prreview.go`
-- `internal/query/query.go`
 - `internal/query/querypack.go`
 - `internal/recorder/recorder.go`
 - `internal/releaseproof/releaseproof.go`
