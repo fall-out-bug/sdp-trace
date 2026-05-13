@@ -1,55 +1,42 @@
 package trace
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-)
-
-// LoadContract returns a parsed contract from path.
-func LoadContract(path string) (Contract, error) {
-	// Empty path explicitly selects the portable default contract rather than a
-	// missing external spec file.
-	if path == "" {
-		return DefaultContract, nil
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return Contract{}, err
-	}
-	contract, err := parseContract(data)
-	if err != nil {
-		return Contract{}, err
-	}
-	return contract.withDefaults(path), nil
+// Contract controls required events for milestone verification.
+type Contract struct {
+	ContractID         string                `json:"contract_id"`
+	Version            string                `json:"version"`
+	RequiredEvents     []string              `json:"required_events"`
+	RequiredEvidence   []EvidenceRequirement `json:"required_evidence,omitempty"`
+	RequiredRuns       []RequiredRun         `json:"required_runs,omitempty"`
+	LockRequiredBefore string                `json:"lock_required_before,omitempty"`
 }
 
-func parseContract(data []byte) (Contract, error) {
-	// Keep parsing logic intentionally light for first milestone; full schema
-	// validation is handled in phase-8 schema migration work.
-	var contract Contract
-	if err := json.Unmarshal(data, &contract); err != nil {
-		// JSON parse failure means the contract cannot be trusted as a spec.
-		return Contract{}, err
-	}
-	return contract, nil
+// RequiredRun names a contract-declared run that should be observed for an advisory gate.
+type RequiredRun struct {
+	ID               string   `json:"id"`
+	WrapperName      string   `json:"wrapper_name"`
+	RequiredEvidence []string `json:"required_evidence,omitempty"`
+	Profile          string   `json:"profile,omitempty"`
 }
 
-func (contract Contract) withDefaults(path string) Contract {
-	// Contract defaults preserve older lightweight fixtures while still naming
-	// the loaded file as the contract ID when no explicit ID is present.
-	if contract.ContractID == "" {
-		// The path-derived ID is display context, not external authority.
-		contract.ContractID = filepath.Base(path)
-	}
-	if contract.Version == "" {
-		// Default version keeps legacy fixtures parseable under the current
-		// schema contract.
-		contract.Version = SchemaVersion
-	}
-	if len(contract.RequiredEvents) == 0 {
-		// Copy the default slice so callers cannot mutate shared contract state.
-		contract.RequiredEvents = append([]string(nil), DefaultContract.RequiredEvents...)
-	}
-	return contract
+// EvidenceRequirement names a contract-declared observation that can be
+// matched against event payload fields without product-specific classifiers.
+type EvidenceRequirement struct {
+	ID            string `json:"id"`
+	EventType     string `json:"event_type"`
+	PayloadField  string `json:"payload_field"`
+	PayloadEquals string `json:"payload_equals"`
+}
+
+// DefaultContract is the minimal local contract for first-milestone local recorder output.
+var DefaultContract = Contract{
+	ContractID: "local-default-v1",
+	Version:    SchemaVersion,
+	RequiredEvents: []string{
+		string(EventRecorderAttached),
+		string(EventRunStarted),
+		string(EventCommandStarted),
+		string(EventCommandFinished),
+		string(EventRunClosed),
+	},
+	LockRequiredBefore: "run_started",
 }
