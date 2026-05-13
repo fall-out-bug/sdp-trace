@@ -324,6 +324,9 @@ func Evaluate(input Input) AssessmentResult {
 }
 
 func evaluateConditions(input Input) []Condition {
+	// evaluateConditions keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return []Condition{
 
@@ -341,6 +344,9 @@ func evaluateConditions(input Input) []Condition {
 }
 
 func assessmentResult(conditions []Condition) AssessmentResult {
+	// assessmentResult keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	result := AssessmentResult{
 		SchemaVersion:               SchemaVersion,
@@ -360,6 +366,9 @@ func assessmentResult(conditions []Condition) AssessmentResult {
 }
 
 func policyCondition(input Input) Condition {
+	// policyCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	if condition, ok := validatePolicyContract(input.Policy); ok {
 		return condition
@@ -374,6 +383,9 @@ func policyCondition(input Input) Condition {
 }
 
 func validatePolicyContract(policy Policy) (Condition, bool) {
+	// validatePolicyContract keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, check := range policyContractChecks(policy) {
 		if check.failed {
 
@@ -383,6 +395,9 @@ func validatePolicyContract(policy Policy) (Condition, bool) {
 	return Condition{}, false
 }
 func policyContractChecks(policy Policy) []policyContractCheck {
+	// policyContractChecks keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return []policyContractCheck{
 		{
@@ -404,6 +419,9 @@ func policyContractChecks(policy Policy) []policyContractCheck {
 }
 
 func policyContractIncomplete(policy Policy) bool {
+	// policyContractIncomplete keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	missingParts := []bool{
 		len(policy.RedactionActions) == 0,
@@ -422,6 +440,9 @@ func policyContractIncomplete(policy Policy) bool {
 }
 
 func validateRunPolicyBinding(input Input) (Condition, bool) {
+	// validateRunPolicyBinding keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if input.Run.RedactionPolicyDigest == input.Policy.PolicyDigest {
 		return Condition{}, false
 	}
@@ -430,6 +451,9 @@ func validateRunPolicyBinding(input Input) (Condition, bool) {
 }
 
 func validateEventPolicyBindings(input Input) (Condition, bool) {
+	// validateEventPolicyBindings keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, event := range input.Run.Events {
 		if condition, ok := validateEventPolicyBinding(input.Policy, event); ok {
 
@@ -440,6 +464,9 @@ func validateEventPolicyBindings(input Input) (Condition, bool) {
 }
 
 func validateEventPolicyBinding(policy Policy, event EventRetention) (Condition, bool) {
+	// validateEventPolicyBinding keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if event.RedactionPolicyDigest != "" && event.RedactionPolicyDigest != policy.PolicyDigest {
 
 		return fail("redaction_policy_bound", "redaction_policy_mismatch", "event evidence contradicts the selected redaction policy digest", "Use a run whose event redaction policy digests match."), true
@@ -451,6 +478,9 @@ func validateEventPolicyBinding(policy Policy, event EventRetention) (Condition,
 }
 
 func prewriteCondition(input Input) Condition {
+	// prewriteCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if prewritePolicyMissing(input.Policy) {
 		return cannotVerify("redaction_prewrite_applied", "redaction_policy_missing", "redaction rule coverage cannot be checked without the selected policy", "Supply the selected redaction policy before assessing rule coverage.")
 	}
@@ -469,6 +499,9 @@ func prewritePolicyMissing(policy Policy) bool {
 }
 
 func prewriteConditionForEvent(event EventRetention, rules map[string]Rule) (Condition, bool) {
+	// prewriteConditionForEvent keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	for _, failure := range prewriteEventFailures(event) {
 		if failure.matched {
@@ -483,6 +516,9 @@ func prewriteConditionForEvent(event EventRetention, rules map[string]Rule) (Con
 	return Condition{}, false
 }
 func prewriteEventFailures(event EventRetention) []conditionFailure {
+	// prewriteEventFailures keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	return []conditionFailure{
 		{
 
@@ -503,6 +539,9 @@ func prewriteEventFailures(event EventRetention) []conditionFailure {
 }
 
 func prewriteConditionForRuleRefs(event EventRetention, rules map[string]Rule) (Condition, bool) {
+	// prewriteConditionForRuleRefs keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, ruleRef := range event.RedactionRuleRefs {
 
 		if condition, ok := prewriteConditionForRuleRef(ruleRef, event.RedactionAction, rules); ok {
@@ -512,6 +551,9 @@ func prewriteConditionForRuleRefs(event EventRetention, rules map[string]Rule) (
 	return Condition{}, false
 }
 func prewriteConditionForRuleRef(ruleRef, eventAction string, rules map[string]Rule) (Condition, bool) {
+	// prewriteConditionForRuleRef keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	rule, ok := rules[ruleRef]
 	if !ok {
 
@@ -541,6 +583,9 @@ func prewriteRuleRefsMissing(event EventRetention) bool {
 }
 
 func unresolvedCondition(input Input) Condition {
+	// unresolvedCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, event := range input.Run.Events {
 
 		if condition, ok := unresolvedConditionForEvent(event); ok {
@@ -551,6 +596,9 @@ func unresolvedCondition(input Input) Condition {
 }
 
 func unresolvedConditionForEvent(event EventRetention) (Condition, bool) {
+	// unresolvedConditionForEvent keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if event.RedactionUnresolved {
 
 		return fail("redaction_unresolved_visible", "redaction_unresolved", "unresolved redaction is visible and blocks forensic retention", "Resolve redaction or lower the forensic claim."), true
@@ -563,6 +611,9 @@ func unresolvedConditionForEvent(event EventRetention) (Condition, bool) {
 }
 
 func withholdingCondition(withholding *Withholding) (Condition, bool) {
+	// withholdingCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if withholdingAuditMissing(withholding) {
 		return cannotVerify("redaction_unresolved_visible", "withholding_audit_missing", "withholding lacks required audit evidence", "Record withholding authority, requestor when different, reason, and justification."), true
 	}
@@ -574,6 +625,9 @@ func withholdingCondition(withholding *Withholding) (Condition, bool) {
 }
 
 func withholdingAuditMissing(withholding *Withholding) bool {
+	// withholdingAuditMissing keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return withholding == nil ||
 		withholding.Authority.ActorID == "" ||
@@ -582,6 +636,9 @@ func withholdingAuditMissing(withholding *Withholding) bool {
 }
 
 func retentionModeCondition(input Input) Condition {
+	// retentionModeCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	allowed := allowedRetentionModes(input.Policy)
 	for _, event := range input.Run.Events {
 
@@ -593,6 +650,9 @@ func retentionModeCondition(input Input) Condition {
 }
 
 func retentionModeConditionForEvent(event EventRetention, allowed map[string]bool) (Condition, bool) {
+	// retentionModeConditionForEvent keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if !validRetentionMode(event.RetentionMode) {
 
 		return fail("retention_mode_declared", "invalid_retention_mode", "event declares a non-FR-054 retention mode", "Use digest_only, sanitized_excerpt, encrypted_raw_ref, external_artifact_ref, or not_assessed."), true
@@ -605,6 +665,9 @@ func retentionModeConditionForEvent(event EventRetention, allowed map[string]boo
 }
 
 func criticalEvidenceCondition(input Input) Condition {
+	// criticalEvidenceCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	critical := criticalEvents(input)
 	for _, event := range input.Run.Events {
 
@@ -616,6 +679,9 @@ func criticalEvidenceCondition(input Input) Condition {
 }
 
 func criticalEvidenceConditionForEvent(event EventRetention, critical map[string]bool) (Condition, bool) {
+	// criticalEvidenceConditionForEvent keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if !criticalEvent(critical, event) {
 
 		return Condition{}, false
@@ -628,6 +694,9 @@ func criticalEvent(critical map[string]bool, event EventRetention) bool {
 }
 
 func criticalRetentionCondition(event EventRetention) (Condition, bool) {
+	// criticalRetentionCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if event.RetentionMode == RetentionModeSanitizedExcerpt {
 		return Condition{}, false
 	}
@@ -638,6 +707,9 @@ func criticalRetentionCondition(event EventRetention) (Condition, bool) {
 	return insufficientCriticalRetentionCondition(event.RetentionMode)
 }
 func insufficientCriticalRetentionCondition(mode string) (Condition, bool) {
+	// insufficientCriticalRetentionCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if condition, ok := insufficientCriticalRetentionConditions[mode]; ok {
 
 		return condition, true
@@ -649,6 +721,9 @@ func criticalRetentionNeedsRawReference(mode string) bool {
 	return mode == RetentionModeEncryptedRawRef || mode == RetentionModeExternalArtifactRef
 }
 func missingCriticalRawReferenceCondition(event EventRetention) (Condition, bool) {
+	// missingCriticalRawReferenceCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if event.RawReference != nil {
 
 		return Condition{}, false
@@ -657,6 +732,9 @@ func missingCriticalRawReferenceCondition(event EventRetention) (Condition, bool
 }
 
 func rawReferenceCondition(input Input) Condition {
+	// rawReferenceCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, event := range input.Run.Events {
 		ref := event.RawReference
 		if ref == nil {
@@ -676,6 +754,9 @@ func validateRawReference(ref *RawReference) (Condition, bool) {
 }
 
 func rawReferenceValidationFailure(ref *RawReference) (Condition, bool) {
+	// rawReferenceValidationFailure keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, rule := range rawReferenceValidationRules {
 		if rule.invalid(ref) {
 
@@ -686,6 +767,9 @@ func rawReferenceValidationFailure(ref *RawReference) (Condition, bool) {
 }
 
 func rawReferenceAccessUnverifiable(ref *RawReference) bool {
+	// rawReferenceAccessUnverifiable keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	switch ref.AccessState {
 	case "", AccessStateNotAssessed, AccessStateUnavailable, AccessStateRevoked:
 
@@ -696,6 +780,9 @@ func rawReferenceAccessUnverifiable(ref *RawReference) bool {
 }
 
 func encryptedKeyCustodyUnverifiable(ref *RawReference) bool {
+	// encryptedKeyCustodyUnverifiable keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if ref.ReferenceType != RetentionModeEncryptedRawRef {
 
 		return false
@@ -710,6 +797,9 @@ func encryptedKeyCustodyUnverifiable(ref *RawReference) bool {
 }
 
 func retentionLifecycleUnverifiable(state string) bool {
+	// retentionLifecycleUnverifiable keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	switch state {
 	case "", RetentionLifecycleNotAssessed, RetentionLifecycleExpired, RetentionLifecycleRevoked, RetentionLifecycleDeleted:
 
@@ -720,6 +810,9 @@ func retentionLifecycleUnverifiable(state string) bool {
 }
 
 func overclaimCondition(input Input) Condition {
+	// overclaimCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	critical := criticalEvents(input)
 	for _, event := range input.Run.Events {
 		if overclaimsForensicProfile(event, critical) {
@@ -739,6 +832,9 @@ func insufficientCriticalRetention(mode string) bool {
 }
 
 func profileSelectionCondition(input Input) Condition {
+	// profileSelectionCondition keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	selection := input.Run.ProfileSelection
 	if selection.SelectedProfile == "" {
 
@@ -751,6 +847,9 @@ func profileSelectionCondition(input Input) Condition {
 }
 
 func profileSelectionVerified(selection ProfileSelection, policyDigest string) bool {
+	// profileSelectionVerified keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	required := []bool{
 		selection.SelectedProfile == ProfileForensicRetention,
@@ -768,6 +867,9 @@ func profileSelectionVerified(selection ProfileSelection, policyDigest string) b
 	return true
 }
 func criticalEvents(input Input) map[string]bool {
+	// criticalEvents keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	out := map[string]bool{}
 	addCriticalDefaults(out)
 	for _, eventType := range input.Policy.CriticalEventFamilies {
@@ -785,6 +887,9 @@ func addCriticalDefaults(out map[string]bool) {
 }
 
 func removeDowngradedEvents(out map[string]bool, downgrades []CriticalityDowngrade) {
+	// removeDowngradedEvents keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, downgrade := range downgrades {
 		if criticalityDowngradeComplete(downgrade) {
 
@@ -798,6 +903,9 @@ func criticalityDowngradeComplete(downgrade CriticalityDowngrade) bool {
 }
 
 func allNonEmpty(values ...string) bool {
+	// allNonEmpty keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	for _, value := range values {
 		if value == "" {
 
@@ -811,6 +919,9 @@ func validRetentionMode(mode string) bool {
 	return validRetentionModes[mode]
 }
 func policyRules(policy Policy) map[string]Rule {
+	// policyRules keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	out := map[string]Rule{}
 	for _, rule := range policy.Rules {
 		if rule.RuleID != "" {
@@ -822,6 +933,9 @@ func policyRules(policy Policy) map[string]Rule {
 }
 
 func allowedRetentionModes(policy Policy) map[string]bool {
+	// allowedRetentionModes keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	out := map[string]bool{}
 	for _, mode := range policy.AllowedRetentionModes {
 
@@ -831,6 +945,9 @@ func allowedRetentionModes(policy Policy) map[string]bool {
 }
 
 func topLevel(conditions []Condition) string {
+	// topLevel keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	highest := StatePass
 	for _, condition := range conditions {
 		if condition.State == StateFail {
@@ -849,6 +966,9 @@ func conditionLimitsTopLevel(condition Condition) bool {
 }
 
 func reasons(conditions []Condition) []string {
+	// reasons keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	out := []string{}
 	for _, condition := range conditions {
 		if condition.State != StatePass {
@@ -861,6 +981,9 @@ func reasons(conditions []Condition) []string {
 }
 
 func nextActions(conditions []Condition) []string {
+	// nextActions keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	set := map[string]bool{}
 	for _, condition := range conditions {
 
@@ -875,6 +998,9 @@ func nextActions(conditions []Condition) []string {
 }
 
 func addNextAction(set map[string]bool, condition Condition) {
+	// addNextAction keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	if condition.State != StatePass && condition.NextAction != "" {
 
 		set[condition.NextAction] = true
@@ -903,6 +1029,9 @@ func ValidTestInput() Input {
 	return validTestInput()
 }
 func validTestInput() Input {
+	// validTestInput keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 	policyDigest := "1111111111111111111111111111111111111111111111111111111111111111"
 
 	return Input{
@@ -912,6 +1041,9 @@ func validTestInput() Input {
 }
 
 func validTestPolicy(policyDigest string) Policy {
+	// validTestPolicy keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return Policy{
 		PolicyID:         "customer-forensic-policy-v1",
@@ -944,6 +1076,9 @@ func validForbiddenPersistenceClasses() []string {
 }
 
 func validProfileMappings() []ProfileMapping {
+	// validProfileMappings keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	required := []string{
 		RetentionModeSanitizedExcerpt,
@@ -959,6 +1094,9 @@ func validProfileMappings() []ProfileMapping {
 }
 
 func validRedactionRules() []Rule {
+	// validRedactionRules keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return []Rule{
 		{RuleID: "secret-token-v1", DetectorFamily: "secret", RuleVersion: "1.0.0", Action: RedactionActionApplyRule, RetentionMode: RetentionModeSanitizedExcerpt},
@@ -967,6 +1105,9 @@ func validRedactionRules() []Rule {
 }
 
 func validRunEvidence(policyDigest string) RunEvidence {
+	// validRunEvidence keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return RunEvidence{
 		RunID:                 "forensic-run-1",
@@ -977,6 +1118,9 @@ func validRunEvidence(policyDigest string) RunEvidence {
 	}
 }
 func validProfileSelection(policyDigest string) ProfileSelection {
+	// validProfileSelection keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return ProfileSelection{
 		ActorID:                 "human:security-owner",
@@ -989,6 +1133,9 @@ func validProfileSelection(policyDigest string) ProfileSelection {
 }
 
 func validEventRetentions(policyDigest string) []EventRetention {
+	// validEventRetentions keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return []EventRetention{
 		validSanitizedExcerptEvent(policyDigest),
@@ -997,6 +1144,9 @@ func validEventRetentions(policyDigest string) []EventRetention {
 }
 
 func validSanitizedExcerptEvent(policyDigest string) EventRetention {
+	// validSanitizedExcerptEvent keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return EventRetention{
 		EventType:             "command_finished",
@@ -1014,6 +1164,9 @@ func validSanitizedExcerptEvent(policyDigest string) EventRetention {
 }
 
 func validExternalArtifactEvent(policyDigest string) EventRetention {
+	// validExternalArtifactEvent keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return EventRetention{
 		EventType:             "test_output_observed",
@@ -1032,6 +1185,9 @@ func validExternalArtifactEvent(policyDigest string) EventRetention {
 	}
 }
 func validExternalRawReference() *RawReference {
+	// validExternalRawReference keeps forensic retention evidence explicit and condition-bound.
+	// Policy, redaction, raw-reference, criticality, and profile states stay separate.
+	// This helper does not turn local retention metadata into external proof.
 
 	return &RawReference{
 		ReferenceType:           RetentionModeExternalArtifactRef,

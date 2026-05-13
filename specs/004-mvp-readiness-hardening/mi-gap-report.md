@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 892 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 840 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -370,6 +370,19 @@ rendering, and summary row construction. Focused `internal/query` tests pass,
 10.9 to 26.0 while remaining below 70. Repository absolute file MI remains 15
 failure rows plus the raw `exit status 1` line; absolute function MI drops to
 892 failure rows plus the raw `exit status 1` line.
+
+The `internal/forensic/forensic.go` in-place trust-boundary comment pass kept
+existing function baseline keys stable while documenting forensic policy
+contract checks, run/event policy binding, prewrite redaction application,
+unresolved redaction visibility, withholding authority, retention modes,
+critical evidence reconstructability, raw-reference validation, lifecycle/key
+custody gaps, profile overclaim checks, profile selection accountability,
+reason/action derivation, and representative fixture boundaries. Focused
+`internal/forensic` tests pass, `internal/forensic` has zero absolute
+function-MI rows, and file MI improves from 6.2 to 18.5 while remaining below
+70. Repository absolute file MI remains 15 failure rows plus the raw
+`exit status 1` line; absolute function MI drops to 840 failure rows plus the
+raw `exit status 1` line.
 
 ## File-Level Failures
 
