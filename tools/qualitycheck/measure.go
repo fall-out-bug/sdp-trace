@@ -11,10 +11,9 @@ func measureFunctions(path string, src []byte, fset *token.FileSet, parsed *ast.
 	var metrics []functionMetric
 	for _, decl := range parsed.Decls {
 		// Only declarations with function bodies become function ratchet
-		// subjects; package declarations and other top-level nodes are file MI.
+		// subjects; file MI omits declaration-only and tiny files separately.
 		fn, ok := decl.(*ast.FuncDecl)
 		if !ok {
-			// Non-function declarations still contribute to file-level MI.
 			continue
 		}
 		metrics = append(metrics, measureFunction(path, src, fset, parsed, fn))

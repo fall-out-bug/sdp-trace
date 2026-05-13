@@ -80,7 +80,7 @@ CRAP, cyclomatic-complexity, or cognitive-complexity pass:
 - `go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools`
 - `go run ./tools/qualitycheck -gocyclo cmd internal tools > /tmp/sdp-trace-gocyclo.txt`
 - `go run ./tools/crapcheck -cover-func /tmp/sdp-trace-cover-func.txt -gocyclo /tmp/sdp-trace-gocyclo.txt -threshold 5 -strict-less`
-- `go run ./tools/qualitycheck -mi-under 70 cmd internal tools` as the advisory absolute MI check; this is expected to remain `assessed_gap` until the historical baseline is retired
+- `go run ./tools/qualitycheck -mi-under 70 cmd internal tools` as the advisory absolute executable-file MI check; this is expected to remain `assessed_gap` until the historical baseline is retired
 
 The CRAP, cyclomatic, and cognitive gates cover Go files under `cmd`,
 `internal`, and `tools`; test files are excluded. The enforced complexity

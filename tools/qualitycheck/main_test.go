@@ -270,6 +270,22 @@ func Risky(a, b bool) int {
 	if a && b {
 		return 1
 	}
+	if a {
+		return 2
+	}
+	if b {
+		return 3
+	}
+	for i := 0; i < 3; i++ {
+		if i > 1 {
+			return i
+		}
+	}
+	for j := 0; j < 3; j++ {
+		if j > 1 {
+			return j
+		}
+	}
 	return 0
 }
 `
@@ -299,6 +315,21 @@ func Build(name string) string {
 	if name == "" {
 		return "default"
 	}
+	if name == "a" {
+		return "a"
+	}
+	if name == "b" {
+		return "b"
+	}
+	if name == "c" {
+		return "c"
+	}
+	if name == "d" {
+		return "d"
+	}
+	if name == "e" {
+		return "e"
+	}
 	return name
 }
 `
@@ -324,6 +355,21 @@ func TestRunFailOnlySuppressesPassingMetricRows(t *testing.T) {
 func Build(name string) string {
 	if name == "" {
 		return "default"
+	}
+	if name == "a" {
+		return "a"
+	}
+	if name == "b" {
+		return "b"
+	}
+	if name == "c" {
+		return "c"
+	}
+	if name == "d" {
+		return "d"
+	}
+	if name == "e" {
+		return "e"
 	}
 	return name
 }
@@ -405,6 +451,21 @@ func TestFileMaintainabilityBaselineAllowsHistoricalLowMI(t *testing.T) {
 func Build(name string) string {
 	if name == "" {
 		return "default"
+	}
+	if name == "a" {
+		return "a"
+	}
+	if name == "b" {
+		return "b"
+	}
+	if name == "c" {
+		return "c"
+	}
+	if name == "d" {
+		return "d"
+	}
+	if name == "e" {
+		return "e"
 	}
 	return name
 }
