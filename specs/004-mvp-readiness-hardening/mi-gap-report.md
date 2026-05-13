@@ -16,7 +16,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 20 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| File MI | 19 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
 | Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
@@ -251,6 +251,17 @@ remains at 1275 failure rows plus the raw `exit status 1` line. The
 releaseproof worker output was discarded because it increased the file-MI
 failure list.
 
+The `internal/verifier/verify.go` file-layout slice split verifier replay into
+focused same-package input, contract, event, chain, result, audit, and artifact
+helpers without changing exported APIs. Focused `internal/verifier` tests pass,
+all verifier files now pass absolute file/function MI, and
+`internal/verifier/verify.go` drops out of the absolute file-MI output.
+Repository absolute file MI drops to 19 failure rows plus the raw
+`exit status 1` line; absolute function MI remains at 1275 failure rows plus
+the raw `exit status 1` line. A releaseproof file-layout attempt was discarded
+because it either broke existing public `Verification` keyed literals or
+increased file-MI failures.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/main.go`
@@ -270,7 +281,6 @@ failure list.
 - `internal/recorder/recorder.go`
 - `internal/releaseproof/releaseproof.go`
 - `internal/repoobserver/repoobserver.go`
-- `internal/verifier/verify.go`
 - `internal/witness/profiles.go`
 - `internal/witness/witness.go`
 
