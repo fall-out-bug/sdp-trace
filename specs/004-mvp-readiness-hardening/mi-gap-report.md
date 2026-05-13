@@ -16,7 +16,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 17 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| File MI | 16 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
 | Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
@@ -284,6 +284,18 @@ only witness file-level MI failure. Repository absolute file MI drops to 17
 failure rows plus the raw `exit status 1` line; absolute function MI remains at
 1275 failure rows plus the raw `exit status 1` line.
 
+The `internal/repoobserver/repoobserver.go` file-layout slice split repository
+observer options, config, status, rendering, install, gitignore, git origin,
+surface, template, and type boundaries into focused same-package files while
+preserving exported APIs and test behavior. The initial worker output was
+locally repaired after it introduced missing shared constants/imports and
+below-threshold split files. Focused `internal/repoobserver` tests pass, all
+repoobserver files now pass absolute file/function MI, and
+`internal/repoobserver/repoobserver.go` is retired from the absolute file-MI
+output. Repository absolute file MI drops to 16 failure rows plus the raw
+`exit status 1` line; absolute function MI remains at 1275 failure rows plus
+the raw `exit status 1` line.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/main.go`
@@ -301,7 +313,6 @@ failure rows plus the raw `exit status 1` line; absolute function MI remains at
 - `internal/prreview/prreview.go`
 - `internal/query/querypack.go`
 - `internal/recorder/recorder.go`
-- `internal/repoobserver/repoobserver.go`
 - `internal/witness/profiles.go`
 
 ## Closure Strategy
