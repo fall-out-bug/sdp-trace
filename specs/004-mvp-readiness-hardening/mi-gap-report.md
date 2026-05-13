@@ -16,8 +16,8 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
-| File MI | 16 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1275 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
+| Function MI | 1237 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -296,6 +296,17 @@ output. Repository absolute file MI drops to 16 failure rows plus the raw
 `exit status 1` line; absolute function MI remains at 1275 failure rows plus
 the raw `exit status 1` line.
 
+The `internal/recorder/recorder.go` file-layout slice split recorder setup,
+contract binding, command execution, event payloads, event writing, manifest
+updates, hashing, finalization, and utilities into focused same-package files
+while preserving the exported recorder API. The initial worker output was
+stopped and locally repaired after it left below-threshold split files. Focused
+`internal/recorder` tests pass, all recorder files now pass absolute
+file/function MI, and `internal/recorder/recorder.go` is retired from the
+absolute file-MI output. Repository absolute file MI drops to 15 failure rows
+plus the raw `exit status 1` line; absolute function MI drops to 1237 failure
+rows plus the raw `exit status 1` line.
+
 ## File-Level Failures
 
 - `cmd/sdp-trace/main.go`
@@ -312,7 +323,6 @@ the raw `exit status 1` line.
 - `internal/posture/posture.go`
 - `internal/prreview/prreview.go`
 - `internal/query/querypack.go`
-- `internal/recorder/recorder.go`
 - `internal/witness/profiles.go`
 
 ## Closure Strategy
