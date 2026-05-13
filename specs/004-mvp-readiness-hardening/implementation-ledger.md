@@ -481,3 +481,10 @@ Unusable attempts:
   `internal/query/querypack.go` file-MI slice but timed out, was shut down, and
   left a broken shared-workspace diff where `internal/query` did not compile.
   The output was restored and is not counted as worker evidence.
+- 2026-05-13 local `internal/adaptercapture/adaptercapture.go` file-layout
+  experiments moved fixture construction and then split evaluator sections by
+  contract, binding, condition group, provider/redaction, aggregation, and type
+  boundaries. Focused tests and function MI stayed green, but package file-MI
+  replay multiplied the single file-MI row into several below-threshold split
+  files; a later constants refinement was syntactically invalid. The output was
+  restored and is not counted as implementation evidence.

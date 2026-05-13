@@ -484,6 +484,13 @@ plus the raw `exit status 1` line.
    restored. Future query-pack file-MI work needs a hand-reviewed vertical
    extraction with focused package tests and package-level file-MI replay after
    each move.
+5. Do not repeat the naive `internal/adaptercapture/adaptercapture.go` split
+   shape. Moving fixture construction and splitting evaluator sections by broad
+   condition family preserved tests and function MI, but package file-MI replay
+   multiplied the single row into several below-threshold files before the
+   experiment was restored. Future adapter-capture file-MI work needs smaller
+   hand-checked vertical extractions with package file-MI replay after every
+   move.
 4. Update this report after each MI retirement slice with the same two commands
    above, and only remove the `assessed_gap` label when both absolute commands
    exit `0`.
