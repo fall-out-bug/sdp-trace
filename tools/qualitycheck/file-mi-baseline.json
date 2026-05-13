@@ -130,7 +130,22 @@
     {
       "key": "internal/trace/event.go",
       "file": "internal/trace/event.go",
-      "maintainability_index": 39.9
+      "maintainability_index": 67.1
+    },
+    {
+      "key": "internal/trace/event_canonical.go",
+      "file": "internal/trace/event_canonical.go",
+      "maintainability_index": 62.1
+    },
+    {
+      "key": "internal/trace/event_hash.go",
+      "file": "internal/trace/event_hash.go",
+      "maintainability_index": 63.1
+    },
+    {
+      "key": "internal/trace/event_scalar.go",
+      "file": "internal/trace/event_scalar.go",
+      "maintainability_index": 51.3
     },
     {
       "key": "internal/trace/store.go",
