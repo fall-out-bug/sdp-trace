@@ -17,7 +17,7 @@ Both commands exited `1` in the fresh 2026-05-13 replay.
 | Scope | Failing rows | Notes |
 | --- | ---: | --- |
 | File MI | 15 failure rows plus the raw `exit status 1` line | The failures include historical large production files and remaining command/tool surfaces; the raw command output also includes one `exit status 1` line. |
-| Function MI | 1112 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
+| Function MI | 1060 failure rows plus the raw `exit status 1` line | The absolute function-level MI check fails again in the current tree; ratchet baselines pass, but absolute MI is not closed. |
 
 Function-level failures by top-level area:
 
@@ -326,6 +326,16 @@ rows, and its file MI improves from 1.8 to 17.0 while remaining below the
 absolute file threshold. Repository absolute file MI remains 15 failure rows
 plus the raw `exit status 1` line; absolute function MI drops to 1112 failure
 rows plus the raw `exit status 1` line.
+
+The `internal/adaptercapture/adaptercapture.go` in-place trust-boundary comment
+pass kept existing function baseline keys stable while documenting adapter
+contract, identity, run-binding, task drift, tool-depth, mutation, model
+identity, test provenance, provider-ref, redaction, overclaim, aggregation,
+reason, and next-action boundaries. Focused `internal/adaptercapture` tests
+pass, `internal/adaptercapture` has zero absolute function-MI rows, and file MI
+improves from 4.0 to 16.0 while remaining below 70. Repository absolute file MI
+remains 15 failure rows plus the raw `exit status 1` line; absolute function MI
+drops to 1060 failure rows plus the raw `exit status 1` line.
 
 ## File-Level Failures
 

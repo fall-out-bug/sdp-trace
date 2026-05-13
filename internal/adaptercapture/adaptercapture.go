@@ -155,6 +155,8 @@ type Condition struct {
 }
 
 func Evaluate(input Input) AssessmentResult {
+	// Evaluation turns adapter events and run evidence into explicit condition
+	// states, not an opaque adapter health score.
 	conditions := adapterCaptureConditions(input.Run)
 	result := adapterCaptureAssessmentResult(conditions)
 	if result.AdapterCaptureAssessment != StatePass {
@@ -168,6 +170,8 @@ func Evaluate(input Input) AssessmentResult {
 }
 
 func adapterCaptureConditions(run RunEvidence) []Condition {
+	// Conditions stay grouped by contract, identity, run binding, task, tool depth,
+	// mutation, model identity, test provenance, redaction, and overclaim evidence.
 
 	return []Condition{
 		contractCondition(run),
@@ -185,6 +189,8 @@ func adapterCaptureConditions(run RunEvidence) []Condition {
 }
 
 func adapterCaptureAssessmentResult(conditions []Condition) AssessmentResult {
+	// Result assembly keeps top-level state, reasons, and actions derived from
+	// machine conditions rather than prose-only claims.
 
 	return AssessmentResult{
 		SchemaVersion:            SchemaVersion,
@@ -195,6 +201,8 @@ func adapterCaptureAssessmentResult(conditions []Condition) AssessmentResult {
 	}
 }
 func contractCondition(run RunEvidence) Condition {
+	// Contract evidence is checked before identity and run binding so an adapter
+	// cannot claim capture semantics without the expected event contract.
 	if len(run.AdapterEvents) == 0 {
 		return cannotVerify("adapter_event_contract_valid", "adapter_events_missing", "adapter event evidence is missing", "Supply same-chain adapter events or an adapter bundle.")
 	}
@@ -203,6 +211,8 @@ func contractCondition(run RunEvidence) Condition {
 }
 
 func contractConditionFromEvents(events []AdapterEvent) Condition {
+	// Event-level contract checks keep missing event families separate from malformed
+	// or unsupported adapter evidence.
 	seen := map[string]bool{}
 	for _, event := range events {
 		if adapterEventIsMalformed(event) {
@@ -230,6 +240,9 @@ func missingAdapterEventPayload(event AdapterEvent) bool {
 }
 
 func hasDuplicateCorrelationKey(seen map[string]bool, event AdapterEvent) bool {
+	// hasDuplicateCorrelationKey preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if event.CorrelationRef == "" {
 
 		return false
@@ -248,6 +261,8 @@ func contractCorrelationKey(event AdapterEvent) string {
 }
 
 func identityCondition(run RunEvidence) Condition {
+	// Identity evidence binds provider, model, and adapter labels before event claims
+	// can contribute to a capture verdict.
 	for _, event := range run.AdapterEvents {
 		if condition, ok := identityConditionForEvent(event); ok {
 
@@ -258,6 +273,9 @@ func identityCondition(run RunEvidence) Condition {
 }
 
 func identityConditionForEvent(event AdapterEvent) (Condition, bool) {
+	// identityConditionForEvent preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if adapterIdentityMissing(event) {
 
 		return cannotVerify("adapter_identity_visible", "adapter_identity_missing", "adapter or producer identity is missing", "Record adapter and producer identity."), true
@@ -278,6 +296,8 @@ func validIdentityBinding(binding string) bool {
 }
 
 func runBindingCondition(run RunEvidence) Condition {
+	// Run binding ties adapter evidence back to the current run chain instead of
+	// trusting checked-in adapter data by itself.
 	if runIdentityMissing(run) {
 
 		return cannotVerify("run_binding_established", "run_binding_missing", "run id or nonce is missing", "Record run id and run nonce before assessing adapter capture.")
@@ -295,6 +315,9 @@ func runIdentityMissing(run RunEvidence) bool {
 }
 
 func adapterEventRunBindingCondition(run RunEvidence, event AdapterEvent) Condition {
+	// adapterEventRunBindingCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if adapterEventRunIdentityMismatch(run, event) {
 		return fail("run_binding_established", "run_binding_mismatch", "adapter event contradicts run id or nonce", "Use adapter events bound to the selected run.")
 	}
@@ -303,6 +326,9 @@ func adapterEventRunBindingCondition(run RunEvidence, event AdapterEvent) Condit
 }
 
 func adapterEventBindingModeCondition(run RunEvidence, event AdapterEvent) Condition {
+	// adapterEventBindingModeCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	switch event.BindingMode {
 	case BindingSameChain:
@@ -319,6 +345,9 @@ func adapterEventRunIdentityMismatch(run RunEvidence, event AdapterEvent) bool {
 }
 
 func sameChainBindingCondition(run RunEvidence, event AdapterEvent) Condition {
+	// sameChainBindingCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if eventAfterRunClosure(run, event.Sequence) {
 
 		return cannotVerify("run_binding_established", "late_adapter_event", "adapter event appears after run closure", "Do not use late adapter events to satisfy capture-depth assessment.")
@@ -339,6 +368,9 @@ func sameChainDigestMissing(event AdapterEvent) bool {
 }
 
 func adapterBundleBindingCondition(run RunEvidence, event AdapterEvent) Condition {
+	// adapterBundleBindingCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if adapterBundleUnbound(run.AdapterBundle, event) {
 
 		return cannotVerify("run_binding_established", "adapter_bundle_unbound", "adapter bundle is not bound to the selected run", "Bind the adapter bundle head digest into the run artifact.")
@@ -351,6 +383,9 @@ func adapterBundleBindingCondition(run RunEvidence, event AdapterEvent) Conditio
 }
 
 func adapterBundleUnbound(bundle *AdapterBundle, event AdapterEvent) bool {
+	// adapterBundleUnbound preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	return bundle == nil ||
 		event.AdapterBundleHeadDigest == "" ||
@@ -359,6 +394,8 @@ func adapterBundleUnbound(bundle *AdapterBundle, event AdapterEvent) bool {
 }
 
 func taskDriftCondition(run RunEvidence) Condition {
+	// Task drift evidence distinguishes superseded work from unverified task changes
+	// so later gates do not silently accept stale context.
 	if !run.TaskDriftAssessed {
 
 		return Condition{ID: "task_drift_visible", State: StateNotAssessed, ReasonCode: "task_drift_not_assessed", Reason: "task drift assessment was not selected", NextAction: "Assess task locks and task_superseded events."}
@@ -370,6 +407,9 @@ func taskDriftCondition(run RunEvidence) Condition {
 }
 
 func taskDriftPassCondition(supersessionCount int) Condition {
+	// taskDriftPassCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if supersessionCount == 0 {
 		return pass("task_drift_visible", "no_supersessions_observed", "task drift was assessed and no supersessions were observed")
 	}
@@ -378,6 +418,9 @@ func taskDriftPassCondition(supersessionCount int) Condition {
 }
 
 func taskSupersessionActorMissing(events []AdapterEvent) bool {
+	// taskSupersessionActorMissing preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, event := range events {
 		if event.EventType == "task_superseded" && event.ActorAttributionState == "" {
 
@@ -388,6 +431,8 @@ func taskSupersessionActorMissing(events []AdapterEvent) bool {
 }
 
 func toolDepthCondition(run RunEvidence) Condition {
+	// Tool-depth evidence records whether adapter events captured nested tool use
+	// without turning absent depth into a pass.
 	if hasRequired(run, "tool_call") && !hasEvent(run.AdapterEvents, "tool_call") {
 		if unsupported(run, "tool_call") {
 
@@ -400,6 +445,8 @@ func toolDepthCondition(run RunEvidence) Condition {
 }
 
 func fileMutationCondition(run RunEvidence) Condition {
+	// File mutation evidence keeps observed changes distinct from unsupported or
+	// missing mutation telemetry.
 	for _, event := range run.AdapterEvents {
 		if fileMutationCorrelationMissing(event) {
 
@@ -414,6 +461,8 @@ func fileMutationCorrelationMissing(event AdapterEvent) bool {
 }
 
 func modelIdentityCondition(run RunEvidence) Condition {
+	// Model identity evidence preserves provider/model attribution before claims are
+	// considered bound to the recorded work.
 	for _, event := range run.AdapterEvents {
 		if modelIdentityOverclaimed(run, event) {
 
@@ -436,6 +485,8 @@ func gatewayModelIdentityBound(run RunEvidence, event AdapterEvent) bool {
 }
 
 func testProvenanceCondition(run RunEvidence) Condition {
+	// Test provenance evidence is evaluated separately because test mentions are not
+	// proof that tests actually executed.
 	if event, ok := firstEvent(run.AdapterEvents, "test_observed"); ok {
 
 		return testProvenanceEventCondition(event)
@@ -447,6 +498,9 @@ func testProvenanceCondition(run RunEvidence) Condition {
 }
 
 func firstEvent(events []AdapterEvent, eventType string) (AdapterEvent, bool) {
+	// firstEvent preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, event := range events {
 		if event.EventType == eventType {
 
@@ -457,6 +511,9 @@ func firstEvent(events []AdapterEvent, eventType string) (AdapterEvent, bool) {
 }
 
 func testProvenanceEventCondition(event AdapterEvent) Condition {
+	// testProvenanceEventCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if testProvenanceExecuted(event.TestProvenance) {
 		return pass("test_provenance_not_overclaimed", "test_provenance_executed", "test evidence is bound to CI or wrapper execution")
 	}
@@ -465,6 +522,9 @@ func testProvenanceEventCondition(event AdapterEvent) Condition {
 }
 
 func nonExecutedTestProvenanceCondition(event AdapterEvent) Condition {
+	// nonExecutedTestProvenanceCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	switch event.TestProvenance {
 	case "agent_reported":
@@ -481,6 +541,9 @@ func testProvenanceExecuted(provenance string) bool {
 }
 
 func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReason string) Condition {
+	// reportedTestCondition preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if event.ExecutedEvidenceClaimed {
 
 		return fail("test_provenance_not_overclaimed", failCode, failReason, "Bind test evidence to CI or wrapper execution.")
@@ -489,6 +552,8 @@ func reportedTestCondition(event AdapterEvent, failCode, failReason, cannotReaso
 }
 
 func providerRefsCondition(run RunEvidence) Condition {
+	// Provider refs are checked for unsafe material before any external reference is
+	// echoed into evidence output.
 	if providerRefsContainSecret(run.ProviderRefs) {
 
 		return fail("provider_refs_portable", "provider_ref_contains_secret", "provider-neutral reference contains credential-like material", "Persist canonical token-free provider references.")
@@ -501,6 +566,9 @@ func providerRefsCondition(run RunEvidence) Condition {
 }
 
 func providerRefsContainSecret(refs []ProviderRef) bool {
+	// providerRefsContainSecret preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, ref := range refs {
 		if providerRefContainsSecret(ref) {
 
@@ -511,6 +579,9 @@ func providerRefsContainSecret(refs []ProviderRef) bool {
 }
 
 func adapterEventsProviderRefsContainSecret(events []AdapterEvent) bool {
+	// adapterEventsProviderRefsContainSecret preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, event := range events {
 		if eventProviderRefsContainSecret(event) {
 
@@ -529,6 +600,8 @@ func eventProviderRefsContainSecret(event AdapterEvent) bool {
 }
 
 func redactionMetadataCondition(run RunEvidence) Condition {
+	// Redaction metadata records whether unsafe payload classes were handled without
+	// using redaction prose as proof of absence.
 	for _, event := range run.AdapterEvents {
 		if condition := redactionMetadataConditionForEvent(event); condition.State != "" {
 
@@ -539,6 +612,9 @@ func redactionMetadataCondition(run RunEvidence) Condition {
 }
 
 func redactionMetadataConditionForEvent(event AdapterEvent) Condition {
+	// redactionMetadataConditionForEvent preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if hasForbiddenRedactionMetadata(event) {
 
 		return fail("redaction_metadata_consistent", "forbidden_adapter_metadata_persisted", "adapter metadata contains forbidden raw or credential-like material", "Redact adapter metadata before persistence.")
@@ -569,6 +645,8 @@ func hasInvalidRetentionMode(event AdapterEvent) bool {
 }
 
 func overclaimCondition(run RunEvidence) Condition {
+	// Overclaim checks guard against adapter events claiming stronger verification
+	// than the captured evidence can replay.
 	if eventFamiliesOverclaim(run.EventFamilySummaries) {
 
 		return fail("capture_depth_not_overclaimed", "capture_depth_overclaimed", "capture-depth output claims reconstruction without sufficient evidence", "Emit a visible capture-depth cap for insufficient evidence.")
@@ -581,6 +659,9 @@ func overclaimCondition(run RunEvidence) Condition {
 }
 
 func eventFamiliesOverclaim(summaries []EventFamilyState) bool {
+	// eventFamiliesOverclaim preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, summary := range summaries {
 		if eventFamilyOverclaims(summary) {
 
@@ -591,6 +672,9 @@ func eventFamiliesOverclaim(summaries []EventFamilyState) bool {
 }
 
 func adapterEventsOverclaim(events []AdapterEvent) bool {
+	// adapterEventsOverclaim preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, event := range events {
 		if adapterEventOverclaims(event) {
 
@@ -633,6 +717,8 @@ func adapterEventInsufficient(event AdapterEvent) bool {
 }
 
 func topLevel(conditions []Condition) string {
+	// Top-level state reports the strongest non-pass condition without averaging or
+	// hiding adapter capture gaps.
 	highest := StatePass
 	for _, condition := range conditions {
 		if condition.State == StateFail {
@@ -649,6 +735,8 @@ func topLevel(conditions []Condition) string {
 }
 
 func reasons(conditions []Condition) []string {
+	// Reasons are derived from condition states so human text follows evidence and
+	// does not become independent authority.
 	out := []string{}
 	for _, condition := range conditions {
 		if condition.State != StatePass {
@@ -661,6 +749,8 @@ func reasons(conditions []Condition) []string {
 }
 
 func nextActions(conditions []Condition) []string {
+	// Next actions point to concrete missing adapter evidence needed for replayable
+	// capture assessment.
 	set := map[string]bool{}
 	for _, condition := range conditions {
 
@@ -675,6 +765,9 @@ func nextActions(conditions []Condition) []string {
 }
 
 func addNextAction(set map[string]bool, condition Condition) {
+	// addNextAction preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if condition.State != StatePass && condition.NextAction != "" {
 
 		set[condition.NextAction] = true
@@ -682,6 +775,9 @@ func addNextAction(set map[string]bool, condition Condition) {
 }
 
 func hasRequired(run RunEvidence, eventType string) bool {
+	// hasRequired preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, required := range run.RequiredEventTypes {
 		if required == eventType {
 
@@ -692,6 +788,9 @@ func hasRequired(run RunEvidence, eventType string) bool {
 }
 
 func unsupported(run RunEvidence, eventType string) bool {
+	// unsupported preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, unsupported := range run.UnsupportedEventTypes {
 		if unsupported == eventType {
 
@@ -702,6 +801,9 @@ func unsupported(run RunEvidence, eventType string) bool {
 }
 
 func hasEvent(events []AdapterEvent, eventType string) bool {
+	// hasEvent preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, event := range events {
 		if event.EventType == eventType {
 
@@ -735,6 +837,9 @@ var validRetentionModes = map[string]bool{
 }
 
 func containsSecret(value string) bool {
+	// containsSecret preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	if value == "" {
 		return false
 	}
@@ -770,6 +875,9 @@ var secretMarkers = []string{
 }
 
 func stringSliceContainsSecret(values []string) bool {
+	// stringSliceContainsSecret preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	for _, value := range values {
 		if containsSecret(value) {
 
@@ -802,6 +910,9 @@ func ValidTestInput() Input {
 }
 
 func validInput() Input {
+	// validInput preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	runID := "adapter-run-1"
 	nonce := "nonce-1"
@@ -811,6 +922,9 @@ func validInput() Input {
 }
 
 func validRunEvidence(runID, nonce, source, policy string) RunEvidence {
+	// validRunEvidence preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	run := validRunHeader(runID, nonce, source, policy)
 	run.AdapterEvents = validAdapterEvents(runID, nonce, source, policy)
@@ -820,6 +934,9 @@ func validRunEvidence(runID, nonce, source, policy string) RunEvidence {
 }
 
 func validRunHeader(runID, nonce, source, policy string) RunEvidence {
+	// validRunHeader preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	return RunEvidence{
 		RunID:                 runID,
@@ -839,6 +956,9 @@ func validRequiredEventTypes() []string {
 }
 
 func validAdapterEvents(runID, nonce, source, policy string) []AdapterEvent {
+	// validAdapterEvents preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 	out := make([]AdapterEvent, 0, len(validEventSpecs))
 	for _, spec := range validEventSpecs {
 
@@ -873,6 +993,9 @@ func validEventFamilySummaries() []EventFamilyState {
 }
 
 func validEvent(id, eventType string, sequence int, runID, nonce, source, policy string) AdapterEvent {
+	// validEvent preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	seed := validEventSeed{id: id, eventType: eventType, sequence: sequence, runID: runID, nonce: nonce, source: source, policy: policy}
 	event := baseValidEvent(seed)
@@ -894,6 +1017,9 @@ type validEventSeed struct {
 }
 
 func baseValidEvent(seed validEventSeed) AdapterEvent {
+	// baseValidEvent preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	event := AdapterEvent{}
 	setValidEventIdentity(&event, seed)
@@ -904,6 +1030,9 @@ func baseValidEvent(seed validEventSeed) AdapterEvent {
 }
 
 func setValidEventIdentity(event *AdapterEvent, seed validEventSeed) {
+	// setValidEventIdentity preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	event.EventID = seed.id
 	event.EventType = seed.eventType
@@ -914,6 +1043,9 @@ func setValidEventIdentity(event *AdapterEvent, seed validEventSeed) {
 }
 
 func setValidEventBinding(event *AdapterEvent, seed validEventSeed) {
+	// setValidEventBinding preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	event.RunID = seed.runID
 	event.RunNonce = seed.nonce
@@ -925,6 +1057,9 @@ func setValidEventBinding(event *AdapterEvent, seed validEventSeed) {
 }
 
 func setValidEventEvidence(event *AdapterEvent, seed validEventSeed) {
+	// setValidEventEvidence preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	event.CaptureState = "captured"
 	event.CorrelationRef = "corr:" + seed.id
@@ -934,6 +1069,9 @@ func setValidEventEvidence(event *AdapterEvent, seed validEventSeed) {
 }
 
 func setValidEventClaims(event *AdapterEvent, eventType string) {
+	// setValidEventClaims preserves adapter-capture evidence as explicit state.
+	// Missing, malformed, unsupported, and failing inputs stay distinct.
+	// The helper does not convert local adapter events into external proof.
 
 	event.ActorAttributionState = "bound"
 	event.ModelIdentityProvenance = "gateway_observed"
