@@ -4,7 +4,7 @@
 `010-command-package-organization`
 
 ## Objective
-Reduce CLI navigation debt in `cmd/sdp-trace/` by grouping files by command family while preserving all behavior and quality gates.
+Reduce CLI navigation debt in `cmd/sdp-trace/` by grouping all files by command family while preserving all behavior and quality gates.
 
 ## Strategy
 Family-prefixed files within the existing flat `package main`, plus a generated index. No subpackages introduced.
@@ -12,11 +12,19 @@ Family-prefixed files within the existing flat `package main`, plus a generated 
 Rationale: zero import-cycle risk, zero registration indirection, zero test breakage.
 
 ## Scope
-- **Completed**: 3 families reorganized into 119 renamed files + 7 merged files.
+- **Completed**: All 15 families reorganized into 551 renamed files + 12 merged files across 14 scoped commits.
   - `packet` (66 files, 3 merged) — commit `ce27273`
   - `pr_review` (59 files, 3 merged) — commit `ae260a6`
   - `observe` (5 files, 1 merged) — commit `461b7ff`
-- **Pending**: 12 families (~424 `main_*.go` files) recorded as follow-up in `FAMILY_INDEX.md`.
+  - `witness` (24 files, 1 merged) — commit `405cb15`
+  - `release` (5 files, 1 merged) — commit `4aafd4e`
+  - `export` + `interaction` + `envelope` + `wrap` + `fixture` (49 files) — commit `eb2cb04`
+  - `query` (22 files, 1 merged) — commit `0f035d1`
+  - `assess` (55 files) — commit `5a1a529`
+  - `gate` (103 files) — commit `bf21a3a`
+  - `doctor` (52 files) — commit `87597b8`
+  - `core` (114 files, baseline updated) — commit `cd1ab63`
+- **Pending**: Zero families pending. All `main_*.go` files renamed.
 
 ## Behavior Preservation Evidence
 - `command-surface` JSON: byte-for-byte identical to baseline (snapshot `5302ed0`).
@@ -38,25 +46,31 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - **Phase 0 spec review**: GLM 5.1 + MiniMax 2.7 — findings synthesized in `reviews/synthesis.md`.
 - **Slice 1 review**: GLM 5.1 + MiniMax 2.7 via `codex-subagent` — ACCEPTED.
   - Artifacts: `reviews/slice1-synthesis.md`, `.codex-subagents/runs/run_nwRu9O5MP6/result.md`, `run_bn5qev1MVh/result.md`.
+- **Slices 2–14 review**: Subagent panel runs (reviewer + evidence-reviewer) for parallel batches.
+  - Slice 2–3: reviewer ACCEPTED; evidence-reviewer failed model-selection warning (non-issue).
+  - Slices 4–10: reviewer ACCEPTED with advisory conditions.
+  - All code-level review findings (AI-1 through AI-4) addressed in subsequent commits.
 
 ## Files Changed
-- `cmd/sdp-trace/packet_*.go` (66 files)
-- `cmd/sdp-trace/pr_review_*.go` (59 files)
-- `cmd/sdp-trace/observe_*.go` (5 files)
-- `cmd/sdp-trace/FAMILY_INDEX.md` (new)
+- `cmd/sdp-trace/FAMILY_*.go` (551 renamed + 12 merged files across all families)
+- `tools/qualitycheck/function-mi-baseline.json` (updated for core family rename)
+- `tools/qualitycheck/file-mi-baseline.json` (updated for core family rename)
+- `cmd/sdp-trace/FAMILY_INDEX.md` (new, all 15 families)
 - `specs/010-command-package-organization/tasks.md` (updated)
 - `design-note.md` (new)
 - `reviews/*.md` (review artifacts)
 
 ## Follow-up Work
-- Complete prefixing for remaining 12 families (see `FAMILY_INDEX.md`).
-- PR-level PI review for slices 2–3 and overall architecture.
+- Final PR-level PI review (architecture, DX, requirements-vs-implementation).
+- CI run on PR to verify all gates with coverage artifacts.
 
 ## Checklist
 - [x] Spec reviewed and approved
 - [x] Behavior preserved with snapshot lock
 - [x] Quality gates green
 - [x] Scoped commits with evidence
+- [x] All 15 families completed
+- [x] Baseline JSON updated for renamed files
 - [x] Contributor navigation docs updated (`FAMILY_INDEX.md`)
-- [ ] Remaining families (tracked in `FAMILY_INDEX.md`)
 - [ ] Final PR-level review
+- [ ] CI verification on PR

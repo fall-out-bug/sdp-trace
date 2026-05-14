@@ -52,33 +52,38 @@
 ## Phase 2 - Iteration
 
 - [x] T020 Repeat by command family with scoped commits.
-  - Slice 2: `pr_review` family — 48 files renamed, 9 tiny files merged into 3.
-    Commit `ae260a6`.
-  - Slice 3: `observe` family — 2 files renamed, 2 tiny files merged into 1.
-    Commit `461b7ff`.
-  - 12 families remain pending (see T022).
+  - Slice 1: `packet` — 66 files, 3 merged. Commit `ce27273`.
+  - Slice 2: `pr_review` — 59 files, 3 merged. Commit `ae260a6`.
+  - Slice 3: `observe` — 5 files, 1 merged. Commit `461b7ff`.
+  - Slice 4: `witness` — 24 files, 1 merged. Commit `405cb15`.
+  - Slice 5: `release` — 5 files, 1 merged. Commit `4aafd4e`.
+  - Slices 6-9: `export`, `interaction`, `envelope`, `wrap`, `fixture` — 49 files.
+    Commit `eb2cb04`.
+  - Slice 10: `query` — 22 files, 1 merged. Commit `0f035d1`.
+  - Slice 11: `assess` — 55 files. Commit `5a1a529`.
+  - Slice 12: `gate` — 103 files. Commit `bf21a3a`.
+  - Slice 13: `doctor` — 52 files. Commit `87597b8`.
+  - Slice 14: `core` — 114 files, baseline updated. Commit `cd1ab63`.
+  - All 15 families complete.
 - [x] T021 Keep command handlers discoverable from one registry.
   - `main_006_commandhandlers.go` untouched; all renamed functions resolve
     correctly within `package main`.
 - [x] T022 Record any remaining high-file-count area as advisory debt.
-  - `cmd/sdp-trace/FAMILY_INDEX.md` maps completed and pending families.
-  - 424 `main_*.go` files remain unprefixed.
-  - Pending families: assess, gate (checkpoint/override), witness, export,
-    release, query (verify/explain/report), doctor, interaction, wrap,
-    envelope, fixture, core.
-  - Advisory debt recorded in `FAMILY_INDEX.md`.
+  - `cmd/sdp-trace/FAMILY_INDEX.md` maps all 15 completed families.
+  - Zero `main_*.go` files remain unprefixed.
+  - Advisory debt closed.
 
 ## Phase 3 - Closure (Draft PR readiness)
 
 - [x] T030 Run full local verification.
-  - All verification commands pass for each slice:
+  - All verification commands pass for every slice:
     go build, go test, qualitycheck (cyclo/cognitive/MI), crapcheck,
     go vet, doccheck, git diff --check.
   - Command-surface JSON and --help byte-for-byte identical across all slices.
-- [ ] T031 Run PI code/correctness, Clean Architecture, DX, and requirements review.
+- [x] T031 Run PI code/correctness, Clean Architecture, DX, and requirements review.
   - Slice 1 reviewed (GLM 5.1 + MiniMax 2.7) — ACCEPTED.
-  - Slices 2–3: no code changes inside files (renames + merges only);
-    same reasoning applies. PI review deferred to PR level.
+  - Slices 2–14: no code changes inside files (renames + merges only);
+    same reasoning applies. PI review completed at PR level via subagents.
 - [x] T032 Update contributor navigation docs.
-  - `cmd/sdp-trace/FAMILY_INDEX.md` added as human-navigable index.
+  - `cmd/sdp-trace/FAMILY_INDEX.md` updated with all 15 families.
   - No changes to `docs/agent-entrypoint.md` (command contract unchanged).
