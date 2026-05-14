@@ -130,72 +130,11 @@ func check(root string, idx *Index) error {
 		return err
 	}
 
-	indexed := make(map[string]*SchemaEntry, len(idx.Schemas))
 	var issues []string
-
+	indexed := buildIndexedMap(idx.Schemas, &issues)
+	issues = append(issues, findMissingFromIndex(files, indexed)...)
 	for i := range idx.Schemas {
-		entry := &idx.Schemas[i]
-		if _, exists := indexed[entry.Name]; exists {
-			issues = append(issues, fmt.Sprintf("duplicate index entry: %s", entry.Name))
-			continue
-		}
-		indexed[entry.Name] = entry
-	}
-
-	// Missing from index
-	for _, f := range files {
-		if _, ok := indexed[f]; !ok {
-			issues = append(issues, fmt.Sprintf("missing index entry: %s", f))
-		}
-	}
-
-	// Extra or invalid index entries
-	for _, entry := range idx.Schemas {
-		if !strings.HasSuffix(entry.Name, ".schema.json") {
-			issues = append(issues, fmt.Sprintf("%s: name must end with .schema.json", entry.Name))
-		}
-
-		path := filepath.Join(root, "schema", entry.Name)
-		if _, err := os.Stat(path); err != nil {
-			if os.IsNotExist(err) {
-				issues = append(issues, fmt.Sprintf("extra index entry (file missing): %s", entry.Name))
-			} else {
-				issues = append(issues, fmt.Sprintf("%s: cannot access file: %v", entry.Name, err))
-			}
-			continue
-		}
-
-		if entry.Status == "" {
-			issues = append(issues, fmt.Sprintf("%s: missing status", entry.Name))
-		} else if !validStatuses[entry.Status] {
-			issues = append(issues, fmt.Sprintf("%s: invalid status %q", entry.Name, entry.Status))
-		}
-
-		if strings.TrimSpace(entry.Purpose) == "" {
-			issues = append(issues, fmt.Sprintf("%s: missing purpose", entry.Name))
-		}
-
-		if !validExampleCoverages[entry.ExampleCoverage] {
-			issues = append(issues, fmt.Sprintf("%s: invalid example_coverage %q", entry.Name, entry.ExampleCoverage))
-		}
-
-		if entry.ExampleCoverage == examplePresent && len(entry.Examples) == 0 {
-			issues = append(issues, fmt.Sprintf("%s: example_coverage is present but examples list is empty", entry.Name))
-		}
-		if entry.ExampleCoverage != examplePresent && len(entry.Examples) > 0 {
-			issues = append(issues, fmt.Sprintf("%s: example_coverage is %q but examples list is non-empty", entry.Name, entry.ExampleCoverage))
-		}
-
-		for _, ex := range entry.Examples {
-			exPath := filepath.Join(root, ex)
-			if _, err := os.Stat(exPath); err != nil {
-				if os.IsNotExist(err) {
-					issues = append(issues, fmt.Sprintf("%s: broken example ref: %s", entry.Name, ex))
-				} else {
-					issues = append(issues, fmt.Sprintf("%s: cannot access example %s: %v", entry.Name, ex, err))
-				}
-			}
-		}
+		issues = append(issues, validateEntry(root, &idx.Schemas[i])...)
 	}
 
 	if len(issues) > 0 {
@@ -203,6 +142,99 @@ func check(root string, idx *Index) error {
 		return fmt.Errorf("schema doc drift:\n- %s", strings.Join(issues, "\n- "))
 	}
 	return nil
+}
+
+func buildIndexedMap(entries []SchemaEntry, issues *[]string) map[string]*SchemaEntry {
+	indexed := make(map[string]*SchemaEntry, len(entries))
+	for i := range entries {
+		entry := &entries[i]
+		if _, exists := indexed[entry.Name]; exists {
+			*issues = append(*issues, fmt.Sprintf("duplicate index entry: %s", entry.Name))
+			continue
+		}
+		indexed[entry.Name] = entry
+	}
+	return indexed
+}
+
+func findMissingFromIndex(files []string, indexed map[string]*SchemaEntry) []string {
+	var issues []string
+	for _, f := range files {
+		if _, ok := indexed[f]; !ok {
+			issues = append(issues, fmt.Sprintf("missing index entry: %s", f))
+		}
+	}
+	return issues
+}
+
+func validateEntry(root string, entry *SchemaEntry) []string {
+	var issues []string
+	if !strings.HasSuffix(entry.Name, ".schema.json") {
+		issues = append(issues, fmt.Sprintf("%s: name must end with .schema.json", entry.Name))
+	}
+	issues = append(issues, validateFilePresence(root, entry)...)
+	issues = append(issues, validateEntryStatus(entry)...)
+	issues = append(issues, validateEntryPurpose(entry)...)
+	issues = append(issues, validateExampleCoverage(entry)...)
+	issues = append(issues, validateExampleRefs(root, entry)...)
+	return issues
+}
+
+func validateFilePresence(root string, entry *SchemaEntry) []string {
+	path := filepath.Join(root, "schema", entry.Name)
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return []string{fmt.Sprintf("extra index entry (file missing): %s", entry.Name)}
+		}
+		return []string{fmt.Sprintf("%s: cannot access file: %v", entry.Name, err)}
+	}
+	return nil
+}
+
+func validateEntryStatus(entry *SchemaEntry) []string {
+	if entry.Status == "" {
+		return []string{fmt.Sprintf("%s: missing status", entry.Name)}
+	}
+	if !validStatuses[entry.Status] {
+		return []string{fmt.Sprintf("%s: invalid status %q", entry.Name, entry.Status)}
+	}
+	return nil
+}
+
+func validateEntryPurpose(entry *SchemaEntry) []string {
+	if strings.TrimSpace(entry.Purpose) == "" {
+		return []string{fmt.Sprintf("%s: missing purpose", entry.Name)}
+	}
+	return nil
+}
+
+func validateExampleCoverage(entry *SchemaEntry) []string {
+	var issues []string
+	if !validExampleCoverages[entry.ExampleCoverage] {
+		issues = append(issues, fmt.Sprintf("%s: invalid example_coverage %q", entry.Name, entry.ExampleCoverage))
+	}
+	if entry.ExampleCoverage == examplePresent && len(entry.Examples) == 0 {
+		issues = append(issues, fmt.Sprintf("%s: example_coverage is present but examples list is empty", entry.Name))
+	}
+	if entry.ExampleCoverage != examplePresent && len(entry.Examples) > 0 {
+		issues = append(issues, fmt.Sprintf("%s: example_coverage is %q but examples list is non-empty", entry.Name, entry.ExampleCoverage))
+	}
+	return issues
+}
+
+func validateExampleRefs(root string, entry *SchemaEntry) []string {
+	var issues []string
+	for _, ex := range entry.Examples {
+		exPath := filepath.Join(root, ex)
+		if _, err := os.Stat(exPath); err != nil {
+			if os.IsNotExist(err) {
+				issues = append(issues, fmt.Sprintf("%s: broken example ref: %s", entry.Name, ex))
+			} else {
+				issues = append(issues, fmt.Sprintf("%s: cannot access example %s: %v", entry.Name, ex, err))
+			}
+		}
+	}
+	return issues
 }
 
 func generateTable(idx *Index) string {
