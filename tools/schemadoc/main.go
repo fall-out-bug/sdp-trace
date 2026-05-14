@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -13,12 +14,15 @@ import (
 )
 
 const (
-	indexPath   = "schema/index.json"
-	schemaGlob  = "schema/*.schema.json"
-	readmePath  = "schema/README.md"
-	statusCurrent     = "current"
-	statusHistorical  = "historical"
+	indexPath        = "schema/index.json"
+	schemaGlob       = "schema/*.schema.json"
+	readmePath       = "schema/README.md"
+	statusCurrent    = "current"
+	statusHistorical = "historical"
 	statusNotAssessed = "not_assessed"
+	examplePresent    = "present"
+	exampleNotAssessed = "not_assessed"
+	indexVersion      = "1"
 )
 
 var validStatuses = map[string]bool{
@@ -27,12 +31,19 @@ var validStatuses = map[string]bool{
 	statusNotAssessed: true,
 }
 
+var validExampleCoverages = map[string]bool{
+	examplePresent:    true,
+	exampleNotAssessed: true,
+	"":                true, // absent means not_assessed
+}
+
 func main() {
-	var generate bool
+	var generate, verifyReadme bool
 	flag.BoolVar(&generate, "generate", false, "print generated README table section to stdout")
+	flag.BoolVar(&verifyReadme, "verify-readme", false, "verify README.md schema table matches index.json")
 	flag.Parse()
 
-	os.Exit(exitCode(run(generate), os.Stderr))
+	os.Exit(exitCode(run(generate, verifyReadme), os.Stderr))
 }
 
 func exitCode(err error, stderr io.Writer) int {
@@ -43,7 +54,7 @@ func exitCode(err error, stderr io.Writer) int {
 	return 1
 }
 
-func run(generate bool) error {
+func run(generate, verifyReadme bool) error {
 	root := repoRoot()
 	idx, err := readIndex(filepath.Join(root, indexPath))
 	if err != nil {
@@ -53,6 +64,10 @@ func run(generate bool) error {
 	if generate {
 		_, err := io.WriteString(os.Stdout, generateTable(idx))
 		return err
+	}
+
+	if verifyReadme {
+		return checkReadme(root, idx)
 	}
 
 	return check(root, idx)
@@ -74,10 +89,11 @@ type Index struct {
 
 // SchemaEntry describes one schema file.
 type SchemaEntry struct {
-	Name     string   `json:"name"`
-	Status   string   `json:"status"`
-	Purpose  string   `json:"purpose"`
-	Examples []string `json:"examples,omitempty"`
+	Name            string   `json:"name"`
+	Status          string   `json:"status"`
+	Purpose         string   `json:"purpose"`
+	ExampleCoverage string   `json:"example_coverage,omitempty"`
+	Examples        []string `json:"examples,omitempty"`
 }
 
 func readIndex(path string) (*Index, error) {
@@ -88,6 +104,9 @@ func readIndex(path string) (*Index, error) {
 	var idx Index
 	if err := json.Unmarshal(b, &idx); err != nil {
 		return nil, fmt.Errorf("parse %s: %w", indexPath, err)
+	}
+	if idx.Version != indexVersion {
+		return nil, fmt.Errorf("unsupported %s version %q, want %q", indexPath, idx.Version, indexVersion)
 	}
 	return &idx, nil
 }
@@ -112,12 +131,16 @@ func check(root string, idx *Index) error {
 	}
 
 	indexed := make(map[string]*SchemaEntry, len(idx.Schemas))
+	var issues []string
+
 	for i := range idx.Schemas {
 		entry := &idx.Schemas[i]
+		if _, exists := indexed[entry.Name]; exists {
+			issues = append(issues, fmt.Sprintf("duplicate index entry: %s", entry.Name))
+			continue
+		}
 		indexed[entry.Name] = entry
 	}
-
-	var issues []string
 
 	// Missing from index
 	for _, f := range files {
@@ -128,9 +151,17 @@ func check(root string, idx *Index) error {
 
 	// Extra or invalid index entries
 	for _, entry := range idx.Schemas {
+		if !strings.HasSuffix(entry.Name, ".schema.json") {
+			issues = append(issues, fmt.Sprintf("%s: name must end with .schema.json", entry.Name))
+		}
+
 		path := filepath.Join(root, "schema", entry.Name)
 		if _, err := os.Stat(path); err != nil {
-			issues = append(issues, fmt.Sprintf("extra index entry (file missing): %s", entry.Name))
+			if os.IsNotExist(err) {
+				issues = append(issues, fmt.Sprintf("extra index entry (file missing): %s", entry.Name))
+			} else {
+				issues = append(issues, fmt.Sprintf("%s: cannot access file: %v", entry.Name, err))
+			}
 			continue
 		}
 
@@ -144,10 +175,22 @@ func check(root string, idx *Index) error {
 			issues = append(issues, fmt.Sprintf("%s: missing purpose", entry.Name))
 		}
 
+		if !validExampleCoverages[entry.ExampleCoverage] {
+			issues = append(issues, fmt.Sprintf("%s: invalid example_coverage %q", entry.Name, entry.ExampleCoverage))
+		}
+
+		if entry.ExampleCoverage == examplePresent && len(entry.Examples) == 0 {
+			issues = append(issues, fmt.Sprintf("%s: example_coverage is present but examples list is empty", entry.Name))
+		}
+
 		for _, ex := range entry.Examples {
 			exPath := filepath.Join(root, ex)
 			if _, err := os.Stat(exPath); err != nil {
-				issues = append(issues, fmt.Sprintf("%s: broken example ref: %s", entry.Name, ex))
+				if os.IsNotExist(err) {
+					issues = append(issues, fmt.Sprintf("%s: broken example ref: %s", entry.Name, ex))
+				} else {
+					issues = append(issues, fmt.Sprintf("%s: cannot access example %s: %v", entry.Name, ex, err))
+				}
 			}
 		}
 	}
@@ -164,7 +207,34 @@ func generateTable(idx *Index) string {
 	b.WriteString("| Schema | Status | Purpose |\n")
 	b.WriteString("|---|---|---|\n")
 	for _, entry := range idx.Schemas {
-		b.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", entry.Name, entry.Status, entry.Purpose))
+		name := strings.ReplaceAll(entry.Name, "|", "\\|")
+		purpose := strings.ReplaceAll(entry.Purpose, "|", "\\|")
+		b.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", name, entry.Status, purpose))
 	}
 	return b.String()
+}
+
+func checkReadme(root string, idx *Index) error {
+	return checkReadmeAt(filepath.Join(root, readmePath), idx)
+}
+
+func checkReadmeAt(path string, idx *Index) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", path, err)
+	}
+	content := string(data)
+	const startMarker = "<!-- schemadoc-start -->\n"
+	const endMarker = "\n<!-- schemadoc-end -->"
+	startIdx := strings.Index(content, startMarker)
+	endIdx := strings.Index(content, endMarker)
+	if startIdx == -1 || endIdx == -1 || endIdx <= startIdx {
+		return errors.New("README missing schemadoc markers")
+	}
+	want := generateTable(idx)
+	got := content[startIdx+len(startMarker) : endIdx]
+	if strings.TrimSpace(got) != strings.TrimSpace(want) {
+		return fmt.Errorf("README schema table drift: run 'go run ./tools/schemadoc -generate' and update the section between %s and %s", startMarker, endMarker)
+	}
+	return nil
 }
