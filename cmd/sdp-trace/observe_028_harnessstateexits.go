@@ -6,7 +6,11 @@ import (
 
 var harnessStateExitCodes = map[string]int{
 	harnessobs.StatePass:         0,
-	harnessobs.StateFail:         1,
+	harnessobs.StateFail:         exitFail,
 	harnessobs.StateNotAssessed:  exitCannotVerify,
 	harnessobs.StateCannotVerify: exitCannotVerify,
+}
+
+func harnessStateExitCode(state string) int {
+	return stringExitCode(state, harnessStateExitCodes, exitCannotVerify)
 }

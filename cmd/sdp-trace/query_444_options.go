@@ -5,3 +5,7 @@ type queryPackOptions struct {
 	runPath string
 	outPath string
 }
+
+type queryPackExplainOptions struct {
+	resultPath string
+}

@@ -12,3 +12,11 @@ func packetValidationExit(result packet.Validation) int {
 	// so the CLI reports cannot_verify rather than a generic runtime failure.
 	return exitCannotVerify
 }
+
+func packetDemoGateExit(result packet.Validation) int {
+	if result.State == packet.StatePass {
+		return 0
+	}
+	// Demo gate validation is an expected fail/pass contract for fixtures.
+	return exitFail
+}
