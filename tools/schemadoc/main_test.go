@@ -208,6 +208,27 @@ func TestCheckFailsMissingPurpose(t *testing.T) {
 	}
 }
 
+func TestCheckFailsInvalidExampleCoverage(t *testing.T) {
+	root := t.TempDir()
+	sd := schemaDir(t, root)
+	if err := os.WriteFile(filepath.Join(sd, "a.schema.json"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	idx := &Index{
+		Version: indexVersion,
+		Schemas: []SchemaEntry{
+			{Name: "a.schema.json", Status: "current", Purpose: "A", ExampleCoverage: "unknown"},
+		},
+	}
+	err := check(root, idx)
+	if err == nil {
+		t.Fatal("expected error for invalid example_coverage")
+	}
+	if !strings.Contains(err.Error(), "invalid example_coverage") {
+		t.Fatalf("error missing expected text: %v", err)
+	}
+}
+
 func TestCheckFailsBrokenExampleRef(t *testing.T) {
 	root := t.TempDir()
 	sd := schemaDir(t, root)
@@ -336,6 +357,27 @@ func TestCheckReadmePassesWhenSynchronized(t *testing.T) {
 	}
 	if err := checkReadmeAt(path, idx); err != nil {
 		t.Fatalf("checkReadmeAt: %v", err)
+	}
+}
+
+func TestCheckReadmeFailsWithoutMarkers(t *testing.T) {
+	root := t.TempDir()
+	idx := &Index{
+		Version: indexVersion,
+		Schemas: []SchemaEntry{
+			{Name: "a.schema.json", Status: "current", Purpose: "A"},
+		},
+	}
+	path := filepath.Join(root, "README.md")
+	if err := os.WriteFile(path, []byte("# No markers here\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	err := checkReadmeAt(path, idx)
+	if err == nil {
+		t.Fatal("expected error for missing markers")
+	}
+	if !strings.Contains(err.Error(), "README missing schemadoc markers") {
+		t.Fatalf("error missing expected text: %v", err)
 	}
 }
 

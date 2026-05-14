@@ -99,14 +99,14 @@ type SchemaEntry struct {
 func readIndex(path string) (*Index, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", indexPath, err)
+		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 	var idx Index
 	if err := json.Unmarshal(b, &idx); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", indexPath, err)
+		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 	if idx.Version != indexVersion {
-		return nil, fmt.Errorf("unsupported %s version %q, want %q", indexPath, idx.Version, indexVersion)
+		return nil, fmt.Errorf("unsupported %s version %q, want %q", path, idx.Version, indexVersion)
 	}
 	return &idx, nil
 }
@@ -181,6 +181,9 @@ func check(root string, idx *Index) error {
 
 		if entry.ExampleCoverage == examplePresent && len(entry.Examples) == 0 {
 			issues = append(issues, fmt.Sprintf("%s: example_coverage is present but examples list is empty", entry.Name))
+		}
+		if entry.ExampleCoverage != examplePresent && len(entry.Examples) > 0 {
+			issues = append(issues, fmt.Sprintf("%s: example_coverage is %q but examples list is non-empty", entry.Name, entry.ExampleCoverage))
 		}
 
 		for _, ex := range entry.Examples {
