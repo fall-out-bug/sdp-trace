@@ -43,6 +43,17 @@
   - `go run ./tools/crapcheck -threshold 5 -strict-less`: PASS
   - `go vet ./...`: PASS
   - `git diff --check`: PASS
+- [x] T013 Run PI adversarial review on slice 1.
+  - Models: `zai/glm-5.1`, `minimax/MiniMax-M2.7` via `codex-subagent`.
+  - Artifacts: `.codex-subagents/runs/run_nwRu9O5MP6/result.md`, `run_bn5qev1MVh/result.md`, `reviews/slice1-synthesis.md`.
+  - Findings: no behavioral drift, merged files correct, boundary clean. Advisory on numbering gaps and baseline coverage for new merged files (addressed: new files MI>70, absolute threshold covers them).
+  - Overall disposition: ACCEPTED.
+
+## Phase 2 - Iteration
+
+- [ ] T020 Repeat by command family with scoped commits.
+- [ ] T021 Keep command handlers discoverable from one registry.
+- [ ] T022 Record any remaining high-file-count area as advisory debt.
 
 ## Phase 2 - Iteration
 
