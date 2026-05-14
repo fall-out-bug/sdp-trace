@@ -3,113 +3,113 @@
   "threshold": 70,
   "functions": [
     {
-      "key": "cmd/sdp-trace/core_537_commandsurfaceconstants.go:knownAssessmentProfiles",
-      "file": "cmd/sdp-trace/core_537_commandsurfaceconstants.go",
+      "key": "cmd/sdp-trace/main_537_commandsurfaceconstants.go:knownAssessmentProfiles",
+      "file": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "line": 5,
       "name": "knownAssessmentProfiles",
       "maintainability_index": 60.8
     },
     {
-      "key": "cmd/sdp-trace/core_537_commandsurfaceconstants.go:knownStates",
-      "file": "cmd/sdp-trace/core_537_commandsurfaceconstants.go",
+      "key": "cmd/sdp-trace/main_537_commandsurfaceconstants.go:knownStates",
+      "file": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "line": 19,
       "name": "knownStates",
       "maintainability_index": 61.7
     },
     {
-      "key": "cmd/sdp-trace/core_538_commandsurfaceregistrycore.go:commandSurfaceCoreCommands",
-      "file": "cmd/sdp-trace/core_538_commandsurfaceregistrycore.go",
+      "key": "cmd/sdp-trace/main_538_commandsurfaceregistrycore.go:commandSurfaceCoreCommands",
+      "file": "cmd/sdp-trace/main_538_commandsurfaceregistrycore.go",
       "line": 3,
       "name": "commandSurfaceCoreCommands",
       "maintainability_index": 44.2
     },
     {
-      "key": "cmd/sdp-trace/core_539_commandsurfaceregistryobserve.go:commandSurfaceObserveCommands",
-      "file": "cmd/sdp-trace/core_539_commandsurfaceregistryobserve.go",
+      "key": "cmd/sdp-trace/main_539_commandsurfaceregistryobserve.go:commandSurfaceObserveCommands",
+      "file": "cmd/sdp-trace/main_539_commandsurfaceregistryobserve.go",
       "line": 3,
       "name": "commandSurfaceObserveCommands",
       "maintainability_index": 55.9
     },
     {
-      "key": "cmd/sdp-trace/core_540_commandsurfaceregistryassess.go:commandSurfaceAssessCommands",
-      "file": "cmd/sdp-trace/core_540_commandsurfaceregistryassess.go",
+      "key": "cmd/sdp-trace/main_540_commandsurfaceregistryassess.go:commandSurfaceAssessCommands",
+      "file": "cmd/sdp-trace/main_540_commandsurfaceregistryassess.go",
       "line": 3,
       "name": "commandSurfaceAssessCommands",
       "maintainability_index": 54.1
     },
     {
-      "key": "cmd/sdp-trace/core_541_commandsurfaceregistryother.go:commandSurfaceOtherCommands",
-      "file": "cmd/sdp-trace/core_541_commandsurfaceregistryother.go",
+      "key": "cmd/sdp-trace/main_541_commandsurfaceregistryother.go:commandSurfaceOtherCommands",
+      "file": "cmd/sdp-trace/main_541_commandsurfaceregistryother.go",
       "line": 3,
       "name": "commandSurfaceOtherCommands",
       "maintainability_index": 46
     },
     {
-      "key": "cmd/sdp-trace/core_542_commandsurfaceregistrypacket.go:commandSurfacePacketCommands",
-      "file": "cmd/sdp-trace/core_542_commandsurfaceregistrypacket.go",
+      "key": "cmd/sdp-trace/main_542_commandsurfaceregistrypacket.go:commandSurfacePacketCommands",
+      "file": "cmd/sdp-trace/main_542_commandsurfaceregistrypacket.go",
       "line": 3,
       "name": "commandSurfacePacketCommands",
       "maintainability_index": 62.7
     },
     {
-      "key": "cmd/sdp-trace/core_543_commandsurfaceregistry.go:buildCommandSurface",
-      "file": "cmd/sdp-trace/core_543_commandsurfaceregistry.go",
+      "key": "cmd/sdp-trace/main_543_commandsurfaceregistry.go:buildCommandSurface",
+      "file": "cmd/sdp-trace/main_543_commandsurfaceregistry.go",
       "line": 3,
       "name": "buildCommandSurface",
       "maintainability_index": 55.4
     },
     {
-      "key": "cmd/sdp-trace/core_544_commandsurfacejson.go:writeCommandSurfaceJSON",
-      "file": "cmd/sdp-trace/core_544_commandsurfacejson.go",
+      "key": "cmd/sdp-trace/main_544_commandsurfacejson.go:writeCommandSurfaceJSON",
+      "file": "cmd/sdp-trace/main_544_commandsurfacejson.go",
       "line": 9,
       "name": "writeCommandSurfaceJSON",
       "maintainability_index": 57
     },
     {
-      "key": "cmd/sdp-trace/core_545_runcommandsurface.go:runCommandSurface",
-      "file": "cmd/sdp-trace/core_545_runcommandsurface.go",
+      "key": "cmd/sdp-trace/main_545_runcommandsurface.go:runCommandSurface",
+      "file": "cmd/sdp-trace/main_545_runcommandsurface.go",
       "line": 10,
       "name": "runCommandSurface",
       "maintainability_index": 60
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go:addUsages",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go:addUsages",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "line": 36,
       "name": "addUsages",
       "maintainability_index": 69.5
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go:collectHelpUsages",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go:collectHelpUsages",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "line": 42,
       "name": "collectHelpUsages",
       "maintainability_index": 61.3
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go:collectRegistryUsages",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go:collectRegistryUsages",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "line": 21,
       "name": "collectRegistryUsages",
       "maintainability_index": 63.2
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go:commandSurfaceDriftError",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go:commandSurfaceDriftError",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "line": 62,
       "name": "commandSurfaceDriftError",
       "maintainability_index": 56
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go:commandSurfaceUsageDrift",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go:commandSurfaceUsageDrift",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "line": 11,
       "name": "commandSurfaceUsageDrift",
       "maintainability_index": 61.6
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go:diffSets",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go:diffSets",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "line": 52,
       "name": "diffSets",
       "maintainability_index": 62.4

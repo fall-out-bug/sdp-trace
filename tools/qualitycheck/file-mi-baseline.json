@@ -13,43 +13,43 @@
       "maintainability_index": 0
     },
     {
-      "key": "cmd/sdp-trace/core_537_commandsurfaceconstants.go",
-      "file": "cmd/sdp-trace/core_537_commandsurfaceconstants.go",
+      "key": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
+      "file": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "maintainability_index": 62.6
     },
     {
-      "key": "cmd/sdp-trace/core_538_commandsurfaceregistrycore.go",
-      "file": "cmd/sdp-trace/core_538_commandsurfaceregistrycore.go",
+      "key": "cmd/sdp-trace/main_538_commandsurfaceregistrycore.go",
+      "file": "cmd/sdp-trace/main_538_commandsurfaceregistrycore.go",
       "maintainability_index": 44
     },
     {
-      "key": "cmd/sdp-trace/core_539_commandsurfaceregistryobserve.go",
-      "file": "cmd/sdp-trace/core_539_commandsurfaceregistryobserve.go",
+      "key": "cmd/sdp-trace/main_539_commandsurfaceregistryobserve.go",
+      "file": "cmd/sdp-trace/main_539_commandsurfaceregistryobserve.go",
       "maintainability_index": 55.5
     },
     {
-      "key": "cmd/sdp-trace/core_540_commandsurfaceregistryassess.go",
-      "file": "cmd/sdp-trace/core_540_commandsurfaceregistryassess.go",
+      "key": "cmd/sdp-trace/main_540_commandsurfaceregistryassess.go",
+      "file": "cmd/sdp-trace/main_540_commandsurfaceregistryassess.go",
       "maintainability_index": 53.7
     },
     {
-      "key": "cmd/sdp-trace/core_541_commandsurfaceregistryother.go",
-      "file": "cmd/sdp-trace/core_541_commandsurfaceregistryother.go",
+      "key": "cmd/sdp-trace/main_541_commandsurfaceregistryother.go",
+      "file": "cmd/sdp-trace/main_541_commandsurfaceregistryother.go",
       "maintainability_index": 45.7
     },
     {
-      "key": "cmd/sdp-trace/core_542_commandsurfaceregistrypacket.go",
-      "file": "cmd/sdp-trace/core_542_commandsurfaceregistrypacket.go",
+      "key": "cmd/sdp-trace/main_542_commandsurfaceregistrypacket.go",
+      "file": "cmd/sdp-trace/main_542_commandsurfaceregistrypacket.go",
       "maintainability_index": 62
     },
     {
-      "key": "cmd/sdp-trace/core_544_commandsurfacejson.go",
-      "file": "cmd/sdp-trace/core_544_commandsurfacejson.go",
+      "key": "cmd/sdp-trace/main_544_commandsurfacejson.go",
+      "file": "cmd/sdp-trace/main_544_commandsurfacejson.go",
       "maintainability_index": 67
     },
     {
-      "key": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
-      "file": "cmd/sdp-trace/core_546_commandsurfacedrift.go",
+      "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
+      "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "maintainability_index": 56.2
     },
     {
