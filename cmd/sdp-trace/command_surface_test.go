@@ -90,9 +90,9 @@ func TestCommandSurfaceIncludesKnownWitnessKinds(t *testing.T) {
 	}
 	want := map[string]bool{
 		"github-actions": true,
-		"gitlab-ci":    true,
-		"buildkite":    true,
-		"customer-pki": true,
+		"gitlab-ci":      true,
+		"buildkite":      true,
+		"customer-pki":   true,
 	}
 	got := map[string]bool{}
 	for _, k := range surface.WitnessKinds {
@@ -115,10 +115,10 @@ func TestCommandSurfaceIncludesKnownStates(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	want := map[string]bool{
-		"observed":     true,
-		"pass":         true,
-		"fail":         true,
-		"not_assessed": true,
+		"observed":      true,
+		"pass":          true,
+		"fail":          true,
+		"not_assessed":  true,
 		"cannot_verify": true,
 	}
 	got := map[string]bool{}

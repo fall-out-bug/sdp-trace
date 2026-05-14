@@ -5,9 +5,9 @@ import (
 )
 
 var harnessStateExitCodes = map[string]int{
-	harnessobs.StatePass:          0,
-	harnessobs.StateFail:          exitFail,
-	harnessobs.StateNotAssessed:   exitCannotVerify,
+	harnessobs.StatePass:         0,
+	harnessobs.StateFail:         exitFail,
+	harnessobs.StateNotAssessed:  exitCannotVerify,
 	harnessobs.StateCannotVerify: exitCannotVerify,
 }
 

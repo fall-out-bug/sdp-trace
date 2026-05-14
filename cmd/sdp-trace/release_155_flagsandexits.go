@@ -6,10 +6,10 @@ var releaseProofRequiredFlags = []requiredCLIFlag{
 }
 
 var releaseProofExitCodes = map[string]int{
-	"pass":           0,
-	"fail":           exitFail,
-	"cannot_verify":  exitCannotVerify,
-	"not_assessed":   0,
+	"pass":          0,
+	"fail":          exitFail,
+	"cannot_verify": exitCannotVerify,
+	"not_assessed":  0,
 }
 
 func releaseProofExitCode(state string) int {
