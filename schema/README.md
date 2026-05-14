@@ -4,44 +4,74 @@ These schemas define the portable `sdp-trace` contract.
 
 ## Schemas
 
-| Schema | Purpose |
-|---|---|
-| `common.schema.json` | Reusable IDs, timestamps, digests, accountability, and `not_assessed` definitions. |
-| `accountability.schema.json` | Records human-held DRI, approver, escalation, risk owner, approval ref, and line of defense. |
-| `risk-classification.schema.json` | Records observed autonomy/impact and externally declared oversight assertions. |
-| `contract-manifest.schema.json` | Lists contract artifacts and SHA-256 digests for a contract release. |
-| `contract-release-verification.schema.json` | Records manifest, source-bound artifact, signature, identity-policy, external trust, approval, freshness, and production verification status. |
-| `proof-summary.schema.json` | Records live verifier output for a selected proof profile. Persisted proof summaries are audit artifacts, not trust authority until re-verified or externally signed. |
-| `trusted-identity-policy.schema.json` | Declares which signer identity may issue a trusted contract release. |
-| `evidence-event.schema.json` | Records one inspectable proof item. |
-| `provenance-record.schema.json` | Records actor/model/harness/tool provenance and payload digests. |
-| `observation.schema.json` | Records evidence-backed observations without policy verdicts. |
-| `metric-stream.schema.json` | Records process movement across windows without interpretation labels. |
-| `external-verdict-input.schema.json` | Records externally produced gate, readiness, override, or custom verdicts as external evidence. |
-| `assessment-input.schema.json` | Packages trace evidence for an external policy consumer. |
-| `flight-recorder-event.schema.json` | Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
-| `flight-recorder-run.schema.json` | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
-| `flight-recorder-witness.schema.json` | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
-| `signed-checkpoint.schema.json` | Records a detached-signature checkpoint binding run id, nonce, source snapshot, task hash, contract digest, event count, and chain head for replay-resistant verification. |
-| `trusted-checkpoint-policy.schema.json` | Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence. |
-| `checkpoint-verification.schema.json` | Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks. |
-| `ci-witness.schema.json` | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
-| `gate-result.schema.json` | Records version-separated advisory and protected gate facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |
-| `forensics-query-pack-result.schema.json` | Records read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict. |
-| `consumer-schema-version-declaration.schema.json` | Shows how downstream consumers declare supported schema versions. |
-| `trace.schema.json` | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
-| `self-attestation-case.schema.json` | Defines local self-attestation verifier cases and expected proof states. |
-| `evidence-bundle.schema.json` | Compatibility schema for reviewable proof bundles. |
-| `gate-verdict.schema.json` | Compatibility schema for portable gate results, including `cannot_verify`/`not_assessed` rationale, evidence requirements, and external policy references. |
-| `decision-record.schema.json` | Compatibility schema for final human or external automated decisions. |
-| `authority-envelope.schema.json` | Declares selected actor/task authority without embedding downstream policy consequences. |
-| `observed-action.schema.json` | Records observed review, mutation, harness, gateway, and custom events with source evidence refs. |
-| `evidence-binding.schema.json` | Records cross-source binding state for git, harness, gateway, artifact, and custom evidence links. |
-| `authority-evaluation.schema.json` | Records authority evaluation facts, attribution state, source coverage, and replay evidence refs. |
-| `harness-observation-profile.schema.json` | Declares required and optional external harness event families, retention policy, degradation rules, and profile limits. |
-| `harness-event.schema.json` | Records one imported harness lifecycle event with digest-bound source identity and content treatment state. |
-| `harness-observation-run.schema.json` | Records an observed harness export run produced by `harness observe`. |
-| `harness-observation-validation.schema.json` | Records `harness validate` state, per-family dimensions, and non-authority boundary. |
+The canonical schema list and metadata live in `schema/index.json`. The table below is generated from that index and must stay synchronized.
+
+<!-- schemadoc-start -->
+| Schema | Status | Purpose |
+|---|---|---|
+| `accountability.schema.json` | current | Records human-held DRI, approver, escalation, risk owner, approval ref, and line of defense. |
+| `adapter-capture-run.schema.json` | current | Records adapter capture run metadata and event bindings. |
+| `adapter-event.schema.json` | current | Records a single adapter event with provenance and digest bindings. |
+| `adapter-registry.schema.json` | current | Declares adapter capabilities, versions, and event mappings. |
+| `assessment-input.schema.json` | current | Packages trace evidence for an external policy consumer. |
+| `assessment-result.schema.json` | current | Records assessment outcome, profile state, and gap list for a verifier run. |
+| `authority-envelope.schema.json` | current | Declares selected actor/task authority without embedding downstream policy consequences. |
+| `authority-evaluation.schema.json` | current | Records authority evaluation facts, attribution state, source coverage, and replay evidence refs. |
+| `change-evidence-packet.v0.schema.json` | current | Packages change evidence for reviewable proof bundles (v0). |
+| `checkpoint-verification.schema.json` | current | Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks. |
+| `ci-artifact-observation.schema.json` | current | Records CI artifact observation results with digest bindings. |
+| `ci-witness.schema.json` | current | Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity. |
+| `common.schema.json` | current | Reusable IDs, timestamps, digests, accountability, and not_assessed definitions. |
+| `consumer-schema-version-declaration.schema.json` | current | Shows how downstream consumers declare supported schema versions. |
+| `contract-manifest.schema.json` | current | Lists contract artifacts and SHA-256 digests for a contract release. |
+| `contract-release-verification.schema.json` | current | Records manifest, source-bound artifact, signature, identity-policy, external trust, approval, freshness, and production verification status. |
+| `cross-repo-posture-export.schema.json` | current | Exports posture evidence across repository boundaries. |
+| `decision-record.schema.json` | historical | Compatibility schema for final human or external automated decisions. |
+| `delivery-trace-envelope.schema.json` | current | Wraps delivery trace records with envelope metadata. |
+| `evidence-binding.schema.json` | current | Records cross-source binding state for git, harness, gateway, artifact, and custom evidence links. |
+| `evidence-bundle-manifest.v0.schema.json` | current | Lists artifacts and digests for an evidence bundle (v0). |
+| `evidence-bundle.schema.json` | historical | Compatibility schema for reviewable proof bundles. |
+| `evidence-event.schema.json` | current | Records one inspectable proof item. |
+| `external-verdict-input.schema.json` | current | Records externally produced gate, readiness, override, or custom verdicts as external evidence. |
+| `flight-recorder-event.schema.json` | current | Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
+| `flight-recorder-run.schema.json` | current | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
+| `flight-recorder-witness.schema.json` | current | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
+| `forensics-query-pack-result.schema.json` | current | Records read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict. |
+| `gate-result.schema.json` | current | Records version-separated advisory and protected gate facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |
+| `gate-verdict.schema.json` | historical | Compatibility schema for portable gate results, including cannot_verify/not_assessed rationale, evidence requirements, and external policy references. |
+| `github-pr-evidence-input.v0.schema.json` | current | Packages GitHub PR evidence for assessment input (v0). |
+| `harness-event.schema.json` | current | Records one imported harness lifecycle event with digest-bound source identity and content treatment state. |
+| `harness-observation-profile.schema.json` | current | Declares required and optional external harness event families, retention policy, degradation rules, and profile limits. |
+| `harness-observation-run.schema.json` | current | Records an observed harness export run produced by harness observe. |
+| `harness-observation-validation.schema.json` | current | Records harness validate state, per-family dimensions, and non-authority boundary. |
+| `harness-session-profile.schema.json` | current | Declares harness session requirements and event capture scope. |
+| `interaction-event.schema.json` | current | Records one interaction event with actor, intent, and payload refs. |
+| `interaction-trace.schema.json` | current | Links interaction events into a traceable sequence. |
+| `managed-harness-policy.schema.json` | current | Declares managed harness policy constraints and authority. |
+| `metric-stream.schema.json` | current | Records process movement across windows without interpretation labels. |
+| `observation.schema.json` | current | Records evidence-backed observations without policy verdicts. |
+| `observed-action.schema.json` | current | Records observed review, mutation, harness, gateway, and custom events with source evidence refs. |
+| `operation-record.schema.json` | current | Records one operation with accountability and evidence refs. |
+| `promise-record.schema.json` | current | Records a promise or commitment with expected evidence. |
+| `proof-summary.schema.json` | current | Records live verifier output for a selected proof profile. Persisted proof summaries are audit artifacts, not trust authority until re-verified or externally signed. |
+| `provenance-record.schema.json` | current | Records actor/model/harness/tool provenance and payload digests. |
+| `pr-review-common.schema.json` | current | Shared types for PR review packets and ledgers. |
+| `pr-review-ledger.schema.json` | current | Records PR review ledger entries with verdict state. |
+| `pr-review-packet.schema.json` | current | Packages PR review facts for external policy consumers. |
+| `pr-review-profile.schema.json` | current | Declares PR review profile requirements and checks. |
+| `pr-review-result.schema.json` | current | Records PR review run set results and gap list. |
+| `pr-review-validation.schema.json` | current | Records PR review validation state and schema conformance. |
+| `redaction-policy.schema.json` | current | Declares redaction rules and suppressed field policies. |
+| `repo-observer-status.schema.json` | current | Records repository observer health and coverage state. |
+| `review-ledger.schema.json` | current | Records review ledger entries with accountability and verdict. |
+| `risk-classification.schema.json` | current | Records observed autonomy/impact and externally declared oversight assertions. |
+| `self-attestation-case.schema.json` | current | Defines local self-attestation verifier cases and expected proof states. |
+| `signed-checkpoint.schema.json` | current | Records a detached-signature checkpoint binding run id, nonce, source snapshot, task hash, contract digest, event count, and chain head for replay-resistant verification. |
+| `trace.schema.json` | historical | Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records. |
+| `trusted-checkpoint-policy.schema.json` | current | Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence. |
+| `trusted-identity-policy.schema.json` | current | Declares which signer identity may issue a trusted contract release. |
+| `witness-profile-result.schema.json` | current | Records witness profile evaluation results and trust boundary. |
+<!-- schemadoc-end -->
 
 ## Validation
 
@@ -49,6 +79,12 @@ Basic JSON syntax check:
 
 ```bash
 jq empty schema/*.json
+```
+
+Schema documentation freshness check (detects missing, stale, or extra schema entries):
+
+```bash
+go run ./tools/schemadoc
 ```
 
 Schema validation target:

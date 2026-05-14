@@ -1,0 +1,395 @@
+{
+  "version": "1",
+  "schemas": [
+    {
+      "name": "accountability.schema.json",
+      "status": "current",
+      "purpose": "Records human-held DRI, approver, escalation, risk owner, approval ref, and line of defense.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "adapter-capture-run.schema.json",
+      "status": "current",
+      "purpose": "Records adapter capture run metadata and event bindings.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "adapter-event.schema.json",
+      "status": "current",
+      "purpose": "Records a single adapter event with provenance and digest bindings.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "adapter-registry.schema.json",
+      "status": "current",
+      "purpose": "Declares adapter capabilities, versions, and event mappings.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "assessment-input.schema.json",
+      "status": "current",
+      "purpose": "Packages trace evidence for an external policy consumer.",
+      "examples": [
+        "examples/pilot-runs/opencode-minimax-kotlin-bazel/handoff/assessment-input.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
+      "name": "assessment-result.schema.json",
+      "status": "current",
+      "purpose": "Records assessment outcome, profile state, and gap list for a verifier run.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "authority-envelope.schema.json",
+      "status": "current",
+      "purpose": "Declares selected actor/task authority without embedding downstream policy consequences.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "authority-evaluation.schema.json",
+      "status": "current",
+      "purpose": "Records authority evaluation facts, attribution state, source coverage, and replay evidence refs.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "change-evidence-packet.v0.schema.json",
+      "status": "current",
+      "purpose": "Packages change evidence for reviewable proof bundles (v0).",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "checkpoint-verification.schema.json",
+      "status": "current",
+      "purpose": "Records live signed-checkpoint verification states for signature, payload digest, replay binding, sequence, signer authority, and freshness checks.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "ci-artifact-observation.schema.json",
+      "status": "current",
+      "purpose": "Records CI artifact observation results with digest bindings.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "ci-witness.schema.json",
+      "status": "current",
+      "purpose": "Records a CI witness that binds local report/run artifacts to repository, commit, workflow, job, and CI run identity.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "common.schema.json",
+      "status": "current",
+      "purpose": "Reusable IDs, timestamps, digests, accountability, and not_assessed definitions.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "consumer-schema-version-declaration.schema.json",
+      "status": "current",
+      "purpose": "Shows how downstream consumers declare supported schema versions.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "contract-manifest.schema.json",
+      "status": "current",
+      "purpose": "Lists contract artifacts and SHA-256 digests for a contract release.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "contract-release-verification.schema.json",
+      "status": "current",
+      "purpose": "Records manifest, source-bound artifact, signature, identity-policy, external trust, approval, freshness, and production verification status.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "cross-repo-posture-export.schema.json",
+      "status": "current",
+      "purpose": "Exports posture evidence across repository boundaries.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "decision-record.schema.json",
+      "status": "historical",
+      "purpose": "Compatibility schema for final human or external automated decisions.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "delivery-trace-envelope.schema.json",
+      "status": "current",
+      "purpose": "Wraps delivery trace records with envelope metadata.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "evidence-binding.schema.json",
+      "status": "current",
+      "purpose": "Records cross-source binding state for git, harness, gateway, artifact, and custom evidence links.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "evidence-bundle-manifest.v0.schema.json",
+      "status": "current",
+      "purpose": "Lists artifacts and digests for an evidence bundle (v0).",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "evidence-bundle.schema.json",
+      "status": "historical",
+      "purpose": "Compatibility schema for reviewable proof bundles.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "evidence-event.schema.json",
+      "status": "current",
+      "purpose": "Records one inspectable proof item.",
+      "examples": [
+        "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/evidence-events.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
+      "name": "external-verdict-input.schema.json",
+      "status": "current",
+      "purpose": "Records externally produced gate, readiness, override, or custom verdicts as external evidence.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "flight-recorder-event.schema.json",
+      "status": "current",
+      "purpose": "Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "flight-recorder-run.schema.json",
+      "status": "current",
+      "purpose": "Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "flight-recorder-witness.schema.json",
+      "status": "current",
+      "purpose": "Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "forensics-query-pack-result.schema.json",
+      "status": "current",
+      "purpose": "Records read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "gate-result.schema.json",
+      "status": "current",
+      "purpose": "Records version-separated advisory and protected gate facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "gate-verdict.schema.json",
+      "status": "historical",
+      "purpose": "Compatibility schema for portable gate results, including cannot_verify/not_assessed rationale, evidence requirements, and external policy references.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "github-pr-evidence-input.v0.schema.json",
+      "status": "current",
+      "purpose": "Packages GitHub PR evidence for assessment input (v0).",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "harness-event.schema.json",
+      "status": "current",
+      "purpose": "Records one imported harness lifecycle event with digest-bound source identity and content treatment state.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "harness-observation-profile.schema.json",
+      "status": "current",
+      "purpose": "Declares required and optional external harness event families, retention policy, degradation rules, and profile limits.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "harness-observation-run.schema.json",
+      "status": "current",
+      "purpose": "Records an observed harness export run produced by harness observe.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "harness-observation-validation.schema.json",
+      "status": "current",
+      "purpose": "Records harness validate state, per-family dimensions, and non-authority boundary.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "harness-session-profile.schema.json",
+      "status": "current",
+      "purpose": "Declares harness session requirements and event capture scope.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "interaction-event.schema.json",
+      "status": "current",
+      "purpose": "Records one interaction event with actor, intent, and payload refs.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "interaction-trace.schema.json",
+      "status": "current",
+      "purpose": "Links interaction events into a traceable sequence.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "managed-harness-policy.schema.json",
+      "status": "current",
+      "purpose": "Declares managed harness policy constraints and authority.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "metric-stream.schema.json",
+      "status": "current",
+      "purpose": "Records process movement across windows without interpretation labels.",
+      "examples": [
+        "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/metric-stream.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
+      "name": "observation.schema.json",
+      "status": "current",
+      "purpose": "Records evidence-backed observations without policy verdicts.",
+      "examples": [
+        "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/observations.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
+      "name": "observed-action.schema.json",
+      "status": "current",
+      "purpose": "Records observed review, mutation, harness, gateway, and custom events with source evidence refs.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "operation-record.schema.json",
+      "status": "current",
+      "purpose": "Records one operation with accountability and evidence refs.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "promise-record.schema.json",
+      "status": "current",
+      "purpose": "Records a promise or commitment with expected evidence.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "proof-summary.schema.json",
+      "status": "current",
+      "purpose": "Records live verifier output for a selected proof profile. Persisted proof summaries are audit artifacts, not trust authority until re-verified or externally signed.",
+      "examples": [
+        "examples/self-trace/proof-summary.example.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
+      "name": "provenance-record.schema.json",
+      "status": "current",
+      "purpose": "Records actor/model/harness/tool provenance and payload digests.",
+      "examples": [
+        "examples/pilot-runs/opencode-minimax-kotlin-bazel/evidence/provenance-records.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
+      "name": "pr-review-common.schema.json",
+      "status": "current",
+      "purpose": "Shared types for PR review packets and ledgers.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "pr-review-ledger.schema.json",
+      "status": "current",
+      "purpose": "Records PR review ledger entries with verdict state.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "pr-review-packet.schema.json",
+      "status": "current",
+      "purpose": "Packages PR review facts for external policy consumers.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "pr-review-profile.schema.json",
+      "status": "current",
+      "purpose": "Declares PR review profile requirements and checks.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "pr-review-result.schema.json",
+      "status": "current",
+      "purpose": "Records PR review run set results and gap list.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "pr-review-validation.schema.json",
+      "status": "current",
+      "purpose": "Records PR review validation state and schema conformance.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "redaction-policy.schema.json",
+      "status": "current",
+      "purpose": "Declares redaction rules and suppressed field policies.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "repo-observer-status.schema.json",
+      "status": "current",
+      "purpose": "Records repository observer health and coverage state.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "review-ledger.schema.json",
+      "status": "current",
+      "purpose": "Records review ledger entries with accountability and verdict.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "risk-classification.schema.json",
+      "status": "current",
+      "purpose": "Records observed autonomy/impact and externally declared oversight assertions.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "self-attestation-case.schema.json",
+      "status": "current",
+      "purpose": "Defines local self-attestation verifier cases and expected proof states.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "signed-checkpoint.schema.json",
+      "status": "current",
+      "purpose": "Records a detached-signature checkpoint binding run id, nonce, source snapshot, task hash, contract digest, event count, and chain head for replay-resistant verification.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "trace.schema.json",
+      "status": "historical",
+      "purpose": "Links specs, tasks, changes, evidence, observations, metric streams, external verdicts, accountability, and contract verification records.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "trusted-checkpoint-policy.schema.json",
+      "status": "current",
+      "purpose": "Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "trusted-identity-policy.schema.json",
+      "status": "current",
+      "purpose": "Declares which signer identity may issue a trusted contract release.",
+      "example_coverage": "not_assessed"
+    },
+    {
+      "name": "witness-profile-result.schema.json",
+      "status": "current",
+      "purpose": "Records witness profile evaluation results and trust boundary.",
+      "example_coverage": "not_assessed"
+    }
+  ]
+}

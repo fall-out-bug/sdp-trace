@@ -10,6 +10,8 @@ Required CI evidence:
 - `golangci-lint run ./...`
 - `jq empty schema/*.json examples/block19-adapter-capture/*.json examples/self-trace/proof-summary.example.json tools/qualitycheck/function-mi-baseline.json tools/qualitycheck/file-mi-baseline.json`
 - `go run ./tools/doccheck`
+- `go run ./tools/schemadoc`
+- `go run ./tools/schemadoc -verify-readme`
 - `git diff --check`
 
 Quality gate policy:
