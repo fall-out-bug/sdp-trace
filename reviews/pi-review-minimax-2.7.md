@@ -163,7 +163,7 @@ func TestCommandSurfaceSchemaContractStability(t *testing.T) {
 ```
 ## Quality Gates (required before first commit)
 - [ ] `go test ./cmd/sdp-trace/...` passes with 0 test changes
-- [ ] `gocyclo -max=10 ./cmd/sdp-trace/...` reports 0 files over threshold  
+- [ ] `gocyclo -max=10 ./cmd/sdp-trace/...` reports 0 files over threshold
 - [ ] Aggregate CRAP for reorganized units ≤ current aggregate CRAP
 - [ ] `commandSurfaceUsageDrift()` returns zero drift after reorganization
 - [ ] All `exitCannotVerify`, `exitUsage` constants map to same values post-refactor

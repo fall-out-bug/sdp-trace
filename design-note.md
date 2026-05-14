@@ -1,7 +1,7 @@
 # Design Note: Command Package Organization
 
-**Feature**: 010-command-package-organization  
-**Date**: 2026-05-14  
+**Feature**: 010-command-package-organization
+**Date**: 2026-05-14
 **Status**: Reviewed, awaiting implementation approval
 
 ## Chosen Strategy

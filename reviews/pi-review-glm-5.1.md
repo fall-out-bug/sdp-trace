@@ -14,7 +14,7 @@ The entire `cmd/sdp-trace/` is `package main` — 548 non-test files, ~17.7K lin
 **Evidence**: Every file begins with `package main`. The `commandHandlers` registry in `main_006_commandhandlers.go` is a flat `map[string]commandHandler` with 27 entries. Subpackages would break this into separate packages that must export handler types, requiring an interface or registration indirection that currently does not exist.
 
 **Risk**: Introducing subpackages into `cmd/sdp-trace/` would require either:
-- (a) exported handler types + a registration API, or  
+- (a) exported handler types + a registration API, or
 - (b) a separate `cmd/sdp-trace/internal/` layer with reverse imports.
 
 Both add indirection for a CLI entry point that currently has **no internal consumers**. The `internal/` packages already own the domain logic; the CLI is pure wiring.
