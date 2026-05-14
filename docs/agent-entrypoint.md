@@ -68,6 +68,18 @@ selected profile cannot run or lacks required evidence, the command must use
 
 ## Command Contract
 
+### Machine-Readable Command Surface
+
+`sdp-trace command-surface` emits machine-readable JSON describing the current
+command surface. This is the authoritative source of truth for
+`tools/doccheck` drift checks.
+
+**Stability**: experimental. The `schema_version` prefix is stable but the full
+surface shape may change between releases without a semver bump. Agents
+consuming this surface should be resilient to new fields.
+
+Current output: `go run ./cmd/sdp-trace command-surface`
+
 ## Local Quality Gates
 
 Use these checks for Go-first product-path changes before claiming local
@@ -109,6 +121,7 @@ Current command surface:
 
 - `go test -count=1 ./...`
 - `sdp-trace --help`
+- `sdp-trace command-surface`
 - `sdp-trace version`
 - `sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>`
 - `sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>`

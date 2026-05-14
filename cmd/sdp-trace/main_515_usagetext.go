@@ -5,6 +5,7 @@ const usageText = `sdp-trace local recorder and verifier commands.
 Usage:
   sdp-trace wrap --name <name> [--contract <file>] [--output-dir <dir>] -- <command...>
   sdp-trace version
+  sdp-trace command-surface
   sdp-trace run --task <task-ref> [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace dry-run [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>
