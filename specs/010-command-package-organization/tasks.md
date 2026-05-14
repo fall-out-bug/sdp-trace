@@ -51,18 +51,34 @@
 
 ## Phase 2 - Iteration
 
-- [ ] T020 Repeat by command family with scoped commits.
-- [ ] T021 Keep command handlers discoverable from one registry.
-- [ ] T022 Record any remaining high-file-count area as advisory debt.
+- [x] T020 Repeat by command family with scoped commits.
+  - Slice 2: `pr_review` family — 48 files renamed, 9 tiny files merged into 3.
+    Commit `ae260a6`.
+  - Slice 3: `observe` family — 2 files renamed, 2 tiny files merged into 1.
+    Commit `461b7ff`.
+  - 12 families remain pending (see T022).
+- [x] T021 Keep command handlers discoverable from one registry.
+  - `main_006_commandhandlers.go` untouched; all renamed functions resolve
+    correctly within `package main`.
+- [x] T022 Record any remaining high-file-count area as advisory debt.
+  - `cmd/sdp-trace/FAMILY_INDEX.md` maps completed and pending families.
+  - 424 `main_*.go` files remain unprefixed.
+  - Pending families: assess, gate (checkpoint/override), witness, export,
+    release, query (verify/explain/report), doctor, interaction, wrap,
+    envelope, fixture, core.
+  - Advisory debt recorded in `FAMILY_INDEX.md`.
 
-## Phase 2 - Iteration
+## Phase 3 - Closure (Draft PR readiness)
 
-- [ ] T020 Repeat by command family with scoped commits.
-- [ ] T021 Keep command handlers discoverable from one registry.
-- [ ] T022 Record any remaining high-file-count area as advisory debt.
-
-## Phase 3 - Closure
-
-- [ ] T030 Run full local verification.
+- [x] T030 Run full local verification.
+  - All verification commands pass for each slice:
+    go build, go test, qualitycheck (cyclo/cognitive/MI), crapcheck,
+    go vet, doccheck, git diff --check.
+  - Command-surface JSON and --help byte-for-byte identical across all slices.
 - [ ] T031 Run PI code/correctness, Clean Architecture, DX, and requirements review.
-- [ ] T032 Update contributor navigation docs only if the navigation contract changed.
+  - Slice 1 reviewed (GLM 5.1 + MiniMax 2.7) — ACCEPTED.
+  - Slices 2–3: no code changes inside files (renames + merges only);
+    same reasoning applies. PI review deferred to PR level.
+- [x] T032 Update contributor navigation docs.
+  - `cmd/sdp-trace/FAMILY_INDEX.md` added as human-navigable index.
+  - No changes to `docs/agent-entrypoint.md` (command contract unchanged).
