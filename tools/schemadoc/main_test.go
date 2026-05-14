@@ -376,7 +376,29 @@ func TestCheckReadmeFailsWithoutMarkers(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing markers")
 	}
-	if !strings.Contains(err.Error(), "README missing schemadoc markers") {
+	if !strings.Contains(err.Error(), "README missing schemadoc-start marker") {
+		t.Fatalf("error missing expected text: %v", err)
+	}
+}
+
+func TestCheckReadmeFailsMarkerOrder(t *testing.T) {
+	root := t.TempDir()
+	idx := &Index{
+		Version: indexVersion,
+		Schemas: []SchemaEntry{
+			{Name: "a.schema.json", Status: "current", Purpose: "A"},
+		},
+	}
+	readme := "\n<!-- schemadoc-end -->\n\n<!-- schemadoc-start -->\n"
+	path := filepath.Join(root, "README.md")
+	if err := os.WriteFile(path, []byte(readme), 0644); err != nil {
+		t.Fatal(err)
+	}
+	err := checkReadmeAt(path, idx)
+	if err == nil {
+		t.Fatal("expected error for invalid marker order")
+	}
+	if !strings.Contains(err.Error(), "invalid schemadoc marker order") {
 		t.Fatalf("error missing expected text: %v", err)
 	}
 }
@@ -406,5 +428,68 @@ func TestCheckReadmeFailsWhenDrifted(t *testing.T) {
 func TestRunAcceptsCurrentIndex(t *testing.T) {
 	if err := run(false, false); err != nil {
 		t.Fatalf("run: %v", err)
+	}
+}
+
+func TestRunGenerate(t *testing.T) {
+	if err := run(true, false); err != nil {
+		t.Fatalf("run generate: %v", err)
+	}
+}
+
+func TestRunVerifyReadme(t *testing.T) {
+	if err := run(false, true); err != nil {
+		t.Fatalf("run verify-readme: %v", err)
+	}
+}
+
+func TestRunVerifyReadmeFailsWhenDrifted(t *testing.T) {
+	root := repoRoot()
+	readme := "# Schema Reference\n\n## Schemas\n\n<!-- schemadoc-start -->\n| Schema | Status | Purpose |\n|---|---|---|\n| `b.schema.json` | current | B |\n<!-- schemadoc-end -->\n\n## Validation\n"
+	path := filepath.Join(root, "schema", "README.md")
+	orig, _ := os.ReadFile(path)
+	if err := os.WriteFile(path, []byte(readme), 0644); err != nil {
+		t.Fatal(err)
+	}
+	defer os.WriteFile(path, orig, 0644)
+	if err := run(false, true); err == nil {
+		t.Fatal("expected error for drifted README")
+	}
+}
+
+func TestCheckFailsNotAssessedWithExamples(t *testing.T) {
+	root := t.TempDir()
+	sd := schemaDir(t, root)
+	if err := os.WriteFile(filepath.Join(sd, "a.schema.json"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	idx := &Index{
+		Version: indexVersion,
+		Schemas: []SchemaEntry{
+			{Name: "a.schema.json", Status: "current", Purpose: "A", ExampleCoverage: exampleNotAssessed, Examples: []string{"examples/nope.json"}},
+		},
+	}
+	err := check(root, idx)
+	if err == nil {
+		t.Fatal("expected error for not_assessed with examples")
+	}
+	if !strings.Contains(err.Error(), "example_coverage is \"not_assessed\" but examples list is non-empty") {
+		t.Fatalf("error missing expected text: %v", err)
+	}
+}
+
+func TestCheckReadmeFailsMissingFile(t *testing.T) {
+	idx := &Index{
+		Version: indexVersion,
+		Schemas: []SchemaEntry{
+			{Name: "a.schema.json", Status: "current", Purpose: "A"},
+		},
+	}
+	err := checkReadmeAt(filepath.Join(t.TempDir(), "README.md"), idx)
+	if err == nil {
+		t.Fatal("expected error for missing README")
+	}
+	if !strings.Contains(err.Error(), "read") {
+		t.Fatalf("error missing expected text: %v", err)
 	}
 }
