@@ -8,5 +8,4 @@ type queryPackOptions struct {
 
 type queryPackExplainOptions struct {
 	resultPath string
-	outPath    string
 }

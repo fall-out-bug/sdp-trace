@@ -17,4 +17,4 @@ docs/research/session-retro-*.md
 .beads-credential-key
 .sdp-trace-*
 reviews/slice*-review-prompt.md
-sdp-trace
+/sdp-trace
