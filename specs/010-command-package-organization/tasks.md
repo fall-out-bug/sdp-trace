@@ -5,9 +5,18 @@
 
 ## Phase 0 - PI Review
 
-- [ ] T001 Run PI review on whether this organization work is worth doing now.
-- [ ] T002 Choose one organization strategy and record the rationale.
-- [ ] T003 Review the chosen strategy for dependency-cycle and behavior-preservation risk.
+- [x] T001 Run PI review on whether this organization work is worth doing now.
+  - Models: `zai/glm-5.1`, `minimax/MiniMax-M2.7`.
+  - Artifacts: `reviews/pi-review-glm-5.1.md`, `reviews/pi-review-minimax-2.7.md`, `reviews/synthesis.md`.
+  - Key findings: flat-package family prefixes are safest; ~72 tiny metric-split files need merging first; snapshot behavior lock required.
+- [x] T002 Choose one organization strategy and record the rationale.
+  - Strategy: family-prefixed files within existing `package main`, plus generated index.
+  - Rationale: zero import-cycle risk, zero registration indirection, zero test breakage, preserves all quality gates.
+  - Recorded in: `design-note.md`.
+- [x] T003 Review the chosen strategy for dependency-cycle and behavior-preservation risk.
+  - Dependency cycle: not possible — no new packages introduced.
+  - Behavior preservation: same-package renames only; snapshot lock via `command-surface` JSON and `--help` output before/after each slice.
+  - Verified MiniMax false-positive claims about missing spec and undefined MI against `docs/agent-entrypoint.md`, `.github/workflows/ci.yml`, `tools/qualitycheck/`.
 - [ ] T004 Stop for explicit approval before moving code.
 
 ## Phase 1 - First Slice
