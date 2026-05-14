@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "context-pack/v1",
+  "id": "sdp-trace-repo-rules",
+  "description": "Repository rules and constraints for sdp-trace subagents",
+  "sections": [
+    {
+      "title": "Trust Rules",
+      "content": "Machine proof wins over prose. No deferred trust closure. Source-bound proof requires clean immutable source commit. No TODO/FIXME markers in new Go code."
+    },
+    {
+      "title": "Technology Stack",
+      "content": "Go is target product code. No Node.js/TS/JS in active product path. Bash only as thin command launcher. Keep root router under 100 lines."
+    },
+    {
+      "title": "Quality Gates",
+      "content": "Cyclomatic complexity <= 10. Cognitive complexity <= 10. CRAP < 5 strict. File MI baseline ratchet 70. Function MI baseline ratchet 70."
+    },
+    {
+      "title": "Verification Commands",
+      "content": "go test -count=1 ./... -coverprofile; go tool cover -func; go run ./tools/qualitycheck -fail-only -cyclo-over 10 -cognitive-over 10 cmd internal tools; go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal; go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools; go run ./tools/qualitycheck -gocyclo > gocyclo.txt; go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less; go vet ./...; go run ./tools/doccheck; git diff --check"
+    },
+    {
+      "title": "Model Policy",
+      "content": "For adversarial review, prefer non-OpenAI, non-Anthropic, and non-Google models unless explicitly permitted otherwise."
+    },
+    {
+      "title": "Current Strategy",
+      "content": "Family-prefixed files within existing flat package main. No subpackages. Behavior lock via command-surface JSON and --help snapshots."
+    }
+  ]
+}
