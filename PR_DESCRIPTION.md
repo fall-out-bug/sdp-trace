@@ -12,7 +12,7 @@ Family-prefixed files within the existing flat `package main`, plus a generated 
 Rationale: zero import-cycle risk, zero registration indirection, zero test breakage.
 
 ## Scope
-- **Completed**: All 15 families reorganized into 551 renamed files + 12 merged files across 16 scoped commits.
+- **Completed**: All 15 families reorganized into 537 renamed files + 12 merged files across 17 scoped commits.
   - `packet` (66 files, 3 merged) — commit `ce27273`
   - `pr_review` (59 files, 3 merged) — commit `ae260a6`
   - `observe` (5 files, 1 merged) — commit `461b7ff`
@@ -23,12 +23,13 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
   - `assess` (55 files) — commit `5a1a529`
   - `gate` (103 files) — commit `bf21a3a`
   - `doctor` (52 files) — commit `87597b8`
-  - `core` (114 files) — commit `cd1ab63`
+  - `core` (100 files) — commit `cd1ab63`
   - gofmt fix (review finding F-1) — commit `22cbd8a`
   - remove binary + trailing whitespace — commit `1ab762a`
   - revert baseline JSON to origin/main — commit `d117e12`
   - remove codex-subagent config — commit `c1ec86b`
-- **Pending**: Zero families pending. All `main_*.go` files renamed.
+  - revert command-surface registry rename — commit `dd917fa`
+- **Intentionally unchanged**: `main_536...main_546` command-surface registry files and `main_test.go` remain as `main_` because they are below the MI threshold and tracked in the baseline. Future refactor PR can raise their MI above 70 and rename them.
 
 ## Behavior Preservation Evidence
 - `command-surface` JSON: byte-for-byte identical to baseline (snapshot `5302ed0`).
@@ -44,7 +45,7 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - Cognitive complexity <= 10: PASS (`qualitycheck -fail-only -cognitive-over 10`).
 - CRAP < 5 strict: PASS (`crapcheck -threshold 5 -strict-less`, fresh pipeline replayed).
 - MI baseline change policy: PASS (`mibaselinepolicy -base-ref origin/main` — no baseline changes in this diff).
-- Note: File/function MI baseline ratchet uses origin/main baseline (unchanged in this PR). Baseline path update for renamed `core_*` files is in standalone PR #47 per `ci-check-policy.md`.
+- File/function MI baseline ratchet: PASS (uses origin/main baseline unchanged).
 
 ## Review Evidence
 - **Phase 0 spec review**: GLM 5.1 + MiniMax 2.7 — findings synthesized in `reviews/synthesis.md`.
@@ -61,11 +62,12 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - **Post-review fixes** (addressing blocking comments in PR #46):
   - Removed checked-in ELF binary `sdp-trace` + added to `.gitignore` (`1ab762a`).
   - Fixed trailing whitespace in `design-note.md`, `reviews/pi-review-glm-5.1.md`, `reviews/pi-review-minimax-2.7.md` (`1ab762a`).
-  - Reverted baseline JSON changes; moved to standalone PR #47 (`d117e12`).
+  - Reverted baseline JSON changes; no baseline changes in this PR (`d117e12`).
   - Removed `.agents/codex-subagents/` harness-specific config (`c1ec86b`).
+  - Reverted rename for `main_536...main_546` command-surface registry files to avoid MI baseline sequencing deadlock (`dd917fa`).
 
 ## Files Changed
-- `cmd/sdp-trace/FAMILY_*.go` (551 renamed + 12 merged files across all families)
+- `cmd/sdp-trace/FAMILY_*.go` (537 renamed + 12 merged files across all families)
 - `cmd/sdp-trace/FAMILY_INDEX.md` (new, all 15 families)
 - `specs/010-command-package-organization/tasks.md` (updated)
 - `design-note.md` (new)
@@ -73,12 +75,11 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - `.gitignore` (add `sdp-trace`)
 
 ## Dependencies
-- **PR #47** (`010-baseline-update`): updates `tools/qualitycheck/function-mi-baseline.json` and `file-mi-baseline.json` for renamed `core_*` paths. Must merge before this PR so CI MI ratchet passes.
+- None. PR is self-contained and mergeable independently.
 
 ## Follow-up Work
-- Merge PR #47 first, then rebase/merge this PR.
-- CI run on this PR after #47 merge.
-- Future: address pre-existing MI debt in `core_537-546` files (from PR #44/009, not this PR).
+- Future refactor PR: raise MI of `main_536...main_546` command-surface registry files above 70, then rename to `core_` prefix.
+- CI run on this PR.
 
 ## Checklist
 - [x] Spec reviewed and approved
@@ -91,8 +92,8 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - [x] Review findings addressed (F-1 gofmt fixed)
 - [x] Binary removed from PR
 - [x] Trailing whitespace fixed
-- [x] Baseline split to PR #47
+- [x] No baseline changes in this PR
 - [x] Harness-specific config removed
-- [ ] PR #47 merged
+- [x] Command-surface registry files kept as main_ to avoid baseline deadlock
 - [ ] CI verification on PR
 - [ ] **Explicit user approval before merge**
