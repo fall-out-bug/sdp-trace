@@ -24,6 +24,7 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
   - `gate` (103 files) — commit `bf21a3a`
   - `doctor` (52 files) — commit `87597b8`
   - `core` (114 files, baseline updated) — commit `cd1ab63`
+  - gofmt fix (review finding F-1) — commit `22cbd8a`
 - **Pending**: Zero families pending. All `main_*.go` files renamed.
 
 ## Behavior Preservation Evidence
@@ -40,7 +41,7 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - Cognitive complexity <= 10: PASS (`qualitycheck -fail-only -cognitive-over 10`).
 - File MI baseline ratchet: PASS (`qualitycheck -fail-only -mi-under 70 -mi-baseline`).
 - Function MI baseline ratchet: PASS (`qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline`).
-- CRAP < 5 strict: PASS (`crapcheck -threshold 5 -strict-less`).
+- CRAP < 5 strict: PASS (`crapcheck -threshold 5 -strict-less`, fresh pipeline replayed).
 
 ## Review Evidence
 - **Phase 0 spec review**: GLM 5.1 + MiniMax 2.7 — findings synthesized in `reviews/synthesis.md`.
@@ -50,6 +51,14 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
   - Slice 2–3: reviewer ACCEPTED; evidence-reviewer failed model-selection warning (non-issue).
   - Slices 4–10: reviewer ACCEPTED with advisory conditions.
   - All code-level review findings (AI-1 through AI-4) addressed in subsequent commits.
+- **Final PR-level review** (`panel_FRY3ES0Hyc`, 2026-05-14):
+  - **Reviewer**: ADVISORY APPROVED with conditions.
+    - F-1 (gofmt): **FIXED** in commit `22cbd8a`.
+    - F-2 (File MI baseline incomplete): pre-existing debt from PR #44/009; no regression.
+    - F-3 (Function MI baseline schema): pre-existing tooling question; no regression.
+    - F-4 (CRAP not verified): addressed — fresh coverage pipeline replayed, all 2766 functions pass.
+  - **Evidence-reviewer**: **ACCEPTED**. All gates verified live. No veto conditions.
+  - Artifacts: `.codex-subagents/runs/run_EFLAvFw9x_/result.md`, `run_5AwaRu5OSt/result.md`.
 
 ## Files Changed
 - `cmd/sdp-trace/FAMILY_*.go` (551 renamed + 12 merged files across all families)
@@ -61,8 +70,8 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - `reviews/*.md` (review artifacts)
 
 ## Follow-up Work
-- Final PR-level PI review (architecture, DX, requirements-vs-implementation).
-- CI run on PR to verify all gates with coverage artifacts.
+- CI run on PR to verify all gates under actual CI environment (advisory, local pipeline equivalent).
+- Future: address pre-existing MI debt in `core_537-546` files (from PR #44/009, not this PR).
 
 ## Checklist
 - [x] Spec reviewed and approved
@@ -72,5 +81,7 @@ Rationale: zero import-cycle risk, zero registration indirection, zero test brea
 - [x] All 15 families completed
 - [x] Baseline JSON updated for renamed files
 - [x] Contributor navigation docs updated (`FAMILY_INDEX.md`)
-- [ ] Final PR-level review
-- [ ] CI verification on PR
+- [x] Final PR-level review (panel_FRY3ES0Hyc)
+- [x] Review findings addressed (F-1 gofmt fixed)
+- [ ] CI verification on PR (advisory)
+- [ ] **Explicit user approval before merge**
