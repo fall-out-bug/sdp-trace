@@ -17,13 +17,32 @@
   - Dependency cycle: not possible — no new packages introduced.
   - Behavior preservation: same-package renames only; snapshot lock via `command-surface` JSON and `--help` output before/after each slice.
   - Verified MiniMax false-positive claims about missing spec and undefined MI against `docs/agent-entrypoint.md`, `.github/workflows/ci.yml`, `tools/qualitycheck/`.
-- [ ] T004 Stop for explicit approval before moving code.
+- [x] T004 Stop for explicit approval before moving code.
+  - User approved on 2026-05-14. Explicit consent to proceed with Phase 1.
 
-## Phase 1 - First Slice
+## Phase 1 - First Slice (packet family)
 
-- [ ] T010 Pick one small command family.
-- [ ] T011 Move or index that family only.
-- [ ] T012 Prove help, docs, exit codes, and tests remain unchanged.
+- [x] T010 Pick one small command family.
+  - Chosen: `packet` — smallest well-tested family with discrete boundaries.
+- [x] T011 Move or index that family only.
+  - Renamed 54 files from `main_0xx_...` → `packet_0xx_...` (removing redundant `packet` infixes).
+  - Merged 10 tiny files into 3 consolidated files:
+    - `packet_032_requiredflags.go` (5 var blocks)
+    - `packet_068_artifacttypes.go` (3 type defs)
+    - `packet_096_exits.go` (2 funcs)
+  - 5 existing `packet_*.go` files required no rename.
+- [x] T012 Prove help, docs, exit codes, and tests remain unchanged.
+  - `go build ./...`: PASS
+  - `go test -count=1 ./...`: PASS
+  - `command-surface` JSON: byte-for-byte identical to snapshot
+  - `--help` output: byte-for-byte identical to snapshot
+  - `go run ./tools/doccheck`: PASS
+  - `go run ./tools/qualitycheck -fail-only -cyclo-over 10 -cognitive-over 10 cmd internal tools`: PASS
+  - `go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline ... cmd internal`: PASS
+  - `go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline ... cmd internal tools`: PASS
+  - `go run ./tools/crapcheck -threshold 5 -strict-less`: PASS
+  - `go vet ./...`: PASS
+  - `git diff --check`: PASS
 
 ## Phase 2 - Iteration
 
