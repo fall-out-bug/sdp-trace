@@ -447,11 +447,18 @@ func TestRunVerifyReadmeFailsWhenDrifted(t *testing.T) {
 	root := repoRoot()
 	readme := "# Schema Reference\n\n## Schemas\n\n<!-- schemadoc-start -->\n| Schema | Status | Purpose |\n|---|---|---|\n| `b.schema.json` | current | B |\n<!-- schemadoc-end -->\n\n## Validation\n"
 	path := filepath.Join(root, "schema", "README.md")
-	orig, _ := os.ReadFile(path)
+	orig, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read README: %v", err)
+	}
 	if err := os.WriteFile(path, []byte(readme), 0644); err != nil {
 		t.Fatal(err)
 	}
-	defer os.WriteFile(path, orig, 0644)
+	defer func() {
+		if err := os.WriteFile(path, orig, 0644); err != nil {
+			t.Errorf("restore README: %v", err)
+		}
+	}()
 	if err := run(false, true); err == nil {
 		t.Fatal("expected error for drifted README")
 	}
