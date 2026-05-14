@@ -2,7 +2,7 @@
 
 ## Roles
 
-Custom role cards for sdp-trace work:
+Custom role cards for sdp-trace work (used as reference; `codex-subagent run` cannot combine `--role-card` with `--task`/`--task-file`):
 
 - `roles/sdp-trace-slice-worker.json` — Implementation agent for renaming and merging files within a command family slice.
 - `roles/sdp-trace-reviewer.json` — Adversarial review agent (model policy: non-OpenAI/Anthropic/Google preferred).
@@ -10,36 +10,61 @@ Custom role cards for sdp-trace work:
 
 ## Contexts
 
-- `contexts/sdp-trace-repo-rules.json` — Repository trust rules, quality gates, verification commands, and model policy.
+Context packs **must** be built via `codex-subagent context build` to satisfy the schema validator.
 
-## Usage Examples
+### Build a context pack
 
-### Run a slice worker
 ```bash
-codex-subagent run pi \
-  --role-card .agents/codex-subagents/roles/sdp-trace-slice-worker.json \
-  --context-pack .agents/codex-subagents/contexts/sdp-trace-repo-rules.json \
-  --task "Implement slice for WITNESS family: rename main_374*.go → witness_*.go, merge tiny files, verify" \
+codex-subagent context build \
+  --subject "sdp-trace command package organization" \
+  --mode dev \
+  --goal "Implement family-prefixed file reorganization while preserving behavior and quality gates" \
+  --non-goal "changing CLI behavior or introducing subpackages" \
+  --non-goal "using non-Go tooling" \
+  --file AGENTS.md \
+  --file design-note.md \
+  --file specs/010-command-package-organization/spec.md \
   --cwd /home/fall_out_bug/projects/vibe_coding/sdp-trace/.worktrees/010-command-package-organization \
-  --model zai/glm-5.1
+  --out .agents/codex-subagents/contexts/sdp-trace-dev.json
 ```
 
-### Run adversarial review
+Available modes: `review`, `council`, `dev`, `research`.
+
+## Usage
+
+### Single subagent with task-file (no role-card/context-pack)
+
 ```bash
 codex-subagent run pi \
-  --role-card .agents/codex-subagents/roles/sdp-trace-reviewer.json \
-  --context-pack .agents/codex-subagents/contexts/sdp-trace-repo-rules.json \
+  --task-file .agents/codex-subagents/tasks/verify-current-slice.md \
+  --cwd /home/fall_out_bug/projects/vibe_coding/sdp-trace/.worktrees/010-command-package-organization
+```
+
+### Multi-role panel (context-pack + built-in roles)
+
+Panels run multiple built-in roles in parallel against one context pack.
+
+```bash
+codex-subagent panel run pi \
+  --context-pack .agents/codex-subagents/contexts/sdp-trace-dev.json \
+  --role reviewer \
+  --role evidence-reviewer \
+  --cwd /home/fall_out_bug/projects/vibe_coding/sdp-trace/.worktrees/010-command-package-organization \
+  --background
+```
+
+Check panel status:
+```bash
+codex-subagent panel status panel_APdUfKPh3S
+codex-subagent panel results panel_APdUfKPh3S
+```
+
+### Run adversarial review with custom model
+
+```bash
+codex-subagent run pi \
+  --model minimax/MiniMax-M2.7 \
   --task-file reviews/slice-review-prompt.md \
-  --cwd /home/fall_out_bug/projects/vibe_coding/sdp-trace/.worktrees/010-command-package-organization \
-  --model minimax/MiniMax-M2.7
-```
-
-### Run verification
-```bash
-codex-subagent run pi \
-  --role-card .agents/codex-subagents/roles/sdp-trace-verifier.json \
-  --context-pack .agents/codex-subagents/contexts/sdp-trace-repo-rules.json \
-  --task "Run full verification suite after slice N and report pass/fail for every gate" \
   --cwd /home/fall_out_bug/projects/vibe_coding/sdp-trace/.worktrees/010-command-package-organization
 ```
 
