@@ -57,9 +57,21 @@ evidence and gaps; it does not approve changes.
 
 - `specs/`: active and historical working specs. Current repository records are
   SpecKit-shaped, but the product contract can map evidence from other planning
-  flows.
+  flows. Each spec directory may contain its own `reviews/` subdirectory for
+  durable review synthesis tied to that block.
 - `examples/`: sanitized fixtures and pilot evidence packages. Treat each
   example according to its README and recorded evidence state.
+
+## Review Evidence
+
+Durable review synthesis lives with the spec it assesses:
+`specs/<block-name>/reviews/` for block-scoped PI review rounds and synthesis.
+
+Raw local subagent output, temporary worktrees, and PR-scoped working notes
+belong outside the tracked tree. The repository hygiene check enforces this by
+rejecting tracked `.worktrees/`, `.codex-subagents/runs/`, `.sdp-trace-*`, root
+`PR_DESCRIPTION.md`, root `design-note.md`, root `reviews/`, root
+executables or binaries, and absolute local paths in durable docs.
 
 ## Current Product Boundary
 
