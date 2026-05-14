@@ -41,6 +41,8 @@ jobs:
       - name: Docs command surface
         run: go run ./tools/doccheck
       - name: Schema doc check
-        run: go run ./tools/schemadoc
+        run: |
+          go run ./tools/schemadoc
+          go run ./tools/schemadoc -verify-readme
       - name: Whitespace check
         run: git diff --check

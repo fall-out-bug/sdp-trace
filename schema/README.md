@@ -6,6 +6,7 @@ These schemas define the portable `sdp-trace` contract.
 
 The canonical schema list and metadata live in `schema/index.json`. The table below is generated from that index and must stay synchronized.
 
+<!-- schemadoc-start -->
 | Schema | Status | Purpose |
 |---|---|---|
 | `accountability.schema.json` | current | Records human-held DRI, approver, escalation, risk owner, approval ref, and line of defense. |
@@ -70,6 +71,7 @@ The canonical schema list and metadata live in `schema/index.json`. The table be
 | `trusted-checkpoint-policy.schema.json` | current | Declares allowed checkpoint signer identities and authority boundaries for local signed, CI signed, or external witnessed checkpoint evidence. |
 | `trusted-identity-policy.schema.json` | current | Declares which signer identity may issue a trusted contract release. |
 | `witness-profile-result.schema.json` | current | Records witness profile evaluation results and trust boundary. |
+<!-- schemadoc-end -->
 
 ## Validation
 
