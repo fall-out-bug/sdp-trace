@@ -3,16 +3,6 @@
   "threshold": 70,
   "files": [
     {
-      "key": "cmd/sdp-trace/harness_cli.go",
-      "file": "cmd/sdp-trace/harness_cli.go",
-      "maintainability_index": 53.5
-    },
-    {
-      "key": "cmd/sdp-trace/main.go",
-      "file": "cmd/sdp-trace/main.go",
-      "maintainability_index": 0
-    },
-    {
       "key": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "file": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "maintainability_index": 62.6
@@ -53,169 +43,19 @@
       "maintainability_index": 56.2
     },
     {
-      "key": "cmd/sdp-trace/observe_cli.go",
-      "file": "cmd/sdp-trace/observe_cli.go",
-      "maintainability_index": 50.7
-    },
-    {
-      "key": "cmd/sdp-trace/packet_cli.go",
-      "file": "cmd/sdp-trace/packet_cli.go",
-      "maintainability_index": 56.2
-    },
-    {
-      "key": "internal/adaptercapture/adaptercapture.go",
-      "file": "internal/adaptercapture/adaptercapture.go",
-      "maintainability_index": 4
-    },
-    {
-      "key": "internal/authority/authority.go",
-      "file": "internal/authority/authority.go",
-      "maintainability_index": 1.2
-    },
-    {
-      "key": "internal/checkpoint/checkpoint.go",
-      "file": "internal/checkpoint/checkpoint.go",
-      "maintainability_index": 7.3
-    },
-    {
-      "key": "internal/ciartifact/ciartifact.go",
-      "file": "internal/ciartifact/ciartifact.go",
-      "maintainability_index": 4.4
-    },
-    {
-      "key": "internal/contract/contract.go",
-      "file": "internal/contract/contract.go",
-      "maintainability_index": 47.2
-    },
-    {
-      "key": "internal/demo/demo.go",
-      "file": "internal/demo/demo.go",
-      "maintainability_index": 0
-    },
-    {
-      "key": "internal/export/export.go",
-      "file": "internal/export/export.go",
-      "maintainability_index": 58.9
-    },
-    {
-      "key": "internal/forensic/forensic.go",
-      "file": "internal/forensic/forensic.go",
-      "maintainability_index": 6.2
-    },
-    {
-      "key": "internal/harnessobs/harnessobs.go",
-      "file": "internal/harnessobs/harnessobs.go",
-      "maintainability_index": 0
-    },
-    {
-      "key": "internal/interaction/interaction.go",
-      "file": "internal/interaction/interaction.go",
-      "maintainability_index": 0
-    },
-    {
-      "key": "internal/managed/managed.go",
-      "file": "internal/managed/managed.go",
-      "maintainability_index": 1.8
-    },
-    {
-      "key": "internal/packet/packet.go",
-      "file": "internal/packet/packet.go",
-      "maintainability_index": 0
-    },
-    {
-      "key": "internal/policy/authority.go",
-      "file": "internal/policy/authority.go",
-      "maintainability_index": 48.6
-    },
-    {
-      "key": "internal/posture/posture.go",
-      "file": "internal/posture/posture.go",
-      "maintainability_index": 0
-    },
-    {
-      "key": "internal/prreview/prreview.go",
-      "file": "internal/prreview/prreview.go",
-      "maintainability_index": 0
-    },
-    {
-      "key": "internal/query/query.go",
-      "file": "internal/query/query.go",
-      "maintainability_index": 54.5
-    },
-    {
-      "key": "internal/query/querypack.go",
-      "file": "internal/query/querypack.go",
-      "maintainability_index": 10.9
-    },
-    {
-      "key": "internal/recorder/recorder.go",
-      "file": "internal/recorder/recorder.go",
-      "maintainability_index": 20
-    },
-    {
-      "key": "internal/releaseproof/releaseproof.go",
-      "file": "internal/releaseproof/releaseproof.go",
-      "maintainability_index": 35.8
-    },
-    {
-      "key": "internal/repoobserver/repoobserver.go",
-      "file": "internal/repoobserver/repoobserver.go",
-      "maintainability_index": 11.1
-    },
-    {
-      "key": "internal/telemetry/prometheus.go",
-      "file": "internal/telemetry/prometheus.go",
-      "maintainability_index": 36.8
-    },
-    {
-      "key": "internal/trace/event.go",
-      "file": "internal/trace/event.go",
-      "maintainability_index": 67.1
-    },
-    {
-      "key": "internal/trace/event_canonical.go",
-      "file": "internal/trace/event_canonical.go",
-      "maintainability_index": 62.1
-    },
-    {
-      "key": "internal/trace/event_hash.go",
-      "file": "internal/trace/event_hash.go",
-      "maintainability_index": 63.1
-    },
-    {
-      "key": "internal/trace/event_scalar.go",
-      "file": "internal/trace/event_scalar.go",
-      "maintainability_index": 51.3
-    },
-    {
-      "key": "internal/trace/store.go",
-      "file": "internal/trace/store.go",
-      "maintainability_index": 42.3
-    },
-    {
-      "key": "internal/trace/types.go",
-      "file": "internal/trace/types.go",
-      "maintainability_index": 37
-    },
-    {
-      "key": "internal/verifier/verify.go",
-      "file": "internal/verifier/verify.go",
-      "maintainability_index": 36.9
-    },
-    {
-      "key": "internal/witness/profiles.go",
-      "file": "internal/witness/profiles.go",
-      "maintainability_index": 11.1
-    },
-    {
-      "key": "internal/witness/witness.go",
-      "file": "internal/witness/witness.go",
-      "maintainability_index": 32
-    },
-    {
       "key": "tools/doccheck/registry.go",
       "file": "tools/doccheck/registry.go",
       "maintainability_index": 42.5
+    },
+    {
+      "key": "tools/doccheck/main.go",
+      "file": "tools/doccheck/main.go",
+      "maintainability_index": 63.4
+    },
+    {
+      "key": "tools/doccheck/quickstart.go",
+      "file": "tools/doccheck/quickstart.go",
+      "maintainability_index": 45.1
     }
   ]
 }
