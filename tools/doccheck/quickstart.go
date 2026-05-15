@@ -52,7 +52,7 @@ func quickstartHasCommand(qsSet map[string]bool, req string) bool {
 
 func setContainsPrefix(set map[string]bool, prefix string) bool {
 	for s := range set {
-		if strings.Contains(s, prefix) {
+		if strings.HasPrefix(s, prefix) {
 			return true
 		}
 	}
@@ -133,6 +133,9 @@ func isCodeFence(line string) bool {
 	return strings.HasPrefix(strings.TrimSpace(line), "```")
 }
 
+// isQuickstartCommand requires a trailing space after "sdp-trace" so that a
+// bare "go run ./cmd/sdp-trace" line (without a subcommand) is ignored. This
+// is intentional: --help is handled as an exact-match meta-flag elsewhere.
 func isQuickstartCommand(line string) bool {
 	return strings.HasPrefix(strings.TrimSpace(line), "go run ./cmd/sdp-trace ")
 }

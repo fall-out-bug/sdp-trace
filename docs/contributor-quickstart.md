@@ -32,9 +32,9 @@ example `cmd /c echo ok` in Command Prompt.
 | Step | Expected state | What it proves |
 |------|----------------|----------------|
 | `go test` | pass | Go toolchain and local build are healthy. |
-| `--help` | exits `0` | CLI compiles and prints current command surface. |
-| `doctor` | `offline_dev` | Local wrapper and output directories are ready. CI prerequisites may show `cannot_verify`; that is expected for local development. |
-| `wrap` | command exits `0` | The tool can record a trace run. |
+| `--help` | exit `0` (help displayed) | CLI compiles and prints current command surface. |
+| `doctor` | `offline_dev` or `pass` | Local wrapper and output directories are ready. CI prerequisites may show `cannot_verify`; that is expected for local development. |
+| `wrap` | exit `0` (run recorded) | The tool can record a trace run. |
 | `verify` | `observed` | The run directory is structurally valid. |
 | `explain` | human-readable summary | The run can be rendered for review. |
 

@@ -103,10 +103,11 @@ themselves before understanding the repository.
 1. [Install](docs/install.md)
 2. [Core Concepts](docs/concepts.md)
 3. [Agent Onboarding](docs/agent-onboarding.md)
-4. [Agent Entrypoint](docs/agent-entrypoint.md)
-5. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
-6. [Harness Integration](docs/harness-integration.md)
-7. [Schema Reference](schema/README.md)
+4. [Contributor Quick Start](docs/contributor-quickstart.md)
+5. [Agent Entrypoint](docs/agent-entrypoint.md)
+6. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
+7. [Harness Integration](docs/harness-integration.md)
+8. [Schema Reference](schema/README.md)
 
 Governance and rollout documents are supporting references after the core path
 is clear.
