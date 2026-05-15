@@ -9,6 +9,7 @@ const contributorQuickstart = "docs/contributor-quickstart.md"
 
 // requiredQuickstartCommands are the minimal commands that must appear in the
 // contributor quick start so a new reader can verify the local environment.
+// This slice is read-only; do not modify at runtime.
 var requiredQuickstartCommands = []string{
 	"go run ./cmd/sdp-trace --help",
 	"go run ./cmd/sdp-trace doctor",
@@ -17,11 +18,7 @@ var requiredQuickstartCommands = []string{
 	"go run ./cmd/sdp-trace explain",
 }
 
-func compareQuickstartWithRegistry(quickstart string) error {
-	registry, err := registryUsages()
-	if err != nil {
-		return err
-	}
+func compareQuickstartWithRegistry(quickstart string, registry []string) error {
 	qsCmds := quickstartCommands(quickstart)
 	missing := missingQuickstartCommands(qsCmds)
 	stale := staleQuickstartCommands(qsCmds, registry)
@@ -78,7 +75,33 @@ func isKnownCommand(qs string, registrySet map[string]bool) bool {
 	if registrySet[normalized] {
 		return true
 	}
+	if prefixMatchesRegistry(normalized, registrySet) {
+		return true
+	}
 	return registryHasBase(registrySet, baseCommand(normalized))
+}
+
+// prefixMatchesRegistry reports whether normalized starts with any registry
+// usage prefix (the stable part before the first optional flag or placeholder).
+func prefixMatchesRegistry(normalized string, registrySet map[string]bool) bool {
+	for reg := range registrySet {
+		prefix := registryPrefix(reg)
+		if prefix != "" && strings.HasPrefix(normalized, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// registryPrefix returns the stable prefix of a registry usage string,
+// stopping before the first optional flag ([) or placeholder (<).
+func registryPrefix(usage string) string {
+	for i, ch := range usage {
+		if ch == '[' || ch == '<' {
+			return strings.TrimSpace(usage[:i])
+		}
+	}
+	return usage
 }
 
 func normalizeQuickstartCommand(qs string) string {
@@ -90,6 +113,9 @@ func normalizeQuickstartCommand(qs string) string {
 }
 
 func registryHasBase(registrySet map[string]bool, base string) bool {
+	if base == "" {
+		return false
+	}
 	for reg := range registrySet {
 		if baseCommand(reg) == base {
 			return true
@@ -120,17 +146,28 @@ func quickstartCommands(doc string) []string {
 }
 
 func processQuickstartLine(inCodeBlock bool, line string) (bool, string) {
-	if isCodeFence(line) {
-		return !inCodeBlock, ""
+	if !inCodeBlock {
+		return openingFence(line)
 	}
-	if inCodeBlock && isQuickstartCommand(line) {
+	if closingFence(line) {
+		return false, ""
+	}
+	if isQuickstartCommand(line) {
 		return inCodeBlock, strings.TrimSpace(line)
 	}
 	return inCodeBlock, ""
 }
 
-func isCodeFence(line string) bool {
-	return strings.HasPrefix(strings.TrimSpace(line), "```")
+func openingFence(line string) (bool, string) {
+	trimmed := strings.TrimSpace(line)
+	if strings.HasPrefix(trimmed, "```") && len(trimmed) > 3 {
+		return true, ""
+	}
+	return false, ""
+}
+
+func closingFence(line string) bool {
+	return strings.TrimSpace(line) == "```"
 }
 
 // isQuickstartCommand requires a trailing space after "sdp-trace" so that a

@@ -33,7 +33,7 @@ example `cmd /c echo ok` in Command Prompt.
 |------|----------------|----------------|
 | `go test` | pass | Go toolchain and local build are healthy. |
 | `--help` | exit `0` (help displayed) | CLI compiles and prints current command surface. |
-| `doctor` | `offline_dev` or `pass` | Local wrapper and output directories are ready. CI prerequisites may show `cannot_verify`; that is expected for local development. |
+| `doctor` | `offline_dev` (local development); `pass` only in CI or with `--profile` | Local wrapper and output directories are ready. CI prerequisites may show `cannot_verify`; that is expected for local development. |
 | `wrap` | exit `0` (run recorded) | The tool can record a trace run. |
 | `verify` | `observed` | The run directory is structurally valid. |
 | `explain` | human-readable summary | The run can be rendered for review. |

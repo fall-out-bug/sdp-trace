@@ -68,11 +68,7 @@ func sortedStringKeys(m map[string]bool) []string {
 	return list
 }
 
-func compareRegistryWithDocs(doc string) error {
-	registry, err := registryUsages()
-	if err != nil {
-		return err
-	}
+func compareRegistryWithDocs(doc string, registry []string) error {
 	docCommands := documentedCommands(doc)
 	registrySet := stringSliceToSet(registry)
 	stale := diffStringSliceAgainstSet(docCommands, registrySet, "sdp-trace --help")

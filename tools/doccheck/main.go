@@ -30,13 +30,17 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if err := checkAgentEntrypoint(help); err != nil {
+	registry, err := registryUsages()
+	if err != nil {
 		return err
 	}
-	return checkQuickstart()
+	if err := checkAgentEntrypoint(help, registry); err != nil {
+		return err
+	}
+	return checkQuickstart(registry)
 }
 
-func checkAgentEntrypoint(help string) error {
+func checkAgentEntrypoint(help string, registry []string) error {
 	docPath := filepath.Join(repoRoot(), agentEntrypoint)
 	doc, err := os.ReadFile(docPath)
 	if err != nil {
@@ -46,14 +50,14 @@ func checkAgentEntrypoint(help string) error {
 	if err := compareCommandSurface(help, docStr); err != nil {
 		return err
 	}
-	return compareRegistryWithDocs(docStr)
+	return compareRegistryWithDocs(docStr, registry)
 }
 
-func checkQuickstart() error {
+func checkQuickstart(registry []string) error {
 	qsPath := filepath.Join(repoRoot(), contributorQuickstart)
 	qs, err := os.ReadFile(qsPath)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", contributorQuickstart, err)
 	}
-	return compareQuickstartWithRegistry(string(qs))
+	return compareQuickstartWithRegistry(string(qs), registry)
 }

@@ -88,7 +88,7 @@ func TestCompareRegistryWithDocsSkipsHelpMetaFlag(t *testing.T) {
 		"",
 		"Do not add aliases",
 	}, "\n")
-	if err := compareRegistryWithDocs(doc); err != nil {
+	if err := compareRegistryWithDocs(doc, []string{"sdp-trace version"}); err != nil {
 		if strings.Contains(err.Error(), "sdp-trace --help") {
 			t.Fatalf("compareRegistryWithDocs should skip --help: %v", err)
 		}
@@ -105,7 +105,7 @@ func TestCompareRegistryWithDocsDetectsStaleDocCommand(t *testing.T) {
 		"",
 		"Do not add aliases",
 	}, "\n")
-	err := compareRegistryWithDocs(doc)
+	err := compareRegistryWithDocs(doc, []string{"sdp-trace version"})
 	if err == nil {
 		t.Fatal("compareRegistryWithDocs succeeded, want drift error")
 	}
