@@ -47,6 +47,16 @@ Every non-trivial implementation chunk needs a SpecKit delta, Socratic review be
 
 If a chunk cannot be traced or verified yet, mark `not_assessed` or `cannot_verify` with a concrete reason and create a tracked follow-up before closing.
 
+## Pi Harness Setup
+This repository includes project-level Pi configuration in `.pi/settings.json` and prompt templates in `.pi/prompts/`.
+
+At the start of every session in this repo, run `/sdp-trace-boot` to load the mandatory process reminder.
+
+Available review prompts:
+- `/review-glm` — architecture doubt review (GLM via ZAI)
+- `/review-qwen` — wide-context code review (Qwen via OpenRouter)
+- `/review-deepseek` — reasoning review (DeepSeek via OpenRouter)
+
 ## Skills Router
 Use local project skills for detailed workflows instead of expanding this file:
 
