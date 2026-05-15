@@ -11,20 +11,21 @@
 
 ## Phase 1 - Canonical Guidance
 
-- [ ] T010 Add task-oriented command guide.
-- [ ] T011 Add canonical evidence state and exit-code table.
-- [ ] T012 Add output location map.
-- [ ] T013 Add profile decision tree.
-- [ ] T014 Consolidate overclaim checklist.
+- [ ] T010 Restructure `docs/reviewer-entrypoint.md` so a short task path (Quick Reference or task table) appears before any long flat command list.
+- [ ] T011 Define canonical state contract: result states (`observed`, `pass`, `fail`, `not_assessed`, `cannot_verify`) with exit codes; classify `missing_telemetry` as telemetry label, `warn` as concepts-only sub-state, `coverage_satisfied/partial/unresolved` as pr-review sub-states, `not_integrated`/`unsupported` as integration labels. Add the contract to the canonical doc.
+- [ ] T012 Add output location map: single table mapping command family → default output path → format → purpose → trust boundary.
+- [ ] T013 Add profile decision tree mapping trust profile IDs ↔ assessment profiles ↔ witness kinds ↔ authority scopes in one decision aid.
+- [ ] T014 Create `docs/overclaim-checklist.md` as the canonical overclaim checklist; ensure all other docs link to it.
 
 ## Phase 2 - Drift Control
 
-- [ ] T020 Remove or link duplicate overclaim/state prose.
+- [ ] T020 Remove duplicate overclaim prose from `agent-entrypoint.md`, `agent-onboarding.md`, `adoption-guide.en.md`, replacing with links to `docs/overclaim-checklist.md` plus one-line inline summaries where critical.
 - [ ] T021 Extend doccheck if command/state claims remain duplicated.
 - [ ] T022 Verify docs do not introduce new authority claims.
+- [ ] T023 Grep audit: scan all `.md` files for state-like tokens; flag any result-state token outside the canonical contract for classification or removal.
 
 ## Phase 3 - Closure
 
-- [ ] T030 Run doccheck and full verification.
+- [ ] T030 Run doccheck, `go test ./tools/doccheck`, and full verification. Grep audit must show zero orphan result-state tokens.
 - [ ] T031 Run cold-reader UX review.
 - [ ] T032 Record remaining advisory UX follow-ups separately.
