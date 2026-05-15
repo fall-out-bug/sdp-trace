@@ -141,33 +141,12 @@ What it does not allow:
 ## Overclaim Checklist
 
 See [`docs/overclaim-checklist.md`](overclaim-checklist.md) for the canonical
-overclaim checklist. The summary below is authoritative only when it matches
-the canonical file.
+overclaim checklist and forbidden-claims list.
 
-- `pr-review` emits review-record evidence over a frozen PR packet. It can
-  report `coverage_satisfied`, `coverage_partial`, `coverage_unresolved`,
-  `not_assessed`, or `cannot_verify`, but it does not approve, merge, mark
-  ready, release, accept risk, or replace human approval.
-- `gate` emits verifier-derived facts and deterministic states. It does not own
-  merge, release, readiness, degradation, override approval, or risk acceptance.
-- `witness` binds available CI or customer-PKI evidence. A CI witness file is
-  not external production trust, a transparency log, or a release approval by
-  itself.
-- `release-proof` can establish `source_bound_local_release` only when the
-  source commit and manifest subjects match. It does not prove
-  `external_production_trust`, `trusted_contract_release`, or
-  `production_release_verified`.
-
-From verifier results, you may only state:
-
-- Which command/profile was run.
-- Which `result` or state values were produced.
-- Whether the selected profile concluded with live `pass` or `observed`.
-- Which states remain `not_assessed` or `cannot_verify`, with the emitted reason.
-
-You may not state external production trust guarantees until
-`external_production_trust` completes with live `pass` and
-`production_release_verified` is supported by its dependent evidence chain.
+In short: `sdp-trace` records evidence and gaps. It does not decide merge
+approval, release readiness, risk acceptance, or production trust authority.
+Verify any trust claim against live verifier output and the canonical state
+contract in `docs/agent-entrypoint.md`.
 
 ## Manual External PR Review Handoff
 

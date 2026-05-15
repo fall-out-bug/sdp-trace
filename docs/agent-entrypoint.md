@@ -340,6 +340,23 @@ These describe the reporting boundary, not a verifier result.
   for local shape/debug inspection; cannot support source-bound or external
   trust closure.
 
+### Claim Tag States
+
+These appear in claim tags (`docs/claim-authoring.md`). They describe the
+freshness of a historical claim, not a verifier result.
+
+- `stale`: a historical closure record contradicts the current verifier output.
+  Used in `sdp-trace-claim` tags to mark claims that need re-verification.
+
+### Quality Gate Statuses
+
+These appear in local quality gate discussions. They describe a standing
+assessment condition, not a verifier result.
+
+- `assessed_gap`: a metric or threshold is below target but tracked as a known
+  gap. Used in Maintainability Index discussions to indicate historical
+  below-threshold functions/files that are tracked but not claimed as passing.
+
 A checked-in proof JSON is an audit artifact, not authority. Authority is replayed
 only from live Go verifier output and the canonical command/state contract above.
 
@@ -354,13 +371,4 @@ and retained audit references. If those are absent, record `not_assessed` or
 ## Overclaim And Forbidden Claims
 
 See [`docs/overclaim-checklist.md`](overclaim-checklist.md) for the canonical
-overclaim checklist. The summary below is authoritative only when it matches
-the canonical file.
-
-Do not emit these in this repo surface:
-
-- `external_production_trust=true` without a live `external_production_trust` profile pass.
-- `trusted_contract_release=true` without live external trust closure.
-- `production_release_verified=true` outside a concluded `external_production_trust` run.
-- Claims that treat `repo_baseline_structural` or `source_bound_local_release` outputs as production trust.
-- Dirty-checkout structural output as source-bound or external-trust evidence.
+overclaim checklist.

@@ -82,7 +82,10 @@ Examples:
 
 ## External Verdict
 
-The externally produced gate or policy outcome:
+The externally produced gate or policy outcome. These are policy-consumer
+concepts, not verifier result states. The canonical verifier result states
+(`observed`, `pass`, `fail`, `not_assessed`, `cannot_verify`) and their
+exit-code mappings are defined in `docs/agent-entrypoint.md`.
 
 - `pass`: evidence satisfies the gate
 - `warn`: evidence exists but risk remains
@@ -95,11 +98,9 @@ The externally produced gate or policy outcome:
 Missing required evidence for a selected gate is `cannot_verify` or `fail`, not
 `pass`. Missing optional or out-of-scope evidence is `not_assessed`.
 
-`warn` is an External Verdict sub-state, not a verifier result state. The
-verifier result states (`observed`, `pass`, `fail`, `not_assessed`,
-`cannot_verify`) and their exit-code mappings are defined in
-`docs/agent-entrypoint.md`. When an External Verdict is `warn`, the underlying
-verifier result is typically `observed` or `pass` with an advisory note.
+`warn` is an External Verdict sub-state, not a verifier result state. When an
+External Verdict is `warn`, the underlying verifier result is typically
+`observed` or `pass` with an advisory note.
 
 ## Assessment Input
 

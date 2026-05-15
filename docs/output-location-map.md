@@ -14,6 +14,15 @@ and trust boundary. For the full command contract, see
 | `observe collect` | normalizes into `<run-dir>/` | JSON | Harness output after run | `cannot_verify` if declared output missing |
 | `observe session` | `--out <run-dir>/` | JSON | Convenience wrapper for setup + collect | Same as setup + collect |
 | `harness observe` | `--out <run-dir>/` | JSON | Import local harness export | Reads explicit files only; unsafe content fails before write |
+| `harness validate` | `--out <validation.json>` | JSON | Validate observed harness events | Emits evidence facts; missing required event families are not passes |
+
+## Environment And Setup
+
+| Command | Default output | Format | Purpose | Trust boundary |
+| --- | --- | --- | --- | --- |
+| `doctor` | stdout | Markdown + JSON | Inspect local environment and prerequisites | Structural readiness; offline or missing prerequisites can produce `cannot_verify` |
+| `doctor --profile <profile>` | `--out <file>` | JSON | Inspect repo observer installation and proof state | Local hooks/config are `local_structural`; CI artifact proof remains `not_assessed` until observed |
+| `install repo-observer` | `--out <file>` | JSON | Install portable repo observer files | Dry-run by default; with `--write`, writes documented allowlist only |
 
 ## Reports And Summaries
 
