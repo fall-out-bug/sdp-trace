@@ -26,12 +26,13 @@ For trust-sensitive work, run separate planes:
 
 <process>
 1. Build a bounded context pack with the objective, changed files, relevant specs, rules, and verification commands.
-2. Launch reviewers in parallel when possible. Keep roles read-only unless the task explicitly assigns a worker.
-3. Reject and replace reviewer output that is hung, empty, generic, off-task, or lacks file/line evidence for actionable claims.
-4. Verify every finding against full files before accepting or rejecting it.
-5. Record disposition as accepted, accepted_fixed, rejected_false_positive, deferred_not_assessed, cannot_verify, or advisory.
-6. Re-run relevant verification after fixes.
-7. Do not count review as merge/sign-off unless the user explicitly requested that authority and the repo process permits it.
+2. For non-trivial trust claims, use `workflows/claim-doubt-cycle.md` before accepting the claim.
+3. Launch reviewers in parallel when possible. Keep roles read-only unless the task explicitly assigns a worker.
+4. Reject and replace reviewer output that is hung, empty, generic, off-task, or lacks file/line evidence for actionable claims.
+5. Verify every finding against full files before accepting or rejecting it.
+6. Record disposition as accepted, accepted_fixed, rejected_false_positive, deferred_not_assessed, cannot_verify, or advisory.
+7. Re-run relevant verification after fixes.
+8. Do not count review as merge/sign-off unless the user explicitly requested that authority and the repo process permits it.
 </process>
 
 <evidence_rules>
@@ -52,3 +53,17 @@ When producing or updating `reviews/synthesis.md` (or any review ledger):
 - Record CI status as `not_assessed` until live GitHub checks are queried for the final head.
 - A green local test run is not a green CI run. Distinguish them explicitly.
 </synthesis_hygiene>
+
+<supporting_files>
+- Use `workflows/claim-doubt-cycle.md` for any gate, verdict, provenance, release-proof, or non-obvious safety claim.
+- Use `references/model-policy.md` when selecting pi/Codex/OpenCode/Kimi/GLM/MiniMax roles.
+- Use `templates/review-disposition.md` for durable synthesis or handoff records.
+</supporting_files>
+
+<red_flags>
+- The reviewer received the author's conclusion instead of artifact plus contract.
+- A reviewer was allowed to edit files during an allegedly independent review.
+- Cross-model output is accepted without checking file/line evidence.
+- A model/harness failure is hidden instead of recorded as fallback, replacement, `cannot_verify`, or `not_assessed`.
+- The synthesis says "approved" while Critical/Important findings remain unresolved.
+</red_flags>

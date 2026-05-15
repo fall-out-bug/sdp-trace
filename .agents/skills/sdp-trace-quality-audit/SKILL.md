@@ -11,6 +11,10 @@ Turn broad repository-polish requests into evidence-backed closure without overc
 Use this skill for requests mentioning repository polish, CRAP, cognitive complexity, Maintainability Index, Clean Code, Clean Architecture, security review, DX/UX review, docs completeness, spec drift, or "work without spec".
 </when_to_use>
 
+<when_not_to_use>
+Do not use this skill to bypass SpecKit deltas for feature work, to claim live CI from checked-in artifacts, or to perform product deployment/release authority. Use `sdp-trace-trust-workflow` for block implementation and `pi-review` for adversarial review.
+</when_not_to_use>
+
 <principles>
 - Treat the user's checklist as deliverables, not vibes.
 - Machine proof beats prose, but only for the requirement it actually covers.
@@ -52,3 +56,15 @@ Keep outputs compact:
 - blockers vs advisory follow-ups
 - trust boundaries that remain `not_assessed`
 </outputs>
+
+<supporting_files>
+Use `templates/audit-matrix.md` to map broad quality requests to concrete artifacts, commands, reviewer planes, and unresolved trust states.
+</supporting_files>
+
+<red_flags>
+- The audit reports a percentage or health score without named evidence.
+- A command is listed as passing without fresh session output.
+- A docs-only change claims verifier behavior changed.
+- Security/trust review is folded into generic code review.
+- Advisory findings are hidden because gates passed.
+</red_flags>

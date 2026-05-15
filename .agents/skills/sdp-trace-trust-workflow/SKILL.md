@@ -11,6 +11,10 @@ Keep block work source-bound, reviewable, and honest: no implementation-only clo
 Use this skill when the user says "берем блок в работу", asks to take a block into work, starts a trust-sensitive feature block, or requests PR-ready closure for a block.
 </when_to_use>
 
+<when_not_to_use>
+Do not use this skill for quick read-only explanations, purely mechanical formatting, or unrelated external workflow management. If the work touches Beads, deployment, UI, or harness-specific automation, keep that outside the active product path unless the user explicitly asks.
+</when_not_to_use>
+
 <intake_protocol>
 1. First land or explicitly park current approved work through review/PR discipline.
 2. Continue new block work in a fresh worktree when practical.
@@ -46,3 +50,20 @@ After approval:
 - If a changed file is a manifest subject, commit it first, then regenerate release proof in a separate commit.
 - Do not close task checkboxes, ledgers, or docs after source-bound proof without another source-bound cycle if those files are manifest subjects.
 </trust_boundaries>
+
+<anti_rationalization>
+Before claiming closure, read `references/anti-rationalizations.md` and reject any shortcut that converts prose, stale JSON, dirty checkout state, or unchecked reviewer output into trust authority.
+</anti_rationalization>
+
+<supporting_files>
+- Use `templates/block-intake.md` when opening or resuming a block.
+- Use `templates/final-evidence-map.md` before PR-ready or complete claims.
+- Use `references/anti-rationalizations.md` for stop conditions and common false closures.
+</supporting_files>
+
+<success_criteria>
+- SpecKit delta and implementation plan were reviewed before implementation approval.
+- Each slice maps to spec, task, evidence, gate, decision, and provenance impact.
+- Verification state is explicitly `pass`, `fail`, `cannot_verify`, or `not_assessed`.
+- Final claims cite fresh command output, live external checks, or explicitly remain open.
+</success_criteria>
