@@ -30,8 +30,10 @@ internals, автоматическое обнаружение каждого by
 - Adapter profiles могут оценивать более богатые harness events, если harness
   их emits.
 - `sdp-trace` не доказывает, что никто не запускал агента вне wrapper.
-- Missing expected evidence должно оставаться `missing_telemetry`,
-  `not_assessed` или `cannot_verify`, а не превращаться в pass.
+- Missing expected evidence должно оставаться `not_assessed` или
+  `cannot_verify`, а не превращаться в pass. Метки telemetry, такие как
+  `missing_telemetry`, описывают характер gap, но не являются verifier result
+  states. См. `docs/agent-entrypoint.md` для canonical state contract.
 
 ## Team defaults
 
@@ -138,7 +140,9 @@ retention/redaction profile и human owner.
 
 Не прячьте emergency bypass. Если production urgency требует shipping с missing
 telemetry, запишите override во внешней policy/change management system и
-оставьте `cannot_verify` или `missing_telemetry` видимым в report. `sdp-trace`
+оставьте `cannot_verify` видимым в report. Метки telemetry, такие как
+`missing_telemetry`, описывают evidence gaps, но не являются verifier result
+states. `sdp-trace`
 записывает evidence; он не approve risk.
 
 ## Что проверять

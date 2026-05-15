@@ -33,9 +33,11 @@ provenance scope, capture state, run binding, source baseline, and
 redaction/retention metadata. Adapter-local labels may be retained as sanitized
 metadata, but they are not stable product contract members.
 
-Missing adapter support is not a failure by itself. It must be reported as
-`missing_telemetry`, `unsupported`, `not_integrated`, `not_assessed`, or
-`cannot_verify` with a concrete reason. Agent-reported and harness-observed test
+Missing adapter support is not a failure by itself. The verifier result is
+`not_assessed` or `cannot_verify` with a concrete reason. Telemetry labels
+such as `missing_telemetry` and integration labels such as `unsupported` or
+`not_integrated` describe the nature of the gap but are not verifier result
+states. See `docs/agent-entrypoint.md` for the canonical state contract. Agent-reported and harness-observed test
 claims never become executed test evidence without CI or registered wrapper/tool
 execution proof.
 

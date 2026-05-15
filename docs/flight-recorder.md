@@ -95,9 +95,12 @@ Adapter capture supports two binding modes:
   referenced by the run before closure.
 
 Adapter capture does not authorize an adapter, prove managed enrollment, or
-upgrade model identity to gateway-observed. It reports `missing_telemetry`,
-`unsupported`, `not_integrated`, `not_assessed`, `retention_limited`, and
-`cannot_verify` as explicit facts. Query output is a read-only summary and does
+upgrade model identity to gateway-observed. It reports telemetry labels
+(`missing_telemetry`, `unsupported`), integration labels (`not_integrated`),
+retention labels (`retention_limited`), and verifier result states
+(`not_assessed`, `cannot_verify`) as explicit facts. See
+`docs/agent-entrypoint.md` for the canonical state contract that classifies
+each token. Query output is a read-only summary and does
 not emit a top-level pass/fail policy verdict.
 
 Adapter event artifacts inherit the forensic-retention safety rules. Raw
@@ -145,8 +148,9 @@ Required query names:
 Queries expose evidence and verifier states only. They must not emit opaque scores or policy verdicts.
 
 Forensics query packs are read-only bundles over existing facts. They must
-preserve `not_assessed`, `cannot_verify`, `retention_limited`, `unsupported`,
-and `not_integrated` rows rather than hiding them behind a summary. Digest-only
+preserve verifier result states (`not_assessed`, `cannot_verify`) and labels
+(`retention_limited`, `unsupported`, `not_integrated`) rather than hiding them
+behind a summary. Digest-only
 evidence is existence evidence, not reconstructable evidence. Forensics query
 packs use opaque command/test identifiers and path-redacted artifact identifiers;
 raw command names, executable paths, script paths, test names, and artifact

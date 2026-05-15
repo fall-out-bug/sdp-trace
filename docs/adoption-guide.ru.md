@@ -79,8 +79,10 @@ sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json 
 Если агент или разработчик не запускается через `sdp-trace wrap` или adapter,
 `sdp-trace` не видит эту локальную работу напрямую. Обнаруживаемый сигнал
 появляется на expected evidence boundary: required run artifacts, adapter
-events, witness bindings или profile inputs отсутствуют и должны оставаться
-`missing_telemetry`, `not_assessed` или `cannot_verify`.
+events, witness bindings или profile inputs отсутствуют. Результат verifier —
+`not_assessed` или `cannot_verify`. Метки telemetry, такие как
+`missing_telemetry`, описывают характер gap, но не являются result states.
+См. `docs/agent-entrypoint.md` для canonical state contract.
 
 ## Текущие профили и границы
 

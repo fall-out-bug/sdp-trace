@@ -272,16 +272,73 @@ from this section.
 
 ## State And Exit Code Contract
 
-- `0`: `observed`, `pass`, or explicitly scoped `not_assessed`
-- `1`: `fail`
-- `2`: usage error / invalid command invocation
-- `3`: `cannot_verify`
+### Result States
 
-- `observed`: verifier evidence met required checks for the selected local profile.
-- `pass`: selected profile concluded successfully where the command contract uses pass/fail states.
-- `fail`: verifier evidence conflicted or was insufficient for required checks.
-- `not_assessed`: state was outside the run scope; it does not imply success or evidence.
-- `cannot_verify`: verifier could not execute a required check or lacked required evidence.
+These are the verifier result states. Every command that reports verifier
+outcome uses one of these. They map to exit codes.
+
+| Result state | Exit code | Meaning |
+| --- | --- | --- |
+| `observed` | `0` | Verifier evidence met required checks for the selected local profile. |
+| `pass` | `0` | Selected profile concluded successfully where the command contract uses pass/fail states. |
+| `fail` | `1` | Verifier evidence conflicted or was insufficient for required checks. |
+| `not_assessed` | `0` | State was outside the run scope; it does not imply success or evidence. May return `0` only when the command completed and the unassessed state is explicitly outside the selected profile or run scope. |
+| `cannot_verify` | `3` | Verifier could not execute a required check or lacked required evidence. |
+
+Exit code `2` is reserved for usage error / invalid command invocation and is
+not a verifier result state.
+
+### Telemetry Labels
+
+These labels describe evidence availability, not verifier outcomes. They do
+not have exit-code mappings.
+
+- `missing_telemetry`: a telemetry stream or metric was expected but not found.
+  Used by query-pack and managed-harness capture-depth reporting. It is not a
+  verifier result state; the corresponding verifier result may be `not_assessed`
+  or `cannot_verify` depending on whether the telemetry was required.
+
+### Completeness Markers
+
+These describe source or input completeness, not verifier outcomes.
+
+- `complete`, `partial`: source completeness for `interaction import-transcript`.
+  They describe the imported data set, not a verifier pass/fail.
+
+### PR-Review Sub-States
+
+These are command-specific coverage states reported by `pr-review`. They are
+not verifier result states and do not have exit-code mappings.
+
+- `coverage_satisfied`: the review packet reached the coverage threshold for the profile.
+- `coverage_partial`: some planes were reviewed but coverage did not reach the threshold.
+- `coverage_unresolved`: coverage could not be determined.
+
+### External Verdict Sub-States
+
+These appear in policy-consumer output and concept docs. They are not verifier
+result states.
+
+- `warn`: evidence exists but risk remains. Defined in `docs/concepts.md` as an
+  External Verdict value. The corresponding verifier result is typically
+  `observed` or `pass` with an advisory note.
+
+### Integration And Adapter Labels
+
+These describe integration or adapter status. They are not verifier result states.
+
+- `not_integrated`: an expected adapter or integration is absent.
+- `unsupported`: a format, schema version, or configuration is not supported.
+
+### Authority Scope Labels
+
+These describe the reporting boundary, not a verifier result.
+
+- `outside_authority`: an observed action is outside the caller-selected
+  authority envelope. Emitted by `assess --profile authority-envelope`.
+- `local_dirty_structural_only`: dirty-checkout structural output. Valid only
+  for local shape/debug inspection; cannot support source-bound or external
+  trust closure.
 
 A checked-in proof JSON is an audit artifact, not authority. Authority is replayed
 only from live Go verifier output and the canonical command/state contract above.
@@ -294,7 +351,11 @@ equivalent with explicit authority policy, payload digest, freshness evidence,
 and retained audit references. If those are absent, record `not_assessed` or
 `cannot_verify`; do not claim external production trust.
 
-## Forbidden Claims
+## Overclaim And Forbidden Claims
+
+See [`docs/overclaim-checklist.md`](overclaim-checklist.md) for the canonical
+overclaim checklist. The summary below is authoritative only when it matches
+the canonical file.
 
 Do not emit these in this repo surface:
 

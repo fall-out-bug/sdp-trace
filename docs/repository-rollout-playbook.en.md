@@ -28,8 +28,10 @@ Current capture boundary:
 - `wrap` observes the wrapped process lifecycle and command-level events.
 - Adapter profiles can assess richer harness events when the harness emits them.
 - `sdp-trace` does not prove that no one ran an agent outside the wrapper.
-- Missing expected evidence must remain `missing_telemetry`, `not_assessed`, or
-  `cannot_verify`, not pass.
+- Missing expected evidence must remain `not_assessed` or `cannot_verify`, not
+  pass. Telemetry labels such as `missing_telemetry` describe the nature of the
+  gap but are not verifier result states. See `docs/agent-entrypoint.md` for
+  the canonical state contract.
 
 ## Team Defaults
 
@@ -136,7 +138,8 @@ profile first and name a human owner.
 
 Do not hide emergency bypasses. If production urgency requires shipping with
 missing telemetry, record the override in the external policy/change management
-system and keep `cannot_verify` or `missing_telemetry` visible in the report.
+system and keep `cannot_verify` visible in the report. Telemetry labels such as
+`missing_telemetry` describe evidence gaps but are not verifier result states.
 `sdp-trace` records evidence; it does not approve the risk.
 
 ## What To Review

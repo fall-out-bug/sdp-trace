@@ -95,6 +95,12 @@ The externally produced gate or policy outcome:
 Missing required evidence for a selected gate is `cannot_verify` or `fail`, not
 `pass`. Missing optional or out-of-scope evidence is `not_assessed`.
 
+`warn` is an External Verdict sub-state, not a verifier result state. The
+verifier result states (`observed`, `pass`, `fail`, `not_assessed`,
+`cannot_verify`) and their exit-code mappings are defined in
+`docs/agent-entrypoint.md`. When an External Verdict is `warn`, the underlying
+verifier result is typically `observed` or `pass` with an advisory note.
+
 ## Assessment Input
 
 A package of evidence, observations, metric streams, accountability,

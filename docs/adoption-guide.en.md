@@ -81,8 +81,10 @@ sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json 
 If an agent or developer does not run through `sdp-trace wrap` or an adapter,
 `sdp-trace` cannot see that local work directly. The detectable signal is at the
 expected evidence boundary: required run artifacts, adapter events, witness
-bindings, or profile inputs are missing and must remain `missing_telemetry`,
-`not_assessed`, or `cannot_verify`.
+bindings, or profile inputs are missing. The verifier result is `not_assessed`
+or `cannot_verify`; telemetry labels such as `missing_telemetry` describe the
+nature of the gap but are not verifier result states. See
+`docs/agent-entrypoint.md` for the canonical state contract.
 
 ## Current Profiles And Boundaries
 
@@ -120,6 +122,10 @@ bindings, or profile inputs are missing and must remain `missing_telemetry`,
 - `fail`: evidence contradicted the selected profile.
 - `observed` or `pass`: the selected local/profile check concluded, but only
   inside its stated trust scope.
+
+For the canonical state contract and exit-code mapping, see
+`docs/agent-entrypoint.md`. For the overclaim checklist, see
+`docs/overclaim-checklist.md`.
 
 ## Privacy And Non-Capture
 
