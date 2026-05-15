@@ -1,5 +1,6 @@
 {
   "prompts": ["prompts"],
+  "extensions": ["extensions"],
   "defaultThinkingLevel": "high",
   "compaction": {
     "enabled": true,
