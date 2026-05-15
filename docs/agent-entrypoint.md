@@ -180,7 +180,7 @@ entrypoints unless this document and `--help` are updated in the same change.
 | Command/profile | Purpose | Minimum invocation | Output and trust boundary |
 | --- | --- | --- | --- |
 | `wrap` | Observe one existing command as a trace run. | `sdp-trace wrap --name smoke -- /bin/echo ok` | Writes run artifacts; local observation only unless later bound by report/witness/profile checks. |
-| `run` | Run a task-referenced command with an optional contract. | `sdp-trace run --task T1 -- /bin/echo ok` | Writes task-linked run artifacts; missing contract evidence remains visible. |
+| `run` | Run a task-referenced command with an optional contract. | `sdp-trace run --task T1 --use-default-contract -- /bin/echo ok` | Writes task-linked run artifacts; missing contract evidence remains visible. |
 | `dry-run` | Show what would run without writing run artifacts. | `sdp-trace dry-run -- /bin/echo ok` | Preview only; cannot support proof closure. |
 | `preview` | Preview command/contract implications before execution. | `sdp-trace preview -- /bin/echo ok` | Read-only preview; any unavailable profile remains `not_assessed`. |
 | `doctor` | Inspect local environment and contract prerequisites. | `sdp-trace doctor` | Emits structural readiness; offline or missing prerequisites can produce `cannot_verify`. |
@@ -235,7 +235,7 @@ from this section.
 | Команда/профиль | Назначение | Минимальный запуск | Граница вывода и доверия |
 | --- | --- | --- | --- |
 | `wrap` | Наблюдает одну существующую команду как trace run. | `sdp-trace wrap --name smoke -- /bin/echo ok` | Пишет run artifacts; это local observation, пока отчет, witness или профиль не добавят другую проверку. |
-| `run` | Запускает команду, связанную с task ref. | `sdp-trace run --task T1 -- /bin/echo ok` | Пишет task-linked run artifacts; missing contract evidence остается видимым. |
+| `run` | Запускает команду, связанную с task ref. | `sdp-trace run --task T1 --use-default-contract -- /bin/echo ok` | Пишет task-linked run artifacts; missing contract evidence остается видимым. |
 | `dry-run` | Показывает запуск без записи run artifacts. | `sdp-trace dry-run -- /bin/echo ok` | Только preview; proof closure не поддерживает. |
 | `preview` | Показывает command/contract implications до выполнения. | `sdp-trace preview -- /bin/echo ok` | Read-only preview; недоступный профиль остается `not_assessed`. |
 | `doctor` | Проверяет локальную среду и prerequisites. | `sdp-trace doctor` | Structural readiness; offline или missing prerequisites могут дать `cannot_verify`. |

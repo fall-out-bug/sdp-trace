@@ -8,8 +8,8 @@ and trust boundary. For the full command contract, see
 
 | Command | Default output | Format | Purpose | Trust boundary |
 | --- | --- | --- | --- | --- |
-| `wrap` | `--output-dir .sdp-trace-runs/<name>/` | JSON + metadata | Record one command as a trace run | Local observation only |
-| `run` | `--output-dir .sdp-trace-runs/<task-ref>/` | JSON + metadata | Task-linked trace run | Local observation; missing contract evidence visible |
+| `wrap` | `.sdp-trace-runs/run-*` (auto-generated); explicit `--output-dir .sdp-trace-runs/<name>/` | JSON + metadata | Record one command as a trace run | Local observation only |
+| `run` | `.sdp-trace-runs/run-*` (auto-generated); explicit `--output-dir .sdp-trace-runs/<task-ref>/` | JSON + metadata | Task-linked trace run | Local observation; missing contract evidence visible |
 | `observe setup` | `--out <run-dir>/` | JSON | Setup metadata before harness run | Session-profile bounded |
 | `observe collect` | normalizes into `<run-dir>/` | JSON | Harness output after run | `cannot_verify` if declared output missing |
 | `observe session` | `--out <run-dir>/` | JSON | Convenience wrapper for setup + collect | Same as setup + collect |
