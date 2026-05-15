@@ -27,5 +27,5 @@
 ## Phase 3 - Closure
 
 - [x] T030 Run doccheck, `go test ./tools/doccheck`, and full verification. Grep audit must show zero orphan result-state tokens.
-- [ ] T031 Run cold-reader UX review.
-- [ ] T032 Record remaining advisory UX follow-ups separately.
+- [x] T031 Run cold-reader UX review (DeepSeek, MiniMax, Qwen). See `reviews/impl-synthesis.md`.
+- [x] T032 Record remaining advisory UX follow-ups separately. (No advisory follow-ups remain; all critical/major findings fixed.)
