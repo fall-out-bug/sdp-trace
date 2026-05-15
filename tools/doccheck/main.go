@@ -30,6 +30,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if err := checkAgentEntrypoint(help); err != nil {
+		return err
+	}
+	return checkQuickstart()
+}
+
+func checkAgentEntrypoint(help string) error {
 	docPath := filepath.Join(repoRoot(), agentEntrypoint)
 	doc, err := os.ReadFile(docPath)
 	if err != nil {
@@ -40,4 +47,13 @@ func run() error {
 		return err
 	}
 	return compareRegistryWithDocs(docStr)
+}
+
+func checkQuickstart() error {
+	qsPath := filepath.Join(repoRoot(), contributorQuickstart)
+	qs, err := os.ReadFile(qsPath)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", contributorQuickstart, err)
+	}
+	return compareQuickstartWithRegistry(string(qs))
 }

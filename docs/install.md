@@ -36,13 +36,9 @@ Maintainers can build release artifacts with:
 
 This writes platform binaries and SHA-256 files to `dist/`.
 
-For a source checkout without installing a binary, use `go run`:
-
-```text
-go run ./cmd/sdp-trace --help
-go run ./cmd/sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
-go run ./cmd/sdp-trace verify .sdp-trace-runs/smoke
-```
+For a source checkout without installing a binary, follow the
+[Contributor Quick Start](contributor-quickstart.md) for the canonical `go run`
+smoke path.
 
 To install from the checkout onto `PATH`:
 

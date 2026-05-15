@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"os/exec"
 	"sort"
 	"strings"
@@ -49,7 +50,7 @@ func extractUsages(output []byte) ([]string, error) {
 
 func addUsage(usages map[string]bool, usage string) {
 	if usage != "" {
-		usages[usage] = true
+		usages[html.UnescapeString(usage)] = true
 	}
 }
 

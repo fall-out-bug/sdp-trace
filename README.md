@@ -20,18 +20,8 @@ every unwrapped agent run was detected.
    spec, plan, task, evidence, gate, decision, trace, and provenance.
 3. Give [Agent Onboarding](docs/agent-onboarding.md) to any coding agent before
    it works in this repository.
-4. Run the local smoke path:
-
-   ```text
-   go test -count=1 ./...
-   go run ./cmd/sdp-trace --help
-   go run ./cmd/sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
-   go run ./cmd/sdp-trace verify .sdp-trace-runs/smoke
-   ```
-
-   On Windows, replace `/bin/echo ok` with a local command available in your
-   shell, for example `cmd /c echo ok` in Command Prompt.
-
+4. Follow [Contributor Quick Start](docs/contributor-quickstart.md) to run the
+   canonical local smoke path and verify your environment.
 5. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
    command and state contract.
 6. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
