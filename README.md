@@ -25,8 +25,14 @@ every unwrapped agent run was detected.
 5. Use [Agent Entrypoint](docs/agent-entrypoint.md) for the authoritative
    command and state contract.
 6. Use [Reviewer Entrypoint](docs/reviewer-entrypoint.md) for a five-minute
-   verification path and overclaim checklist.
-7. Use [Documentation Map](docs/README.md) to choose the right next document.
+   verification path.
+7. Use [Output Location Map](docs/output-location-map.md) to find where each
+   command writes artifacts.
+8. Use [Profile Selection Guide](docs/profile-selection-guide.md) to choose
+   the right assessment profile or witness kind.
+9. Use [Overclaim Checklist](docs/overclaim-checklist.md) for the canonical
+   forbidden-claims and trust-scope rules.
+10. Use [Documentation Map](docs/README.md) to choose the right next document.
 
 Origin note: `sdp-trace` was extracted from delivery evidence work in
 `sdp_lab`. That history is not a runtime dependency and should not be required
@@ -106,8 +112,11 @@ themselves before understanding the repository.
 4. [Contributor Quick Start](docs/contributor-quickstart.md)
 5. [Agent Entrypoint](docs/agent-entrypoint.md)
 6. [Reviewer Entrypoint](docs/reviewer-entrypoint.md)
-7. [Harness Integration](docs/harness-integration.md)
-8. [Schema Reference](schema/README.md)
+7. [Output Location Map](docs/output-location-map.md)
+8. [Profile Selection Guide](docs/profile-selection-guide.md)
+9. [Overclaim Checklist](docs/overclaim-checklist.md)
+10. [Harness Integration](docs/harness-integration.md)
+11. [Schema Reference](schema/README.md)
 
 Governance and rollout documents are supporting references after the core path
 is clear.
@@ -129,8 +138,10 @@ spec -> plan -> task -> change -> evidence -> provenance -> accountability -> as
 ```
 
 External policy consumers can turn assessment input and verifier facts into
-decisions. When evidence is missing, the state must remain `not_assessed`,
-`cannot_verify`, `missing_telemetry`, or an explicit failure reason.
+decisions. When evidence is missing, the verifier result is `not_assessed` or
+`cannot_verify` with an explicit reason. Telemetry labels such as
+`missing_telemetry` describe the nature of the gap but are not verifier result
+states. See `docs/agent-entrypoint.md` for the canonical state contract.
 
 ## Adoption Shape
 

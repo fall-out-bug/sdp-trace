@@ -69,11 +69,15 @@ Use these docs while working:
   payload and policy.
 - A checked-in JSON file is an audit artifact until the current verifier replays
   it or an accepted external signature binds it.
-- Missing evidence remains `not_assessed`, `cannot_verify`,
-  `missing_telemetry`, `not_integrated`, or a concrete failure reason.
+- Missing evidence remains `not_assessed`, `cannot_verify`, or a concrete
+  failure reason. Telemetry labels such as `missing_telemetry` and integration
+  labels such as `not_integrated` describe evidence availability, not verifier
+  result states. See `docs/agent-entrypoint.md` for the canonical state
+  contract.
 
 Never convert missing evidence into success. Never describe a local verifier
-fact as production trust.
+fact as production trust. See `docs/overclaim-checklist.md` for the canonical
+overclaim checklist.
 
 ## What To Produce
 

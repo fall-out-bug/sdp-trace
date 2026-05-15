@@ -20,7 +20,9 @@
 ## Risks
 
 - Consolidation can hide important caveats if links replace necessary local warnings.
+  **Mitigation**: Critical warnings remain as one-line inline summaries with a link to the full canonical checklist; bare links alone are not sufficient.
 - State vocabulary must reflect actual CLI behavior, not desired behavior.
+  **Mitigation**: The canonical contract classifies all existing tokens found in the current codebase before any doc is rewritten; no token is invented or removed without evidence from `command-surface` or Go source.
 
 ## Review Plan
 

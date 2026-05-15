@@ -4,6 +4,12 @@ This catalog defines portable metric names for `sdp-trace` observations over tim
 
 `sdp-trace` records metric movement. It does not decide whether a value is good, bad, sufficient, degrading, ready, blocked, or acceptable. Thresholds and interpretations belong to CI, release governance, customer governance, or another external policy consumer.
 
+**Note on enum values**: Metric enum values such as `passed`, `failed`, and
+`not_assessed` describe metric collection outcomes, not verifier result states.
+The canonical verifier result states (`observed`, `pass`, `fail`, `not_assessed`,
+`cannot_verify`) and their exit-code mappings are defined in
+`docs/agent-entrypoint.md`.
+
 ## Required Dimensions
 
 Every metric sample should include dimensions that are available for the scope:

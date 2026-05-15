@@ -9,6 +9,27 @@ For the demo-repository pilot evidence package, read
 the retained package. Treat that package as an exact observed slice, not broad
 OpenCode, MiniMax, Kotlin, or Bazel support.
 
+## Quick Reference — I Have A Run Directory, What Now?
+
+| Goal | Command | Typical state boundary |
+| --- | --- | --- |
+| Verify the run | `sdp-trace verify <run-dir>` | `observed` supports local structural assertions only |
+| Find missing evidence | `sdp-trace query --query missing-evidence <run-dir>` | Missing evidence remains visible, not passed |
+| Build a forensic package | `sdp-trace query-pack --pack forensics-basic-v1 --run <run-dir> --out query-pack.json` | Limited by retained/redacted evidence |
+| Explain the run | `sdp-trace explain <run-dir>` | Explanation does not upgrade trust scope |
+| Assess adapter capture | `sdp-trace assess --profile adapter-capture --out assessment.json --run <run-dir>` | Can fail if adapter events are absent |
+| Assess managed harness | `sdp-trace assess --profile managed-harness --out assessment.json --contract contract.json --run <run-dir> --adapter-registry registry.json --managed-policy policy.json --managed-witness witness.json` | Policy owns block/allow |
+| Assess forensic retention | `sdp-trace assess --profile forensic-retention --out assessment.json --run <run-dir> --redaction-policy redaction.json` | Digest-only or missing retention may fail |
+| Assess CI artifacts | `sdp-trace assess --profile ci-artifact-observation --out observation.json --artifact-manifest artifact-manifest.json` | Facts only; checked-in claims cannot satisfy `ci_uploaded` |
+| Assess authority envelope | `sdp-trace assess --profile authority-envelope --authority-package authority-package.json --out authority-evaluation.json` | Authority facts only; policy owns consequences |
+| Build a report | `sdp-trace report --out .sdp-trace-report .sdp-trace-runs` | Packages observed data and gaps |
+| Witness CI run | `sdp-trace witness --kind github-actions --out ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs` | CI witness is not production trust by itself |
+| Check release proof | `sdp-trace release-proof --manifest <file> --out release-proof.json` | Local source-bound proof only |
+| Run automated PR review | `sdp-trace pr-review check --out review --repo-id <safe-id> --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review-record completeness only; not merge approval |
+
+For output locations, see [`docs/output-location-map.md`](output-location-map.md).
+For profile selection, see [`docs/profile-selection-guide.md`](profile-selection-guide.md).
+
 ## Verification Path
 
 From a clean checkout, run:
@@ -100,7 +121,8 @@ default, or turn missing harness output into a pass.
 - Dirty checkout without a command-supported dirty allowance: required clean-source checks may return `cannot_verify`.
 - Dirty structural output may support only the `local_dirty_structural_only`
   authority scope.
-- Do not use dirty output to conclude `source_bound_local_release` or `external_production_trust`.
+- Do not use dirty output to conclude `source_bound_local_release` or
+  `external_production_trust`.
 
 ## Not-Assessed Interpretation
 
@@ -116,49 +138,15 @@ What it does not allow:
 - Treating the state as passed.
 - Using it as external trust closure.
 
-## Gate, Witness, And Release Caveats
+## Overclaim Checklist
 
-- `pr-review` emits review-record evidence over a frozen PR packet. It can
-  report `coverage_satisfied`, `coverage_partial`, `coverage_unresolved`,
-  `not_assessed`, or `cannot_verify`, but it does not approve, merge, mark
-  ready, release, accept risk, or replace human approval.
-- `gate` emits verifier-derived facts and deterministic states. It does not own
-  merge, release, readiness, degradation, override approval, or risk acceptance.
-- `witness` binds available CI or customer-PKI evidence. A CI witness file is
-  not external production trust, a transparency log, or a release approval by
-  itself.
-- `release-proof` can establish `source_bound_local_release` only when the
-  source commit and manifest subjects match. It does not prove
-  `external_production_trust`, `trusted_contract_release`, or
-  `production_release_verified`.
+See [`docs/overclaim-checklist.md`](overclaim-checklist.md) for the canonical
+overclaim checklist and forbidden-claims list.
 
-## What You May State From Output
-
-From verifier results, you may only state:
-
-- Which command/profile was run.
-- Which `result` or state values were produced.
-- Whether the selected profile concluded with live `pass` or `observed`.
-- Which states remain `not_assessed` or `cannot_verify`, with the emitted reason.
-
-You may not state external production trust guarantees until
-`external_production_trust` completes with live `pass` and
-`production_release_verified` is supported by its dependent evidence chain.
-
-## Quick Reference
-
-| Goal | Command | Typical state boundary |
-| --- | --- | --- |
-| Local trace verification | `sdp-trace verify <run-dir>` | `observed` supports local structural assertions only |
-| Missing evidence review | `sdp-trace query --query missing-evidence <run-dir>` | Missing evidence remains visible, not passed |
-| Forensic package review | `sdp-trace query-pack explain --result <file>` | Explanation of retained evidence only |
-| Managed harness review | `sdp-trace assess explain --assessment-result <file>` | Assessment facts; external policy owns block/allow |
-| First-run harness observation review | `sdp-trace observe collect --profile <session-profile.json> --run <run-dir>` | Session-profile collection; missing declared output is `cannot_verify` |
-| Harness event validation | `sdp-trace harness validate --profile <harness-profile.json> --run <run-dir> --out <file>` | Event-family facts; missing required families are not passes |
-| Authority envelope review | `sdp-trace assess --profile authority-envelope --authority-package <file> --out <file>` | Authority facts only; external policy owns consequences |
-| CI/customer witness review | `sdp-trace witness --kind <kind> --out <file> <runs-root-or-run-dir>` | CI/customer-bound evidence, not production trust by itself |
-| Source-bound release review | `sdp-trace release-proof --manifest <file> --out <file>` | Local source-bound proof only |
-| Automated PR review evidence | `sdp-trace pr-review check --out review --repo-id <safe-id> --change-ref pr-123 --base <sha> --head <sha> --diff change.diff --profile examples/pr-review/trust-sensitive-default.profile.json` | Review-record completeness only; not merge approval |
+In short: `sdp-trace` records evidence and gaps. It does not decide merge
+approval, release readiness, risk acceptance, or production trust authority.
+Verify any trust claim against live verifier output and the canonical state
+contract in `docs/agent-entrypoint.md`.
 
 ## Manual External PR Review Handoff
 

@@ -31,9 +31,9 @@ A user can choose the next command from a task-oriented guide rather than readin
 
 ### US-002 - Evidence State Decision Tree (P0)
 
-A reviewer can distinguish `not_assessed`, `cannot_verify`, `missing_telemetry`, `observed`, `pass`, and `fail` without guessing from exit codes.
+A reviewer can distinguish result states (`observed`, `pass`, `fail`, `not_assessed`, `cannot_verify`) from telemetry labels, completeness markers, and command-specific sub-states without guessing from exit codes.
 
-**Independent Test**: Docs contain one canonical state table or decision tree, and other docs reference it instead of redefining states inconsistently.
+**Independent Test**: One canonical state contract defines result states with exit codes and classifies all other state-like tokens. No doc outside that contract redefines or invents result states. `missing_telemetry` is classified as a telemetry label, not a result state. `warn`, `coverage_satisfied`, `coverage_partial`, `coverage_unresolved`, `not_integrated`, and `unsupported` are classified in the contract or removed from non-contract docs.
 
 ### US-003 - Output Location Map (P1)
 
@@ -50,16 +50,19 @@ A reviewer has one canonical checklist for forbidden interpretations and trust-s
 ## Functional Requirements
 
 - **FR-001**: Add a task-oriented command guide or restructure existing docs to include one.
-- **FR-002**: Add canonical evidence state vocabulary and exit-code mapping.
-- **FR-003**: Add "which profile do I use?" decision tree.
+- **FR-002**: Add canonical evidence state vocabulary and exit-code mapping. The canonical contract must classify every state-like token used in the product as either a result state, a telemetry label, a completeness marker, or a command-specific sub-state.
+- **FR-003**: Add "which profile do I use?" decision tree. The tree must map trust profile IDs, assessment profiles, witness kinds, and authority scopes in a single decision aid.
 - **FR-004**: Add output location reference.
-- **FR-005**: Consolidate overclaim rules and link from other docs.
+- **FR-005**: Consolidate overclaim rules into one canonical checklist file; all other docs link to it and may retain one-line inline summaries.
 - **FR-006**: Mark any future interactive guide command as a separate implementation follow-up, not implied by docs-only work.
+- **FR-007**: Add profile taxonomy map that explicitly relates trust profile IDs (`repo_baseline_structural`, `source_bound_local_release`, `external_production_trust`) to assessment profiles, witness kinds, and authority scopes.
 
 ## Acceptance Criteria
 
-- `docs/reviewer-entrypoint.md` has a short task path before long references.
-- State vocabulary is consistent across README, concepts, agent entrypoint, reviewer entrypoint, and adoption guide.
+- `docs/reviewer-entrypoint.md` has a short task path (≤10 lines or a table) before any flat command list longer than 5 entries.
+- Exactly one canonical state contract exists (in `docs/agent-entrypoint.md` or a dedicated canonical doc) and defines: (a) result states with exit codes, (b) classification of all other state-like tokens. A grep audit shows zero orphan result-state tokens in non-contract docs.
+- One canonical overclaim checklist exists in `docs/overclaim-checklist.md`; README and agent entrypoint link to it.
+- One profile decision tree exists and maps all trust profile IDs, assessment profiles, witness kinds, and authority scopes.
 - `go run ./tools/doccheck` passes and covers the command claims it owns.
 - UX review finds no blocker-level ambiguity in the first-run reviewer path.
 

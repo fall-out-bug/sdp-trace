@@ -12,7 +12,7 @@ Allowed Slice 1 values:
 
 - `claim`: `task_closed`, `command_verified`, `profile_passed`, `trust_not_assessed`
 - `state`: `pass`, `fail`, `not_assessed`, `stale`, `cannot_verify`
-- `profile`: `repo_baseline`, `source_bound_local_release`, `external_production_trust`, `observed_slice`
+- `profile`: `repo_baseline_structural`, `source_bound_local_release`, `external_production_trust`, `observed_slice`
 - `evidence`: `command_set:block04-t070` or `state:claim_tags_consistent`
 
 `state=pass` with `command_set:block04-t070` replays the current closure commands. If any command fails or cannot verify, the claim fails. Use `state=stale` for historical closure records that contradict the current verifier.

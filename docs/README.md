@@ -13,8 +13,12 @@ working specs and historical implementation records.
    local smoke path and verify your environment.
 5. [Agent Entrypoint](agent-entrypoint.md): current command, state, trust-scope,
    authority-scope, and exit-code contract.
-6. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path and
-   overclaim rules.
+6. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path.
+7. [Output Location Map](output-location-map.md): where each command writes
+   artifacts.
+8. [Profile Selection Guide](profile-selection-guide.md): which profile to use.
+9. [Overclaim Checklist](overclaim-checklist.md): canonical forbidden-claims
+   and trust-scope rules.
 7. [Harness Integration](harness-integration.md): how existing workflows feed
    trace evidence without being replaced.
 8. [Schema Reference](../schema/README.md): the portable JSON contracts.
