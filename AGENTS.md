@@ -65,6 +65,8 @@ Use `docs/claim-authoring.md` for authoritative claim syntax. Current Slice 1 va
 Use current command contracts in `docs/agent-entrypoint.md` and `docs/reviewer-entrypoint.md`.
 
 - Defaults: `go test ./...`, `jq empty schema/*.json`, `gofmt` for changed Go files, and `git diff --check`.
+- Coverage-backed CRAP: `go test -count=1 ./... -coverprofile=coverage.out`, `go tool cover -func=coverage.out`, `go run ./tools/qualitycheck -gocyclo cmd internal tools`, then `go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less`. CRAP must be verified locally before any PR claim.
+- Lint: `go vet ./...` is required. If `golangci-lint` is available, also run `golangci-lint run` (it catches `errcheck` and other analyzers that `go vet` misses).
 - For schema/contract changes, also check refs, changed examples, fixture shape, and Go struct/schema alignment.
 
 Bash verification commands are not product architecture. Keep them only when they are thin launchers around Go commands or external tools.

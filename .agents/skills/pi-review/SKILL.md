@@ -44,3 +44,11 @@ For trust-sensitive work, run separate planes:
 <output_format>
 Summarize findings first, ordered by severity. Include file/line evidence, disposition, verification command, and remaining `not_assessed` areas.
 </output_format>
+
+<synthesis_hygiene>
+When producing or updating `reviews/synthesis.md` (or any review ledger):
+- Cross-check every claimed fix against the actual diff. If a file was reverted or removed from the diff, remove the claim about it.
+- Do not list a verification command as passing unless it was actually run and produced fresh output in this session.
+- Record CI status as `not_assessed` until live GitHub checks are queried for the final head.
+- A green local test run is not a green CI run. Distinguish them explicitly.
+</synthesis_hygiene>

@@ -34,8 +34,10 @@ After approval:
 1. Prepare a PR with code, tracing/evidence, docs, and requirements mapping.
 2. Run separate review planes at PR level: code/correctness, tracing/evidence/provenance, requirements-vs-implementation, and security/DX/UX when relevant.
 3. Verify reviewer findings against full files before accepting or rejecting them.
-4. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
-5. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
+4. Re-read the actual diff before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
+5. Ensure the PR is not in Draft state before claiming it is ready for review.
+6. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
+7. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
 </pr_protocol>
 
 <trust_boundaries>
