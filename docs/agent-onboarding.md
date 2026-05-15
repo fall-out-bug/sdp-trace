@@ -46,14 +46,9 @@ Useful mappings:
 
 ## First Commands
 
-Run the current Go-first smoke path:
-
-```text
-go test ./...
-sdp-trace --help
-sdp-trace wrap --name smoke -- /bin/echo ok
-sdp-trace verify <run-dir>
-```
+Follow the [Contributor Quick Start](contributor-quickstart.md) for the current
+canonical Go-first smoke path. It includes environment checks, failure routing,
+and expected verifier states.
 
 Use these docs while working:
 

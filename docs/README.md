@@ -9,18 +9,20 @@ working specs and historical implementation records.
 2. [Core Concepts](concepts.md): vocabulary and product boundary.
 3. [Agent Onboarding](agent-onboarding.md): the single link to give a coding
    agent before it works in this repository.
-4. [Agent Entrypoint](agent-entrypoint.md): current command, state, trust-scope,
+4. [Contributor Quick Start](contributor-quickstart.md): run the canonical
+   local smoke path and verify your environment.
+5. [Agent Entrypoint](agent-entrypoint.md): current command, state, trust-scope,
    authority-scope, and exit-code contract.
-5. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path and
+6. [Reviewer Entrypoint](reviewer-entrypoint.md): quick verification path and
    overclaim rules.
-6. [Harness Integration](harness-integration.md): how existing workflows feed
+7. [Harness Integration](harness-integration.md): how existing workflows feed
    trace evidence without being replaced.
-7. [Schema Reference](../schema/README.md): the portable JSON contracts.
+8. [Schema Reference](../schema/README.md): the portable JSON contracts.
 
 ## Reader Shortcuts
 
-- New contributor: read onboarding, concepts, and the agent entrypoint before
-  editing files.
+- New contributor: read the quick start, onboarding, concepts, and the agent
+  entrypoint before editing files.
 - Reviewer: start with the reviewer entrypoint, then inspect the evidence
   policy and relevant examples.
 - Harness maintainer: read harness integration, flight recorder, and schema
