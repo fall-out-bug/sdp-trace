@@ -19,9 +19,9 @@ working specs and historical implementation records.
 8. [Profile Selection Guide](profile-selection-guide.md): which profile to use.
 9. [Overclaim Checklist](overclaim-checklist.md): canonical forbidden-claims
    and trust-scope rules.
-7. [Harness Integration](harness-integration.md): how existing workflows feed
-   trace evidence without being replaced.
-8. [Schema Reference](../schema/README.md): the portable JSON contracts.
+10. [Harness Integration](harness-integration.md): how existing workflows feed
+    trace evidence without being replaced.
+11. [Schema Reference](../schema/README.md): the portable JSON contracts.
 
 ## Reader Shortcuts
 

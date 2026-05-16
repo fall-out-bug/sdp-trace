@@ -1,0 +1,55 @@
+---
+
+## Adversarial Review: specs/015-spec-governance-and-roadmap + docs/roadmap.md
+
+### FINDING 1 — Stale "Last updated" on roadmap (P2 — self-defeating)
+**File:** `docs/roadmap.md:117`
+**Issue:** "Last updated: 2026-05-15" but `git log` shows the file was last committed at `2026-05-16T07:48:11+0300`. The freshness mechanism this slice introduces (FR-006) is already broken on its own first document. This undermines credibility of the entire freshness promise.
+
+### FINDING 2 — No `sdp-trace-claim` tags in the slice's own output (P2 — convention violation)
+**Files:** `specs/015-spec-governance-and-roadmap/final-evidence-map.md`, `tasks.md`, `docs/roadmap.md`
+**Issue:** US-004 Scope Rule says "claim tags are required for new or touched files." This slice creates brand-new authoritative claims:
+- `final-evidence-map.md:29-32` — "What is proven" / closure statement
+- `tasks.md:27` — T030 verification summary
+Yet zero `sdp-trace-claim` tags exist in any of this slice's own files. The slice that mandates claim tags doesn't use them. Per `docs/claim-authoring.md`, these are prose commentary, not machine-authoritative.
+
+### FINDING 3 — T030 closure overclaims doccheck capability (P2 — verification gap)
+**File:** `specs/015-spec-governance-and-roadmap/tasks.md:27`
+**Issue:** T030 marks `doccheck exit=0` as evidence for the spec's verification condition. But the spec requires: "roadmap lists every spec 001–015 with capability and status." `doccheck` verifies link integrity only — it does not check coverage, structure, presence of capability/status columns, or content completeness. T030 conflates "links aren't broken" with "roadmap satisfies contract."
+
+### FINDING 4 — External CI claim without tag or replay (P2 — trust boundary)
+**Files:** `tasks.md:27`, `final-evidence-map.md:24`
+**Issue:** "GitHub Actions verify job PASS for PR #53" is stated as prose fact. This is an external CI assertion. Per AGENTS.md: "dirty checkout output is local structural evidence only, not external trust." Local `go test ./...` and `jq empty` do replay the source-bound checks — but the GitHub Actions claim has no `sdp-trace-claim` tag, no link to the CI run, and no way to distinguish "I ran this and saw PASS" from "the PR page showed green once." Without a link or a checked-in CI receipt, this is exactly the "checked-in proof is not authority unless live-verified or externally signed" risk.
+
+### FINDING 5 — Blocker notation format not applied to its own table (P1 — internal inconsistency)
+**File:** `docs/roadmap.md`
+**Issue:** Lines 81-86 define a formal blocker notation:
+```
+- [ ] T### Description → Blocked on: <concrete reason>.
+```
+But the "Blocked or Paused Specs" table (lines 36-44) doesn't use this format. It uses free-form prose in the Blocker column: "Self-attestation proof incomplete; external production trust blocked until…" The slice that establishes a blocker notation convention doesn't apply it to its own roadmap tables.
+
+### FINDING 6 — "Status transitions undefined" accepted as advisory undermines the taxonomy (P1 — architectural gap)
+**File:** `specs/015-spec-governance-and-roadmap/review-disposition.md` (cited in `final-evidence-map.md:44`)
+**Issue:** The review finding "Status transitions undefined" was dispositioned as `advisory (kept informal for Slice 1)`. But the lifecycle taxonomy is the core deliverable — if there are no defined transitions, any contributor can flip a spec from `draft` → `complete` without any gate. The taxonomy becomes decorative rather than governance. The spec claims to provide "lightweight governance" but delivers labeling without rules.
+
+### FINDING 7 — Capability index hides cross-cutting ownership (P1 — misleading)
+**File:** `docs/roadmap.md` "Capability Index" table
+**Issue:** The index maps each capability to a single owner spec. But evidence/trace surfaces are touched by specs 001, 002, 005, 006, and 008. "Evidence substrate / trace format" maps only to 001 ("Blocked"). A reader scanning the index could conclude the evidence surface is entirely blocked, when specs 009 (command surface) and 011 (schema docs) are `draft` and could drive evidence work forward. No caveat about overlapping concerns.
+
+### FINDING 8 — `socratic-judge-result.json` ambiguity (P2 — potential misread)
+**File:** `specs/001-sdp-trace-time-series-evidence-substrate/socratic-judge-result.json`
+**Issue:** Contains `"verdict": "PASS"` at the spec root level (not in `blocks/`). The roadmap lists spec 001 as `blocked`. The socratic review PASS was pre-implementation architectural alignment, but the filename and top-level `verdict` field could mislead tooling or readers into conflating "architectural review passed" with "implementation trust passed." This is already exempt per US-004 scope ("existing checked-in review JSON are exempt"), but the human-readability risk remains. A one-line caveat in the JSON or a pointer to the resolution notes would help. Not a spec-015 bug per se, but this slice's roadmap points users to spec 001 without flagging the ambiguity.
+
+### FINDING 9 — docs/README.md duplicate numbering (P3 — quality)
+**File:** `docs/README.md` "First-Time Path" numbered list
+**Issue:** Items are numbered 1–9, then 7–8 again (for "Harness Integration" and "Schema Reference"). Markdown renderers may or may not auto-correct, but the source is structurally wrong. This file was touched by this slice (T022 linked the roadmap).
+
+---
+
+### Cannot verify:
+- External multi-LLM review (GLM/Qwen/DeepSeek) — no provider access in current environment. Correctly marked `cannot_verify` in tasks.
+- PR #53 GitHub Actions evidence — no external API to replay. Claim exists in prose only.
+
+### Not assessed:
+- Whether individual spec statuses in the roadmap (`draft`, `blocked`, etc.) match what each spec's own `tasks.md` says — cross-reference not performed.

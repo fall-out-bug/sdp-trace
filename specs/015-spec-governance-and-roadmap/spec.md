@@ -33,7 +33,7 @@ A reviewer can see which spec owns command surface, docs generation, repository 
 
 ### US-002 - Lifecycle Labels (P0)
 
-A contributor can tell whether a spec is `draft`, `pending_review`, `approved`, `in_progress`, `paused`, `blocked`, or `complete`.
+A contributor can tell whether a spec is `draft`, `pending_review`, `approved`, `in_progress`, `paused`, `blocked`, `complete`, or `historical`.
 
 **Independent Test**: New specs use a consistent status taxonomy in `spec.md` and task blockers are explicit.
 

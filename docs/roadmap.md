@@ -17,6 +17,15 @@
 | `complete` | Implementation merged to `main`; maintenance mode only. |
 | `historical` | Block records preserved for evidence; not live work. |
 
+### Minimal Transitions
+
+These are editorial conventions, not enforced gates:
+- `draft` → `pending_review` → `approved` → `in_progress` → `complete`
+- `in_progress` may transition to `paused` or `blocked` with a recorded reason.
+- `blocked` returns to `in_progress` when the blocker is resolved, not `complete`.
+- `complete` is final for a slice; new work opens a new spec.
+- `historical` is assigned by maintainers when a spec is archived, not by the original author.
+
 ## Active Specs
 
 | Spec | Capability | Status | Blocker / Next Step |
@@ -33,31 +42,45 @@
 
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
-| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `blocked` | Self-attestation proof incomplete; external production trust blocked until signed release process. See spec tasks T020–T026. |
-| [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `blocked` | Post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
+| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `blocked` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. See spec tasks T020–T026. |
+| [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `blocked` | → Blocked on: post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
 
-## Historical / Completed Specs
+## Older Draft Specs (No Active Work)
 
 | Spec | Capability | Status | Notes |
 | --- | --- | --- | --- |
-| [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `historical` | Block records preserved in `blocks/`. Not live work. |
-| [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `historical` | Roadmap artifact; Socratic review completed. Block records preserved. |
-| [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `historical` | Revised after Socratic review. Block records preserved. |
-| [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `historical` | Revised after full review. Block records preserved. |
-| [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `historical` | Needs Socratic review before any future implementation. Block records preserved. |
-| [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `historical` | Needs Socratic review before any future implementation. Block records preserved. |
+| [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `draft` | Revised after initial Socratic review; focused re-review pending. No `blocks/` directory. |
+| [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `draft` | Roadmap artifact; Socratic review completed; revisions pending. No `blocks/` directory. |
+| [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Revised after initial Socratic review; approval pending. No `blocks/` directory. |
+| [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `draft` | Revised after full review; re-review pending. No `blocks/` directory. |
+| [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
+| [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
+
+> **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon completion and merge, move to Completed Specs.
+
+## Completed Specs
+
+| Spec | Capability | Status | Notes |
+| --- | --- | --- | --- |
+| *(none yet)* | | | |
+
+## Historical / Archived Evidence
+
+| Spec | Capability | Status | Notes |
+| --- | --- | --- | --- |
+| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate | `historical` | Block records preserved in `blocks/` directory. Not live work. |
 
 ## Capability Index
 
-Use this to find which spec owns a product surface.
+Use this to find which spec owns a product surface. A capability may be touched by multiple specs; the listed owner is the primary spec, not an exclusive boundary.
 
 | Capability | Owner Spec(s) | Live? |
 | --- | --- | --- |
 | Evidence substrate / trace format | 001 | Blocked |
-| Authority envelope / trust boundary | 002 | Historical |
-| Product contract schema | 005 | Historical |
-| Change evidence packet | 006 | Historical |
-| GitHub demo workflow | 007 | Historical |
+| Authority envelope / trust boundary | 002 | Draft (old) |
+| Product contract schema | 005 | Draft (old) |
+| Change evidence packet | 006 | Draft (old) |
+| GitHub demo workflow | 007 | Draft (old) |
 | Flight recorder / wrap command | 008 | Blocked |
 | Command surface (JSON schema, registry) | 009 | Draft |
 | Command package organization | 010 | Draft |
@@ -114,4 +137,6 @@ Historical block records in `blocks/` are exempt from these expectations. They a
 
 - Update this file when a new spec is opened or an active spec's status changes.
 - Owner: the spec author or current block worker.
-- Last updated: 2026-05-15.
+- Last updated: 2026-05-16.
+
+<!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:015-roadmap-verification -->
