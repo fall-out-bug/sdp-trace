@@ -47,3 +47,15 @@ Verify that the spec governance slice improves roadmap clarity without turning c
 - `git diff --check`: PASS
 - `go vet ./...`: PASS
 - `jq empty schema/*.json`: PASS
+
+## Round 2 (post-fix) Review
+
+GLM performed a second-pass review on the v2 artifact (post-fix). Qwen v2 returned no output. MiniMax and DeepSeek remain `cannot_verify`.
+
+| # | Severity | Finding | Disposition | Fix |
+| --- | --- | --- | --- | --- |
+| F1 | P1 | Spec 001 dual-listed (`blocked` + `historical`) in roadmap | accepted_fixed | Removed from Historical section; kept in Blocked with `blocks/` note |
+| F2 | P2 | Unstaged diff in `final-evidence-map.md` | accepted_fixed | Committed PR #54 reference change |
+| F3 | P2 | Untracked `glm-review-v2.txt` | accepted_fixed | Committed as review evidence |
+| F4 | P3 advisory | `command_set:` references lack machine-readable registry | acknowledged | Out of scope for Slice 1; tracked for later slice |
+| F5 | P3 advisory | Transition rules are unenforceable prose | acknowledged | Documented as editorial conventions, not enforced gates |
