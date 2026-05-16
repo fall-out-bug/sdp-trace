@@ -42,8 +42,8 @@ These are editorial conventions, not enforced gates:
 
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
-| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `blocked` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. See spec tasks T020–T026. Historical `blocks/` directory preserved as evidence. |
-| [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `blocked` | → Blocked on: post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
+| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `draft` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. See spec tasks T020–T026. `blocks/` directory preserved as evidence. |
+| [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `in_progress` | → Blocked on: post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
 
 ## Older Draft Specs (No Active Work)
 
@@ -76,12 +76,12 @@ Use this to find which spec owns a product surface. A capability may be touched 
 
 | Capability | Owner Spec(s) | Live? |
 | --- | --- | --- |
-| Evidence substrate / trace format | 001 | Blocked |
+| Evidence substrate / trace format | 001 | Draft (blocked) |
 | Authority envelope / trust boundary | 002 | Draft (old) |
 | Product contract schema | 005 | Draft (old) |
 | Change evidence packet | 006 | Draft (old) |
 | GitHub demo workflow | 007 | Draft (old) |
-| Flight recorder / wrap command | 008 | Blocked |
+| Flight recorder / wrap command | 008 | In progress (blocked) |
 | Command surface (JSON schema, registry) | 009 | Draft |
 | Command package organization | 010 | Draft |
 | Schema docs generation | 011 | Draft |
@@ -139,4 +139,4 @@ Historical block records in `blocks/` are exempt from these expectations. They a
 - Owner: the spec author or current block worker.
 - Last updated: 2026-05-16.
 
-<!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:015-roadmap-verification -->
+<!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->

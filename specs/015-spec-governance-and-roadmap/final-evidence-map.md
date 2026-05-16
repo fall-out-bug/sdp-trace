@@ -56,10 +56,13 @@
 ## Closure statement
 
 - **What the evidence shows**: The repository contains a lightweight roadmap (`docs/roadmap.md`) mapping specs 001–015 to capabilities, statuses, and blockers. The spec lifecycle taxonomy is defined with a status-vs-trust-verdict caveat. Task-file expectations for blockers and approval gates are documented. Claim-tag enforcement is scoped to new/touched files. All local verification passes.
-- **What is not assessed**: (none)
+- **What is not assessed**:
+  - Whether roadmap statuses will stay accurate over time (depends on manual curation).
+  - Whether all specs 001–014 will adopt the new taxonomy (out of scope for this slice).
+  - Whether the claim-tag grammar is machine-parseable (no parser exists yet).
 - **What cannot be verified**:
   - DeepSeek reasoning review plane timed out without output.
   - MiniMax skill-adherence review plane returned 404 from provider.
 - **Required follow-up before merge, if any**: Retry DeepSeek and MiniMax if provider access is restored; otherwise proceed with GLM + Qwen review evidence.
 
-<!-- sdp-trace-claim: claim=profile_passed; subject=015-evidence-map; state=pass; profile=repo_baseline_structural; evidence=command_set:015-local-verification -->
+<!-- sdp-trace-claim: claim=profile_passed; subject=015-evidence-map; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->

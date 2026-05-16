@@ -48,6 +48,8 @@ Verify that the spec governance slice improves roadmap clarity without turning c
 - `go vet ./...`: PASS
 - `jq empty schema/*.json`: PASS
 
+<!-- sdp-trace-claim: claim=profile_passed; subject=015-review-synthesis; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->
+
 ## Round 2 (post-fix) Review
 
 GLM performed a second-pass review on the v2 artifact (post-fix). Qwen v2 returned no output. MiniMax and DeepSeek remain `cannot_verify`.
@@ -59,3 +61,13 @@ GLM performed a second-pass review on the v2 artifact (post-fix). Qwen v2 return
 | F3 | P2 | Untracked `glm-review-v2.txt` | accepted_fixed | Committed as review evidence |
 | F4 | P3 advisory | `command_set:` references lack machine-readable registry | acknowledged | Out of scope for Slice 1; tracked for later slice |
 | F5 | P3 advisory | Transition rules are unenforceable prose | acknowledged | Documented as editorial conventions, not enforced gates |
+
+### Qwen v2 (post-fix) findings
+
+| # | Severity | Finding | Disposition | Fix |
+| --- | --- | --- | --- | --- |
+| Q1 | P0 | Spec 001 `blocked` vs spec.md `Draft` | accepted_fixed | Changed roadmap status to `draft` (blocked) with blocker note |
+| Q2 | P0 | Spec 008 `blocked` vs spec.md `Implemented locally` | accepted_fixed | Changed roadmap status to `in_progress` (blocked) with blocker note |
+| Q3 | P1 | Claim tag evidence refs don't match `command_set:block-task` grammar | accepted_fixed | Replaced with `command_set:block015-t030` |
+| Q4 | P1 | `not_assessed: (none)` contradicts synthesis gaps | accepted_fixed | Added three `not_assessed` items to final-evidence-map |
+| Q5 | P2 | `synthesis.md` verification assertions without claim tag | accepted_fixed | Added claim tag to synthesis.md |

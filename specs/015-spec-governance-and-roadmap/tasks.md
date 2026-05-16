@@ -31,4 +31,4 @@
 - [x] T034 Fix GLM+Qwen review findings. — Roadmap statuses aligned with spec.md; `blocks/` overclaim removed; `historical` added to taxonomy; claim tags added; overclaims removed.
 - [x] T035 Add claim tags to new/modified files. — Tags added to `docs/roadmap.md` and `final-evidence-map.md`.
 
-<!-- sdp-trace-claim: claim=task_closed; subject=015-tasks; state=pass; profile=repo_baseline_structural; evidence=command_set:015-local-verification -->
+<!-- sdp-trace-claim: claim=task_closed; subject=015-tasks; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->

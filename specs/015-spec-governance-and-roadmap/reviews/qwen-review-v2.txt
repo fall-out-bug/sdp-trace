@@ -1,0 +1,77 @@
+All files read and cross-referenced. Here are the actionable findings:
+
+---
+
+## Adversarial Re-Review Results
+
+### P0 — Roadmap status contradicts spec.md source-of-truth
+
+**1. docs/roadmap.md — Spec 001 listed as `blocked`, spec.md says `Draft`**
+
+Roadmap "Blocked or Paused Specs" table shows spec 001 as `blocked`. But `specs/001-sdp-trace-time-series-evidence-substrate/spec.md` line 5 says `Status: Draft`. Contract (AGENTS.md) requires "Roadmap status must match spec.md source-of-truth." The roadmap even contains a disclaimer ("The roadmap does not override spec source-of-truth status") then immediately violates it.
+
+**Fix**: Either update spec 001's spec.md to use the taxonomy label `blocked` with a recorded reason, or change the roadmap to `draft` (matching source-of-truth) with a note in the Blocker column — but the current state is an unacknowledged contradiction.
+
+**2. docs/roadmap.md — Spec 008 listed as `blocked`, spec.md says `Implemented locally`**
+
+Roadmap shows spec 008 as `blocked`. But `specs/008-invisible-flight-recorder/spec.md` line 5 says `Status: Implemented locally; post-implementation review recorded; PR/final-head CI evidence pending`. That doesn't map to the taxonomy label `blocked` — if anything, it maps closer to `in_progress` or `pending_review`. Same contract violation as #1.
+
+**Fix**: Align the roadmap status with what spec 008's spec.md actually says, or update spec 008's spec.md to use a taxonomy label.
+
+---
+
+### P1 — Claim tag evidence references violate grammar
+
+**3. docs/roadmap.md (last line), `final-evidence-map.md` (last line), `tasks.md` (last line)**
+
+All three claim tags use evidence references that don't conform to the grammar in `docs/claim-authoring.md`:
+
+```
+Actual:   evidence=command_set:015-roadmap-verification
+           evidence=command_set:015-local-verification
+Allowed:  evidence=command_set:block04-t070  (example from grammar)
+```
+
+The grammar requires `command_set:<block>-<task>` format referencing a specific task. `015-roadmap-verification` and `015-local-verification` are not valid block-task references. They should be something like `command_set:block015-t030` (referencing T030, the verification task).
+
+**Fix**: Replace with actual task references:
+- `docs/roadmap.md` → `command_set:block015-t030` (or whichever task owns roadmap verification)
+- `final-evidence-map.md` → `command_set:block015-t030`
+- `tasks.md` → `command_set:block015-t030` (same verification gate task)
+
+---
+
+### P1 — Evidence map overclaims by omission
+
+**4. `final-evidence-map.md` — "What is not assessed: (none)"**
+
+This section claims nothing is `not_assessed`. But `reviews/synthesis.md` explicitly lists three things "this review does not prove":
+- Roadmap statuses staying accurate (depends on manual curation)
+- All specs 001–014 adopting the taxonomy (out of scope for this slice)
+- Claim-tag grammar being machine-parseable (no parser yet)
+
+These are genuine `not_assessed` gaps that the review itself acknowledges. The evidence map contradicts its own review synthesis.
+
+**Fix**: Move those three items into "What is not assessed" in the closure statement.
+
+---
+
+### P2 — synthesis.md makes verification claims without claim tag
+
+**5. `specs/015-spec-governance-and-roadmap/reviews/synthesis.md` — "Re-verification after fixes" section**
+
+This section asserts that `go test ./...`, `doccheck`, `git diff --check`, `go vet`, and `jq` all PASS. These are authoritative `command_verified` claims. The file was created as part of this post-015 slice, so US-004 scope rules apply: "Claim tags are required for new authoritative claims in any file created or materially modified after this slice." No claim tag exists on the file.
+
+**Fix**: Add a claim tag to synthesis.md covering the re-verification section, or move the verification assertions into the already-tagged `final-evidence-map.md` and reduce the synthesis section to a cross-reference.
+
+---
+
+### Summary
+
+| # | Severity | File | Issue |
+|---|----------|------|-------|
+| 1 | P0 | `docs/roadmap.md` | Spec 001 shown as `blocked`; spec.md says `Draft` |
+| 2 | P0 | `docs/roadmap.md` | Spec 008 shown as `blocked`; spec.md says `Implemented locally` |
+| 3 | P1 | 3 files | Claim tag evidence refs don't match `command_set:block- task` grammar |
+| 4 | P1 | `final-evidence-map.md` | "not_assessed: (none)" contradicts synthesis.md gaps |
+| 5 | P2 | `reviews/synthesis.md` | Verification assertions without claim tag |
