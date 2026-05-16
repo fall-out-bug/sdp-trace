@@ -24,7 +24,7 @@
 
 ## Phase 3 - Closure
 
-- [x] T030 Run doccheck and full verification. — doccheck exit=0; go test ./... pass; jq empty schema/*.json pass; git diff --check pass.
+- [x] T030 Run doccheck and full verification. — doccheck exit=0; go test ./... pass; jq empty schema/*.json pass; git diff --check pass; GitHub Actions verify job PASS for PR #53.
 - [ ] T031 Run multi-LLM review on roadmap accuracy (GLM/Qwen/DeepSeek). — `cannot_verify`: no API credentials or endpoints available in current harness. Must run before merge if provider access available.
 - [x] T032 Record any historical migration follow-ups separately. — Historical specs (001–014) exempt; no migration required.
 - [x] T033 Commit scoped slices and prepare PR evidence. — Two scoped commits on branch `015-spec-governance-and-roadmap`.

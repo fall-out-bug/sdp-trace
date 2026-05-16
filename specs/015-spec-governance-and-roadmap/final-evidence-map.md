@@ -21,14 +21,14 @@
 - `git diff --check`: **PASS** (no whitespace errors)
 - Additional gate commands:
   - `go run ./tools/doccheck`: **PASS** (exit=0)
-- Live CI/checks: **not_assessed** — branch not yet pushed to origin; GitHub checks not queried.
+- Live CI/checks: **PASS** — GitHub Actions `verify` job completed successfully for PR #53 final head.
 
 ## Trust states
 
 - **pass**: File existence (`docs/roadmap.md`), doccheck, go tests, schema validation, git diff --check.
 - **fail**: (none)
 - **cannot_verify**: External multi-LLM review (GLM/Qwen/DeepSeek) — no API credentials or endpoints available in current harness environment.
-- **not_assessed**: Live GitHub CI checks for final head.
+- **not_assessed**: (none)
 
 ## Review disposition
 
@@ -47,6 +47,6 @@
 ## Closure statement
 
 - **What is proven**: The repository now contains a lightweight roadmap (`docs/roadmap.md`) mapping specs 001–015 to capabilities, statuses, and blockers. The spec lifecycle taxonomy is defined with a status-vs-trust-verdict caveat. Task-file expectations for blockers and approval gates are documented. Claim-tag enforcement is scoped to new/touched files. All local verification passes.
-- **What is not assessed**: Live GitHub CI checks for the final head.
+- **What is not assessed**: (none)
 - **What cannot be verified**: External adversarial review by GLM, Qwen, and DeepSeek models due to missing API credentials/endpoints in the current harness environment.
 - **Required follow-up before merge, if any**: Run external multi-LLM review plane if the merge party has access to configured non-OpenAI/Anthropic/Google providers. Otherwise, record the plane as `cannot_verify` and proceed with internal review evidence only.
