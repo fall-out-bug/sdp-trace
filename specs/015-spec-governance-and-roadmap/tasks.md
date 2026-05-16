@@ -12,19 +12,19 @@
 ## Phase 1 - Roadmap
 
 - [x] T010 Define spec lifecycle taxonomy. — In spec.md US-002; caveat added.
-- [ ] T011 Add current spec ownership map. → Create `docs/roadmap.md`.
-- [ ] T012 Mark blockers and next steps for active specs. → Populate in roadmap.
-- [ ] T013 Update spec.md with approved review fixes. → Status, claim verification, historical rule, claim-tag scope, freshness.
+- [x] T011 Add current spec ownership map. — `docs/roadmap.md` created.
+- [x] T012 Mark blockers and next steps for active specs. — Populated in roadmap.
+- [x] T013 Update spec.md with approved review fixes. — Status, claim verification, historical rule, claim-tag scope, freshness.
 
 ## Phase 2 - Governance
 
-- [ ] T020 Define task-file expectations for approval gates and blocked specs. → Add to `docs/roadmap.md` or new `docs/spec-lifecycle.md`.
+- [x] T020 Define task-file expectations for approval gates and blocked specs. — Added to `docs/roadmap.md`.
 - [x] T021 Define claim-tag enforcement scope for future authoritative prose. — In spec.md US-004; scope = new/touched files.
-- [ ] T022 Link roadmap from docs map or README if approved.
+- [x] T022 Link roadmap from docs map or README if approved. — Linked from `docs/README.md`.
 
 ## Phase 3 - Closure
 
-- [ ] T030 Run doccheck and full verification.
-- [ ] T031 Run multi-LLM review on roadmap accuracy (GLM/Qwen/DeepSeek).
-- [ ] T032 Record any historical migration follow-ups separately.
-- [ ] T033 Commit scoped slices and prepare PR evidence.
+- [x] T030 Run doccheck and full verification. — doccheck exit=0; go test ./... pass; jq empty schema/*.json pass; git diff --check pass.
+- [ ] T031 Run multi-LLM review on roadmap accuracy (GLM/Qwen/DeepSeek). — `cannot_verify`: no API credentials or endpoints available in current harness. Must run before merge if provider access available.
+- [x] T032 Record any historical migration follow-ups separately. — Historical specs (001–014) exempt; no migration required.
+- [x] T033 Commit scoped slices and prepare PR evidence. — Two scoped commits on branch `015-spec-governance-and-roadmap`.

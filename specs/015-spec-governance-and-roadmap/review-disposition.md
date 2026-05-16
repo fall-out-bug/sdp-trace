@@ -22,16 +22,16 @@ Review objective: Adversarial Socratic spec review before implementation approva
 | Advisory | Roadmap artifact format unspecified: FR-001 says "short roadmap/navigation artifact" but no filename/location/format. | spec.md FR-001 | accepted | Propose `docs/roadmap.md` or `ROADMAP.md`; await user approval. |
 
 ## Unresolved states
-- not_assessed: External multi-LLM review (GLM/Qwen/DeepSeek) — deferred to PR stage due to harness availability.
-- cannot_verify: (none)
+- not_assessed: (none)
+- cannot_verify: External multi-LLM review (GLM/Qwen/DeepSeek) — no API credentials or harness endpoints available in current environment for non-OpenAI/Anthropic/Google models. This plane must be run before merge if the requesting party has access to the configured review providers.
 
 ## Synthesis
-- Required fixes before implementation:
-  1. Add machine-verifiable acceptance criteria to Core Claim.
-  2. Add lifecycle label caveat linking to claim-authoring.md.
-  3. Define concrete historical evidence boundary rule.
-  4. Scope claim-tag enforcement to new/touched files with exemption list.
-  5. Propose roadmap filename/location.
+- Required fixes status:
+  1. ✅ Machine-verifiable acceptance criteria added to Core Claim.
+  2. ✅ Lifecycle label caveat linking to claim-authoring.md added.
+  3. ✅ Concrete historical evidence boundary rule defined.
+  4. ✅ Claim-tag enforcement scoped to new/touched files with exemption list.
+  5. ✅ Roadmap filename/location fixed as `docs/roadmap.md`.
 - Advisory follow-ups:
   - Define status transition rules in a later governance slice if needed.
   - Add roadmap freshness owner rule.
