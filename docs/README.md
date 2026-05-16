@@ -19,9 +19,9 @@ working specs and historical implementation records.
 8. [Profile Selection Guide](profile-selection-guide.md): which profile to use.
 9. [Overclaim Checklist](overclaim-checklist.md): canonical forbidden-claims
    and trust-scope rules.
-7. [Harness Integration](harness-integration.md): how existing workflows feed
-   trace evidence without being replaced.
-8. [Schema Reference](../schema/README.md): the portable JSON contracts.
+10. [Harness Integration](harness-integration.md): how existing workflows feed
+    trace evidence without being replaced.
+11. [Schema Reference](../schema/README.md): the portable JSON contracts.
 
 ## Reader Shortcuts
 
@@ -40,6 +40,7 @@ evidence and gaps; it does not approve changes.
 
 ## Governance And Rollout Docs
 
+- [Spec Roadmap](roadmap.md): current spec statuses, capability ownership, and lifecycle labels.
 - [Adoption Guide, English](adoption-guide.en.md)
 - [Adoption Guide, Russian](adoption-guide.ru.md)
 - [Repository Rollout Playbook, English](repository-rollout-playbook.en.md)

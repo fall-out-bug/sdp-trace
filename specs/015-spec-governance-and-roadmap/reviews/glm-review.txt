@@ -1,0 +1,132 @@
+I have now completed my examination of all the artifacts. Here is the adversarial review.
+
+---
+
+## Adversarial Review: 015-spec-governance-and-roadmap + docs/roadmap.md
+
+### ISSUE 1 — Roadmap status contradicts spec source-of-truth status for every historical spec (P0 — schema drift)
+
+**Files:** `docs/roadmap.md` lines 46–56 vs. `specs/002..007/spec.md`
+
+The roadmap marks specs 002–007 as `historical`. Their own `spec.md` files all say `Draft` (with various qualification text). The taxonomy defined in this slice's own legend (line 12) says `draft` = "Spec written, not yet reviewed or approved for implementation." These are contradictory lifecycle states. The roadmap is overwriting the author's own status without changing the source files.
+
+Spec 001's `spec.md` says `Draft`; the roadmap says `blocked`. Spec 008's `spec.md` says `Implemented locally; post-implementation review recorded; PR/final-head CI evidence pending`; the roadmap says `blocked`. These are not the same semantic. A downstream consumer reading `spec.md` and the roadmap will see different authoritative statuses.
+
+**This is exactly the kind of drift the slice claims to prevent.** The roadmap status was derived editorially and has not been written back to the spec files, nor do the spec files reference the roadmap as status authority.
+
+---
+
+### ISSUE 2 — No `blocks/` directories exist for 5 of 6 specs claimed to have "Block records preserved in `blocks/`" (P0 — provenance gap)
+
+**File:** `docs/roadmap.md` lines 47–56
+
+The roadmap states for specs 002–007: "Block records preserved in `blocks/`. Not live work." However, only `specs/001-sdp-trace-time-series-evidence-substrate/blocks/` exists on disk. Specs 002 through 007 have no `blocks/` directory. The roadmap asserts the existence of evidence that is not present. This is a factual overclaim.
+
+---
+
+### ISSUE 3 — `historical` status is undefined in the taxonomy legend (P1 — semantic gap)
+
+**File:** `docs/roadmap.md` lines 12, 46–56
+
+The legend table (lines 9–17) defines 8 statuses: `draft`, `pending_review`, `approved`, `in_progress`, `paused`, `blocked`, `complete`, `historical`. The spec.md US-002 lists 7: `draft`, `pending_review`, `approved`, `in_progress`, `paused`, `blocked`, `complete`. The `historical` status is used 6 times in the roadmap but is not defined in spec.md's taxonomy. The roadmap legend does define it, but spec.md and roadmap.md now have divergent taxonomies. Which is authoritative?
+
+---
+
+### ISSUE 4 — Zero `sdp-trace-claim` tags in any artifact this slice produced (P1 — self-defeating convention violation)
+
+**Files:** `specs/015-spec-governance-and-roadmap/tasks.md`, `docs/roadmap.md`, `specs/015-spec-governance-and-roadmap/final-evidence-map.md`
+
+US-004 Scope Rule: "Claim tags are required for new authoritative claims in any file created or materially modified after this slice." This slice created `docs/roadmap.md` (new), `final-evidence-map.md` (new), and materially modified `tasks.md` and `docs/README.md`. None contain a single `sdp-trace-claim` tag. The slice that mandates claim tags does not use them. Per `docs/claim-authoring.md`, everything in these files is untagged prose — not machine-authoritative.
+
+T030's verification summary in `tasks.md:27` asserts "go test ./... pass; jq empty pass; GitHub Actions verify job PASS for PR #53" — these are authoritative closure claims with zero claim tags.
+
+---
+
+### ISSUE 5 — `final-evidence-map.md` closure statement is prose overclaim (P1 — trust boundary)
+
+**File:** `specs/015-spec-governance-and-roadmap/final-evidence-map.md` lines 29–33
+
+"What is proven: The repository now contains a lightweight roadmap mapping specs 001–015 to capabilities, statuses, and blockers." — This uses the word "proven" but carries no `sdp-trace-claim` tag. Per AGENTS.md trust rules and `docs/claim-authoring.md`, this is prose commentary, not proof. The file title "Final Evidence Map" implies a closed evidence package for a docs-only change, but it contains unverified external claims (PR #53 CI).
+
+---
+
+### ISSUE 6 — GitHub Actions PR #53 claim is external trust without receipt or replay (P1 — external trust overclaim)
+
+**Files:** `tasks.md:27`, `final-evidence-map.md:24`
+
+"GitHub Actions verify job PASS for PR #53" — no URL to the CI run, no checked-in CI receipt, no `sdp-trace-claim` tag, no replay mechanism. Per AGENTS.md: "checked-in proof JSON is not authority unless live-verified or externally signed" and "dirty checkout output is local structural evidence only, not external trust." A future reader cannot distinguish "I ran this and saw green" from "I saw the PR page showed green once." This is exactly the overclaim pattern the trust rules forbid.
+
+---
+
+### ISSUE 7 — `doccheck exit=0` does not verify roadmap content completeness (P2 — verification gap)
+
+**File:** `tasks.md:27`
+
+T030 marks `doccheck exit=0` as evidence. The acceptance criteria require: "Roadmap covers specs 001 through 015 at the capability/status level." `doccheck` verifies link integrity. It does not check coverage, column presence, status validity, or content completeness. T030 conflates "links aren't broken" with "roadmap satisfies the spec contract." The actual coverage check was manual prose with no machine replay.
+
+---
+
+### ISSUE 8 — Task checkboxes closed without source-bound proof cycle (P1 — trust rules)
+
+**Files:** `specs/015-spec-governance-and-roadmap/tasks.md` (all `[x]` items)
+
+AGENTS.md: "Do not close task checkboxes, review ledgers, or docs after source-bound proof without another source-bound cycle if those files are manifest subjects." All 13 task checkboxes are closed. The "proof" is `doccheck`, `go test`, `jq empty`, and a prose CI assertion. `tasks.md` itself is a manifest subject of this slice. The Qwen review (already in `reviews/qwen-review.txt`) flagged this pattern — no corrective action was taken.
+
+---
+
+### ISSUE 9 — Roadmap freshness rule already stale on its own document (P2 — self-defeating)
+
+**File:** `docs/roadmap.md` line 117
+
+"Last updated: 2026-05-15" but `git log` shows commits to `docs/roadmap.md` dated 2026-05-16. The freshness mechanism (FR-006) was introduced by this slice and is immediately stale in its own first document. Undermines the rule's credibility.
+
+---
+
+### ISSUE 10 — Blocker notation convention not applied to roadmap itself (P2 — internal inconsistency)
+
+**File:** `docs/roadmap.md` lines 36–44 vs. lines 81–86
+
+Lines 81–86 define a formal blocker notation: `- [ ] T### Description → Blocked on: <concrete reason>.` The "Blocked or Paused Specs" table (lines 36–44) uses free-form prose: "Self-attestation proof incomplete; external production trust blocked until signed release process." The slice that defines the convention doesn't follow it.
+
+---
+
+### ISSUE 11 — Capability index maps overlapping surfaces to single owners without caveat (P2 — misleading)
+
+**File:** `docs/roadmap.md` "Capability Index" table
+
+"Command surface (JSON schema, registry)" → only spec 009. But spec 010 ("Command package organization") also owns command surface. "Evidence substrate / trace format" → only spec 001 ("Blocked"). Specs 002, 005, 006, 008 all touch evidence/trace surfaces. A reader could conclude the entire evidence surface is blocked when `draft` specs could advance parts of it. No cross-cutting caveat exists.
+
+---
+
+### ISSUE 12 — docs/README.md duplicate list numbering (P3 — quality)
+
+**File:** `docs/README.md` lines 9–18
+
+The "First-Time Path" numbered list goes 1–9, then restarts at 7 for "Harness Integration" and 8 for "Schema Reference." This file was touched by this slice (T022). Structurally incorrect Markdown.
+
+---
+
+### ISSUE 13 — Status transitions undefined makes taxonomy decorative, not governance (P1 — architectural)
+
+**File:** `docs/roadmap.md` legend, `specs/015-spec-governance-and-roadmap/review-disposition.md`
+
+The review finding "Status transitions undefined" was dispositioned as `advisory (kept informal for Slice 1)`. With no defined transitions, any contributor can flip a spec from `draft` → `complete` without a gate. The taxonomy is then purely decorative labeling — it cannot govern. This directly undermines the spec's Core Claim of "lightweight governance."
+
+---
+
+### ISSUE 14 — No spec 001–014 `spec.md` files were updated to reference the new lifecycle taxonomy (P2 — adoption gap)
+
+The slice defines a taxonomy but does not update any existing spec to use it. Specs 001–014 still use free-form status strings ("Draft - revised after initial Socratic review, focused re-review pending"). The roadmap retroactively maps these to `draft`, `blocked`, `historical` — but the spec files themselves don't reference the taxonomy at all. There is no contract between the roadmap and the spec files. The roadmap could drift indefinitely from the specs it claims to map.
+
+---
+
+### Summary
+
+| Severity | Count | Key Theme |
+| --- | --- | --- |
+| P0 | 2 | Roadmap status contradicts spec source-of-truth; asserts `blocks/` directories that don't exist |
+| P1 | 5 | Zero claim tags in the claim-tag-mandating slice; external CI overclaim; checkbox closure without proof cycle; undefined transitions; evidence map overclaim |
+| P2 | 5 | doccheck≠completeness; stale freshness date; blocker notation unapplied; capability index misleading; no adoption in existing specs |
+| P3 | 1 | Duplicate list numbering |
+
+The most fundamental problem: the roadmap assigns lifecycle statuses (`historical`, `blocked`) that directly contradict the source specs' own `Status:` fields, and claims "Block records preserved in `blocks/`" for 5 specs that have no `blocks/` directory. This is exactly the prose-overclaim pattern the trust rules exist to prevent.
