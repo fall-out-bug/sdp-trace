@@ -2,7 +2,7 @@
 
 **Feature Branch**: `015-spec-governance-and-roadmap`
 **Created**: 2026-05-14
-**Status**: `approved` — Socratic review complete, implementation authorized
+**Status**: `in_progress` — implementation active on branch `015-spec-governance-and-roadmap`
 **Input**: DX/CTO review found parallel specs, inconsistent spec lifecycle markers, and no concise ownership map for current product work.
 
 ## Problem Statement

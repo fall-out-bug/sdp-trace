@@ -32,7 +32,10 @@
   - MiniMax-M2.7 review plane returned 404 (endpoint unavailable).
   - DeepSeek-v4-pro review plane timed out without output (300s).
   - GLM-5.1 final-check (v3) timed out without output (180s).
-- **not_assessed**: (none)
+- **not_assessed**:
+  - Whether roadmap statuses will stay accurate over time (depends on manual curation).
+  - Whether all specs 001–014 will adopt the new taxonomy (out of scope for this slice).
+  - Whether the claim-tag grammar is machine-parseable (no parser exists yet).
 
 ## Review disposition
 
