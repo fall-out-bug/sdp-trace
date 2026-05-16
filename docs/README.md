@@ -40,6 +40,7 @@ evidence and gaps; it does not approve changes.
 
 ## Governance And Rollout Docs
 
+- [Spec Roadmap](roadmap.md): current spec statuses, capability ownership, and lifecycle labels.
 - [Adoption Guide, English](adoption-guide.en.md)
 - [Adoption Guide, Russian](adoption-guide.ru.md)
 - [Repository Rollout Playbook, English](repository-rollout-playbook.en.md)

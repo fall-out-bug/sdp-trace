@@ -8,9 +8,10 @@
 
 ## Scope
 
-- Add a lightweight roadmap/navigation artifact.
-- Define spec lifecycle taxonomy.
+- Add a lightweight roadmap/navigation artifact at `docs/roadmap.md`.
+- Define spec lifecycle taxonomy and status caveat (status ≠ trust verdict).
 - Add task-file expectations for blockers and approval gates.
+- Define claim-tag enforcement scope for new/touched files only.
 
 ## Non-Goals
 
@@ -21,8 +22,12 @@
 ## Risks
 
 - Roadmap can become stale unless ownership is clear.
+  - **Mitigation**: FR-06 freshness rule — update on spec open/status change; owner = spec author.
 - Lifecycle labels can look like trust verdicts unless caveated.
+  - **Mitigation**: Explicit caveat in spec.md US-002 linking to `docs/claim-authoring.md`.
 
 ## Review Plan
 
-Run CTO/product, DX, and evidence review planes. Verify labels against current files before marking any status.
+- Socratic spec review completed; findings recorded in `review-disposition.md`.
+- Implementation authorized after user approval.
+- External multi-LLM review (GLM/Qwen/DeepSeek) deferred to PR stage.

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `015-spec-governance-and-roadmap`
 **Created**: 2026-05-14
-**Status**: Draft for PI review
+**Status**: `approved` — Socratic review complete, implementation authorized
 **Input**: DX/CTO review found parallel specs, inconsistent spec lifecycle markers, and no concise ownership map for current product work.
 
 ## Problem Statement
@@ -21,6 +21,8 @@ This slice must not claim:
 - that blocked specs are resolved;
 - that roadmap status is a trust verdict.
 
+**Verification**: This claim is satisfied when `docs/roadmap.md` exists, lists every spec 001–015 with capability and status, and `docs/claim-authoring.md` governs authoritative claims. Roadmap status is prose guidance, not machine proof; authoritative claims require `sdp-trace-claim` tags per `docs/claim-authoring.md`.
+
 ## Required User Stories
 
 ### US-001 - Spec Ownership Map (P0)
@@ -35,11 +37,15 @@ A contributor can tell whether a spec is `draft`, `pending_review`, `approved`, 
 
 **Independent Test**: New specs use a consistent status taxonomy in `spec.md` and task blockers are explicit.
 
+**Caveat**: A status of `complete` or `approved` describes editorial lifecycle state, not a trust verdict. Trust state (pass, fail, `not_assessed`) is expressed only through `sdp-trace-claim` tags or live verifier output. See `docs/claim-authoring.md`.
+
 ### US-003 - Historical Evidence Boundary (P1)
 
 Historical block ledgers remain discoverable but are not mistaken for current live proof.
 
 **Independent Test**: Roadmap distinguishes active specs from historical block records and links to trust rules for checked-in evidence.
+
+**Concrete Rule**: Historical block records live in a spec's `blocks/` directory and are marked `historical` in the roadmap with no live status transition. They are exempt from claim-tag requirements. Live work uses the spec root (`spec.md`, `plan.md`, `tasks.md`).
 
 ### US-004 - Claim Tag Adoption Plan (P1)
 
@@ -47,13 +53,16 @@ The repo has a path to enforce claim tags for future authoritative prose without
 
 **Independent Test**: A plan names the Markdown scopes where claim tags are required and where historical files are exempt.
 
+**Scope Rule**: Claim tags are required for new authoritative claims in any file created or materially modified after this slice. Historical specs (001–014), their `blocks/` directories, and existing checked-in review JSON are exempt unless separately approved for migration.
+
 ## Functional Requirements
 
-- **FR-001**: Add a short roadmap/navigation artifact for current specs.
+- **FR-001**: Add a short roadmap/navigation artifact for current specs at `docs/roadmap.md`.
 - **FR-002**: Define lifecycle status labels and blocker notation.
 - **FR-003**: Update current draft specs to use the taxonomy, or record follow-ups.
 - **FR-004**: Define where claim tags are required for new authoritative claims.
 - **FR-005**: Avoid rewriting historical evidence packages unless required by a scoped follow-up.
+- **FR-006**: Roadmap freshness: update `docs/roadmap.md` when a new spec is opened or an active spec's status changes. Owner = the spec author or current block worker.
 
 ## Acceptance Criteria
 
