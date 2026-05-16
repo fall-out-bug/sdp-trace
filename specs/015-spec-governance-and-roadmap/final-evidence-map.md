@@ -28,7 +28,10 @@
 - **pass**: File existence (`docs/roadmap.md`), doccheck, go tests, schema validation, git diff --check.
 - **fail**: (none)
 - **pass**: Internal Socratic review (claim-doubt-cycle) completed with 8 findings accepted and fixed.
-- **cannot_verify**: External multi-LLM review — GLM and Qwen completed; MiniMax returned 404 (endpoint unavailable); DeepSeek timed out without output.
+- **cannot_verify**:
+  - MiniMax-M2.7 review plane returned 404 (endpoint unavailable).
+  - DeepSeek-v4-pro review plane timed out without output (300s).
+  - GLM-5.1 final-check (v3) timed out without output (180s).
 - **not_assessed**: (none)
 
 ## Review disposition
