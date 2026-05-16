@@ -42,7 +42,7 @@ These are editorial conventions, not enforced gates:
 
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
-| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `blocked` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. See spec tasks T020–T026. |
+| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `blocked` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. See spec tasks T020–T026. Historical `blocks/` directory preserved as evidence. |
 | [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `blocked` | → Blocked on: post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
 
 ## Older Draft Specs (No Active Work)
@@ -68,7 +68,7 @@ These are editorial conventions, not enforced gates:
 
 | Spec | Capability | Status | Notes |
 | --- | --- | --- | --- |
-| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate | `historical` | Block records preserved in `blocks/` directory. Not live work. |
+| *(none yet — see Blocked or Paused for specs with preserved `blocks/` directories)* | | | |
 
 ## Capability Index
 

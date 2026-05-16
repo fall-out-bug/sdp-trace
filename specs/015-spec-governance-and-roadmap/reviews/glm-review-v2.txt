@@ -1,0 +1,57 @@
+Now I have a comprehensive picture. Let me compile my review.
+
+---
+
+## Review: 015-spec-governance-and-roadmap Implementation v2
+
+### Verification Run (fresh, this session)
+
+| Command | Result |
+| --- | --- |
+| `go test ./...` | ✅ PASS |
+| `go vet ./...` | ✅ PASS |
+| `jq empty schema/*.json` | ✅ PASS |
+| `go run ./tools/doccheck` | ✅ PASS (exit=0) |
+| `git diff --check` | ✅ PASS |
+| Link resolution (all 16 `../specs/...` links in roadmap.md) | ✅ All OK |
+
+### Findings
+
+| # | Severity | Finding | File:area | Disposition |
+|---|---|---|---|---|
+| F1 | **P1** | **Spec 001 listed twice with conflicting statuses** — `blocked` in "Blocked or Paused" table and `historical` in "Historical / Archived" table. The spec's own `spec.md` says `Draft`. The `blocks/` directory exists but the roadmap gives it two lifecycle labels simultaneously, violating US-002 (unambiguous status). Should appear in exactly one section. Recommend: pick `blocked` (it has an active blocker description) and remove from Historical, or pick `historical` and add a note that it was formerly `blocked`. | `docs/roadmap.md` lines ~42, ~71 | **Open** |
+| F2 | **P2** | **Unstaged diff in `final-evidence-map.md`** — Working tree has a one-line change from "branch `015-spec-governance-and-roadmap` final head" to "PR #54 final head" that is not committed. The review prompt says the PR #53 reference was removed, but the committed file still references branch name while the working tree references PR #54. Either way, this diff should be committed or reverted before merge. | `specs/015-spec-governance-and-roadmap/final-evidence-map.md` | **Open** |
+| F3 | **P2** | **Untracked file `glm-review-v2.txt`** not committed — if this is review evidence, it should be committed with the synthesis or excluded. Leaving it untracked means it won't survive branch checkout. | `specs/015-spec-governance-and-roadmap/reviews/glm-review-v2.txt` | **Open** |
+| F4 | **P3 advisory** | **Claim tags use `command_set:015-roadmap-verification` and `command_set:015-local-verification`** but no such command sets are defined in any machine-readable artifact. Per `claim-authoring.md`, Slice 1 accepts `command_set:block04-t070` form but there's no registry mapping these names to actual commands. This is consistent with Slice 1 conventions but will need formalization in a later slice. | `docs/roadmap.md` line 142, `tasks.md` line 34, `final-evidence-map.md` line 65 | **Advisory** |
+| F5 | **P3 advisory** | **Transition "complete is final"** states "new work opens a new spec" but there's no mechanism to enforce this. The `historical` status assignment rule ("by maintainers, not by the original author") is good prose but unenforceable at Slice 1. Acknowledged as informal per finding #13 in synthesis. | `docs/roadmap.md` "Minimal Transitions" | **Advisory** |
+
+### Findings Checked and Closed (from GLM+Qwen review, verified in v2)
+
+| Original Finding | Verified Fixed? |
+|---|---|
+| Roadmap status contradicts spec.md for 002–007 | ✅ Fixed — 002–007 now `draft` with notes |
+| `blocks/` directories don't exist for 002–007 | ✅ Fixed — explicit "No `blocks/` directory" notes |
+| `historical` undefined in taxonomy | ✅ Fixed — added to spec.md US-002 and roadmap legend |
+| Zero claim tags | ✅ Fixed — 3 files have tags |
+| `final-evidence-map.md` overclaim ("proven") | ✅ Fixed — changed to "What the evidence shows" |
+| doccheck overclaim | ✅ Fixed — T030 now states "link integrity only" |
+| docs/README.md duplicate numbering | ✅ Fixed — items numbered 10–11 |
+| Blocker notation | ✅ Fixed — `→ Blocked on:` format applied |
+| Capability index caveat | ✅ Fixed — cross-cutting ownership note added |
+| Minimal transitions | ✅ Added — editorial conventions documented |
+
+### What This Review Does Not Prove
+
+- That roadmap statuses will stay accurate (manual curation, no CI enforcement).
+- That the claim-tag grammar is machine-parseable (no parser exists yet).
+- That MiniMax or DeepSeek reviews would have found additional issues (both failed to return output).
+
+### Summary
+
+The v2 fixes are well-executed: the major overclaims from v1 have been resolved, claim tags are present in the right places, and all local verification passes. **Three actionable items remain before merge:**
+
+1. **F1 (P1)**: Spec 001 dual-status conflict — must appear in exactly one table section.
+2. **F2 (P2)**: Unstaged diff in `final-evidence-map.md` — commit or revert.
+3. **F3 (P2)**: Untracked `glm-review-v2.txt` — commit or `.gitignore`.
+
+Once F1–F3 are resolved, the slice is ready for merge with the caveat that MiniMax/DeepSeek review planes remain `cannot_verify`.

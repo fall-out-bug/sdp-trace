@@ -21,7 +21,7 @@
 - `git diff --check`: **PASS** (no whitespace errors)
 - Additional gate commands:
   - `go run ./tools/doccheck`: **PASS** (exit=0)
-- Live CI/checks: **PASS** — GitHub Actions `verify` job completed successfully for branch `015-spec-governance-and-roadmap` final head (run after PR closure).
+- Live CI/checks: **PASS** — GitHub Actions `verify` job completed successfully for PR #54 final head.
 
 ## Trust states
 
