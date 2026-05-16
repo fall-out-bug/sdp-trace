@@ -21,7 +21,7 @@
 - `git diff --check`: **PASS** (no whitespace errors)
 - Additional gate commands:
   - `go run ./tools/doccheck`: **PASS** (exit=0)
-- Live CI/checks: **PASS** — GitHub Actions `verify` job completed successfully for PR #54 final head.
+- Live CI/checks: **PASS** — GitHub Actions `verify` job completed successfully for PR #55 final head.
 
 ## Trust states
 
