@@ -27,6 +27,11 @@ Review disposition:
 - cannot_verify:
 - advisory:
 
+Cleanup:
+- Worktree removed:
+- Feature branch deleted (local and remote):
+- Post-merge main verified (`git pull`, `go test ./...`):
+
 Closure statement:
 - What is proven:
 - What is not assessed:
