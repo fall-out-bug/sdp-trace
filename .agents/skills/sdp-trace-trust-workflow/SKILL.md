@@ -42,6 +42,7 @@ After approval:
 5. Ensure the PR is not in Draft state before claiming it is ready for review.
 6. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
 7. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
+8. After merge: delete the local worktree (`git worktree remove`) and the feature branch (`git branch -d` or remote deletion). The branch should not persist on origin once merged; keeping it creates drift and implies unfinished work.
 </pr_protocol>
 
 <trust_boundaries>
