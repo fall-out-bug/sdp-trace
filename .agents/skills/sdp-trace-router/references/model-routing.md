@@ -14,11 +14,11 @@ Codex output is not trust authority. It still needs live commands, reviewed diff
 <codex_subagents>
 Use `codex-subagent` when the user asks to hand work to Pi/OpenCode/GSD2, when a block needs background workers, or when the implementation would consume substantial Codex context.
 
-- write-capable work: `codex-subagent run <runtime> --isolate worktree --background`; add `--model` when deterministic selection is required
+- write-capable work: `codex-subagent run <runtime> --isolate worktree --background`; add provider-qualified `--model` when deterministic selection is required
 - review work: `codex-subagent panel run pi --profile review`
 - inspection: `status`, `events`, `logs`, `result --structured`
 
-Subagent output is work product. Codex must inspect diffs and run verification before integration. A default Pi run that stalls is an orchestration finding until logs prove a model/provider root cause.
+Subagent output is work product. Codex must inspect diffs and run verification before integration. A default Pi run that stalls is an orchestration finding until logs prove a model/provider root cause. For Pi, `codex-subagent` should use `--no-session`; if it does not, fix the harness or relaunch with direct `pi -p --no-session` before treating the model as bad.
 </codex_subagents>
 
 <opencode>
@@ -32,6 +32,8 @@ For adversarial review, prefer model diversity and cold context:
 - GLM-5.1 or current Z.AI coding model for long-horizon engineering review.
 - MiniMax M2.7 or current MiniMax coding model for skill-adherence and multi-step workflow review.
 - Kimi K2.5 or current official Moonshot coding model for wide-context review; only pin newer versions after primary-source confirmation.
+- Qwen current model for wide-context code review; prefer `openrouter/qwen/qwen3.6-max-preview` or `openrouter/qwen/qwen3.6-plus` after `pi --list-models qwen3.6`.
+- DeepSeek current model for independent reasoning review; prefer `openrouter/deepseek/deepseek-v4-pro` or `openrouter/deepseek/deepseek-v3.2` after `pi --list-models deepseek`.
 
 These reviewers are advisory. Record model name, provider/harness, prompt, timeout, retry, replacement, and disposition.
 </pi_review_models>

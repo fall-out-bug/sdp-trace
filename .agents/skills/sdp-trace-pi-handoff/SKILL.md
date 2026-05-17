@@ -15,6 +15,7 @@ Use this skill when the user asks to send work to Pi, Kimi, OpenCode, GSD2, code
 - Commit or explicitly park the reviewed spec before worker launch.
 - Build a `context-pack/v1` with `AGENTS.md`, relevant project skills, spec/plan/tasks, and owned files only.
 - Launch write-capable workers through `codex-subagent run <runtime> --isolate worktree --background`; pass `--model` when reproducibility, fallback control, or reviewer diversity requires it.
+- For Pi runs, prefer explicit provider/model IDs and non-interactive sessionless execution. Local `codex-subagent` must invoke Pi with `--no-session`; if a generated command lacks it, treat the harness as misconfigured before blaming the selected model.
 - Record the resolved or requested model/profile. Do not diagnose a stalled Pi run as a model failure unless logs or Pi status prove that root cause.
 - Give each worker disjoint file ownership and require `subagent-result/v1`.
 - Inspect `status`, `events`, `logs`, `result --structured`, and the worker worktree diff before integration.
@@ -37,14 +38,15 @@ Use this skill when the user asks to send work to Pi, Kimi, OpenCode, GSD2, code
 3. Launch the implementation worker:
    - `codex-subagent context build --subject "<block>" --mode dev --goal "<slice or block goal>" --rule AGENTS.md --rule .agents/skills/sdp-trace-pi-handoff/SKILL.md --file <spec> --file <tasks> --write-allowed --out .codex-subagents/context/<block>.json`
    - `codex-subagent run pi --context-pack .codex-subagents/context/<block>.json --role-template worker --isolate worktree --background --timeout 3600`
-   - add `--model <model-id>` when the handoff needs deterministic model selection or a previous run failed with a model/provider-specific error.
+   - add `--model <provider/model-id>` when the handoff needs deterministic model selection or a previous run failed with a model/provider-specific error.
+   - for Kimi implementation, verify the available Kimi/Moonshot model with `pi --list-models kimi` before launch instead of relying on Pi's default model.
 4. Monitor without loading worker context into Codex:
    - `codex-subagent status <run-id>`
    - `codex-subagent events <run-id>`
    - `codex-subagent logs <run-id> --stream stderr`
    - `codex-subagent result <run-id> --structured`
 5. Review through separate agents:
-   - `codex-subagent panel run pi --context-pack <review-context> --role requirements-reviewer --role code-reviewer --role evidence-reviewer --role security-reviewer --profile review --background`
+   - `codex-subagent panel run pi --context-pack <review-context> --role requirements-reviewer --role code-reviewer --role evidence-reviewer --role security-reviewer --profile review --model <current-provider/model-id> --background`
    - reject hung, empty, generic, or off-task reviewers as `not_assessed`.
 6. Integrate:
    - inspect worker diff in its isolated worktree;
