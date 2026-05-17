@@ -14,7 +14,8 @@ Use this skill when the user asks to send work to Pi, Kimi, OpenCode, GSD2, code
 <contract>
 - Commit or explicitly park the reviewed spec before worker launch.
 - Build a `context-pack/v1` with `AGENTS.md`, relevant project skills, spec/plan/tasks, and owned files only.
-- Launch write-capable workers through `codex-subagent run <runtime> --model <explicit-model> --isolate worktree --background`.
+- Launch write-capable workers through `codex-subagent run <runtime> --isolate worktree --background`; pass `--model` when reproducibility, fallback control, or reviewer diversity requires it.
+- Record the resolved or requested model/profile. Do not diagnose a stalled Pi run as a model failure unless logs or Pi status prove that root cause.
 - Give each worker disjoint file ownership and require `subagent-result/v1`.
 - Inspect `status`, `events`, `logs`, `result --structured`, and the worker worktree diff before integration.
 - Run independent review panels through `codex-subagent panel run pi` or equivalent read-only runtime.
@@ -35,7 +36,8 @@ Use this skill when the user asks to send work to Pi, Kimi, OpenCode, GSD2, code
    - include the approved spec, plan, task, and review files
 3. Launch the implementation worker:
    - `codex-subagent context build --subject "<block>" --mode dev --goal "<slice or block goal>" --rule AGENTS.md --rule .agents/skills/sdp-trace-pi-handoff/SKILL.md --file <spec> --file <tasks> --write-allowed --out .codex-subagents/context/<block>.json`
-   - `codex-subagent run pi --context-pack .codex-subagents/context/<block>.json --role-template worker --model kimi-coding/kimi-for-coding --isolate worktree --background --timeout 3600`
+   - `codex-subagent run pi --context-pack .codex-subagents/context/<block>.json --role-template worker --isolate worktree --background --timeout 3600`
+   - add `--model <model-id>` when the handoff needs deterministic model selection or a previous run failed with a model/provider-specific error.
 4. Monitor without loading worker context into Codex:
    - `codex-subagent status <run-id>`
    - `codex-subagent events <run-id>`
@@ -59,7 +61,7 @@ Stop and ask the user before continuing when:
 - the worktree cannot be isolated;
 - worker output lacks structured result data;
 - required review planes cannot run and the user asked for PR-ready closure;
-- a worker has no status/result/log/diff progress for several minutes; cancel it, record `cannot_verify`, narrow the context, and relaunch with an explicit model if appropriate;
+- a worker has no status/result/log/diff progress for several minutes; cancel it, record `cannot_verify`, inspect Pi profile/model/context/tooling evidence, narrow the context, and relaunch with changed run controls only when justified;
 - PR creation, merge, publish, or external side effects need credentials or authority not available locally.
 </stop_conditions>
 

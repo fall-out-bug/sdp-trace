@@ -14,11 +14,11 @@ Codex output is not trust authority. It still needs live commands, reviewed diff
 <codex_subagents>
 Use `codex-subagent` when the user asks to hand work to Pi/OpenCode/GSD2, when a block needs background workers, or when the implementation would consume substantial Codex context.
 
-- write-capable work: `codex-subagent run <runtime> --model <explicit-model> --isolate worktree --background`
+- write-capable work: `codex-subagent run <runtime> --isolate worktree --background`; add `--model` when deterministic selection is required
 - review work: `codex-subagent panel run pi --profile review`
 - inspection: `status`, `events`, `logs`, `result --structured`
 
-Subagent output is work product. Codex must inspect diffs and run verification before integration.
+Subagent output is work product. Codex must inspect diffs and run verification before integration. A default Pi run that stalls is an orchestration finding until logs prove a model/provider root cause.
 </codex_subagents>
 
 <opencode>

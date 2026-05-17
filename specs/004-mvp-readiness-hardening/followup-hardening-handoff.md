@@ -9,14 +9,14 @@
 | Commit | Purpose | Verification |
 |---|---|---|
 | `01a245b` | Added follow-up hardening SpecKit delta, tasks, Kimi review prompt, Kimi readiness note, and Pi review ledger. | `git diff --check` before commit; Kimi PI review recorded in `followup-hardening-pi-review.md`. |
-| `1b936da` | Updated rules to require explicit model selection for subagent handoff after default Pi runs stalled. | `git diff --check`; `codex-subagent --version` reported `0.3.0`. |
+| `1b936da` | Updated rules to request explicit model selection after default Pi runs stalled. | Later corrected: the stall was not proven to be a model failure; it is an orchestration/profile/context observability finding until logs prove root cause. |
 
 ## Subagent Runs
 
 | Run ID | Scope | Runtime/model | State | Disposition |
 |---|---|---|---|---|
 | `run_7FWrtNDYCb` | Full follow-up package | Pi default model | `cancelled` | `cannot_verify`: run produced only partial Slice 2 format drift and then no status/result/log progress. Not counted as closure. |
-| `run_HRz3AfNM82` | Slice 2 format/import | Pi default model | `cancelled` | `cannot_verify`: no diff/log/result progress. Led to explicit-model rule update. |
+| `run_HRz3AfNM82` | Slice 2 format/import | Pi default model | `cancelled` | `cannot_verify`: no diff/log/result progress. Root cause not proven; treat as Pi orchestration/profile/context observability issue, not a default-model defect. |
 | `run_XROAfGeIU6` | Slice 2 format/import | `kimi-coding/kimi-for-coding` | `pass` | `accepted_integrated`: produced commit `dfdd470`; focused local verification passed in main. |
 | `run_Wauju2IBKg` | Slice 3 releaseproof hardening | `kimi-coding/kimi-for-coding` | `pass` | `accepted_integrated`: produced commit `3718e90`, integrated as main commit `4916b1f`; focused local verification passed in main. |
 | `run_9u6G4Ax__O` | Slice 6 docs/MI overclaim closure | `kimi-coding/kimi-for-coding` | `cancelled` | `cannot_verify`: no diff/log/result progress after several minutes. Slice 6 remains open. |
