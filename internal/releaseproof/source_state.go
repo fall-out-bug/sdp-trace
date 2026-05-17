@@ -42,16 +42,20 @@ func isValidCommitSHA(ref string) bool {
 	// Accept only immutable 40-character lowercase hex commit object
 	// identifiers. Reject branch names, symbolic refs, revspec suffixes,
 	// pathspecs, flags, and any ref that can resolve to a non-commit object.
-	if len(ref) != 40 {
-		return false
-	}
-	for i := 0; i < len(ref); i++ {
-		c := ref[i]
-		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+	return len(ref) == 40 && isLowerHexString(ref)
+}
+
+func isLowerHexString(value string) bool {
+	for i := 0; i < len(value); i++ {
+		if !isLowerHexByte(value[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+func isLowerHexByte(value byte) bool {
+	return (value >= '0' && value <= '9') || (value >= 'a' && value <= 'f')
 }
 
 func sourceCommitExists(repoRoot, sourceCommit string) bool {
