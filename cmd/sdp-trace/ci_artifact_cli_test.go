@@ -65,13 +65,7 @@ func TestCIArtifactObservationAssessPassesExplainsAndPreviews(t *testing.T) {
 }
 
 func TestCIArtifactObservationAssessDistinctExitStates(t *testing.T) {
-	cases := []struct {
-		name      string
-		mutate    func(*ciartifact.Manifest)
-		wantExit  int
-		wantState string
-		wantCode  string
-	}{
+	cases := []assessCLICase[ciartifact.Manifest]{
 		{
 			name: "checked-in-only",
 			mutate: func(m *ciartifact.Manifest) {
@@ -103,31 +97,14 @@ func TestCIArtifactObservationAssessDistinctExitStates(t *testing.T) {
 			wantExit: 1, wantState: ciartifact.StateFail, wantCode: "unsafe_artifact_output",
 		},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			root := t.TempDir()
-			manifest := validCIArtifactManifest()
-			tc.mutate(&manifest)
-			manifestPath := filepath.Join(root, "manifest.json")
-			writeTestJSON(t, manifestPath, manifest)
-			var out bytes.Buffer
-			var errOut bytes.Buffer
-			exit := run([]string{
-				"assess",
-				"--profile", "ci-artifact-observation",
-				"--artifact-manifest", manifestPath,
-				"--out", filepath.Join(root, "observation.json"),
-			}, &out, &errOut)
-			if exit != tc.wantExit {
-				t.Fatalf("exit = %d want %d err=%s out=%s", exit, tc.wantExit, errOut.String(), out.String())
-			}
-			if !strings.Contains(out.String(), `"artifact_observation_state": "`+tc.wantState+`"`) ||
-				!strings.Contains(out.String(), `"reason_code": "`+tc.wantCode+`"`) {
-				t.Fatalf("output missing state/code: %s", out.String())
-			}
-			assertNoCIArtifactLeak(t, out.String())
-		})
-	}
+	runAssessCLICases(t, cases, validCIArtifactManifest, "manifest.json", "artifact_observation_state", func(root, manifestPath string) []string {
+		return []string{
+			"assess",
+			"--profile", "ci-artifact-observation",
+			"--artifact-manifest", manifestPath,
+			"--out", filepath.Join(root, "observation.json"),
+		}
+	}, assertNoCIArtifactLeak)
 }
 
 func validCIArtifactManifest() ciartifact.Manifest {

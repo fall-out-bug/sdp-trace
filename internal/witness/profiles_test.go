@@ -945,42 +945,10 @@ func TestSafeJSONRejectsSymlinkInput(t *testing.T) {
 }
 
 func TestWriteProfileDetectsUnsafeSerializedOutput(t *testing.T) {
-	root := writeRunRoot(t)
-	dir := t.TempDir()
-	artifacts, err := hashRunArtifacts(root)
-	if err != nil {
-		t.Fatalf("hash artifacts: %v", err)
-	}
 	sentinel := "person@example.com"
-	envelope := EnvelopeInput{
-		ProfileID:    "gitlab-ci-v1",
-		ProviderKind: KindGitLabCI,
-		Source:       SourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
-		CI:           CIIdentity{Provider: KindGitLabCI, RunID: "pipeline-42", Job: "verify", Actor: sentinel},
-		RunArtifacts: artifacts,
-		ProfileStates: ProfileStates{
-			IdentityState:        statePass,
-			SignerAuthorityState: statePass,
-			FreshnessState:       statePass,
-			ArtifactBindingState: statePass,
-			SourceBindingState:   statePass,
-			RunBindingState:      statePass,
-			PolicyBindingState:   statePass,
-			IndependenceState:    independenceCIJob,
-		},
-	}
-	envelopePath := writeJSON(t, dir, "unsafe-serialized-envelope.json", envelope)
-	outPath := filepath.Join(dir, "witness.json")
-	record, err := WriteProfile(KindGitLabCI, outPath, root, "", ProfileOptions{EnvelopePath: envelopePath})
-	if err != nil {
-		t.Fatalf("WriteProfile: %v", err)
-	}
+	record, raw := writeGitLabWitnessProfileWithActor(t, "unsafe-serialized-envelope.json", sentinel)
 	if record.Status != StatusFail || record.Reason != ReasonUnsafeOutput {
 		t.Fatalf("record = %s reason=%s", record.Status, record.Reason)
-	}
-	raw, err := os.ReadFile(outPath)
-	if err != nil {
-		t.Fatalf("read witness: %v", err)
 	}
 	if strings.Contains(string(raw), sentinel) {
 		t.Fatalf("unsafe serialized sentinel leaked into witness output")
@@ -988,18 +956,29 @@ func TestWriteProfileDetectsUnsafeSerializedOutput(t *testing.T) {
 }
 
 func TestWriteProfileRejectsJWTShapedEnvelopeInput(t *testing.T) {
+	sentinel := "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJibG9jazIyIn0.signaturesecret"
+	record, raw := writeGitLabWitnessProfileWithActor(t, "jwt-envelope.json", sentinel)
+	if record.Status != StatusCannotVerify || record.Reason != ReasonMalformedInput {
+		t.Fatalf("record = %s reason=%s", record.Status, record.Reason)
+	}
+	if strings.Contains(string(raw), sentinel) {
+		t.Fatalf("jwt-shaped sentinel leaked into witness output")
+	}
+}
+
+func writeGitLabWitnessProfileWithActor(t *testing.T, envelopeName, actor string) (Record, []byte) {
+	t.Helper()
 	root := writeRunRoot(t)
 	dir := t.TempDir()
 	artifacts, err := hashRunArtifacts(root)
 	if err != nil {
 		t.Fatalf("hash artifacts: %v", err)
 	}
-	sentinel := "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJibG9jazIyIn0.signaturesecret"
 	envelope := EnvelopeInput{
 		ProfileID:    "gitlab-ci-v1",
 		ProviderKind: KindGitLabCI,
 		Source:       SourceIdentity{Repository: "org/repo", Ref: "refs/heads/main", CommitSHA: "abc123"},
-		CI:           CIIdentity{Provider: KindGitLabCI, RunID: "pipeline-42", Job: "verify", Actor: sentinel},
+		CI:           CIIdentity{Provider: KindGitLabCI, RunID: "pipeline-42", Job: "verify", Actor: actor},
 		RunArtifacts: artifacts,
 		ProfileStates: ProfileStates{
 			IdentityState:        statePass,
@@ -1012,22 +991,17 @@ func TestWriteProfileRejectsJWTShapedEnvelopeInput(t *testing.T) {
 			IndependenceState:    independenceCIJob,
 		},
 	}
-	envelopePath := writeJSON(t, dir, "jwt-envelope.json", envelope)
+	envelopePath := writeJSON(t, dir, envelopeName, envelope)
 	outPath := filepath.Join(dir, "witness.json")
 	record, err := WriteProfile(KindGitLabCI, outPath, root, "", ProfileOptions{EnvelopePath: envelopePath})
 	if err != nil {
 		t.Fatalf("WriteProfile: %v", err)
 	}
-	if record.Status != StatusCannotVerify || record.Reason != ReasonMalformedInput {
-		t.Fatalf("record = %s reason=%s", record.Status, record.Reason)
-	}
 	raw, err := os.ReadFile(outPath)
 	if err != nil {
 		t.Fatalf("read witness: %v", err)
 	}
-	if strings.Contains(string(raw), sentinel) {
-		t.Fatalf("jwt-shaped sentinel leaked into witness output")
-	}
+	return record, raw
 }
 
 func TestFinalizeRecordRejectsJWTShapedSerializedOutput(t *testing.T) {

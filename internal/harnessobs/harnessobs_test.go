@@ -748,27 +748,7 @@ func TestSetupSessionInstallsIsolationRulesRelativeToProfile(t *testing.T) {
 }
 
 func TestSetupSessionWritesBlankCommandDefaults(t *testing.T) {
-	dir := t.TempDir()
-	writeProfile(t, dir, []string{"harness"}, nil)
-	oldwd := chdir(t, dir)
-	defer oldwd()
-	sessionProfile := SessionProfile{
-		SchemaVersion:      SessionProfileSchemaVersion,
-		ProfileID:          "session-profile",
-		HarnessProfilePath: "profile.json",
-		EventSourcePath:    "events.jsonl",
-	}
-	writeJSONFixture(t, "session-profile.json", sessionProfile)
-
-	run, err := SetupSession(SessionSetupOptions{
-		ProfilePath: "session-profile.json",
-		OutDir:      "run",
-		Command:     "   ",
-		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
-	})
-	if err != nil {
-		t.Fatalf("SetupSession() error = %v", err)
-	}
+	run := setupSessionWithCommand(t, "   ")
 	if run.CommandDigest != "" || run.CommandDigestState != StateCannotVerify {
 		t.Fatalf("command digest state = %s/%s, want cannot_verify/", run.CommandDigestState, run.CommandDigest)
 	}
@@ -778,6 +758,17 @@ func TestSetupSessionWritesBlankCommandDefaults(t *testing.T) {
 }
 
 func TestSetupSessionCommandRejectsModelAndWritesDigest(t *testing.T) {
+	run := setupSessionWithCommand(t, "opencode run --model model name")
+	if run.CommandDigest == "" || run.CommandDigestState != StatePass {
+		t.Fatalf("command digest state = %s/%s, want pass", run.CommandDigestState, run.CommandDigest)
+	}
+	if run.CommandModel != "" || run.CommandModelState != "" {
+		t.Fatalf("command model state = %s/%s, want empty/empty", run.CommandModelState, run.CommandModel)
+	}
+}
+
+func setupSessionWithCommand(t *testing.T, command string) SessionRun {
+	t.Helper()
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
 	oldwd := chdir(t, dir)
@@ -793,18 +784,13 @@ func TestSetupSessionCommandRejectsModelAndWritesDigest(t *testing.T) {
 	run, err := SetupSession(SessionSetupOptions{
 		ProfilePath: "session-profile.json",
 		OutDir:      "run",
-		Command:     "opencode run --model model name",
+		Command:     command,
 		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
 	})
 	if err != nil {
 		t.Fatalf("SetupSession() error = %v", err)
 	}
-	if run.CommandDigest == "" || run.CommandDigestState != StatePass {
-		t.Fatalf("command digest state = %s/%s, want pass", run.CommandDigestState, run.CommandDigest)
-	}
-	if run.CommandModel != "" || run.CommandModelState != "" {
-		t.Fatalf("command model state = %s/%s, want empty/empty", run.CommandModelState, run.CommandModel)
-	}
+	return run
 }
 
 func TestCollectSessionWritesObservedRun(t *testing.T) {

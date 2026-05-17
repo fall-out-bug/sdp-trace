@@ -399,30 +399,9 @@ func TestBuildSupportsTeamServiceAndHarnessChangeGrouping(t *testing.T) {
 }
 
 func TestBuildRefusesStaleInput(t *testing.T) {
-	root := t.TempDir()
-	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
-	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
-	repo.InputObservedAt = "2025-12-31T00:00:00Z"
-	selection := SelectionManifest{
-		SchemaVersion:           SelectionSchemaVersion,
-		ProfileID:               ProfileID,
-		GroupingSetID:           GroupingRepoWindow,
-		FreshnessBoundary:       "2026-01-01T00:00:00Z",
-		DimensionExposurePolicy: []string{"repo", "team", "service", "harness", "change_type"},
-		CurrentWindow:           "2026-w02",
-		PreviousWindow:          "2026-w01",
-		Repositories:            []RepositoryWindow{repo},
-	}
-	selectionPath := filepath.Join(root, "selection.json")
-	writeJSON(t, selectionPath, selection)
-	result, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC))
-	if err != nil {
-		t.Fatalf("build: %v", err)
-	}
-	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != "stale_input" {
-		t.Fatalf("refusals = %+v", result.RefusalRows)
-	}
+	assertBuildRefusesSingleRepo(t, "stale_input", func(repo *RepositoryWindow) {
+		repo.InputObservedAt = "2025-12-31T00:00:00Z"
+	})
 }
 
 func TestBuildRejectsGroupingOutsideExposurePolicy(t *testing.T) {
@@ -635,11 +614,18 @@ func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 }
 
 func TestBuildRefusesWindowsAbsoluteInputPath(t *testing.T) {
+	assertBuildRefusesSingleRepo(t, "malformed_input", func(repo *RepositoryWindow) {
+		repo.QueryPackResult = `C:\private\query-pack.json`
+	})
+}
+
+func assertBuildRefusesSingleRepo(t *testing.T, wantReason string, mutate func(*RepositoryWindow)) {
+	t.Helper()
 	root := t.TempDir()
 	withChdir(t, root)
 	qp := writeQueryPack(t, ".", "current", "present")
 	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
-	repo.QueryPackResult = `C:\private\query-pack.json`
+	mutate(&repo)
 	selection := SelectionManifest{
 		SchemaVersion:           SelectionSchemaVersion,
 		ProfileID:               ProfileID,
@@ -656,7 +642,7 @@ func TestBuildRefusesWindowsAbsoluteInputPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != "malformed_input" {
+	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != wantReason {
 		t.Fatalf("refusals = %+v", result.RefusalRows)
 	}
 }

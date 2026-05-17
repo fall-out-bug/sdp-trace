@@ -11,12 +11,7 @@ import (
 )
 
 func TestCheckForbiddenTrackedPaths(t *testing.T) {
-	cases := []struct {
-		name     string
-		tracked  []string
-		want     int
-		contains string
-	}{
+	runTrackedPathCases(t, checkForbiddenTrackedPaths, []trackedPathCase{
 		{
 			name:    "clean",
 			tracked: []string{"docs/README.md", "cmd/sdp-trace/main.go"},
@@ -40,27 +35,11 @@ func TestCheckForbiddenTrackedPaths(t *testing.T) {
 			want:     1,
 			contains: ".sdp-trace-runs/session.json",
 		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			got := checkForbiddenTrackedPaths(c.tracked)
-			if len(got) != c.want {
-				t.Fatalf("got %d findings, want %d: %v", len(got), c.want, got)
-			}
-			if c.want > 0 && !strings.Contains(got[0], c.contains) {
-				t.Fatalf("finding %q does not contain %q", got[0], c.contains)
-			}
-		})
-	}
+	})
 }
 
 func TestCheckRootArtifactClutter(t *testing.T) {
-	cases := []struct {
-		name     string
-		tracked  []string
-		want     int
-		contains string
-	}{
+	runTrackedPathCases(t, checkRootArtifactClutter, []trackedPathCase{
 		{
 			name:    "clean",
 			tracked: []string{"docs/README.md", "specs/010/PR_DESCRIPTION.md"},
@@ -84,10 +63,21 @@ func TestCheckRootArtifactClutter(t *testing.T) {
 			want:     1,
 			contains: "reviews/",
 		},
-	}
+	})
+}
+
+type trackedPathCase struct {
+	name     string
+	tracked  []string
+	want     int
+	contains string
+}
+
+func runTrackedPathCases(t *testing.T, check func([]string) []string, cases []trackedPathCase) {
+	t.Helper()
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := checkRootArtifactClutter(c.tracked)
+			got := check(c.tracked)
 			if len(got) != c.want {
 				t.Fatalf("got %d findings, want %d: %v", len(got), c.want, got)
 			}

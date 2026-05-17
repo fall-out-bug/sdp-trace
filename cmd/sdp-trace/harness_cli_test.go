@@ -277,91 +277,30 @@ func TestObserveSessionNormalizesRealOpenCodeGSDToolPaths(t *testing.T) {
 }
 
 func TestObserveCollectRejectsTokenInRawOpenCodePathField(t *testing.T) {
-	dir := t.TempDir()
-	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
 	raw := `{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_token","state":{"status":"completed","input":{"path":"sk-testtoken1234567890abcdef"},"output":"digest only"}}}`
-	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldwd := chdirCLI(t, dir)
-	defer oldwd()
-
-	var out, errOut bytes.Buffer
-	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	out.Reset()
-	errOut.Reset()
-	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.path:token_like_value") {
-		t.Fatalf("collect should reject token-like path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after token-like raw path")
-	}
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:part.state.input.path:token_like_value", "token-like path")
 }
 
 func TestObserveCollectRejectsAuthenticatedURLInRawOpenCodePathField(t *testing.T) {
-	dir := t.TempDir()
-	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
 	raw := `{"type":"tool_use","timestamp":1778326474358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_url","state":{"status":"completed","input":{"path":"https://user:pass@example.test/secret"},"output":"digest only"}}}`
-	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldwd := chdirCLI(t, dir)
-	defer oldwd()
-
-	var out, errOut bytes.Buffer
-	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	out.Reset()
-	errOut.Reset()
-	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.path:authenticated_url") {
-		t.Fatalf("collect should reject authenticated URL path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after authenticated URL raw path")
-	}
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:part.state.input.path:authenticated_url", "authenticated URL path")
 }
 
 func TestObserveCollectRejectsTopLevelRawPromptOpenCodeJSONL(t *testing.T) {
-	dir := t.TempDir()
-	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
 	raw := `{"type":"tool_use","timestamp":1778326474358,"prompt":"raw prompt should remain forbidden","part":{"type":"tool","tool":"task","state":{"status":"completed"}}}`
-	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldwd := chdirCLI(t, dir)
-	defer oldwd()
-
-	var out, errOut bytes.Buffer
-	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	out.Reset()
-	errOut.Reset()
-	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:prompt:forbidden_raw_field") {
-		t.Fatalf("collect should reject top-level prompt exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after top-level raw prompt")
-	}
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:prompt:forbidden_raw_field", "top-level prompt")
 }
 
 func TestObserveCollectRejectsNestedSecretInRawOpenCodePromptObject(t *testing.T) {
+	raw := `{"type":"tool_use","timestamp":1778326474358,"part":{"type":"tool","tool":"task","state":{"status":"completed","input":{"prompt":{"api_key":"redacted"}}}}}`
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:part.state.input.prompt:forbidden_raw_field", "nested prompt secret")
+}
+
+func assertObserveCollectRejectsRawOpenCode(t *testing.T, raw, wantError, label string) {
+	t.Helper()
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
 	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
-	raw := `{"type":"tool_use","timestamp":1778326474358,"part":{"type":"tool","tool":"task","state":{"status":"completed","input":{"prompt":{"api_key":"redacted"}}}}}`
 	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -376,11 +315,11 @@ func TestObserveCollectRejectsNestedSecretInRawOpenCodePromptObject(t *testing.T
 	out.Reset()
 	errOut.Reset()
 	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.prompt:forbidden_raw_field") {
-		t.Fatalf("collect should reject nested prompt secret exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	if exit == 0 || !strings.Contains(errOut.String(), wantError) {
+		t.Fatalf("collect should reject %s exit=%d stderr=%s stdout=%s", label, exit, errOut.String(), out.String())
 	}
 	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after nested prompt secret")
+		t.Fatalf("normalized source written after %s", label)
 	}
 }
 

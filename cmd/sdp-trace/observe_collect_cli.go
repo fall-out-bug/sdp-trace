@@ -45,18 +45,10 @@ func writeObserveCollect(stdout, stderr io.Writer, session harnessobs.SessionRun
 }
 
 func parseObserveCollectArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
-	opts := &flagSet{name: "observe collect"}
 	// Collection has exactly two provenance inputs: the profile that defines
 	// expectations and the run directory that supplies retained evidence.
-	opts.setString("profile", "")
-	opts.setString("run", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return nil, exitUsage, false
-	}
-	// Collection inputs are named flags because the run directory is evidence.
-	if !requireOnlyFlags(opts, stderr, "observe collect accepts only flags", observeCollectRequiredFlags) {
-		return nil, exitUsage, false
-	}
-	return opts, 0, true
+	return parseFlagOnlyCommand(args, stderr, "observe collect", "observe collect accepts only flags", []observeStringFlag{
+		{name: "profile"},
+		{name: "run"},
+	}, observeCollectRequiredFlags)
 }

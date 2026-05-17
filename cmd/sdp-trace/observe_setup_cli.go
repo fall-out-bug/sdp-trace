@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/fall_out_bug/sdp-trace/internal/harnessobs"
@@ -14,18 +13,7 @@ import (
 // Any write or marshal failure stays cannot_verify.
 
 func runObserveSetup(args []string, stdout, stderr io.Writer) int {
-	// Setup inputs are explicit flags because they define the session artifact.
-	opts, code, ok := parseObserveSetupArgs(args, stderr)
-	if !ok {
-		return code
-	}
-	// Setup only records metadata; no harness source evidence is collected.
-	session, err := setupObservedSession(opts)
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitCannotVerify
-	}
-	return writeObserveSetup(stdout, stderr, session)
+	return runJSONFlagCommand(args, stdout, stderr, parseObserveSetupArgs, setupObservedSession, "marshal observe setup")
 }
 
 func setupObservedSession(opts *flagSet) (harnessobs.SessionRun, error) {
@@ -37,28 +25,12 @@ func setupObservedSession(opts *flagSet) (harnessobs.SessionRun, error) {
 	})
 }
 
-func writeObserveSetup(stdout, stderr io.Writer, session harnessobs.SessionRun) int {
-	// A setup response is evidence only if the CLI can emit structured JSON.
-	if !writeJSONPayload(stdout, stderr, session, "marshal observe setup") {
-		return exitCannotVerify
-	}
-	return 0
-}
-
 func parseObserveSetupArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
-	opts := &flagSet{name: "observe setup"}
 	// Profile and output identify the session contract and write target;
 	// command is only a preview label recorded in setup metadata.
-	opts.setString("profile", "")
-	opts.setString("out", "")
-	opts.setString("command", "")
-	if err := opts.parse(args); err != nil {
-		fmt.Fprintln(stderr, err)
-		return nil, exitUsage, false
-	}
-	// Setup is flag-only so profile and output provenance stay explicit.
-	if !requireOnlyFlags(opts, stderr, "observe setup accepts only flags", observeSetupRequiredFlags) {
-		return nil, exitUsage, false
-	}
-	return opts, 0, true
+	return parseFlagOnlyCommand(args, stderr, "observe setup", "observe setup accepts only flags", []observeStringFlag{
+		{name: "profile"},
+		{name: "out"},
+		{name: "command"},
+	}, observeSetupRequiredFlags)
 }
