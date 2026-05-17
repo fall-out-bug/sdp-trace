@@ -1,15 +1,15 @@
 package main
 
 const (
-	indexPath         = "schema/index.json"
-	schemaGlob        = "schema/*.schema.json"
-	readmePath        = "schema/README.md"
-	statusCurrent     = "current"
-	statusHistorical  = "historical"
-	statusNotAssessed = "not_assessed"
-	examplePresent    = "present"
+	indexPath          = "schema/index.json"
+	schemaGlob         = "schema/*.schema.json"
+	readmePath         = "schema/README.md"
+	statusCurrent      = "current"
+	statusHistorical   = "historical"
+	statusNotAssessed  = "not_assessed"
+	examplePresent     = "present"
 	exampleNotAssessed = "not_assessed"
-	indexVersion      = "1"
+	indexVersion       = "1"
 )
 
 var validStatuses = map[string]bool{

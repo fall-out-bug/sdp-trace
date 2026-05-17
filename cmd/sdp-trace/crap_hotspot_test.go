@@ -75,7 +75,7 @@ func TestPreviewActionHelpers(t *testing.T) {
 				"absent":             {"Supply checkpoint input before running protected gate."},
 				"present_unreadable": {"Replace checkpoint input with readable JSON."},
 				"present_malformed":  {"Replace checkpoint input with readable JSON."},
-				"present_valid":      []string{},
+				"present_valid":      {},
 			},
 		},
 		{

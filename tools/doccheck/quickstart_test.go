@@ -155,9 +155,9 @@ func TestIsQuickstartCommand(t *testing.T) {
 		{"go run ./cmd/sdp-trace --help", true},
 		{"go run ./cmd/sdp-trace doctor", true},
 		{"  go run ./cmd/sdp-trace wrap --name smoke  ", true},
-		{"go run ./cmd/sdp-trace", false},     // bare binary, no subcommand
-		{"go test -count=1 ./...", false},     // unrelated go command
-		{"go build ./cmd/sdp-trace", false},   // unrelated go command
+		{"go run ./cmd/sdp-trace", false},          // bare binary, no subcommand
+		{"go test -count=1 ./...", false},          // unrelated go command
+		{"go build ./cmd/sdp-trace", false},        // unrelated go command
 		{"# go run ./cmd/sdp-trace --help", false}, // comment
 	}
 	for _, c := range cases {
