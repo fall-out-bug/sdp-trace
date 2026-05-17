@@ -12,7 +12,7 @@ import (
 // of relying on shell history or prose.
 
 func runHarnessObserve(args []string, stdout, stderr io.Writer) int {
-	return runJSONFlagCommand(args, stdout, stderr, parseHarnessObserveArgs, observeHarnessRun, "marshal harness run")
+	return runHarnessObserveCommand(args, stdout, stderr)
 }
 
 func observeHarnessRun(opts *flagSet) (harnessobs.Run, error) {
@@ -26,11 +26,9 @@ func observeHarnessRun(opts *flagSet) (harnessobs.Run, error) {
 }
 
 func parseHarnessObserveArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
-	// Observation requires the profile, raw source, and output run directory to
-	// stay named for replayable artifact provenance.
-	return parseFlagOnlyCommand(args, stderr, "harness observe", "harness observe accepts only flags", []observeStringFlag{
-		{name: "profile"},
-		{name: "source"},
-		{name: "out"},
-	}, harnessObserveRequiredFlags)
+	return parseHarnessObserveCommandArgs(args, stderr)
+}
+
+func writeHarnessRun(stdout, stderr io.Writer, run harnessobs.Run) int {
+	return writeHarnessRunPayload(stdout, stderr, run)
 }

@@ -13,7 +13,7 @@ import (
 // Any write or marshal failure stays cannot_verify.
 
 func runObserveSetup(args []string, stdout, stderr io.Writer) int {
-	return runJSONFlagCommand(args, stdout, stderr, parseObserveSetupArgs, setupObservedSession, "marshal observe setup")
+	return runObserveSetupCommand(args, stdout, stderr)
 }
 
 func setupObservedSession(opts *flagSet) (harnessobs.SessionRun, error) {
@@ -26,11 +26,9 @@ func setupObservedSession(opts *flagSet) (harnessobs.SessionRun, error) {
 }
 
 func parseObserveSetupArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
-	// Profile and output identify the session contract and write target;
-	// command is only a preview label recorded in setup metadata.
-	return parseFlagOnlyCommand(args, stderr, "observe setup", "observe setup accepts only flags", []observeStringFlag{
-		{name: "profile"},
-		{name: "out"},
-		{name: "command"},
-	}, observeSetupRequiredFlags)
+	return parseObserveSetupCommandArgs(args, stderr)
+}
+
+func writeObserveSetup(stdout, stderr io.Writer, session harnessobs.SessionRun) int {
+	return writeObserveSetupPayload(stdout, stderr, session)
 }

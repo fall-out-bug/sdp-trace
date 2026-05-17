@@ -2,8 +2,11 @@ package releaseproof
 
 import (
 	"os/exec"
+	"regexp"
 	"strings"
 )
+
+var commitSHAPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
 func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
 	// The source commit is the anchor for every source-bound artifact check; if
@@ -42,20 +45,7 @@ func isValidCommitSHA(ref string) bool {
 	// Accept only immutable 40-character lowercase hex commit object
 	// identifiers. Reject branch names, symbolic refs, revspec suffixes,
 	// pathspecs, flags, and any ref that can resolve to a non-commit object.
-	return len(ref) == 40 && isLowerHexString(ref)
-}
-
-func isLowerHexString(value string) bool {
-	for i := 0; i < len(value); i++ {
-		if !isLowerHexByte(value[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func isLowerHexByte(value byte) bool {
-	return (value >= '0' && value <= '9') || (value >= 'a' && value <= 'f')
+	return commitSHAPattern.MatchString(ref)
 }
 
 func sourceCommitExists(repoRoot, sourceCommit string) bool {
