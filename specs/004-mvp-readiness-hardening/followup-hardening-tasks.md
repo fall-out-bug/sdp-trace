@@ -30,28 +30,28 @@
 
 ## Phase 3 - Duplication Cleanup
 
-- [ ] FH030 Confirm current `dupl` output before editing.
-- [ ] FH031 Extract only high-signal observe CLI shared flow.
-- [ ] FH032 Extract repeated observe-collect test helpers and hygiene table runner only where behavior is identical.
-- [ ] FH033 Run Slice 4 verification and record `pass` or `fail`.
-- [ ] FH034 Commit Slice 4 separately.
+- [x] FH030 Confirm current `dupl` output before editing.
+- [x] FH031 Extract only high-signal observe CLI shared flow.
+- [x] FH032 Extract repeated observe-collect test helpers and hygiene table runner only where behavior is identical.
+- [x] FH033 Run Slice 4 verification and record `pass` or `fail`.
+- [x] FH034 Commit Slice 4 separately.
 
 ## Phase 4 - Lint Cleanup
 
-- [ ] FH040 Confirm current gocritic/unparam/prealloc output before editing.
-- [ ] FH041 Fix production-safe findings in the Slice 5 target files.
-- [ ] FH042 Reject prealloc suggestions that reduce readability and record why.
-- [ ] FH043 Run Slice 5 verification and record `pass` or `fail`.
-- [ ] FH044 Commit Slice 5 separately.
+- [x] FH040 Confirm current gocritic/unparam/prealloc output before editing.
+- [x] FH041 Fix production-safe findings in the Slice 5 target files.
+- [x] FH042 Reject prealloc suggestions that reduce readability and record why.
+- [x] FH043 Run Slice 5 verification and record `pass` or `fail`.
+- [x] FH044 Commit Slice 5 separately.
 
 ## Phase 5 - Maintainability And Docs Claims
 
-- [ ] FH050 Replay absolute file/function MI commands before changing docs.
-- [ ] FH051 Decide whether this slice closes absolute MI or corrects stale pass language.
-- [ ] FH052 Update stale docs and CI consistency references.
+- [x] FH050 Replay absolute file/function MI commands before changing docs.
+- [x] FH051 Decide whether this slice closes absolute MI or corrects stale pass language.
+- [x] FH052 Update stale docs and CI consistency references.
 - [ ] FH053 If implementing MI refactors, apply TDD one file at a time and avoid metric-only shuffling.
-- [ ] FH054 Run Slice 6 verification and record `pass`, `fail`, or `cannot_verify`.
-- [ ] FH055 Commit Slice 6 separately.
+- [x] FH054 Run Slice 6 verification and record `pass`, `fail`, or `cannot_verify`.
+- [x] FH055 Commit Slice 6 separately.
 
 ## Phase 6 - Final Evidence And Review
 
