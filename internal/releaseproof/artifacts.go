@@ -41,6 +41,12 @@ func artifactState(counts ArtifactCounts) (string, string) {
 func artifactBytes(repoRoot, sourceCommit, path string) ([]byte, error) {
 	// Read artifacts from the manifest source commit, not the dirty checkout,
 	// so local edits cannot satisfy source-bound release proof.
+	if !isValidCommitSHA(sourceCommit) {
+		return nil, exec.ErrNotFound
+	}
+	// sourceCommit is validated as a 40-char lowercase hex SHA; path is cleaned
+	// by filepath.Clean before this call.
+	// #nosec G204
 	cmd := exec.Command("git", "show", sourceCommit+":"+path)
 	cmd.Dir = repoRoot
 	return cmd.Output()

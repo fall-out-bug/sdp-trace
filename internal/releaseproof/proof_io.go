@@ -18,6 +18,9 @@ func Write(path string, result Verification) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
+	// Release proof artifacts are intentionally readable for downstream evidence
+	// checks and review.
+	// #nosec G306
 	return os.WriteFile(path, payload, 0o644)
 }
 

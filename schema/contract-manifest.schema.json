@@ -54,7 +54,7 @@
         "additionalProperties": false
       }
     },
-    "source_commit": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/nonEmptyString" },
+    "source_commit": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/gitCommitSHA" },
     "previous_manifest_digest": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/sha256" },
     "issued_at": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
     "valid_until": { "$ref": "https://schemas.sdp.dev/trace/common.schema.json#/$defs/timestamp" },
