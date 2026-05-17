@@ -14,19 +14,19 @@
 
 ## Phase 1 - Format And Imports
 
-- [ ] FH010 Run the format/import commands from Slice 2 and capture the exact failing files.
-- [ ] FH011 Apply only formatting/import fixes to the Slice 2 target files.
-- [ ] FH012 Re-run Slice 2 verification and record `pass` or `fail`.
-- [ ] FH013 Commit Slice 2 separately.
+- [x] FH010 Run the format/import commands from Slice 2 and capture the exact failing files.
+- [x] FH011 Apply only formatting/import fixes to the Slice 2 target files.
+- [x] FH012 Re-run Slice 2 verification and record `pass` or `fail`.
+- [x] FH013 Commit Slice 2 separately.
 
 ## Phase 2 - Releaseproof Security Hardening
 
-- [ ] FH020 Add test-first negative cases for unsafe `source_commit` refs.
-- [ ] FH021 Implement immutable commit object validation before source inspection.
-- [ ] FH022 Align schema constraints with the implementation contract.
-- [ ] FH023 Fix or narrowly justify remaining gosec rows.
-- [ ] FH024 Run Slice 3 verification and record `pass`, `fail`, or `cannot_verify`.
-- [ ] FH025 Commit Slice 3 separately.
+- [x] FH020 Add test-first negative cases for unsafe `source_commit` refs.
+- [x] FH021 Implement immutable commit object validation before source inspection.
+- [x] FH022 Align schema constraints with the implementation contract.
+- [x] FH023 Fix or narrowly justify remaining gosec rows.
+- [x] FH024 Run Slice 3 verification and record `pass`, `fail`, or `cannot_verify`.
+- [x] FH025 Commit Slice 3 separately.
 
 ## Phase 3 - Duplication Cleanup
 
