@@ -1,13 +1,16 @@
 # Completion Audit: Polish Objective
 
-Date: 2026-05-13
+Date: 2026-05-17
 
 This audit maps the active polish objective to concrete local evidence. It is
 not a readiness claim, release proof, PR approval, or external CI result.
 
 ## Success Criteria
 
-The objective is complete only when all of the following have live evidence:
+The original polish objective is complete only when all of the following have
+live evidence. Current local evidence intentionally leaves absolute MI `> 70`
+open as `fail_local`; the follow-up Slice 6 closure is the stale-claim
+correction, not absolute MI closure.
 
 | Criterion | Required evidence | Current state |
 | --- | --- | --- |
