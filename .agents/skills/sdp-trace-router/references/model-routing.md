@@ -2,14 +2,24 @@
 This file captures routing policy, not benchmark authority. Refresh it when model availability or official harness behavior changes.
 
 <codex>
-Use Codex as the default implementation and integration agent for this repository:
-- scoped Go changes
+Use Codex as the default integration agent for this repository:
+- small scoped Go changes
 - local verification
 - PR preparation
 - final synthesis from reviewer output
 
 Codex output is not trust authority. It still needs live commands, reviewed diffs, and source-bound evidence.
 </codex>
+
+<codex_subagents>
+Use `codex-subagent` when the user asks to hand work to Pi/OpenCode/GSD2, when a block needs background workers, or when the implementation would consume substantial Codex context.
+
+- write-capable work: `codex-subagent run <runtime> --isolate worktree --background`
+- review work: `codex-subagent panel run pi --profile review`
+- inspection: `status`, `events`, `logs`, `result --structured`
+
+Subagent output is work product. Codex must inspect diffs and run verification before integration.
+</codex_subagents>
 
 <opencode>
 OpenCode discovers `.agents/skills/<name>/SKILL.md`, so project-local skills are the portable format for this repo. Keep frontmatter to `name` and `description` for maximum compatibility; extra frontmatter may be ignored by OpenCode.
