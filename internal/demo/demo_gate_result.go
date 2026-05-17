@@ -1,8 +1,9 @@
 package demo
 
 import (
-	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"time"
+
+	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
 func newGateResult(rows []RunRow, contract trace.Contract) GateResult {
