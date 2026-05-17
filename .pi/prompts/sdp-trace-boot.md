@@ -11,7 +11,7 @@ When working in the `sdp-trace` repository:
 3. **On requests to send work to Pi/codex-subagents or run implementation unattended:**
    - Invoke `/skill:sdp-trace-pi-handoff`
    - Commit the reviewed spec handoff before worker launch
-   - Use `codex-subagent run pi --isolate worktree --background`
+   - Use `codex-subagent run pi --model <explicit-model> --isolate worktree --background`
    - Monitor `status`, `events`, `logs`, and `result --structured`
    - Run separate review panels before PR-ready claims
 4. **On review requests:**

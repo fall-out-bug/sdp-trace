@@ -58,10 +58,10 @@ Available review prompts:
 - `/review-kimi` — wide-context code/spec review when Kimi credentials are available
 - `/review-deepseek` — reasoning review (DeepSeek via OpenRouter)
 
-For external implementation handoff, use `codex-subagent` with isolated
-worktrees. Commit the reviewed spec handoff before launching workers, monitor
-status/events/logs/structured result, then run independent review planes before
-PR-ready claims.
+For external implementation handoff, use `codex-subagent` with explicit model
+selection and isolated worktrees. Commit the reviewed spec handoff before
+launching workers, monitor status/events/logs/structured result, then run
+independent review planes before PR-ready claims.
 
 ## Skills Router
 Use local project skills for detailed workflows instead of expanding this file:
