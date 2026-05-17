@@ -6,7 +6,7 @@ func documentedCommands(doc string) []string {
 	// The current command surface section is intentionally simple markdown so a
 	// small parser can keep it honest in CI without Node or shell-specific code.
 	section := currentCommandSurface(doc)
-	var commands []string
+	commands := make([]string, 0, strings.Count(section, "- `sdp-trace "))
 	for _, line := range strings.Split(section, "\n") {
 		line = strings.TrimSpace(line)
 		if !strings.HasPrefix(line, "- `sdp-trace ") || !strings.HasSuffix(line, "`") {

@@ -1,11 +1,8 @@
 package posture
 
-import (
-	"fmt"
-	"time"
-)
+import "fmt"
 
-func prepareBuildSelectionInput(now time.Time, selection SelectionManifest) (buildInput, error) {
+func prepareBuildSelectionInput(selection SelectionManifest) (buildInput, error) {
 	// prepareBuildSelectionInput keeps posture export evidence explicit and source-bound.
 	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
 	// This helper aggregates replayed query-pack data; it does not create new proof.
@@ -14,7 +11,7 @@ func prepareBuildSelectionInput(now time.Time, selection SelectionManifest) (bui
 	if err != nil {
 		return buildInput{}, err
 	}
-	cutoff, hasCutoff, err := parseFreshnessBoundary(selection.FreshnessBoundary, now)
+	cutoff, hasCutoff, err := parseFreshnessBoundary(selection.FreshnessBoundary)
 	if err != nil {
 		return buildInput{}, err
 	}

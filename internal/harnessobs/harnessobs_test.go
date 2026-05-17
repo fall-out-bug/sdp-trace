@@ -1747,7 +1747,7 @@ func writeEvents(t *testing.T, dir string, events []map[string]any) {
 
 func writeRawEvents(t *testing.T, dir string, events []map[string]any) {
 	t.Helper()
-	var lines []string
+	lines := make([]string, 0, len(events))
 	for _, event := range events {
 		lines = append(lines, marshalCompact(t, event))
 	}

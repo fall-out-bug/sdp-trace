@@ -6,7 +6,7 @@ func buildMovements(metrics []MetricRow, currentWindow, previousWindow string) (
 	// This helper aggregates replayed query-pack data; it does not create new proof.
 	byKey := metricsByMovementKey(metrics)
 	keys := sortedMovementKeys(byKey)
-	var rows []MovementRow
+	rows := make([]MovementRow, 0, len(keys))
 	summary := MovementSummary{NonComparableReason: map[string]int{}}
 	for i, key := range keys {
 

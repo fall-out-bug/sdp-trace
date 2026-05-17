@@ -11,7 +11,7 @@ func dimensionKey(repo RepositoryWindow, keys []string) (string, map[string]stri
 
 	values := dimensionValues(repo)
 	dims := map[string]string{}
-	var parts []string
+	parts := make([]string, 0, len(keys))
 	for _, key := range keys {
 		dims[key] = values[key]
 		if key == "time_window" {

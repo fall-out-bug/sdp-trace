@@ -1,5 +1,6 @@
 package harnessobs
 
+//nolint:unparam // path is variable in test coverage and remains explicit for future non-default settings files.
 func ensureJSONReadDenyRule(path, pattern string) error {
 	// ensureJSONReadDenyRule keeps harness observation evidence explicit and replay-bound.
 	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.

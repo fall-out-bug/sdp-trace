@@ -166,16 +166,19 @@ func TestRunRejectsMissingInputPath(t *testing.T) {
 }
 
 func TestNormalizeFileVariants(t *testing.T) {
-	tests := map[string]string{
-		" /tmp/work/sdp-trace/internal/demo/demo.go ":             "internal/demo/demo.go",
-		"cmd/sdp-trace/harness_cli.go":                            "cmd/sdp-trace/harness_cli.go",
-		"sdp-trace/internal/demo/demo.go":                         "internal/demo/demo.go",
-		"github.com/fall_out_bug/sdp-trace/internal/demo/demo.go": "internal/demo/demo.go",
-		"./internal/demo/demo.go":                                 "internal/demo/demo.go",
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{" /tmp/work/sdp-trace/internal/demo/demo.go ", "internal/demo/demo.go"},
+		{"cmd/sdp-trace/harness_cli.go", "cmd/sdp-trace/harness_cli.go"},
+		{"sdp-trace/internal/demo/demo.go", "internal/demo/demo.go"},
+		{"github.com/fall_out_bug/sdp-trace/internal/demo/demo.go", "internal/demo/demo.go"},
+		{"./internal/demo/demo.go", "internal/demo/demo.go"},
 	}
-	for input, want := range tests {
-		if got := normalizeFile(input); got != want {
-			t.Fatalf("normalizeFile(%q) = %q, want %q", input, got, want)
+	for _, tc := range tests {
+		if got := normalizeFile(tc.input); got != tc.want {
+			t.Fatalf("normalizeFile(%q) = %q, want %q", tc.input, got, tc.want)
 		}
 	}
 }

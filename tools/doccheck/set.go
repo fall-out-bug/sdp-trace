@@ -22,7 +22,7 @@ func uniqueSorted(values []string) []string {
 	// Sorting removes accidental markdown/help ordering differences while still
 	// requiring exact command text matches.
 	seen := map[string]bool{}
-	var unique []string
+	unique := make([]string, 0, len(values))
 	for _, value := range values {
 		if value == "" || seen[value] {
 			continue

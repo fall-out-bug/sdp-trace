@@ -120,20 +120,20 @@ func TestJSONAndEventHashHelpers(t *testing.T) {
 	if _, err := EventSeqFromFilename("run_started.json"); err == nil {
 		t.Fatalf("expected invalid event filename error")
 	}
-	event := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	event := mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
 	if hash, err := EventHash(event); err != nil || hash == "" {
 		t.Fatalf("EventHash() = %q err=%v", hash, err)
 	}
 }
 
 func TestEventPayloadDigestBranches(t *testing.T) {
-	event := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	event := mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
 	event.PayloadDigest = ""
 	if err := event.VerifyPayloadDigest(); err != nil {
 		t.Fatalf("empty digest should be skipped: %v", err)
 	}
 
-	event = mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	event = mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
 	event.EventPayload = nil
 	event.Payload = []byte(`{"state":"run_started"}`)
 	digest, err := CanonicalEventPayloadDigest([]byte(`{"state":"run_started"}`))
@@ -149,7 +149,7 @@ func TestEventPayloadDigestBranches(t *testing.T) {
 		t.Fatalf("expected invalid encoded payload error")
 	}
 
-	event = mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	event = mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
 	event.PayloadDigest = "sha256:wrong"
 	if err := event.VerifyPayloadDigest(); err == nil {
 		t.Fatalf("expected payload digest mismatch")

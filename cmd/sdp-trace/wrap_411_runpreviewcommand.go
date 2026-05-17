@@ -18,7 +18,7 @@ func runPreviewCommand(commandName, mode string, args []string, stdout, stderr i
 	// Preview loads the contract but deliberately avoids recorder.Run so no run
 	// artifacts or trace events are written.
 	// Contract parsing is the only validation preview performs.
-	contract, code, ok := loadPreviewContract(commandName, opts, stderr)
+	contract, code, ok := loadPreviewContract(opts, stderr)
 	if !ok {
 		return code
 	}

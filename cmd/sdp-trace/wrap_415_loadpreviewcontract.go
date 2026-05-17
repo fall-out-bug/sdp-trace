@@ -7,7 +7,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
-func loadPreviewContract(commandName string, opts *flagSet, stderr io.Writer) (trace.Contract, int, bool) {
+func loadPreviewContract(opts *flagSet, stderr io.Writer) (trace.Contract, int, bool) {
 	contractPath := opts.stringValue("contract")
 	contract := trace.DefaultContract
 	if contractPath != "" {

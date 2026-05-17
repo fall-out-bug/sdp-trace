@@ -44,7 +44,8 @@ func loadFunctionBaselineForReport(opts options) (map[string]functionMIBaselineR
 	}
 	baseline, err := readMIBaseline[functionMIBaseline](opts.functionMIBaseline, functionMIBaselineSchema, "function")
 	if err != nil {
-		return reportBaselineReadError[functionMIBaselineRecord](opts, "function", err)
+		baselineOK, failed := reportBaselineReadError(opts, "function", err)
+		return nil, baselineOK, failed
 	}
 	return indexFunctionReportBaseline(baseline.Functions), true, false
 }
@@ -58,7 +59,8 @@ func loadFileBaselineForReport(opts options) (map[string]fileMIBaselineRecord, b
 	}
 	baseline, err := readMIBaseline[fileMIBaseline](opts.fileMIBaseline, fileMIBaselineSchema, "file")
 	if err != nil {
-		return reportBaselineReadError[fileMIBaselineRecord](opts, "file", err)
+		baselineOK, failed := reportBaselineReadError(opts, "file", err)
+		return nil, baselineOK, failed
 	}
 	return indexFileReportBaseline(baseline.Files), true, false
 }

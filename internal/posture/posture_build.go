@@ -13,7 +13,7 @@ func Build(selectionPath string, now time.Time) (ExportResult, error) {
 	if err != nil {
 		return ExportResult{}, err
 	}
-	input, err := prepareBuildSelectionInput(now, selection)
+	input, err := prepareBuildSelectionInput(selection)
 	if err != nil {
 		return ExportResult{}, err
 	}

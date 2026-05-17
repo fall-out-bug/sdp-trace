@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func parseFreshnessBoundary(value string, now time.Time) (time.Time, bool, error) {
+func parseFreshnessBoundary(value string) (time.Time, bool, error) {
 	// parseFreshnessBoundary keeps posture export evidence explicit and source-bound.
 	// Selection, digest, signal, metric, movement, refusal, and safety states stay separate.
 	// This helper aggregates replayed query-pack data; it does not create new proof.

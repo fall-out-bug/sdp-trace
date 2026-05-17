@@ -32,9 +32,7 @@ var rawReferenceValidationRules = []rawReferenceValidationRule{
 		condition: cannotVerify("raw_reference_bound", "missing_reference", "raw reference URI is missing", "Provide a stable encrypted or external raw reference."),
 	},
 	{
-		invalid: func(ref *RawReference) bool {
-			return rawReferenceAccessUnverifiable(ref)
-		},
+		invalid:   rawReferenceAccessUnverifiable,
 		condition: cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access state is not verifiably available", "Record current access verification state and time."),
 	},
 	{
@@ -45,9 +43,7 @@ var rawReferenceValidationRules = []rawReferenceValidationRule{
 		condition: cannotVerify("raw_reference_bound", "access_unverifiable", "raw reference access verification time is missing", "Record access_state_last_verified for the assessment."),
 	},
 	{
-		invalid: func(ref *RawReference) bool {
-			return encryptedKeyCustodyUnverifiable(ref)
-		},
+		invalid:   encryptedKeyCustodyUnverifiable,
 		condition: cannotVerify("raw_reference_bound", "key_custody_unverifiable", "encrypted raw reference key custody is not verifiable", "Record holder_known or escrowed key custody state."),
 	},
 	{

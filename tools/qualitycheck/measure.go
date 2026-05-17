@@ -8,7 +8,7 @@ import (
 func measureFunctions(path string, src []byte, fset *token.FileSet, parsed *ast.File) []functionMetric {
 	// Function measurement walks top-level declarations only; nested literals do
 	// not become independent ratchet subjects.
-	var metrics []functionMetric
+	metrics := make([]functionMetric, 0, len(parsed.Decls))
 	for _, decl := range parsed.Decls {
 		// Only declarations with function bodies become function ratchet
 		// subjects; file MI omits declaration-only and tiny files separately.
