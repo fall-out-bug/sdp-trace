@@ -1,4 +1,4 @@
-package query
+package capturedepth
 
 import "github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
 

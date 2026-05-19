@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/fall_out_bug/sdp-trace/internal/capturedepth"
 	"github.com/fall_out_bug/sdp-trace/internal/query"
 )
 
 func runNamedQuery(queryName, runDir string, stderr io.Writer) ([]byte, int, bool) {
-	if queryName == query.QueryCaptureDepth {
+	if queryName == capturedepth.QueryName {
 		// Capture-depth is a read-only diagnostic query over retained evidence.
 		return captureDepthQuery(runDir, stderr)
 	}

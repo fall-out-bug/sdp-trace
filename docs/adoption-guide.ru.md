@@ -5,10 +5,12 @@
 человеческий decision. Он не заменяет агента, CI, code review или release
 governance.
 
-Текущий controlled-pilot MVP позволяет пробовать local trace packages,
-repo-observable evidence, assessment profiles, witness artifacts и source-bound
-release checks. Это не automatic merge blocking, не production release approval,
-не external audit proof и не гарантия обнаружения каждого unwrapped agent run.
+Core pilot path: trace capture, local verification, explanation, report и
+missing-evidence query. Assessment profiles, advisory/protected gate facts,
+CI/customer witness profiles, forensic query packs, cross-repository posture
+export, PR review packets и source-bound release proof являются extension
+surfaces. Это не automatic merge blocking, не production release approval, не
+external audit proof и не гарантия обнаружения каждого unwrapped agent run.
 
 ## Что дает sdp-trace
 
@@ -58,20 +60,28 @@ sdp-trace wrap / adapter events
 .sdp-trace-runs/
         |
         v
-report, query, assess, gate facts
+verify, explain, report, missing-evidence query
         |
         v
-CI or customer witness where available
+optional extension: assess, gate, witness, packet, release-proof, export
         |
         v
 evidence package per repo and commit
 ```
 
-Минимальная command sequence:
+Минимальная core command sequence:
 
 ```text
 sdp-trace wrap --name <workflow-name> --output-dir .sdp-trace-runs/<run-id> -- <existing command...>
+sdp-trace verify .sdp-trace-runs/<run-id>
+sdp-trace explain .sdp-trace-runs/<run-id>
 sdp-trace report --out .sdp-trace-report .sdp-trace-runs
+sdp-trace query --query missing-evidence .sdp-trace-runs/<run-id>
+```
+
+Optional extension sequence, если downstream policy consumer требует эти факты:
+
+```text
 sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs
 sdp-trace witness --kind github-actions --out .sdp-trace-report/ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs
 ```
@@ -88,6 +98,7 @@ events, witness bindings или profile inputs отсутствуют. Резу�
 
 | Surface | Что поддерживает сейчас | Caveat |
 | --- | --- | --- |
+| Core run/report/query | Records, verifies, explains, reports и queries missing evidence для local run. | Local evidence only; это не CI witness и не production trust. |
 | `adapter-capture` | Проверяет adapter event coverage и overclaim risk. | Missing adapter events не доказывают, что агент не использовался; они доказывают, что профилю не хватает evidence. |
 | `managed-harness` | Проверяет managed policy, adapter registry, run и witness evidence. | Выдает verifier facts; block/allow решает external CI или policy. |
 | `forensic-retention` | Проверяет, хватает ли retained/redacted evidence для reconstruction. | Digest-only или unresolved redaction могут блокировать forensic claims. |
@@ -101,7 +112,8 @@ events, witness bindings или profile inputs отсутствуют. Резу�
 - `.sdp-trace-report/summary.json`: run и report summary.
 - `.sdp-trace-report/evidence-table.json`: observed evidence rows.
 - `.sdp-trace-report/missing-telemetry.json`: required evidence not observed.
-- `.sdp-trace-report/gate-result.json`: advisory/protected gate facts и reasons.
+- `sdp-trace query --query missing-evidence <run-dir>`: core missing-evidence table.
+- `.sdp-trace-report/gate-result.json`: optional advisory/protected gate facts и reasons.
 - `.sdp-trace-report/ci-witness.json` или другой witness artifact: CI/customer binding state.
 - `.sdp-trace-runs/<run-id>/`: raw run package с учетом retention/redaction policy.
 - `query-pack` output: incident или forensic reconstruction package.

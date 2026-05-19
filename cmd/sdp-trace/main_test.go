@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fall_out_bug/sdp-trace/internal/capturedepth"
 	"github.com/fall_out_bug/sdp-trace/internal/checkpoint"
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
-	"github.com/fall_out_bug/sdp-trace/internal/query"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -470,7 +470,7 @@ func TestCLICommandDispatchAndQueryErrorBranches(t *testing.T) {
 	}
 
 	errOut.Reset()
-	_, code, ok = runNamedQuery(query.QueryCaptureDepth, filepath.Join(t.TempDir(), "missing-run"), &errOut)
+	_, code, ok = runNamedQuery(capturedepth.QueryName, filepath.Join(t.TempDir(), "missing-run"), &errOut)
 	if ok || code != exitCannotVerify {
 		t.Fatalf("missing query run ok=%v code=%d err=%s", ok, code, errOut.String())
 	}

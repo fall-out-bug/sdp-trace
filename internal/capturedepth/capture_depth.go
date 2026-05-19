@@ -1,4 +1,4 @@
-package query
+package capturedepth
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
 )
 
-const QueryCaptureDepth = "capture-depth"
+const QueryName = "capture-depth"
 
 // Capture-depth output is investigative evidence, not a gate result.
 // The query deliberately preserves cannot_verify/not_assessed details instead

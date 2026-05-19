@@ -1,4 +1,4 @@
-package query
+package capturedepth
 
 import "github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
 
@@ -22,7 +22,7 @@ func newCaptureDepthSummary(run adaptercapture.RunEvidence, result adaptercaptur
 	// Keep the top-level field explicit so downstream JSON consumers cannot
 	// mistake a query response for a verifier verdict.
 	sum := CaptureDepthSummary{
-		Query:                  QueryCaptureDepth,
+		Query:                  QueryName,
 		SelectedProfile:        adaptercapture.ProfileAdapterCapture,
 		TopLevelAssessment:     "not_emitted_for_query",
 		TaskSupersessionCount:  run.TaskSupersessionCount,

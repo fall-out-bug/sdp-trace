@@ -22,6 +22,8 @@ go run ./cmd/sdp-trace doctor
 go run ./cmd/sdp-trace wrap --name smoke --output-dir .sdp-trace-runs/smoke -- /bin/echo ok
 go run ./cmd/sdp-trace verify .sdp-trace-runs/smoke
 go run ./cmd/sdp-trace explain .sdp-trace-runs/smoke
+go run ./cmd/sdp-trace report --out .sdp-trace-report .sdp-trace-runs/smoke
+go run ./cmd/sdp-trace query --query missing-evidence .sdp-trace-runs/smoke
 ```
 
 On Windows, replace `/bin/echo ok` with a command available in your shell, for
@@ -37,6 +39,8 @@ example `cmd /c echo ok` in Command Prompt.
 | `wrap` | exit `0` (run recorded) | The tool can record a trace run. |
 | `verify` | `observed` | The run directory is structurally valid. |
 | `explain` | human-readable summary | The run can be rendered for review. |
+| `report` | report files written | The run can be packaged for review. |
+| `query --query missing-evidence` | missing-evidence table | Core evidence gaps can be inspected without an assessment profile. |
 
 ## Failure Routing
 
@@ -49,8 +53,9 @@ next diagnostic command.
 | `--help` fails or prints no commands | Build failure or dirty checkout | Run `go build ./cmd/sdp-trace` and inspect compilation errors. |
 | `doctor` fails with local errors | Permissions or missing directories | Inspect the JSON output for the failing `control_point`; check that `.sdp-trace-runs` is writable. |
 | `wrap` fails | CLI usage error | Verify the double dash `--` is present and the command after it exists; check that `--output-dir` is writable. |
-| `verify` fails | Corrupted or missing run directory | Check that the run directory exists and contains `run.json`; try `go run ./cmd/sdp-trace query --query missing-evidence <run-dir>`. |
+| `verify` fails | Corrupted or missing run directory | Check that the run directory exists and contains `run.json`. |
 | `explain` fails | Run directory unreadable | Re-run `verify` on the same directory to get structured errors. |
+| `query --query missing-evidence` fails | Missing verifier artifact or replay error | Re-run `verify` and inspect the run directory path. |
 
 ## Before You Write Tasks Or Claims
 
@@ -62,7 +67,8 @@ machine-authoritative.
 
 For the authoritative command, state, trust-scope, and exit-code contract, see
 [Agent Entrypoint](agent-entrypoint.md). This quick start shows only the
-smallest verification path; it does not duplicate the full command table.
+smallest core verification path; it does not duplicate the full command table
+or optional extension surfaces.
 
 ## Trust Scope Note
 
