@@ -60,7 +60,7 @@ func addUsages(usages map[string]bool, values []string) {
 }
 
 func sortedStringKeys(m map[string]bool) []string {
-	var list []string
+	list := make([]string, 0, len(m))
 	for k := range m {
 		list = append(list, k)
 	}

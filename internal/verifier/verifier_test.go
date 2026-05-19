@@ -14,7 +14,7 @@ import (
 )
 
 func TestVerifyReturnsObservedForUntamperedRun(t *testing.T) {
-	runDir := runAndCapture(t, []string{"ok"}, true, "")
+	runDir := runAndCapture(t, []string{"ok"}, "")
 
 	result, table, audit, err := VerifyRun(runDir)
 	if err != nil {
@@ -32,7 +32,7 @@ func TestVerifyReturnsObservedForUntamperedRun(t *testing.T) {
 }
 
 func TestVerifyDetectsTamperedChain(t *testing.T) {
-	runDir := runAndCapture(t, []string{"tamper"}, true, "")
+	runDir := runAndCapture(t, []string{"tamper"}, "")
 	eventPath := filepath.Join(runDir, "events", "000003-command_finished.json")
 	var event trace.Event
 	data, err := os.ReadFile(eventPath)
@@ -73,7 +73,7 @@ func TestVerifyReportsMissingEvidenceRows(t *testing.T) {
 	if err := writeJSONFile(contractPath, contract); err != nil {
 		t.Fatalf("write contract: %v", err)
 	}
-	runDir := runAndCapture(t, []string{"missing"}, true, contractPath)
+	runDir := runAndCapture(t, []string{"missing"}, contractPath)
 	result, table, _, err := VerifyRun(runDir)
 	if err != nil {
 		t.Fatalf("verify error: %v", err)
@@ -138,7 +138,7 @@ func TestExplainRunIncludesMissingEvidence(t *testing.T) {
 	if err := writeJSONFile(contractPath, contract); err != nil {
 		t.Fatalf("write contract: %v", err)
 	}
-	runDir := runAndCapture(t, []string{"explain"}, true, contractPath)
+	runDir := runAndCapture(t, []string{"explain"}, contractPath)
 
 	explanation, err := ExplainRun(runDir)
 	if err != nil {
@@ -276,13 +276,13 @@ func TestLoadRunEventsRequiresEventsDirectory(t *testing.T) {
 	}
 }
 
-func runAndCapture(t *testing.T, command []string, useDefault bool, contract string) string {
+func runAndCapture(t *testing.T, command []string, contract string) string {
 	t.Helper()
 	echo := mustFindCommand(t, "echo")
 	ctx := context.Background()
 	opts := recorder.RecorderOptions{
 		WrapperName:        "test",
-		UseDefaultContract: useDefault,
+		UseDefaultContract: true,
 		OutputDir:          t.TempDir(),
 		Command:            append([]string{echo}, command...),
 	}

@@ -5,11 +5,11 @@ func (b *packBuilder) addRedactionRows() {
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.forensicPresent {
-		b.addRow(QueryForensicsRedactions, RowStateCannotVerify, EvidenceFamilyRedaction, "block_18.condition.missing", "", "", "missing_block_18_forensic_retention_result", "redaction")
+		b.addRow(QueryForensicsRedactions, RowStateCannotVerify, EvidenceFamilyRedaction, "block_18.condition.missing", "missing_block_18_forensic_retention_result", "redaction")
 		return
 	}
 	if b.inputs.forensicErr != nil {
-		b.addRow(QueryForensicsRedactions, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", "input_artifact")
+		b.addRow(QueryForensicsRedactions, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "unreadable_or_malformed_input_artifact", "input_artifact")
 		return
 	}
 	for _, condition := range b.inputs.forensic.ForensicConditions {
@@ -37,11 +37,11 @@ func (b *packBuilder) addCaptureRows() {
 }
 
 func (b *packBuilder) addMissingAdapterCaptureRow() {
-	b.addRow(QueryForensicsCaptureDepth, RowStateCannotVerify, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_block_19_adapter_capture_result", "adapter_capture")
+	b.addRow(QueryForensicsCaptureDepth, RowStateCannotVerify, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "missing_block_19_adapter_capture_result", "adapter_capture")
 }
 
 func (b *packBuilder) addMalformedAdapterCaptureRow() {
-	b.addRow(QueryForensicsCaptureDepth, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", "input_artifact")
+	b.addRow(QueryForensicsCaptureDepth, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "unreadable_or_malformed_input_artifact", "input_artifact")
 }
 
 func (b *packBuilder) addAdapterCaptureConditionRow(condition assessmentCondition) {

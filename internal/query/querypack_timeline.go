@@ -12,13 +12,13 @@ func (b *packBuilder) addRunTimelineRows() {
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
 	if len(b.inputs.run.EventRefs) == 0 {
-		b.addRow(QueryForensicsTimeline, RowStatePresent, EvidenceFamilyRunChain, "block_09.run.run_id", "", "", "run_timeline_available", "")
+		b.addRow(QueryForensicsTimeline, RowStatePresent, EvidenceFamilyRunChain, "block_09.run.run_id", "run_timeline_available", "")
 		return
 	}
 	for i, event := range b.inputs.run.EventRefs {
 		family := familyForEvent(event.EventType)
 		sourceRef := fmt.Sprintf("block_09.event.%s.e%04d", family, i+1)
-		b.addRow(QueryForensicsTimeline, RowStatePresent, family, sourceRef, "", "", "timeline_event_present", "")
+		b.addRow(QueryForensicsTimeline, RowStatePresent, family, sourceRef, "timeline_event_present", "")
 	}
 }
 
@@ -33,11 +33,11 @@ func (b *packBuilder) addOptionalTimelineRow(present bool, inputErr error, famil
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
 	if !present {
-		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, family, block+".condition.missing", "", "", missingReason, family)
+		b.addRow(QueryForensicsTimeline, RowStateNotAssessed, family, block+".condition.missing", missingReason, family)
 		return
 	}
 	if inputErr != nil {
-		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, block+".condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
+		b.addRow(QueryForensicsTimeline, RowStateCannotVerify, EvidenceFamilyInputArtifact, block+".condition.malformed", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }
 
@@ -46,6 +46,6 @@ func (b *packBuilder) addMalformedRequiredInputRows() {
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
 	for _, queryName := range queryOrder {
-		b.addRow(queryName, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_09.run.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
+		b.addRow(queryName, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_09.run.malformed", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }

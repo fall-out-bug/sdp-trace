@@ -2,14 +2,20 @@ package releaseproof
 
 import (
 	"os/exec"
+	"regexp"
 	"strings"
 )
+
+var commitSHAPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
 func sourceCommitState(repoRoot, sourceCommit string) (string, string) {
 	// The source commit is the anchor for every source-bound artifact check; if
 	// it cannot resolve locally, artifact claims stay unverified.
 	if sourceCommit == "" {
 		return StatusMissing, "manifest source_commit is missing"
+	}
+	if !isValidCommitSHA(sourceCommit) {
+		return StatusMissing, "manifest source_commit is not a valid immutable commit SHA"
 	}
 	if !sourceCommitExists(repoRoot, sourceCommit) {
 		return StatusMissing, "manifest source_commit could not be resolved from git"
@@ -35,9 +41,18 @@ func applyDirtyState(repoRoot, state, commitStatus, reason string) (string, stri
 	return StateFail, StatusMismatch, "dirty checkout cannot support source-bound local release proof"
 }
 
+func isValidCommitSHA(ref string) bool {
+	// Accept only immutable 40-character lowercase hex commit object
+	// identifiers. Reject branch names, symbolic refs, revspec suffixes,
+	// pathspecs, flags, and any ref that can resolve to a non-commit object.
+	return commitSHAPattern.MatchString(ref)
+}
+
 func sourceCommitExists(repoRoot, sourceCommit string) bool {
 	// Git object resolution is the immutable-source boundary for this local
 	// verifier; a missing object keeps the release verdict at cannot_verify.
+	// sourceCommit is validated as a 40-char lowercase hex SHA before this call.
+	// #nosec G204
 	cmd := exec.Command("git", "cat-file", "-e", sourceCommit+"^{commit}")
 	cmd.Dir = repoRoot
 	return cmd.Run() == nil

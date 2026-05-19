@@ -133,10 +133,7 @@ func TestCommandSurfaceIncludesKnownStates(t *testing.T) {
 }
 
 func TestCommandSurfaceUsageDrift(t *testing.T) {
-	missing, stale, err := commandSurfaceUsageDrift()
-	if err != nil {
-		t.Fatalf("commandSurfaceUsageDrift: %v", err)
-	}
+	missing, stale := commandSurfaceUsageDrift()
 	if len(missing) > 0 {
 		t.Fatalf("registry usages missing from usageText: %s", strings.Join(missing, "; "))
 	}

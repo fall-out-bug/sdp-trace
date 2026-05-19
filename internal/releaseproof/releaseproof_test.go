@@ -265,6 +265,113 @@ func TestEvaluateRejectsManifestSymlinkOutsideRepo(t *testing.T) {
 	}
 }
 
+func TestSourceCommitStateRejectsUnsafeRefs(t *testing.T) {
+	root := t.TempDir()
+	runGit(t, root, "init")
+
+	badRefs := []string{
+		"   ",
+		"\t",
+		"\n",
+		"HEAD",
+		"main",
+		"origin/main",
+		"refs/heads/main",
+		"abc^{tree}",
+		"abc:path",
+		"abc~1",
+		"abc..def",
+		"--flag",
+		"-e",
+		"--help",
+		"../etc/passwd",
+		"foo/bar",
+		"111111111111111111111111111111111111111",
+		"11111111111111111111111111111111111111111",
+		"1111111111111111111111111111111111111111111111111111111111111111",
+		"ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCD",
+		"ghijghijghijghijghijghijghijghijghijghij",
+		"111111111111111111111111111111111111111g",
+	}
+
+	for _, ref := range badRefs {
+		t.Run(ref, func(t *testing.T) {
+			status, reason := sourceCommitState(root, ref)
+			if status != StatusMissing {
+				t.Fatalf("status = %s, want %s", status, StatusMissing)
+			}
+			if reason != "manifest source_commit is not a valid immutable commit SHA" {
+				t.Fatalf("reason = %q", reason)
+			}
+		})
+	}
+
+	// Empty string is caught by the earlier missing check, not the SHA validator.
+	status, reason := sourceCommitState(root, "")
+	if status != StatusMissing {
+		t.Fatalf("status = %s, want %s", status, StatusMissing)
+	}
+	if reason != "manifest source_commit is missing" {
+		t.Fatalf("reason = %q", reason)
+	}
+}
+
+func TestSourceCommitStateAcceptsValidSHA(t *testing.T) {
+	root := t.TempDir()
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.invalid")
+	runGit(t, root, "config", "user.name", "Test")
+	writeFile(t, filepath.Join(root, "file.txt"), "hello\n")
+	runGit(t, root, "add", "file.txt")
+	runGit(t, root, "commit", "-m", "init")
+	validSHA := strings.TrimSpace(runGit(t, root, "rev-parse", "HEAD"))
+
+	status, reason := sourceCommitState(root, validSHA)
+	if status != StatusMatched {
+		t.Fatalf("status = %s, want %s", status, StatusMatched)
+	}
+	if reason != "source commit contains every manifest artifact path with matching digest" {
+		t.Fatalf("reason = %q", reason)
+	}
+}
+
+func TestEvaluateCannotVerifyWhenSourceCommitIsInvalid(t *testing.T) {
+	root := t.TempDir()
+	runGit(t, root, "init")
+	manifest := `{
+  "id": "test-manifest",
+  "signing_profile": "sdp-trace-signature/sigstore-dsse-keyless-v1",
+  "trusted_identity_policy_ref": "policy.json",
+  "source_commit": "HEAD",
+  "artifacts": [],
+  "accountability": {
+    "dri": {"identity_ref": "role:dri", "actor_type": "human_role"},
+    "approver": {"identity_ref": "role:approver", "actor_type": "human_role"},
+    "escalation": {"identity_ref": "role:cto", "actor_type": "human_role"},
+    "authority_scope": "contract_release",
+    "accountability_claim": "release_approval",
+    "approval_ref": "approval",
+    "risk_owner": {"identity_ref": "role:risk", "actor_type": "human_role"},
+    "line_of_defense": "second"
+  }
+}`
+	writeFile(t, filepath.Join(root, "manifest.json"), manifest)
+
+	result, err := Evaluate(root, "manifest.json", time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+	if result.ReleaseVerificationState != StateCannotVerify {
+		t.Fatalf("state = %s", result.ReleaseVerificationState)
+	}
+	if result.SourceCommitStatus != StatusMissing {
+		t.Fatalf("source commit status = %s", result.SourceCommitStatus)
+	}
+	if result.SourceCommitReason != "manifest source_commit is not a valid immutable commit SHA" {
+		t.Fatalf("source commit reason = %q", result.SourceCommitReason)
+	}
+}
+
 func TestWriteReadAndRepoRoot(t *testing.T) {
 	root := t.TempDir()
 	runGit(t, root, "init")
@@ -318,6 +425,8 @@ func writeFile(t *testing.T, path string, value string) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
+	// Test fixtures in temporary directories; readable permissions are intentional.
+	// #nosec G306
 	if err := os.WriteFile(path, []byte(value), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}

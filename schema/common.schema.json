@@ -20,6 +20,11 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
+    "gitCommitSHA": {
+      "type": "string",
+      "description": "Immutable 40-character lowercase hex Git commit object identifier. Branch names, symbolic refs, revspec suffixes, pathspecs, and flags are rejected.",
+      "pattern": "^[a-f0-9]{40}$"
+    },
     "schemaId": {
       "type": "string",
       "pattern": "^https://schemas\\.sdp\\.dev/trace/.+\\.schema\\.json$"

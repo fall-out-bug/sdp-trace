@@ -12,7 +12,7 @@ Use this skill for Socratic review, implementation review, PR review, security/t
 </when_to_use>
 
 <model_policy>
-For adversarial review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise. Record model, retry, fallback, timeout, and replacement details in the review artifact, not in `AGENTS.md`.
+For adversarial review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise. Use current, provider-qualified model IDs verified by `pi --list-models <family>` in the same session when model freshness matters or when a reviewer previously failed. Do not use stale reviewer defaults such as `qwen3-coder`, `deepseek-chat-v3.1`, or `glm-4.6` unless every newer candidate is unavailable and the fallback is recorded as degraded. Record model, provider, retry, fallback, timeout, and replacement details in the review artifact, not in `AGENTS.md`.
 </model_policy>
 
 <review_planes>
@@ -27,7 +27,7 @@ For trust-sensitive work, run separate planes:
 <process>
 1. Build a bounded context pack with the objective, changed files, relevant specs, rules, and verification commands.
 2. For non-trivial trust claims, use `workflows/claim-doubt-cycle.md` before accepting the claim.
-3. Launch reviewers in parallel when possible. Keep roles read-only unless the task explicitly assigns a worker.
+3. Launch reviewers in parallel when possible, preferably through `codex-subagent panel run pi` for durable run IDs, logs, and structured results. Keep roles read-only unless the task explicitly assigns a worker. Pin each reviewer to a current provider-qualified model when using Pi.
 4. Reject and replace reviewer output that is hung, empty, generic, off-task, or lacks file/line evidence for actionable claims.
 5. Verify every finding against full files before accepting or rejecting it.
 6. Record disposition as accepted, accepted_fixed, rejected_false_positive, deferred_not_assessed, cannot_verify, or advisory.
@@ -58,6 +58,7 @@ When producing or updating `reviews/synthesis.md` (or any review ledger):
 - Use `workflows/claim-doubt-cycle.md` for any gate, verdict, provenance, release-proof, or non-obvious safety claim.
 - Use `references/model-policy.md` when selecting pi/Codex/OpenCode/Kimi/GLM/MiniMax roles.
 - Use `templates/review-disposition.md` for durable synthesis or handoff records.
+- For implementation delegation rather than review, use `sdp-trace-pi-handoff`.
 </supporting_files>
 
 <red_flags>

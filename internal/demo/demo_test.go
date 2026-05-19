@@ -16,7 +16,7 @@ import (
 )
 
 func TestReportAndGatePassForObservedDemoRuns(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	root := t.TempDir()
 	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
 	runCommand(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "tests")
@@ -69,7 +69,7 @@ func TestReportAndGatePassForObservedDemoRuns(t *testing.T) {
 }
 
 func TestPreviewWitnessBindingMatchesRunArtifacts(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	root := t.TempDir()
 	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
 
@@ -183,7 +183,7 @@ func TestCRAPHelperEdges(t *testing.T) {
 }
 
 func TestReportAcceptsSingleRunDirectory(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	runDir := filepath.Join(t.TempDir(), "single-run")
 	runCommand(t, runDir, "agent-session", echo, "hello")
 
@@ -212,7 +212,7 @@ func TestDiscoverRunDirsReturnsRootRunDirectoryWhenRunManifestExists(t *testing.
 
 func TestDiscoverRunDirsFindsRunSubdirectoriesInSortedOrder(t *testing.T) {
 	root := t.TempDir()
-	makeRunDir := func(name string) string {
+	makeRunDir := func(name string) {
 		path := filepath.Join(root, name)
 		if err := os.MkdirAll(path, 0o755); err != nil {
 			t.Fatalf("create dir %s: %v", name, err)
@@ -220,7 +220,6 @@ func TestDiscoverRunDirsFindsRunSubdirectoriesInSortedOrder(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(path, "run.json"), []byte(`{"run_id":"`+name+`"}`), 0o644); err != nil {
 			t.Fatalf("write manifest in %s: %v", name, err)
 		}
-		return path
 	}
 	makeRunDir("z-run")
 	makeRunDir("a-run")
@@ -268,7 +267,7 @@ func TestDiscoverRunDirsRejectsNonDirectory(t *testing.T) {
 }
 
 func TestGateFailsForTamperedRun(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	root := t.TempDir()
 	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
 	tampered := filepath.Join(root, "002-verification-run")
@@ -965,7 +964,7 @@ func TestProtectedGateReasonsUseSeverityBeforeConditionOrder(t *testing.T) {
 }
 
 func TestReportAndGateArtifactsDoNotLeakSecretLikeCommand(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	root := t.TempDir()
 	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "SECRET_TOKEN_DEMO_TABLE")
 	contractPath := writeDemoContract(t, t.TempDir())
@@ -1095,7 +1094,7 @@ func TestGateUsesCannotVerifyCIWitness(t *testing.T) {
 }
 
 func TestMalformedRunAppearsAsCannotVerify(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	root := t.TempDir()
 	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
 	broken := filepath.Join(root, "002-verification-run")
@@ -1123,7 +1122,7 @@ func TestMalformedRunAppearsAsCannotVerify(t *testing.T) {
 }
 
 func TestVerifierArtifactWriteFailureAppearsAsCannotVerify(t *testing.T) {
-	echo := mustFindCommand(t, "echo")
+	echo := mustFindCommand(t)
 	root := t.TempDir()
 	runCommand(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "hello")
 	readOnlyRun := filepath.Join(root, "002-verification-run")
@@ -1216,11 +1215,11 @@ func runCommand(t *testing.T, runDir, wrapperName, command string, args ...strin
 	}
 }
 
-func mustFindCommand(t *testing.T, name string) string {
+func mustFindCommand(t *testing.T) string {
 	t.Helper()
-	path, err := exec.LookPath(name)
+	path, err := exec.LookPath("echo")
 	if err != nil {
-		t.Skipf("%s not available", name)
+		t.Skipf("echo not available")
 	}
 	return path
 }

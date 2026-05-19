@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-func mustNewTestEvent(t *testing.T, runID string, sequence int, eventType EventType, prevHash string) Event {
+func mustNewTestEvent(t *testing.T, sequence int, eventType EventType, prevHash string) Event {
 	t.Helper()
 	event := Event{
 		SchemaVersion: SchemaVersion,
-		RunID:         runID,
+		RunID:         "run-a",
 		EventID:       string(eventType),
 		Sequence:      sequence,
 		EventType:     eventType,
@@ -74,8 +74,8 @@ func TestValidateRunDirectoryChecksEventCountAndChainHead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	validEvent := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
-	mismatchedEvent := mustNewTestEvent(t, "run-a", 0, EventRunClosed, NullEventHash)
+	validEvent := mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
+	mismatchedEvent := mustNewTestEvent(t, 0, EventRunClosed, NullEventHash)
 	manifest := RunManifest{
 		SchemaVersion:   SchemaVersion,
 		RunID:           "run-a",
@@ -114,8 +114,8 @@ func TestValidateRunDirectorySkipsEventChainCheckWhenDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	firstEvent := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
-	secondEvent := mustNewTestEvent(t, "run-a", 1, EventRunClosed, "sha256:bad")
+	firstEvent := mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
+	secondEvent := mustNewTestEvent(t, 1, EventRunClosed, "sha256:bad")
 	manifest := RunManifest{
 		SchemaVersion:   SchemaVersion,
 		RunID:           "run-a",
@@ -144,7 +144,7 @@ func TestAppendRunEventExtendsChainAndUpdatesManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first := mustNewTestEvent(t, "run-a", 0, EventRunStarted, NullEventHash)
+	first := mustNewTestEvent(t, 0, EventRunStarted, NullEventHash)
 	manifest := RunManifest{
 		SchemaVersion:   SchemaVersion,
 		RunID:           "run-a",

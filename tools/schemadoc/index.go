@@ -33,7 +33,7 @@ func listSchemaFiles(root string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var names []string
+	names := make([]string, 0, len(matches))
 	for _, m := range matches {
 		names = append(names, filepath.Base(m))
 	}

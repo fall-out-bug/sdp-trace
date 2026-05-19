@@ -13,8 +13,8 @@ import (
 func TestCrossRepoPostureExportWritesSafeArtifactAndExplain(t *testing.T) {
 	root := t.TempDir()
 	withCLIChdir(t, root)
-	current := writePostureCLIQueryPack(t, ".", "current", "missing_telemetry")
-	previous := writePostureCLIQueryPack(t, ".", "previous", "present")
+	current := writePostureCLIQueryPack(t, "current", "missing_telemetry")
+	previous := writePostureCLIQueryPack(t, "previous", "present")
 	selectionPath := writePostureCLISelection(t, ".", current, previous)
 	outPath := "cross-repo-export.json"
 
@@ -68,8 +68,8 @@ func TestCrossRepoPostureValidateOnlyAndRequiredFlags(t *testing.T) {
 
 	root := t.TempDir()
 	withCLIChdir(t, root)
-	current := writePostureCLIQueryPack(t, ".", "current", "present")
-	previous := writePostureCLIQueryPack(t, ".", "previous", "present")
+	current := writePostureCLIQueryPack(t, "current", "present")
+	previous := writePostureCLIQueryPack(t, "previous", "present")
 	selectionPath := writePostureCLISelection(t, ".", current, previous)
 	out.Reset()
 	errOut.Reset()
@@ -153,9 +153,9 @@ func writePostureCLISelection(t *testing.T, root, current, previous string) stri
 	return selectionPath
 }
 
-func writePostureCLIQueryPack(t *testing.T, root, name, state string) string {
+func writePostureCLIQueryPack(t *testing.T, name, state string) string {
 	t.Helper()
-	path := filepath.Join(root, name+"-query-pack.json")
+	path := name + "-query-pack.json"
 	writeCLITestJSON(t, path, map[string]any{
 		"schema_version":     "block20-forensics-query-pack-result-v1",
 		"query_pack_id":      "forensics-basic-v1",

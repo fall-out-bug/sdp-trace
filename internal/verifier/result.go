@@ -15,11 +15,10 @@ func observedResult(runDir, runID string) trace.VerifierResult {
 	}
 }
 
-func cannotVerifyResult(runDir, runID, reason string) trace.VerifierResult {
+func cannotVerifyResult(runDir, reason string) trace.VerifierResult {
 	// Cannot-verify results still carry local trust scope because the verifier
 	// only assessed local artifacts.
 	return trace.VerifierResult{
-		RunID:        runID,
 		RunDir:       runDir,
 		Result:       trace.VerdictCannotVerify,
 		TrustScope:   trace.TrustScopeLocalObserved,

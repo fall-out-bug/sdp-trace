@@ -2,8 +2,9 @@ package demo
 
 import (
 	"fmt"
-	"github.com/fall_out_bug/sdp-trace/internal/trace"
 	"strings"
+
+	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
 func overrideRequestFieldState(event trace.Event) (string, string) {

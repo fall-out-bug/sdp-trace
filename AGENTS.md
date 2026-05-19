@@ -55,12 +55,19 @@ At the start of every session in this repo, run `/sdp-trace-boot` to load the ma
 Available review prompts:
 - `/review-glm` — architecture doubt review (GLM via ZAI)
 - `/review-qwen` — wide-context code review (Qwen via OpenRouter)
+- `/review-kimi` — wide-context code/spec review when Kimi credentials are available
 - `/review-deepseek` — reasoning review (DeepSeek via OpenRouter)
+
+For external implementation handoff, use `codex-subagent` with isolated
+worktrees and recorded Pi model/profile resolution. Commit the reviewed spec
+handoff before launching workers, monitor status/events/logs/structured result,
+then run independent review planes before PR-ready claims.
 
 ## Skills Router
 Use local project skills for detailed workflows instead of expanding this file:
 
 - `sdp-trace-trust-workflow`: block intake, SpecKit review, implementation slicing, PR/review/merge discipline.
+- `sdp-trace-pi-handoff`: external Pi/codex-subagent worker delegation, worktree isolation, monitoring, review panels, and PR handoff.
 - `pi-review`: adversarial reviewer orchestration, retries, model policy, and disposition rules.
 - `sdp-trace-quality-audit`: repository polish, quality gates, completion audits, docs/UX/DX/security review, and final evidence mapping.
 

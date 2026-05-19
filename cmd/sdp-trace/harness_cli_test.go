@@ -129,7 +129,7 @@ func TestObserveSessionRunsControlledProxyWithoutRetainingStdout(t *testing.T) {
 func TestObserveSessionNormalizesOpenCodeRawJSONL(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5","timestamp":"2026-05-09T12:00:00Z"}`,
 		`{"type":"message","role":"assistant","content":"ack"}`,
@@ -173,7 +173,7 @@ func TestObserveSessionNormalizesOpenCodeRawJSONL(t *testing.T) {
 func TestObserveSessionNormalizesNativeOpenCodeJSONL(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"step_start","timestamp":1778326453680,"sessionID":"ses_fixture","part":{"id":"prt_start","messageID":"msg_fixture","sessionID":"ses_fixture","snapshot":"4b825dc642cb6eb9a060e54bf8d69288fbee4904","type":"step-start"}}`,
 		`{"type":"text","timestamp":1778326453882,"sessionID":"ses_fixture","part":{"id":"prt_text","messageID":"msg_fixture","sessionID":"ses_fixture","type":"text","text":"OK","time":{"start":1778326453875,"end":1778326453882}}}`,
@@ -220,7 +220,7 @@ func TestObserveSessionNormalizesNativeOpenCodeJSONL(t *testing.T) {
 func TestObserveSessionNormalizesRealOpenCodeGSDToolPaths(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"step_start","timestamp":1778326453680,"sessionID":"ses_fixture","part":{"type":"step-start"}}`,
 		`{"type":"text","timestamp":1778326453882,"sessionID":"ses_fixture","part":{"type":"text","text":"initializing GSD project"}}`,
@@ -277,91 +277,30 @@ func TestObserveSessionNormalizesRealOpenCodeGSDToolPaths(t *testing.T) {
 }
 
 func TestObserveCollectRejectsTokenInRawOpenCodePathField(t *testing.T) {
-	dir := t.TempDir()
-	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
 	raw := `{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_token","state":{"status":"completed","input":{"path":"sk-testtoken1234567890abcdef"},"output":"digest only"}}}`
-	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldwd := chdirCLI(t, dir)
-	defer oldwd()
-
-	var out, errOut bytes.Buffer
-	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	out.Reset()
-	errOut.Reset()
-	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.path:token_like_value") {
-		t.Fatalf("collect should reject token-like path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after token-like raw path")
-	}
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:part.state.input.path:token_like_value", "token-like path")
 }
 
 func TestObserveCollectRejectsAuthenticatedURLInRawOpenCodePathField(t *testing.T) {
-	dir := t.TempDir()
-	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
 	raw := `{"type":"tool_use","timestamp":1778326474358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"read","callID":"call_url","state":{"status":"completed","input":{"path":"https://user:pass@example.test/secret"},"output":"digest only"}}}`
-	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldwd := chdirCLI(t, dir)
-	defer oldwd()
-
-	var out, errOut bytes.Buffer
-	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	out.Reset()
-	errOut.Reset()
-	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.path:authenticated_url") {
-		t.Fatalf("collect should reject authenticated URL path exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after authenticated URL raw path")
-	}
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:part.state.input.path:authenticated_url", "authenticated URL path")
 }
 
 func TestObserveCollectRejectsTopLevelRawPromptOpenCodeJSONL(t *testing.T) {
-	dir := t.TempDir()
-	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
 	raw := `{"type":"tool_use","timestamp":1778326474358,"prompt":"raw prompt should remain forbidden","part":{"type":"tool","tool":"task","state":{"status":"completed"}}}`
-	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldwd := chdirCLI(t, dir)
-	defer oldwd()
-
-	var out, errOut bytes.Buffer
-	exit := run([]string{"observe", "setup", "--profile", "session-profile.json", "--out", "session-run"}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("setup exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	out.Reset()
-	errOut.Reset()
-	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:prompt:forbidden_raw_field") {
-		t.Fatalf("collect should reject top-level prompt exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
-	}
-	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after top-level raw prompt")
-	}
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:prompt:forbidden_raw_field", "top-level prompt")
 }
 
 func TestObserveCollectRejectsNestedSecretInRawOpenCodePromptObject(t *testing.T) {
+	raw := `{"type":"tool_use","timestamp":1778326474358,"part":{"type":"tool","tool":"task","state":{"status":"completed","input":{"prompt":{"api_key":"redacted"}}}}}`
+	assertObserveCollectRejectsRawOpenCode(t, raw, "unsafe_input:part.state.input.prompt:forbidden_raw_field", "nested prompt secret")
+}
+
+func assertObserveCollectRejectsRawOpenCode(t *testing.T, raw, wantError, label string) {
+	t.Helper()
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"tool"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
-	raw := `{"type":"tool_use","timestamp":1778326474358,"part":{"type":"tool","tool":"task","state":{"status":"completed","input":{"prompt":{"api_key":"redacted"}}}}}`
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -376,18 +315,18 @@ func TestObserveCollectRejectsNestedSecretInRawOpenCodePromptObject(t *testing.T
 	out.Reset()
 	errOut.Reset()
 	exit = run([]string{"observe", "collect", "--profile", "session-profile.json", "--run", "session-run"}, &out, &errOut)
-	if exit == 0 || !strings.Contains(errOut.String(), "unsafe_input:part.state.input.prompt:forbidden_raw_field") {
-		t.Fatalf("collect should reject nested prompt secret exit=%d stderr=%s stdout=%s", exit, errOut.String(), out.String())
+	if exit == 0 || !strings.Contains(errOut.String(), wantError) {
+		t.Fatalf("collect should reject %s exit=%d stderr=%s stdout=%s", label, exit, errOut.String(), out.String())
 	}
 	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err == nil {
-		t.Fatalf("normalized source written after nested prompt secret")
+		t.Fatalf("normalized source written after %s", label)
 	}
 }
 
 func TestObserveCollectNormalizesNativeOpenCodeToolUseWithPrivateOutput(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "tool", "mutation"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"step_start","timestamp":1778326472992,"sessionID":"ses_fixture","part":{"type":"step-start"}}`,
 		`{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"glob","callID":"call_fixture","state":{"status":"completed","input":{"pattern":"*"},"output":"/Users/fall_out_bug/projects/vibe_coding/sdp-trace/schema/harness-event.schema.json"}}}`,
@@ -429,7 +368,7 @@ func TestObserveCollectNormalizesNativeOpenCodeToolUseWithPrivateOutput(t *testi
 func TestObserveCollectTreatsNativeEditToolAsMutation(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "tool", "mutation"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"step_start","timestamp":1778326472992,"sessionID":"ses_fixture","part":{"type":"step-start"}}`,
 		`{"type":"tool_use","timestamp":1778326473358,"sessionID":"ses_fixture","part":{"type":"tool","tool":"edit","callID":"call_fixture","state":{"status":"completed","input":{"file":"src/App.kt"},"output":"updated"}}}`,
@@ -467,7 +406,7 @@ func TestObserveCollectTreatsNativeEditToolAsMutation(t *testing.T) {
 func TestObserveSessionDoesNotPromoteMessageTextToEvidence(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "interaction", "phase", "tool", "mutation", "test"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5"}`,
 		`{"type":"message","role":"assistant","content":"I used a tool, edited files, completed the phase, and tests pass"}`,
@@ -505,7 +444,7 @@ func TestObserveSessionDoesNotPromoteMessageTextToEvidence(t *testing.T) {
 func TestObserveCollectDoesNotTreatFileReadAsMutation(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model", "mutation"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := strings.Join([]string{
 		`{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5"}`,
 		`{"type":"file.read","path":"src/App.kt"}`,
@@ -538,7 +477,7 @@ func TestObserveCollectDoesNotTreatFileReadAsMutation(t *testing.T) {
 func TestObserveCollectDoesNotFabricateEventsForUnrecognizedRawJSONL(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfileWithFamilies(t, dir, []string{"harness", "model"})
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(`{"type":"custom.event","data":"x"}`+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -572,7 +511,7 @@ func TestObserveCollectDoesNotFabricateEventsForUnrecognizedRawJSONL(t *testing.
 func TestObserveCollectRejectsUnsafeRawOpenCodeJSONL(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfile(t, dir)
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := `{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5","api_key":"redacted"}`
 	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -599,7 +538,7 @@ func TestObserveCollectRejectsUnsafeRawOpenCodeJSONL(t *testing.T) {
 func TestObserveCollectRejectsNestedUnsafeRawOpenCodeJSONL(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfile(t, dir)
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "opencode-raw.jsonl")
 	raw := `{"type":"session.started","provider":"minimax","model":"minimax-coding-plan/MiniMax-M2.5","content":{"api_key":"redacted"}}`
 	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(raw+"\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -623,7 +562,7 @@ func TestObserveCollectRejectsNestedUnsafeRawOpenCodeJSONL(t *testing.T) {
 func TestObserveCollectRejectsUnsafeRawEventSourcePath(t *testing.T) {
 	dir := t.TempDir()
 	writeHarnessCLIProfile(t, dir)
-	writeHarnessSessionProfileWithRaw(t, dir, "normalized-events.jsonl", "../opencode-raw.jsonl", harnessobs.OpenCodeJSONLRawFormat)
+	writeHarnessSessionProfileWithRaw(t, dir, "../opencode-raw.jsonl")
 	oldwd := chdirCLI(t, dir)
 	defer oldwd()
 
@@ -881,15 +820,15 @@ func writeHarnessSessionProfileWithStream(t *testing.T, dir, eventSource, stream
 	}
 }
 
-func writeHarnessSessionProfileWithRaw(t *testing.T, dir, eventSource, rawSource, rawFormat string) {
+func writeHarnessSessionProfileWithRaw(t *testing.T, dir, rawSource string) {
 	t.Helper()
 	profile := harnessobs.SessionProfile{
 		SchemaVersion:      harnessobs.SessionProfileSchemaVersion,
 		ProfileID:          "opencode-gsd-fixture-v1",
 		HarnessProfilePath: "profile.json",
-		EventSourcePath:    eventSource,
+		EventSourcePath:    "normalized-events.jsonl",
 		RawEventSourcePath: rawSource,
-		RawEventFormat:     rawFormat,
+		RawEventFormat:     harnessobs.OpenCodeJSONLRawFormat,
 		SetupActions: []harnessobs.SessionSetupAction{
 			{ID: "init", Kind: "init", Required: true},
 			{ID: "profile", Kind: "profile", Required: true},

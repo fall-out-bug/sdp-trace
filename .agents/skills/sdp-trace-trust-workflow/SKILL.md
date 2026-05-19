@@ -20,23 +20,25 @@ Do not use this skill for quick read-only explanations, purely mechanical format
 2. Continue new block work in a fresh worktree when practical.
 3. Prepare a SpecKit delta and implementation plan.
 4. Run Socratic spec review with `pi-review`; fix or record findings.
-5. Stop for explicit user approval of the reviewed spec direction before writing implementation code.
+5. Commit or explicitly park the reviewed spec/review handoff before delegating or writing implementation code.
+6. Stop for explicit user approval of the reviewed spec direction unless the user already requested unattended worker delegation through Pi/codex-subagents.
 </intake_protocol>
 
 <implementation_loop>
 After approval:
 1. Split independent tasks into bounded slices with clear file ownership.
-2. Use subagents for parallel exploration, implementation, testing, and review when they materially help.
-3. Keep each slice traceable to spec, task, evidence, gate, decision, and provenance changes.
-4. Use test-first behavior when behavior changes.
-5. Run drift checks: spec vs implementation and regression against previous blocks.
-6. Record verifier state as `pass`, `fail`, `cannot_verify`, or `not_assessed`.
-7. Commit each verified slice with a scoped message.
+2. For large approved blocks, use `sdp-trace-pi-handoff` and `codex-subagent` workers in isolated worktrees instead of loading the whole implementation loop into Codex context.
+3. Use subagents for parallel exploration, implementation, testing, and review when they materially help.
+4. Keep each slice traceable to spec, task, evidence, gate, decision, and provenance changes.
+5. Use test-first behavior when behavior changes.
+6. Run drift checks: spec vs implementation and regression against previous blocks.
+7. Record verifier state as `pass`, `fail`, `cannot_verify`, or `not_assessed`.
+8. Commit each verified slice with a scoped message.
 </implementation_loop>
 
 <pr_protocol>
 1. Prepare a PR with code, tracing/evidence, docs, and requirements mapping.
-2. Run separate review planes at PR level: code/correctness, tracing/evidence/provenance, requirements-vs-implementation, and security/DX/UX when relevant.
+2. Run separate review planes at PR level through `pi-review` or `codex-subagent panel run pi`: code/correctness, tracing/evidence/provenance, requirements-vs-implementation, and security/DX/UX when relevant.
 3. Verify reviewer findings against full files before accepting or rejecting them.
 4. Re-read the actual diff before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
 5. Ensure the PR is not in Draft state before claiming it is ready for review.

@@ -13,11 +13,11 @@ func missingReportBaseline(path string) bool {
 }
 
 // reportBaselineReadError converts a baseline read failure into gate state.
-func reportBaselineReadError[R any](opts options, label string, err error) (map[string]R, bool, bool) {
+func reportBaselineReadError(opts options, label string, err error) (bool, bool) {
 	// Keep the baseline error attached to the metric family label so users can
 	// distinguish function and file ratchet failures.
 	fmt.Fprintf(errorOutput(opts), "read %s MI baseline: %v\n", label, err)
-	return nil, false, true
+	return false, true
 }
 
 // indexFunctionReportBaseline builds function-ratchet lookups by stable key.

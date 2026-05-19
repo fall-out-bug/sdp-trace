@@ -2,11 +2,11 @@ package query
 
 import "strings"
 
-func (b *packBuilder) addRow(queryName, state, family, sourceRef, conditionID, conditionState, reasonCode, gap string) {
+func (b *packBuilder) addRow(queryName, state, family, sourceRef, reasonCode, gap string) {
 	// addRow keeps query-pack rows source-bound to replayed evidence artifacts.
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
-	row := b.newRow(queryName, state, family, sourceRef, conditionID, conditionState, reasonCode, gap)
+	row := b.newRow(queryName, state, family, sourceRef, "", "", reasonCode, gap)
 	b.rows[queryName] = append(b.rows[queryName], row)
 }
 

@@ -13,6 +13,7 @@ Use this skill at the start of sdp-trace work, when choosing a workflow, when a 
 
 <routing>
 - Block intake, SpecKit delta, implementation, PR-ready closure, or "берем блок в работу" -> use `sdp-trace-trust-workflow`.
+- Sending approved work to Pi, Kimi, OpenCode, GSD2, codex-subagents, background workers, or external implementation agents -> use `sdp-trace-pi-handoff`.
 - Adversarial, Socratic, PR, implementation, requirements, security, evidence, or provenance review -> use `pi-review`.
 - Repository polish, quality gates, CRAP, MI, docs/DX/security audit, spec drift, or readiness -> use `sdp-trace-quality-audit`.
 - Skill authoring or skill cleanup -> use a skill-authoring workflow, but keep project-local files portable across Codex/OpenCode/Claude-style agents.
@@ -28,7 +29,7 @@ Do not let generic global skills override sdp-trace trust rules.
 </global_skill_quarantine>
 
 <model_and_harness_balance>
-Use Codex for scoped implementation, Go edits, local verification, and PR integration. Use OpenCode-compatible `.agents/skills` semantics for portable skill discovery. Use pi-style reviewer fanout for adversarial evidence, preferring non-OpenAI, non-Anthropic, and non-Google reviewers when the repo policy applies and the user authorizes the tool/model.
+Use Codex for scoped integration, local verification, review synthesis, and PR finalization. For large approved implementation blocks, prefer `codex-subagent` handoff to Pi/OpenCode/GSD2 workers in isolated worktrees instead of keeping the whole work loop in Codex context. Use OpenCode-compatible `.agents/skills` semantics for portable skill discovery. Use pi-style reviewer fanout for adversarial evidence, preferring non-OpenAI, non-Anthropic, and non-Google reviewers when the repo policy applies and the user authorizes the tool/model.
 
 Treat Kimi, GLM, MiniMax, and other long-horizon or swarm-capable models as advisory reviewers or workers, not trust authorities. Record model, harness, timeout, retry, fallback, and missing-evidence status in the review artifact.
 </model_and_harness_balance>

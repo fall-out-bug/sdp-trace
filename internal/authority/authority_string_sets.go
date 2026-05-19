@@ -10,7 +10,7 @@ func uniqueStrings(values []string) []string {
 	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
 	// This helper does not turn local policy data into external trust.
 	seen := map[string]bool{}
-	var out []string
+	out := make([]string, 0, len(values))
 	for _, value := range values {
 		value = strings.TrimSpace(value)
 		if value == "" || seen[value] {

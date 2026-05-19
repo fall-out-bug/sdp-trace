@@ -54,7 +54,6 @@ func parseObserveCollectArgs(args []string, stderr io.Writer) (*flagSet, int, bo
 		fmt.Fprintln(stderr, err)
 		return nil, exitUsage, false
 	}
-	// Collection inputs are named flags because the run directory is evidence.
 	if !requireOnlyFlags(opts, stderr, "observe collect accepts only flags", observeCollectRequiredFlags) {
 		return nil, exitUsage, false
 	}

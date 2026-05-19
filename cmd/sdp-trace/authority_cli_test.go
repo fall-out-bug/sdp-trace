@@ -61,13 +61,7 @@ func TestAuthorityEnvelopeAssessExplainsAndPreviews(t *testing.T) {
 }
 
 func TestAuthorityEnvelopeAssessDistinctExitStates(t *testing.T) {
-	cases := []struct {
-		name      string
-		mutate    func(*authority.Package)
-		wantExit  int
-		wantState string
-		wantCode  string
-	}{
+	cases := []assessCLICase[authority.Package]{
 		{
 			name: "within-authority",
 			mutate: func(pkg *authority.Package) {
@@ -92,31 +86,14 @@ func TestAuthorityEnvelopeAssessDistinctExitStates(t *testing.T) {
 			wantExit: exitCannotVerify, wantState: authority.StateCannotVerify, wantCode: "allow_deny_event_conflict",
 		},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			root := t.TempDir()
-			pkg := validAuthorityPackage()
-			tc.mutate(&pkg)
-			packagePath := filepath.Join(root, "authority-package.json")
-			writeTestJSON(t, packagePath, pkg)
-			var out bytes.Buffer
-			var errOut bytes.Buffer
-			exit := run([]string{
-				"assess",
-				"--profile", "authority-envelope",
-				"--authority-package", packagePath,
-				"--out", filepath.Join(root, "authority-result.json"),
-			}, &out, &errOut)
-			if exit != tc.wantExit {
-				t.Fatalf("exit = %d want %d err=%s out=%s", exit, tc.wantExit, errOut.String(), out.String())
-			}
-			if !strings.Contains(out.String(), `"authority_evaluation_state": "`+tc.wantState+`"`) ||
-				!strings.Contains(out.String(), `"reason_code": "`+tc.wantCode+`"`) {
-				t.Fatalf("output missing state/code: %s", out.String())
-			}
-			assertNoAuthorityLeak(t, out.String())
-		})
-	}
+	runAssessCLICases(t, cases, validAuthorityPackage, "authority-package.json", "authority_evaluation_state", func(root, packagePath string) []string {
+		return []string{
+			"assess",
+			"--profile", "authority-envelope",
+			"--authority-package", packagePath,
+			"--out", filepath.Join(root, "authority-result.json"),
+		}
+	}, assertNoAuthorityLeak)
 }
 
 func validAuthorityPackage() authority.Package {

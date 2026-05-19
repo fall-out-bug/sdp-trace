@@ -19,7 +19,7 @@ func TestVerifyDigestManifest(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
 
-	queryPack := writeQueryPack(t, ".", "current", "present")
+	queryPack := writeQueryPack(t, "current", "present")
 	digestManifest := writeDigest(t, queryPack)
 
 	actual, err := verifyDigestManifest(digestManifest, queryPack)
@@ -42,7 +42,7 @@ func TestVerifyDigestManifestMissingQueryPackArtifact(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
 
-	queryPack := writeQueryPack(t, ".", "current", "present")
+	queryPack := writeQueryPack(t, "current", "present")
 	digestManifest := writeDigest(t, queryPack)
 	var digest DigestManifest
 	readJSONFixture(t, digestManifest, &digest)
@@ -59,7 +59,7 @@ func TestVerifyDigestManifestRejectsMismatchedQueryPackPath(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
 
-	queryPack := writeQueryPack(t, ".", "current", "present")
+	queryPack := writeQueryPack(t, "current", "present")
 	digestManifest := writeDigest(t, queryPack)
 	var digest DigestManifest
 	readJSONFixture(t, digestManifest, &digest)
@@ -76,7 +76,7 @@ func TestVerifyDigestManifestMismatchReturnsNoDigest(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
 
-	queryPack := writeQueryPack(t, ".", "current", "present")
+	queryPack := writeQueryPack(t, "current", "present")
 	digestManifest := writeDigest(t, queryPack)
 	var digest DigestManifest
 	readJSONFixture(t, digestManifest, &digest)
@@ -97,7 +97,7 @@ func TestIngestRepository(t *testing.T) {
 		root := t.TempDir()
 		withChdir(t, root)
 
-		queryPack := writeQueryPack(t, ".", "current", "present")
+		queryPack := writeQueryPack(t, "current", "present")
 		digest := writeDigest(t, queryPack)
 		signals := writeSignals(t, ".", "current-signals.json", "timeline.0001", "ci_witnessed", "override_present")
 		repo := selectionRepo("current", "2026-w02", queryPack, digest, signals)
@@ -118,7 +118,7 @@ func TestIngestRepository(t *testing.T) {
 		root := t.TempDir()
 		withChdir(t, root)
 
-		queryPack := writeQueryPack(t, ".", "current", "present")
+		queryPack := writeQueryPack(t, "current", "present")
 		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "")
 		repo.Repo = "https://provider.example/private"
 
@@ -135,7 +135,7 @@ func TestIngestRepository(t *testing.T) {
 		root := t.TempDir()
 		withChdir(t, root)
 
-		queryPack := writeQueryPack(t, ".", "current", "present")
+		queryPack := writeQueryPack(t, "current", "present")
 		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "")
 		repo.InputObservedAt = "2025-12-31T00:00:00Z"
 
@@ -152,7 +152,7 @@ func TestIngestRepository(t *testing.T) {
 		root := t.TempDir()
 		withChdir(t, root)
 
-		queryPack := writeQueryPack(t, ".", "current", "present")
+		queryPack := writeQueryPack(t, "current", "present")
 		var payload map[string]any
 		readJSONFixture(t, queryPack, &payload)
 		payload["schema_version"] = "future"
@@ -173,7 +173,7 @@ func TestIngestRepository(t *testing.T) {
 		root := t.TempDir()
 		withChdir(t, root)
 
-		queryPack := writeQueryPack(t, ".", "current", "present")
+		queryPack := writeQueryPack(t, "current", "present")
 		repo := selectionRepo("current", "2026-w02", queryPack, writeDigest(t, queryPack), "malformed-signals.json")
 		if err := os.WriteFile(repo.PostureSignalManifest, []byte("{invalid json"), 0o644); err != nil {
 			t.Fatal(err)
@@ -192,9 +192,9 @@ func TestIngestRepository(t *testing.T) {
 func TestBuildAggregatesMovementAndRefusals(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	current := writeQueryPack(t, ".", "current", "missing_telemetry")
-	previous := writeQueryPack(t, ".", "previous", "present")
-	bad := writeQueryPack(t, ".", "bad", "issue_observed")
+	current := writeQueryPack(t, "current", "missing_telemetry")
+	previous := writeQueryPack(t, "previous", "present")
+	bad := writeQueryPack(t, "bad", "issue_observed")
 	currentDigest := writeDigest(t, current)
 	previousDigest := writeDigest(t, previous)
 	badDigest := writeDigest(t, bad)
@@ -319,7 +319,7 @@ func TestPostureHelperCoverageForDigestAndTrustCopies(t *testing.T) {
 func TestBuildRefusesUnsafeLabels(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	manifest := writeDigest(t, qp)
 	selection := SelectionManifest{
 		SchemaVersion:           "block21-cross-repo-selection-v1",
@@ -370,8 +370,8 @@ func TestBuildSupportsTeamServiceAndHarnessChangeGrouping(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
 			withChdir(t, root)
-			current := writeQueryPack(t, ".", "current", "present")
-			previous := writeQueryPack(t, ".", "previous", "present")
+			current := writeQueryPack(t, "current", "present")
+			previous := writeQueryPack(t, "previous", "present")
 			selection := SelectionManifest{
 				SchemaVersion:           SelectionSchemaVersion,
 				ProfileID:               ProfileID,
@@ -399,36 +399,15 @@ func TestBuildSupportsTeamServiceAndHarnessChangeGrouping(t *testing.T) {
 }
 
 func TestBuildRefusesStaleInput(t *testing.T) {
-	root := t.TempDir()
-	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
-	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
-	repo.InputObservedAt = "2025-12-31T00:00:00Z"
-	selection := SelectionManifest{
-		SchemaVersion:           SelectionSchemaVersion,
-		ProfileID:               ProfileID,
-		GroupingSetID:           GroupingRepoWindow,
-		FreshnessBoundary:       "2026-01-01T00:00:00Z",
-		DimensionExposurePolicy: []string{"repo", "team", "service", "harness", "change_type"},
-		CurrentWindow:           "2026-w02",
-		PreviousWindow:          "2026-w01",
-		Repositories:            []RepositoryWindow{repo},
-	}
-	selectionPath := filepath.Join(root, "selection.json")
-	writeJSON(t, selectionPath, selection)
-	result, err := Build(selectionPath, time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC))
-	if err != nil {
-		t.Fatalf("build: %v", err)
-	}
-	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != "stale_input" {
-		t.Fatalf("refusals = %+v", result.RefusalRows)
-	}
+	assertBuildRefusesSingleRepo(t, "stale_input", func(repo *RepositoryWindow) {
+		repo.InputObservedAt = "2025-12-31T00:00:00Z"
+	})
 }
 
 func TestBuildRejectsGroupingOutsideExposurePolicy(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	selection := SelectionManifest{
 		SchemaVersion:           SelectionSchemaVersion,
 		ProfileID:               ProfileID,
@@ -449,7 +428,7 @@ func TestBuildRejectsGroupingOutsideExposurePolicy(t *testing.T) {
 func TestBuildRejectsDurationFreshnessBoundaryInV1(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	manifest := writeDigest(t, qp)
 	selection := SelectionManifest{
 		SchemaVersion:           "block21-cross-repo-selection-v1",
@@ -473,7 +452,7 @@ func TestBuildRejectsDurationFreshnessBoundaryInV1(t *testing.T) {
 func TestBuildRefusesUnsafeInputIDTimeWindowAndPaths(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	manifest := writeDigest(t, qp)
 	for name, mutate := range map[string]func(*RepositoryWindow){
 		"input-id": func(repo *RepositoryWindow) { repo.InputID = "credential-token" },
@@ -509,7 +488,7 @@ func TestBuildRefusesUnsafeInputIDTimeWindowAndPaths(t *testing.T) {
 func TestBuildRejectsMismatchedDigestManifestPath(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	manifest := writeDigest(t, qp)
 	var digest DigestManifest
 	payload, err := os.ReadFile(manifest)
@@ -545,7 +524,7 @@ func TestBuildRejectsMismatchedDigestManifestPath(t *testing.T) {
 func TestBuildRejectsUnsupportedDigestManifestSchema(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	manifest := writeDigest(t, qp)
 	var digest DigestManifest
 	readJSONFixture(t, manifest, &digest)
@@ -606,7 +585,7 @@ func TestUnsafeOutput(t *testing.T) {
 func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	manifest := writeDigest(t, qp)
 	selection := SelectionManifest{
 		SchemaVersion:           SelectionSchemaVersion,
@@ -635,11 +614,18 @@ func TestBuildNormalizesHandoffAndRejectsUnsafeHandoff(t *testing.T) {
 }
 
 func TestBuildRefusesWindowsAbsoluteInputPath(t *testing.T) {
+	assertBuildRefusesSingleRepo(t, "malformed_input", func(repo *RepositoryWindow) {
+		repo.QueryPackResult = `C:\private\query-pack.json`
+	})
+}
+
+func assertBuildRefusesSingleRepo(t *testing.T, wantReason string, mutate func(*RepositoryWindow)) {
+	t.Helper()
 	root := t.TempDir()
 	withChdir(t, root)
-	qp := writeQueryPack(t, ".", "current", "present")
+	qp := writeQueryPack(t, "current", "present")
 	repo := selectionRepo("current", "2026-w02", qp, writeDigest(t, qp), "")
-	repo.QueryPackResult = `C:\private\query-pack.json`
+	mutate(&repo)
 	selection := SelectionManifest{
 		SchemaVersion:           SelectionSchemaVersion,
 		ProfileID:               ProfileID,
@@ -656,7 +642,7 @@ func TestBuildRefusesWindowsAbsoluteInputPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != "malformed_input" {
+	if len(result.RefusalRows) != 1 || result.RefusalRows[0].RefusalReason != wantReason {
 		t.Fatalf("refusals = %+v", result.RefusalRows)
 	}
 }
@@ -919,9 +905,9 @@ func selectionRepo(inputID, window, qp, digestManifest, signals string) Reposito
 	}
 }
 
-func writeQueryPack(t *testing.T, root, name, rowState string) string {
+func writeQueryPack(t *testing.T, name, rowState string) string {
 	t.Helper()
-	path := filepath.Join(root, name+"-query-pack.json")
+	path := name + "-query-pack.json"
 	result := map[string]any{
 		"schema_version":     "block20-forensics-query-pack-result-v1",
 		"query_pack_id":      "forensics-basic-v1",

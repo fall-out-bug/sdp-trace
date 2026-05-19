@@ -53,7 +53,7 @@ func applyBindingAttribution(eval *AuthorityEvaluation, action ObservedAction, e
 
 		eval.ToolAttribution = AttributionVerified
 	}
-	if hasVerifiedGatewayBinding(action, eventBindings) {
+	if hasVerifiedGatewayBinding(eventBindings) {
 
 		eval.ModelAttribution = AttributionVerified
 	}

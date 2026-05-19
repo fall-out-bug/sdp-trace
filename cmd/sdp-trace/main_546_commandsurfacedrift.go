@@ -8,14 +8,14 @@ import (
 
 // commandSurfaceUsageDrift returns missing and stale usage rows when comparing
 // the command surface registry against the frozen usageText constant.
-func commandSurfaceUsageDrift() (missing, stale []string, err error) {
+func commandSurfaceUsageDrift() (missing, stale []string) {
 	registryUsages := collectRegistryUsages(buildCommandSurface())
 	helpUsages := collectHelpUsages(usageText)
 	missing = diffSets(registryUsages, helpUsages)
 	stale = diffSets(helpUsages, registryUsages)
 	sort.Strings(missing)
 	sort.Strings(stale)
-	return missing, stale, nil
+	return missing, stale
 }
 
 func collectRegistryUsages(surface commandSurfaceSchema) map[string]bool {

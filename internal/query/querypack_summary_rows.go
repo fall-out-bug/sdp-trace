@@ -28,7 +28,7 @@ func (b *packBuilder) relatedRows(queryName string) []string {
 	// relatedRows keeps query-pack rows source-bound to replayed evidence artifacts.
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
-	var related []string
+	related := make([]string, 0, len(b.rows[queryName]))
 	for _, row := range b.rows[queryName] {
 		related = append(related, row.ID)
 	}

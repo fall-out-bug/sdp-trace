@@ -38,7 +38,7 @@ func (b *packBuilder) addVerifierGapRow(key string, state verifierState) {
 		return
 	}
 	family := familyForVerifierState(key)
-	b.addRow(QueryForensicsGaps, rowState, family, "block_09.run."+safeToken(key), "", "", safeToken(key), family)
+	b.addRow(QueryForensicsGaps, rowState, family, "block_09.run."+safeToken(key), safeToken(key), family)
 }
 
 func (b *packBuilder) addForensicGapRows() {
@@ -46,9 +46,9 @@ func (b *packBuilder) addForensicGapRows() {
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.forensicPresent {
-		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "", "", "missing_optional_block_18_forensic_retention_result", "retention")
+		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyRetention, "block_18.condition.missing", "missing_optional_block_18_forensic_retention_result", "retention")
 	} else if b.inputs.forensicErr != nil {
-		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
+		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_18.condition.malformed", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }
 
@@ -57,8 +57,8 @@ func (b *packBuilder) addAdapterGapRows() {
 	// Missing, malformed, redacted, retained, and adapter evidence stay separate.
 	// This helper renders derived query rows; it does not create a new verdict.
 	if !b.inputs.adapterPresent {
-		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "", "", "missing_optional_block_19_adapter_capture_result", "adapter_capture")
+		b.addRow(QueryForensicsGaps, RowStateNotAssessed, EvidenceFamilyAdapterCapture, "block_19.condition.missing", "missing_optional_block_19_adapter_capture_result", "adapter_capture")
 	} else if b.inputs.adapterErr != nil {
-		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "", "", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
+		b.addRow(QueryForensicsGaps, RowStateCannotVerify, EvidenceFamilyInputArtifact, "block_19.condition.malformed", "unreadable_or_malformed_input_artifact", EvidenceFamilyInputArtifact)
 	}
 }
