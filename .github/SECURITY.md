@@ -15,8 +15,10 @@ report it responsibly.
 
 To report a security concern:
 
-1. **Private disclosure**: Email the maintainers directly with a description of
-   the issue, steps to reproduce, and potential impact.
+1. **Private disclosure**: Use GitHub private vulnerability reporting or draft
+   Security Advisory for this repository when available. If that channel is not
+   visible, open a public issue that asks for a private disclosure channel but
+   does not include vulnerability details.
 2. **Expected response time**: We aim to acknowledge within 7 days.
 3. **What to expect**: We will assess the report, determine severity, and work
    with you on a fix or mitigation.
@@ -49,8 +51,9 @@ See `docs/production-adoption-readiness.md` for the current adoption readiness
 matrix and `docs/security-baseline.md` for the scanner findings ledger.
 
 This repository is in controlled-pilot MVP status. It has not undergone external
-security audit. Production deployments should follow your organization's
-security review process.
+security audit. A dedicated security email/contact is `not_assessed` until the
+maintainers publish one. Production deployments should follow your
+organization's security review process.
 
 ## Security Best Practices for Deployments
 
@@ -65,13 +68,18 @@ If you deploy sdp-trace in your environment:
 
 ## Scanner Status
 
-Automated security scans are run locally and in CI:
+Current CI runs the repository's Go, docs, hygiene, schema, and quality gates.
+Additional security scanners are tracked in `docs/security-baseline.md`:
 
-- `go vet`: Static analysis; no findings.
-- `govulncheck`: Vulnerability database check; no vulnerabilities found.
-- `gosec`: Static security analysis; findings are classified in
-  `docs/security-baseline.md`.
-- `gitleaks`: Secret detection; findings require allowlist review.
+- `go vet`: Static analysis; currently pass locally.
+- `govulncheck`: Vulnerability database check; currently pass locally.
+- `gosec`: Static security analysis; 133 findings require triage before it can
+  become a CI gate.
+- `gitleaks`: Secret detection; local and tracked-source scans pass with the
+  reviewed `.gitleaks.toml` fixture allowlist.
+
+`govulncheck`, `gosec`, and `gitleaks` CI coverage is `not_assessed` until
+those jobs are added to `.github/workflows/ci.yml`.
 
 See `docs/security-baseline.md` for the full triage ledger and classification
 status.

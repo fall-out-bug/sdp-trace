@@ -73,7 +73,7 @@ Missing tools render that probe `blocked`.
 | Rekor integration | `not_assessed` | Transparency log requires external service and OIDC identity |
 | CUE module packaging | `cannot_verify` | `schema/` refs not yet packaged as CUE modules |
 | Cosign production trust | `not_assessed` | Local key signing excludes keyless/OIDC/transparency verification |
-| JSON Schema fixture alignment | `pass` | Checked examples validate; live wrap output mismatch documented |
-| OPA policy prototype | `pass` | Local evaluation passes/fails as expected on test fixtures |
+| JSON Schema fixture alignment | `local_pass` | Checked examples validate; live wrap output mismatch documented |
+| OPA policy prototype | `local_pass` | Local evaluation passes/fails as expected on test fixtures |
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.

@@ -28,3 +28,7 @@ Status: draft
 - [ ] T017-070 Mark unavailable external services as `not_assessed` or
   `cannot_verify`; do not infer pass from local fixture success.
 - [ ] T017-080 Update roadmap and docs index after accepted implementation.
+- [ ] T017-090 Keep the live `wrap` output vs
+  `schema/flight-recorder-run.schema.json` drift open as a blocker until
+  T017-020 lands; fixture schema compatibility must not be claimed as live
+  recorder compatibility.

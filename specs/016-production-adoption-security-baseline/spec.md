@@ -14,7 +14,7 @@ customer production adoption or external production trust.
   no latest release, security policy disabled.
 - Current local branch: `main` at
   `464d5e2c6e4a208861fa50b420afb05e4177144c`.
-- Command surface: 26 command families; many are `partial`.
+- Command surface: 27 command families; many are `partial`.
 - Roadmap: existing specs are draft, blocked, or in progress; no completed spec
   is recorded.
 - `go vet ./...`: pass.

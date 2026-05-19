@@ -10,8 +10,11 @@ decisions but do not prove production readiness.
 ## Environment
 
 - Platform: Linux amd64
+- CPU: AMD Ryzen 7 5800X 8-Core Processor exposed as 6 vCPUs
+- Memory: 47 GiB available host memory
 - Iterations: 20 per probe
 - Reported metric: **median** wall-clock time per invocation
+- Background load: not recorded
 
 ## Benchmark Table
 
@@ -63,6 +66,8 @@ per probe. They do not account for:
 - Cold starts vs. warmed caches beyond the measured median
 - System-level jitter from other processes
 - Different CPU architectures or constrained environments (containers, CI)
+- Hardware and background-load differences; the original run did not capture a
+  full performance profile
 
 Benchmark results must not be used to assign health scores, readiness gates,
 or production trust decisions. They are scope-informative only.

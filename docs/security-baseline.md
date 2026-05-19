@@ -12,13 +12,12 @@ secrets.
 | Field | Value |
 | --- | --- |
 | Date | 2026-05-20 |
-| Source commit | `adf0e0220c7412171d6ca279d52c56ec83f459e4` |
-| Integration branch | `codex/016-018-pi-delivery` |
+| Scanner target | Local branch snapshot before this baseline was committed |
 | Go version | `1.22` from `go.mod` |
-| Local evidence files | `/tmp/sdp-trace-gosec.json`, `/tmp/sdp-trace-gitleaks.json`, `/tmp/sdp-trace-gitleaks-tracked.json` |
 
 The scanner evidence was produced locally before later integration edits in
-this branch. Re-run the commands below before using this ledger in a PR.
+this branch. Re-run the commands below before using this ledger in a PR; raw
+scanner JSON is intentionally not checked in.
 
 ## Tool Summary
 
@@ -27,8 +26,10 @@ this branch. Re-run the commands below before using this ledger in a PR.
 | `go vet ./...` | pass | 0 | `verified` | Go vet completed locally. |
 | `govulncheck ./...` | pass | 0 | `verified` | No known vulnerabilities reported by the local database snapshot. |
 | `gosec ./...` | exit 1 | 133 | `needs_triage` | Static findings require code-level review or reviewed suppressions. |
-| `gitleaks detect --source . --no-git --redact=100` | exit 1 | 14 | `needs_triage` | Includes local `.codex-subagents/` clutter; not suitable as tracked-source evidence. |
-| tracked-source `gitleaks` snapshot | exit 1 | 10 | `needs_triage` | Scanned an archive of tracked `HEAD`; findings are fixture/test candidates but not allowlisted. |
+| `gitleaks detect --source . --no-git --redact=100`, default config | exit 1 | 14 | `triaged` | Includes local `.codex-subagents/` clutter and tracked fixture candidates. |
+| tracked-source `gitleaks` snapshot, default config | exit 1 | 10 | `triaged` | Scanned an archive of tracked `HEAD`; findings are reviewed fixture/test candidates. |
+| working-tree `gitleaks`, `.gitleaks.toml` | pass | 0 | `verified` | Reviewed allowlist suppresses only known fixture/local-clutter patterns. |
+| tracked-source `gitleaks`, `.gitleaks.toml` | pass | 0 | `verified` | Reviewed allowlist suppresses only known fixture patterns. |
 
 ## `gosec` Family Summary
 
@@ -49,15 +50,15 @@ false positive.
 
 ## Tracked `gitleaks` Findings
 
-The tracked-source snapshot reported 10 findings:
+The tracked-source snapshot with the default config reported 10 findings:
 
 | Rule | File | Lines | Triage State | Notes |
 | --- | --- | --- | --- | --- |
-| `generic-api-key` | `examples/self-trace/evidence-events.json` | 169, 218 | `fixture_candidate` | `dedupe_key` labels; needs allowlist or fixture rewrite. |
-| `generic-api-key` | `examples/self-trace/negative-native-policy-field.json` | 178, 227 | `fixture_candidate` | Mirrored self-trace labels; keep mirrors synchronized if edited. |
-| `generic-api-key` | `examples/self-trace/assessment-input.json` | 174, 223 | `fixture_candidate` | Mirrored self-trace labels; keep mirrors synchronized if edited. |
-| `jwt` | `internal/witness/profiles_test.go` | 959, 1008 | `test_fixture_candidate` | JWT sentinel used by tests; needs reviewed fixture pattern or allowlist. |
-| `private-key` | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | 45660, 46637 | `historical_fixture_candidate` | Historical review fixture contains private-key marker text; needs policy decision. |
+| `generic-api-key` | `examples/self-trace/evidence-events.json` | 169, 218 | `allowlisted_fixture` | `dedupe_key` labels; allowlist is path+regex scoped. |
+| `generic-api-key` | `examples/self-trace/negative-native-policy-field.json` | 178, 227 | `allowlisted_fixture` | Mirrored self-trace labels; allowlist is path+regex scoped. |
+| `generic-api-key` | `examples/self-trace/assessment-input.json` | 174, 223 | `allowlisted_fixture` | Mirrored self-trace labels; allowlist is path+regex scoped. |
+| `jwt` | `internal/witness/profiles_test.go` | 959, 1008 | `allowlisted_test_fixture` | JWT sentinel used by tests; allowlist is path+regex scoped. |
+| `private-key` | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | 45660, 46637 | `allowlisted_historical_fixture` | Historical review fixture contains private-key marker text; allowlist is path+regex scoped. |
 
 The working-tree scan reported four additional `.codex-subagents/` findings
 from local run clutter. Those files are not intended to be tracked and are
@@ -67,8 +68,8 @@ already covered by repository hygiene rules.
 
 - Review all `G703`, `G304`, and `G204` call sites first because they touch
   path, network, external-input, and command-execution boundaries.
-- Decide whether fixture-looking `gitleaks` hits should be rewritten or added
-  to a reviewed scanner allowlist.
+- Re-run `gitleaks` with `.gitleaks.toml` after each fixture or scanner-rule
+  change; do not broaden allowlist patterns without review.
 - Add CI jobs for `govulncheck`, `gosec`, and `gitleaks` only after local
   baselines are stable enough to avoid turning known fixture hits into noise.
 - Re-run this baseline after any security, trust, path, witness, release-proof,
@@ -79,8 +80,9 @@ already covered by repository hygiene rules.
 ```text
 go vet ./...
 govulncheck ./...
-gosec -fmt=json -out=/tmp/sdp-trace-gosec.json ./...
-gitleaks detect --source . --no-git --redact=100 --report-format json --report-path /tmp/sdp-trace-gitleaks.json
-git archive --format=tar HEAD | tar -xf - -C /tmp/sdp-trace-tracked-scan
-gitleaks detect --source /tmp/sdp-trace-tracked-scan --no-git --redact=100 --report-format json --report-path /tmp/sdp-trace-gitleaks-tracked.json
+gosec -fmt=json -out <scan-output-dir>/gosec.json ./...
+gitleaks detect --source . --no-git --redact=100 --config .gitleaks.toml
+git archive --format=tar HEAD | tar -xf - -C <tracked-scan-dir>
+cp .gitleaks.toml <tracked-scan-dir>/.gitleaks.toml
+gitleaks detect --source <tracked-scan-dir> --no-git --redact=100 --config <tracked-scan-dir>/.gitleaks.toml
 ```
