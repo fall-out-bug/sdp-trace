@@ -12,12 +12,13 @@ secrets.
 | Field | Value |
 | --- | --- |
 | Date | 2026-05-20 |
-| Scanner target | Local branch snapshot before this baseline was committed |
+| Scanner target | Local branch snapshot after final review fixes |
 | Go version | `1.22` from `go.mod` |
+| `gosec` version | `dev` build from local OSS tool cache |
 
-The scanner evidence was produced locally before later integration edits in
-this branch. Re-run the commands below before using this ledger in a PR; raw
-scanner JSON is intentionally not checked in.
+The scanner evidence was produced locally on this branch. Re-run the commands
+below before using this ledger in a later PR; raw scanner JSON is intentionally
+not checked in.
 
 ## Tool Summary
 
@@ -25,7 +26,7 @@ scanner JSON is intentionally not checked in.
 | --- | --- | ---: | --- | --- |
 | `go vet ./...` | pass | 0 | `verified` | Go vet completed locally. |
 | `govulncheck ./...` | pass | 0 | `verified` | No known vulnerabilities reported by the local database snapshot. |
-| `gosec ./...` | exit 1 | 133 | `needs_triage` | Static findings require code-level review or reviewed suppressions. |
+| `gosec ./...` | exit 1 | 132 | `needs_triage` | Static findings require code-level review or reviewed suppressions. |
 | `gitleaks detect --source . --no-git --redact=100`, default config | exit 1 | 14 | `triaged` | Includes local `.codex-subagents/` clutter and tracked fixture candidates. |
 | tracked-source `gitleaks` snapshot, default config | exit 1 | 10 | `triaged` | Scanned an archive of tracked `HEAD`; findings are reviewed fixture/test candidates. |
 | working-tree `gitleaks`, `.gitleaks.toml` | pass | 0 | `verified` | Reviewed allowlist suppresses only known fixture/local-clutter patterns. |
@@ -35,18 +36,20 @@ scanner JSON is intentionally not checked in.
 
 | Rule | Count | Scanner Severity | Triage State | Current Disposition |
 | --- | ---: | --- | --- | --- |
-| `G304` | 61 | medium | `needs_triage` | Variable file reads/opens. Must verify path provenance and traversal controls per call site. |
+| `G304` | 60 | medium | `needs_triage` | Variable file reads/opens. Must verify path provenance and traversal controls per call site. |
 | `G301` | 28 | medium | `needs_triage` | Directory permissions `0755`. Must confirm generated evidence readability is intentional for each path. |
 | `G306` | 24 | medium | `needs_triage` | File permissions `0644`. Must confirm public-readable evidence output is acceptable for each artifact class. |
 | `G204` | 11 | medium | `needs_triage` | Subprocess launches. Must distinguish intended wrapper behavior from untrusted command execution. |
-| `G703` | 5 | high | `needs_triage` | Potential path traversal in repo observer / PR review paths. Review before any production-adoption claim. |
+| `G703` | 5 | high | `needs_triage` | Path traversal via taint analysis. This rule ID is emitted by the local `gosec` `dev` build used for the baseline. |
 | `G101` | 2 | high | `candidate_false_positive` | Semantic strings matched credential heuristics; verify before allowlisting. |
 | `G302` | 1 | medium | `needs_triage` | `chmod 0644` on generated evidence file; requires artifact-sensitivity review. |
 | `G115` | 1 | high | `candidate_false_positive` | `rune` to `byte` conversion appears guarded by `r <= 127`; verify before suppressing. |
 
-No `gosec` finding is treated as closed by this document. The next code slice
-should either fix, narrow, or add a reviewed suppression for each accepted
-false positive.
+One reviewed `G304` false positive in `internal/capturedepth` has a scoped
+`#nosec` suppression because `runDir` is a caller-selected local evidence root
+and query output does not echo provider refs. The remaining `gosec` findings
+are not treated as closed by this document. The next code slice should either
+fix, narrow, or add a reviewed suppression for each accepted false positive.
 
 ## Tracked `gitleaks` Findings
 

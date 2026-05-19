@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fall_out_bug/sdp-trace/internal/adaptercapture"
@@ -53,5 +54,30 @@ func TestCaptureDepthQueryExposesReadOnlyFacts(t *testing.T) {
 	}
 	if len(summary.UnverifiedClaims) == 0 {
 		t.Fatalf("expected unverified claims in summary")
+	}
+}
+
+func TestCaptureDepthDoesNotEchoProviderRefs(t *testing.T) {
+	run := adaptercapture.ValidTestInput().Run
+	run.ProviderRefs = []adaptercapture.ProviderRef{{
+		ReviewRef: "https://review.invalid/7?token=secret-token",
+	}}
+
+	runDir := t.TempDir()
+	payload, err := json.Marshal(run)
+	if err != nil {
+		t.Fatalf("marshal run: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(runDir, "run.json"), payload, 0o644); err != nil {
+		t.Fatalf("write run: %v", err)
+	}
+
+	queryPayload, err := CaptureDepth(runDir)
+	if err != nil {
+		t.Fatalf("query capture depth: %v", err)
+	}
+	if strings.Contains(string(queryPayload), "secret-token") ||
+		strings.Contains(string(queryPayload), "review.invalid") {
+		t.Fatalf("capture-depth output echoed provider refs: %s", string(queryPayload))
 	}
 }

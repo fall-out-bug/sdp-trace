@@ -146,6 +146,10 @@ encrypted external references, and explicit redaction notes. If a team needs raw
 capture for an incident, it must be a separately approved retention/redaction
 profile with a human owner.
 
+Trace metadata includes provenance fields such as the invocation working
+directory. Run `wrap` from the project directory being traced and redact or
+withhold trace packages before external sharing when local paths are sensitive.
+
 ## Rollout Inputs
 
 Before rollout, make sure the following are explicit in the repository:

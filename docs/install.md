@@ -26,6 +26,11 @@ verifies, explains, reports, and queries missing evidence. `sdp-trace` records
 command provenance and retained artifacts outside the prompt surface; it does
 not inject instructions into the harness or model context.
 
+Run `sdp-trace wrap` from the project directory you intend to trace. The run
+metadata records the invocation working directory for provenance; if you launch
+from an unrelated checkout while pointing the wrapped tool elsewhere, the trace
+can expose that unrelated path.
+
 Assessment profiles, gate facts, witness artifacts, release proof, and PR
 packet proof are extension surfaces. Add them only after the core run/report
 path is working and an external policy consumer needs those facts.

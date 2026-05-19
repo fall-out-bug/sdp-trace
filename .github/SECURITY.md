@@ -65,6 +65,7 @@ If you deploy sdp-trace in your environment:
 4. Store trace artifacts (`.sdp-trace-runs/`) according to your retention policy.
 5. Do not commit raw credentials, tokens, or sensitive source to trace artifacts.
 6. Review and redact sensitive data before sharing trace packages externally.
+7. Treat local filesystem paths in trace metadata as potentially sensitive.
 
 ## Scanner Status
 
@@ -73,7 +74,7 @@ Additional security scanners are tracked in `docs/security-baseline.md`:
 
 - `go vet`: Static analysis; currently pass locally.
 - `govulncheck`: Vulnerability database check; currently pass locally.
-- `gosec`: Static security analysis; 133 findings require triage before it can
+- `gosec`: Static security analysis; 132 findings require triage before it can
   become a CI gate.
 - `gitleaks`: Secret detection; local and tracked-source scans pass with the
   reviewed `.gitleaks.toml` fixture allowlist.

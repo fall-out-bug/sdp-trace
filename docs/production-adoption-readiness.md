@@ -19,7 +19,7 @@ known from what remains `not_assessed` or `cannot_verify`.
 | **Release readiness** | Local source-bound release proof available | `sdp-trace release-proof` verifies manifest subjects against source commit | Live CI at final head: `not_assessed`; no published releases yet |
 | **External production trust** | Not claimed | N/A | Requires external trust profile pass; currently `not_assessed` |
 | **Security policy** | Local policy file drafted | `.github/SECURITY.md` | GitHub security policy publication is `not_assessed` until merged and visible on GitHub |
-| **Security findings triage** | In progress | `gosec` 133 findings, tracked-source `gitleaks` 10 findings; see `docs/security-baseline.md` | Findings must be fixed, narrowed, or reviewed before adoption claim improves |
+| **Security findings triage** | In progress | `gosec` 132 findings, tracked-source `gitleaks` passes with reviewed fixture allowlist; see `docs/security-baseline.md` | `gosec` findings must be fixed, narrowed, or reviewed before adoption claim improves |
 
 ## Scanner Findings Summary
 
@@ -27,8 +27,8 @@ known from what remains `not_assessed` or `cannot_verify`.
 | --- | --- | --- |
 | `go vet` | 0 | `pass` |
 | `govulncheck` | 0 vulnerabilities | `pass` |
-| `gosec` | 133 findings | `needs_triage`; classification ledger in `docs/security-baseline.md` |
-| `gitleaks` | 10 findings on tracked `HEAD` | `needs_triage`; fixture/test candidates require rewrite or reviewed allowlist |
+| `gosec` | 132 findings | `needs_triage`; classification ledger in `docs/security-baseline.md` |
+| `gitleaks` | 0 findings with reviewed `.gitleaks.toml` | `verified`; default-config fixture hits remain documented in `docs/security-baseline.md` |
 
 See `docs/security-baseline.md` for the full triage ledger.
 
@@ -39,8 +39,8 @@ The following areas cannot be claimed from local checks alone:
 - **External customer adoption**: No evidence of production use by external customers.
 - **Live CI at final head**: CI workflow exists but live run at HEAD is not verified in this document.
 - **External security audit**: No external security review has been completed.
-- **gosec findings classification**: 133 findings require reviewed disposition; must be labeled blocker, false positive, accepted fix, or deferred advisory before readiness improves.
-- **gitleaks allowlist review**: 10 findings require reviewed allowlist or scanner-safe fixture changes.
+- **gosec findings classification**: 132 findings require reviewed disposition; must be labeled blocker, false positive, accepted fix, or deferred advisory before readiness improves.
+- **gitleaks CI coverage**: Local and tracked-source scans pass with `.gitleaks.toml`; live CI coverage is `not_assessed` until the job exists.
 - **GitHub security policy**: Local `.github/SECURITY.md` exists; GitHub publication is `not_assessed`.
 
 ## What This Document Does Not Claim

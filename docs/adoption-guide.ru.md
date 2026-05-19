@@ -140,6 +140,10 @@ excerpts, encrypted external refs и explicit redaction notes. Если кома
 raw capture для incident, это отдельный retention/redaction profile с human
 owner.
 
+Trace metadata включает provenance fields вроде invocation working directory.
+Запускайте `wrap` из project directory, который трассируется, и редактируйте
+или не передавайте trace packages наружу, если local paths чувствительны.
+
 ## Rollout inputs
 
 Перед rollout зафиксируйте в репозитории:
