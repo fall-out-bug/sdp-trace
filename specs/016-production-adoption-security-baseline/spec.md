@@ -21,6 +21,8 @@ customer production adoption or external production trust.
 - `govulncheck ./...`: pass, no vulnerabilities found.
 - `gosec ./...`: 133 findings, including path traversal/file inclusion,
   subprocess launch, integer conversion, and synthetic-secret detections.
+  One `G304` false positive was later given a scoped reviewed suppression;
+  the current security baseline records 132 remaining findings.
 - `gitleaks` on tracked `HEAD` snapshot: 10 findings, apparently fixture/test
   markers or synthetic tokens, but not allowlisted.
 - External customer adoption evidence: not_assessed.
