@@ -31,6 +31,9 @@ These are editorial conventions, not enforced gates:
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
+| [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `draft` | Awaiting review |
+| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `draft` | Awaiting review |
+| [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `draft` | Awaiting review |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX, command guidance, profile selection | `draft` | Awaiting Socratic review |
 | [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | `draft` | Awaiting Socratic review |
 | [012](../specs/012-repo-hygiene-and-artifact-boundary/) | Repository hygiene and artifact boundary rules | `draft` | Awaiting Socratic review |
@@ -89,6 +92,9 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Contributor onboarding | 013 | Draft |
 | Docs UX / command guidance | 014 | Draft |
 | Spec governance / roadmap | 015 | In progress |
+| Production adoption / security baseline | 016 | Draft |
+| OSS replacement compatibility / benchmarks | 017 | Draft |
+| Core/policy split and Pi delivery | 018 | Draft |
 
 ## Claim-Tag Enforcement Scope
 
