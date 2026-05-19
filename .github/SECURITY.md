@@ -51,9 +51,11 @@ See `docs/production-adoption-readiness.md` for the current adoption readiness
 matrix and `docs/security-baseline.md` for the scanner findings ledger.
 
 This repository is in controlled-pilot MVP status. It has not undergone external
-security audit. A dedicated security email/contact is `not_assessed` until the
-maintainers publish one. Production deployments should follow your
-organization's security review process.
+security audit. The active private reporting path is GitHub private
+vulnerability reporting or draft Security Advisory when available. A dedicated
+security email/contact is `not_assessed` until the maintainers publish one.
+Production deployments should follow your organization's security review
+process.
 
 ## Security Best Practices for Deployments
 

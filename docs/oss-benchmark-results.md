@@ -74,6 +74,9 @@ or production trust decisions. They are scope-informative only.
 
 ## Follow-Ups
 
+- **Reproducible harness:** T017-050 tracks adding a checked-in benchmark
+  harness before this table is used for approval. The current table is a local
+  markdown ledger only.
 - **CUE module packaging:** Once `schema/` files are exported as CUE modules,
   add `cue vet` benchmark numbers to this table.
 - **SLSA verifier negative benchmark:** Time `slsa-verifier` rejecting local
