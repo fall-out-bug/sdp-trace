@@ -4,7 +4,7 @@ title = "sdp-trace reviewed secret-scan allowlist"
 useDefault = true
 
 [allowlist]
-description = "Synthetic secret markers for redaction tests and review evidence"
+description = "Synthetic secret markers for redaction tests and review evidence. Regexes are exact synthetic strings; paths limit them to known fixture/test/historical files as defense-in-depth."
 
 regexes = [
   '''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''',
@@ -12,4 +12,10 @@ regexes = [
   '''"-----begin private key-----"''',
   '''"-----begin rsa private key-----"''',
   '''"-----begin ec private key-----"''',
+]
+
+paths = [
+  '''^examples/self-trace/(assessment-input|evidence-events|negative-native-policy-field)\.json$''',
+  '''^internal/witness/profiles_test\.go$''',
+  '''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''',
 ]

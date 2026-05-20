@@ -25,7 +25,7 @@ not checked in.
 | `govulncheck ./...` | latest | 0 known vulnerabilities | green |
 | `gosec ./...` | dev | 132 findings | advisory — classified below |
 | `gitleaks detect` (default config, tracked source) | v8.30.1 | 10 findings | all triaged false positive below |
-| `gitleaks detect` (default config, working tree) | v8.30.1 | 12 findings | 10 tracked + 2 local ignored clutter |
+| `gitleaks detect` (default config, working tree) | v8.30.1 | 10 findings | same tracked findings; local ignored clutter currently clean |
 | `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
 
 ## `gosec` Finding Family Classification
@@ -68,7 +68,7 @@ not checked in.
 
 Default-config scans:
 - Tracked-source snapshot (`git archive HEAD`): **10 findings**, all in tracked files.
-- Working-tree scan (includes local ignored clutter): **12 findings** (the same 10 tracked + 2 additional hits in `.codex-subagents/` local run clutter).
+- Working-tree scan (includes local ignored clutter): **10 findings** (same tracked findings; local ignored clutter is currently clean).
 - None are live secrets.
 
 The 2 working-tree-only hits are local ignored clutter, not repository evidence.
@@ -120,9 +120,14 @@ git diff --check
 gosec ./...
 
 # Default-config scans (for count verification)
-gitleaks detect --source . --no-git
+# Exclude .gitleaks.toml so gitleaks does not auto-load the reviewed allowlist.
+mkdir -p /tmp/worktree-scan && rm -rf /tmp/worktree-scan/*
+tar --exclude='.gitleaks.toml' --exclude='.git' -cf - . | tar -xf - -C /tmp/worktree-scan
+gitleaks detect --source /tmp/worktree-scan --no-git
+
 mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
 git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
+rm -f /tmp/tracked-scan/.gitleaks.toml
 gitleaks detect --source /tmp/tracked-scan --no-git
 
 # Configured tracked-source scan
@@ -130,7 +135,7 @@ mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
 git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
 gitleaks detect --source /tmp/tracked-scan --no-git --config .gitleaks.toml
 
-# Configured scan (reviewed allowlist)
+# Configured working-tree scan (reviewed allowlist)
 gitleaks detect --source . --config .gitleaks.toml
 ```
 
@@ -150,7 +155,7 @@ gitleaks detect --source . --config .gitleaks.toml
 ## Change Log
 
 - 2026-05-20: Initial security baseline for spec 016. All `gosec` families
-  classified. Tracked-source `gitleaks` (10 findings) and working-tree
-  `gitleaks` (10 tracked + 2 local clutter) triaged as false positive.
+  classified. Tracked-source and working-tree `gitleaks` (10 findings each)
+  triaged as false positive. Local ignored clutter is currently clean.
   Two `gosec` families (G204, G703) deferred as advisory pending caller audit;
   `G304` deferred advisory (1 reviewed `#nosec`, 59 remaining call sites).
