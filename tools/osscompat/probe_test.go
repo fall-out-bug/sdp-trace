@@ -159,6 +159,11 @@ func TestWrapOutputIsNotJSONObject(t *testing.T) {
 	if err := json.Unmarshal(data, &obj); err == nil {
 		t.Fatal("expected wrap output to be non-JSON, but it parsed as JSON")
 	}
+	// Verify the fixture contains the expected plain-text prefix from the
+	// frozen verbatim capture.
+	if !strings.Contains(string(data), "run_dir: .sdp-trace-runs/run-") {
+		t.Fatal("expected wrap output to contain the run_dir prefix")
+	}
 }
 
 func TestPrintResults_JSON(t *testing.T) {

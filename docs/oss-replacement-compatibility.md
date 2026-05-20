@@ -98,8 +98,7 @@ and report `not_assessed`.
 ```bash
 # Import JSON Schema types into CUE (does not validate sdp-trace artifacts)
 (
-  cue import --package sdptrace schema/flight-recorder-run.schema.json \
-    -o /tmp/flight-recorder-run.cue
+  cue import --package sdptrace schema/flight-recorder-run.schema.json -o -
 )
 ```
 
@@ -183,7 +182,7 @@ and report `not_assessed`.
 | CUE module packaging | `cannot_verify` | `schema/` refs not yet packaged as CUE modules |
 | Cosign production trust | `not_assessed` | Local key signing excludes keyless/OIDC/transparency verification |
 | JSON Schema fixture alignment | `pass` | Checked examples validate; live wrap output mismatch documented |
-| OPA policy prototype | `pass` | Local evaluation of the checked-in positive fixture returns true; no negative fixture is verified |
+| OPA policy prototype | `pass` | Local evaluation of the checked-in positive and negative fixtures returns expected true/false |
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
 

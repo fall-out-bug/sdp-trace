@@ -43,6 +43,17 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	var defs []benchmarkDef
 	if *name != "" {
+		found := false
+		for _, b := range builtIns {
+			if b.Name == *name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			fmt.Fprintf(stderr, "unknown benchmark: %s\n", *name)
+			return 2
+		}
 		if err := resolveBuiltIns(); err != nil {
 			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
 			return 2
@@ -52,10 +63,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 				defs = append(defs, b)
 				break
 			}
-		}
-		if len(defs) == 0 {
-			fmt.Fprintf(stderr, "unknown benchmark: %s\n", *name)
-			return 2
 		}
 	} else {
 		// If no name given and extra args look like a command, run a custom benchmark.
