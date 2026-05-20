@@ -39,13 +39,13 @@ tools are available, the expected results are shown in the
 
 | Proxy / Tool | Capability Tested | Current Result | Expected (tool available) | Status |
 |---|---|---|---|---|
-| `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `not_assessed` | `pass` | Checked fixture conforms to schema [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `not_assessed` | `fail` | Live wrap output fails schema validation; drift is a confirmed conformance failure [^1] |
-| OPA/Rego | Express simplified adapter-capture pass rule | `not_assessed` | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
-| OPA/Rego | Combined negative fixture (both rules broken) | `not_assessed` | `pass` | `adapter.rego` correctly rejects `test-fixture-fail.json` [^1] |
-| OPA/Rego | Negative trace_id rule only | `not_assessed` | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-traceid.json` [^1] |
-| OPA/Rego | Negative provenance rule only | `not_assessed` | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-provenance.json` [^1] |
-| CUE | JSON Schema import to stdout | `not_assessed` | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
+| `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `check-jsonschema` present [^1] |
+| `check-jsonschema` | Validate live `sdp-trace wrap` CLI stdout vs `flight-recorder-run.schema.json` | `not_assessed` | `fail` | Not assessed in current environment; expected `fail` (CLI stdout is not schema JSON) when `check-jsonschema` present [^1] |
+| OPA/Rego | Express simplified adapter-capture pass rule | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
+| OPA/Rego | Combined negative fixture (both rules broken) | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
+| OPA/Rego | Negative trace_id rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
+| OPA/Rego | Negative provenance rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
+| CUE | JSON Schema import to stdout | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `cue` present [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Sign/verify local `run.json` blob | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
