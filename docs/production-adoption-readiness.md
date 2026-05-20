@@ -1,8 +1,8 @@
 # Production Adoption Readiness
 
-This document tracks the evidence needed before `sdp-trace` can be presented
-as production-adoptable beyond a controlled pilot. It does not claim
-production trust, release approval, or customer adoption.
+`sdp-trace` is a portable evidence substrate for AI-assisted delivery.
+This document records what is known, what is pilot-capable, and what remains
+`not_assessed` for production adoption beyond a controlled pilot.
 
 ## Trust Scope
 
@@ -10,38 +10,100 @@ production trust, release approval, or customer adoption.
 risk acceptance, or production trust. Every row below separates what is
 known from what remains `not_assessed` or `cannot_verify`.
 
-## Adoption Readiness Matrix
+## Readiness Matrix
 
-| Dimension | Current State | Evidence | Open Gap |
-| --- | --- | --- | --- |
-| **Public repository adoption** | Available as open-source project | GitHub repository, commit history | External customer adoption evidence: `not_assessed` |
-| **Pilot capability** | Controlled-pilot MVP | Local trace packages, repo-observable evidence, assessment profiles, witness artifacts, source-bound release checks | Command surface has `partial` families; see `docs/agent-entrypoint.md` |
-| **Release readiness** | Local source-bound release proof available | `sdp-trace release-proof` verifies manifest subjects against source commit | Live CI at final head: `not_assessed`; no published releases yet |
-| **External production trust** | Not claimed | N/A | Requires external trust profile pass; currently `not_assessed` |
-| **Security policy** | Local policy file drafted | `.github/SECURITY.md` | GitHub security policy publication is `not_assessed` until merged and visible on GitHub |
-| **Security findings triage** | In progress | `gosec` 132 findings, tracked-source `gitleaks` passes with reviewed fixture allowlist; see `docs/security-baseline.md` | `gosec` findings must be fixed, narrowed, or reviewed before adoption claim improves |
+| Area | Controlled Pilot | Local Evidence | CI-Witnessed | Source-Bound Release | External Production Trust |
+|------|:----------------:|:--------------:|:------------:|:--------------------:|:-------------------------:|
+| Repository existence | yes | yes | `not_assessed` | `not_assessed` | `not_assessed` |
+| Public documentation | yes | yes | `not_assessed` | `not_assessed` | `not_assessed` |
+| Command surface stability | partial | partial | `not_assessed` | `not_assessed` | `not_assessed` |
+| Local security baseline | yes | yes | `not_assessed` | `not_assessed` | `not_assessed` |
+| CI security baseline | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` |
+| External security audit | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` |
+| Customer adoption evidence | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` |
+| Signed release process | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` |
 
-## Scanner Findings Summary
+Legend:
+- **yes**: Evidence exists and is verifiable from source.
+- **partial**: Some evidence exists; gaps are recorded.
+- **`not_assessed`**: No evidence or external verification available.
 
-| Tool | Finding Count | Status |
-| --- | --- | --- |
-| `go vet` | 0 | `pass` |
-| `govulncheck` | 0 vulnerabilities | `pass` |
-| `gosec` | 132 findings | `needs_triage`; classification ledger in `docs/security-baseline.md` |
-| `gitleaks` | 0 findings with reviewed `.gitleaks.toml` | `verified`; default-config fixture hits remain documented in `docs/security-baseline.md` |
+## Command Family Readiness
 
-See `docs/security-baseline.md` for the full triage ledger.
+State values follow the command surface schema: `complete`, `partial`, `not_assessed`.
 
-## Open `not_assessed` Areas
+| Command Family | State | Trust Note |
+|----------------|-------|------------|
+| `assess` | `partial` | Emits verifier facts; missing or stale evidence can produce `cannot_verify`. |
+| `checkpoint` | `partial` | Subcommands `create` and `verify` are present; completeness not verified. |
+| `envelope` | `complete` | Read-only over refs; reports linked and `not_assessed` areas. |
+| `explain` | `complete` | Derived from run artifacts; does not upgrade trust scope. |
+| `gate` | `partial` | Emits verifier facts and states; not a native merge/release/risk decision. |
+| `harness` | `partial` | Harness event import and validation; limited to supported harness kinds. |
+| `interaction` | `partial` | Interaction recording and summarization; relay and import-transcript paths are pilot-only. |
+| `observe` | `partial` | First-run harness observation; session profile shape may change. |
+| `export` | `partial` | Export cross-repo posture or telemetry profiles for external consumption. |
+| `override` | `not_assessed` | Override record creation; authority scope is advisory. |
+| `packet` | `partial` | Packet generation and validation; schema versioned but not externally signed. |
+| `pr-review` | `partial` | Build, run, synthesize, validate, and summarize automated PR review evidence. |
+| `query` | `complete` | Highlights gaps; missing rows are not passes. |
+| `query-pack` | `partial` | Produces investigation package; digest-only or redacted data limits reconstruction. |
+| `release-proof` | `complete` | `source_bound_local_release` only; dirty/stale source or manifest mismatch fails. |
+| `report` | `complete` | Packages observed data and gaps; report presence is not proof of completeness. |
+| `verify` | `complete` | Supports local structural assertions only. |
+| `witness` | `partial` | CI-bound evidence is not external production trust by itself. |
 
-The following areas cannot be claimed from local checks alone:
+**Summary**: 6 families are `complete`, 11 are `partial`, 1 is `not_assessed` (18 families).
 
-- **External customer adoption**: No evidence of production use by external customers.
-- **Live CI at final head**: CI workflow exists but live run at HEAD is not verified in this document.
-- **External security audit**: No external security review has been completed.
-- **gosec findings classification**: 132 findings require reviewed disposition; must be labeled blocker, false positive, accepted fix, or deferred advisory before readiness improves.
-- **gitleaks CI coverage**: Local and tracked-source scans pass with `.gitleaks.toml`; live CI coverage is `not_assessed` until the job exists.
-- **GitHub security policy**: Local `.github/SECURITY.md` exists; GitHub publication is `not_assessed`.
+## Utility Commands
+
+The following commands are stable utilities that support the main families
+but are not primary evidence-producing workflows.
+
+| Command | State | Description |
+|---------|-------|-------------|
+| `command-surface` | `complete` | Emit machine-readable command surface JSON. |
+| `doctor` | `complete` | Inspect local environment and contract prerequisites. |
+| `dry-run` | `complete` | Show what would run without writing run artifacts. |
+| `install` | `complete` | Install portable repo observer files for local git hooks and GitHub Actions artifact upload. |
+| `preview` | `complete` | Preview command/contract implications before execution. |
+| `run` | `complete` | Run a task-referenced command with an optional contract. |
+| `validate-fixtures` | `complete` | Validate checked trace-run fixture directories. |
+| `version` | `complete` | Print version. |
+| `wrap` | `complete` | Observe one existing command as a trace run. |
+
+**Total command surface**: 18 families + 9 utility commands = 27 commands.
+
+## Spec Completion
+
+Most active specs are `draft` or `in_progress` per [`docs/roadmap.md`](roadmap.md).
+No spec has reached `complete`. This is expected for an early-stage project
+and does not block controlled pilot use.
+
+## Security Baseline
+
+| Tool | Local Result | Disposition |
+|------|-------------|-------------|
+| `go vet ./...` | pass | green |
+| `govulncheck ./...` | 0 vulnerabilities | green |
+| `gosec ./...` | 132 findings | advisory — classified in [`docs/security-baseline.md`](security-baseline.md) |
+| `gitleaks detect` (with `.gitleaks.toml`) | 0 findings | triaged in [`docs/security-baseline.md`](security-baseline.md) |
+
+Local ignored clutter (`.worktrees/`, `.codex-subagents/`, `.sdp-trace-runs/`,
+`.sdp-trace-report/`) is not repository proof. Scan it with hygiene tooling
+locally, but do not treat findings in ignored paths as product evidence.
+
+## `not_assessed` Areas (Explicit)
+
+1. **Live CI status**: GitHub Actions workflows exist but have not been
+   verified as green at the current `main` head for this block.
+2. **Customer adoption**: No external customer has reported production use.
+3. **External security audit**: No third-party security review has been
+   commissioned or completed.
+4. **Signed release process**: Release artifacts are built locally; no
+   externally signed or witnessed release pipeline exists.
+5. **Production trust decision**: This repository structures evidence and gaps;
+   it does not approve changes, releases, or risk acceptance.
 
 ## What This Document Does Not Claim
 
@@ -60,20 +122,20 @@ The following areas cannot be claimed from local checks alone:
 
 ## Verification Commands
 
-```text
+Run these locally to reproduce the current baseline:
+
+```bash
+# Green gates
 go vet ./...
 go test -count=1 ./...
+govulncheck ./...
 go run ./tools/doccheck
 go run ./tools/hygienecheck
 git diff --check
-```
 
-Additional scanner commands (results recorded separately):
-
-```text
-govulncheck ./...
-gitleaks detect --source . --redact
+# Advisory scans
 gosec ./...
+gitleaks detect --source . --config .gitleaks.toml --no-git
 ```
 
 ## Maintenance
@@ -85,3 +147,8 @@ Update this matrix when:
 - a live CI run completes and is recorded;
 - external customer adoption evidence becomes available;
 - a GitHub security policy is enabled and configured.
+
+## Change Log
+
+- 2026-05-20: Initial matrix for spec 016. All command families and security
+  tools recorded. Explicit `not_assessed` areas named.

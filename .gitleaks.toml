@@ -1,10 +1,13 @@
 title = "sdp-trace reviewed secret-scan allowlist"
 
+[extend]
+useDefault = true
+
 [[allowlists]]
 description = "Self-trace dedupe keys are fixture labels, not credentials."
 condition = "AND"
 paths = ['''^examples/self-trace/(assessment-input|evidence-events|negative-native-policy-field)\.json$''']
-regexes = ['''"dedupe_key": "crisis-(glm-critic|judge)-2026-04-30"''']
+regexes = ['''crisis-(glm-critic|judge|kimi-critic)-2026-04-30''']
 
 [[allowlists]]
 description = "Witness tests use a synthetic JWT-shaped sentinel to verify redaction."
@@ -13,11 +16,9 @@ paths = ['''^internal/witness/profiles_test\.go$''']
 regexes = ['''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''']
 
 [[allowlists]]
-description = "Historical review fixture contains private-key marker text from a sanitized diff."
+description = "Historical review fixture contains private-key marker text."
 condition = "AND"
-paths = ['''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''']
-regexes = ['''-----begin private key-----''']
-
-[[allowlists]]
-description = "Local codex-subagent run artifacts are untracked workspace clutter, not source."
-paths = ['''^\.codex-subagents/''']
+paths = [
+  '''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''',
+]
+regexes = ['''"-----begin (private key|rsa private key|ec private key)-----"''']

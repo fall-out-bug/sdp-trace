@@ -84,8 +84,7 @@ govulncheck ./...
 gitleaks detect on a tracked-file snapshot
 ```
 
-`gosec ./...` is advisory for this phase. It may become blocking only after a
-later spec defines per-call-site dispositions and a stable CI threshold.
+`gosec ./...` remains advisory for this phase. WS-016-B classified findings into deferred advisory (G304, G204, G703), accepted (G301, G306, G302), and accepted false positive (G101, G115).
 
 ## Pi Handoff Notes
 

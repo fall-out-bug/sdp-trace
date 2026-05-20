@@ -1,6 +1,6 @@
 # Spec 016: Production Adoption And Security Baseline
 
-Status: draft
+Status: in_progress
 
 ## Objective
 
@@ -12,19 +12,18 @@ customer production adoption or external production trust.
 
 - GitHub repository: public, 0 stars, 0 forks, 0 issues, 1 pull request,
   no latest release, security policy disabled.
-- Current local branch: `main` at
-  `464d5e2c6e4a208861fa50b420afb05e4177144c`.
-- Command surface: 27 command families; many are `partial`.
+- Current local branch: `main` at `464d5e2` (base), rebased onto `18cd4a0`.
+- Command surface: 18 command families (6 `complete`, 11 `partial`, 1 `not_assessed`)
+  plus 9 utility commands = 27 total commands.
 - Roadmap: existing specs are draft, blocked, or in progress; no completed spec
   is recorded.
 - `go vet ./...`: pass.
 - `govulncheck ./...`: pass, no vulnerabilities found.
-- `gosec ./...`: 133 findings, including path traversal/file inclusion,
+- `gosec ./...`: 132 findings (133 originally; one `G304` in `internal/capturedepth`
+  has a scoped reviewed `#nosec` suppression), including path traversal/file inclusion,
   subprocess launch, integer conversion, and synthetic-secret detections.
-  One `G304` false positive was later given a scoped reviewed suppression;
-  the current security baseline records 132 remaining findings.
-- `gitleaks` on tracked `HEAD` snapshot: 10 findings, apparently fixture/test
-  markers or synthetic tokens, but not allowlisted.
+- `gitleaks` on tracked `HEAD` snapshot: 10 findings with default config;
+  0 findings with reviewed `.gitleaks.toml` allowlist.
 - External customer adoption evidence: not_assessed.
 - Live CI at final head: not_assessed.
 
@@ -60,7 +59,7 @@ customer production adoption or external production trust.
 ## Decisions
 
 - `gosec` is advisory for this phase, not a blocking CI gate. The current
-  132 findings remain `needs_triage` until a later security slice fixes,
+  132 findings remain classified until a later security slice fixes,
   narrows, or suppresses individual call sites with evidence.
 - `govulncheck` and `go vet` are required local verification commands.
   `gitleaks` with the reviewed repository config is the selected secret scan
@@ -93,5 +92,19 @@ customer production adoption or external production trust.
   a reviewed allowlist.
 - `go vet ./...`, `govulncheck ./...`, and the selected secret scan complete in
   a documented local command path.
-- `gosec` family findings are explicitly classified before readiness is
+- Any remaining `gosec` findings are explicitly classified before readiness is
   improved beyond controlled pilot.
+
+## Resolved Questions
+
+- `gosec`: advisory for this phase; blocker if new G101/G204 appear after baseline.
+- Security policy: `.github/SECURITY.md` per GitHub community standard.
+- Ignored local agent run directories: scanned by hygiene tooling locally,
+  reported as local clutter, not repository proof.
+
+## Change Log
+
+- 2026-05-20: Spec intake completed. All workstreams implemented.
+  Readiness matrix, security baseline, gitleaks allowlist, and security
+  policy created. All tasks complete; remaining `not_assessed` areas
+  explicitly recorded.

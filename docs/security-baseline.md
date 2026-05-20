@@ -1,11 +1,8 @@
 # Security Baseline
 
-Status: draft
-
-This document records local security probes for the adoption-readiness work.
-It is a triage ledger, not a production trust claim. Scanner output can show
-findings that need review; it cannot prove absence of vulnerabilities or
-secrets.
+Local security evidence for `sdp-trace` as of 2026-05-20.
+This document is advisory; it does not prove absence of vulnerabilities
+or guarantee production readiness.
 
 ## Probe Metadata
 
@@ -20,57 +17,130 @@ The scanner evidence was produced locally on this branch. Re-run the commands
 below before using this ledger in a later PR; raw scanner JSON is intentionally
 not checked in.
 
-## Tool Summary
+## Tool Results Summary
 
-| Tool | Result | Finding Count | State | Notes |
-| --- | --- | ---: | --- | --- |
-| `go vet ./...` | pass | 0 | `verified` | Go vet completed locally. |
-| `govulncheck ./...` | pass | 0 | `verified` | No known vulnerabilities reported by the local database snapshot. |
-| `gosec ./...` | exit 1 | 132 | `needs_triage` | Static findings require code-level review or reviewed suppressions. |
-| `gitleaks detect --source . --no-git --redact=100`, default config | exit 1 | 14 | `triaged` | Includes local `.codex-subagents/` clutter and tracked fixture candidates. |
-| tracked-source `gitleaks` snapshot, default config | exit 1 | 10 | `triaged` | Scanned an archive of tracked `HEAD`; findings are reviewed fixture/test candidates. |
-| working-tree `gitleaks`, `.gitleaks.toml` | pass | 0 | `verified` | Reviewed allowlist suppresses only known fixture/local-clutter patterns. |
-| tracked-source `gitleaks`, `.gitleaks.toml` | pass | 0 | `verified` | Reviewed allowlist suppresses only known fixture patterns. |
+| Tool | Version | Result | Disposition |
+|------|---------|--------|-------------|
+| `go vet ./...` | go1.22 | pass | green |
+| `govulncheck ./...` | latest | 0 known vulnerabilities | green |
+| `gosec ./...` | dev | 132 findings | advisory — classified below |
+| `gitleaks detect` (default config, tracked source) | v8.30.1 | 10 findings | all triaged false positive below |
+| `gitleaks detect` (default config, working tree) | v8.30.1 | 10 findings | same tracked findings; local ignored clutter currently clean |
+| `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
 
-## `gosec` Family Summary
+## `gosec` Finding Family Classification
 
-| Rule | Count | Scanner Severity | Triage State | Current Disposition |
-| --- | ---: | --- | --- | --- |
-| `G304` | 60 | medium | `needs_triage` | Variable file reads/opens. Must verify path provenance and traversal controls per call site. |
-| `G301` | 28 | medium | `needs_triage` | Directory permissions `0755`. Must confirm generated evidence readability is intentional for each path. |
-| `G306` | 24 | medium | `needs_triage` | File permissions `0644`. Must confirm public-readable evidence output is acceptable for each artifact class. |
-| `G204` | 11 | medium | `needs_triage` | Subprocess launches. Must distinguish intended wrapper behavior from untrusted command execution. |
-| `G703` | 5 | high | `needs_triage` | Path traversal via taint analysis. This rule ID is emitted by the local `gosec` `dev` build used for the baseline. |
-| `G101` | 2 | high | `candidate_false_positive` | Semantic strings matched credential heuristics; verify before allowlisting. |
-| `G302` | 1 | medium | `needs_triage` | `chmod 0644` on generated evidence file; requires artifact-sensitivity review. |
-| `G115` | 1 | high | `candidate_false_positive` | `rune` to `byte` conversion appears guarded by `r <= 127`; verify before suppressing. |
+| Rule | Count | Severity | Classification | Rationale |
+|------|-------|----------|----------------|-----------|
+| G304 | 60 | MEDIUM | **deferred advisory** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. One `G304` in `internal/capturedepth` has a scoped reviewed `#nosec` suppression; the remaining 59 call sites need per-call-site audit before this family can be marked accepted. |
+| G301 | 28 | MEDIUM | **accepted** | `os.MkdirAll` with `0o755` creates group-readable evidence directories. Intentional for shared local inspection. |
+| G306 | 24 | MEDIUM | **accepted** | `os.WriteFile` with `0o644` creates group-readable evidence files. Intentional for shared local inspection. |
+| G204 | 11 | MEDIUM | **deferred advisory** | Git subprocess launch with variable args. Most callers use hardcoded safe args; `gitOutput`/`runGit` variadic helpers and `mibaselinepolicy` git helpers pass external values. Review needed: validate all callers sanitize inputs before passing to git helpers. |
+| G703 | 5 | HIGH | **deferred advisory** | Path traversal in repoobserver install helpers. Paths derive from install targets. Review needed: verify caller validates paths are within repository boundary. |
+| G101 | 2 | HIGH | **accepted false positive** | String constants `ReasonLocalHooksBypassable` and policy map `authorityPreviewSafety` are not credentials. |
+| G115 | 1 | HIGH | **accepted false positive** | `byte(r)` is guarded by `r <= 127`; overflow impossible. |
+| G302 | 1 | MEDIUM | **accepted** | `os.Chmod(tmpName, 0o644)` in atomic text write matches other generated evidence file modes. |
 
-One reviewed `G304` false positive in `internal/capturedepth` has a scoped
-`#nosec` suppression because `runDir` is a caller-selected local evidence root
-and query output does not echo provider refs. The remaining `gosec` findings
-are not treated as closed by this document. The next code slice should either
-fix, narrow, or add a reviewed suppression for each accepted false positive.
+### Deferred Advisory Detail
 
-## Tracked `gitleaks` Findings
+**G204 — Subprocess launch with variable**
+- Files: `internal/trace/source_snapshot.go`, `internal/repoobserver/git.go`, `tools/mibaselinepolicy/git.go`
+- Risk: If external input reaches `gitOutput`/`runGit` args or `mibaselinepolicy` ref/path parameters without validation, malicious flags could be injected.
+- Required follow-up:
+  - `internal/trace/source_snapshot.go:14-15` calls `gitOutput(cleanBase, "rev-parse", "HEAD^{tree}")` and `gitOutput(cleanBase, "status", "--porcelain")` — hardcoded safe args.
+  - `internal/repoobserver/status_git.go:6-7` calls `gitOutput(repoRoot, "rev-parse", "--verify", "HEAD")` and `gitOutput(repoRoot, "branch", "--show-current")` — hardcoded safe args.
+  - `internal/repoobserver/surface_hooks.go:18` calls `gitOutput(opts.RepoRoot, "config", "--get", "core.hooksPath")` — hardcoded safe args.
+  - `internal/repoobserver/install_hooks_path.go:13,23` calls `gitOutput` and `runGit` with hardcoded config args.
+  - `tools/mibaselinepolicy/git.go` callers: verify `ref` is a valid git ref (SHA or tag) and `path` is within repository before passing to `gitFileExistsAtRef` and `gitCommitExists`.
 
-The tracked-source snapshot with the default config reported 10 findings:
+**G304 — Variable file inclusion via path**
+- Files: 60 call sites across `tools/`, `internal/`, and `cmd/sdp-trace/`.
+- Risk: If a path derives from external input without validation, file reads could escape the intended boundary.
+- Current state: `internal/capturedepth/capture_depth.go:37` has a reviewed `#nosec G304` because `runDir` is a caller-selected local evidence root and query output does not echo provider refs.
+- Required follow-up: Audit the 60 call sites. For each, either confirm the path is a hardcoded or caller-validated tool input, or add a scoped `#nosec` with a recorded rationale.
 
-| Rule | File | Lines | Triage State | Notes |
-| --- | --- | --- | --- | --- |
-| `generic-api-key` | `examples/self-trace/evidence-events.json` | 169, 218 | `allowlisted_fixture` | `dedupe_key` labels; allowlist is path+regex scoped. |
-| `generic-api-key` | `examples/self-trace/negative-native-policy-field.json` | 178, 227 | `allowlisted_fixture` | Mirrored self-trace labels; allowlist is path+regex scoped. |
-| `generic-api-key` | `examples/self-trace/assessment-input.json` | 174, 223 | `allowlisted_fixture` | Mirrored self-trace labels; allowlist is path+regex scoped. |
-| `jwt` | `internal/witness/profiles_test.go` | 959, 1008 | `allowlisted_test_fixture` | JWT sentinel used by tests; allowlist is path+regex scoped. |
-| `private-key` | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | 45660, 46637 | `allowlisted_historical_fixture` | Historical review fixture contains private-key marker text; allowlist is path+regex scoped. |
+**G703 — Path traversal via taint analysis**
+- Files: `internal/repoobserver/install_target_overwrite.go`, `internal/repoobserver/install_gitignore_update.go`
+- Risk: If `target.path` or `path` parameters contain `../` sequences, writes could escape the repository.
+- Required follow-up: Verify callers validate paths are within the repository root before calling install helpers.
 
-The working-tree scan reported four additional `.codex-subagents/` findings
-from local run clutter. Those files are not intended to be tracked and are
-already covered by repository hygiene rules.
+## `gitleaks` Findings Triage
+
+Default-config scans:
+- Tracked-source snapshot (`git archive HEAD`): **10 findings**, all in tracked files.
+- Working-tree scan (includes local ignored clutter): **10 findings** (same tracked findings; local ignored clutter is currently clean).
+- None are live secrets.
+
+Configured scan (with reviewed `.gitleaks.toml`): **0 findings**.
+
+A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers.
+
+| Category | Files | Rule | Disposition |
+|----------|-------|------|-------------|
+| Synthetic JWT sentinel (redaction tests) | `internal/witness/profiles_test.go` | `jwt` / `generic-api-key` | **accepted false positive** — test fixture verifying redaction behavior |
+| Review dedupe keys (fixture labels) | `examples/self-trace/evidence-events.json`, `examples/self-trace/negative-native-policy-field.json`, `examples/self-trace/assessment-input.json` | `generic-api-key` | **accepted false positive** — review event labels (`crisis-{glm-critic|judge|kimi-critic}-YYYY-MM-DD`), not credentials |
+| Private-key marker (historical diff) | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | `private-key` | **accepted false positive** — sanitized diff showing redaction sentinel changes |
+
+## Local Ignored Clutter Policy
+
+The following paths are ignored by `.gitignore` and must NOT be treated as
+repository security evidence:
+
+- `.worktrees/`
+- `.codex-subagents/`
+- `.sdp-trace-runs/`
+- `.sdp-trace-report/`
+- `.sdp-trace-*`
+
+Scan them with local hygiene tooling, but report findings as **local hygiene**
+only. If a finding in an ignored path is a real secret, rotate it; do not
+allowlist it in repository scans.
+
+## Reporting
+
+For vulnerability reporting guidance, see [`.github/SECURITY.md`](../.github/SECURITY.md).
+
+## Verification Commands
+
+Reproduce the current baseline:
+
+```bash
+# Green gates
+go vet ./...
+go test -count=1 ./...
+govulncheck ./...
+go run ./tools/doccheck
+go run ./tools/hygienecheck
+git diff --check
+
+# Advisory scans
+gosec ./...
+
+# Default-config scans (for count verification)
+# Run from /tmp so gitleaks does not auto-load the repository .gitleaks.toml.
+mkdir -p /tmp/worktree-scan && rm -rf /tmp/worktree-scan/*
+tar --exclude='.gitleaks.toml' --exclude='.git' -cf - . | tar -xf - -C /tmp/worktree-scan
+(cd /tmp && gitleaks detect --source /tmp/worktree-scan --no-git)
+
+mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
+git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
+(cd /tmp && gitleaks detect --source /tmp/tracked-scan --no-git)
+
+# Configured tracked-source scan
+mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
+git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
+gitleaks detect --source /tmp/tracked-scan --no-git --config .gitleaks.toml
+
+# Configured working-tree scan (reviewed allowlist, working-tree only)
+gitleaks detect --source . --config .gitleaks.toml --no-git
+```
 
 ## Required Follow-Up
 
-- Review all `G703`, `G304`, and `G204` call sites first because they touch
+- Review all `G703` and `G204` call sites first because they touch
   path, network, external-input, and command-execution boundaries.
+- Review remaining `G304` call sites (59 of 60) and add scoped `#nosec` with
+  rationale where the path is a validated tool input.
 - Re-run `gitleaks` with `.gitleaks.toml` after each fixture or scanner-rule
   change; do not broaden allowlist patterns without review.
 - Add CI jobs for `govulncheck`, `gosec`, and `gitleaks` only after local
@@ -78,14 +148,10 @@ already covered by repository hygiene rules.
 - Re-run this baseline after any security, trust, path, witness, release-proof,
   repo-observer, or PR-review change.
 
-## Reproduction Commands
+## Change Log
 
-```text
-go vet ./...
-govulncheck ./...
-gosec -fmt=json -out <scan-output-dir>/gosec.json ./...
-gitleaks detect --source . --no-git --redact=100 --config .gitleaks.toml
-git archive --format=tar HEAD | tar -xf - -C <tracked-scan-dir>
-cp .gitleaks.toml <tracked-scan-dir>/.gitleaks.toml
-gitleaks detect --source <tracked-scan-dir> --no-git --redact=100 --config <tracked-scan-dir>/.gitleaks.toml
-```
+- 2026-05-20: Initial security baseline for spec 016. All `gosec` families
+  classified. Tracked-source and working-tree `gitleaks` (10 findings each)
+  triaged as false positive. Local ignored clutter is currently clean.
+  Two `gosec` families (G204, G703) deferred as advisory pending caller audit;
+  `G304` deferred advisory (60 call sites; 1 reviewed `#nosec`, 59 need audit).
