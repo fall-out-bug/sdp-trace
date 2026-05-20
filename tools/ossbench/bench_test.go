@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 )
 
@@ -42,10 +43,10 @@ func TestStats_Empty(t *testing.T) {
 
 func TestRunBenchmark_CustomCommand(t *testing.T) {
 	def := benchmarkDef{
-		Name: "true",
-		Cmd:  "true",
-		Args: []string{},
-		Dir:  "/tmp",
+		Name: "go-env",
+		Cmd:  "go",
+		Args: []string{"env", "GOOS"},
+		Dir:  os.TempDir(),
 	}
 	res := runBenchmark(def, 5)
 	if res.Error != "" {
@@ -63,10 +64,10 @@ func TestRunBenchmark_CustomCommand(t *testing.T) {
 	if res.MinMs < 0 || res.MaxMs < res.MinMs {
 		t.Errorf("invalid min/max: min=%v max=%v", res.MinMs, res.MaxMs)
 	}
-	if len(res.Argv) != 1 || res.Argv[0] != "true" {
+	if len(res.Argv) != 3 || res.Argv[0] != "go" {
 		t.Errorf("unexpected argv: %v", res.Argv)
 	}
-	if res.WorkingDirectory != "/tmp" {
+	if res.WorkingDirectory != os.TempDir() {
 		t.Errorf("unexpected working_directory: %q", res.WorkingDirectory)
 	}
 }
@@ -94,8 +95,9 @@ func TestRunBenchmark_NoCommand(t *testing.T) {
 
 func TestRunBenchmark_DefaultIterations(t *testing.T) {
 	def := benchmarkDef{
-		Name: "true",
-		Cmd:  "true",
+		Name: "go-env",
+		Cmd:  "go",
+		Args: []string{"env", "GOOS"},
 	}
 	res := runBenchmark(def, 0)
 	if res.Error != "" {
@@ -107,10 +109,11 @@ func TestRunBenchmark_DefaultIterations(t *testing.T) {
 }
 
 func TestRunBenchmark_PartialFailure(t *testing.T) {
-	// Verify that a command that sometimes fails still produces partial results.
+	// Verify that a command that always fails still produces partial results.
 	def2 := benchmarkDef{
 		Name: "always-fail",
-		Cmd:  "false",
+		Cmd:  "go",
+		Args: []string{"env", "-badflag"},
 	}
 	res2 := runBenchmark(def2, 3)
 	if res2.Error == "" {

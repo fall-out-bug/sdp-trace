@@ -21,18 +21,18 @@ func TestRun_List(t *testing.T) {
 
 func TestRun_CustomCommand(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-n", "3", "true"}, &out, &out)
+	code := run([]string{"-n", "3", "go", "env", "GOOS"}, &out, &out)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
-	if !strings.Contains(out.String(), "true") {
+	if !strings.Contains(out.String(), "go env GOOS") {
 		t.Fatalf("expected output for custom command, got: %s", out.String())
 	}
 }
 
 func TestRun_JSON(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-json", "-n", "2", "true"}, &out, &out)
+	code := run([]string{"-json", "-n", "2", "go", "env", "GOOS"}, &out, &out)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

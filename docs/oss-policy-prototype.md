@@ -9,6 +9,10 @@ it does not approve replacing sdp-trace verifier behavior with OPA.
 
 ## Probe Result
 
+Results below reflect a local environment where `opa` was available. In the
+current integration environment (no optional tools installed) the automated
+harness reports `not_assessed` for OPA probes.
+
 | Probe | State | Reason |
 |---|---|---|
 | OPA adapter-capture pass rule | `pass` | Positive fixture evaluates to true |

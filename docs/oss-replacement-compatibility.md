@@ -32,9 +32,9 @@ Missing tools render that probe `not_assessed`.
 ## Compatibility Probes
 
 The table below reflects the **current environment**, where no optional
-external CLI tools are installed. The automated harness output is recorded in
-[`oss-compat-run-current.json`](oss-compat-run-current.json). When the
-required optional tools are available, the expected results are shown in the
+external CLI tools are installed. Run `go run ./tools/osscompat -json` to
+produce live harness output for your environment. When the required optional
+tools are available, the expected results are shown in the
 **Expected (tool available)** column.
 
 | Proxy / Tool | Capability Tested | Current Result | Expected (tool available) | Status |
@@ -236,8 +236,8 @@ and report `not_assessed`.
 | Rekor integration | `not_assessed` | Transparency log requires external service and OIDC identity |
 | CUE module packaging | `cannot_verify` | `schema/` refs not yet packaged as CUE modules |
 | Cosign production trust | `not_assessed` | Local key signing excludes keyless/OIDC/transparency verification |
-| JSON Schema fixture alignment | `pass` | Checked examples validate; live wrap output mismatch documented |
-| OPA policy prototype | `pass` | Local evaluation of the checked-in positive and negative fixtures returns expected true/false |
+| JSON Schema fixture alignment | `not_assessed` | `check-jsonschema` not available in current environment; expected `pass` when tool present |
+| OPA policy prototype | `not_assessed` | `opa` not available in current environment; expected `pass` when tool present |
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
 
