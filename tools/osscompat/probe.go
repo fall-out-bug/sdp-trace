@@ -162,7 +162,6 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 		return stateCannotVerify, fmt.Sprintf("go build failed: %v\n%s", err, strings.TrimSpace(string(buildOut)))
 	}
 
-	wrapOut := filepath.Join(tmpDir, "wrap.json")
 	cmd := exec.CommandContext(ctx, bin, "wrap", "/bin/true")
 	cmd.Dir = tmpDir
 	stdout, err := cmd.Output()
@@ -173,8 +172,17 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 		}
 		return stateFail, fmt.Sprintf("wrap failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
 	}
-	if err := os.WriteFile(wrapOut, stdout, 0644); err != nil {
-		return stateCannotVerify, fmt.Sprintf("write wrap output: %v", err)
+	// Parse stdout to locate the generated run_dir.
+	// Expected format: "run_dir: <path>\n"
+	fields := strings.Fields(strings.TrimSpace(string(stdout)))
+	if len(fields) != 2 || fields[0] != "run_dir:" {
+		return stateCannotVerify, fmt.Sprintf("unexpected wrap stdout format: %q", string(stdout))
+	}
+	runDir := fields[1]
+	// The run_dir path printed by wrap is relative to cmd.Dir (tmpDir).
+	runJSONPath := filepath.Join(tmpDir, runDir, "run.json")
+	if _, err := os.Stat(runJSONPath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("run.json not found at expected path %s: %v", runJSONPath, err)
 	}
 
 	if !hasTool("check-jsonschema") {
@@ -195,17 +203,17 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	}
 	schemaOut, err := exec.CommandContext(checkCtx, "check-jsonschema",
 		"--schemafile", schemaPath,
-		wrapOut,
+		runJSONPath,
 	).CombinedOutput()
 	if err == nil {
-		return statePass, "local wrap stdout passed schema validation — this is local checkout evidence only, not source-bound drift closure"
+		return statePass, "local wrap run.json passed schema validation — this is local checkout evidence only, not source-bound drift closure"
 	}
 	// Distinguish schema-validation failure (exit code 1) from harness/tool
 	// errors (other exit codes, signals, crashes).
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-		return stateFail, fmt.Sprintf("live wrap output fails schema validation (conformance failure): %s", strings.TrimSpace(string(schemaOut)))
+		return stateFail, fmt.Sprintf("live wrap run.json fails schema validation (conformance failure): %s", strings.TrimSpace(string(schemaOut)))
 	}
-	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap output (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(schemaOut)))
+	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(schemaOut)))
 }
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.

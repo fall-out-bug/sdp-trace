@@ -193,21 +193,37 @@ func TestRunSLSANegative(t *testing.T) {
 	}
 }
 
-func TestWrapOutputIsNotJSONObject(t *testing.T) {
-	// Structural evidence that live wrap output does not conform to
-	// flight-recorder-run.schema.json.
-	data, err := os.ReadFile("../../examples/flight-recorder/wrap-output-drift/wrap-output.txt")
+func TestWrapRunJSONDriftFixture(t *testing.T) {
+	// Structural evidence that the captured run.json does not conform to
+	// flight-recorder-run.schema.json. This test checks the frozen snapshot
+	// without invoking an external schema validator.
+	data, err := os.ReadFile("../../examples/flight-recorder/wrap-output-drift/run.json")
 	if err != nil {
 		t.Fatalf("read drift fixture: %v", err)
 	}
 	var obj map[string]any
-	if err := json.Unmarshal(data, &obj); err == nil {
-		t.Fatal("expected wrap output to not be a JSON object, but it parsed as one")
+	if err := json.Unmarshal(data, &obj); err != nil {
+		t.Fatalf("expected run.json to be a JSON object: %v", err)
 	}
-	// Verify the fixture contains the expected plain-text prefix from the
-	// frozen verbatim capture.
-	if !strings.Contains(string(data), "run_dir: .sdp-trace-runs/run-") {
-		t.Fatal("expected wrap output to contain the run_dir prefix")
+	// The schema requires schema_version == "1.0.0" and many required fields.
+	required := []string{
+		"schema_version", "run_id", "profile", "trust_scope", "artifact_role",
+		"created_at", "source_summary", "task_summary", "model_summary",
+		"harness_summary", "evidence_retention_summary", "verifier_states",
+	}
+	missing := 0
+	for _, key := range required {
+		if _, ok := obj[key]; !ok {
+			missing++
+		}
+	}
+	if missing == 0 {
+		t.Fatal("expected frozen run.json to be missing required schema fields, but all were present")
+	}
+	// Specifically, schema_version must be "1.0.0"; the captured manifest uses
+	// a different version string.
+	if sv, ok := obj["schema_version"].(string); ok && sv == "1.0.0" {
+		t.Fatal("expected schema_version mismatch in frozen run.json")
 	}
 }
 

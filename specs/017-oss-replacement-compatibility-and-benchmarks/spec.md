@@ -18,12 +18,13 @@ accident.
   in the current environment (no optional tools installed) the probe reports
   `not_assessed`. When available, it validates checked flight-recorder fixtures
   against locally rewired schema refs.
-- `sdp-trace wrap` CLI stdout has been observed not to validate against
-  `schema/flight-recorder-run.schema.json`. When `check-jsonschema` is
-  available, the `osscompat` harness confirms this drift with a temp-dir probe
-  that builds from source, runs `wrap`, captures stdout, and reports `fail`
-  because the stdout is not schema JSON. When `check-jsonschema` is absent,
-  the probe reports `not_assessed`.
+- The `run.json` artifact produced by `sdp-trace wrap /bin/true` has been
+  observed not to validate against `schema/flight-recorder-run.schema.json`.
+  When `check-jsonschema` is available, the `osscompat` harness confirms this
+  drift with a temp-dir probe that builds from source, runs `wrap`, locates the
+  generated `run.json` inside the reported `run_dir`, and reports `fail` because
+  the manifest is missing required fields and uses an incorrect `schema_version`.
+  When `check-jsonschema` is absent, the probe reports `not_assessed`.
 - `OPA` adapter-capture rule evaluation: expected `pass` when tool available;
   in the current environment the probe reports `not_assessed`. When available,
   the checked-in positive fixture evaluates to true and negative fixtures

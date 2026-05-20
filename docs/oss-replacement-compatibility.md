@@ -40,7 +40,7 @@ tools are available, the expected results are shown in the
 | Proxy / Tool | Capability Tested | Current Result | Expected (tool available) | Status |
 |---|---|---|---|---|
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `check-jsonschema` present [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` CLI stdout vs `flight-recorder-run.schema.json` | `not_assessed` | `fail` | Not assessed in current environment; expected `fail` (CLI stdout is not schema JSON) when `check-jsonschema` present [^1] |
+| `check-jsonschema` | Validate `run.json` artifact from `sdp-trace wrap` vs `flight-recorder-run.schema.json` | `not_assessed` | `fail` | Not assessed in current environment; expected `fail` (generated manifest is missing required fields) when `check-jsonschema` present [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | OPA/Rego | Combined negative fixture (both rules broken) | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | OPA/Rego | Negative trace_id rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
@@ -74,8 +74,8 @@ and report `not_assessed`.
 
 ```bash
 # This command is expected to fail until a source-bound schema/wrap fix lands
-# in a subsequent spec. Build the binary from the repo root, then run it from
-# an isolated temp dir.
+# in a subsequent spec. Build the binary from the repo root, run it from an
+# isolated temp dir, then validate the generated run.json artifact.
 (
   set -e
   command -v check-jsonschema >/dev/null || { echo "check-jsonschema not found"; exit 1; }
@@ -85,16 +85,15 @@ and report `not_assessed`.
   cd "$REPO_ROOT"
   go build -o "$TMPDIR/sdp-trace" ./cmd/sdp-trace
   cd "$TMPDIR"
-  WRAP_OUT=$(mktemp -p "$TMPDIR")
-  trap 'rm -rf "$TMPDIR" "$WRAP_OUT"' EXIT
   # Preflight: confirm the tool and schema are functional against a known-good fixture.
   check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
     "$REPO_ROOT/examples/flight-recorder/local-positive/run.json"
-  "$TMPDIR/sdp-trace" wrap /bin/true > "$WRAP_OUT"
+  RUN_DIR=$("$TMPDIR/sdp-trace" wrap /bin/true | awk '{print $2}')
+  RUN_JSON="$TMPDIR/$RUN_DIR/run.json"
   if check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
-    "$WRAP_OUT"; then
+    "$RUN_JSON"; then
     echo "ERROR: expected schema validation to fail"
     exit 1
   fi
