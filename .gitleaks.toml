@@ -7,7 +7,7 @@ useDefault = true
 description = "Self-trace dedupe keys are fixture labels, not credentials."
 condition = "AND"
 paths = ['''^examples/self-trace/(assessment-input|evidence-events|negative-native-policy-field)\.json$''']
-regexes = ['''crisis-(glm-critic|judge|kimi-critic)-\d{4}-\d{2}-\d{2}''']
+regexes = ['''crisis-(glm-critic|judge|kimi-critic)-2026-04-30''']
 
 [[allowlists]]
 description = "Witness tests use a synthetic JWT-shaped sentinel to verify redaction."
