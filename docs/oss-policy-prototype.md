@@ -9,16 +9,17 @@ it does not approve replacing sdp-trace verifier behavior with OPA.
 
 ## Probe Result
 
-Results below reflect a local environment where `opa` was available. In the
-current integration environment (no optional tools installed) the automated
-harness reports `not_assessed` for OPA probes.
+The table below reflects the **current environment**, where `opa` is not
+available. Run `go run ./tools/osscompat -json` to produce live harness output
+for your environment. When `opa` is available, the expected results are shown
+in the **Expected (tool available)** column.
 
-| Probe | State | Reason |
-|---|---|---|
-| OPA adapter-capture pass rule | `pass` | Positive fixture evaluates to true |
-| OPA adapter-capture fail rule | `pass` | Negative fixture correctly evaluates to false |
-| OPA gate verdict replacement | `cannot_verify` | OPA does not understand sdp-trace gate semantics without adapter glue |
-| CUE direct validation | `cannot_verify` | Schema refs not packaged as CUE modules |
+| Probe | Current State | Expected (tool available) | Reason |
+|---|---|---|---|
+| OPA adapter-capture pass rule | `not_assessed` | `pass` | Positive fixture evaluates to true |
+| OPA adapter-capture fail rule | `not_assessed` | `pass` | Negative fixture correctly evaluates to false |
+| OPA gate verdict replacement | `cannot_verify` | `cannot_verify` | OPA does not understand sdp-trace gate semantics without adapter glue |
+| CUE direct validation | `cannot_verify` | `cannot_verify` | Schema refs not packaged as CUE modules |
 
 ## Files
 

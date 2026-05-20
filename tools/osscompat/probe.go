@@ -198,7 +198,7 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 		wrapOut,
 	).CombinedOutput()
 	if err == nil {
-		return statePass, "live wrap output unexpectedly passed schema validation; drift may be fixed"
+		return statePass, "local wrap stdout passed schema validation — this is local checkout evidence only, not source-bound drift closure"
 	}
 	// Distinguish schema-validation failure (exit code 1) from harness/tool
 	// errors (other exit codes, signals, crashes).
