@@ -39,8 +39,8 @@ Missing tools render that probe `not_assessed`.
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
-| in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally [^1] |
-| Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled [^1] |
+| in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Link metadata generated and signed locally (manual-only; no automated harness probe) [^1] |
+| Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Works with local key when transparency log verification is explicitly disabled (manual-only; no automated harness probe) [^1] |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
 | SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: truncated signature prevents verification before any Rekor check |
 
@@ -66,13 +66,15 @@ and report `not_assessed`.
 
 ```bash
 # This command is expected to fail until T017-020 resolves the drift.
-# Run from /tmp so wrap does not create .sdp-trace-runs in the repo root.
+# Use an isolated temp directory so wrap does not leave state behind.
 (
   set -e
   REPO_ROOT=$(git rev-parse --show-toplevel)
-  cd /tmp
-  WRAP_OUT=$(mktemp)
-  trap 'rm -f "$WRAP_OUT"' EXIT
+  TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$TMPDIR"' EXIT
+  cd "$TMPDIR"
+  WRAP_OUT=$(mktemp -p "$TMPDIR")
+  trap 'rm -rf "$TMPDIR" "$WRAP_OUT"' EXIT
   go run "$REPO_ROOT/cmd/sdp-trace" wrap /bin/true > "$WRAP_OUT"
   check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \

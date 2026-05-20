@@ -35,10 +35,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *list {
-		if err := resolveBuiltIns(); err != nil {
-			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
-			return 2
-		}
 		for _, b := range builtIns {
 			fmt.Fprintf(stdout, "%s\t%s\n", b.Name, b.Description)
 		}
