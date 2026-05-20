@@ -40,13 +40,13 @@ is provisional scope evidence only.
 
 | Probe | Median ms | Notes |
 | --- | ---: | --- |
-| shell prototype wrap | 6.0 | Minimal JSON, no hash chain semantics |
-| `sdp-trace verify` | 8.0 | Existing local run |
-| OPA adapter policy eval | 14.0 | Simplified policy |
-| `sdp-trace wrap` | 26.0 | Local `/bin/true` |
-| Cosign local verify | 30.5 | Transparency log ignored |
-| `in-toto-run` | 148.0 | Signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | Python validator startup cost |
+| `sdp-trace version` | 4.6 | Built-in, measured via `tools/ossbench` |
+| `sdp-trace wrap` | 16.1 | Built-in, measured via `tools/ossbench` |
+| shell prototype wrap | 6.0 | One-shot; minimal JSON, no hash chain semantics |
+| OPA adapter policy eval | 14.0 | One-shot; simplified policy |
+| Cosign local verify | 30.5 | One-shot; transparency log ignored |
+| `in-toto-run` | 148.0 | One-shot; signed link metadata |
+| `check-jsonschema` fixture validation | 271.5 | One-shot; Python validator startup cost |
 
 ## Requirements
 

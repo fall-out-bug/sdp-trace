@@ -68,19 +68,19 @@ measurement protocol, not to claim the exact same medians will hold on
 another machine.
 
 ```bash
+# sdp-trace version (built-in harness probe)
+sdp-trace version
+
+# sdp-trace wrap (built-in harness probe)
+sdp-trace wrap /bin/true
+
 # Shell prototype wrap
 printf '%s\n' '{"v":"local"}'
-
-# sdp-trace verify
-sdp-trace verify
 
 # OPA adapter policy eval
 opa eval --data examples/oss-policy/adapter.rego \
   --input examples/oss-policy/test-fixture.json \
   'data.sdp_trace.adapter.pass'
-
-# sdp-trace wrap
-sdp-trace wrap /bin/true
 
 # Cosign local verify
 cosign verify-blob --key /tmp/cosign.pub \

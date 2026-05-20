@@ -68,12 +68,13 @@ and report `not_assessed`.
 # Run from /tmp so wrap does not create .sdp-trace-runs in the repo root.
 (
   set -e
+  REPO_ROOT=$(git rev-parse --show-toplevel)
   cd /tmp
   WRAP_OUT=$(mktemp)
   trap 'rm -f "$WRAP_OUT"' EXIT
   sdp-trace wrap /bin/true > "$WRAP_OUT"
   check-jsonschema \
-    --schemafile schema/flight-recorder-run.schema.json \
+    --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
     "$WRAP_OUT"
 )
 ```
@@ -139,7 +140,7 @@ and report `not_assessed`.
 
 ```bash
 # Attempt to verify a local DSSE fixture as production SLSA evidence.
-# Expected to fail because no Rekor entry exists.
+# Expected to fail because the signature is truncated and no Rekor entry exists.
 (
   slsa-verifier verify-artifact \
     --provenance-path examples/oss-supply-chain/local-dsse.json \
@@ -183,9 +184,8 @@ and report `not_assessed`.
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
 
-[^1]: Automated probes in `tools/osscompat` verify tool presence where full
-validation requires manual execution or external fixtures. The doc table
-records the manual probe result; the tool reports `cannot_verify` for the
-same probe because it cannot safely auto-run the full check without
-mutating state or depending on fixture paths. Run the reproduction commands
-above for the actual validation.
+[^1]: Automated probes in `tools/osscompat` run the full validation when
+safe to do so (JSON Schema fixture check, OPA eval against checked-in
+fixtures, CUE import). For probes that mutate state or require external
+services, the tool reports `cannot_verify` and the doc records the manual
+result. Run the reproduction commands above for the actual validation.
