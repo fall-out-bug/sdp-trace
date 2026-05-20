@@ -17,7 +17,7 @@ sdp-trace-like rules, but it does not replace the product verifier.
 
 ## Run the Policy
 
-Requires `opa` in `$PATH`. Run from the `examples/oss-policy` directory.
+Requires `opa` in `$PATH`. Run from the repository root.
 
 ```bash
 (

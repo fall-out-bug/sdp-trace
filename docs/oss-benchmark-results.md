@@ -114,8 +114,8 @@ or production trust decisions. They are scope-informative only.
 
 - **Built-in harness:** `tools/ossbench` now automates the 20-iteration
   protocol for built-in `sdp-trace` probes and emits structured JSON with
-  `min_ms`, `max_ms`, `median_ms`, and `iterations`. Run with `-json` for
-  machine-readable output.
+  `min_ms`, `max_ms`, `median_ms`, `attempted_iterations`, and
+  `succeeded_iterations`. Run with `-json` for machine-readable output.
 - **External-tool benchmarks:** Probes requiring `opa`, `cosign`, `in-toto-run`,
   `check-jsonschema`, or `slsa-verifier` are not yet covered by the harness
   because they depend on optional external CLIs.

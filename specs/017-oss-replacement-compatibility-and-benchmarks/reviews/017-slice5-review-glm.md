@@ -23,7 +23,7 @@ Tool spot-checks:
 ```
 go run ./tools/osscompat -list   — 7 probes listed; 6 not_assessed (tools absent), 1 cannot_verify
 go run ./tools/osscompat -json   — structured JSON output with state/reason
-go run ./tools/ossbench -list    — 2 built-in benchmarks (sdp-trace-verify, sdp-trace-wrap)
+go run ./tools/ossbench -list    — 2 built-in benchmarks (sdp-trace-version, sdp-trace-wrap)
 go run ./tools/ossbench -n 3 -json — produces min_ms, max_ms, median_ms
 ```
 
