@@ -56,43 +56,6 @@ witness steps, but too high for per-event recording.
 For CI schema checks this is acceptable; it is not suitable as a per-event
 recording validator in hot paths.
 
-## Commands Measured
-
-The following commands are **historical protocol documentation** from the
-original one-shot run. They are not self-contained copy-paste blocks:
-setup steps (key generation, temp directories, prior `cosign sign-blob`)
-were performed in separate subshells and are not repeated here.
-The built-in `sdp-trace` probes should be reproduced with `tools/ossbench`.
-
-```bash
-# sdp-trace version (built-in harness probe)
-sdp-trace version
-
-# sdp-trace wrap (built-in harness probe; use tools/ossbench for clean temp dirs)
-sdp-trace wrap /bin/true
-
-# Shell prototype wrap
-printf '%s\n' '{"v":"local"}'
-
-# OPA adapter policy eval
-opa eval --data examples/oss-policy/adapter.rego \
-  --input examples/oss-policy/test-fixture.json \
-  'data.sdp_trace.adapter.pass'
-
-# Cosign local verify (requires prior sign-blob step and key generation)
-cosign verify-blob --key /tmp/cosign.pub \
-  --signature /tmp/run.json.sig --insecure-ignore-tlog /tmp/run.json
-
-# in-toto-run (requires prior key generation; run inside a temp directory)
-in-toto-run --step-name test-wrap --products /dev/null \
-  --key /tmp/key.pem -- /bin/true
-
-# check-jsonschema fixture validation
-check-jsonschema \
-  --schemafile schema/flight-recorder-run.schema.json \
-  examples/flight-recorder/local-positive/run.json
-```
-
 ## Non-Authoritative Disclaimer
 
 These numbers come from a local Linux amd64 environment with 20 iterations

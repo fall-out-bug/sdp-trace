@@ -33,16 +33,15 @@ Missing tools render that probe `not_assessed`.
 
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
-| `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against local schema refs | `pass` | Checked fixture conforms to schema [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `cannot_verify` | Live wrap output differs from schema; safe auto-run is not implemented so the automated probe reports `cannot_verify` [^1] |
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
+| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `cannot_verify` | Live wrap output differs from schema; safe auto-run is not implemented so the automated probe reports `cannot_verify` [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
-| Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
-| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: truncated signature prevents verification before any Rekor check |
+| Cosign | Verify with transparency log / Rekor | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
+| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
 
 ## Reproduction Commands
 

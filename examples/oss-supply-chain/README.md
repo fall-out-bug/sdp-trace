@@ -59,9 +59,9 @@ negative-path testing. These are local experiments only.
 ## SLSA Verifier Negative Path
 
 ```bash
-# From the repo root:
+# Run from this directory.
 slsa-verifier verify-artifact \
-  --provenance-path examples/oss-supply-chain/local-dsse.json \
+  --provenance-path local-dsse.json \
   --source-uri local/test \
   /dev/null
 ```
