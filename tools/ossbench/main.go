@@ -58,6 +58,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
 			return 2
 		}
+		defer cleanupTempBinary()
 		for _, b := range builtIns {
 			if b.Name == *name {
 				defs = append(defs, b)
@@ -79,6 +80,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 				fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
 				return 2
 			}
+			defer cleanupTempBinary()
 			defs = builtIns
 		}
 	}
@@ -109,10 +111,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	if err := printResults(stdout, results, *asJSON); err != nil {
 		fmt.Fprintf(stderr, "print results: %v\n", err)
-		cleanupTempBinary()
 		return 2
 	}
-	cleanupTempBinary()
 	return exitCode(results)
 }
 

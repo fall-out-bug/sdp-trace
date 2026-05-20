@@ -69,6 +69,7 @@ and report `not_assessed`.
 # Build the binary from the repo root, then run it from an isolated temp dir.
 (
   set -e
+  command -v check-jsonschema >/dev/null || { echo "check-jsonschema not found"; exit 1; }
   REPO_ROOT=$(git rev-parse --show-toplevel)
   TMPDIR=$(mktemp -d)
   trap 'rm -rf "$TMPDIR"' EXIT
@@ -172,6 +173,7 @@ and report `not_assessed`.
 # Expected to fail because the signature is truncated and no Rekor entry exists.
 (
   set -e
+  command -v slsa-verifier >/dev/null || { echo "slsa-verifier not found"; exit 1; }
   if slsa-verifier verify-artifact \
     --provenance-path examples/oss-supply-chain/local-dsse.json \
     --source-uri local/test \

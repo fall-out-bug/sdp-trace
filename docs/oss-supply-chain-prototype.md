@@ -14,8 +14,8 @@ sdp-trace witness, checkpoint, or release-proof semantics.
 |---|---|---|
 | in-toto-run wrap + sign | `cannot_verify` | Manual-only; no automated harness probe run |
 | Cosign local blob sign/verify | `cannot_verify` | Manual-only; no automated harness probe run |
-| Cosign verify with Rekor | `fail` | Expected: no Rekor entry for local fixture |
-| SLSA verifier reject local DSSE | `pass` | Rejects truncated-signature local DSSE fixture as expected |
+| Cosign verify with Rekor | `cannot_verify` | Manual-only; run reproduction command for expected-fail evidence |
+| SLSA verifier reject local DSSE | `cannot_verify` | Manual-only; run reproduction command for expected-fail evidence |
 | SLSA/Rekor production trust | `not_assessed` | No live external provenance or Rekor inclusion |
 
 ## Files

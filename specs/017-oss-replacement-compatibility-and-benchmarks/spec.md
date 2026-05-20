@@ -26,9 +26,10 @@ accident.
 - `CUE` can import JSON Schema, but direct validation is blocked until schema
   refs are packaged as a CUE module.
 - `in-toto-run` can wrap a command, sign link metadata, and record material and
-  product hashes.
+  product hashes (manual-only; no harness probe).
 - `cosign` can sign and verify a local `run.json` blob with a local key when
-  transparency-log verification is explicitly disabled.
+  transparency-log verification is explicitly disabled (manual-only; no harness
+  probe).
 - `slsa-verifier` rejects the local DSSE fixture because the signature is
   truncated; Rekor rejection is not separately evidenced.
 
