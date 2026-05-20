@@ -1,6 +1,6 @@
 # OSS Supply-Chain Prototype
 
-Status: locally tested, not externally verified
+Status: experimental; verification not_assessed/cannot_verify as listed below
 Spec: [017](../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This directory contains minimal supply-chain tooling probes:

@@ -42,8 +42,13 @@ All rows below are reproducible via `tools/ossbench`.
 
 | Probe | Median ms | Min ms | Max ms | Command |
 | --- | ---: | ---: | ---: | --- |
-| `sdp-trace version` | 4.44 | 4.29 | 5.08 | `sdp-trace version` |
-| `sdp-trace wrap` | 15.93 | 15.33 | 17.24 | `sdp-trace wrap /bin/true` |
+| `sdp-trace version` | 4.60 | 4.39 | 5.03 | `sdp-trace version` |
+| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | `sdp-trace wrap /bin/true` |
+
+The harness builds `sdp-trace` from source into a temp directory on every run;
+the displayed command is a display name (`filepath.Base`), while the actual
+binary path is recorded in JSON `binary_path` and `binary_source`. Reproduce
+with: `go run ./tools/ossbench -json -n 20`.
 
 One-shot historical numbers for external tools (OPA, Cosign, in-toto,
 check-jsonschema) are not included because min/max were not preserved and

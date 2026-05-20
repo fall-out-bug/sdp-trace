@@ -20,8 +20,14 @@ decisions but do not prove production readiness.
 
 | Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
 |---|---:|---:|---:|---|---|---|
-| `sdp-trace version` | 4.5 | 4.3 | 4.9 | 20 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
-| `sdp-trace wrap` | 16.1 | 15.8 | 22.8 | 20 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace version` | 4.60 | 4.39 | 5.03 | 20 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | 20 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
+
+**Exact Command note:** the harness builds `sdp-trace` from source into a temp
+directory on every run. The displayed command is a display name
+(`filepath.Base`); the actual binary path and source are recorded in JSON
+`binary_path` / `binary_source`. Reproduce with:
+`go run ./tools/ossbench -json -n 20`.
 
 External-tool benchmarks (OPA, Cosign, in-toto, check-jsonschema) are
 **not yet covered by the harness** and are excluded from this table.
