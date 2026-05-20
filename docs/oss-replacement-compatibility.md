@@ -31,6 +31,10 @@ Missing tools render that probe `not_assessed`.
 
 ## Compatibility Probes
 
+Probe results below are from a local run where the required optional CLI tools
+were available. If a tool is missing, the automated harness reports
+`not_assessed` for that probe instead of the result shown here.
+
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
@@ -67,8 +71,9 @@ and report `not_assessed`.
 ### JSON Schema live wrap drift (expected fail)
 
 ```bash
-# This command is expected to fail until T017-020 resolves the drift.
-# Build the binary from the repo root, then run it from an isolated temp dir.
+# This command is expected to fail until a source-bound schema/wrap fix lands
+# in a subsequent spec. Build the binary from the repo root, then run it from
+# an isolated temp dir.
 (
   set -e
   command -v check-jsonschema >/dev/null || { echo "check-jsonschema not found"; exit 1; }

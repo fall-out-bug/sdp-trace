@@ -28,6 +28,10 @@ func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
+	if len(fs.Args()) > 0 {
+		fmt.Fprintf(stderr, "unexpected positional args: %s\n", fs.Args())
+		return 2
+	}
 
 	if *list {
 		for _, p := range reg {

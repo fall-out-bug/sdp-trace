@@ -95,7 +95,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 
 	times := make([]time.Duration, 0, iterations)
 	var lastErr string
+	attempted := 0
 	for i := 0; i < iterations; i++ {
+		attempted++
 		start := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		cmd := exec.CommandContext(ctx, def.Cmd, def.Args...)
@@ -128,7 +130,7 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 			BinaryPath:          def.Cmd,
 			BinarySource:        def.Source,
 			Environment:         getEnv(),
-			AttemptedIterations: iterations,
+			AttemptedIterations: attempted,
 			Error:               lastErr,
 		}
 	}
@@ -147,7 +149,7 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		BinaryPath:          def.Cmd,
 		BinarySource:        def.Source,
 		Environment:         getEnv(),
-		AttemptedIterations: iterations,
+		AttemptedIterations: attempted,
 		SucceededIterations: len(times),
 		MinMs:               min,
 		MaxMs:               max,
