@@ -18,7 +18,7 @@ accident.
   in the current environment (no optional tools installed) the probe reports
   `not_assessed`. When available, it validates checked flight-recorder fixtures
   against locally rewired schema refs.
-- Live `sdp-trace wrap` CLI stdout does not validate against
+- `sdp-trace wrap` CLI stdout has been observed not to validate against
   `schema/flight-recorder-run.schema.json`. When `check-jsonschema` is
   available, the `osscompat` harness confirms this drift with a temp-dir probe
   that builds from source, runs `wrap`, captures stdout, and reports `fail`

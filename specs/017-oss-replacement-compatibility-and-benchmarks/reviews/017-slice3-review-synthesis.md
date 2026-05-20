@@ -21,4 +21,4 @@ All Advisory findings addressed in commit 8f72914.
 - git diff --check: pass
 
 ## Verdict After Fix
-**Approved** — all Advisory findings from the initial GLM/Kimi reviews were addressed in commit 8f72914. Subsequent iterative adversarial review (codex rounds 1–31) produced no new Important or Advisory findings for the wrap drift slice. Advisory finding GLM-1 (tests verify only hard-coded returns) was re-reviewed and accepted with rationale: structural evidence is provided by `TestWrapOutputIsNotJSONObject`.
+**Approved** — all Advisory findings from the initial GLM/Kimi reviews were addressed in commit 8f72914. Advisory finding GLM-1 (tests verify only hard-coded returns) was re-reviewed and accepted with rationale: structural evidence is provided by `TestWrapOutputIsNotJSONObject`.

@@ -378,10 +378,8 @@ func runCUEImport() (verifierState, string) {
 func runInTotoWrap() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if out, err := exec.CommandContext(ctx, "in-toto-run", "--version").CombinedOutput(); err != nil {
+	if _, err := exec.CommandContext(ctx, "in-toto-run", "--version").CombinedOutput(); err != nil {
 		return stateCannotVerify, fmt.Sprintf("in-toto-run version check failed: %v", err)
-	} else if !strings.Contains(string(out), "in-toto") {
-		return stateCannotVerify, "unexpected in-toto-run version output"
 	}
 	return stateCannotVerify, "in-toto-run present; run manual wrap per docs/oss-replacement-compatibility.md"
 }

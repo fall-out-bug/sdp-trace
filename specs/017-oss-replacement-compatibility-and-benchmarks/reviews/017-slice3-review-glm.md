@@ -64,4 +64,4 @@ If someone re-runs `sdp-trace wrap /bin/true`, they get a different run ID. The 
 | Advisory | UX | 1 |
 | Advisory | DX | 1 |
 
-**Disposition:** LGTM with advisory notes. No blockers, no important findings. The drift evidence is honest and structurally verified by `TestWrapOutputIsNotValidJSON`. The `cannot_verify` state for the two schema-drift probes is the correct honest call. Tests compile, pass, and `go vet` is clean.
+**Disposition:** Approved with advisory notes. Three Advisory findings remain (low-value stub tests, missing `anyOf`/`allOf` detail in drift table, fixture regeneration ambiguity). No blockers, no Important findings. The drift evidence is honest and structurally verified by `TestWrapOutputIsNotValidJSON`. The `cannot_verify` state for the two schema-drift probes is the correct honest call. Tests compile, pass, and `go vet` is clean.

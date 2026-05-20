@@ -2,9 +2,16 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
+
+func skipUnlessIntegration(t *testing.T) {
+	if os.Getenv("SDPTRACE_INTEGRATION") != "1" {
+		t.Skip("set SDPTRACE_INTEGRATION=1 to run tests that build the product binary")
+	}
+}
 
 func TestRun_List(t *testing.T) {
 	var out bytes.Buffer
@@ -42,6 +49,7 @@ func TestRun_JSON(t *testing.T) {
 }
 
 func TestRun_BuiltinBench(t *testing.T) {
+	skipUnlessIntegration(t)
 	var out bytes.Buffer
 	code := run([]string{"-bench", "sdp-trace-version", "-n", "1"}, &out, &out)
 	if code != 0 {
