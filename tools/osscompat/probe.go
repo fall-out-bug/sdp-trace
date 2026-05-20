@@ -46,6 +46,7 @@ var registry = []probe{
 	},
 	{
 		Name:        "jsonschema-wrap-drift",
+		NeedsTool:   "check-jsonschema",
 		Description: "Document live wrap output vs flight-recorder-run.schema.json drift",
 		Run:         runJSONSchemaWrapDrift,
 	},
@@ -189,14 +190,19 @@ func runOPAPolicy() (verifierState, string) {
 	if _, err := os.Stat(fixturePath); err != nil {
 		return stateCannotVerify, fmt.Sprintf("test-fixture.json not found: %v", err)
 	}
-	out, err := exec.CommandContext(ctx, "opa", "eval",
+	cmd := exec.CommandContext(ctx, "opa", "eval",
 		"--data", regoPath,
 		"--input", fixturePath,
 		"--format", "json",
 		"data.sdp_trace.adapter.pass",
-	).CombinedOutput()
+	)
+	stdout, err := cmd.Output()
 	if err != nil {
-		return stateFail, fmt.Sprintf("opa eval failed: %v\n%s", err, strings.TrimSpace(string(out)))
+		var stderr []byte
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			stderr = exitErr.Stderr
+		}
+		return stateFail, fmt.Sprintf("opa eval failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
 	}
 	// Parse OPA JSON output to assert the expression evaluates to true.
 	// Expected top-level structure: {"result":[{"expressions":[{"value":true}]}]}
@@ -207,7 +213,7 @@ func runOPAPolicy() (verifierState, string) {
 			} `json:"expressions"`
 		} `json:"result"`
 	}
-	if err := json.Unmarshal(out, &opaResult); err != nil {
+	if err := json.Unmarshal(stdout, &opaResult); err != nil {
 		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
 	}
 	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
@@ -232,14 +238,19 @@ func runOPANegativeFixture() (verifierState, string) {
 	if _, err := os.Stat(fixturePath); err != nil {
 		return stateCannotVerify, fmt.Sprintf("test-fixture-fail.json not found: %v", err)
 	}
-	out, err := exec.CommandContext(ctx, "opa", "eval",
+	cmd := exec.CommandContext(ctx, "opa", "eval",
 		"--data", regoPath,
 		"--input", fixturePath,
 		"--format", "json",
 		"data.sdp_trace.adapter.pass",
-	).CombinedOutput()
+	)
+	stdout, err := cmd.Output()
 	if err != nil {
-		return stateFail, fmt.Sprintf("opa eval failed: %v\n%s", err, strings.TrimSpace(string(out)))
+		var stderr []byte
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			stderr = exitErr.Stderr
+		}
+		return stateFail, fmt.Sprintf("opa eval failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
 	}
 	var opaResult struct {
 		Result []struct {
@@ -248,7 +259,7 @@ func runOPANegativeFixture() (verifierState, string) {
 			} `json:"expressions"`
 		} `json:"result"`
 	}
-	if err := json.Unmarshal(out, &opaResult); err != nil {
+	if err := json.Unmarshal(stdout, &opaResult); err != nil {
 		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
 	}
 	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
