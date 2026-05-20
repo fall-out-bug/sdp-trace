@@ -13,7 +13,7 @@
 - **No TODO/FIXME markers** in new Go files (`tools/osscompat/*`, `tools/ossbench/*`).
 - **Honest status transitions.** T017-080 ("Update roadmap and docs index after accepted implementation") is correctly left unchecked because the slice is still in review.
 - **Trust claims are scoped with disclaimers.** Docs repeatedly mark results as "local experiments only," "non-authoritative," and `not_assessed` where external evidence is missing. No production Sigstore/Rekor/SLSA trust is claimed from local fixtures.
-- **Wrap output/schema drift is preserved as structural evidence.** `examples/flight-recorder/wrap-output-drift/run.json` captures the verbatim non-JSON output, and `tools/osscompat/probe_test.go:145-154` (`TestWrapOutputIsNotJSONObject`) asserts the mismatch.
+- **Wrap output/schema drift is preserved as structural evidence.** `examples/flight-recorder/wrap-output-drift/wrap-output.txt` captures the verbatim non-JSON output, and `tools/osscompat/probe_test.go:145-154` (`TestWrapOutputIsNotJSONObject`) asserts the mismatch.
 - **`tools/ossbench` satisfies FR-017-004 structurally.** The harness emits `min_ms`, `max_ms`, `median_ms`, `iterations`, and command/environment metadata. `TestRunBenchmark_CustomCommand` and `TestStats` provide coverage.
 
 ---

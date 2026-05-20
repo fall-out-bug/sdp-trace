@@ -22,12 +22,16 @@ Status: in_progress
   Pi ownership: docs/examples for policy prototype only.
 - [x] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.
   Pi ownership: docs/examples for supply-chain prototype only.
+  Status: prototype complete; automated harness probes for in-toto wrapping,
+  Cosign blob signing, and SLSA negative path are manual-only (`cannot_verify`).
+  Full automated coverage is deferred to a future spec update.
 - [x] T017-050 WS-017-E: Add benchmark harness and benchmark report.
   Pi ownership: `tools/ossbench/*` and benchmark docs.
-  Note: the harness satisfies FR-017-004 structurally. The markdown table in
-  `docs/oss-benchmark-results.md` now carries reproducible numbers from the
-  harness (see spec benchmark snapshot). External-tool rows remain excluded
-  because the harness does not yet automate those probes.
+  Note: the harness satisfies FR-017-004 structurally for sdp-trace built-in
+  benchmarks. The markdown table in `docs/oss-benchmark-results.md` carries
+  reproducible numbers from the harness (see spec benchmark snapshot).
+  External-tool benchmark rows are explicitly deferred; they are not automated
+  in this slice and are not claimed as complete.
 
 ## Phase 2 - Integration
 
