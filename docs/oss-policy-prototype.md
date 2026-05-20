@@ -11,7 +11,7 @@ it does not approve replacing sdp-trace verifier behavior with OPA.
 
 | Probe | State | Reason |
 |---|---|---|
-| OPA adapter-capture pass/fail rule | `pass` | Policy evaluates correctly on test fixtures |
+| OPA adapter-capture pass rule | `pass` | Positive fixture evaluates to true; no negative fixture is checked in |
 | OPA gate verdict replacement | `cannot_verify` | OPA does not understand sdp-trace gate semantics without adapter glue |
 | CUE direct validation | `cannot_verify` | Schema refs not packaged as CUE modules |
 

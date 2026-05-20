@@ -40,7 +40,7 @@ is provisional scope evidence only.
 
 | Probe | Median ms | Notes |
 | --- | ---: | --- |
-| `sdp-trace version` | 4.6 | Built-in, measured via `tools/ossbench` |
+| `sdp-trace version` | 4.5 | Built-in, measured via `tools/ossbench` |
 | `sdp-trace wrap` | 16.1 | Built-in, measured via `tools/ossbench` |
 | shell prototype wrap | 6.0 | One-shot; minimal JSON, no hash chain semantics |
 | OPA adapter policy eval | 14.0 | One-shot; simplified policy |

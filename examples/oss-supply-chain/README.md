@@ -27,11 +27,12 @@ negative-path testing. These are local experiments only.
   set -e
   TMPDIR=$(mktemp -d)
   trap 'rm -rf "$TMPDIR"' EXIT
-  openssl genpkey -algorithm RSA -out "$TMPDIR/test-key.pem" 2>/dev/null
+  cd "$TMPDIR"
+  openssl genpkey -algorithm RSA -out test-key.pem 2>/dev/null
   in-toto-run \
     --step-name test-wrap \
     --products /dev/null \
-    --key "$TMPDIR/test-key.pem" \
+    --key test-key.pem \
     -- /bin/true
 )
 ```

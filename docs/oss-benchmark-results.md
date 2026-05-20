@@ -20,8 +20,8 @@ decisions but do not prove production readiness.
 
 | Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
 |---|---:|---:|---:|---|---|---|
-| `sdp-trace version` | 4.6 | 4.4 | 5.1 | 10 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
-| `sdp-trace wrap` | 16.1 | 15.8 | 16.4 | 10 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace version` | 4.5 | 4.3 | 4.9 | 20 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace wrap` | 16.1 | 15.8 | 22.8 | 20 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
 | Shell prototype `wrap` | 6.0 | — | — | 20 | `printf '%s\n' '{"v":"local"}'` | One-shot; minimal JSON, no hash-chain semantics |
 | OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | One-shot; simplified policy |
 | Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig run.json` | One-shot; transparency log ignored |
@@ -84,7 +84,7 @@ opa eval --data examples/oss-policy/adapter.rego \
 
 # Cosign local verify
 cosign verify-blob --key /tmp/cosign.pub \
-  --signature /tmp/run.json.sig /tmp/run.json
+  --signature /tmp/run.json.sig --insecure-ignore-tlog /tmp/run.json
 
 # in-toto-run
 in-toto-run --step-name test-wrap --products /dev/null \

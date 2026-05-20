@@ -18,7 +18,8 @@ type benchmarkDef struct {
 	Description string
 	Cmd         string
 	Args        []string
-	Dir         string // working directory; empty means current directory
+	Dir         string   // working directory; empty means current directory
+	Cleanup     func()   // optional cleanup after benchmark completes
 }
 
 // repoRoot returns the repository root by walking up from the current

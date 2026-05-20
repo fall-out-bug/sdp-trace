@@ -70,6 +70,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	results := make([]benchmarkResult, 0, len(defs))
 	for _, d := range defs {
 		res := runBenchmark(d, *iterations)
+		if d.Cleanup != nil {
+			d.Cleanup()
+		}
 		if !*raw {
 			res.AllMs = nil
 		}
@@ -91,13 +94,17 @@ func printResults(w io.Writer, results []benchmarkResult, asJSON bool) error {
 	}
 	width := maxNameWidth(results)
 	for _, r := range results {
+		var err error
 		if r.Error != "" {
-			fmt.Fprintf(w, "%*s  error: %s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+			_, err = fmt.Fprintf(w, "%*s  error: %s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
 				-width, r.Name, r.Error, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
-			continue
+		} else {
+			_, err = fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+				-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
 		}
-		fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
-			-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -136,5 +143,8 @@ var builtIns = []benchmarkDef{
 		Cmd:         resolveBinary("sdp-trace"),
 		Args:        []string{"wrap", "/bin/true"},
 		Dir:         "/tmp",
+		Cleanup: func() {
+			_ = os.RemoveAll("/tmp/.sdp-trace-runs")
+		},
 	},
 }

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // verifierState is the canonical probe result state.
@@ -106,7 +108,9 @@ func repoRoot() string {
 
 // runJSONSchemaFixtures validates a checked fixture against the schema.
 func runJSONSchemaFixtures() (verifierState, string) {
-	out, err := exec.Command("check-jsonschema",
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "check-jsonschema",
 		"--schemafile", filepath.Join(repoRoot(), "schema/flight-recorder-run.schema.json"),
 		filepath.Join(repoRoot(), "examples/flight-recorder/local-positive/run.json"),
 	).CombinedOutput()
@@ -126,6 +130,8 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
 func runOPAPolicy() (verifierState, string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
 	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture.json")
 	if _, err := os.Stat(regoPath); err != nil {
@@ -134,7 +140,7 @@ func runOPAPolicy() (verifierState, string) {
 	if _, err := os.Stat(fixturePath); err != nil {
 		return stateCannotVerify, fmt.Sprintf("test-fixture.json not found: %v", err)
 	}
-	out, err := exec.Command("opa", "eval",
+	out, err := exec.CommandContext(ctx, "opa", "eval",
 		"--data", regoPath,
 		"--input", fixturePath,
 		"data.sdp_trace.adapter.pass",
@@ -150,13 +156,15 @@ func runOPAPolicy() (verifierState, string) {
 
 // runCUEImport tests CUE JSON Schema import.
 func runCUEImport() (verifierState, string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	args := []string{
 		"import",
 		"--package", "sdptrace",
 		"-o", "-",
 		filepath.Join(repoRoot(), "schema/flight-recorder-run.schema.json"),
 	}
-	if out, err := exec.Command("cue", args...).CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(ctx, "cue", args...).CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("cue import failed: %v\n%s", err, strings.TrimSpace(string(out)))
 	}
 	return statePass, "cue can import flight-recorder JSON Schema to stdout"
@@ -164,7 +172,9 @@ func runCUEImport() (verifierState, string) {
 
 // runInTotoWrap tests in-toto-run presence.
 func runInTotoWrap() (verifierState, string) {
-	if out, err := exec.Command("in-toto-run", "--version").CombinedOutput(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if out, err := exec.CommandContext(ctx, "in-toto-run", "--version").CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("in-toto-run version failed: %v", err)
 	} else if !strings.Contains(string(out), "in-toto") {
 		return stateFail, "unexpected in-toto-run version output"
@@ -174,7 +184,9 @@ func runInTotoWrap() (verifierState, string) {
 
 // runCosignLocalSign tests cosign presence.
 func runCosignLocalSign() (verifierState, string) {
-	if _, err := exec.Command("cosign", "version").CombinedOutput(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if _, err := exec.CommandContext(ctx, "cosign", "version").CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("cosign version failed: %v", err)
 	}
 	return stateCannotVerify, "cosign present; run manual sign/verify per docs/oss-replacement-compatibility.md"
@@ -182,7 +194,9 @@ func runCosignLocalSign() (verifierState, string) {
 
 // runSLSANegative tests slsa-verifier presence.
 func runSLSANegative() (verifierState, string) {
-	if out, err := exec.Command("slsa-verifier", "version").CombinedOutput(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if out, err := exec.CommandContext(ctx, "slsa-verifier", "version").CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("slsa-verifier version failed: %v", err)
 	} else if !strings.Contains(string(out), "slsa") && !strings.Contains(string(out), "SLSA") {
 		return stateFail, "unexpected slsa-verifier version output"

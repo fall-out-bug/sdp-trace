@@ -62,10 +62,12 @@ func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 		if r.Reason != "" {
 			line += "  — " + strings.ReplaceAll(r.Reason, "\n", " ")
 		}
-		fmt.Fprintln(w, line)
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
 	}
 	pass, fail, cant, na := summarize(results)
-	fmt.Fprintf(w, "\n%d pass, %d fail, %d cannot_verify, %d not_assessed\n",
+	_, err := fmt.Fprintf(w, "\n%d pass, %d fail, %d cannot_verify, %d not_assessed\n",
 		pass, fail, cant, na)
-	return nil
+	return err
 }
