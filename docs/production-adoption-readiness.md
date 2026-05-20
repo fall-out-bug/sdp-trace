@@ -42,7 +42,8 @@ State values follow the command surface schema: `complete`, `partial`, `not_asse
 | `harness` | `partial` | Harness event import and validation; limited to supported harness kinds. |
 | `interaction` | `partial` | Interaction recording and summarization; relay and import-transcript paths are pilot-only. |
 | `observe` | `partial` | First-run harness observation; session profile shape may change. |
-| `override` | `partial` | Override record creation; authority scope is advisory. |
+| `export-telemetry` | `partial` | Export telemetry profiles for external consumption. |
+| `override` | `not_assessed` | Override record creation; authority scope is advisory. |
 | `packet` | `partial` | Packet generation and validation; schema versioned but not externally signed. |
 | `pr-review` | `partial` | Build, run, synthesize, validate, and summarize automated PR review evidence. |
 | `query` | `complete` | Highlights gaps; missing rows are not passes. |
@@ -52,7 +53,7 @@ State values follow the command surface schema: `complete`, `partial`, `not_asse
 | `verify` | `complete` | Supports local structural assertions only. |
 | `witness` | `partial` | CI-bound evidence is not external production trust by itself. |
 
-**Summary**: 6 families are `complete`, 11 are `partial`, 0 are `not_assessed`. (17 total)
+**Summary**: 6 families are `complete`, 11 are `partial`, 1 is `not_assessed`. (18 total)
 
 ## Spec Completion
 
@@ -66,8 +67,8 @@ block controlled pilot use.
 |------|-------------|-------------|
 | `go vet ./...` | pass | green |
 | `govulncheck ./...` | 0 vulnerabilities | green |
-| `gosec ./...` | 133 findings | advisory — classified in [`docs/security-baseline.md`](security-baseline.md) |
-| `gitleaks detect` (tracked files) | 12 findings | triaged in [`docs/security-baseline.md`](security-baseline.md) |
+| `gosec ./...` | 132 findings | advisory — classified in [`docs/security-baseline.md`](security-baseline.md) |
+| `gitleaks detect` (tracked files) | 0 findings | triaged in [`docs/security-baseline.md`](security-baseline.md) |
 
 Local ignored clutter (`.worktrees/`, `.codex-subagents/`, `.sdp-trace-runs/`,
 `.sdp-trace-report/`) is not repository proof. Scan it with hygiene tooling

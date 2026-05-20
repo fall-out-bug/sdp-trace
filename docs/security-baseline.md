@@ -23,14 +23,14 @@ not checked in.
 |------|---------|--------|-------------|
 | `go vet ./...` | go1.22 | pass | green |
 | `govulncheck ./...` | latest | 0 known vulnerabilities | green |
-| `gosec ./...` | dev | 133 findings | advisory — classified below |
+| `gosec ./...` | dev | 132 findings | advisory — classified below |
 | `gitleaks detect` (tracked files) | v8.30.1 | 12 findings | triaged below |
 
 ## `gosec` Finding Family Classification
 
 | Rule | Count | Severity | Classification | Rationale |
 |------|-------|----------|----------------|-----------|
-| G304 | 61 | MEDIUM | **accepted** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. |
+| G304 | 60 | MEDIUM | **accepted** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. One `G304` in `internal/capturedepth` has a scoped reviewed `#nosec` suppression. |
 | G301 | 28 | MEDIUM | **accepted** | `os.MkdirAll` with `0o755` creates group-readable evidence directories. Intentional for shared local inspection. |
 | G306 | 24 | MEDIUM | **accepted** | `os.WriteFile` with `0o644` creates group-readable evidence files. Intentional for shared local inspection. |
 | G204 | 11 | MEDIUM | **deferred advisory** | Git subprocess launch with variable args. Most callers use hardcoded safe args; `gitOutput`/`runGit` variadic helpers and `mibaselinepolicy` git helpers pass external values. Review needed: validate all callers sanitize inputs before passing to git helpers. |

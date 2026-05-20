@@ -84,8 +84,7 @@ govulncheck ./...
 gitleaks detect on a tracked-file snapshot
 ```
 
-`gosec ./...` is advisory for this phase. It may become blocking only after a
-later spec defines per-call-site dispositions and a stable CI threshold.
+`gosec ./...` may remain advisory until WS-016-B classifies findings.
 
 ## Pi Handoff Notes
 
