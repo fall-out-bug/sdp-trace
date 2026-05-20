@@ -50,6 +50,16 @@ func summarize(results []probeResult) (pass, fail, cant, na int) {
 	return
 }
 
+func maxNameWidth(results []probeResult) int {
+	maxW := 24
+	for _, r := range results {
+		if len(r.Name) > maxW {
+			maxW = len(r.Name)
+		}
+	}
+	return maxW
+}
+
 // printResults writes probe results as text or JSON.
 func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 	if asJSON {
@@ -57,8 +67,9 @@ func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 		enc.SetIndent("", "  ")
 		return enc.Encode(results)
 	}
+	width := maxNameWidth(results)
 	for _, r := range results {
-		line := fmt.Sprintf("%-24s %s", r.Name, r.State)
+		line := fmt.Sprintf("%*s %s", -width, r.Name, r.State)
 		if r.Reason != "" {
 			line += "  - " + strings.ReplaceAll(r.Reason, "\n", " ")
 		}

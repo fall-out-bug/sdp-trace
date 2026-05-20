@@ -39,8 +39,8 @@ Missing tools render that probe `not_assessed`.
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
-| in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Link metadata generated and signed locally (manual-only; no automated harness probe) [^1] |
-| Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Works with local key when transparency log verification is explicitly disabled (manual-only; no automated harness probe) [^1] |
+| in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
+| Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
 | SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: truncated signature prevents verification before any Rekor check |
 
@@ -153,7 +153,10 @@ and report `not_assessed`.
   cosign generate-key-pair
   cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
   # This command omits --insecure-ignore-tlog so Rekor verification is attempted.
-  cosign verify-blob --key cosign.pub --signature run.json.sig run.json || true
+  if cosign verify-blob --key cosign.pub --signature run.json.sig run.json; then
+    echo "ERROR: expected Rekor verification to fail"
+    exit 1
+  fi
 )
 ```
 

@@ -43,16 +43,6 @@ func repoRoot() string {
 	}
 }
 
-// resolveBinary returns an absolute path to name if it exists in the repo
-// root, otherwise returns name for PATH lookup.
-func resolveBinary(name string) string {
-	p := filepath.Join(repoRoot(), name)
-	if _, err := os.Stat(p); err == nil {
-		return p
-	}
-	return name
-}
-
 // buildSDPTrace compiles the sdp-trace binary from source into outPath.
 func buildSDPTrace(outPath string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
