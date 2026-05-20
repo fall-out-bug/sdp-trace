@@ -1,5 +1,11 @@
 # WS-016-B Review: Security Scan Triage
 
+**Status: superseded by commit `fa3fc29`.**
+This per-slice review captures the state before G304 was reclassified from
+`accepted` to `deferred advisory`, before gitleaks counts were split into
+tracked-source vs working-tree, and before stale line-number references were
+removed. Do not rely on scanner counts or file:line claims below.
+
 Date: 2026-05-20
 Files: `docs/security-baseline.md`, `docs/README.md`
 

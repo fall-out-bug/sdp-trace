@@ -1,5 +1,10 @@
 # Spec Review 016: Production Adoption And Security Baseline
 
+**Status: superseded by later review rounds (commits `aca55ca` and `fa3fc29`).**
+This artifact records the intake review state before rebase onto `origin/main`
+(`18cd4a0`). Scanner counts and command surface numbers below are stale.
+Do not rely on them for current evidence.
+
 Reviewer: self (Socratic review during intake)
 Date: 2026-05-20
 

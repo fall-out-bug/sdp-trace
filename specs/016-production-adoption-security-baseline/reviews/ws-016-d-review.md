@@ -1,5 +1,10 @@
 # WS-016-D Review: Repository Security Policy
 
+**Status: superseded by commit `aca55ca`.**
+This per-slice review captures the state before the undeliverable security email
+was removed and replaced with GitHub private vulnerability reporting as the
+primary channel. Do not rely on email-related claims below.
+
 Date: 2026-05-20
 Files: `.github/SECURITY.md`, `docs/security-baseline.md`, `docs/README.md`
 

@@ -8,7 +8,7 @@
 
 ### D1 — critical → verified fixed after rebase
 ** readiness.md отличается от command surface registry в main.**
-- Проверено: после rebase `export-telemetry` присутствует (state `partial`), `override` — `not_assessed`.
+- Проверено: после rebase `export` присутствует (state `partial`), `override` — `not_assessed`.
 - Итоговая строка корректна: "6 complete, 11 partial, 1 not_assessed (18 total)".
 - Файлы: `docs/production-adoption-readiness.md`.
 

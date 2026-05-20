@@ -24,7 +24,9 @@ not checked in.
 | `go vet ./...` | go1.22 | pass | green |
 | `govulncheck ./...` | latest | 0 known vulnerabilities | green |
 | `gosec ./...` | dev | 132 findings | advisory — classified below |
-| `gitleaks detect` (default config) | v8.30.1 | 12 findings | all triaged false positive below |
+| `gitleaks detect` (default config, tracked source) | v8.30.1 | 10 findings | all triaged false positive below |
+| `gitleaks detect` (default config, working tree) | v8.30.1 | 12 findings | 10 tracked + 2 local ignored clutter |
+| `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
 | `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
 
 ## `gosec` Finding Family Classification
@@ -66,11 +68,14 @@ not checked in.
 ## `gitleaks` Findings Triage
 
 Default-config scans:
-- Tracked-source snapshot (`git archive HEAD`): 10 findings, all in tracked files.
-- Working-tree scan (includes local ignored clutter): 12 findings (the same 10 tracked + 2 additional hits in `.codex-subagents/` local run clutter).
+- Tracked-source snapshot (`git archive HEAD`): **10 findings**, all in tracked files.
+- Working-tree scan (includes local ignored clutter): **12 findings** (the same 10 tracked + 2 additional hits in `.codex-subagents/` local run clutter).
 - None are live secrets.
 
-Configured scan (with reviewed `.gitleaks.toml`): 0 findings.
+The 2 working-tree-only hits are local ignored clutter, not repository evidence.
+They are excluded from the triage table below.
+
+Configured scan (with reviewed `.gitleaks.toml`): **0 findings**.
 
 A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers.
 
@@ -133,5 +138,7 @@ gitleaks detect --source . --config .gitleaks.toml
 ## Change Log
 
 - 2026-05-20: Initial security baseline for spec 016. All `gosec` families
-  classified. All 12 `gitleaks` findings triaged as false positive.
-  Two `gosec` families (G204, G703) deferred as advisory pending caller audit.
+  classified. Tracked-source `gitleaks` (10 findings) and working-tree
+  `gitleaks` (10 tracked + 2 local clutter) triaged as false positive.
+  Two `gosec` families (G204, G703) deferred as advisory pending caller audit;
+  `G304` deferred advisory (1 reviewed `#nosec`, 59 remaining call sites).
