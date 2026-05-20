@@ -13,6 +13,7 @@ sdp-trace-like rules, but it does not replace the product verifier.
 |---|---|
 | `adapter.rego` | Simplified pass/fail rule with trace_id and provenance bounds |
 | `test-fixture.json` | Valid input that should produce `pass = true` |
+| `test-fixture-fail.json` | Invalid input that should produce `pass = false` |
 
 ## Run the Policy
 
@@ -42,11 +43,12 @@ Expected output:
 
 ```bash
 opa eval --data adapter.rego \
-  --input <(echo '{"trace_id":"","provenance":[]}') \
-  'data.sdp_trace.adapter.fail_reason'
+  --input test-fixture-fail.json \
+  --format json \
+  'data.sdp_trace.adapter.pass'
 ```
 
-Expected: `["missing trace_id"]`.
+Expected: `false` (the fixture has a non-string trace_id and provenance exceeding the bound).
 
 ## Substitution Boundary
 
