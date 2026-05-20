@@ -3,7 +3,7 @@
 **Reviewer:** GLM adversarial review plane
 **Date:** 2026-05-20
 **Files reviewed:**
-- `examples/flight-recorder/wrap-output-drift/run.json`
+- `examples/flight-recorder/wrap-output-drift/wrap-output.txt`
 - `examples/flight-recorder/wrap-output-drift/README.md`
 - `tools/osscompat/probe_test.go`
 

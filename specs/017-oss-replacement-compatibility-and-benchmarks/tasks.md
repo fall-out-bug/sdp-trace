@@ -32,8 +32,12 @@ Status: in_progress
 
 - [x] T017-060 Run all compatibility probes available in the local environment.
   Verification: `go test -count=1 ./tools/osscompat` and `go test -count=1
-  ./tools/ossbench` pass locally; per-slice review artifacts record probe
-  results for the current source state.
+  ./tools/ossbench` pass locally. Example harness output (current environment,
+  all optional tools absent): `go run ./tools/osscompat -json` reports eight
+  `not_assessed` probes because no optional external tools are installed; this
+  is the expected behavior for an environment without the optional CLI
+  prerequisites. `go run ./tools/ossbench -json` reports reproducible
+  `min_ms`/`max_ms`/`median_ms` for both built-in benchmarks.
 - [x] T017-070 Mark unavailable external services as `not_assessed` or
   `cannot_verify`; do not infer pass from local fixture success.
 - [ ] T017-080 Update roadmap and docs index after accepted implementation.

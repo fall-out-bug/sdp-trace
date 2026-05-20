@@ -28,23 +28,22 @@ accident.
   positive fixture evaluates to true.
 - `CUE` can import JSON Schema, but direct validation is blocked until schema
   refs are packaged as a CUE module.
-- `in-toto-run` can wrap a command, sign link metadata, and record material and
-  product hashes (manual-only; no harness probe; status `cannot_verify`).
-- `cosign` can sign and verify a local `run.json` blob with a local key when
-  transparency-log verification is explicitly disabled (manual-only; no harness
-  probe; status `cannot_verify`).
-- `slsa-verifier` rejects the local DSSE fixture because the signature is
-  truncated; Rekor rejection is not separately evidenced.
+- `in-toto-run` command wrapping capability is not verified by the automated
+  harness probe (status `cannot_verify`; manual-only).
+- `cosign` local blob sign/verify capability is not verified by the automated
+  harness probe (status `cannot_verify`; manual-only).
+- `slsa-verifier` does not accept the local DSSE fixture as production SLSA
+  evidence (status `cannot_verify`; manual-only expected-fail probe).
 
 ## Benchmark Snapshot
 
-Local 20-iteration benchmark, compiled `sdp-trace`, Linux amd64.
+Local 20-iteration benchmark, compiled `sdp-trace` from source, Linux amd64.
 All rows below are reproducible via `tools/ossbench`.
 
-| Probe | Median ms | Notes |
-| --- | ---: | --- |
-| `sdp-trace version` | 4.5 | Built-in, measured via `tools/ossbench` |
-| `sdp-trace wrap` | 16.1 | Built-in, measured via `tools/ossbench` |
+| Probe | Median ms | Min ms | Max ms | Command |
+| --- | ---: | ---: | ---: | --- |
+| `sdp-trace version` | 4.44 | 4.29 | 5.08 | `sdp-trace version` |
+| `sdp-trace wrap` | 15.93 | 15.33 | 17.24 | `sdp-trace wrap /bin/true` |
 
 One-shot historical numbers for external tools (OPA, Cosign, in-toto,
 check-jsonschema) are not included because min/max were not preserved and
