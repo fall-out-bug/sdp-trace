@@ -165,13 +165,23 @@ var builtIns = []benchmarkDef{
 		Description: "sdp-trace version command",
 		Cmd:         "sdp-trace",
 		Args:        []string{"version"},
+		Source:      "PATH",
 	},
 	{
 		Name:        "sdp-trace-wrap",
 		Description: "sdp-trace wrap /bin/true",
 		Cmd:         "sdp-trace",
 		Args:        []string{"wrap", "/bin/true"},
+		Source:      "PATH",
 	},
+}
+
+// builtInsOrig holds the original Cmd and Source values so resolveBuiltIns
+// can mutate the global slice and cleanupTempBinary can restore it.
+var builtInsOrig = make([]benchmarkDef, len(builtIns))
+
+func init() {
+	copy(builtInsOrig, builtIns)
 }
 
 // tempBinaryPath is set when the harness builds sdp-trace into a temp dir.
@@ -182,6 +192,7 @@ var tempBinaryPath string
 // checkout is not mutated.
 func resolveBuiltIns() error {
 	bin := resolveBinary("sdp-trace")
+	source := "repo-root"
 	if bin == "sdp-trace" {
 		tmpDir, err := os.MkdirTemp("", "ossbench-bin-*")
 		if err != nil {
@@ -193,17 +204,22 @@ func resolveBuiltIns() error {
 			return fmt.Errorf("sdp-trace binary not found and build failed: %w", err)
 		}
 		tempBinaryPath = bin
+		source = "temp-build"
 	}
 	for i := range builtIns {
 		builtIns[i].Cmd = bin
+		builtIns[i].Source = source
 	}
 	return nil
 }
 
-// cleanupTempBinary removes the temp-built binary if one was created.
+// cleanupTempBinary removes the temp-built binary if one was created and
+// restores builtIns to their original values so subsequent runs in the same
+// process do not reference a deleted path.
 func cleanupTempBinary() {
 	if tempBinaryPath != "" {
 		_ = os.RemoveAll(filepath.Dir(tempBinaryPath))
 		tempBinaryPath = ""
 	}
+	copy(builtIns, builtInsOrig)
 }

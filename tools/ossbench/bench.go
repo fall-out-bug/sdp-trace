@@ -18,8 +18,9 @@ type benchmarkDef struct {
 	Description string
 	Cmd         string
 	Args        []string
-	Dir         string   // working directory; empty means current directory
-	Cleanup     func()   // optional cleanup after benchmark completes
+	Dir         string // working directory; empty means current directory
+	Cleanup     func() // optional cleanup after benchmark completes
+	Source      string // "repo-root", "temp-build", or "PATH"
 }
 
 // repoRoot returns the repository root by walking up from the current
@@ -70,6 +71,8 @@ type benchmarkResult struct {
 	Name                string    `json:"name"`
 	Description         string    `json:"description,omitempty"`
 	Command             string    `json:"command"`
+	BinaryPath          string    `json:"binary_path,omitempty"`
+	BinarySource        string    `json:"binary_source,omitempty"`
 	Environment         envInfo   `json:"environment,omitempty"`
 	AttemptedIterations int       `json:"attempted_iterations"`
 	SucceededIterations int       `json:"succeeded_iterations"`
@@ -90,6 +93,8 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 			Name:                def.Name,
 			Description:         def.Description,
 			Command:             "",
+			BinaryPath:          "",
+			BinarySource:        def.Source,
 			Environment:         getEnv(),
 			AttemptedIterations: iterations,
 			Error:               "no command specified",
@@ -114,11 +119,14 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		times = append(times, time.Since(start))
 	}
 
+	cmdDisplay := filepath.Base(def.Cmd) + " " + strings.Join(def.Args, " ")
 	if len(times) == 0 {
 		return benchmarkResult{
 			Name:                def.Name,
 			Description:         def.Description,
-			Command:             def.Cmd + " " + strings.Join(def.Args, " "),
+			Command:             cmdDisplay,
+			BinaryPath:          def.Cmd,
+			BinarySource:        def.Source,
 			Environment:         getEnv(),
 			AttemptedIterations: iterations,
 			Error:               lastErr,
@@ -133,7 +141,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	return benchmarkResult{
 		Name:                def.Name,
 		Description:         def.Description,
-		Command:             def.Cmd + " " + strings.Join(def.Args, " "),
+		Command:             cmdDisplay,
+		BinaryPath:          def.Cmd,
+		BinarySource:        def.Source,
 		Environment:         getEnv(),
 		AttemptedIterations: iterations,
 		SucceededIterations: len(times),
