@@ -8,7 +8,7 @@ conform to `schema/flight-recorder-run.schema.json`.
 
 ## Frozen Snapshot
 
-The file `run.json` in this directory is a **frozen historical snapshot** of
+The file `wrap-output.txt` in this directory is a **frozen historical snapshot** of
 `sdp-trace wrap /bin/true` output captured during spec 017 development. It is
 not regenerated on every build; it exists as structural evidence that wrap
 output once differed from `schema/flight-recorder-run.schema.json`.
