@@ -1,6 +1,6 @@
 # OSS Benchmark Results
 
-Status: draft
+Status: in_progress
 Spec: [017](../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This document records local benchmark numbers for OSS tools and `sdp-trace`

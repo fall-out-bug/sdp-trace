@@ -1,6 +1,6 @@
 # OSS Replacement Compatibility
 
-Status: draft
+Status: in_progress
 Spec: [017](../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This document records local compatibility probes for candidate OSS replacements

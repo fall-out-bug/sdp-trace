@@ -1,6 +1,6 @@
 # Spec 017: OSS Replacement Compatibility And Benchmarks
 
-Status: draft
+Status: in_progress
 
 ## Objective
 

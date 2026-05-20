@@ -1,6 +1,6 @@
 # Plan: OSS Replacement Compatibility And Benchmarks
 
-Status: draft
+Status: in_progress
 
 ## Workstreams
 
