@@ -118,8 +118,8 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		times = append(times, time.Since(start))
 	}
 
-	cmdDisplay := filepath.Base(def.Cmd) + " " + strings.Join(def.Args, " ")
-	argv := append([]string{def.Cmd}, def.Args...)
+	argv := append([]string{filepath.Base(def.Cmd)}, def.Args...)
+	cmdDisplay := strings.Join(argv, " ")
 	if len(times) == 0 {
 		return benchmarkResult{
 			Name:                def.Name,

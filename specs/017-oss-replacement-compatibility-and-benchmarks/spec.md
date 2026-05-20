@@ -14,26 +14,30 @@ accident.
 
 ## Evidence From 2026-05-20 Probe
 
-- `check-jsonschema` validates checked flight-recorder fixtures against
-  locally rewired schema refs.
+- `check-jsonschema` fixture validation: expected `pass` when tool available;
+  in the current environment (no optional tools installed) the probe reports
+  `not_assessed`. When available, it validates checked flight-recorder fixtures
+  against locally rewired schema refs.
 - Live `sdp-trace wrap` CLI stdout does not validate against
   `schema/flight-recorder-run.schema.json`. When `check-jsonschema` is
   available, the `osscompat` harness confirms this drift with a temp-dir probe
   that builds from source, runs `wrap`, captures stdout, and reports `fail`
   because the stdout is not schema JSON. When `check-jsonschema` is absent,
   the probe reports `not_assessed`.
-- `check-jsonschema` validates `examples/flight-recorder/local-positive/run.json`
-  against `schema/flight-recorder-run.schema.json`.
-- `OPA` can express a simplified adapter-capture pass rule; the checked-in
-  positive fixture evaluates to true.
-- `CUE` can import JSON Schema, but direct validation is blocked until schema
-  refs are packaged as a CUE module.
-- `in-toto-run` command wrapping capability is not verified by the automated
-  harness probe (status `cannot_verify`; manual-only).
-- `cosign` local blob sign/verify capability is not verified by the automated
-  harness probe (status `cannot_verify`; manual-only).
-- `slsa-verifier` does not accept the local DSSE fixture as production SLSA
-  evidence (status `cannot_verify`; manual-only expected-fail probe).
+- `OPA` adapter-capture rule evaluation: expected `pass` when tool available;
+  in the current environment the probe reports `not_assessed`. When available,
+  the checked-in positive fixture evaluates to true and negative fixtures
+  evaluate to false.
+- `CUE` JSON Schema import: expected `pass` when tool available; in the
+  current environment the probe reports `not_assessed`. Direct validation is
+  blocked until schema refs are packaged as a CUE module.
+- `in-toto-run` command wrapping: automated harness probe reports
+  `cannot_verify` (manual-only). No automated conformance verdict is issued.
+- `cosign` local blob sign/verify: automated harness probe reports
+  `cannot_verify` (manual-only). No automated conformance verdict is issued.
+- `slsa-verifier` local DSSE fixture: automated harness probe reports
+  `cannot_verify` (manual-only expected-fail). No automated conformance
+  verdict is issued.
 
 ## Benchmark Snapshot
 
