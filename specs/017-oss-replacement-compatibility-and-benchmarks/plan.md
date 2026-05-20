@@ -14,8 +14,10 @@ Owned files:
 
 Deliverable:
 
-- A command that runs or explains compatibility probes without mutating tracked
-  product artifacts.
+- A command that runs compatibility probes and reports results without mutating
+  tracked product artifacts. Probes that cannot run due to missing dependencies
+  must report `cannot_verify` or `not_assessed`, not fall back to explanation
+  mode.
 
 ### WS-017-B: Schema Compatibility
 
@@ -27,9 +29,10 @@ Owned files:
 
 Deliverable:
 
-- Implement the spec decision that live recorder schema compatibility remains
-  blocked until `wrap` output conforms to `flight-recorder-run.schema.json` or
-  a separate current recorder schema is defined.
+- Document the live `wrap` output / `flight-recorder-run.schema.json` drift as
+  a blocker in `docs/oss-replacement-compatibility.md` and add a failing test or
+  schema example that captures the exact mismatch. Fixing the drift is out of
+  scope for this workstream unless a separate spec delta explicitly rescopes it.
 
 ### WS-017-C: Policy-As-Code Prototype
 
@@ -85,3 +88,7 @@ Additional optional commands depend on installed OSS tools and must report
 Assign WS-017-B only to a worker allowed to touch schema/examples. Assign
 WS-017-C and WS-017-D to separate workers because policy and supply-chain
 experiments have different dependencies.
+
+**Merge order:** WS-017-B should land before WS-017-A if schema changes are
+introduced, because WS-017-A probes validate against `schema/*` files and probe
+results may flip when schema changes.

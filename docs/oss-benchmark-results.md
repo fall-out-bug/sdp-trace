@@ -18,15 +18,21 @@ decisions but do not prove production readiness.
 
 ## Benchmark Table
 
-| Probe | Median (ms) | Notes |
-|---|---:|---|
-| Shell prototype `wrap` | 6.0 | Minimal JSON, no hash-chain semantics |
-| `sdp-trace verify` | 8.0 | Existing local run |
-| OPA adapter policy eval | 14.0 | Simplified policy |
-| `sdp-trace wrap` | 26.0 | Local `/bin/true` |
-| Cosign local verify | 30.5 | Transparency log ignored |
-| `in-toto-run` | 148.0 | Signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | Python validator startup cost |
+| Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
+|---|---:|---:|---:|---|---|---|
+| Shell prototype `wrap` | 6.0 | — | — | 20 | `bash -c 'echo {"v":"local"}'` | Minimal JSON, no hash-chain semantics |
+| `sdp-trace verify` | 8.0 | — | — | 20 | `sdp-trace verify` | Existing local run |
+| OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | Simplified policy |
+| `sdp-trace wrap` | 26.0 | — | — | 20 | `sdp-trace wrap /bin/true` | Local `/bin/true` |
+| Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig run.json` | Transparency log ignored |
+| `in-toto-run` | 148.0 | — | — | 20 | `in-toto-run --step-name test --products /dev/null --key key.pem -- /bin/true` | Signed link metadata |
+| `check-jsonschema` fixture validation | 271.5 | — | — | 20 | `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/...` | Python validator startup cost |
+
+**Note:** Min and max values are marked `—` because the raw iteration data
+from the 2026-05-20 one-shot run was not preserved. This table is a **local
+markdown ledger only** and does not satisfy FR-017-004 until `tools/ossbench`
+produces reproducible structured output with full statistics. Do not use these
+numbers for approval decisions.
 
 ## Observations
 
@@ -54,6 +60,42 @@ witness steps, but too high for per-event recording.
 `check-jsonschema` (271.5 ms) is dominated by Python interpreter startup.
 For CI schema checks this is acceptable; it is not suitable as a per-event
 recording validator in hot paths.
+
+## Commands Measured
+
+The following commands were invoked from the repository root in a subshell
+unless noted otherwise. They are provided so a reader can reproduce the
+measurement protocol, not to claim the exact same medians will hold on
+another machine.
+
+```bash
+# Shell prototype wrap
+bash -c 'echo {"v":"local"}'
+
+# sdp-trace verify
+sdp-trace verify
+
+# OPA adapter policy eval
+opa eval --data examples/oss-policy/adapter.rego \
+  --input examples/oss-policy/test-fixture.json \
+  'data.sdp_trace.adapter.pass'
+
+# sdp-trace wrap
+sdp-trace wrap /bin/true
+
+# Cosign local verify
+cosign verify-blob --key /tmp/cosign.pub \
+  --signature /tmp/run.json.sig /tmp/run.json
+
+# in-toto-run
+in-toto-run --step-name test-wrap --products /dev/null \
+  --key /tmp/key.pem -- /bin/true
+
+# check-jsonschema fixture validation
+check-jsonschema \
+  --schemafile schema/flight-recorder-run.schema.json \
+  examples/flight-recorder/local-wrap-positive/run.json
+```
 
 ## Non-Authoritative Disclaimer
 

@@ -34,7 +34,9 @@ accident.
 
 ## Benchmark Snapshot
 
-Local 20-iteration benchmark, compiled `sdp-trace`, Linux amd64:
+Local 20-iteration benchmark, compiled `sdp-trace`, Linux amd64.
+**Note:** Min and max were not preserved from the one-shot run; this table
+is provisional scope evidence only.
 
 | Probe | Median ms | Notes |
 | --- | ---: | --- |

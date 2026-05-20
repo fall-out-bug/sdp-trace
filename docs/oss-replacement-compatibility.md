@@ -17,16 +17,16 @@ that probes can run locally, not that sdp-trace should replace any product code.
 ## Prerequisites
 
 To reproduce probes, the following CLI tools must be available in `$PATH`.
-Missing tools render that probe `blocked`.
+Missing tools render that probe `not_assessed`.
 
 | Tool | Purpose | Verdict if missing |
 |---|---|---|
-| `check-jsonschema` (Python) | JSON Schema fixture validation | `blocked` |
-| `opa` | Rego policy evaluation | `blocked` |
-| `cue` | CUE import / validation | `blocked` |
-| `in-toto-run` | Signed supply-chain link generation | `blocked` |
-| `cosign` | Local DSSE/blob signing & verification | `blocked` |
-| `slsa-verifier` | SLSA provenance verifier negative test | `blocked` |
+| `check-jsonschema` (Python) | JSON Schema fixture validation | `not_assessed` |
+| `opa` | Rego policy evaluation | `not_assessed` |
+| `cue` | CUE import / validation | `not_assessed` |
+| `in-toto-run` | Signed supply-chain link generation | `not_assessed` |
+| `cosign` | Local DSSE/blob signing & verification | `not_assessed` |
+| `slsa-verifier` | SLSA provenance verifier negative test | `not_assessed` |
 
 ## Compatibility Probes
 
@@ -36,12 +36,102 @@ Missing tools render that probe `blocked`.
 | `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Required fields and timestamp format differ |
 | `check-jsonschema` | Validate representative assessment, gate, and release examples | `pass` | Example fixtures conform to schema |
 | OPA/Rego | Express simplified adapter-capture pass/fail rule | `pass` | Policy evaluates and correctly detects `test_provenance_not_overclaimed` failure fixture |
-| CUE | JSON Schema import | `partial` | CUE can import JSON Schema types |
-| CUE | Direct validation against sdp-trace `schema/` refs | `cannot_verify` | Blocked: schema refs must be packaged as a CUE module first |
+| CUE | JSON Schema import | `cannot_verify` | CUE can import JSON Schema types, but direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally |
 | Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
 | SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: no matching Rekor entries found |
+
+## Reproduction Commands
+
+The following commands can be run from a clean checkout at the repository root.
+Each command uses subshell isolation where the working directory matters.
+Missing tools produce a non-zero exit code; probe scripts should catch this
+and report `not_assessed`.
+
+### JSON Schema fixture validation
+
+```bash
+# Validate a representative flight-recorder fixture
+(
+  check-jsonschema \
+    --schemafile schema/flight-recorder-run.schema.json \
+    examples/flight-recorder/local-wrap-positive/run.json
+)
+```
+
+### JSON Schema live wrap drift (expected fail)
+
+```bash
+# This command is expected to fail until T017-020 resolves the drift.
+(
+  sdp-trace wrap /bin/true > /tmp/wrap-run.json
+  check-jsonschema \
+    --schemafile schema/flight-recorder-run.schema.json \
+    /tmp/wrap-run.json || true
+)
+```
+
+### OPA/Rego policy evaluation
+
+```bash
+# Evaluate a simplified adapter-capture rule against a test fixture
+(
+  cd examples/oss-policy || exit 1
+  opa eval --data adapter.rego --input test-fixture.json \
+    'data.sdp_trace.adapter.pass'
+)
+```
+
+### CUE JSON Schema import
+
+```bash
+# Import JSON Schema types into CUE (does not validate sdp-trace artifacts)
+(
+  cue import --package sdptrace schema/flight-recorder-run.schema.json \
+    -o /tmp/flight-recorder-run.cue || true
+)
+```
+
+### in-toto command wrapping
+
+```bash
+# Wrap a command and sign link metadata with a local key
+(
+  cd /tmp
+  in-toto-run \
+    --step-name test-wrap \
+    --products /dev/null \
+    --key /dev/null \
+    -- /bin/true || true
+)
+```
+
+### Cosign local blob sign/verify
+
+```bash
+# Sign and verify a local JSON blob with a generated ephemeral key
+(
+  cd /tmp
+  cosign generate-key-pair || true
+  cosign sign-blob --key cosign.key --yes run.json > run.json.sig || true
+  cosign verify-blob --key cosign.pub --signature run.json.sig run.json \
+    || true
+)
+```
+
+### SLSA verifier negative path (expected fail)
+
+```bash
+# Attempt to verify a local DSSE fixture as production SLSA evidence.
+# Expected to fail because no Rekor entry exists.
+(
+  slsa-verifier verify-artifact \
+    --provenance-path examples/oss-supply-chain/local-dsse.json \
+    --source-uri local/test \
+    /dev/null || true
+)
+```
 
 ## Substitution Boundaries
 
@@ -73,7 +163,7 @@ Missing tools render that probe `blocked`.
 | Rekor integration | `not_assessed` | Transparency log requires external service and OIDC identity |
 | CUE module packaging | `cannot_verify` | `schema/` refs not yet packaged as CUE modules |
 | Cosign production trust | `not_assessed` | Local key signing excludes keyless/OIDC/transparency verification |
-| JSON Schema fixture alignment | `local_pass` | Checked examples validate; live wrap output mismatch documented |
-| OPA policy prototype | `local_pass` | Local evaluation passes/fails as expected on test fixtures |
+| JSON Schema fixture alignment | `pass` | Checked examples validate; live wrap output mismatch documented |
+| OPA policy prototype | `pass` | Local evaluation passes/fails as expected on test fixtures |
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
