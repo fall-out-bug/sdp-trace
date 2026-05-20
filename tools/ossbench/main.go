@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -177,9 +178,14 @@ var builtIns = []benchmarkDef{
 	},
 	{
 		Name:        "sdp-trace-wrap",
-		Description: "sdp-trace wrap /bin/true",
+		Description: "sdp-trace wrap no-op",
 		Cmd:         "sdp-trace",
-		Args:        []string{"wrap", "/bin/true"},
+		Args:        func() []string {
+			if runtime.GOOS == "windows" {
+				return []string{"wrap", "cmd", "/c", "exit", "0"}
+			}
+			return []string{"wrap", "true"}
+		}(),
 		Source:      "PATH",
 	},
 }

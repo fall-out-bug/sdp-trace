@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -162,7 +163,12 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 		return stateCannotVerify, fmt.Sprintf("go build failed: %v\n%s", err, strings.TrimSpace(string(buildOut)))
 	}
 
-	cmd := exec.CommandContext(ctx, bin, "wrap", "/bin/true")
+	// Use a portable no-op command so the probe works on non-Unix platforms.
+	wrapArgs := []string{"wrap", "true"}
+	if runtime.GOOS == "windows" {
+		wrapArgs = []string{"wrap", "cmd", "/c", "exit", "0"}
+	}
+	cmd := exec.CommandContext(ctx, bin, wrapArgs...)
 	cmd.Dir = tmpDir
 	stdout, err := cmd.Output()
 	if err != nil {
@@ -179,8 +185,27 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 		return stateCannotVerify, fmt.Sprintf("unexpected wrap stdout format: %q", string(stdout))
 	}
 	runDir := fields[1]
+	// Sanitize run_dir to prevent path traversal outside tmpDir.
+	if filepath.IsAbs(runDir) {
+		return stateCannotVerify, fmt.Sprintf("run_dir is absolute (possible traversal): %q", runDir)
+	}
+	cleanRunDir := filepath.Clean(runDir)
+	if strings.HasPrefix(cleanRunDir, "..") {
+		return stateCannotVerify, fmt.Sprintf("run_dir escapes tmpDir (possible traversal): %q", runDir)
+	}
 	// The run_dir path printed by wrap is relative to cmd.Dir (tmpDir).
-	runJSONPath := filepath.Join(tmpDir, runDir, "run.json")
+	runJSONPath := filepath.Join(tmpDir, cleanRunDir, "run.json")
+	resolvedPath, err := filepath.EvalSymlinks(runJSONPath)
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("run.json path resolution failed: %v", err)
+	}
+	resolvedTmp, err := filepath.EvalSymlinks(tmpDir)
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("tmpDir path resolution failed: %v", err)
+	}
+	if !strings.HasPrefix(resolvedPath, resolvedTmp+string(filepath.Separator)) {
+		return stateCannotVerify, fmt.Sprintf("run.json resolved outside tmpDir: %s", resolvedPath)
+	}
 	if _, err := os.Stat(runJSONPath); err != nil {
 		return stateCannotVerify, fmt.Sprintf("run.json not found at expected path %s: %v", runJSONPath, err)
 	}
