@@ -78,9 +78,12 @@ and report `not_assessed`.
   WRAP_OUT=$(mktemp -p "$TMPDIR")
   trap 'rm -rf "$TMPDIR" "$WRAP_OUT"' EXIT
   "$TMPDIR/sdp-trace" wrap /bin/true > "$WRAP_OUT"
-  check-jsonschema \
+  if check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
-    "$WRAP_OUT"
+    "$WRAP_OUT"; then
+    echo "ERROR: expected schema validation to fail"
+    exit 1
+  fi
 )
 ```
 

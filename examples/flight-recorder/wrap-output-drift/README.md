@@ -6,15 +6,12 @@ Spec: [017](../../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 This directory demonstrates that the live `sdp-trace wrap` output does not
 conform to `schema/flight-recorder-run.schema.json`.
 
-## Current Live Output
+## Frozen Snapshot
 
-The file `run.json` in this directory is the verbatim output of:
-
-```bash
-sdp-trace wrap /bin/true
-```
-
-It is a single text line:
+The file `run.json` in this directory is a **frozen historical snapshot** of
+`sdp-trace wrap /bin/true` output captured during spec 017 development. It is
+not regenerated on every build; it exists as structural evidence that wrap
+output once differed from `schema/flight-recorder-run.schema.json`.
 
 ```text
 run_dir: .sdp-trace-runs/run-3068560305
@@ -22,7 +19,8 @@ run_dir: .sdp-trace-runs/run-3068560305
 
 > **Note:** The run ID (`run-3068560305`) is nondeterministic across invocations.
 > This fixture is frozen as structural evidence; the exact run ID does not affect
-> the drift claim, which depends only on the plain-text format.
+> the drift claim, which depends only on the plain-text format. If `sdp-trace wrap`
+> output changes in the future, this snapshot does not automatically update.
 
 ## Schema Expectation
 

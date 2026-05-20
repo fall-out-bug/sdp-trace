@@ -14,6 +14,12 @@ func main() {
 func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 	fs := flag.NewFlagSet("osscompat", flag.ContinueOnError)
 	fs.SetOutput(stderr)
+	fs.Usage = func() {
+		fmt.Fprintf(stderr, "Usage: osscompat [flags]\n")
+		fmt.Fprintf(stderr, "Run compatibility probes and emit results.\n")
+		fmt.Fprintf(stderr, "Exit 0 means no probe returned fail; it does NOT mean all probes passed.\n\n")
+		fs.PrintDefaults()
+	}
 	var (
 		asJSON = fs.Bool("json", false, "emit JSON output")
 		list   = fs.Bool("list", false, "list available probes")
