@@ -33,7 +33,7 @@ Missing tools render that probe `not_assessed`.
 
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
-| `check-jsonschema` | Validate flight-recorder fixtures against local schema refs | `pass` | Local refs resolve; validation succeeds on checked examples [^1] |
+| `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against local schema refs | `pass` | Checked fixture conforms to schema [^1] |
 | `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `cannot_verify` | Live wrap output differs from schema; safe auto-run is not implemented so the automated probe reports `cannot_verify` [^1] |
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
@@ -135,6 +135,25 @@ and report `not_assessed`.
   cosign generate-key-pair
   cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
   cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
+)
+```
+
+### Cosign Rekor verification (expected fail)
+
+```bash
+# Attempt to verify a locally-signed blob against the public Rekor log.
+# Expected to fail because the blob was never uploaded to Rekor.
+(
+  set -e
+  export COSIGN_PASSWORD=""
+  TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$TMPDIR"' EXIT
+  cd "$TMPDIR"
+  printf '{"run":"test"}\n' > run.json
+  cosign generate-key-pair
+  cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
+  # This command omits --insecure-ignore-tlog so Rekor verification is attempted.
+  cosign verify-blob --key cosign.pub --signature run.json.sig run.json || true
 )
 ```
 

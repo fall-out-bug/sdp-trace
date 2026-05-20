@@ -22,16 +22,12 @@ decisions but do not prove production readiness.
 |---|---:|---:|---:|---|---|---|
 | `sdp-trace version` | 4.5 | 4.3 | 4.9 | 20 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
 | `sdp-trace wrap` | 16.1 | 15.8 | 22.8 | 20 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
-| Shell prototype `wrap` | 6.0 | — | — | 20 | `printf '%s\n' '{"v":"local"}'` | One-shot; minimal JSON, no hash-chain semantics |
-| OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | One-shot; simplified policy |
-| Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json` | One-shot; transparency log ignored |
-| `in-toto-run` | 148.0 | — | — | 20 | `in-toto-run --step-name test --products /dev/null --key key.pem -- /bin/true` | One-shot; signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | — | — | 20 | `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/...` | One-shot; Python validator startup cost |
 
-**Note:** Min and max are present only for probes measured by the built-in
-`tools/ossbench` harness. Rows marked "One-shot" retain `—` because raw
-iteration data from the original run was not preserved. This table is a
-**local markdown ledger only**. Do not use these numbers for approval decisions.
+External-tool benchmarks (OPA, Cosign, in-toto, check-jsonschema) are
+**not yet covered by the harness** and are excluded from this table.
+One-shot historical numbers from the original run were not preserved with
+min/max, so they cannot be reproduced. This table is a **local markdown
+ledger only**. Do not use these numbers for approval decisions.
 
 ## Observations
 
