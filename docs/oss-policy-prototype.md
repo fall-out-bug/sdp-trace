@@ -11,14 +11,16 @@ it does not approve replacing sdp-trace verifier behavior with OPA.
 
 | Probe | State | Reason |
 |---|---|---|
-| OPA adapter-capture pass rule | `pass` | Positive fixture evaluates to true; no negative fixture is checked in |
+| OPA adapter-capture pass rule | `pass` | Positive fixture evaluates to true |
+| OPA adapter-capture fail rule | `pass` | Negative fixture correctly evaluates to false |
 | OPA gate verdict replacement | `cannot_verify` | OPA does not understand sdp-trace gate semantics without adapter glue |
 | CUE direct validation | `cannot_verify` | Schema refs not packaged as CUE modules |
 
 ## Files
 
 - `examples/oss-policy/adapter.rego`
-- `examples/oss-policy/test-fixture.json`
+- `examples/oss-policy/test-fixture.json` (positive)
+- `examples/oss-policy/test-fixture-fail.json` (negative)
 
 ## Substitution Boundary
 

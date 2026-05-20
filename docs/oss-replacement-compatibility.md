@@ -42,7 +42,7 @@ Missing tools render that probe `not_assessed`.
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally [^1] |
 | Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled [^1] |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
-| SLSA verifier | Reject local DSSE fixture as production SLSA evidence | `fail` | Expected: truncated signature prevents verification before any Rekor check |
+| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: truncated signature prevents verification before any Rekor check |
 
 ## Reproduction Commands
 
@@ -73,7 +73,7 @@ and report `not_assessed`.
   cd /tmp
   WRAP_OUT=$(mktemp)
   trap 'rm -f "$WRAP_OUT"' EXIT
-  sdp-trace wrap /bin/true > "$WRAP_OUT"
+  go run "$REPO_ROOT/cmd/sdp-trace" wrap /bin/true > "$WRAP_OUT"
   check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
     "$WRAP_OUT"

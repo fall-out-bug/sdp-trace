@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -105,8 +106,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	if err := printResults(stdout, results, *asJSON); err != nil {
 		fmt.Fprintf(stderr, "print results: %v\n", err)
+		cleanupTempBinary()
 		return 2
 	}
+	cleanupTempBinary()
 	return exitCode(results)
 }
 
@@ -168,17 +171,36 @@ var builtIns = []benchmarkDef{
 	},
 }
 
+// tempBinaryPath is set when the harness builds sdp-trace into a temp dir.
+var tempBinaryPath string
+
 // resolveBuiltIns resolves or builds the sdp-trace binary and updates builtIns.
+// It prefers a repo-local binary; otherwise it builds into a temp dir so the
+// checkout is not mutated.
 func resolveBuiltIns() error {
 	bin := resolveBinary("sdp-trace")
 	if bin == "sdp-trace" {
-		if err := buildSDPTrace(); err != nil {
-			return fmt.Errorf("sdp-trace binary not found in repo root and build failed: %w", err)
+		tmpDir, err := os.MkdirTemp("", "ossbench-bin-*")
+		if err != nil {
+			return fmt.Errorf("mkdir temp for build: %w", err)
 		}
-		bin = resolveBinary("sdp-trace")
+		bin = filepath.Join(tmpDir, "sdp-trace")
+		if err := buildSDPTrace(bin); err != nil {
+			_ = os.RemoveAll(tmpDir)
+			return fmt.Errorf("sdp-trace binary not found and build failed: %w", err)
+		}
+		tempBinaryPath = bin
 	}
 	for i := range builtIns {
 		builtIns[i].Cmd = bin
 	}
 	return nil
+}
+
+// cleanupTempBinary removes the temp-built binary if one was created.
+func cleanupTempBinary() {
+	if tempBinaryPath != "" {
+		_ = os.RemoveAll(filepath.Dir(tempBinaryPath))
+		tempBinaryPath = ""
+	}
 }

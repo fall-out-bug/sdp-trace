@@ -52,11 +52,11 @@ func resolveBinary(name string) string {
 	return name
 }
 
-// buildSDPTrace compiles the sdp-trace binary from source in the repo root.
-func buildSDPTrace() error {
+// buildSDPTrace compiles the sdp-trace binary from source into outPath.
+func buildSDPTrace(outPath string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "go", "build", "-o", "sdp-trace", "./cmd/sdp-trace")
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", outPath, "./cmd/sdp-trace")
 	cmd.Dir = repoRoot()
 	out, err := cmd.CombinedOutput()
 	if err != nil {
