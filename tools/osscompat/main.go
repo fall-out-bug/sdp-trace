@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, registry))
 }
 
-func run(args []string, stdout, stderr io.Writer) int {
+func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 	fs := flag.NewFlagSet("osscompat", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	var (
@@ -24,14 +24,14 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *list {
-		for _, p := range registry {
+		for _, p := range reg {
 			fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description)
 		}
 		return 0
 	}
 
 	if *probe != "" {
-		for _, p := range registry {
+		for _, p := range reg {
 			if p.Name == *probe {
 				r := runProbe(p)
 				if err := printResults(stdout, []probeResult{r}, *asJSON); err != nil {
@@ -45,7 +45,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	results := runAllProbes()
+	results := runAllProbes(reg)
 	if err := printResults(stdout, results, *asJSON); err != nil {
 		fmt.Fprintf(stderr, "print results: %v\n", err)
 		return 2

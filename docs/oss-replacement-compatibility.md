@@ -34,7 +34,7 @@ Missing tools render that probe `not_assessed`.
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
 | `check-jsonschema` | Validate flight-recorder fixtures against local schema refs | `pass` | Local refs resolve; validation succeeds on checked examples [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Required fields and timestamp format differ |
+| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `cannot_verify` | Live wrap output differs from schema; safe auto-run is not implemented so the automated probe reports `cannot_verify` [^1] |
 | `check-jsonschema` | Validate representative assessment, gate, and release examples | `pass` | Example fixtures conform to schema |
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
@@ -181,7 +181,7 @@ and report `not_assessed`.
 | CUE module packaging | `cannot_verify` | `schema/` refs not yet packaged as CUE modules |
 | Cosign production trust | `not_assessed` | Local key signing excludes keyless/OIDC/transparency verification |
 | JSON Schema fixture alignment | `pass` | Checked examples validate; live wrap output mismatch documented |
-| OPA policy prototype | `pass` | Local evaluation passes/fails as expected on test fixtures |
+| OPA policy prototype | `pass` | Local evaluation of the checked-in positive fixture returns true; no negative fixture is verified |
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
 
