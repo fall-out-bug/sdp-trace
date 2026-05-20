@@ -14,8 +14,9 @@ Owned files:
 
 Deliverable:
 
-- Classify every command family as core, extension, experimental, fixture-only,
-  or not_assessed.
+- Apply the spec-approved command tiers: the named core commands stay core,
+  every other current command family is extension, experimental, or
+  fixture-only, and no command remains unclassified.
 
 ### WS-018-B: Core First Docs
 
@@ -51,7 +52,8 @@ Owned files:
 
 Deliverable:
 
-- A safe sequence for moving non-core surfaces without deleting behavior.
+- A safe sequence for moving non-core surfaces after a later implementation
+  spec; this phase keeps extension surfaces in the current binary.
 
 ## Verification
 

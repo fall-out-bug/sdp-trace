@@ -88,5 +88,5 @@ Current checked state:
 
 - Split query-pack code out of `internal/query` if a future core-library claim
   requires package-level purity rather than command-level purity.
-- Decide whether witness, release-proof, PR review, and repo-observer remain in
-  the same binary or move to separate binaries/plugins after a reviewed spec.
+- Keep witness, release-proof, PR review, and repo-observer in the same binary
+  for this phase. Separate binaries or plugins require a later reviewed spec.

@@ -8,7 +8,8 @@ Status: draft
 
 Owned files:
 
-- `tools/osscompat/*` or `docs/oss-replacement-compatibility.md`
+- `tools/osscompat/*`
+- `docs/oss-replacement-compatibility.md`
 - no product dependency on Node.js/npm
 
 Deliverable:
@@ -26,9 +27,9 @@ Owned files:
 
 Deliverable:
 
-- Decide whether live `wrap` output should conform to
-  `flight-recorder-run.schema.json`, or whether a separate current recorder
-  schema is required.
+- Implement the spec decision that live recorder schema compatibility remains
+  blocked until `wrap` output conforms to `flight-recorder-run.schema.json` or
+  a separate current recorder schema is defined.
 
 ### WS-017-C: Policy-As-Code Prototype
 
@@ -58,7 +59,8 @@ Deliverable:
 
 Owned files:
 
-- `tools/ossbench/*` or `docs/oss-benchmark-results.md`
+- `tools/ossbench/*`
+- `docs/oss-benchmark-results.md`
 
 Deliverable:
 

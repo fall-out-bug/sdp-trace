@@ -28,19 +28,23 @@ No command is currently approved for removal.
 
 ## Extension Areas
 
-| Area | Commands | Next Decision |
+All extension areas stay in the current binary for this phase. The next action
+is classification, package-boundary cleanup, or a follow-up implementation spec;
+it is not an execution-time decision to remove or split commands.
+
+| Area | Commands | Spec Decision |
 | --- | --- | --- |
-| Assessment profiles | `assess` | Stay in binary vs. profile plugin surface. |
-| Adapter capture diagnostics | `query --query capture-depth` | Kept in `internal/capturedepth`; decide whether profile owns the command. |
-| Protected gates/checkpoints | `gate`, `checkpoint` | Downstream policy consumer vs. in-binary advisory facts. |
-| Witness/signing | `witness` | Same binary vs. separate trust/witness tool. |
-| Release proof | `release-proof` | Source-bound local trust anchor in binary vs. extension binary. |
-| PR evidence | `packet`, `pr-review` | Separate PR tool vs. in-binary workflow. |
-| Forensic packaging | `query-pack` | Split from `internal/query` before any package-level core claim. |
-| Interaction and harness observation | `interaction`, `observe`, `harness` | Harness-specific adapter package or plugin. |
-| Cross-repo posture and telemetry | `export` | Downstream reporting tool vs. in-binary export. |
-| Repo observer | `install repo-observer`, `doctor --profile` | Separate installer/doctor utility vs. in-binary helper. |
-| Envelope summary | `envelope` | Renderer utility vs. in-binary summary command. |
+| Assessment profiles | `assess` | Extension surface in current binary; no plugin split in this phase. |
+| Adapter capture diagnostics | `query --query capture-depth` | Extension surface owned by adapter-capture diagnostics; not a core query. |
+| Protected gates/checkpoints | `gate`, `checkpoint` | Extension surface that emits advisory facts for downstream policy consumers. |
+| Witness/signing | `witness` | Extension surface in current binary; separate trust tool requires a later spec. |
+| Release proof | `release-proof` | Extension surface; source-bound local trust anchor, not core adoption. |
+| PR evidence | `packet`, `pr-review` | Extension workflow in current binary; separate PR tool requires a later spec. |
+| Forensic packaging | `query-pack` | Extension surface; split from `internal/query` before any package-level core claim. |
+| Interaction and harness observation | `interaction`, `observe`, `harness` | Extension surface for harness-specific adapters. |
+| Cross-repo posture and telemetry | `export` | Extension surface for downstream reporting. |
+| Repo observer | `install repo-observer`, `doctor --profile` | Extension helper in current binary; separate installer requires a later spec. |
+| Envelope summary | `envelope` | Extension renderer utility in current binary. |
 
 ## Core Commands
 

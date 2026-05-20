@@ -63,7 +63,7 @@ Deliverable:
 
 Owned files:
 
-- `SECURITY.md` or `.github/SECURITY.md`
+- `.github/SECURITY.md`
 - `docs/install.md` only if release/security contact guidance changes
 
 Deliverable:
@@ -84,7 +84,8 @@ govulncheck ./...
 gitleaks detect on a tracked-file snapshot
 ```
 
-`gosec ./...` may remain advisory until WS-016-B classifies findings.
+`gosec ./...` is advisory for this phase. It may become blocking only after a
+later spec defines per-call-site dispositions and a stable CI threshold.
 
 ## Pi Handoff Notes
 

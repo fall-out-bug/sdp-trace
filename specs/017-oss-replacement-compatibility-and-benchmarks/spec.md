@@ -8,8 +8,9 @@ Create a reproducible compatibility and performance harness for candidate OSS
 replacements: JSON Schema tooling, CUE, OPA/Rego, in-toto, Sigstore/Cosign,
 SLSA verifier, and minimal shell/Go prototypes.
 
-This spec tests substitution boundaries. It does not decide to replace product
-code by itself.
+This spec tests substitution boundaries and records the replacement decisions
+for this phase. It does not approve replacing product code by implementation
+accident.
 
 ## Evidence From 2026-05-20 Probe
 
@@ -59,6 +60,28 @@ Local 20-iteration benchmark, compiled `sdp-trace`, Linux amd64:
   but do not prove production readiness.
 - FR-017-006: Do not add Node.js, npm, JavaScript, TypeScript, or `.mjs`
   tooling to the product path.
+
+## Decisions
+
+- No existing product command is replaced by OSS tooling in this phase.
+  OSS tools are compatibility probes and candidate substrates only.
+- The in-scope OSS candidates are JSON Schema validation, OPA/Rego, CUE,
+  in-toto, Cosign, and SLSA verifier. Other tools require a spec update before
+  implementation work starts.
+- Reproducible compatibility and benchmark tooling belongs under the Go active
+  path (`tools/osscompat` and `tools/ossbench`) unless a later spec explicitly
+  narrows a probe to docs-only evidence.
+- JSON Schema can be used for external CI/example validation now. Live
+  recorder output is not schema-compatible until the `wrap` output/schema
+  drift is fixed or a current recorder schema is defined.
+- OPA/Rego may replace hand-written policy expressions only behind an explicit
+  JSON translation layer. It does not replace verifier evidence collection.
+- CUE remains import-only until schema refs are packaged as CUE modules.
+- in-toto, Cosign, and SLSA tooling may provide signing/provenance substrates.
+  They do not replace `witness`, `release-proof`, or gate verdict semantics
+  without OIDC, Rekor, and identity-policy evidence.
+- Benchmarks are scope evidence only. They cannot create health scores,
+  production readiness, or replacement approval.
 
 ## Non-Goals
 

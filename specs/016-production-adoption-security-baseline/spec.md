@@ -57,6 +57,25 @@ customer production adoption or external production trust.
 - FR-016-007: Do not claim production adoption, production trust, customer
   trust, or release readiness from local checks alone.
 
+## Decisions
+
+- `gosec` is advisory for this phase, not a blocking CI gate. The current
+  132 findings remain `needs_triage` until a later security slice fixes,
+  narrows, or suppresses individual call sites with evidence.
+- `govulncheck` and `go vet` are required local verification commands.
+  `gitleaks` with the reviewed repository config is the selected secret scan
+  for local and tracked-source checks.
+- The security policy lives under `.github/SECURITY.md`. A root
+  `SECURITY.md` is not required for this phase.
+- Tracked synthetic secret fixtures are handled by narrow, reviewed
+  path-and-regex allowlists. Broad scanner suppression is not allowed.
+- Ignored local agent run directories are local clutter, not repository proof.
+  They may be scanned during working-tree hygiene, but tracked-source scans
+  are the evidence for repository claims.
+- No readiness state may improve beyond controlled pilot while external
+  customer adoption, live CI at final head, and external security audit remain
+  `not_assessed`.
+
 ## Non-Goals
 
 - No production trust decision.
@@ -74,14 +93,5 @@ customer production adoption or external production trust.
   a reviewed allowlist.
 - `go vet ./...`, `govulncheck ./...`, and the selected secret scan complete in
   a documented local command path.
-- Any remaining `gosec` findings are explicitly classified before readiness is
+- `gosec` family findings are explicitly classified before readiness is
   improved beyond controlled pilot.
-
-## Open Questions
-
-- Should `gosec` become a blocking CI gate, advisory CI artifact, or
-  slice-specific review input?
-- Should security policy be implemented as `SECURITY.md` at repository root or
-  under `.github/SECURITY.md`?
-- Should ignored local agent run directories be scanned by hygiene tooling, or
-  only reported as local clutter?

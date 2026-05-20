@@ -6,8 +6,10 @@ Status: draft
 
 - [ ] T016-001 Review this spec for scope: production adoption facts must not
   become production trust claims.
-- [ ] T016-002 Decide whether `gosec` is blocking or advisory for this phase.
-- [ ] T016-003 Decide the scanner policy for synthetic secret fixtures.
+- [ ] T016-002 Verify the spec decision that `gosec` is advisory for this
+  phase is reflected in docs and CI language.
+- [ ] T016-003 Verify tracked synthetic secret fixtures use only narrow
+  reviewed path-and-regex allowlists or scanner-safe rewrites.
 
 ## Phase 1 - Pi-Ready Workstreams
 

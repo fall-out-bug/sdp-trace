@@ -4,15 +4,15 @@ Status: draft
 
 ## Phase 0 - Review
 
-- [ ] T017-001 Review substitution candidates and decide which are in scope for
-  first implementation.
-- [ ] T017-002 Decide whether compatibility tooling is product Go code under
-  `tools/` or docs-only reproducible shell snippets.
+- [ ] T017-001 Verify the spec-approved substitution candidates remain the only
+  in-scope OSS tools for first implementation.
+- [ ] T017-002 Implement compatibility tooling under the Go active path unless
+  a later spec explicitly narrows a probe to docs-only evidence.
 
 ## Phase 1 - Pi-Ready Workstreams
 
 - [ ] T017-010 WS-017-A: Create reproducible OSS compatibility harness.
-  Pi ownership: `tools/osscompat/*` or one docs page.
+  Pi ownership: `tools/osscompat/*`.
 - [ ] T017-020 WS-017-B: Resolve live `wrap` output vs flight-recorder schema
   compatibility. Pi ownership: schema/examples plus focused recorder tests.
 - [ ] T017-030 WS-017-C: Build OPA/Rego or CUE assessment-profile prototype.
@@ -20,7 +20,7 @@ Status: draft
 - [ ] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.
   Pi ownership: docs/examples for supply-chain prototype only.
 - [ ] T017-050 WS-017-E: Add benchmark harness and benchmark report.
-  Pi ownership: `tools/ossbench/*` or benchmark docs only.
+  Pi ownership: `tools/ossbench/*` and benchmark docs.
 
 ## Phase 2 - Integration
 

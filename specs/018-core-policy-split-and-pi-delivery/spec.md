@@ -9,7 +9,7 @@ from policy, witness, PR-review, telemetry, and forensic extensions. This spec
 turns the simplification analysis into work that can be delegated safely to Pi
 agents.
 
-## Proposed Product Shape
+## Product Shape Decision
 
 ### Core
 
@@ -31,6 +31,24 @@ agents.
 - forensic query packs
 - repo observer installation
 
+## Decisions
+
+- The core command set for this simplification phase is exactly `wrap`, `run`,
+  `verify`, `explain`, `report`, and `query --query missing-evidence`.
+- All other current command families remain in the same binary for this phase
+  and are classified as extension, experimental, or fixture-only. Separate
+  binaries, plugins, and removals require a later implementation spec.
+- `query --query capture-depth` belongs to the adapter-capture diagnostics
+  extension. It is not part of the core query surface.
+- `query-pack` remains a forensic extension. The remaining query-pack code in
+  `internal/query` must be split before any package-level minimal-core claim.
+- `release-proof`, `witness`, `gate`, `checkpoint`, `packet`, and `pr-review`
+  are useful trust or policy surfaces but are not core adoption commands.
+- First implementation work must reduce package coupling and documentation
+  complexity without changing command behavior or deleting commands.
+- A future behavior-changing simplification must start from a new reviewed
+  implementation spec, not from ad hoc execution inside this planning slice.
+
 ## Requirements
 
 - FR-018-001: Define command-family stability tiers: core, extension,
@@ -51,11 +69,12 @@ agents.
 - No immediate deletion of non-core commands.
 - No behavior change without a reviewed implementation spec.
 - No claim that core-only adoption is production trust.
+- No decision to split into separate binaries or plugins in this phase.
 
 ## Acceptance Criteria
 
 - A core/extension command matrix exists.
 - Documentation reading order points new adopters to the core path first.
-- Extension surfaces have explicit owner, status, and next decision.
+- Extension surfaces have explicit owner, status, and spec decision.
 - Pi handoff slices are small enough to run in isolated worktrees without
   overlapping write sets.

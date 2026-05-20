@@ -5,8 +5,8 @@ Status: draft
 ## Phase 0 - Review
 
 - [ ] T018-001 Review core command list with maintainers.
-- [ ] T018-002 Decide whether extension surfaces stay in the same binary,
-  become sub-binaries, or remain documented as controlled-pilot commands.
+- [ ] T018-002 Verify docs and implementation slices preserve the spec
+  decision that extension surfaces stay in the same binary for this phase.
 
 ## Phase 1 - Pi-Ready Workstreams
 
