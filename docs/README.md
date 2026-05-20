@@ -50,6 +50,7 @@ evidence and gaps; it does not approve changes.
 - [Accountability Model](accountability-model.md)
 - [Evidence Policy](evidence-policy.md)
 - [Security Baseline](security-baseline.md): local security scan results and triage.
+- [Security Policy](../.github/SECURITY.md): vulnerability reporting and scope.
 - [CI Check Policy](ci-check-policy.md)
 - [Security Baseline](security-baseline.md)
 

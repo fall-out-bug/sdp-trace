@@ -91,6 +91,10 @@ Scan them with local hygiene tooling, but report findings as **local hygiene**
 only. If a finding in an ignored path is a real secret, rotate it; do not
 allowlist it in repository scans.
 
+## Reporting
+
+For vulnerability reporting guidance, see [`.github/SECURITY.md`](../.github/SECURITY.md).
+
 ## Verification Commands
 
 Reproduce the current baseline:
