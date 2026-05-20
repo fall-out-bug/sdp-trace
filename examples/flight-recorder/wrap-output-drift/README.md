@@ -1,10 +1,13 @@
 # Wrap Output / Schema Drift Example
 
-Status: `fail` (live wrap output vs schema); frozen snapshot is historical evidence only
+Status: `fail` (observed in captured snapshot); frozen snapshot is historical evidence only
 Spec: [017](../../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
-This directory demonstrates that the live `sdp-trace wrap` output does not
-conform to `schema/flight-recorder-run.schema.json`.
+This directory preserves structural evidence that a captured `sdp-trace wrap`
+output did not conform to `schema/flight-recorder-run.schema.json`.
+For live verification of the current checkout, run `go run ./tools/osscompat`
+(or `go run ./tools/osscompat -probe jsonschema-wrap-drift` for the specific
+probe).
 
 ## Frozen Snapshot
 

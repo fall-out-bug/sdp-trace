@@ -32,7 +32,7 @@ These are editorial conventions, not enforced gates:
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
 | [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `draft` | Awaiting review |
-| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Slice review in progress; all workstreams implemented; final PR review pending |
+| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Slice review in progress; workstreams A–C and E implemented; WS-017-D automated probes remain open (manual-only). Final PR review pending |
 | [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 open; repeat review in progress |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX, command guidance, profile selection | `draft` | Awaiting Socratic review |
 | [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | `draft` | Awaiting Socratic review |
