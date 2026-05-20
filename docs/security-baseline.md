@@ -120,11 +120,11 @@ gosec ./...
 # Run from /tmp so gitleaks does not auto-load the repository .gitleaks.toml.
 mkdir -p /tmp/worktree-scan && rm -rf /tmp/worktree-scan/*
 tar --exclude='.gitleaks.toml' --exclude='.git' -cf - . | tar -xf - -C /tmp/worktree-scan
-cd /tmp && gitleaks detect --source /tmp/worktree-scan --no-git
+(cd /tmp && gitleaks detect --source /tmp/worktree-scan --no-git)
 
 mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
 git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
-cd /tmp && gitleaks detect --source /tmp/tracked-scan --no-git
+(cd /tmp && gitleaks detect --source /tmp/tracked-scan --no-git)
 
 # Configured tracked-source scan
 mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
