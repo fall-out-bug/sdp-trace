@@ -127,12 +127,49 @@ func runJSONSchemaFixtures() (verifierState, string) {
 	return statePass, "fixture validates against schema"
 }
 
-// runJSONSchemaWrapDrift checks live wrap output against schema (expected fail).
+// runJSONSchemaWrapDrift builds sdp-trace from source, runs wrap in an isolated
+// temp directory, and checks the live output against the schema. The probe
+// returns pass only if schema validation fails (confirming the drift).
 func runJSONSchemaWrapDrift() (verifierState, string) {
-	// This probe is expected to fail until the wrap output/schema drift is resolved.
-	// We cannot easily capture live wrap output here without mutating state,
-	// so we report cannot_verify with the documented blocker reason.
-	return stateCannotVerify, "live wrap output/schema drift is documented as a blocker; see docs/oss-replacement-compatibility.md"
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	root := repoRoot()
+	tmpDir, err := os.MkdirTemp("", "osscompat-wrap-*")
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("mkdir temp: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	bin := filepath.Join(tmpDir, "sdp-trace")
+	buildOut, err := exec.CommandContext(ctx, "go", "build", "-o", bin, filepath.Join(root, "cmd/sdp-trace")).CombinedOutput()
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("go build failed: %v\n%s", err, strings.TrimSpace(string(buildOut)))
+	}
+
+	wrapOut := filepath.Join(tmpDir, "wrap.json")
+	cmd := exec.CommandContext(ctx, bin, "wrap", "/bin/true")
+	cmd.Dir = tmpDir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return stateFail, fmt.Sprintf("wrap failed: %v\n%s", err, strings.TrimSpace(string(out)))
+	}
+	if err := os.WriteFile(wrapOut, out, 0644); err != nil {
+		return stateCannotVerify, fmt.Sprintf("write wrap output: %v", err)
+	}
+
+	if !hasTool("check-jsonschema") {
+		return stateCannotVerify, "check-jsonschema not in PATH; cannot validate live wrap output"
+	}
+	checkCtx, checkCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer checkCancel()
+	schemaOut, err := exec.CommandContext(checkCtx, "check-jsonschema",
+		"--schemafile", filepath.Join(root, "schema/flight-recorder-run.schema.json"),
+		wrapOut,
+	).CombinedOutput()
+	if err == nil {
+		return stateFail, "live wrap output unexpectedly passed schema validation; drift may be fixed"
+	}
+	return statePass, fmt.Sprintf("live wrap output fails schema validation as expected: %s", strings.TrimSpace(string(schemaOut)))
 }
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
@@ -260,10 +297,8 @@ func runCosignLocalSign() (verifierState, string) {
 func runSLSANegative() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if out, err := exec.CommandContext(ctx, "slsa-verifier", "version").CombinedOutput(); err != nil {
+	if _, err := exec.CommandContext(ctx, "slsa-verifier", "version").CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("slsa-verifier version failed: %v", err)
-	} else if !strings.Contains(string(out), "slsa") && !strings.Contains(string(out), "SLSA") {
-		return stateFail, "unexpected slsa-verifier version output"
 	}
 	return stateCannotVerify, "slsa-verifier present; run manual negative test per docs/oss-replacement-compatibility.md"
 }

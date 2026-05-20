@@ -34,7 +34,7 @@ Missing tools render that probe `not_assessed`.
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `cannot_verify` | Live wrap output differs from schema; safe auto-run is not implemented so the automated probe reports `cannot_verify` [^1] |
+| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `pass` | Live probe confirms wrap output fails schema validation (drift is still present) [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
@@ -219,7 +219,8 @@ and report `not_assessed`.
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
 
 [^1]: Automated probes in `tools/osscompat` run the full validation when
-safe to do so (JSON Schema fixture check, OPA eval against checked-in
-fixtures, CUE import). For probes that mutate state or require external
-services, the tool reports `cannot_verify` and the doc records the manual
-result. Run the reproduction commands above for the actual validation.
+safe to do so (JSON Schema fixture check, live wrap drift confirmation,
+OPA eval against checked-in fixtures, CUE import). For probes that mutate
+state or require external services, the tool reports `cannot_verify` and
+the doc records the manual result. Run the reproduction commands above for
+the actual validation.

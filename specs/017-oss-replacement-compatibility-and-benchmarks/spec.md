@@ -16,9 +16,10 @@ accident.
 
 - `check-jsonschema` validates checked flight-recorder fixtures against
   locally rewired schema refs.
-- Current live `sdp-trace wrap` output does not validate against
-  `schema/flight-recorder-run.schema.json`; required fields and timestamp
-  format differ.
+- Live `sdp-trace wrap` output does not validate against
+  `schema/flight-recorder-run.schema.json`; the `osscompat` harness confirms
+  this drift with a temp-dir probe that builds from source and fails schema
+  validation as expected.
 - `check-jsonschema` validates `examples/flight-recorder/local-positive/run.json`
   against `schema/flight-recorder-run.schema.json`.
 - `OPA` can express a simplified adapter-capture pass rule; the checked-in
@@ -26,28 +27,27 @@ accident.
 - `CUE` can import JSON Schema, but direct validation is blocked until schema
   refs are packaged as a CUE module.
 - `in-toto-run` can wrap a command, sign link metadata, and record material and
-  product hashes (manual-only; no harness probe).
+  product hashes (manual-only; no harness probe; status `cannot_verify`).
 - `cosign` can sign and verify a local `run.json` blob with a local key when
   transparency-log verification is explicitly disabled (manual-only; no harness
-  probe).
+  probe; status `cannot_verify`).
 - `slsa-verifier` rejects the local DSSE fixture because the signature is
   truncated; Rekor rejection is not separately evidenced.
 
 ## Benchmark Snapshot
 
 Local 20-iteration benchmark, compiled `sdp-trace`, Linux amd64.
-**Note:** Min and max were not preserved from the one-shot run; this table
-is provisional scope evidence only.
+All rows below are reproducible via `tools/ossbench`.
 
 | Probe | Median ms | Notes |
 | --- | ---: | --- |
 | `sdp-trace version` | 4.5 | Built-in, measured via `tools/ossbench` |
 | `sdp-trace wrap` | 16.1 | Built-in, measured via `tools/ossbench` |
-| shell prototype wrap | 6.0 | One-shot; minimal JSON, no hash chain semantics |
-| OPA adapter policy eval | 14.0 | One-shot; simplified policy |
-| Cosign local verify | 30.5 | One-shot; transparency log ignored |
-| `in-toto-run` | 148.0 | One-shot; signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | One-shot; Python validator startup cost |
+
+One-shot historical numbers for external tools (OPA, Cosign, in-toto,
+check-jsonschema) are not included because min/max were not preserved and
+the harness does not yet automate those probes. See `docs/oss-benchmark-results.md`
+for scope context.
 
 ## Requirements
 
