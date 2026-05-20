@@ -95,8 +95,8 @@ func printResults(w io.Writer, results []benchmarkResult, asJSON bool) error {
 			fmt.Fprintf(w, "%*s  error: %s\n", -width, r.Name, r.Error)
 			continue
 		}
-		fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  n=%d\n",
-			-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.Iterations)
+		fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+			-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
 	}
 	return nil
 }

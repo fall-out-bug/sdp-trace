@@ -93,8 +93,8 @@ func TestRunOPAPolicy(t *testing.T) {
 		t.Skip("opa not in PATH")
 	}
 	state, reason := runOPAPolicy()
-	if state != statePass {
-		t.Errorf("expected statePass, got %s: %s", state, reason)
+	if state != stateCannotVerify {
+		t.Errorf("expected stateCannotVerify, got %s: %s", state, reason)
 	}
 }
 
@@ -113,8 +113,8 @@ func TestRunInTotoWrap(t *testing.T) {
 		t.Skip("in-toto-run not in PATH")
 	}
 	state, reason := runInTotoWrap()
-	if state != statePass {
-		t.Errorf("expected statePass, got %s: %s", state, reason)
+	if state != stateCannotVerify {
+		t.Errorf("expected stateCannotVerify, got %s: %s", state, reason)
 	}
 }
 
@@ -123,8 +123,8 @@ func TestRunCosignLocalSign(t *testing.T) {
 		t.Skip("cosign not in PATH")
 	}
 	state, reason := runCosignLocalSign()
-	if state != statePass {
-		t.Errorf("expected statePass, got %s: %s", state, reason)
+	if state != stateCannotVerify {
+		t.Errorf("expected stateCannotVerify, got %s: %s", state, reason)
 	}
 }
 
@@ -133,8 +133,8 @@ func TestRunSLSANegative(t *testing.T) {
 		t.Skip("slsa-verifier not in PATH")
 	}
 	state, reason := runSLSANegative()
-	if state != statePass {
-		t.Errorf("expected statePass, got %s: %s", state, reason)
+	if state != stateCannotVerify {
+		t.Errorf("expected stateCannotVerify, got %s: %s", state, reason)
 	}
 }
 

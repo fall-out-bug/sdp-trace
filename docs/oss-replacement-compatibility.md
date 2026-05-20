@@ -114,10 +114,10 @@ and report `not_assessed`.
 # Sign and verify a local JSON blob with a generated ephemeral key
 (
   cd /tmp
-  cosign generate-key-pair || true
-  cosign sign-blob --key cosign.key --yes run.json > run.json.sig || true
-  cosign verify-blob --key cosign.pub --signature run.json.sig run.json \
-    || true
+  echo '{"run":"test"}' > run.json
+  cosign generate-key-pair
+  cosign sign-blob --key cosign.key --yes run.json > run.json.sig
+  cosign verify-blob --key cosign.pub --signature run.json.sig run.json
 )
 ```
 

@@ -20,7 +20,7 @@ decisions but do not prove production readiness.
 
 | Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
 |---|---:|---:|---:|---|---|---|
-| Shell prototype `wrap` | 6.0 | — | — | 20 | `bash -c 'echo {"v":"local"}'` | Minimal JSON, no hash-chain semantics |
+| Shell prototype `wrap` | 6.0 | — | — | 20 | `printf '%s\n' '{"v":"local"}'` | Minimal JSON, no hash-chain semantics |
 | `sdp-trace verify` | 8.0 | — | — | 20 | `sdp-trace verify` | Existing local run |
 | OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | Simplified policy |
 | `sdp-trace wrap` | 26.0 | — | — | 20 | `sdp-trace wrap /bin/true` | Local `/bin/true` |
@@ -70,7 +70,7 @@ another machine.
 
 ```bash
 # Shell prototype wrap
-bash -c 'echo {"v":"local"}'
+printf '%s\n' '{"v":"local"}'
 
 # sdp-trace verify
 sdp-trace verify

@@ -101,13 +101,14 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 
 // runOPAPolicy evaluates a simplified Rego rule.
 func runOPAPolicy() (verifierState, string) {
-	// Probe for OPA presence and basic eval capability.
+	// We only verify tool presence here; actual policy evaluation requires
+	// adapter.rego and a test fixture that may not be present in all environments.
 	if out, err := exec.Command("opa", "version").CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("opa version failed: %v", err)
 	} else if !strings.Contains(string(out), "Version") {
 		return stateFail, "unexpected opa version output"
 	}
-	return statePass, "opa executable responds to version query"
+	return stateCannotVerify, "opa present; run manual evaluation per docs/oss-replacement-compatibility.md"
 }
 
 // runCUEImport tests CUE JSON Schema import.
@@ -131,7 +132,7 @@ func runInTotoWrap() (verifierState, string) {
 	} else if !strings.Contains(string(out), "in-toto") {
 		return stateFail, "unexpected in-toto-run version output"
 	}
-	return statePass, "in-toto-run executable responds to version query"
+	return stateCannotVerify, "in-toto-run present; run manual wrap per docs/oss-replacement-compatibility.md"
 }
 
 // runCosignLocalSign tests cosign presence.
@@ -141,7 +142,7 @@ func runCosignLocalSign() (verifierState, string) {
 	} else if !strings.Contains(string(out), "Cosign") {
 		return stateFail, "unexpected cosign version output"
 	}
-	return statePass, "cosign executable responds to version query"
+	return stateCannotVerify, "cosign present; run manual sign/verify per docs/oss-replacement-compatibility.md"
 }
 
 // runSLSANegative tests slsa-verifier presence.
@@ -151,5 +152,5 @@ func runSLSANegative() (verifierState, string) {
 	} else if !strings.Contains(string(out), "slsa") && !strings.Contains(string(out), "SLSA") {
 		return stateFail, "unexpected slsa-verifier version output"
 	}
-	return statePass, "slsa-verifier executable responds to version query"
+	return stateCannotVerify, "slsa-verifier present; run manual negative test per docs/oss-replacement-compatibility.md"
 }

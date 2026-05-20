@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -18,14 +20,17 @@ type benchmarkDef struct {
 
 // benchmarkResult holds the measured statistics for one benchmark.
 type benchmarkResult struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	Iterations  int       `json:"iterations"`
-	MinMs       float64   `json:"min_ms"`
-	MaxMs       float64   `json:"max_ms"`
-	MedianMs    float64   `json:"median_ms"`
-	AllMs       []float64 `json:"all_ms,omitempty"`
-	Error       string    `json:"error,omitempty"`
+	Name                string    `json:"name"`
+	Description         string    `json:"description,omitempty"`
+	Command             string    `json:"command"`
+	Environment         envInfo   `json:"environment,omitempty"`
+	AttemptedIterations int       `json:"attempted_iterations"`
+	SucceededIterations int       `json:"succeeded_iterations"`
+	MinMs               float64   `json:"min_ms"`
+	MaxMs               float64   `json:"max_ms"`
+	MedianMs            float64   `json:"median_ms"`
+	AllMs               []float64 `json:"all_ms,omitempty"`
+	Error               string    `json:"error,omitempty"`
 }
 
 // runBenchmark executes a benchmark definition for n iterations.
@@ -35,9 +40,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	}
 	if def.Cmd == "" {
 		return benchmarkResult{
-			Name:       def.Name,
-			Iterations: iterations,
-			Error:      "no command specified",
+			Name:                def.Name,
+			AttemptedIterations: iterations,
+			Error:               "no command specified",
 		}
 	}
 
@@ -58,9 +63,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 
 	if len(times) == 0 {
 		return benchmarkResult{
-			Name:       def.Name,
-			Iterations: iterations,
-			Error:      lastErr,
+			Name:                def.Name,
+			AttemptedIterations: iterations,
+			Error:               lastErr,
 		}
 	}
 
@@ -70,14 +75,32 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	}
 	min, max, median := stats(ms)
 	return benchmarkResult{
-		Name:        def.Name,
-		Description: def.Description,
-		Iterations:  iterations,
-		MinMs:       min,
-		MaxMs:       max,
-		MedianMs:    median,
-		AllMs:       ms,
-		Error:       lastErr,
+		Name:                def.Name,
+		Description:         def.Description,
+		Command:             def.Cmd + " " + strings.Join(def.Args, " "),
+		Environment:         getEnv(),
+		AttemptedIterations: iterations,
+		SucceededIterations: len(times),
+		MinMs:               min,
+		MaxMs:               max,
+		MedianMs:            median,
+		AllMs:               ms,
+		Error:               lastErr,
+	}
+}
+
+// envInfo captures the benchmark environment.
+type envInfo struct {
+	Platform string `json:"platform"`
+	GoOS     string `json:"goos"`
+	GoArch   string `json:"goarch"`
+}
+
+func getEnv() envInfo {
+	return envInfo{
+		Platform: runtime.GOOS + "/" + runtime.GOARCH,
+		GoOS:     runtime.GOOS,
+		GoArch:   runtime.GOARCH,
 	}
 }
 

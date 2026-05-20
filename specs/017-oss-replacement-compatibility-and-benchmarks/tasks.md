@@ -13,8 +13,9 @@ Status: in_progress
 
 - [x] T017-010 WS-017-A: Create reproducible OSS compatibility harness.
   Pi ownership: `tools/osscompat/*`.
-- [x] T017-020 WS-017-B: Resolve live `wrap` output vs flight-recorder schema
-  compatibility. Pi ownership: schema/examples plus focused recorder tests.
+- [x] T017-020 WS-017-B: Document live `wrap` output vs flight-recorder schema
+  compatibility drift and add structural evidence. Pi ownership: schema/examples
+  plus focused recorder tests. Fixing the drift remains out of scope.
 - [x] T017-030 WS-017-C: Build OPA/Rego or CUE assessment-profile prototype.
   Pi ownership: docs/examples for policy prototype only.
 - [x] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.

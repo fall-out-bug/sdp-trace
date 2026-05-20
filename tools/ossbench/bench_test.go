@@ -50,8 +50,11 @@ func TestRunBenchmark_CustomCommand(t *testing.T) {
 	if res.Error != "" {
 		t.Fatalf("unexpected error: %s", res.Error)
 	}
-	if res.Iterations != 5 {
-		t.Errorf("iterations = %d, want 5", res.Iterations)
+	if res.AttemptedIterations != 5 {
+		t.Errorf("attempted = %d, want 5", res.AttemptedIterations)
+	}
+	if res.SucceededIterations != 5 {
+		t.Errorf("succeeded = %d, want 5", res.SucceededIterations)
 	}
 	if len(res.AllMs) != 5 {
 		t.Errorf("got %d measurements, want 5", len(res.AllMs))
@@ -77,8 +80,8 @@ func TestRunBenchmark_NoCommand(t *testing.T) {
 	if res.Error == "" {
 		t.Fatal("expected error when no command specified")
 	}
-	if res.Iterations != 1 {
-		t.Errorf("expected Iterations=1, got %d", res.Iterations)
+	if res.AttemptedIterations != 1 {
+		t.Errorf("expected AttemptedIterations=1, got %d", res.AttemptedIterations)
 	}
 }
 
@@ -91,8 +94,8 @@ func TestRunBenchmark_DefaultIterations(t *testing.T) {
 	if res.Error != "" {
 		t.Fatalf("unexpected error: %s", res.Error)
 	}
-	if res.Iterations != 20 {
-		t.Errorf("expected default 20 iterations, got %d", res.Iterations)
+	if res.AttemptedIterations != 20 {
+		t.Errorf("expected default 20 attempted, got %d", res.AttemptedIterations)
 	}
 }
 
@@ -116,7 +119,7 @@ func TestRunBenchmark_PartialFailure(t *testing.T) {
 	if res2.Error == "" {
 		t.Fatal("expected error for always-failing command")
 	}
-	if res2.Iterations != 3 {
-		t.Errorf("expected Iterations=3, got %d", res2.Iterations)
+	if res2.AttemptedIterations != 3 {
+		t.Errorf("expected AttemptedIterations=3, got %d", res2.AttemptedIterations)
 	}
 }
