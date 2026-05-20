@@ -42,6 +42,11 @@ Missing tools render that probe `not_assessed`.
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
 | SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: no matching Rekor entries found |
 
+<!-- sdp-trace-claim: claim=trust_not_assessed; subject=017-slsa-production; state=not_assessed; profile=external_production_trust; evidence=state:no_rekor_entries -->
+<!-- sdp-trace-claim: claim=trust_not_assessed; subject=017-rekor-integration; state=not_assessed; profile=external_production_trust; evidence=state:no_rekor_entries -->
+<!-- sdp-trace-claim: claim=command_verified; subject=017-check-jsonschema-fixture; state=pass; profile=observed_slice; evidence=command_set:017-fixture-validation -->
+<!-- sdp-trace-claim: claim=command_verified; subject=017-opa-policy; state=pass; profile=observed_slice; evidence=command_set:017-opa-eval -->
+
 ## Reproduction Commands
 
 The following commands can be run from a clean checkout at the repository root.

@@ -36,14 +36,13 @@ in-toto-run \
 
 ```bash
 # Run in a subshell to avoid mutating the caller's CWD.
-# If your Cosign version enforces transparency-log checks by default,
-# add --insecure-ignore-tlog to the verify-blob command.
+# Transparency-log upload and verification are disabled for local-only testing.
 (
   cd /tmp
   cosign generate-key-pair
   echo '{"run":"test"}' > run.json
-  cosign sign-blob --key cosign.key --yes run.json > run.json.sig
-  cosign verify-blob --key cosign.pub --signature run.json.sig run.json
+  cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
+  cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
 )
 ```
 

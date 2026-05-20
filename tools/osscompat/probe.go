@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -82,11 +84,31 @@ func hasTool(tool string) bool {
 	return err == nil
 }
 
+// repoRoot returns the repository root by walking up from the current
+// working directory until it finds a .git directory or reaches the filesystem
+// root. It falls back to "." if the root cannot be determined.
+func repoRoot() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, ".git")); err == nil {
+			return cwd
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			return "."
+		}
+		cwd = parent
+	}
+}
+
 // runJSONSchemaFixtures validates a checked fixture against the schema.
 func runJSONSchemaFixtures() (verifierState, string) {
 	out, err := exec.Command("check-jsonschema",
-		"--schemafile", "schema/flight-recorder-run.schema.json",
-		"examples/flight-recorder/local-positive/run.json",
+		"--schemafile", filepath.Join(repoRoot(), "schema/flight-recorder-run.schema.json"),
+		filepath.Join(repoRoot(), "examples/flight-recorder/local-positive/run.json"),
 	).CombinedOutput()
 	if err != nil {
 		return stateFail, fmt.Sprintf("fixture validation failed: %v\n%s", err, strings.TrimSpace(string(out)))
@@ -120,7 +142,7 @@ func runCUEImport() (verifierState, string) {
 		"import",
 		"--package", "sdptrace",
 		"-o", "-",
-		"schema/flight-recorder-run.schema.json",
+		filepath.Join(repoRoot(), "schema/flight-recorder-run.schema.json"),
 	}
 	if out, err := exec.Command("cue", args...).CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("cue import failed: %v\n%s", err, strings.TrimSpace(string(out)))
