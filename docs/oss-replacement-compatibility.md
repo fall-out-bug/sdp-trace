@@ -31,24 +31,26 @@ Missing tools render that probe `not_assessed`.
 
 ## Compatibility Probes
 
-Probe results below are from a local run where the required optional CLI tools
-were available. If a tool is missing, the automated harness reports
-`not_assessed` for that probe instead of the result shown here.
+The table below reflects the **current environment**, where no optional
+external CLI tools are installed. The automated harness output is recorded in
+[`oss-compat-run-current.json`](oss-compat-run-current.json). When the
+required optional tools are available, the expected results are shown in the
+**Expected (tool available)** column.
 
-| Proxy / Tool | Capability Tested | Probe Result | Status |
-|---|---|---|---|
-| `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Live wrap output fails schema validation; drift is a confirmed conformance failure [^1] |
-| OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
-| OPA/Rego | Combined negative fixture (both rules broken) | `pass` | `adapter.rego` correctly rejects `test-fixture-fail.json` [^1] |
-| OPA/Rego | Negative trace_id rule only | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-traceid.json` [^1] |
-| OPA/Rego | Negative provenance rule only | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-provenance.json` [^1] |
-| CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
-| CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
-| in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
-| Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
-| Cosign | Verify with transparency log / Rekor | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
-| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `cannot_verify` | Manual-only expected-fail probe; intentionally invalid local fixture (see reproduction command) |
+| Proxy / Tool | Capability Tested | Current Result | Expected (tool available) | Status |
+|---|---|---|---|---|
+| `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `not_assessed` | `pass` | Checked fixture conforms to schema [^1] |
+| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `not_assessed` | `fail` | Live wrap output fails schema validation; drift is a confirmed conformance failure [^1] |
+| OPA/Rego | Express simplified adapter-capture pass rule | `not_assessed` | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
+| OPA/Rego | Combined negative fixture (both rules broken) | `not_assessed` | `pass` | `adapter.rego` correctly rejects `test-fixture-fail.json` [^1] |
+| OPA/Rego | Negative trace_id rule only | `not_assessed` | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-traceid.json` [^1] |
+| OPA/Rego | Negative provenance rule only | `not_assessed` | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-provenance.json` [^1] |
+| CUE | JSON Schema import to stdout | `not_assessed` | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
+| CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
+| in-toto | Wrap command, sign link metadata, record material/product hashes | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
+| Cosign | Sign/verify local `run.json` blob | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
+| Cosign | Verify with transparency log / Rekor | `not_assessed` | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
+| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `not_assessed` | `cannot_verify` | Manual-only expected-fail probe; intentionally invalid local fixture (see reproduction command) |
 
 ## Reproduction Commands
 

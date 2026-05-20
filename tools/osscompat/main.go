@@ -29,7 +29,7 @@ func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 		return 2
 	}
 	if len(fs.Args()) > 0 {
-		fmt.Fprintf(stderr, "unexpected positional args: %s\n", fs.Args())
+		fmt.Fprintf(stderr, "unexpected positional args: %v\n", fs.Args())
 		return 2
 	}
 

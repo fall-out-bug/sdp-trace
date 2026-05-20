@@ -1,0 +1,52 @@
+[
+  {
+    "name": "jsonschema-fixtures",
+    "state": "not_assessed",
+    "reason": "required tool \"check-jsonschema\" not found in PATH"
+  },
+  {
+    "name": "jsonschema-wrap-drift",
+    "state": "not_assessed",
+    "reason": "required tool \"check-jsonschema\" not found in PATH"
+  },
+  {
+    "name": "opa-policy",
+    "state": "not_assessed",
+    "reason": "required tool \"opa\" not found in PATH"
+  },
+  {
+    "name": "opa-negative",
+    "state": "not_assessed",
+    "reason": "required tool \"opa\" not found in PATH"
+  },
+  {
+    "name": "opa-negative-traceid",
+    "state": "not_assessed",
+    "reason": "required tool \"opa\" not found in PATH"
+  },
+  {
+    "name": "opa-negative-provenance",
+    "state": "not_assessed",
+    "reason": "required tool \"opa\" not found in PATH"
+  },
+  {
+    "name": "cue-import",
+    "state": "not_assessed",
+    "reason": "required tool \"cue\" not found in PATH"
+  },
+  {
+    "name": "intoto-wrap",
+    "state": "not_assessed",
+    "reason": "required tool \"in-toto-run\" not found in PATH"
+  },
+  {
+    "name": "cosign-local-sign",
+    "state": "not_assessed",
+    "reason": "required tool \"cosign\" not found in PATH"
+  },
+  {
+    "name": "slsa-negative",
+    "state": "not_assessed",
+    "reason": "required tool \"slsa-verifier\" not found in PATH"
+  }
+]

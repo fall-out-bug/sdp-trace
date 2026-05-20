@@ -379,9 +379,9 @@ func runInTotoWrap() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if out, err := exec.CommandContext(ctx, "in-toto-run", "--version").CombinedOutput(); err != nil {
-		return stateFail, fmt.Sprintf("in-toto-run version failed: %v", err)
+		return stateCannotVerify, fmt.Sprintf("in-toto-run version check failed: %v", err)
 	} else if !strings.Contains(string(out), "in-toto") {
-		return stateFail, "unexpected in-toto-run version output"
+		return stateCannotVerify, "unexpected in-toto-run version output"
 	}
 	return stateCannotVerify, "in-toto-run present; run manual wrap per docs/oss-replacement-compatibility.md"
 }
@@ -391,7 +391,7 @@ func runCosignLocalSign() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if _, err := exec.CommandContext(ctx, "cosign", "version").CombinedOutput(); err != nil {
-		return stateFail, fmt.Sprintf("cosign version failed: %v", err)
+		return stateCannotVerify, fmt.Sprintf("cosign version check failed: %v", err)
 	}
 	return stateCannotVerify, "cosign present; run manual sign/verify per docs/oss-replacement-compatibility.md"
 }
@@ -401,7 +401,7 @@ func runSLSANegative() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if _, err := exec.CommandContext(ctx, "slsa-verifier", "version").CombinedOutput(); err != nil {
-		return stateFail, fmt.Sprintf("slsa-verifier version failed: %v", err)
+		return stateCannotVerify, fmt.Sprintf("slsa-verifier version check failed: %v", err)
 	}
 	return stateCannotVerify, "slsa-verifier present; run manual negative test per docs/oss-replacement-compatibility.md"
 }

@@ -26,7 +26,9 @@ decisions but do not prove production readiness.
 **Exact Command note:** the harness builds `sdp-trace` from source into a temp
 directory on every run. The displayed command is a display name
 (`filepath.Base`); the actual binary path and source are recorded in JSON
-`binary_path` / `binary_source`. Reproduce with:
+`binary_path` / `binary_source`. `binary_path` is ephemeral (deleted after the
+run); `binary_source: "temp-build"` means the binary was compiled from the
+current checkout, not a durable artifact. Reproduce with:
 `go run ./tools/ossbench -json -n 20`.
 
 External-tool benchmarks (OPA, Cosign, in-toto, check-jsonschema) are
