@@ -20,6 +20,10 @@ It is a single text line:
 run_dir: .sdp-trace-runs/run-3068560305
 ```
 
+> **Note:** The run ID (`run-3068560305`) is nondeterministic across invocations.
+> This fixture is frozen as structural evidence; the exact run ID does not affect
+> the drift claim, which depends only on the plain-text format.
+
 ## Schema Expectation
 
 `schema/flight-recorder-run.schema.json` requires a JSON object with these
@@ -47,6 +51,8 @@ required fields:
 | `run_id` | Absent | Required non-empty string |
 | `created_at` | Absent | Required ISO-8601 timestamp |
 | `verifier_states` | Absent | Required array |
+| `event_refs` / `event_chain_head` | Absent | At least one required (`anyOf`) |
+| `witness_ref` + `event_chain_head` | Absent | Required for witnessed profiles (`allOf`) |
 
 ## Blocker Status
 

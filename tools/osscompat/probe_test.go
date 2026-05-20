@@ -138,7 +138,7 @@ func TestRunSLSANegative(t *testing.T) {
 	}
 }
 
-func TestWrapOutputIsNotValidJSON(t *testing.T) {
+func TestWrapOutputIsNotJSONObject(t *testing.T) {
 	// Structural evidence that live wrap output does not conform to
 	// flight-recorder-run.schema.json.
 	data, err := os.ReadFile("../../examples/flight-recorder/wrap-output-drift/run.json")
