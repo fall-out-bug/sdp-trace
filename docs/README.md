@@ -41,6 +41,7 @@ evidence and gaps; it does not approve changes.
 ## Governance And Rollout Docs
 
 - [Spec Roadmap](roadmap.md): current spec statuses, capability ownership, and lifecycle labels.
+- [Production Adoption Readiness](production-adoption-readiness.md): trust scope matrix and open gaps.
 - [Adoption Guide, English](adoption-guide.en.md)
 - [Adoption Guide, Russian](adoption-guide.ru.md)
 - [Repository Rollout Playbook, English](repository-rollout-playbook.en.md)
@@ -48,17 +49,23 @@ evidence and gaps; it does not approve changes.
 - [Accountability Model](accountability-model.md)
 - [Evidence Policy](evidence-policy.md)
 - [CI Check Policy](ci-check-policy.md)
+- [Security Baseline](security-baseline.md)
 
 ## Engineering Docs
 
 - [Harness Integration](harness-integration.md)
 - [Claim Authoring](claim-authoring.md)
+- [Command Stability Matrix](command-stability-matrix.md)
+- [Package Ownership Map](package-ownership-map.md)
+- [Extension Boundary Plan](extension-boundary-plan.md)
 - [Spec Drift Register](spec-drift-register.md)
 - [Contract Release Signing](contract-release-signing.md)
 - [Process Metric Catalog](process-metric-catalog.md)
 - [Flight Recorder](flight-recorder.md)
 - [SpecKit Compatibility](speckit-compatibility.md)
 - [JVM And Bazel Guide](jvm-bazel-guide.md)
+- [OSS Replacement Compatibility](oss-replacement-compatibility.md)
+- [OSS Benchmark Results](oss-benchmark-results.md)
 
 ## Working Artifacts
 

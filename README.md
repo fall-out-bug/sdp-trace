@@ -12,6 +12,11 @@ source-bound release checks. You cannot use this repo as a production trust
 authority, release approval system, universal harness adapter, or guarantee that
 every unwrapped agent run was detected.
 
+The core adoption path is intentionally small: `wrap` or `run`, then `verify`,
+`explain`, `report`, and `query --query missing-evidence`. Assessment profiles,
+gate facts, witness artifacts, release proof, PR review packets, telemetry, and
+forensic packages are optional extension surfaces.
+
 ## Start Here
 
 1. Read [Install](docs/install.md) and choose either a release binary or
@@ -42,7 +47,8 @@ context for using this repository.
 
 - trace run artifacts under `.sdp-trace-runs/`;
 - report packages under `.sdp-trace-report/`;
-- query and forensic query-pack outputs;
+- core missing-evidence query output;
+- forensic query-pack outputs for extension workflows;
 - assessment results for supported profiles;
 - advisory gate facts for downstream policy consumers;
 - CI or customer witness artifacts when required evidence exists;
@@ -77,9 +83,10 @@ portability without turning this repository into the release authority.
 The happy path should stay ordinary:
 
 1. Keep your normal spec, plan, task, code review, and CI flow.
-2. Wrap or adapt the observable parts of the work.
-3. Retain evidence artifacts and explicit gaps.
-4. Hand assessment input to the policy consumer that already owns the decision.
+2. Wrap or run the observable command.
+3. Verify, explain, report, and query missing evidence.
+4. Add assessment, gate, witness, PR-review, or telemetry extensions only when
+   an external policy consumer actually needs them.
 
 Developers should not need to learn an internal SDP runtime, switch agents, or
 accept hidden GitHub assumptions. If a workflow cannot yet produce replayable
@@ -134,12 +141,12 @@ is clear.
 ## Minimal Flow
 
 ```text
-spec -> plan -> task -> change -> evidence -> provenance -> accountability -> assessment input
+spec -> plan -> task -> change -> trace -> verify -> report -> missing-evidence query
 ```
 
-External policy consumers can turn assessment input and verifier facts into
-decisions. When evidence is missing, the verifier result is `not_assessed` or
-`cannot_verify` with an explicit reason. Telemetry labels such as
+External policy consumers can add extension evidence and turn verifier facts
+into decisions. When evidence is missing, the verifier result is `not_assessed`
+or `cannot_verify` with an explicit reason. Telemetry labels such as
 `missing_telemetry` describe the nature of the gap but are not verifier result
 states. See `docs/agent-entrypoint.md` for the canonical state contract.
 
