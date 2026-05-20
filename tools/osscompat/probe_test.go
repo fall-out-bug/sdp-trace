@@ -127,6 +127,28 @@ func TestRunOPANegativeFixture(t *testing.T) {
 	}
 }
 
+func TestRunOPANegativeTraceID(t *testing.T) {
+	skipUnlessIntegration(t)
+	if !hasTool("opa") {
+		t.Skip("opa not in PATH")
+	}
+	state, reason := runOPANegativeTraceID()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
+func TestRunOPANegativeProvenance(t *testing.T) {
+	skipUnlessIntegration(t)
+	if !hasTool("opa") {
+		t.Skip("opa not in PATH")
+	}
+	state, reason := runOPANegativeProvenance()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
 func TestRunCUEImport(t *testing.T) {
 	skipUnlessIntegration(t)
 	if !hasTool("cue") {

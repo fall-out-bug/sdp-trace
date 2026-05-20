@@ -36,6 +36,9 @@ Missing tools render that probe `not_assessed`.
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
 | `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Live wrap output fails schema validation; drift is a confirmed conformance failure [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
+| OPA/Rego | Combined negative fixture (both rules broken) | `pass` | `adapter.rego` correctly rejects `test-fixture-fail.json` [^1] |
+| OPA/Rego | Negative trace_id rule only | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-traceid.json` [^1] |
+| OPA/Rego | Negative provenance rule only | `pass` | `adapter.rego` correctly rejects `test-fixture-fail-provenance.json` [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
@@ -77,6 +80,10 @@ and report `not_assessed`.
   cd "$TMPDIR"
   WRAP_OUT=$(mktemp -p "$TMPDIR")
   trap 'rm -rf "$TMPDIR" "$WRAP_OUT"' EXIT
+  # Preflight: confirm the tool and schema are functional against a known-good fixture.
+  check-jsonschema \
+    --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
+    "$REPO_ROOT/examples/flight-recorder/local-positive/run.json"
   "$TMPDIR/sdp-trace" wrap /bin/true > "$WRAP_OUT"
   if check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \

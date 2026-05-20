@@ -59,8 +59,20 @@ var registry = []probe{
 	{
 		Name:        "opa-negative",
 		NeedsTool:   "opa",
-		Description: "Evaluate adapter.rego against the negative test fixture",
+		Description: "Evaluate adapter.rego against the combined negative test fixture",
 		Run:         runOPANegativeFixture,
+	},
+	{
+		Name:        "opa-negative-traceid",
+		NeedsTool:   "opa",
+		Description: "Evaluate adapter.rego against the negative trace_id fixture",
+		Run:         runOPANegativeTraceID,
+	},
+	{
+		Name:        "opa-negative-provenance",
+		NeedsTool:   "opa",
+		Description: "Evaluate adapter.rego against the negative provenance fixture",
+		Run:         runOPANegativeProvenance,
 	},
 	{
 		Name:        "cue-import",
@@ -188,7 +200,12 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	if err == nil {
 		return statePass, "live wrap output unexpectedly passed schema validation; drift may be fixed"
 	}
-	return stateFail, fmt.Sprintf("live wrap output fails schema validation (conformance failure): %s", strings.TrimSpace(string(schemaOut)))
+	// Distinguish schema-validation failure (exit code 1) from harness/tool
+	// errors (other exit codes, signals, crashes).
+	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+		return stateFail, fmt.Sprintf("live wrap output fails schema validation (conformance failure): %s", strings.TrimSpace(string(schemaOut)))
+	}
+	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap output (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(schemaOut)))
 }
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
@@ -282,6 +299,63 @@ func runOPANegativeFixture() (verifierState, string) {
 		return stateFail, "opa eval did not return boolean false for expected fail fixture"
 	}
 	return statePass, "adapter.rego correctly rejects test-fixture-fail.json"
+}
+
+// runOPANegativeTraceID evaluates adapter.rego against the trace_id-only
+// negative fixture and asserts pass is false.
+func runOPANegativeTraceID() (verifierState, string) {
+	return runOPANegativeFixturePath("test-fixture-fail-traceid.json", "trace_id-only")
+}
+
+// runOPANegativeProvenance evaluates adapter.rego against the provenance-only
+// negative fixture and asserts pass is false.
+func runOPANegativeProvenance() (verifierState, string) {
+	return runOPANegativeFixturePath("test-fixture-fail-provenance.json", "provenance-only")
+}
+
+// runOPANegativeFixturePath is a shared helper for per-rule negative fixtures.
+func runOPANegativeFixturePath(fixtureName, label string) (verifierState, string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
+	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy", fixtureName)
+	if _, err := os.Stat(regoPath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("adapter.rego not found: %v", err)
+	}
+	if _, err := os.Stat(fixturePath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("%s not found: %v", fixtureName, err)
+	}
+	cmd := exec.CommandContext(ctx, "opa", "eval",
+		"--data", regoPath,
+		"--input", fixturePath,
+		"--format", "json",
+		"data.sdp_trace.adapter.pass",
+	)
+	stdout, err := cmd.Output()
+	if err != nil {
+		var stderr []byte
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			stderr = exitErr.Stderr
+		}
+		return stateFail, fmt.Sprintf("opa eval failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
+	}
+	var opaResult struct {
+		Result []struct {
+			Expressions []struct {
+				Value interface{} `json:"value"`
+			} `json:"expressions"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(stdout, &opaResult); err != nil {
+		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
+	}
+	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
+		return stateFail, "opa eval returned no expressions"
+	}
+	if v, ok := opaResult.Result[0].Expressions[0].Value.(bool); !ok || v {
+		return stateFail, fmt.Sprintf("opa eval did not return boolean false for %s negative fixture", label)
+	}
+	return statePass, fmt.Sprintf("adapter.rego correctly rejects %s negative fixture", label)
 }
 
 // runCUEImport tests CUE JSON Schema import.

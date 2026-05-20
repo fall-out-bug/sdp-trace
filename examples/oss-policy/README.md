@@ -13,7 +13,9 @@ sdp-trace-like rules, but it does not replace the product verifier.
 |---|---|
 | `adapter.rego` | Simplified pass/fail rule with trace_id and provenance bounds |
 | `test-fixture.json` | Valid input that should produce `pass = true` |
-| `test-fixture-fail.json` | Invalid input that should produce `pass = false` |
+| `test-fixture-fail.json` | Combined invalid input (both rules broken) |
+| `test-fixture-fail-traceid.json` | Invalid trace_id only (number instead of string) |
+| `test-fixture-fail-provenance.json` | Invalid provenance only (overclaimed length) |
 
 ## Run the Policy
 
@@ -34,8 +36,9 @@ Requires `opa` in `$PATH`. Run from the repository root.
 )
 ```
 
-## Test the Failure Fixture
+## Test the Failure Fixtures
 
+### Combined failure
 ```bash
 (
   set -e
@@ -51,7 +54,43 @@ Requires `opa` in `$PATH`. Run from the repository root.
 )
 ```
 
-Expected: `false` (the fixture has a non-string trace_id and provenance exceeding the bound).
+Expected: `false` (non-string trace_id and overlong provenance).
+
+### Trace ID rule only
+```bash
+(
+  set -e
+  cd examples/oss-policy || exit 1
+  RESULT=$(opa eval --data adapter.rego \
+    --input test-fixture-fail-traceid.json \
+    --format raw \
+    'data.sdp_trace.adapter.pass')
+  if [ "$RESULT" != "false" ]; then
+    echo "ERROR: expected false, got: $RESULT"
+    exit 1
+  fi
+)
+```
+
+Expected: `false` (trace_id is a number).
+
+### Provenance rule only
+```bash
+(
+  set -e
+  cd examples/oss-policy || exit 1
+  RESULT=$(opa eval --data adapter.rego \
+    --input test-fixture-fail-provenance.json \
+    --format raw \
+    'data.sdp_trace.adapter.pass')
+  if [ "$RESULT" != "false" ]; then
+    echo "ERROR: expected false, got: $RESULT"
+    exit 1
+  fi
+)
+```
+
+Expected: `false` (provenance exceeds the bound).
 
 ## Substitution Boundary
 
