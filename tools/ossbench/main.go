@@ -68,8 +68,20 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	results := make([]benchmarkResult, 0, len(defs))
-	for _, d := range defs {
-		res := runBenchmark(d, *iterations)
+	for i := range defs {
+		d := &defs[i]
+		if d.Name == "sdp-trace-wrap" {
+			tmpDir, err := os.MkdirTemp("", "ossbench-wrap-*")
+			if err != nil {
+				fmt.Fprintf(stderr, "mkdir temp: %v\n", err)
+				return 2
+			}
+			d.Dir = tmpDir
+			d.Cleanup = func() {
+				_ = os.RemoveAll(tmpDir)
+			}
+		}
+		res := runBenchmark(*d, *iterations)
 		if d.Cleanup != nil {
 			d.Cleanup()
 		}
@@ -142,9 +154,5 @@ var builtIns = []benchmarkDef{
 		Description: "sdp-trace wrap /bin/true",
 		Cmd:         resolveBinary("sdp-trace"),
 		Args:        []string{"wrap", "/bin/true"},
-		Dir:         "/tmp",
-		Cleanup: func() {
-			_ = os.RemoveAll("/tmp/.sdp-trace-runs")
-		},
 	},
 }

@@ -21,16 +21,16 @@ accident.
   format differ.
 - `check-jsonschema` validates representative assessment, gate, and release
   example files.
-- `OPA` can express a simplified adapter-capture pass/fail rule and detects the
-  `test_provenance_not_overclaimed` failure fixture.
+- `OPA` can express a simplified adapter-capture pass rule; the checked-in
+  positive fixture evaluates to true.
 - `CUE` can import JSON Schema, but direct validation is blocked until schema
   refs are packaged as a CUE module.
 - `in-toto-run` can wrap a command, sign link metadata, and record material and
   product hashes.
 - `cosign` can sign and verify a local `run.json` blob with a local key when
   transparency-log verification is explicitly disabled.
-- `slsa-verifier` does not accept the local DSSE fixture as production SLSA
-  evidence; it fails because no matching Rekor entries are found.
+- `slsa-verifier` rejects the local DSSE fixture because the signature is
+  truncated; Rekor rejection is not separately evidenced.
 
 ## Benchmark Snapshot
 

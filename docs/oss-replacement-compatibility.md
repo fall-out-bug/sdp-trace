@@ -26,6 +26,7 @@ Missing tools render that probe `not_assessed`.
 | `cue` | CUE import / validation | `not_assessed` |
 | `in-toto-run` | Signed supply-chain link generation | `not_assessed` |
 | `cosign` | Local DSSE/blob signing & verification | `not_assessed` |
+| `openssl` | Throwaway key generation for in-toto/Cosign local tests | `not_assessed` |
 | `slsa-verifier` | SLSA provenance verifier negative test | `not_assessed` |
 
 ## Compatibility Probes

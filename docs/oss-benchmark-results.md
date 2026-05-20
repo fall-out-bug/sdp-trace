@@ -24,7 +24,7 @@ decisions but do not prove production readiness.
 | `sdp-trace wrap` | 16.1 | 15.8 | 22.8 | 20 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
 | Shell prototype `wrap` | 6.0 | — | — | 20 | `printf '%s\n' '{"v":"local"}'` | One-shot; minimal JSON, no hash-chain semantics |
 | OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | One-shot; simplified policy |
-| Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig run.json` | One-shot; transparency log ignored |
+| Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json` | One-shot; transparency log ignored |
 | `in-toto-run` | 148.0 | — | — | 20 | `in-toto-run --step-name test --products /dev/null --key key.pem -- /bin/true` | One-shot; signed link metadata |
 | `check-jsonschema` fixture validation | 271.5 | — | — | 20 | `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/...` | One-shot; Python validator startup cost |
 

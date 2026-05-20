@@ -18,6 +18,7 @@ negative-path testing. These are local experiments only.
 - `in-toto-run`
 - `cosign`
 - `slsa-verifier`
+- `openssl` (for throwaway key generation)
 
 ## in-toto Command Wrapping
 
