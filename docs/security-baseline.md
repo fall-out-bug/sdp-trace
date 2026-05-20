@@ -71,9 +71,6 @@ Default-config scans:
 - Working-tree scan (includes local ignored clutter): **10 findings** (same tracked findings; local ignored clutter is currently clean).
 - None are live secrets.
 
-The 2 working-tree-only hits are local ignored clutter, not repository evidence.
-They are excluded from the triage table below.
-
 Configured scan (with reviewed `.gitleaks.toml`): **0 findings**.
 
 A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers.
