@@ -1,19 +1,19 @@
 title = "sdp-trace reviewed secret-scan allowlist"
 
-[[allowlists]]
-description = "Self-trace dedupe keys are fixture labels, not credentials."
-condition = "AND"
-paths = ['''^examples/self-trace/(assessment-input|evidence-events|negative-native-policy-field)\.json$''']
-regexes = ['''"dedupe_key": "crisis-(glm-critic|judge|kimi-critic)-\d{4}-\d{2}-\d{2}"''']
+[extend]
+useDefault = true
 
-[[allowlists]]
-description = "Witness tests use a synthetic JWT-shaped sentinel to verify redaction."
-condition = "AND"
-paths = ['''^internal/witness/profiles_test\.go$''']
-regexes = ['''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''']
+[allowlist]
+description = "Synthetic secret markers for redaction tests and review evidence"
 
-[[allowlists]]
-description = "Historical review fixture contains private-key marker text from a sanitized diff."
-condition = "AND"
-paths = ['''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''']
-regexes = ['''-----begin private key-----''']
+regexes = [
+  '''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''',
+  '''crisis-(glm-critic|judge|kimi-critic)-\d{4}-\d{2}-\d{2}''',
+  '''-----begin private key-----''',
+]
+
+paths = [
+  '''^examples/self-trace/(assessment-input|evidence-events|negative-native-policy-field)\.json$''',
+  '''^internal/witness/profiles_test\.go$''',
+  '''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''',
+]

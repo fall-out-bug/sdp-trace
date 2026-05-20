@@ -1,5 +1,11 @@
 # WS-016-C Review: Scanner-Safe Fixtures
 
+**Status: superseded by commit `ce7861a`.**
+This per-slice review captures the state before `.gitleaks.toml` was updated
+with `[extend] useDefault = true` and before the allowlist format was
+consolidated into a single `[allowlist]` block. Do not rely on config structure
+claims below.
+
 Date: 2026-05-20
 Files: `.gitleaks.toml`, `docs/security-baseline.md`
 

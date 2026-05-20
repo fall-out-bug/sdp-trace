@@ -1,5 +1,10 @@
 # WS-016-A Review: Adoption Readiness Matrix
 
+**Status: superseded by commit `aca55ca` and repeat review.**
+This per-slice review captures the state before command family count was
+fixed (16 → 18 families + 9 utilities = 27 total) and before `pr-review`
+was added. Do not rely on counts or claims below.
+
 Date: 2026-05-20
 Files: `docs/production-adoption-readiness.md`, `docs/README.md`
 

@@ -27,13 +27,12 @@ not checked in.
 | `gitleaks detect` (default config, tracked source) | v8.30.1 | 10 findings | all triaged false positive below |
 | `gitleaks detect` (default config, working tree) | v8.30.1 | 12 findings | 10 tracked + 2 local ignored clutter |
 | `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
-| `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
 
 ## `gosec` Finding Family Classification
 
 | Rule | Count | Severity | Classification | Rationale |
 |------|-------|----------|----------------|-----------|
-| G304 | 60 | MEDIUM | **deferred advisory** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. One `G304` in `internal/capturedepth` has a scoped reviewed `#nosec` suppression; the remaining 60 call sites need per-call-site audit before this family can be marked accepted. |
+| G304 | 60 | MEDIUM | **deferred advisory** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. One `G304` in `internal/capturedepth` has a scoped reviewed `#nosec` suppression; the remaining 59 call sites need per-call-site audit before this family can be marked accepted. |
 | G301 | 28 | MEDIUM | **accepted** | `os.MkdirAll` with `0o755` creates group-readable evidence directories. Intentional for shared local inspection. |
 | G306 | 24 | MEDIUM | **accepted** | `os.WriteFile` with `0o644` creates group-readable evidence files. Intentional for shared local inspection. |
 | G204 | 11 | MEDIUM | **deferred advisory** | Git subprocess launch with variable args. Most callers use hardcoded safe args; `gitOutput`/`runGit` variadic helpers and `mibaselinepolicy` git helpers pass external values. Review needed: validate all callers sanitize inputs before passing to git helpers. |
@@ -119,6 +118,13 @@ git diff --check
 
 # Advisory scans
 gosec ./...
+
+# Default-config scans (for count verification)
+gitleaks detect --source . --no-git
+git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
+gitleaks detect --source /tmp/tracked-scan --no-git
+
+# Configured scan (reviewed allowlist)
 gitleaks detect --source . --config .gitleaks.toml
 ```
 
