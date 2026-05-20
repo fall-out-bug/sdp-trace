@@ -56,8 +56,8 @@ not checked in.
 **G304 — Variable file inclusion via path**
 - Files: 60 call sites across `tools/`, `internal/`, and `cmd/sdp-trace/`.
 - Risk: If a path derives from external input without validation, file reads could escape the intended boundary.
-- Current state: One call site in `internal/capturedepth/capture_depth.go:37` has a reviewed `#nosec G304` because `runDir` is a caller-selected local evidence root and query output does not echo provider refs.
-- Required follow-up: Audit the remaining 59 call sites. For each, either confirm the path is a hardcoded or caller-validated tool input, or add a scoped `#nosec` with a recorded rationale.
+- Current state: `internal/capturedepth/capture_depth.go:37` has a reviewed `#nosec G304` because `runDir` is a caller-selected local evidence root and query output does not echo provider refs.
+- Required follow-up: Audit the 60 call sites. For each, either confirm the path is a hardcoded or caller-validated tool input, or add a scoped `#nosec` with a recorded rationale.
 
 **G703 — Path traversal via taint analysis**
 - Files: `internal/repoobserver/install_target_overwrite.go`, `internal/repoobserver/install_gitignore_update.go`
@@ -155,4 +155,4 @@ gitleaks detect --source . --config .gitleaks.toml
   classified. Tracked-source and working-tree `gitleaks` (10 findings each)
   triaged as false positive. Local ignored clutter is currently clean.
   Two `gosec` families (G204, G703) deferred as advisory pending caller audit;
-  `G304` deferred advisory (1 reviewed `#nosec`, 59 remaining call sites).
+  `G304` deferred advisory (60 call sites; 1 reviewed `#nosec`, 59 need audit).
