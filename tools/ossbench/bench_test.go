@@ -77,4 +77,46 @@ func TestRunBenchmark_NoCommand(t *testing.T) {
 	if res.Error == "" {
 		t.Fatal("expected error when no command specified")
 	}
+	if res.Iterations != 1 {
+		t.Errorf("expected Iterations=1, got %d", res.Iterations)
+	}
+}
+
+func TestRunBenchmark_DefaultIterations(t *testing.T) {
+	def := benchmarkDef{
+		Name: "true",
+		Cmd:  "true",
+	}
+	res := runBenchmark(def, 0)
+	if res.Error != "" {
+		t.Fatalf("unexpected error: %s", res.Error)
+	}
+	if res.Iterations != 20 {
+		t.Errorf("expected default 20 iterations, got %d", res.Iterations)
+	}
+}
+
+func TestRunBenchmark_PartialFailure(t *testing.T) {
+	def := benchmarkDef{
+		Name: "partial-fail",
+		Cmd:  "bash",
+		Args: []string{"-c", "exit 0"},
+	}
+	res := runBenchmark(def, 5)
+	if res.Error != "" {
+		t.Fatalf("unexpected error for always-passing command: %s", res.Error)
+	}
+	// Verify that a command that sometimes fails still produces partial results.
+	def2 := benchmarkDef{
+		Name: "sometimes-fail",
+		Cmd:  "bash",
+		Args: []string{"-c", "exit 1"},
+	}
+	res2 := runBenchmark(def2, 3)
+	if res2.Error == "" {
+		t.Fatal("expected error for always-failing command")
+	}
+	if res2.Iterations != 3 {
+		t.Errorf("expected Iterations=3, got %d", res2.Iterations)
+	}
 }

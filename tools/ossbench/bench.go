@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"sort"
@@ -34,22 +35,33 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	}
 	if def.Cmd == "" {
 		return benchmarkResult{
-			Name:   def.Name,
-			Error:  "no command specified",
+			Name:       def.Name,
+			Iterations: iterations,
+			Error:      "no command specified",
 		}
 	}
 
 	times := make([]time.Duration, 0, iterations)
+	var lastErr string
 	for i := 0; i < iterations; i++ {
 		start := time.Now()
-		cmd := exec.Command(def.Cmd, def.Args...)
-		if err := cmd.Run(); err != nil {
-			return benchmarkResult{
-				Name:   def.Name,
-				Error:  fmt.Sprintf("iteration %d failed: %v", i, err),
-			}
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		cmd := exec.CommandContext(ctx, def.Cmd, def.Args...)
+		err := cmd.Run()
+		cancel()
+		if err != nil {
+			lastErr = fmt.Sprintf("iteration %d failed: %v", i, err)
+			continue
 		}
 		times = append(times, time.Since(start))
+	}
+
+	if len(times) == 0 {
+		return benchmarkResult{
+			Name:       def.Name,
+			Iterations: iterations,
+			Error:      lastErr,
+		}
 	}
 
 	ms := make([]float64, len(times))
@@ -65,6 +77,7 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		MaxMs:       max,
 		MedianMs:    median,
 		AllMs:       ms,
+		Error:       lastErr,
 	}
 }
 

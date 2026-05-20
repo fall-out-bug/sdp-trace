@@ -41,6 +41,17 @@ func TestRun_JSON(t *testing.T) {
 	}
 }
 
+func TestRun_BuiltinBench(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-bench", "sdp-trace-verify", "-n", "1"}, &out, &out)
+	if code != 0 && code != 1 {
+		t.Fatalf("expected exit 0 or 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "sdp-trace-verify") {
+		t.Fatalf("expected output for builtin bench, got: %s", out.String())
+	}
+}
+
 func TestRun_UnknownBench(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-bench", "nonexistent"}, &out, &out)

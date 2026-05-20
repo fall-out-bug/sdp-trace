@@ -16,11 +16,18 @@ func main() {
 func run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("ossbench", flag.ContinueOnError)
 	fs.SetOutput(stderr)
+	fs.Usage = func() {
+		fmt.Fprintf(stderr, "Usage: ossbench [flags] [command args...]\n")
+		fmt.Fprintf(stderr, "Run built-in or custom benchmarks with min/max/median stats.\n")
+		fmt.Fprintf(stderr, "Use -list to see built-in benchmarks.\n\n")
+		fs.PrintDefaults()
+	}
 	var (
 		asJSON     = fs.Bool("json", false, "emit JSON output")
 		iterations = fs.Int("n", 20, "number of iterations")
 		list       = fs.Bool("list", false, "list built-in benchmarks")
 		name       = fs.String("bench", "", "run a single built-in benchmark by name")
+		raw        = fs.Bool("raw", false, "include all_ms in JSON output")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -62,7 +69,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	results := make([]benchmarkResult, 0, len(defs))
 	for _, d := range defs {
-		results = append(results, runBenchmark(d, *iterations))
+		res := runBenchmark(d, *iterations)
+		if !*raw {
+			res.AllMs = nil
+		}
+		results = append(results, res)
 	}
 
 	if err := printResults(stdout, results, *asJSON); err != nil {
@@ -78,15 +89,26 @@ func printResults(w io.Writer, results []benchmarkResult, asJSON bool) error {
 		enc.SetIndent("", "  ")
 		return enc.Encode(results)
 	}
+	width := maxNameWidth(results)
 	for _, r := range results {
 		if r.Error != "" {
-			fmt.Fprintf(w, "%-24s error: %s\n", r.Name, r.Error)
+			fmt.Fprintf(w, "%*s  error: %s\n", -width, r.Name, r.Error)
 			continue
 		}
-		fmt.Fprintf(w, "%-24s median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  n=%d\n",
-			r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.Iterations)
+		fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  n=%d\n",
+			-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.Iterations)
 	}
 	return nil
+}
+
+func maxNameWidth(results []benchmarkResult) int {
+	maxW := 24
+	for _, r := range results {
+		if len(r.Name) > maxW {
+			maxW = len(r.Name)
+		}
+	}
+	return maxW
 }
 
 func exitCode(results []benchmarkResult) int {
@@ -96,27 +118,6 @@ func exitCode(results []benchmarkResult) int {
 		}
 	}
 	return 0
-}
-
-// envInfo captures the benchmark environment.
-type envInfo struct {
-	Platform string `json:"platform"`
-	GoOS     string `json:"goos"`
-	GoArch   string `json:"goarch"`
-}
-
-func getEnv() envInfo {
-	return envInfo{
-		Platform: os.Getenv("GOOS") + "/" + os.Getenv("GOARCH"),
-		GoOS:     os.Getenv("GOOS"),
-		GoArch:   os.Getenv("GOARCH"),
-	}
-}
-
-func init() {
-	if getEnv().GoOS == "" {
-		_ = os.Setenv("GOOS", os.Getenv("GOOS"))
-	}
 }
 
 // builtIns are the standard OSS tool benchmarks.
