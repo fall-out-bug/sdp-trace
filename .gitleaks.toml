@@ -3,11 +3,10 @@ title = "sdp-trace reviewed secret-scan allowlist"
 [extend]
 useDefault = true
 
-# Each allowlist is scoped to a specific known-fixture file (paths) and an
-# exact synthetic string pattern (regexes). Gitleaks v8 treats entries within
-# one [[allowlists]] block as OR; because the regexes are exact synthetic
-# markers and the paths are the only files that contain them, the practical
-# scope is narrow. Do not broaden paths or regexes without review.
+# Each allowlist scopes exact synthetic string regexes to known fixture/test
+# files. Gitleaks v8 applies OR within each [[allowlists]] block; because
+# the regexes are exact synthetic markers and the paths are the only files
+# that legitimately contain them, the practical scope is narrow.
 
 [[allowlists]]
 description = "Self-trace dedupe keys are fixture labels, not credentials."
