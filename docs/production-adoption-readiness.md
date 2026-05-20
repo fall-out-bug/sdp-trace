@@ -14,9 +14,9 @@ known from what remains `not_assessed` or `cannot_verify`.
 
 | Area | Controlled Pilot | Local Evidence | CI-Witnessed | Source-Bound Release | External Production Trust |
 |------|:----------------:|:--------------:|:------------:|:--------------------:|:-------------------------:|
-| Repository existence | yes | yes | yes | yes | `not_assessed` |
-| Public documentation | yes | yes | yes | yes | `not_assessed` |
-| Command surface stability | partial | partial | partial | partial | `not_assessed` |
+| Repository existence | yes | yes | `not_assessed` | yes | `not_assessed` |
+| Public documentation | yes | yes | `not_assessed` | yes | `not_assessed` |
+| Command surface stability | partial | partial | `not_assessed` | partial | `not_assessed` |
 | Local security baseline | yes | yes | `not_assessed` | `not_assessed` | `not_assessed` |
 | CI security baseline | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` |
 | External security audit | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` | `not_assessed` |

@@ -121,8 +121,14 @@ gosec ./...
 
 # Default-config scans (for count verification)
 gitleaks detect --source . --no-git
+mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
 git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
 gitleaks detect --source /tmp/tracked-scan --no-git
+
+# Configured tracked-source scan
+mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
+git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
+gitleaks detect --source /tmp/tracked-scan --no-git --config .gitleaks.toml
 
 # Configured scan (reviewed allowlist)
 gitleaks detect --source . --config .gitleaks.toml
