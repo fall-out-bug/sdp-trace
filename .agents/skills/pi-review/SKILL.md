@@ -13,6 +13,8 @@ Use this skill for Socratic review, implementation review, PR review, security/t
 
 <model_policy>
 For adversarial review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise. Use current, provider-qualified model IDs verified by `pi --list-models <family>` in the same session when model freshness matters or when a reviewer previously failed. Do not use stale reviewer defaults such as `qwen3-coder`, `deepseek-chat-v3.1`, or `glm-4.6` unless every newer candidate is unavailable and the fallback is recorded as degraded. Record model, provider, retry, fallback, timeout, and replacement details in the review artifact, not in `AGENTS.md`.
+
+Codex CLI with OpenAI model (e.g., `gpt-5.5`) is an acceptable adversarial review plane when the user requests it or when non-OpenAI models are unavailable. Run via stdin diff: `git diff <base>..HEAD | codex exec -m gpt-5.5 --reasoning-effort high "<prompt>"`. Use for iterative rounds until exactly `LGTM` (zero findings). Record Codex session ID, model, and token usage in the review artifact.
 </model_policy>
 
 <review_planes>

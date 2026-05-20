@@ -40,7 +40,8 @@ After approval:
 <pr_protocol>
 1. Prepare a PR with code, tracing/evidence, docs, and requirements mapping.
 2. Run separate review planes at PR level through `pi-review` or `codex-subagent panel run pi`: code/correctness, tracing/evidence/provenance, requirements-vs-implementation, and security/DX/UX when relevant.
-3. For trust-sensitive PRs, run iterative adversarial review rounds against the full diff. Fix every finding of any severity before the next round. Repeat until the reviewer outputs exactly `LGTM` (zero findings).
+3. Codex CLI review is a valid review plane: `git diff <base>..HEAD | codex exec -m gpt-5.5 --reasoning-effort high "<prompt>"`. Use for iterative adversarial review rounds against the full diff.
+4. For trust-sensitive PRs, run iterative adversarial review rounds against the full diff. Fix every finding of any severity before the next round. Repeat until the reviewer outputs exactly `LGTM` (zero findings).
 4. Verify reviewer findings against full files before accepting or rejecting them.
 5. Re-read the actual diff before each review round and before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
 6. Delete stale review artifacts; do not rely on headers or markers to neutralize stale claims.

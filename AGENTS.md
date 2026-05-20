@@ -62,11 +62,16 @@ Available review prompts:
 - `/review-qwen` — wide-context code review (Qwen via OpenRouter)
 - `/review-kimi` — wide-context code/spec review when Kimi credentials are available
 - `/review-deepseek` — reasoning review (DeepSeek via OpenRouter)
+- `/review-codex` — adversarial review via Codex CLI with OpenAI model (e.g., `gpt-5.5`), high reasoning effort, full diff via stdin; use for iterative rounds until zero findings.
 
 For external implementation handoff, use `codex-subagent` with isolated
 worktrees and recorded Pi model/profile resolution. Commit the reviewed spec
 handoff before launching workers, monitor status/events/logs/structured result,
 then run independent review planes before PR-ready claims.
+
+Codex CLI review is a valid review plane for trust-sensitive PRs. Run as:
+`git diff <base>..HEAD | codex exec -m gpt-5.5 --reasoning-effort high "<prompt>"`
+Fix every finding before the next round; repeat until output is exactly `LGTM`.
 
 ## Skills Router
 Use local project skills for detailed workflows instead of expanding this file:
