@@ -31,7 +31,7 @@ not checked in.
 
 | Rule | Count | Severity | Classification | Rationale |
 |------|-------|----------|----------------|-----------|
-| G304 | 60 | MEDIUM | **accepted** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. One `G304` in `internal/capturedepth` has a scoped reviewed `#nosec` suppression. |
+| G304 | 60 | MEDIUM | **deferred advisory** | Tools read user-specified files (schemas, baselines, evidence). Path is the tool's explicit input. One `G304` in `internal/capturedepth` has a scoped reviewed `#nosec` suppression; the remaining 60 call sites need per-call-site audit before this family can be marked accepted. |
 | G301 | 28 | MEDIUM | **accepted** | `os.MkdirAll` with `0o755` creates group-readable evidence directories. Intentional for shared local inspection. |
 | G306 | 24 | MEDIUM | **accepted** | `os.WriteFile` with `0o644` creates group-readable evidence files. Intentional for shared local inspection. |
 | G204 | 11 | MEDIUM | **deferred advisory** | Git subprocess launch with variable args. Most callers use hardcoded safe args; `gitOutput`/`runGit` variadic helpers and `mibaselinepolicy` git helpers pass external values. Review needed: validate all callers sanitize inputs before passing to git helpers. |
@@ -52,6 +52,12 @@ not checked in.
   - `internal/repoobserver/install_hooks_path.go:13,23` calls `gitOutput` and `runGit` with hardcoded config args.
   - `tools/mibaselinepolicy/git.go` callers: verify `ref` is a valid git ref (SHA or tag) and `path` is within repository before passing to `gitFileExistsAtRef` and `gitCommitExists`.
 
+**G304 — Variable file inclusion via path**
+- Files: 60 call sites across `tools/`, `internal/`, and `cmd/sdp-trace/`.
+- Risk: If a path derives from external input without validation, file reads could escape the intended boundary.
+- Current state: One call site in `internal/capturedepth/capture_depth.go:37` has a reviewed `#nosec G304` because `runDir` is a caller-selected local evidence root and query output does not echo provider refs.
+- Required follow-up: Audit the remaining 59 call sites. For each, either confirm the path is a hardcoded or caller-validated tool input, or add a scoped `#nosec` with a recorded rationale.
+
 **G703 — Path traversal via taint analysis**
 - Files: `internal/repoobserver/install_target_overwrite.go`, `internal/repoobserver/install_gitignore_update.go`
 - Risk: If `target.path` or `path` parameters contain `../` sequences, writes could escape the repository.
@@ -59,9 +65,14 @@ not checked in.
 
 ## `gitleaks` Findings Triage
 
-All 12 findings (default-config scan) are in tracked files. None are live secrets.
-A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers;
-with the allowlist active the scan returns 0 findings.
+Default-config scans:
+- Tracked-source snapshot (`git archive HEAD`): 10 findings, all in tracked files.
+- Working-tree scan (includes local ignored clutter): 12 findings (the same 10 tracked + 2 additional hits in `.codex-subagents/` local run clutter).
+- None are live secrets.
+
+Configured scan (with reviewed `.gitleaks.toml`): 0 findings.
+
+A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers.
 
 | Category | Files | Rule | Disposition |
 |----------|-------|------|-------------|
@@ -108,8 +119,10 @@ gitleaks detect --source . --config .gitleaks.toml
 
 ## Required Follow-Up
 
-- Review all `G703`, `G304`, and `G204` call sites first because they touch
+- Review all `G703` and `G204` call sites first because they touch
   path, network, external-input, and command-execution boundaries.
+- Review remaining `G304` call sites (59 of 60) and add scoped `#nosec` with
+  rationale where the path is a validated tool input.
 - Re-run `gitleaks` with `.gitleaks.toml` after each fixture or scanner-rule
   change; do not broaden allowlist patterns without review.
 - Add CI jobs for `govulncheck`, `gosec`, and `gitleaks` only after local

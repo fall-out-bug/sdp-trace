@@ -100,7 +100,7 @@ Additional security scanners are tracked in `docs/security-baseline.md`:
 
 - `go vet`: Static analysis; currently pass locally.
 - `govulncheck`: Vulnerability database check; currently pass locally.
-- `gosec`: Static security analysis; 133 findings classified in
+- `gosec`: Static security analysis; 132 findings classified in
   `docs/security-baseline.md`.
 - `gitleaks`: Secret detection; local and tracked-source scans pass with the
   reviewed `.gitleaks.toml` fixture allowlist.

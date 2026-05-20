@@ -1,17 +1,22 @@
 # PR Final Review: Production Adoption And Security Baseline
 
+**Status: superseded by `review-dx-ux-drift-2026-05-20.md` and commit `aca55ca`.**
+This review captured the state before rebase onto `origin/main` (`18cd4a0`)
+and before Codex review findings were fixed. Do not rely on counts or claims
+below; use the repeat review and current HEAD instead.
+
 Date: 2026-05-20
 Branch: `feat/016-production-adoption-security-baseline`
-Base: `main` (`464d5e2`)
-Files changed: 13 (+714 lines)
+Base: `main` (`464d5e2` → rebased to `18cd4a0`)
+Files changed: 13 → 16 (+714 lines, then amended)
 
 ## Quality
 
 | Finding | Severity | Evidence | Disposition |
 |---------|----------|----------|-------------|
 | Q1: All spec requirements (FR-016-001 through FR-016-007) are addressed in the diff. | positive | Verified against diff. | accepted. |
-| Q2: Command family table in readiness.md lists 17 families matching the registry. | positive | Count verified against `cmd/sdp-trace/main_54*.go`. | accepted. |
-| Q3: gosec counts (133 total: G304 61, G301 28, G306 24, G204 11, G703 5, G101 2, G115 1, G302 1) match fresh gosec output. | positive | Verified with fresh command. | accepted. |
+| Q2: Command family table in readiness.md lists 17 families matching the registry. | positive (stale) | Superseded: after rebase 18 command families + 9 utility commands = 27 total. | superseded. |
+| Q3: gosec counts (133 total: G304 61...) match fresh gosec output. | positive (stale) | Superseded: after rebase gosec = 132, G304 = 60 (one nosec in capturedepth). | superseded. |
 | Q4: gitleaks with `.gitleaks.toml` returns `no leaks found`. | positive | Verified with fresh command. | accepted. |
 | Q5: hygienecheck initially failed on `reviews/016/` root clutter; fixed by moving reviews into `specs/016/reviews/`. | minor | Self-corrected during integration. | accepted_fixed. |
 | Q6: `docs/security-baseline.md` references `docs/security-baseline.md` in gitleaks section but the file is at `docs/security-baseline.md`. | info | Relative link works from `docs/`. | accepted. |
@@ -22,7 +27,7 @@ Files changed: 13 (+714 lines)
 |---------|----------|----------|-------------|
 | U1: `docs/README.md` links are in natural alphabetical reading order. | positive | Easy discovery. | accepted. |
 | U2: `docs/production-adoption-readiness.md` explicitly lists `not_assessed` areas in a numbered list. | positive | Scannable. | accepted. |
-| U3: `.github/SECURITY.md` provides clear reporting email and response timeline. | positive | Human-friendly. | accepted. |
+| U3: `.github/SECURITY.md` provides clear reporting email and response timeline. | positive (stale) | Superseded: email removed as undeliverable; fallback to GitHub private reporting. | superseded. |
 
 ## DX
 

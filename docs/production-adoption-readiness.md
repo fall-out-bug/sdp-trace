@@ -76,9 +76,9 @@ but are not primary evidence-producing workflows.
 
 ## Spec Completion
 
-All active specs are `draft` per [`docs/roadmap.md`](roadmap.md). No spec has
-reached `complete`. This is expected for an early-stage project and does not
-block controlled pilot use.
+Most active specs are `draft` or `in_progress` per [`docs/roadmap.md`](roadmap.md).
+No spec has reached `complete`. This is expected for an early-stage project
+and does not block controlled pilot use.
 
 ## Security Baseline
 
