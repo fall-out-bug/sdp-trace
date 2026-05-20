@@ -13,8 +13,8 @@ customer production adoption or external production trust.
 - GitHub repository: public, 0 stars, 0 forks, 0 issues, 1 pull request,
   no latest release, security policy disabled.
 - Current local branch: `main` at `464d5e2` (base), rebased onto `18cd4a0`.
-- Command surface: 18 command families; 6 are `complete`, 11 are `partial`,
-  1 is `not_assessed`.
+- Command surface: 18 command families (6 `complete`, 11 `partial`, 1 `not_assessed`)
+  plus 9 utility commands = 27 total commands.
 - Roadmap: existing specs are draft, blocked, or in progress; no completed spec
   is recorded.
 - `go vet ./...`: pass.
