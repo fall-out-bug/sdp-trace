@@ -46,6 +46,13 @@ agents.
   are useful trust or policy surfaces but are not core adoption commands.
 - First implementation work must reduce package coupling and documentation
   complexity without changing command behavior or deleting commands.
+- Numbered one-function Go source shards such as `family_123_name.go` are a
+  transitional organization artifact, not the target architecture. Cleanup
+  work must converge them into cohesive, behavior-named files by command or
+  domain while preserving package boundaries and test coverage.
+- File renaming must not be used as metric gaming. The target is readable
+  locality, stable ownership, and dependency direction; complexity and MI gates
+  remain verification signals, not design goals.
 - A future behavior-changing simplification must start from a new reviewed
   implementation spec, not from ad hoc execution inside this planning slice.
 
@@ -63,6 +70,9 @@ agents.
   `not_assessed` or `cannot_verify` boundaries.
 - FR-018-006: Produce Pi-ready implementation slices with disjoint file
   ownership and verification commands.
+- FR-018-007: Define source-file locality rules that reject numbered
+  one-function shard names as the target state and require cohesive
+  behavior-named files for future cleanup work.
 
 ## Non-Goals
 
@@ -70,11 +80,14 @@ agents.
 - No behavior change without a reviewed implementation spec.
 - No claim that core-only adoption is production trust.
 - No decision to split into separate binaries or plugins in this phase.
+- No broad rename of numbered Go files in this planning PR.
 
 ## Acceptance Criteria
 
 - A core/extension command matrix exists.
 - Documentation reading order points new adopters to the core path first.
 - Extension surfaces have explicit owner, status, and spec decision.
+- Source-file locality policy identifies numbered Go shards as transitional
+  and requires future cleanup slices to replace them with cohesive named files.
 - Pi handoff slices are small enough to run in isolated worktrees without
   overlapping write sets.

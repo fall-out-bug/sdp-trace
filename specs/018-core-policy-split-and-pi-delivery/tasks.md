@@ -30,6 +30,12 @@ Status: draft
   Pi ownership: `docs/extension-boundary-plan.md`.
   Verification: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`,
   `git diff --check`.
+- [ ] T018-045 WS-018-E: Define source file locality policy for numbered Go
+  shards.
+  Pi ownership: `docs/package-ownership-map.md`,
+  `specs/018-core-policy-split-and-pi-delivery/spec.md`.
+  Verification: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`,
+  `git diff --check`.
 
 ## Phase 2 - Integration
 

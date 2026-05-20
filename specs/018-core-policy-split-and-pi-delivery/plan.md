@@ -55,6 +55,19 @@ Deliverable:
 - A safe sequence for moving non-core surfaces after a later implementation
   spec; this phase keeps extension surfaces in the current binary.
 
+### WS-018-E: Source File Locality Policy
+
+Owned files:
+
+- `docs/package-ownership-map.md`
+- `specs/018-core-policy-split-and-pi-delivery/spec.md`
+
+Deliverable:
+
+- Record numbered Go source shards as transitional and define the target
+  cleanup direction: cohesive behavior-named files by command/domain, no broad
+  rename in this planning PR, and no metric-gaming rationale.
+
 ## Verification
 
 Docs-only changes:
@@ -80,3 +93,6 @@ git diff --check
 Do not assign the same docs file to multiple workers. WS-018-A and WS-018-B
 both touch docs navigation, so run them sequentially or give one worker an
 explicit read-only dependency on the other's output.
+
+Source file locality cleanup should be split by package or command family in a
+later implementation spec. Do not hand one worker a repo-wide rename.

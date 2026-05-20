@@ -84,6 +84,28 @@ Current checked state:
   as extension.
 - Cross-extension imports should stay rare and explicit.
 
+## Source File Locality
+
+Numbered one-function Go source shards are transitional. They helped previous
+mechanical organization work, but they are not the target CleanCode,
+CleanArchitecture, SOLID, or modern Go shape for this repository.
+
+Target cleanup direction:
+
+- group functions into cohesive files named after behavior, command family, or
+  domain concept;
+- keep command wiring in `cmd/sdp-trace` thin and move reusable behavior into
+  internal packages before grouping;
+- avoid package stutter and generated-looking ordinal prefixes in human-owned
+  source files;
+- split cleanup by package or command family so review remains meaningful;
+- preserve tests, command contracts, MI/complexity baselines, and dependency
+  direction during each slice.
+
+This map does not approve a repo-wide rename. A later implementation spec must
+own each package-level rename/grouping slice and define the verification
+commands before files are moved.
+
 ## Open Split Work
 
 - Split query-pack code out of `internal/query` if a future core-library claim
