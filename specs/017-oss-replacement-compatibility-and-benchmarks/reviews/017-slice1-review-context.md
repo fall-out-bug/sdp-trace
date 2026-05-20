@@ -22,7 +22,8 @@
 
 ## Verification Commands
 ```text
-go test -count=1 ./tools/osscompat
+go test -count=1 ./tools/osscompat            # hermetic tests only
+go test -count=1 -tags=integration ./tools/osscompat  # include optional-CLI tests (requires check-jsonschema, opa, cue, etc.)
 go vet ./tools/osscompat
 go run ./tools/osscompat        # exit 0 when no fail probes; exit 1 when jsonschema-wrap-drift reports fail
 go run ./tools/osscompat -json

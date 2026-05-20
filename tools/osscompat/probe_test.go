@@ -68,7 +68,14 @@ func TestPrintResults_Text(t *testing.T) {
 	}
 }
 
+func skipUnlessIntegration(t *testing.T) {
+	if os.Getenv("SDPTRACE_INTEGRATION") != "1" {
+		t.Skip("set SDPTRACE_INTEGRATION=1 to run tests that invoke optional external CLIs")
+	}
+}
+
 func TestRunJSONSchemaFixtures(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("check-jsonschema") {
 		t.Skip("check-jsonschema not in PATH")
 	}
@@ -79,6 +86,7 @@ func TestRunJSONSchemaFixtures(t *testing.T) {
 }
 
 func TestRunJSONSchemaWrapDrift(t *testing.T) {
+	skipUnlessIntegration(t)
 	state, reason := runJSONSchemaWrapDrift()
 	// If check-jsonschema is missing we get cannot_verify; otherwise the drift
 	// should still be present, so we expect fail (conformance failure). Only if
@@ -98,6 +106,7 @@ func TestRunJSONSchemaWrapDrift(t *testing.T) {
 }
 
 func TestRunOPAPolicy(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("opa") {
 		t.Skip("opa not in PATH")
 	}
@@ -108,6 +117,7 @@ func TestRunOPAPolicy(t *testing.T) {
 }
 
 func TestRunOPANegativeFixture(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("opa") {
 		t.Skip("opa not in PATH")
 	}
@@ -118,6 +128,7 @@ func TestRunOPANegativeFixture(t *testing.T) {
 }
 
 func TestRunCUEImport(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("cue") {
 		t.Skip("cue not in PATH")
 	}
@@ -128,6 +139,7 @@ func TestRunCUEImport(t *testing.T) {
 }
 
 func TestRunInTotoWrap(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("in-toto-run") {
 		t.Skip("in-toto-run not in PATH")
 	}
@@ -138,6 +150,7 @@ func TestRunInTotoWrap(t *testing.T) {
 }
 
 func TestRunCosignLocalSign(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("cosign") {
 		t.Skip("cosign not in PATH")
 	}
@@ -148,6 +161,7 @@ func TestRunCosignLocalSign(t *testing.T) {
 }
 
 func TestRunSLSANegative(t *testing.T) {
+	skipUnlessIntegration(t)
 	if !hasTool("slsa-verifier") {
 		t.Skip("slsa-verifier not in PATH")
 	}
