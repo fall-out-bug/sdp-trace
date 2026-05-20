@@ -82,13 +82,16 @@ func hasTool(tool string) bool {
 	return err == nil
 }
 
-// runJSONSchemaFixtures validates checked examples.
+// runJSONSchemaFixtures validates a checked fixture against the schema.
 func runJSONSchemaFixtures() (verifierState, string) {
-	// The actual validation command is recorded in docs/oss-replacement-compatibility.md
-	// as a copy-pasteable reproduction step. This probe does not auto-run the
-	// validation because fixture paths may vary and we must not claim pass
-	// without evidence.
-	return stateCannotVerify, "fixture validation must be run manually; see docs/oss-replacement-compatibility.md"
+	out, err := exec.Command("check-jsonschema",
+		"--schemafile", "schema/flight-recorder-run.schema.json",
+		"examples/flight-recorder/local-positive/run.json",
+	).CombinedOutput()
+	if err != nil {
+		return stateFail, fmt.Sprintf("fixture validation failed: %v\n%s", err, strings.TrimSpace(string(out)))
+	}
+	return statePass, "fixture validates against schema"
 }
 
 // runJSONSchemaWrapDrift checks live wrap output against schema (expected fail).

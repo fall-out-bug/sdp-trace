@@ -111,13 +111,14 @@ and report `not_assessed`.
 ### Cosign local blob sign/verify
 
 ```bash
-# Sign and verify a local JSON blob with a generated ephemeral key
+# Sign and verify a local JSON blob with a generated ephemeral key.
+# Transparency-log upload and verification are disabled for local-only testing.
 (
   cd /tmp
   echo '{"run":"test"}' > run.json
   cosign generate-key-pair
-  cosign sign-blob --key cosign.key --yes run.json > run.json.sig
-  cosign verify-blob --key cosign.pub --signature run.json.sig run.json
+  cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
+  cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
 )
 ```
 

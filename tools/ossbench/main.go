@@ -133,5 +133,6 @@ var builtIns = []benchmarkDef{
 		Description: "sdp-trace wrap /bin/true",
 		Cmd:         "sdp-trace",
 		Args:        []string{"wrap", "/bin/true"},
+		Dir:         "/tmp",
 	},
 }

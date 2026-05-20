@@ -16,6 +16,7 @@ type benchmarkDef struct {
 	Description string
 	Cmd         string
 	Args        []string
+	Dir         string // working directory; empty means current directory
 }
 
 // benchmarkResult holds the measured statistics for one benchmark.
@@ -41,6 +42,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	if def.Cmd == "" {
 		return benchmarkResult{
 			Name:                def.Name,
+			Description:         def.Description,
+			Command:             "",
+			Environment:         getEnv(),
 			AttemptedIterations: iterations,
 			Error:               "no command specified",
 		}
@@ -52,6 +56,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		start := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		cmd := exec.CommandContext(ctx, def.Cmd, def.Args...)
+		if def.Dir != "" {
+			cmd.Dir = def.Dir
+		}
 		err := cmd.Run()
 		cancel()
 		if err != nil {
@@ -64,6 +71,9 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	if len(times) == 0 {
 		return benchmarkResult{
 			Name:                def.Name,
+			Description:         def.Description,
+			Command:             def.Cmd + " " + strings.Join(def.Args, " "),
+			Environment:         getEnv(),
 			AttemptedIterations: iterations,
 			Error:               lastErr,
 		}
