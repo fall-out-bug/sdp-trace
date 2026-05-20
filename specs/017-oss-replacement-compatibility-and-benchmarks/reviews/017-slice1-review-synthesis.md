@@ -20,10 +20,10 @@ Reviewer planes: GLM-5.1 (zai), Kimi-k2-thinking (kimi-coding), MiniMax-M2.7 (mi
 | GLM-F7 | Advisory | UX | No summary line in output | accepted_fixed |
 | GLM-F8 | Advisory | UX | No -list flag | accepted_fixed |
 | GLM-F9 | Advisory | Quality | No test for -json + -probe combination | accepted_fixed |
-| Kimi-6 | Advisory | UX | Hardcoded %-24s width | advisory (acceptable for current scope) |
+| Kimi-6 | Advisory | UX | Hardcoded %-24s width | accepted_fixed — dynamic width added in main.go |
 
 ## Fixes Applied
-All Important and Advisory findings except Kimi-6 (acceptable width constraint) were fixed in commit 465f8e0.
+All Important and Advisory findings were fixed in commit 465f8e0.
 
 ## Re-Verification
 - go test -count=1 ./tools/osscompat: pass
@@ -32,4 +32,4 @@ All Important and Advisory findings except Kimi-6 (acceptable width constraint) 
 - git diff --check: pass
 
 ## Verdict After Fix
-**LGTM** — zero Important findings remain. Slice 1 is approved.
+**LGTM** — zero Important and zero Advisory findings remain. Slice 1 is approved.

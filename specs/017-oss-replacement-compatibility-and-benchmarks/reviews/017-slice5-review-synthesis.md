@@ -17,8 +17,8 @@ Reviewer planes: GLM-5.1 (zai), Kimi-k2-thinking (kimi-coding)
 | Kimi-3 | Important | Quality+UX | Stale FR-017-004 unsatisfaction claim in benchmark docs | accepted_fixed |
 | Kimi-4 | Important | Quality+DX | Roadmap Capability Index drift | accepted_fixed |
 | Kimi-A | Advisory | DX | Minor status inconsistency in prototype docs | accepted_fixed |
-| Kimi-B | Advisory | Quality | Automated vs manual probe result mapping divergent | advisory (documented by design) |
-| Kimi-C | Advisory | Security | New docs lack sdp-trace-claim tags | advisory (prose disclaimers present; claim tags not required for observational tables) |
+| Kimi-B | Advisory | Quality | Automated vs manual probe result mapping divergent | accepted_fixed — footnote added to compatibility doc |
+| Kimi-C | Advisory | Security | New docs lack sdp-trace-claim tags | accepted_fixed — claim tags added to compatibility doc tables |
 
 ## Fixes Applied
 All Important and Advisory findings addressed in commit 79adf88.
@@ -31,4 +31,4 @@ All Important and Advisory findings addressed in commit 79adf88.
 - git diff --check: pass
 
 ## Verdict After Fix
-**LGTM** — zero Important findings remain. Slice 5 is approved.
+**LGTM** — zero Important and zero Advisory findings remain. Slice 5 is approved.

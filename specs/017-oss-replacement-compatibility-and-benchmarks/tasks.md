@@ -22,6 +22,9 @@ Status: in_progress
   Pi ownership: docs/examples for supply-chain prototype only.
 - [x] T017-050 WS-017-E: Add benchmark harness and benchmark report.
   Pi ownership: `tools/ossbench/*` and benchmark docs.
+  Note: the historical markdown table in `docs/oss-benchmark-results.md`
+  remains provisional because min/max raw data from the one-shot run was not
+  preserved. The harness satisfies FR-017-004 structurally; the table does not.
 
 ## Phase 2 - Integration
 

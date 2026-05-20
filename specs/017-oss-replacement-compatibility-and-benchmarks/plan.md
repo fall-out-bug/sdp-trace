@@ -14,10 +14,11 @@ Owned files:
 
 Deliverable:
 
-- A command that runs compatibility probes and reports results without mutating
-  tracked product artifacts. Probes that cannot run due to missing dependencies
-  must report `cannot_verify` or `not_assessed`, not fall back to explanation
-  mode.
+- A command that discovers available OSS tools and reports probe results
+  without mutating tracked product artifacts. Probes verify tool presence where
+  the full compatibility check requires external CLI execution or manual steps;
+  they report `cannot_verify` with a pointer to the reproduction command in the
+  docs, not a false `pass`. Missing tools report `not_assessed`.
 
 ### WS-017-B: Schema Compatibility
 

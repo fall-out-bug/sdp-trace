@@ -32,13 +32,13 @@ Missing tools render that probe `not_assessed`.
 
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
-| `check-jsonschema` | Validate flight-recorder fixtures against local schema refs | `pass` | Local refs resolve; validation succeeds on checked examples |
+| `check-jsonschema` | Validate flight-recorder fixtures against local schema refs | `pass` | Local refs resolve; validation succeeds on checked examples [^1] |
 | `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Required fields and timestamp format differ |
 | `check-jsonschema` | Validate representative assessment, gate, and release examples | `pass` | Example fixtures conform to schema |
-| OPA/Rego | Express simplified adapter-capture pass/fail rule | `pass` | Policy evaluates and correctly detects `test_provenance_not_overclaimed` failure fixture |
+| OPA/Rego | Express simplified adapter-capture pass/fail rule | `pass` | Policy evaluates and correctly detects `test_provenance_not_overclaimed` failure fixture [^1] |
 | CUE | JSON Schema import | `cannot_verify` | CUE can import JSON Schema types, but direct validation is blocked until schema refs are packaged as a CUE module |
-| in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally |
-| Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled |
+| in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally [^1] |
+| Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled [^1] |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
 | SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: no matching Rekor entries found |
 
@@ -68,7 +68,7 @@ and report `not_assessed`.
   sdp-trace wrap /bin/true > /tmp/wrap-run.json
   check-jsonschema \
     --schemafile schema/flight-recorder-run.schema.json \
-    /tmp/wrap-run.json || true
+    /tmp/wrap-run.json
 )
 ```
 
@@ -89,7 +89,7 @@ and report `not_assessed`.
 # Import JSON Schema types into CUE (does not validate sdp-trace artifacts)
 (
   cue import --package sdptrace schema/flight-recorder-run.schema.json \
-    -o /tmp/flight-recorder-run.cue || true
+    -o /tmp/flight-recorder-run.cue
 )
 ```
 
@@ -104,7 +104,7 @@ and report `not_assessed`.
     --step-name test-wrap \
     --products /dev/null \
     --key test-key.pem \
-    -- /bin/true || true
+    -- /bin/true
 )
 ```
 
@@ -130,7 +130,7 @@ and report `not_assessed`.
   slsa-verifier verify-artifact \
     --provenance-path examples/oss-supply-chain/local-dsse.json \
     --source-uri local/test \
-    /dev/null || true
+    /dev/null
 )
 ```
 
@@ -168,3 +168,10 @@ and report `not_assessed`.
 | OPA policy prototype | `pass` | Local evaluation passes/fails as expected on test fixtures |
 
 All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
+
+[^1]: Automated probes in `tools/osscompat` verify tool presence where full
+validation requires manual execution or external fixtures. The doc table
+records the manual probe result; the tool reports `cannot_verify` for the
+same probe because it cannot safely auto-run the full check without
+mutating state or depending on fixture paths. Run the reproduction commands
+above for the actual validation.
