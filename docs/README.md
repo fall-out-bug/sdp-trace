@@ -49,6 +49,7 @@ evidence and gaps; it does not approve changes.
 - [Repository Rollout Playbook, Russian](repository-rollout-playbook.ru.md)
 - [Accountability Model](accountability-model.md)
 - [Evidence Policy](evidence-policy.md)
+- [Security Baseline](security-baseline.md): local security scan results and triage.
 - [CI Check Policy](ci-check-policy.md)
 - [Security Baseline](security-baseline.md)
 
