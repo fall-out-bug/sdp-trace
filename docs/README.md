@@ -41,7 +41,6 @@ evidence and gaps; it does not approve changes.
 ## Governance And Rollout Docs
 
 - [Spec Roadmap](roadmap.md): current spec statuses, capability ownership, and lifecycle labels.
-- [Production Adoption Readiness](production-adoption-readiness.md): trust scope matrix and open gaps.
 - [Adoption Guide, English](adoption-guide.en.md)
 - [Adoption Guide, Russian](adoption-guide.ru.md)
 - [Production Adoption Readiness](production-adoption-readiness.md): what is known, pilot-capable, and `not_assessed`.
@@ -52,7 +51,6 @@ evidence and gaps; it does not approve changes.
 - [Security Baseline](security-baseline.md): local security scan results and triage.
 - [Security Policy](../.github/SECURITY.md): vulnerability reporting and scope.
 - [CI Check Policy](ci-check-policy.md)
-- [Security Baseline](security-baseline.md)
 
 ## Engineering Docs
 

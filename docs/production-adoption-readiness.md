@@ -42,7 +42,7 @@ State values follow the command surface schema: `complete`, `partial`, `not_asse
 | `harness` | `partial` | Harness event import and validation; limited to supported harness kinds. |
 | `interaction` | `partial` | Interaction recording and summarization; relay and import-transcript paths are pilot-only. |
 | `observe` | `partial` | First-run harness observation; session profile shape may change. |
-| `export-telemetry` | `partial` | Export telemetry profiles for external consumption. |
+| `export` | `partial` | Export cross-repo posture or telemetry profiles for external consumption. |
 | `override` | `not_assessed` | Override record creation; authority scope is advisory. |
 | `packet` | `partial` | Packet generation and validation; schema versioned but not externally signed. |
 | `pr-review` | `partial` | Build, run, synthesize, validate, and summarize automated PR review evidence. |
@@ -53,7 +53,26 @@ State values follow the command surface schema: `complete`, `partial`, `not_asse
 | `verify` | `complete` | Supports local structural assertions only. |
 | `witness` | `partial` | CI-bound evidence is not external production trust by itself. |
 
-**Summary**: 6 families are `complete`, 11 are `partial`, 1 is `not_assessed`. (18 total)
+**Summary**: 6 families are `complete`, 11 are `partial`, 1 is `not_assessed` (18 families).
+
+## Utility Commands
+
+The following commands are stable utilities that support the main families
+but are not primary evidence-producing workflows.
+
+| Command | State | Description |
+|---------|-------|-------------|
+| `command-surface` | `complete` | Emit machine-readable command surface JSON. |
+| `doctor` | `complete` | Inspect local environment and contract prerequisites. |
+| `dry-run` | `complete` | Show what would run without writing run artifacts. |
+| `install` | `complete` | Install portable repo observer files for local git hooks and GitHub Actions artifact upload. |
+| `preview` | `complete` | Preview command/contract implications before execution. |
+| `run` | `complete` | Run a task-referenced command with an optional contract. |
+| `validate-fixtures` | `complete` | Validate checked trace-run fixture directories. |
+| `version` | `complete` | Print version. |
+| `wrap` | `complete` | Observe one existing command as a trace run. |
+
+**Total command surface**: 18 families + 9 utility commands = 27 commands.
 
 ## Spec Completion
 
@@ -68,7 +87,7 @@ block controlled pilot use.
 | `go vet ./...` | pass | green |
 | `govulncheck ./...` | 0 vulnerabilities | green |
 | `gosec ./...` | 132 findings | advisory — classified in [`docs/security-baseline.md`](security-baseline.md) |
-| `gitleaks detect` (tracked files) | 0 findings | triaged in [`docs/security-baseline.md`](security-baseline.md) |
+| `gitleaks detect` (with `.gitleaks.toml`) | 0 findings | triaged in [`docs/security-baseline.md`](security-baseline.md) |
 
 Local ignored clutter (`.worktrees/`, `.codex-subagents/`, `.sdp-trace-runs/`,
 `.sdp-trace-report/`) is not repository proof. Scan it with hygiene tooling

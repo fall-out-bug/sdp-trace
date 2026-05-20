@@ -12,14 +12,16 @@ Only the latest commit on `main` receives security-related updates.
 
 ## Reporting a Vulnerability
 
-Email: `security+report@fall-out-bug.dev`
+**Primary channel:** GitHub private vulnerability reporting or draft Security
+Advisory for this repository, when that feature is enabled.
 
-If email is not available, use GitHub private vulnerability reporting or draft
-a Security Advisory for this repository when that feature is enabled. If no
-private channel is visible, open a public issue that asks for a private
-disclosure channel but does not include vulnerability details.
+**Fallback:** If no private channel is visible, open a public issue that asks
+for a private disclosure channel but does not include vulnerability details.
 
 **Do not report security issues through public GitHub issues with details.**
+
+A dedicated security email is `not_assessed` until the domain/mailbox is
+configured and verified deliverable.
 
 Please include:
 - Affected file paths and line numbers (or commit hash)

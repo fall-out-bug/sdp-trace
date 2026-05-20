@@ -24,7 +24,8 @@ not checked in.
 | `go vet ./...` | go1.22 | pass | green |
 | `govulncheck ./...` | latest | 0 known vulnerabilities | green |
 | `gosec ./...` | dev | 132 findings | advisory — classified below |
-| `gitleaks detect` (tracked files) | v8.30.1 | 12 findings | triaged below |
+| `gitleaks detect` (default config) | v8.30.1 | 12 findings | all triaged false positive below |
+| `gitleaks detect` (with `.gitleaks.toml`) | v8.30.1 | 0 findings | verified |
 
 ## `gosec` Finding Family Classification
 
@@ -58,23 +59,15 @@ not checked in.
 
 ## `gitleaks` Findings Triage
 
-All 12 findings are in tracked files. None are live secrets.
-A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers.
+All 12 findings (default-config scan) are in tracked files. None are live secrets.
+A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers;
+with the allowlist active the scan returns 0 findings.
 
-| # | File | Line | Secret | Rule | Disposition |
-|---|------|------|--------|------|-------------|
-| 1 | `internal/witness/profiles_test.go` | 599 | `eyJhbGciOiJFZERTQSJ9...signaturesecret` | generic-api-key | **accepted false positive** — synthetic JWT marker for redaction tests |
-| 2 | `internal/witness/profiles_test.go` | 636 | `eyJhbGciOiJFZERTQSJ9...signaturesecret` | generic-api-key | **accepted false positive** — synthetic JWT marker |
-| 3 | `internal/witness/profiles_test.go` | 959 | `eyJhbGciOiJFZERTQSJ9...signaturesecret` | generic-api-key | **accepted false positive** — synthetic JWT marker |
-| 4 | `internal/witness/profiles.go` | 586 | `-----begin private key-----` | private-key | **accepted false positive** — redaction sentinel string, not a real key |
-| 5 | `examples/self-trace/evidence-events.json` | 173 | `crisis-glm-critic-2026-04-30` | generic-api-key | **accepted false positive** — review dedupe key, not a secret |
-| 6 | `examples/self-trace/evidence-events.json` | 222 | `crisis-judge-2026-04-30` | generic-api-key | **accepted false positive** — review dedupe key |
-| 7 | `examples/self-trace/negative-native-policy-field.json` | 178 | `crisis-glm-critic-2026-04-30` | generic-api-key | **accepted false positive** — review dedupe key |
-| 8 | `examples/self-trace/negative-native-policy-field.json` | 227 | `crisis-judge-2026-04-30` | generic-api-key | **accepted false positive** — review dedupe key |
-| 9 | `examples/self-trace/assessment-input.json` | 178 | `crisis-glm-critic-2026-04-30` | generic-api-key | **accepted false positive** — review dedupe key |
-| 10 | `examples/self-trace/assessment-input.json` | 227 | `crisis-judge-2026-04-30` | generic-api-key | **accepted false positive** — review dedupe key |
-| 11 | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | 45660 | `-----begin private key-----` | private-key | **accepted false positive** — diff content showing redaction sentinel addition |
-| 12 | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | 46637 | `-----begin private key-----` | private-key | **accepted false positive** — diff content showing redaction sentinel removal |
+| Category | Files | Rule | Disposition |
+|----------|-------|------|-------------|
+| Synthetic JWT sentinel (redaction tests) | `internal/witness/profiles_test.go` | `jwt` / `generic-api-key` | **accepted false positive** — test fixture verifying redaction behavior |
+| Review dedupe keys (fixture labels) | `examples/self-trace/evidence-events.json`, `examples/self-trace/negative-native-policy-field.json`, `examples/self-trace/assessment-input.json` | `generic-api-key` | **accepted false positive** — review event labels, not credentials |
+| Private-key marker (historical diff) | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | `private-key` | **accepted false positive** — sanitized diff showing redaction sentinel changes |
 
 ## Local Ignored Clutter Policy
 
