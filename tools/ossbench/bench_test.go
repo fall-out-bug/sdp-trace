@@ -6,11 +6,11 @@ import (
 
 func TestStats(t *testing.T) {
 	tests := []struct {
-		name         string
-		values       []float64
-		wantMin      float64
-		wantMax      float64
-		wantMedian   float64
+		name       string
+		values     []float64
+		wantMin    float64
+		wantMax    float64
+		wantMedian float64
 	}{
 		{"odd count", []float64{3, 1, 2}, 1, 3, 2},
 		{"even count", []float64{4, 1, 3, 2}, 1, 4, 2.5},

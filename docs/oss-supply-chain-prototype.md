@@ -1,6 +1,6 @@
 # OSS Supply-Chain Prototype
 
-Status: draft
+Status: in_progress
 Spec: [017](../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This document records local supply-chain tooling probes: in-toto command

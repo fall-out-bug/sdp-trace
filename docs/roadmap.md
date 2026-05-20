@@ -93,7 +93,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Docs UX / command guidance | 014 | Draft |
 | Spec governance / roadmap | 015 | In progress |
 | Production adoption / security baseline | 016 | In progress |
-| OSS replacement compatibility / benchmarks | 017 | Draft |
+| OSS replacement compatibility / benchmarks | 017 | In progress |
 | Core/policy split and Pi delivery | 018 | Draft |
 
 ## Claim-Tag Enforcement Scope
@@ -143,6 +143,6 @@ Historical block records in `blocks/` are exempt from these expectations. They a
 
 - Update this file when a new spec is opened or an active spec's status changes.
 - Owner: the spec author or current block worker.
-- Last updated: 2026-05-16.
+- Last updated: 2026-05-20.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->

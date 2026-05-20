@@ -1,6 +1,6 @@
 # OSS Policy Prototype
 
-Status: draft
+Status: in_progress
 Spec: [017](../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This document records the OPA/Rego policy-as-code prototype for an

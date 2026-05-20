@@ -29,10 +29,10 @@ decisions but do not prove production readiness.
 | `check-jsonschema` fixture validation | 271.5 | — | — | 20 | `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/...` | Python validator startup cost |
 
 **Note:** Min and max values are marked `—` because the raw iteration data
-from the 2026-05-20 one-shot run was not preserved. This table is a **local
-markdown ledger only** and does not satisfy FR-017-004 until `tools/ossbench`
-produces reproducible structured output with full statistics. Do not use these
-numbers for approval decisions.
+from the 2026-05-20 one-shot run was not preserved. The two `sdp-trace`
+built-in probes can now be reproduced with `tools/ossbench`; the remaining
+rows require external tools and remain manual one-shot data. This table is a
+**local markdown ledger only**. Do not use these numbers for approval decisions.
 
 ## Observations
 
@@ -94,7 +94,7 @@ in-toto-run --step-name test-wrap --products /dev/null \
 # check-jsonschema fixture validation
 check-jsonschema \
   --schemafile schema/flight-recorder-run.schema.json \
-  examples/flight-recorder/local-wrap-positive/run.json
+  examples/flight-recorder/local-positive/run.json
 ```
 
 ## Non-Authoritative Disclaimer
@@ -116,13 +116,15 @@ or production trust decisions. They are scope-informative only.
 
 ## Follow-Ups
 
-- **Reproducible harness:** T017-050 tracks adding a checked-in benchmark
-  harness before this table is used for approval. The current table is a local
-  markdown ledger only.
+- **Built-in harness:** `tools/ossbench` now automates the 20-iteration
+  protocol for built-in `sdp-trace` probes and emits structured JSON with
+  `min_ms`, `max_ms`, `median_ms`, and `iterations`. Run with `-json` for
+  machine-readable output.
+- **External-tool benchmarks:** Probes requiring `opa`, `cosign`, `in-toto-run`,
+  `check-jsonschema`, or `slsa-verifier` are not yet covered by the harness
+  because they depend on optional external CLIs.
 - **CUE module packaging:** Once `schema/` files are exported as CUE modules,
   add `cue vet` benchmark numbers to this table.
 - **SLSA verifier negative benchmark:** Time `slsa-verifier` rejecting local
   DSSE fixture to understand its rejection latency vs. acceptance latency
   for future production scenarios.
-- **Reproducible benchmark harness:** A Go tool under `tools/ossbench/` could
-  automate the 20-iteration protocol and emit structured JSON output.

@@ -56,7 +56,7 @@ and report `not_assessed`.
 (
   check-jsonschema \
     --schemafile schema/flight-recorder-run.schema.json \
-    examples/flight-recorder/local-wrap-positive/run.json
+    examples/flight-recorder/local-positive/run.json
 )
 ```
 
@@ -96,13 +96,14 @@ and report `not_assessed`.
 ### in-toto command wrapping
 
 ```bash
-# Wrap a command and sign link metadata with a local key
+# Generate a throwaway key and wrap a command
 (
   cd /tmp
+  openssl genpkey -algorithm RSA -out test-key.pem 2>/dev/null
   in-toto-run \
     --step-name test-wrap \
     --products /dev/null \
-    --key /dev/null \
+    --key test-key.pem \
     -- /bin/true || true
 )
 ```

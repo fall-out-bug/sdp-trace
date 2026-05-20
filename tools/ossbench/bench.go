@@ -18,14 +18,14 @@ type benchmarkDef struct {
 
 // benchmarkResult holds the measured statistics for one benchmark.
 type benchmarkResult struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	Iterations  int      `json:"iterations"`
-	MinMs       float64  `json:"min_ms"`
-	MaxMs       float64  `json:"max_ms"`
-	MedianMs    float64  `json:"median_ms"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	Iterations  int       `json:"iterations"`
+	MinMs       float64   `json:"min_ms"`
+	MaxMs       float64   `json:"max_ms"`
+	MedianMs    float64   `json:"median_ms"`
 	AllMs       []float64 `json:"all_ms,omitempty"`
-	Error       string   `json:"error,omitempty"`
+	Error       string    `json:"error,omitempty"`
 }
 
 // runBenchmark executes a benchmark definition for n iterations.
