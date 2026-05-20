@@ -21,36 +21,33 @@ Requires `opa` in `$PATH`. Run from the repository root.
 
 ```bash
 (
+  set -e
   cd examples/oss-policy || exit 1
-  opa eval --data adapter.rego \
+  RESULT=$(opa eval --data adapter.rego \
     --input test-fixture.json \
-    'data.sdp_trace.adapter.pass'
+    --format raw \
+    'data.sdp_trace.adapter.pass')
+  if [ "$RESULT" != "true" ]; then
+    echo "ERROR: expected true, got: $RESULT"
+    exit 1
+  fi
 )
-```
-
-Expected output:
-
-```json
-{
-  "result": [{
-    "expressions": [{
-      "value": true,
-      "text": "data.sdp_trace.adapter.pass",
-      "location": {"row": 1, "col": 1}
-    }]
-  }]
-}
 ```
 
 ## Test the Failure Fixture
 
 ```bash
 (
+  set -e
   cd examples/oss-policy || exit 1
-  opa eval --data adapter.rego \
+  RESULT=$(opa eval --data adapter.rego \
     --input test-fixture-fail.json \
-    --format json \
-    'data.sdp_trace.adapter.pass'
+    --format raw \
+    'data.sdp_trace.adapter.pass')
+  if [ "$RESULT" != "false" ]; then
+    echo "ERROR: expected false, got: $RESULT"
+    exit 1
+  fi
 )
 ```
 

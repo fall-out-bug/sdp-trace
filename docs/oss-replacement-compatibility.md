@@ -34,14 +34,14 @@ Missing tools render that probe `not_assessed`.
 | Proxy / Tool | Capability Tested | Probe Result | Status |
 |---|---|---|---|
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `pass` | Checked fixture conforms to schema [^1] |
-| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `cannot_verify` | Live wrap output fails schema validation; drift remains open and blocks compatibility verification [^1] |
+| `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Live wrap output fails schema validation; drift is a confirmed conformance failure [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Verify with transparency log / Rekor | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
-| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `cannot_verify` | Manual-only expected-fail probe; malformed/truncated DSSE signature prevents verification before any Rekor check |
+| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `cannot_verify` | Manual-only expected-fail probe; intentionally invalid local fixture (see reproduction command) |
 
 ## Reproduction Commands
 
@@ -90,11 +90,19 @@ and report `not_assessed`.
 ### OPA/Rego policy evaluation
 
 ```bash
-# Evaluate a simplified adapter-capture rule against a test fixture
+# Evaluate a simplified adapter-capture rule against a test fixture.
+# Assert the result is exactly true.
 (
+  set -e
   cd examples/oss-policy || exit 1
-  opa eval --data adapter.rego --input test-fixture.json \
-    'data.sdp_trace.adapter.pass'
+  RESULT=$(opa eval --data adapter.rego \
+    --input test-fixture.json \
+    --format raw \
+    'data.sdp_trace.adapter.pass')
+  if [ "$RESULT" != "true" ]; then
+    echo "ERROR: expected true, got: $RESULT"
+    exit 1
+  fi
 )
 ```
 
@@ -168,9 +176,9 @@ and report `not_assessed`.
 ### SLSA verifier negative path (expected fail)
 
 ```bash
-# Attempt to verify a local DSSE fixture as production SLSA evidence.
-# Expected to fail because the DSSE signature is malformed/truncated.
-# The malformed signature prevents the verifier from reaching any Rekor check.
+# Attempt to verify an intentionally invalid local DSSE fixture as production
+# SLSA evidence. Expected to fail; the exact failure mode depends on the
+# verifier version and is not separately evidenced.
 (
   set -e
   command -v slsa-verifier >/dev/null || { echo "slsa-verifier not found"; exit 1; }

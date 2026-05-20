@@ -74,9 +74,9 @@ negative-path testing. These are local experiments only.
 )
 ```
 
-Expected: failure due to malformed/truncated DSSE signature. Rekor rejection
-is not separately evidenced because the malformed signature prevents the
-verifier from reaching any transparency-log check.
+Expected: failure because the fixture is intentionally invalid for local
+negative-path testing. The exact verifier failure mode is not separately
+evidence-backed.
 
 ## Substitution Boundary
 

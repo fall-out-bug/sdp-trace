@@ -81,15 +81,15 @@ func TestRunJSONSchemaFixtures(t *testing.T) {
 func TestRunJSONSchemaWrapDrift(t *testing.T) {
 	state, reason := runJSONSchemaWrapDrift()
 	// If check-jsonschema is missing we get cannot_verify; otherwise the drift
-	// should still be present, so we expect cannot_verify. Only if the drift is
-	// unexpectedly fixed do we get pass.
+	// should still be present, so we expect fail (conformance failure). Only if
+	// the drift is unexpectedly fixed do we get pass.
 	if !hasTool("check-jsonschema") {
 		if state != stateCannotVerify {
 			t.Errorf("expected stateCannotVerify when check-jsonschema missing, got %s: %s", state, reason)
 		}
 		return
 	}
-	if state != stateCannotVerify && state != statePass {
+	if state != stateFail && state != statePass {
 		t.Errorf("unexpected state %s: %s", state, reason)
 	}
 	if reason == "" {

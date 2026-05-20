@@ -129,8 +129,8 @@ func runJSONSchemaFixtures() (verifierState, string) {
 
 // runJSONSchemaWrapDrift builds sdp-trace from source, runs wrap in an isolated
 // temp directory, and checks the live stdout against the schema. The probe
-// reports cannot_verify when schema validation fails (the drift blocks
-// compatibility verification) and pass only if the drift is unexpectedly fixed.
+// reports fail when schema validation fails (conformance failure) and pass
+// only if the drift is unexpectedly fixed.
 func runJSONSchemaWrapDrift() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -174,7 +174,7 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	if err == nil {
 		return statePass, "live wrap output unexpectedly passed schema validation; drift may be fixed"
 	}
-	return stateCannotVerify, fmt.Sprintf("live wrap output fails schema validation; drift remains open: %s", strings.TrimSpace(string(schemaOut)))
+	return stateFail, fmt.Sprintf("live wrap output fails schema validation (conformance failure): %s", strings.TrimSpace(string(schemaOut)))
 }
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
