@@ -99,16 +99,18 @@ check-jsonschema \
 
 ```bash
 # Generate a throwaway key and wrap a command
-set -e
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
-cd "$TMPDIR"
-openssl genpkey -algorithm RSA -out test-key.pem 2>/dev/null
-in-toto-run \
-  --step-name test-wrap \
-  --products /dev/null \
-  --key test-key.pem \
-  -- /bin/true
+(
+  set -e
+  TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$TMPDIR"' EXIT
+  cd "$TMPDIR"
+  openssl genpkey -algorithm RSA -out test-key.pem 2>/dev/null
+  in-toto-run \
+    --step-name test-wrap \
+    --products /dev/null \
+    --key test-key.pem \
+    -- /bin/true
+)
 ```
 
 ### Cosign local blob sign/verify
@@ -116,15 +118,17 @@ in-toto-run \
 ```bash
 # Sign and verify a local JSON blob with a generated ephemeral key.
 # Transparency-log upload and verification are disabled for local-only testing.
-set -e
-export COSIGN_PASSWORD=""
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
-cd "$TMPDIR"
-printf '{"run":"test"}\n' > run.json
-cosign generate-key-pair
-cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
-cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
+(
+  set -e
+  export COSIGN_PASSWORD=""
+  TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$TMPDIR"' EXIT
+  cd "$TMPDIR"
+  printf '{"run":"test"}\n' > run.json
+  cosign generate-key-pair
+  cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
+  cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
+)
 ```
 
 ### SLSA verifier negative path (expected fail)

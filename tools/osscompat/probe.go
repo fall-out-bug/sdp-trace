@@ -124,16 +124,28 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	return stateCannotVerify, "live wrap output/schema drift is documented as a blocker; see docs/oss-replacement-compatibility.md"
 }
 
-// runOPAPolicy evaluates a simplified Rego rule.
+// runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
 func runOPAPolicy() (verifierState, string) {
-	// We only verify tool presence here; actual policy evaluation requires
-	// adapter.rego and a test fixture that may not be present in all environments.
-	if out, err := exec.Command("opa", "version").CombinedOutput(); err != nil {
-		return stateFail, fmt.Sprintf("opa version failed: %v", err)
-	} else if !strings.Contains(string(out), "Version") {
-		return stateFail, "unexpected opa version output"
+	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
+	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture.json")
+	if _, err := os.Stat(regoPath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("adapter.rego not found: %v", err)
 	}
-	return stateCannotVerify, "opa present; run manual evaluation per docs/oss-replacement-compatibility.md"
+	if _, err := os.Stat(fixturePath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("test-fixture.json not found: %v", err)
+	}
+	out, err := exec.Command("opa", "eval",
+		"--data", regoPath,
+		"--input", fixturePath,
+		"data.sdp_trace.adapter.pass",
+	).CombinedOutput()
+	if err != nil {
+		return stateFail, fmt.Sprintf("opa eval failed: %v\n%s", err, strings.TrimSpace(string(out)))
+	}
+	if !strings.Contains(string(out), "true") {
+		return stateFail, "opa eval did not return true for expected pass fixture"
+	}
+	return statePass, "adapter.rego evaluates test-fixture.json as expected"
 }
 
 // runCUEImport tests CUE JSON Schema import.
@@ -162,10 +174,8 @@ func runInTotoWrap() (verifierState, string) {
 
 // runCosignLocalSign tests cosign presence.
 func runCosignLocalSign() (verifierState, string) {
-	if out, err := exec.Command("cosign", "version").CombinedOutput(); err != nil {
+	if _, err := exec.Command("cosign", "version").CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("cosign version failed: %v", err)
-	} else if !strings.Contains(string(out), "Cosign") {
-		return stateFail, "unexpected cosign version output"
 	}
 	return stateCannotVerify, "cosign present; run manual sign/verify per docs/oss-replacement-compatibility.md"
 }

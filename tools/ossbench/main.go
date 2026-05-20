@@ -121,17 +121,18 @@ func exitCode(results []benchmarkResult) int {
 }
 
 // builtIns are the standard OSS tool benchmarks.
+// They prefer a repo-local binary when available, falling back to PATH.
 var builtIns = []benchmarkDef{
 	{
 		Name:        "sdp-trace-verify",
 		Description: "sdp-trace verify command",
-		Cmd:         "sdp-trace",
+		Cmd:         resolveBinary("sdp-trace"),
 		Args:        []string{"verify"},
 	},
 	{
 		Name:        "sdp-trace-wrap",
 		Description: "sdp-trace wrap /bin/true",
-		Cmd:         "sdp-trace",
+		Cmd:         resolveBinary("sdp-trace"),
 		Args:        []string{"wrap", "/bin/true"},
 		Dir:         "/tmp",
 	},

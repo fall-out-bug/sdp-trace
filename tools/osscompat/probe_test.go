@@ -93,8 +93,8 @@ func TestRunOPAPolicy(t *testing.T) {
 		t.Skip("opa not in PATH")
 	}
 	state, reason := runOPAPolicy()
-	if state != stateCannotVerify {
-		t.Errorf("expected stateCannotVerify, got %s: %s", state, reason)
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
 	}
 }
 

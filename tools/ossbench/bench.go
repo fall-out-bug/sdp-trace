@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -17,6 +19,36 @@ type benchmarkDef struct {
 	Cmd         string
 	Args        []string
 	Dir         string // working directory; empty means current directory
+}
+
+// repoRoot returns the repository root by walking up from the current
+// working directory until it finds a .git directory or reaches the filesystem
+// root. It falls back to "." if the root cannot be determined.
+func repoRoot() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, ".git")); err == nil {
+			return cwd
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			return "."
+		}
+		cwd = parent
+	}
+}
+
+// resolveBinary returns an absolute path to name if it exists in the repo
+// root, otherwise returns name for PATH lookup.
+func resolveBinary(name string) string {
+	p := filepath.Join(repoRoot(), name)
+	if _, err := os.Stat(p); err == nil {
+		return p
+	}
+	return name
 }
 
 // benchmarkResult holds the measured statistics for one benchmark.
