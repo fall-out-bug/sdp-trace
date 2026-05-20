@@ -29,4 +29,4 @@ All Important and Advisory findings addressed in commit de6d1d3.
 - git diff --check: pass
 
 ## Verdict After Fix
-**Approved** — all Important and Advisory findings from the initial GLM/Kimi reviews were addressed in commit de6d1d3. Subsequent iterative adversarial review (codex rounds 1–31) produced no new Important or Advisory findings for `tools/ossbench`. GLM-F3 (built-in benchmarks use PATH-lookup) was re-reviewed and accepted with rationale: absolute paths would break portability across environments, and the harness is documented as local-scope evidence only.
+**Approved** — all Important and Advisory findings from the initial GLM/Kimi reviews were addressed in commit de6d1d3. Subsequent iterative adversarial review produced no new Important or Advisory findings for `tools/ossbench` at the time of this synthesis. GLM-F3 (built-in benchmarks use PATH-lookup) was re-reviewed and accepted with rationale: absolute paths would break portability across environments, and the harness is documented as local-scope evidence only.

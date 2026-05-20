@@ -143,7 +143,9 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	defer os.RemoveAll(tmpDir)
 
 	bin := filepath.Join(tmpDir, "sdp-trace")
-	buildOut, err := exec.CommandContext(ctx, "go", "build", "-o", bin, filepath.Join(root, "cmd/sdp-trace")).CombinedOutput()
+	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", bin, "./cmd/sdp-trace")
+	buildCmd.Dir = root
+	buildOut, err := buildCmd.CombinedOutput()
 	if err != nil {
 		return stateCannotVerify, fmt.Sprintf("go build failed: %v\n%s", err, strings.TrimSpace(string(buildOut)))
 	}

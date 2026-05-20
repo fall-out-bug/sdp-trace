@@ -31,6 +31,9 @@ Status: in_progress
 ## Phase 2 - Integration
 
 - [x] T017-060 Run all compatibility probes available in the local environment.
+  Verification: `go test -count=1 ./tools/osscompat` and `go test -count=1
+  ./tools/ossbench` pass locally; per-slice review artifacts record probe
+  results for the current source state.
 - [x] T017-070 Mark unavailable external services as `not_assessed` or
   `cannot_verify`; do not infer pass from local fixture success.
 - [ ] T017-080 Update roadmap and docs index after accepted implementation.
