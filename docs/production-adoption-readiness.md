@@ -134,8 +134,8 @@ go run ./tools/hygienecheck
 git diff --check
 
 # Advisory scans
-# gosec ./...
-# gitleaks detect --source . --config .gitleaks.toml
+gosec ./...
+gitleaks detect --source . --config .gitleaks.toml
 ```
 
 ## Maintenance
