@@ -66,16 +66,18 @@ and report `not_assessed`.
 
 ```bash
 # This command is expected to fail until T017-020 resolves the drift.
-# Use an isolated temp directory so wrap does not leave state behind.
+# Build the binary from the repo root, then run it from an isolated temp dir.
 (
   set -e
   REPO_ROOT=$(git rev-parse --show-toplevel)
   TMPDIR=$(mktemp -d)
   trap 'rm -rf "$TMPDIR"' EXIT
+  cd "$REPO_ROOT"
+  go build -o "$TMPDIR/sdp-trace" ./cmd/sdp-trace
   cd "$TMPDIR"
   WRAP_OUT=$(mktemp -p "$TMPDIR")
   trap 'rm -rf "$TMPDIR" "$WRAP_OUT"' EXIT
-  go run "$REPO_ROOT/cmd/sdp-trace" wrap /bin/true > "$WRAP_OUT"
+  "$TMPDIR/sdp-trace" wrap /bin/true > "$WRAP_OUT"
   check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
     "$WRAP_OUT"
@@ -166,10 +168,14 @@ and report `not_assessed`.
 # Attempt to verify a local DSSE fixture as production SLSA evidence.
 # Expected to fail because the signature is truncated and no Rekor entry exists.
 (
-  slsa-verifier verify-artifact \
+  set -e
+  if slsa-verifier verify-artifact \
     --provenance-path examples/oss-supply-chain/local-dsse.json \
     --source-uri local/test \
-    /dev/null
+    /dev/null; then
+    echo "ERROR: expected SLSA verification to fail"
+    exit 1
+  fi
 )
 ```
 

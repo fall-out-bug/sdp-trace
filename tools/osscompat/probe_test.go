@@ -157,7 +157,7 @@ func TestWrapOutputIsNotJSONObject(t *testing.T) {
 	}
 	var obj map[string]any
 	if err := json.Unmarshal(data, &obj); err == nil {
-		t.Fatal("expected wrap output to be non-JSON, but it parsed as JSON")
+		t.Fatal("expected wrap output to not be a JSON object, but it parsed as one")
 	}
 	// Verify the fixture contains the expected plain-text prefix from the
 	// frozen verbatim capture.

@@ -17,12 +17,15 @@ sdp-trace-like rules, but it does not replace the product verifier.
 
 ## Run the Policy
 
-Requires `opa` in `$PATH`.
+Requires `opa` in `$PATH`. Run from the `examples/oss-policy` directory.
 
 ```bash
-opa eval --data adapter.rego \
-  --input test-fixture.json \
-  'data.sdp_trace.adapter.pass'
+(
+  cd examples/oss-policy || exit 1
+  opa eval --data adapter.rego \
+    --input test-fixture.json \
+    'data.sdp_trace.adapter.pass'
+)
 ```
 
 Expected output:
@@ -42,10 +45,13 @@ Expected output:
 ## Test the Failure Fixture
 
 ```bash
-opa eval --data adapter.rego \
-  --input test-fixture-fail.json \
-  --format json \
-  'data.sdp_trace.adapter.pass'
+(
+  cd examples/oss-policy || exit 1
+  opa eval --data adapter.rego \
+    --input test-fixture-fail.json \
+    --format json \
+    'data.sdp_trace.adapter.pass'
+)
 ```
 
 Expected: `false` (the fixture has a non-string trace_id and provenance exceeding the bound).
