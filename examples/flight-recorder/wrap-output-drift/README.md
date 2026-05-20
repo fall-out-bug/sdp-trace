@@ -1,6 +1,6 @@
 # Wrap Output / Schema Drift Example
 
-Status: `blocked`
+Status: `cannot_verify`
 Spec: [017](../../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This directory demonstrates that the live `sdp-trace wrap` output does not

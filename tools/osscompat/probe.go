@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -143,13 +144,29 @@ func runOPAPolicy() (verifierState, string) {
 	out, err := exec.CommandContext(ctx, "opa", "eval",
 		"--data", regoPath,
 		"--input", fixturePath,
+		"--format", "json",
 		"data.sdp_trace.adapter.pass",
 	).CombinedOutput()
 	if err != nil {
 		return stateFail, fmt.Sprintf("opa eval failed: %v\n%s", err, strings.TrimSpace(string(out)))
 	}
-	if !strings.Contains(string(out), "true") {
-		return stateFail, "opa eval did not return true for expected pass fixture"
+	// Parse OPA JSON output to assert the expression evaluates to true.
+	// Expected top-level structure: {"result":[{"expressions":[{"value":true}]}]}
+	var opaResult struct {
+		Result []struct {
+			Expressions []struct {
+				Value interface{} `json:"value"`
+			} `json:"expressions"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(out, &opaResult); err != nil {
+		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
+	}
+	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
+		return stateFail, "opa eval returned no expressions"
+	}
+	if v, ok := opaResult.Result[0].Expressions[0].Value.(bool); !ok || !v {
+		return stateFail, "opa eval did not return boolean true for expected pass fixture"
 	}
 	return statePass, "adapter.rego evaluates test-fixture.json as expected"
 }

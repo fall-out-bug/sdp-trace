@@ -142,17 +142,27 @@ func exitCode(results []benchmarkResult) int {
 
 // builtIns are the standard OSS tool benchmarks.
 // They prefer a repo-local binary when available, falling back to PATH.
-var builtIns = []benchmarkDef{
-	{
-		Name:        "sdp-trace-version",
-		Description: "sdp-trace version command",
-		Cmd:         resolveBinary("sdp-trace"),
-		Args:        []string{"version"},
-	},
-	{
-		Name:        "sdp-trace-wrap",
-		Description: "sdp-trace wrap /bin/true",
-		Cmd:         resolveBinary("sdp-trace"),
-		Args:        []string{"wrap", "/bin/true"},
-	},
-}
+var builtIns = func() []benchmarkDef {
+	bin := resolveBinary("sdp-trace")
+	if bin == "sdp-trace" {
+		if err := buildSDPTrace(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: sdp-trace binary not found in repo root and build failed: %v\n", err)
+		} else {
+			bin = resolveBinary("sdp-trace")
+		}
+	}
+	return []benchmarkDef{
+		{
+			Name:        "sdp-trace-version",
+			Description: "sdp-trace version command",
+			Cmd:         bin,
+			Args:        []string{"version"},
+		},
+		{
+			Name:        "sdp-trace-wrap",
+			Description: "sdp-trace wrap /bin/true",
+			Cmd:         bin,
+			Args:        []string{"wrap", "/bin/true"},
+		},
+	}
+}()

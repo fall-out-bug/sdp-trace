@@ -52,6 +52,19 @@ func resolveBinary(name string) string {
 	return name
 }
 
+// buildSDPTrace compiles the sdp-trace binary from source in the repo root.
+func buildSDPTrace() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", "sdp-trace", "./cmd/sdp-trace")
+	cmd.Dir = repoRoot()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("go build failed: %v\n%s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
 // benchmarkResult holds the measured statistics for one benchmark.
 type benchmarkResult struct {
 	Name                string    `json:"name"`

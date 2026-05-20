@@ -18,7 +18,7 @@ Reviewer planes: GLM-5.1 (zai), Kimi-k2-thinking (kimi-coding)
 | Kimi-4 | Important | Quality+DX | Roadmap Capability Index drift | accepted_fixed |
 | Kimi-A | Advisory | DX | Minor status inconsistency in prototype docs | accepted_fixed |
 | Kimi-B | Advisory | Quality | Automated vs manual probe result mapping divergent | accepted_fixed — footnote added to compatibility doc |
-| Kimi-C | Advisory | Security | New docs lack sdp-trace-claim tags | accepted_fixed — claim tags added to compatibility doc tables |
+| Kimi-C | Advisory | Security | New docs lack sdp-trace-claim tags | accepted_fixed — claim tags removed after codex review found they used unsupported evidence forms; compatibility doc uses prose-only claims instead |
 
 ## Fixes Applied
 All Important and Advisory findings addressed in commit 79adf88.
