@@ -9,7 +9,7 @@ Reviewer planes: GLM-5.1 (zai), Kimi-k2-thinking (kimi-coding), MiniMax-M2.7 (mi
 |---|---|---|---|---|
 | GLM-F1 | Advisory | Quality | Dead code: envInfo, getEnv(), init() | accepted_fixed |
 | GLM-F2 | Advisory | Quality | First failed iteration aborts entire benchmark | accepted_fixed |
-| GLM-F3 | Advisory | Security | Built-in benchmarks use PATH-lookup | accepted (using absolute paths would break portability; documented) |
+| GLM-F3 | Advisory | Security | Built-in benchmarks use PATH-lookup | accepted_fixed (resolved by temp-build from source in resolveBuiltIns; never relies on stale PATH binary) |
 | GLM-F4 | Advisory | DX | No usage preamble; bare invocation runs built-ins | accepted_fixed |
 | GLM-F5 | Advisory | Quality | AllMs always included in JSON | accepted_fixed (added -raw flag) |
 | Kimi-1 | Important | Quality+DX | Dead/incorrect code envInfo/getEnv/init | accepted_fixed |

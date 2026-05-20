@@ -170,8 +170,19 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	}
 	checkCtx, checkCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer checkCancel()
+	schemaPath := filepath.Join(root, "schema/flight-recorder-run.schema.json")
+	// Preflight: validate a known-good fixture to confirm the tool and schema
+	// are functional. If this fails, the harness or schema is broken, not the
+	// wrap output.
+	positiveFixture := filepath.Join(root, "examples/flight-recorder/local-positive/run.json")
+	if _, err := exec.CommandContext(checkCtx, "check-jsonschema",
+		"--schemafile", schemaPath,
+		positiveFixture,
+	).CombinedOutput(); err != nil {
+		return stateCannotVerify, fmt.Sprintf("check-jsonschema preflight failed on known-positive fixture (harness/tool error, not conformance): %v", err)
+	}
 	schemaOut, err := exec.CommandContext(checkCtx, "check-jsonschema",
-		"--schemafile", filepath.Join(root, "schema/flight-recorder-run.schema.json"),
+		"--schemafile", schemaPath,
 		wrapOut,
 	).CombinedOutput()
 	if err == nil {
