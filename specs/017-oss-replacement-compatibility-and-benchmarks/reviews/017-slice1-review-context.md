@@ -24,7 +24,7 @@
 ```text
 go test -count=1 ./tools/osscompat
 go vet ./tools/osscompat
-go run ./tools/osscompat
+go run ./tools/osscompat        # exit 0 when no fail probes; exit 1 when jsonschema-wrap-drift reports fail
 go run ./tools/osscompat -json
 go run ./tools/osscompat -probe jsonschema-fixtures
 go run ./tools/hygienecheck

@@ -1,6 +1,6 @@
 # Wrap Output / Schema Drift Example
 
-Status: `cannot_verify`
+Status: `fail` (live wrap output vs schema); frozen snapshot is historical evidence only
 Spec: [017](../../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This directory demonstrates that the live `sdp-trace wrap` output does not

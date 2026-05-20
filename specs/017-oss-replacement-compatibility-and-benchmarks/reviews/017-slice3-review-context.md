@@ -1,7 +1,7 @@
 # Slice 3 Review Context: WS-017-B Wrap Output / Schema Drift
 
 ## Files Changed
-- `examples/flight-recorder/wrap-output-drift/run.json`
+- `examples/flight-recorder/wrap-output-drift/wrap-output.txt`
 - `examples/flight-recorder/wrap-output-drift/README.md`
 - `tools/osscompat/probe_test.go`
 

@@ -21,7 +21,7 @@ accident.
   available, the `osscompat` harness confirms this drift with a temp-dir probe
   that builds from source and reports `fail` because the output fails schema
   validation. When `check-jsonschema` is absent, the probe reports
-  `cannot_verify`.
+  `not_assessed`.
 - `check-jsonschema` validates `examples/flight-recorder/local-positive/run.json`
   against `schema/flight-recorder-run.schema.json`.
 - `OPA` can express a simplified adapter-capture pass rule; the checked-in
