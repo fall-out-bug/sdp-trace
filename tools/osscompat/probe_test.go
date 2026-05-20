@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -133,6 +135,19 @@ func TestRunSLSANegative(t *testing.T) {
 	state, reason := runSLSANegative()
 	if state != statePass {
 		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
+func TestWrapOutputIsNotValidJSON(t *testing.T) {
+	// Structural evidence that live wrap output does not conform to
+	// flight-recorder-run.schema.json.
+	data, err := os.ReadFile("../../examples/flight-recorder/wrap-output-drift/run.json")
+	if err != nil {
+		t.Fatalf("read drift fixture: %v", err)
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(data, &obj); err == nil {
+		t.Fatal("expected wrap output to be non-JSON, but it parsed as JSON")
 	}
 }
 
