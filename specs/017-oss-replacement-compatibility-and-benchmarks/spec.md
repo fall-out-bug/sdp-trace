@@ -18,8 +18,8 @@ accident.
   locally rewired schema refs.
 - Live `sdp-trace wrap` output does not validate against
   `schema/flight-recorder-run.schema.json`; the `osscompat` harness confirms
-  this drift with a temp-dir probe that builds from source and fails schema
-  validation as expected.
+  this drift with a temp-dir probe that builds from source and reports
+  `cannot_verify` because the drift blocks compatibility verification.
 - `check-jsonschema` validates `examples/flight-recorder/local-positive/run.json`
   against `schema/flight-recorder-run.schema.json`.
 - `OPA` can express a simplified adapter-capture pass rule; the checked-in

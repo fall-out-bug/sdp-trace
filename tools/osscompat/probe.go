@@ -128,8 +128,9 @@ func runJSONSchemaFixtures() (verifierState, string) {
 }
 
 // runJSONSchemaWrapDrift builds sdp-trace from source, runs wrap in an isolated
-// temp directory, and checks the live output against the schema. The probe
-// returns pass only if schema validation fails (confirming the drift).
+// temp directory, and checks the live stdout against the schema. The probe
+// reports cannot_verify when schema validation fails (the drift blocks
+// compatibility verification) and pass only if the drift is unexpectedly fixed.
 func runJSONSchemaWrapDrift() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -149,11 +150,15 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	wrapOut := filepath.Join(tmpDir, "wrap.json")
 	cmd := exec.CommandContext(ctx, bin, "wrap", "/bin/true")
 	cmd.Dir = tmpDir
-	out, err := cmd.CombinedOutput()
+	stdout, err := cmd.Output()
 	if err != nil {
-		return stateFail, fmt.Sprintf("wrap failed: %v\n%s", err, strings.TrimSpace(string(out)))
+		var stderr []byte
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			stderr = exitErr.Stderr
+		}
+		return stateFail, fmt.Sprintf("wrap failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
 	}
-	if err := os.WriteFile(wrapOut, out, 0644); err != nil {
+	if err := os.WriteFile(wrapOut, stdout, 0644); err != nil {
 		return stateCannotVerify, fmt.Sprintf("write wrap output: %v", err)
 	}
 
@@ -167,9 +172,9 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 		wrapOut,
 	).CombinedOutput()
 	if err == nil {
-		return stateFail, "live wrap output unexpectedly passed schema validation; drift may be fixed"
+		return statePass, "live wrap output unexpectedly passed schema validation; drift may be fixed"
 	}
-	return statePass, fmt.Sprintf("live wrap output fails schema validation as expected: %s", strings.TrimSpace(string(schemaOut)))
+	return stateCannotVerify, fmt.Sprintf("live wrap output fails schema validation; drift remains open: %s", strings.TrimSpace(string(schemaOut)))
 }
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
