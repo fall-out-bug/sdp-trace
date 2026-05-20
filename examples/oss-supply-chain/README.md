@@ -59,14 +59,24 @@ negative-path testing. These are local experiments only.
 ## SLSA Verifier Negative Path
 
 ```bash
-# Run from this directory.
-slsa-verifier verify-artifact \
-  --provenance-path local-dsse.json \
-  --source-uri local/test \
-  /dev/null
+# Run from the repo root with subshell isolation.
+(
+  set -e
+  command -v slsa-verifier >/dev/null || { echo "slsa-verifier not found"; exit 1; }
+  cd examples/oss-supply-chain
+  if slsa-verifier verify-artifact \
+    --provenance-path local-dsse.json \
+    --source-uri local/test \
+    /dev/null; then
+    echo "ERROR: expected SLSA verification to fail"
+    exit 1
+  fi
+)
 ```
 
-Expected: failure (truncated signature, no Rekor entry, untrusted key).
+Expected: failure due to malformed/truncated DSSE signature. Rekor rejection
+is not separately evidenced because the malformed signature prevents the
+verifier from reaching any transparency-log check.
 
 ## Substitution Boundary
 

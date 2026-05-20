@@ -41,7 +41,7 @@ Missing tools render that probe `not_assessed`.
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Sign/verify local `run.json` blob | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Verify with transparency log / Rekor | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
-| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
+| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `cannot_verify` | Manual-only expected-fail probe; malformed/truncated DSSE signature prevents verification before any Rekor check |
 
 ## Reproduction Commands
 
@@ -169,7 +169,8 @@ and report `not_assessed`.
 
 ```bash
 # Attempt to verify a local DSSE fixture as production SLSA evidence.
-# Expected to fail because the signature is truncated and no Rekor entry exists.
+# Expected to fail because the DSSE signature is malformed/truncated.
+# The malformed signature prevents the verifier from reaching any Rekor check.
 (
   set -e
   command -v slsa-verifier >/dev/null || { echo "slsa-verifier not found"; exit 1; }

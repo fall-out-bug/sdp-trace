@@ -61,6 +61,8 @@ type benchmarkResult struct {
 	Name                string    `json:"name"`
 	Description         string    `json:"description,omitempty"`
 	Command             string    `json:"command"`
+	Argv                []string  `json:"argv,omitempty"`
+	WorkingDirectory    string    `json:"working_directory,omitempty"`
 	BinaryPath          string    `json:"binary_path,omitempty"`
 	BinarySource        string    `json:"binary_source,omitempty"`
 	Environment         envInfo   `json:"environment,omitempty"`
@@ -110,11 +112,14 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 	}
 
 	cmdDisplay := filepath.Base(def.Cmd) + " " + strings.Join(def.Args, " ")
+	argv := append([]string{def.Cmd}, def.Args...)
 	if len(times) == 0 {
 		return benchmarkResult{
 			Name:                def.Name,
 			Description:         def.Description,
 			Command:             cmdDisplay,
+			Argv:                argv,
+			WorkingDirectory:    def.Dir,
 			BinaryPath:          def.Cmd,
 			BinarySource:        def.Source,
 			Environment:         getEnv(),
@@ -132,6 +137,8 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		Name:                def.Name,
 		Description:         def.Description,
 		Command:             cmdDisplay,
+		Argv:                argv,
+		WorkingDirectory:    def.Dir,
 		BinaryPath:          def.Cmd,
 		BinarySource:        def.Source,
 		Environment:         getEnv(),

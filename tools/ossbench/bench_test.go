@@ -45,6 +45,7 @@ func TestRunBenchmark_CustomCommand(t *testing.T) {
 		Name: "true",
 		Cmd:  "true",
 		Args: []string{},
+		Dir:  "/tmp",
 	}
 	res := runBenchmark(def, 5)
 	if res.Error != "" {
@@ -61,6 +62,12 @@ func TestRunBenchmark_CustomCommand(t *testing.T) {
 	}
 	if res.MinMs < 0 || res.MaxMs < res.MinMs {
 		t.Errorf("invalid min/max: min=%v max=%v", res.MinMs, res.MaxMs)
+	}
+	if len(res.Argv) != 1 || res.Argv[0] != "true" {
+		t.Errorf("unexpected argv: %v", res.Argv)
+	}
+	if res.WorkingDirectory != "/tmp" {
+		t.Errorf("unexpected working_directory: %q", res.WorkingDirectory)
 	}
 }
 
