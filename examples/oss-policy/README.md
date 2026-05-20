@@ -1,0 +1,58 @@
+# OSS Policy Prototype
+
+Status: `local_pass`  
+Spec: [017](../../specs/017-oss-replacement-compatibility-and-benchmarks/)
+
+This directory contains a minimal OPA/Rego policy prototype for an
+simplified adapter-capture profile. It demonstrates that OPA can express
+sdp-trace-like rules, but it does not replace the product verifier.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `adapter.rego` | Simplified pass/fail rule with trace_id and provenance bounds |
+| `test-fixture.json` | Valid input that should produce `pass = true` |
+
+## Run the Policy
+
+Requires `opa` in `$PATH`.
+
+```bash
+opa eval --data adapter.rego \
+  --input test-fixture.json \
+  'data.sdp_trace.adapter.pass'
+```
+
+Expected output:
+
+```json
+{
+  "result": [{
+    "expressions": [{
+      "value": true,
+      "text": "data.sdp_trace.adapter.pass",
+      "location": {"row": 1, "col": 1}
+    }]
+  }]
+}
+```
+
+## Test the Failure Fixture
+
+```bash
+opa eval --data adapter.rego \
+  --input <(echo '{"trace_id":"","provenance":[]}') \
+  'data.sdp_trace.adapter.fail_reason'
+```
+
+Expected: `["missing trace_id"]`.
+
+## Substitution Boundary
+
+- **What OPA replaces:** Policy-as-code expressions for simplified profiles.
+- **What remains sdp-trace-specific:** Evidence collection, gate verdicts,
+  `sdp-trace-claim` tag semantics, and hash-chain validation.
+- **Adapter glue required:** JSON translation layer between sdp-trace events
+  and OPA input. OPA does not natively understand trace provenance or
+  recorder profiles.
