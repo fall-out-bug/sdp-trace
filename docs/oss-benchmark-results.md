@@ -21,7 +21,7 @@ decisions but do not prove production readiness.
 | Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
 |---|---:|---:|---:|---|---|---|
 | `sdp-trace version` | 4.60 | 4.39 | 5.03 | 20 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
-| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | 20 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | 20 | `sdp-trace wrap true` | Built-in, measured via `tools/ossbench` (portable no-op; `true` on Unix, `cmd /c exit 0` on Windows) |
 
 **Exact Command note:** the harness builds `sdp-trace` from source into a temp
 directory on every run. The displayed command is a display name

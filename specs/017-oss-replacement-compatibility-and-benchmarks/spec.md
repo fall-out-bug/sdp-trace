@@ -18,8 +18,8 @@ accident.
   in the current environment (no optional tools installed) the probe reports
   `not_assessed`. When available, it validates checked flight-recorder fixtures
   against locally rewired schema refs.
-- The `run.json` artifact produced by `sdp-trace wrap /bin/true` has been
-  observed not to validate against `schema/flight-recorder-run.schema.json`.
+- The `run.json` artifact produced by `sdp-trace wrap true` (portable no-op)
+  has been observed not to validate against `schema/flight-recorder-run.schema.json`.
   When `check-jsonschema` is available, the `osscompat` harness confirms this
   drift with a temp-dir probe that builds from source, runs `wrap`, locates the
   generated `run.json` inside the reported `run_dir`, and reports `fail` because
@@ -48,7 +48,7 @@ All rows below are reproducible via `tools/ossbench`.
 | Probe | Median ms | Min ms | Max ms | Command |
 | --- | ---: | ---: | ---: | --- |
 | `sdp-trace version` | 4.60 | 4.39 | 5.03 | `sdp-trace version` |
-| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | `sdp-trace wrap /bin/true` |
+| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | `sdp-trace wrap true` |
 
 The harness builds `sdp-trace` from source into a temp directory on every run;
 the displayed command is a display name (`filepath.Base`), while the actual

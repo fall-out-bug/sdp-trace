@@ -19,7 +19,7 @@ sdp-trace-like rules, but it does not replace the product verifier.
 
 ## Run the Policy
 
-Requires `opa` in `$PATH`. Run from the repository root.
+Requires `opa` in `$PATH`. The prototype uses `import rego.v1`, which requires OPA v1.0+ (or a recent v0.x with Rego v1 support). Run from the repository root.
 
 ```bash
 (

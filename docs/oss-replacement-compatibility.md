@@ -22,7 +22,7 @@ Missing tools render that probe `not_assessed`.
 | Tool | Purpose | Verdict if missing |
 |---|---|---|
 | `check-jsonschema` (Python) | JSON Schema fixture validation | `not_assessed` |
-| `opa` | Rego policy evaluation | `not_assessed` |
+| `opa` | Rego policy evaluation (requires v1.0+ for `import rego.v1`) | `not_assessed` |
 | `cue` | CUE import / validation | `not_assessed` |
 | `in-toto-run` | Signed supply-chain link generation | `not_assessed` |
 | `cosign` | Local DSSE/blob signing & verification | `not_assessed` |
@@ -46,7 +46,7 @@ tools are available, the expected results are shown in the
 | OPA/Rego | Negative trace_id rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | OPA/Rego | Negative provenance rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | CUE | JSON Schema import to stdout | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `cue` present [^1] |
-| CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
+| CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | `cannot_verify` | Docs-only/manual; no automated harness probe. Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Sign/verify local `run.json` blob | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
 | Cosign | Verify with transparency log / Rekor | `not_assessed` | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
@@ -89,7 +89,7 @@ and report `not_assessed`.
   check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
     "$REPO_ROOT/examples/flight-recorder/local-positive/run.json"
-  RUN_DIR=$("$TMPDIR/sdp-trace" wrap /bin/true | awk '{print $2}')
+  RUN_DIR=$("$TMPDIR/sdp-trace" wrap true | awk '{print $2}')
   RUN_JSON="$TMPDIR/$RUN_DIR/run.json"
   if check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
