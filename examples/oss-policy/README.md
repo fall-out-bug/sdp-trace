@@ -1,9 +1,9 @@
 # OSS Policy Prototype
 
-Status: `local_pass`  
+Status: locally tested, not externally verified
 Spec: [017](../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
-This directory contains a minimal OPA/Rego policy prototype for an
+This directory contains a minimal OPA/Rego policy prototype for a
 simplified adapter-capture profile. It demonstrates that OPA can express
 sdp-trace-like rules, but it does not replace the product verifier.
 

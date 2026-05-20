@@ -1,6 +1,6 @@
 # OSS Supply-Chain Prototype
 
-Status: `local_pass`  
+Status: locally tested, not externally verified
 Spec: [017](../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This directory contains minimal supply-chain tooling probes:
@@ -22,6 +22,9 @@ negative-path testing. These are local experiments only.
 ## in-toto Command Wrapping
 
 ```bash
+# Generate a throwaway key for local testing
+openssl genpkey -algorithm RSA -out /tmp/test-key.pem 2>/dev/null
+
 in-toto-run \
   --step-name test-wrap \
   --products /dev/null \
@@ -32,23 +35,29 @@ in-toto-run \
 ## Cosign Local Blob Sign/Verify
 
 ```bash
-cd /tmp
-cosign generate-key-pair
-echo '{"run":"test"}' > run.json
-cosign sign-blob --key cosign.key --yes run.json > run.json.sig
-cosign verify-blob --key cosign.pub --signature run.json.sig run.json
+# Run in a subshell to avoid mutating the caller's CWD.
+# If your Cosign version enforces transparency-log checks by default,
+# add --insecure-ignore-tlog to the verify-blob command.
+(
+  cd /tmp
+  cosign generate-key-pair
+  echo '{"run":"test"}' > run.json
+  cosign sign-blob --key cosign.key --yes run.json > run.json.sig
+  cosign verify-blob --key cosign.pub --signature run.json.sig run.json
+)
 ```
 
 ## SLSA Verifier Negative Path
 
 ```bash
+# From the repo root:
 slsa-verifier verify-artifact \
   --provenance-path examples/oss-supply-chain/local-dsse.json \
   --source-uri local/test \
   /dev/null
 ```
 
-Expected: failure because no Rekor entry exists.
+Expected: failure (truncated signature, no Rekor entry, untrusted key).
 
 ## Substitution Boundary
 
