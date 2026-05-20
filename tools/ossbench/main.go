@@ -34,6 +34,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *list {
+		if err := resolveBuiltIns(); err != nil {
+			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
+			return 2
+		}
 		for _, b := range builtIns {
 			fmt.Fprintf(stdout, "%s\t%s\n", b.Name, b.Description)
 		}
@@ -42,6 +46,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	var defs []benchmarkDef
 	if *name != "" {
+		if err := resolveBuiltIns(); err != nil {
+			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
+			return 2
+		}
 		for _, b := range builtIns {
 			if b.Name == *name {
 				defs = append(defs, b)
@@ -63,6 +71,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 				Args:        remaining[1:],
 			})
 		} else {
+			if err := resolveBuiltIns(); err != nil {
+				fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
+				return 2
+			}
 			defs = builtIns
 		}
 	}
@@ -141,28 +153,32 @@ func exitCode(results []benchmarkResult) int {
 }
 
 // builtIns are the standard OSS tool benchmarks.
-// They prefer a repo-local binary when available, falling back to PATH.
-var builtIns = func() []benchmarkDef {
+var builtIns = []benchmarkDef{
+	{
+		Name:        "sdp-trace-version",
+		Description: "sdp-trace version command",
+		Cmd:         "sdp-trace",
+		Args:        []string{"version"},
+	},
+	{
+		Name:        "sdp-trace-wrap",
+		Description: "sdp-trace wrap /bin/true",
+		Cmd:         "sdp-trace",
+		Args:        []string{"wrap", "/bin/true"},
+	},
+}
+
+// resolveBuiltIns resolves or builds the sdp-trace binary and updates builtIns.
+func resolveBuiltIns() error {
 	bin := resolveBinary("sdp-trace")
 	if bin == "sdp-trace" {
 		if err := buildSDPTrace(); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: sdp-trace binary not found in repo root and build failed: %v\n", err)
-		} else {
-			bin = resolveBinary("sdp-trace")
+			return fmt.Errorf("sdp-trace binary not found in repo root and build failed: %w", err)
 		}
+		bin = resolveBinary("sdp-trace")
 	}
-	return []benchmarkDef{
-		{
-			Name:        "sdp-trace-version",
-			Description: "sdp-trace version command",
-			Cmd:         bin,
-			Args:        []string{"version"},
-		},
-		{
-			Name:        "sdp-trace-wrap",
-			Description: "sdp-trace wrap /bin/true",
-			Cmd:         bin,
-			Args:        []string{"wrap", "/bin/true"},
-		},
+	for i := range builtIns {
+		builtIns[i].Cmd = bin
 	}
-}()
+	return nil
+}

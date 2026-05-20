@@ -60,7 +60,7 @@ func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 	for _, r := range results {
 		line := fmt.Sprintf("%-24s %s", r.Name, r.State)
 		if r.Reason != "" {
-			line += "  — " + strings.ReplaceAll(r.Reason, "\n", " ")
+			line += "  - " + strings.ReplaceAll(r.Reason, "\n", " ")
 		}
 		if _, err := fmt.Fprintln(w, line); err != nil {
 			return err

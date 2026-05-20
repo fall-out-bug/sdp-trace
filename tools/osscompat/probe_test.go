@@ -98,6 +98,16 @@ func TestRunOPAPolicy(t *testing.T) {
 	}
 }
 
+func TestRunOPANegativeFixture(t *testing.T) {
+	if !hasTool("opa") {
+		t.Skip("opa not in PATH")
+	}
+	state, reason := runOPANegativeFixture()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
 func TestRunCUEImport(t *testing.T) {
 	if !hasTool("cue") {
 		t.Skip("cue not in PATH")

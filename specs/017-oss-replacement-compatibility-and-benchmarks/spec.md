@@ -19,8 +19,8 @@ accident.
 - Current live `sdp-trace wrap` output does not validate against
   `schema/flight-recorder-run.schema.json`; required fields and timestamp
   format differ.
-- `check-jsonschema` validates representative assessment, gate, and release
-  example files.
+- `check-jsonschema` validates `examples/flight-recorder/local-positive/run.json`
+  against `schema/flight-recorder-run.schema.json`.
 - `OPA` can express a simplified adapter-capture pass rule; the checked-in
   positive fixture evaluates to true.
 - `CUE` can import JSON Schema, but direct validation is blocked until schema

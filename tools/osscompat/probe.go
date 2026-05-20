@@ -52,8 +52,14 @@ var registry = []probe{
 	{
 		Name:        "opa-policy",
 		NeedsTool:   "opa",
-		Description: "Verify opa is present and responds to version query",
+		Description: "Evaluate adapter.rego against the positive test fixture",
 		Run:         runOPAPolicy,
+	},
+	{
+		Name:        "opa-negative",
+		NeedsTool:   "opa",
+		Description: "Evaluate adapter.rego against the negative test fixture",
+		Run:         runOPANegativeFixture,
 	},
 	{
 		Name:        "cue-import",
@@ -169,6 +175,47 @@ func runOPAPolicy() (verifierState, string) {
 		return stateFail, "opa eval did not return boolean true for expected pass fixture"
 	}
 	return statePass, "adapter.rego evaluates test-fixture.json as expected"
+}
+
+// runOPANegativeFixture evaluates the checked-in adapter.rego against the
+// negative test fixture and asserts pass is false.
+func runOPANegativeFixture() (verifierState, string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
+	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture-fail.json")
+	if _, err := os.Stat(regoPath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("adapter.rego not found: %v", err)
+	}
+	if _, err := os.Stat(fixturePath); err != nil {
+		return stateCannotVerify, fmt.Sprintf("test-fixture-fail.json not found: %v", err)
+	}
+	out, err := exec.CommandContext(ctx, "opa", "eval",
+		"--data", regoPath,
+		"--input", fixturePath,
+		"--format", "json",
+		"data.sdp_trace.adapter.pass",
+	).CombinedOutput()
+	if err != nil {
+		return stateFail, fmt.Sprintf("opa eval failed: %v\n%s", err, strings.TrimSpace(string(out)))
+	}
+	var opaResult struct {
+		Result []struct {
+			Expressions []struct {
+				Value interface{} `json:"value"`
+			} `json:"expressions"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(out, &opaResult); err != nil {
+		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
+	}
+	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
+		return stateFail, "opa eval returned no expressions"
+	}
+	if v, ok := opaResult.Result[0].Expressions[0].Value.(bool); !ok || v {
+		return stateFail, "opa eval did not return boolean false for expected fail fixture"
+	}
+	return statePass, "adapter.rego correctly rejects test-fixture-fail.json"
 }
 
 // runCUEImport tests CUE JSON Schema import.
