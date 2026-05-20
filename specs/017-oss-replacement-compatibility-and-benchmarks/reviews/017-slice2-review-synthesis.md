@@ -29,4 +29,4 @@ All Important and Advisory findings addressed in commit de6d1d3.
 - git diff --check: pass
 
 ## Verdict After Fix
-**LGTM** — zero Important findings remain. Slice 2 is approved.
+**Approved** — zero Important findings remain. Advisory finding GLM-F3 (built-in benchmarks use PATH-lookup) is accepted with rationale: absolute paths would break portability across environments, and the harness is documented as local-scope evidence only. Slice 2 is approved with this accepted advisory.

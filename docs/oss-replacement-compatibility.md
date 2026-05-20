@@ -36,16 +36,12 @@ Missing tools render that probe `not_assessed`.
 | `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Required fields and timestamp format differ |
 | `check-jsonschema` | Validate representative assessment, gate, and release examples | `pass` | Example fixtures conform to schema |
 | OPA/Rego | Express simplified adapter-capture pass/fail rule | `pass` | Policy evaluates and correctly detects `test_provenance_not_overclaimed` failure fixture [^1] |
-| CUE | JSON Schema import | `cannot_verify` | CUE can import JSON Schema types, but direct validation is blocked until schema refs are packaged as a CUE module |
+| CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
+| CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally [^1] |
 | Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled [^1] |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
 | SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: no matching Rekor entries found |
-
-<!-- sdp-trace-claim: claim=trust_not_assessed; subject=017-slsa-production; state=not_assessed; profile=external_production_trust; evidence=state:no_rekor_entries -->
-<!-- sdp-trace-claim: claim=trust_not_assessed; subject=017-rekor-integration; state=not_assessed; profile=external_production_trust; evidence=state:no_rekor_entries -->
-<!-- sdp-trace-claim: claim=command_verified; subject=017-check-jsonschema-fixture; state=pass; profile=observed_slice; evidence=command_set:017-fixture-validation -->
-<!-- sdp-trace-claim: claim=command_verified; subject=017-opa-policy; state=pass; profile=observed_slice; evidence=command_set:017-opa-eval -->
 
 ## Reproduction Commands
 
@@ -69,12 +65,13 @@ and report `not_assessed`.
 
 ```bash
 # This command is expected to fail until T017-020 resolves the drift.
-(
-  sdp-trace wrap /bin/true > /tmp/wrap-run.json
-  check-jsonschema \
-    --schemafile schema/flight-recorder-run.schema.json \
-    /tmp/wrap-run.json
-)
+set -e
+WRAP_OUT=$(mktemp)
+trap 'rm -f "$WRAP_OUT"' EXIT
+sdp-trace wrap /bin/true > "$WRAP_OUT"
+check-jsonschema \
+  --schemafile schema/flight-recorder-run.schema.json \
+  "$WRAP_OUT"
 ```
 
 ### OPA/Rego policy evaluation
@@ -102,15 +99,16 @@ and report `not_assessed`.
 
 ```bash
 # Generate a throwaway key and wrap a command
-(
-  cd /tmp
-  openssl genpkey -algorithm RSA -out test-key.pem 2>/dev/null
-  in-toto-run \
-    --step-name test-wrap \
-    --products /dev/null \
-    --key test-key.pem \
-    -- /bin/true
-)
+set -e
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+cd "$TMPDIR"
+openssl genpkey -algorithm RSA -out test-key.pem 2>/dev/null
+in-toto-run \
+  --step-name test-wrap \
+  --products /dev/null \
+  --key test-key.pem \
+  -- /bin/true
 ```
 
 ### Cosign local blob sign/verify
@@ -118,13 +116,15 @@ and report `not_assessed`.
 ```bash
 # Sign and verify a local JSON blob with a generated ephemeral key.
 # Transparency-log upload and verification are disabled for local-only testing.
-(
-  cd /tmp
-  echo '{"run":"test"}' > run.json
-  cosign generate-key-pair
-  cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
-  cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
-)
+set -e
+export COSIGN_PASSWORD=""
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+cd "$TMPDIR"
+printf '{"run":"test"}\n' > run.json
+cosign generate-key-pair
+cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
+cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
 ```
 
 ### SLSA verifier negative path (expected fail)

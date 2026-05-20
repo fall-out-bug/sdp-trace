@@ -100,20 +100,10 @@ func TestRunBenchmark_DefaultIterations(t *testing.T) {
 }
 
 func TestRunBenchmark_PartialFailure(t *testing.T) {
-	def := benchmarkDef{
-		Name: "partial-fail",
-		Cmd:  "bash",
-		Args: []string{"-c", "exit 0"},
-	}
-	res := runBenchmark(def, 5)
-	if res.Error != "" {
-		t.Fatalf("unexpected error for always-passing command: %s", res.Error)
-	}
 	// Verify that a command that sometimes fails still produces partial results.
 	def2 := benchmarkDef{
-		Name: "sometimes-fail",
-		Cmd:  "bash",
-		Args: []string{"-c", "exit 1"},
+		Name: "always-fail",
+		Cmd:  "false",
 	}
 	res2 := runBenchmark(def2, 3)
 	if res2.Error == "" {

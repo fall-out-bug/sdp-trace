@@ -69,14 +69,12 @@ func TestPrintResults_Text(t *testing.T) {
 }
 
 func TestRunJSONSchemaFixtures(t *testing.T) {
-	state, reason := runJSONSchemaFixtures()
-	// If check-jsonschema is missing the probe returns not_assessed via runProbe,
-	// but if we call the function directly it may return pass or fail.
-	if state != statePass && state != stateFail && state != stateCannotVerify {
-		t.Errorf("unexpected state %s: %s", state, reason)
+	if !hasTool("check-jsonschema") {
+		t.Skip("check-jsonschema not in PATH")
 	}
-	if reason == "" {
-		t.Error("expected reason")
+	state, reason := runJSONSchemaFixtures()
+	if state != statePass {
+		t.Fatalf("expected statePass, got %s: %s", state, reason)
 	}
 }
 
