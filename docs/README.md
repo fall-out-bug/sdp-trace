@@ -44,6 +44,7 @@ evidence and gaps; it does not approve changes.
 - [Production Adoption Readiness](production-adoption-readiness.md): trust scope matrix and open gaps.
 - [Adoption Guide, English](adoption-guide.en.md)
 - [Adoption Guide, Russian](adoption-guide.ru.md)
+- [Production Adoption Readiness](production-adoption-readiness.md): what is known, pilot-capable, and `not_assessed`.
 - [Repository Rollout Playbook, English](repository-rollout-playbook.en.md)
 - [Repository Rollout Playbook, Russian](repository-rollout-playbook.ru.md)
 - [Accountability Model](accountability-model.md)
