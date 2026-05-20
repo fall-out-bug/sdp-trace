@@ -16,18 +16,28 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	var (
 		asJSON = fs.Bool("json", false, "emit JSON output")
+		list   = fs.Bool("list", false, "list available probes")
 		probe  = fs.String("probe", "", "run a single probe by name")
 	)
 	if err := fs.Parse(args); err != nil {
-		fmt.Fprintf(stderr, "parse flags: %v\n", err)
 		return 2
+	}
+
+	if *list {
+		for _, p := range registry {
+			fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description)
+		}
+		return 0
 	}
 
 	if *probe != "" {
 		for _, p := range registry {
 			if p.Name == *probe {
 				r := runProbe(p)
-				_ = printResults(stdout, []probeResult{r}, *asJSON)
+				if err := printResults(stdout, []probeResult{r}, *asJSON); err != nil {
+					fmt.Fprintf(stderr, "print results: %v\n", err)
+					return 2
+				}
 				return exitCode([]probeResult{r})
 			}
 		}

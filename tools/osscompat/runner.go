@@ -33,6 +33,23 @@ func runProbe(p probe) probeResult {
 	}
 }
 
+// summarize counts results by state.
+func summarize(results []probeResult) (pass, fail, cant, na int) {
+	for _, r := range results {
+		switch r.State {
+		case statePass:
+			pass++
+		case stateFail:
+			fail++
+		case stateCannotVerify:
+			cant++
+		case stateNotAssessed:
+			na++
+		}
+	}
+	return
+}
+
 // printResults writes probe results as text or JSON.
 func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 	if asJSON {
@@ -47,5 +64,8 @@ func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 		}
 		fmt.Fprintln(w, line)
 	}
+	pass, fail, cant, na := summarize(results)
+	fmt.Fprintf(w, "\n%d pass, %d fail, %d cannot_verify, %d not_assessed\n",
+		pass, fail, cant, na)
 	return nil
 }

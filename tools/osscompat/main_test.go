@@ -42,11 +42,35 @@ func TestRun_SingleProbe(t *testing.T) {
 	}
 }
 
+func TestRun_ListProbes(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-list"}, &out, &out)
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	for _, p := range registry {
+		if !strings.Contains(out.String(), p.Name) {
+			t.Errorf("output missing probe %q", p.Name)
+		}
+	}
+}
+
 func TestRun_UnknownProbe(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-probe", "nonexistent"}, &out, &out)
 	if code != 2 {
 		t.Fatalf("expected exit 2, got %d", code)
+	}
+}
+
+func TestRun_SingleProbeJSON(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-json", "-probe", registry[0].Name}, &out, &out)
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out.String()), "[") {
+		t.Fatalf("expected JSON array output, got: %s", out.String())
 	}
 }
 

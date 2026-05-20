@@ -36,43 +36,42 @@ var registry = []probe{
 	{
 		Name:        "jsonschema-fixtures",
 		NeedsTool:   "check-jsonschema",
-		Description: "Validate flight-recorder fixtures against local schema refs",
+		Description: "Verify check-jsonschema is present and can validate fixtures (run manually per docs)",
 		Run:         runJSONSchemaFixtures,
 	},
 	{
 		Name:        "jsonschema-wrap-drift",
-		NeedsTool:   "check-jsonschema",
-		Description: "Validate live sdp-trace wrap output vs flight-recorder-run.schema.json",
+		Description: "Document live wrap output vs flight-recorder-run.schema.json drift",
 		Run:         runJSONSchemaWrapDrift,
 	},
 	{
 		Name:        "opa-policy",
 		NeedsTool:   "opa",
-		Description: "Evaluate simplified adapter-capture pass/fail rule",
+		Description: "Verify opa is present and responds to version query",
 		Run:         runOPAPolicy,
 	},
 	{
 		Name:        "cue-import",
 		NeedsTool:   "cue",
-		Description: "Import JSON Schema into CUE",
+		Description: "Verify cue can import JSON Schema to stdout without mutating working tree",
 		Run:         runCUEImport,
 	},
 	{
 		Name:        "intoto-wrap",
 		NeedsTool:   "in-toto-run",
-		Description: "Wrap command and sign link metadata",
+		Description: "Verify in-toto-run is present and responds to version query",
 		Run:         runInTotoWrap,
 	},
 	{
 		Name:        "cosign-local-sign",
 		NeedsTool:   "cosign",
-		Description: "Sign and verify local blob with local key",
+		Description: "Verify cosign is present and responds to version query",
 		Run:         runCosignLocalSign,
 	},
 	{
 		Name:        "slsa-negative",
 		NeedsTool:   "slsa-verifier",
-		Description: "Reject local DSSE fixture as production SLSA evidence",
+		Description: "Verify slsa-verifier is present and responds to version query",
 		Run:         runSLSANegative,
 	},
 }
@@ -86,9 +85,10 @@ func hasTool(tool string) bool {
 // runJSONSchemaFixtures validates checked examples.
 func runJSONSchemaFixtures() (verifierState, string) {
 	// The actual validation command is recorded in docs/oss-replacement-compatibility.md
-	// as a copy-pasteable reproduction step. This probe checks tool presence only
-	// because fixture paths may vary across environments.
-	return statePass, "fixture validation documented in compatibility doc"
+	// as a copy-pasteable reproduction step. This probe does not auto-run the
+	// validation because fixture paths may vary and we must not claim pass
+	// without evidence.
+	return stateCannotVerify, "fixture validation must be run manually; see docs/oss-replacement-compatibility.md"
 }
 
 // runJSONSchemaWrapDrift checks live wrap output against schema (expected fail).
@@ -115,12 +115,13 @@ func runCUEImport() (verifierState, string) {
 	args := []string{
 		"import",
 		"--package", "sdptrace",
+		"-o", "-",
 		"schema/flight-recorder-run.schema.json",
 	}
 	if out, err := exec.Command("cue", args...).CombinedOutput(); err != nil {
 		return stateFail, fmt.Sprintf("cue import failed: %v\n%s", err, strings.TrimSpace(string(out)))
 	}
-	return statePass, "cue can import flight-recorder JSON Schema"
+	return statePass, "cue can import flight-recorder JSON Schema to stdout"
 }
 
 // runInTotoWrap tests in-toto-run presence.
@@ -151,10 +152,4 @@ func runSLSANegative() (verifierState, string) {
 		return stateFail, "unexpected slsa-verifier version output"
 	}
 	return statePass, "slsa-verifier executable responds to version query"
-}
-
-// repoRoot returns the repository root path.
-// It uses the working directory as a proxy; callers should invoke from repo root.
-func repoRoot() string {
-	return "."
 }

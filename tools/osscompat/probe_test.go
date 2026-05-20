@@ -66,6 +66,76 @@ func TestPrintResults_Text(t *testing.T) {
 	}
 }
 
+func TestRunJSONSchemaFixtures(t *testing.T) {
+	state, reason := runJSONSchemaFixtures()
+	if state != stateCannotVerify {
+		t.Errorf("expected stateCannotVerify, got %s", state)
+	}
+	if reason == "" {
+		t.Error("expected reason for cannot_verify")
+	}
+}
+
+func TestRunJSONSchemaWrapDrift(t *testing.T) {
+	state, reason := runJSONSchemaWrapDrift()
+	if state != stateCannotVerify {
+		t.Errorf("expected stateCannotVerify, got %s", state)
+	}
+	if reason == "" {
+		t.Error("expected reason for cannot_verify")
+	}
+}
+
+func TestRunOPAPolicy(t *testing.T) {
+	if !hasTool("opa") {
+		t.Skip("opa not in PATH")
+	}
+	state, reason := runOPAPolicy()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
+func TestRunCUEImport(t *testing.T) {
+	if !hasTool("cue") {
+		t.Skip("cue not in PATH")
+	}
+	state, reason := runCUEImport()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
+func TestRunInTotoWrap(t *testing.T) {
+	if !hasTool("in-toto-run") {
+		t.Skip("in-toto-run not in PATH")
+	}
+	state, reason := runInTotoWrap()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
+func TestRunCosignLocalSign(t *testing.T) {
+	if !hasTool("cosign") {
+		t.Skip("cosign not in PATH")
+	}
+	state, reason := runCosignLocalSign()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
+func TestRunSLSANegative(t *testing.T) {
+	if !hasTool("slsa-verifier") {
+		t.Skip("slsa-verifier not in PATH")
+	}
+	state, reason := runSLSANegative()
+	if state != statePass {
+		t.Errorf("expected statePass, got %s: %s", state, reason)
+	}
+}
+
 func TestPrintResults_JSON(t *testing.T) {
 	var buf bytes.Buffer
 	results := []probeResult{
