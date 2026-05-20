@@ -50,9 +50,20 @@
 **Review-артефакты находятся в `specs/016-production-adoption-security-baseline/reviews/`.**
 - Соответствует `hygienecheck` и `docs/README.md`.
 
+## Codex Review Findings (2026-05-20) — All Fixed
+
+| Finding | Severity | Fix | Commit |
+|---------|----------|-----|--------|
+| Security contact `security+report@fall-out-bug.dev` undeliverable (NXDOMAIN) | major | Removed email; fallback to GitHub private vulnerability reporting; marked dedicated email `not_assessed` | `aca55ca` |
+| Command readiness undercounts (27 commands vs 18 families) | major | Added Utility Commands section (9 commands, all `complete`); fixed `export-telemetry` → `export` | `aca55ca` |
+| Security scanner ledger inconsistent (12 vs 0 findings) | major | Split default-config (12 findings) vs configured-scan (0 findings); replaced stale line-number table with category-based triage | `aca55ca` |
+| Spec workflow state drift (roadmap still `draft`) | major | Updated `docs/roadmap.md` spec 016 status → `in_progress` | `aca55ca` |
+| Duplicate entries in `docs/README.md` | minor | Removed duplicate links | `aca55ca` |
+
 ## Резюме
 
-- D1 — исправить перед merge.
-- D2 — исправить перед merge.
+- D1 — verified fixed (export family name, utility commands added).
+- D2 — verified fixed (stale comment absent).
+- All Codex review findings fixed in `aca55ca`.
 - U1 — advisory.
 - Остальное — positive или info.
