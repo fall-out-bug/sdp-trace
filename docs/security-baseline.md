@@ -117,15 +117,14 @@ git diff --check
 gosec ./...
 
 # Default-config scans (for count verification)
-# Exclude .gitleaks.toml so gitleaks does not auto-load the reviewed allowlist.
+# Run from /tmp so gitleaks does not auto-load the repository .gitleaks.toml.
 mkdir -p /tmp/worktree-scan && rm -rf /tmp/worktree-scan/*
 tar --exclude='.gitleaks.toml' --exclude='.git' -cf - . | tar -xf - -C /tmp/worktree-scan
-gitleaks detect --source /tmp/worktree-scan --no-git
+cd /tmp && gitleaks detect --source /tmp/worktree-scan --no-git
 
 mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
 git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
-rm -f /tmp/tracked-scan/.gitleaks.toml
-gitleaks detect --source /tmp/tracked-scan --no-git
+cd /tmp && gitleaks detect --source /tmp/tracked-scan --no-git
 
 # Configured tracked-source scan
 mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
