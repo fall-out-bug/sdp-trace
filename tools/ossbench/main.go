@@ -124,10 +124,10 @@ func exitCode(results []benchmarkResult) int {
 // They prefer a repo-local binary when available, falling back to PATH.
 var builtIns = []benchmarkDef{
 	{
-		Name:        "sdp-trace-verify",
-		Description: "sdp-trace verify command",
+		Name:        "sdp-trace-version",
+		Description: "sdp-trace version command",
 		Cmd:         resolveBinary("sdp-trace"),
-		Args:        []string{"verify"},
+		Args:        []string{"version"},
 	},
 	{
 		Name:        "sdp-trace-wrap",

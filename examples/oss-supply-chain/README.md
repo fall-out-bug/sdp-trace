@@ -23,13 +23,17 @@ negative-path testing. These are local experiments only.
 
 ```bash
 # Generate a throwaway key for local testing
-openssl genpkey -algorithm RSA -out /tmp/test-key.pem 2>/dev/null
-
-in-toto-run \
-  --step-name test-wrap \
-  --products /dev/null \
-  --key /tmp/test-key.pem \
-  -- /bin/true
+(
+  set -e
+  TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$TMPDIR"' EXIT
+  openssl genpkey -algorithm RSA -out "$TMPDIR/test-key.pem" 2>/dev/null
+  in-toto-run \
+    --step-name test-wrap \
+    --products /dev/null \
+    --key "$TMPDIR/test-key.pem" \
+    -- /bin/true
+)
 ```
 
 ## Cosign Local Blob Sign/Verify
@@ -38,9 +42,13 @@ in-toto-run \
 # Run in a subshell to avoid mutating the caller's CWD.
 # Transparency-log upload and verification are disabled for local-only testing.
 (
-  cd /tmp
+  set -e
+  export COSIGN_PASSWORD=""
+  TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$TMPDIR"' EXIT
+  cd "$TMPDIR"
   cosign generate-key-pair
-  echo '{"run":"test"}' > run.json
+  printf '{"run":"test"}\n' > run.json
   cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
   cosign verify-blob --key cosign.pub --signature run.json.sig --insecure-ignore-tlog run.json
 )

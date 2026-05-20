@@ -35,13 +35,13 @@ Missing tools render that probe `not_assessed`.
 | `check-jsonschema` | Validate flight-recorder fixtures against local schema refs | `pass` | Local refs resolve; validation succeeds on checked examples [^1] |
 | `check-jsonschema` | Validate live `sdp-trace wrap` output vs `flight-recorder-run.schema.json` | `fail` | Required fields and timestamp format differ |
 | `check-jsonschema` | Validate representative assessment, gate, and release examples | `pass` | Example fixtures conform to schema |
-| OPA/Rego | Express simplified adapter-capture pass/fail rule | `pass` | Policy evaluates and correctly detects `test_provenance_not_overclaimed` failure fixture [^1] |
+| OPA/Rego | Express simplified adapter-capture pass rule | `pass` | Policy evaluates the checked-in pass fixture as expected [^1] |
 | CUE | JSON Schema import to stdout | `pass` | `cue import` succeeds against `schema/flight-recorder-run.schema.json` without mutating the working tree [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | Direct validation is blocked until schema refs are packaged as a CUE module |
 | in-toto | Wrap command, sign link metadata, record material/product hashes | `pass` | Link metadata generated and signed locally [^1] |
 | Cosign | Sign/verify local `run.json` blob | `pass` | Works with local key when transparency log verification is explicitly disabled [^1] |
 | Cosign | Verify with transparency log / Rekor | `fail` | Expected for local-only fixtures; no Rekor entry exists |
-| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `fail` | Expected: no matching Rekor entries found |
+| SLSA verifier | Reject local DSSE fixture as production SLSA evidence | `fail` | Expected: truncated signature prevents verification before any Rekor check |
 
 ## Reproduction Commands
 
@@ -65,13 +65,17 @@ and report `not_assessed`.
 
 ```bash
 # This command is expected to fail until T017-020 resolves the drift.
-set -e
-WRAP_OUT=$(mktemp)
-trap 'rm -f "$WRAP_OUT"' EXIT
-sdp-trace wrap /bin/true > "$WRAP_OUT"
-check-jsonschema \
-  --schemafile schema/flight-recorder-run.schema.json \
-  "$WRAP_OUT"
+# Run from /tmp so wrap does not create .sdp-trace-runs in the repo root.
+(
+  set -e
+  cd /tmp
+  WRAP_OUT=$(mktemp)
+  trap 'rm -f "$WRAP_OUT"' EXIT
+  sdp-trace wrap /bin/true > "$WRAP_OUT"
+  check-jsonschema \
+    --schemafile schema/flight-recorder-run.schema.json \
+    "$WRAP_OUT"
+)
 ```
 
 ### OPA/Rego policy evaluation

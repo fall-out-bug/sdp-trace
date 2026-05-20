@@ -20,18 +20,17 @@ decisions but do not prove production readiness.
 
 | Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
 |---|---:|---:|---:|---|---|---|
-| Shell prototype `wrap` | 6.0 | — | — | 20 | `printf '%s\n' '{"v":"local"}'` | Minimal JSON, no hash-chain semantics |
-| `sdp-trace verify` | 8.0 | — | — | 20 | `sdp-trace verify` | Existing local run |
-| OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | Simplified policy |
-| `sdp-trace wrap` | 26.0 | — | — | 20 | `sdp-trace wrap /bin/true` | Local `/bin/true` |
-| Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig run.json` | Transparency log ignored |
-| `in-toto-run` | 148.0 | — | — | 20 | `in-toto-run --step-name test --products /dev/null --key key.pem -- /bin/true` | Signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | — | — | 20 | `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/...` | Python validator startup cost |
+| `sdp-trace version` | 4.6 | 4.4 | 5.1 | 10 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace wrap` | 16.1 | 15.8 | 16.4 | 10 | `sdp-trace wrap /bin/true` | Built-in, measured via `tools/ossbench` |
+| Shell prototype `wrap` | 6.0 | — | — | 20 | `printf '%s\n' '{"v":"local"}'` | One-shot; minimal JSON, no hash-chain semantics |
+| OPA adapter policy eval | 14.0 | — | — | 20 | `opa eval --data adapter.rego --input fixture.json 'data.sdp_trace.adapter.pass'` | One-shot; simplified policy |
+| Cosign local verify | 30.5 | — | — | 20 | `cosign verify-blob --key cosign.pub --signature run.json.sig run.json` | One-shot; transparency log ignored |
+| `in-toto-run` | 148.0 | — | — | 20 | `in-toto-run --step-name test --products /dev/null --key key.pem -- /bin/true` | One-shot; signed link metadata |
+| `check-jsonschema` fixture validation | 271.5 | — | — | 20 | `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/...` | One-shot; Python validator startup cost |
 
-**Note:** Min and max values are marked `—` because the raw iteration data
-from the 2026-05-20 one-shot run was not preserved. The two `sdp-trace`
-built-in probes can now be reproduced with `tools/ossbench`; the remaining
-rows require external tools and remain manual one-shot data. This table is a
+**Note:** Min and max are present only for probes measured by the built-in
+`tools/ossbench` harness. Rows marked "One-shot" retain `—` because raw
+iteration data from the original run was not preserved. This table is a
 **local markdown ledger only**. Do not use these numbers for approval decisions.
 
 ## Observations

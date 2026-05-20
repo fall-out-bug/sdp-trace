@@ -21,4 +21,4 @@ All Advisory findings addressed in commit 8f72914.
 - git diff --check: pass
 
 ## Verdict After Fix
-**LGTM** — zero Important findings remain. Slice 3 is approved.
+**Conditionally approved** — zero Important findings remain. Advisory finding GLM-1 (tests verify only hard-coded returns) is recorded with rationale: structural evidence is provided by `TestWrapOutputIsNotJSONObject`. Slice 3 may proceed, but PR-level review must disposition GLM-1 before final LGTM.

@@ -29,4 +29,4 @@ All Important and Advisory findings addressed in commit de6d1d3.
 - git diff --check: pass
 
 ## Verdict After Fix
-**Conditionally approved** — zero Important findings remain. Advisory finding GLM-F3 (built-in benchmarks use PATH-lookup) remains open with rationale: absolute paths would break portability across environments, and the harness is documented as local-scope evidence only. Slice 2 may proceed, but PR-level review must either fix GLM-F3 or accept it with explicit rationale before the final PR review plane can output LGTM.
+**Conditionally approved** — zero Important findings remain. Advisory finding GLM-F3 (built-in benchmarks use PATH-lookup) is recorded with rationale: absolute paths would break portability across environments, and the harness is documented as local-scope evidence only. Slice 2 may proceed, but PR-level review must disposition GLM-F3 before final LGTM.
