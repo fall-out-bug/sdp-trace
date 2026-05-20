@@ -3,11 +3,23 @@ title = "sdp-trace reviewed secret-scan allowlist"
 [extend]
 useDefault = true
 
-[allowlist]
-description = "Exact synthetic secret markers for redaction tests and review evidence. These strings are intentionally placed in test fixtures and historical diffs; they do not match real credentials."
+[[allowlists]]
+description = "Self-trace dedupe keys are fixture labels, not credentials."
+condition = "AND"
+paths = ['''^examples/self-trace/(assessment-input|evidence-events|negative-native-policy-field)\.json$''']
+regexes = ['''crisis-(glm-critic|judge|kimi-critic)-\d{4}-\d{2}-\d{2}''']
 
-regexes = [
-  '''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''',
-  '''crisis-(glm-critic|judge|kimi-critic)-\d{4}-\d{2}-\d{2}''',
-  '''"-----begin (private key|rsa private key|ec private key)-----"''',
+[[allowlists]]
+description = "Witness tests use a synthetic JWT-shaped sentinel to verify redaction."
+condition = "AND"
+paths = ['''^internal/witness/profiles_test\.go$''']
+regexes = ['''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''']
+
+[[allowlists]]
+description = "Historical review fixture and legacy profiles.go contain private-key marker text."
+condition = "AND"
+paths = [
+  '''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''',
+  '''^internal/witness/profiles\.go$''',
 ]
+regexes = ['''"-----begin (private key|rsa private key|ec private key)-----"''']
