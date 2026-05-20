@@ -16,10 +16,9 @@ paths = ['''^internal/witness/profiles_test\.go$''']
 regexes = ['''eyJhbGciOiJFZERTQSJ9\.eyJzdWIiOiJibG9jazIyIn0\.signaturesecret''']
 
 [[allowlists]]
-description = "Historical review fixture and legacy profiles.go contain private-key marker text."
+description = "Historical review fixture contains private-key marker text."
 condition = "AND"
 paths = [
   '''^specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff\.patch$''',
-  '''^internal/witness/profiles\.go$''',
 ]
 regexes = ['''"-----begin (private key|rsa private key|ec private key)-----"''']

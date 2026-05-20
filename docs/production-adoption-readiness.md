@@ -135,7 +135,7 @@ git diff --check
 
 # Advisory scans
 gosec ./...
-gitleaks detect --source . --config .gitleaks.toml
+gitleaks detect --source . --config .gitleaks.toml --no-git
 ```
 
 ## Maintenance

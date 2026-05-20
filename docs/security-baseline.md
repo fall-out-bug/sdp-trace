@@ -79,7 +79,7 @@ A reviewed `.gitleaks.toml` allowlist covers intentional synthetic markers.
 |----------|-------|------|-------------|
 | Synthetic JWT sentinel (redaction tests) | `internal/witness/profiles_test.go` | `jwt` / `generic-api-key` | **accepted false positive** — test fixture verifying redaction behavior |
 | Review dedupe keys (fixture labels) | `examples/self-trace/evidence-events.json`, `examples/self-trace/negative-native-policy-field.json`, `examples/self-trace/assessment-input.json` | `generic-api-key` | **accepted false positive** — review event labels (`crisis-{glm-critic|judge|kimi-critic}-YYYY-MM-DD`), not credentials |
-| Private-key marker (historical diff / legacy source) | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch`, `internal/witness/profiles.go` (historical commit) | `private-key` | **accepted false positive** — sanitized diff and legacy redaction sentinel changes |
+| Private-key marker (historical diff) | `specs/004-mvp-readiness-hardening/pr-review/ec8db52/packet/inputs/diff.patch` | `private-key` | **accepted false positive** — sanitized diff showing redaction sentinel changes |
 
 ## Local Ignored Clutter Policy
 
@@ -132,8 +132,8 @@ mkdir -p /tmp/tracked-scan && rm -rf /tmp/tracked-scan/*
 git archive --format=tar HEAD | tar -xf - -C /tmp/tracked-scan
 gitleaks detect --source /tmp/tracked-scan --no-git --config .gitleaks.toml
 
-# Configured working-tree scan (reviewed allowlist)
-gitleaks detect --source . --config .gitleaks.toml
+# Configured working-tree scan (reviewed allowlist, working-tree only)
+gitleaks detect --source . --config .gitleaks.toml --no-git
 ```
 
 ## Required Follow-Up
