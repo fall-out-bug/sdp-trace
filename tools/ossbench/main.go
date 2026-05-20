@@ -54,6 +54,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "unknown benchmark: %s\n", *name)
 			return 2
 		}
+		if len(fs.Args()) > 0 {
+			fmt.Fprintf(stderr, "unexpected positional args with -bench: %s\n", strings.Join(fs.Args(), " "))
+			return 2
+		}
 		if err := resolveBuiltIns(); err != nil {
 			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
 			return 2

@@ -106,6 +106,11 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		cancel()
 		if err != nil {
 			lastErr = fmt.Sprintf("iteration %d failed: %v", i, err)
+			// Fail-fast on timeout so a hanging command does not accumulate
+			// 30s per remaining iteration.
+			if ctx.Err() == context.DeadlineExceeded {
+				break
+			}
 			continue
 		}
 		times = append(times, time.Since(start))

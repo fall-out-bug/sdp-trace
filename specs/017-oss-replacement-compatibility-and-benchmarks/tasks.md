@@ -24,16 +24,17 @@ Status: in_progress
   Pi ownership: docs/examples for supply-chain prototype only.
 - [x] T017-050 WS-017-E: Add benchmark harness and benchmark report.
   Pi ownership: `tools/ossbench/*` and benchmark docs.
-  Note: the historical markdown table in `docs/oss-benchmark-results.md`
-  remains provisional because min/max raw data from the one-shot run was not
-  preserved. The harness satisfies FR-017-004 structurally; the table does not.
+  Note: the harness satisfies FR-017-004 structurally. The markdown table in
+  `docs/oss-benchmark-results.md` now carries reproducible numbers from the
+  harness (see spec benchmark snapshot). External-tool rows remain excluded
+  because the harness does not yet automate those probes.
 
 ## Phase 2 - Integration
 
 - [x] T017-060 Run all compatibility probes available in the local environment.
   Verification: `go test -count=1 ./tools/osscompat` and `go test -count=1
   ./tools/ossbench` pass locally. Example harness output (current environment,
-  all optional tools absent): `go run ./tools/osscompat -json` reports eight
+  all optional tools absent): `go run ./tools/osscompat -json` reports ten
   `not_assessed` probes because no optional external tools are installed; this
   is the expected behavior for an environment without the optional CLI
   prerequisites. `go run ./tools/ossbench -json` reports reproducible
