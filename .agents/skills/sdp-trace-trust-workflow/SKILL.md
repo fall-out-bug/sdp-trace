@@ -34,17 +34,20 @@ After approval:
 6. Run drift checks: spec vs implementation and regression against previous blocks.
 7. Record verifier state as `pass`, `fail`, `cannot_verify`, or `not_assessed`.
 8. Commit each verified slice with a scoped message.
+9. Ensure verification commands in docs are copy-pasteable and reproducible. Use subshell isolation for commands that must change directory or depend on ambient state. Document both configured and default-config scanner behavior when they differ.
 </implementation_loop>
 
 <pr_protocol>
 1. Prepare a PR with code, tracing/evidence, docs, and requirements mapping.
 2. Run separate review planes at PR level through `pi-review` or `codex-subagent panel run pi`: code/correctness, tracing/evidence/provenance, requirements-vs-implementation, and security/DX/UX when relevant.
-3. Verify reviewer findings against full files before accepting or rejecting them.
-4. Re-read the actual diff before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
-5. Ensure the PR is not in Draft state before claiming it is ready for review.
-6. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
-7. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
-8. After merge: delete the local worktree (`git worktree remove`) and the feature branch (`git branch -d` or remote deletion). The branch should not persist on origin once merged; keeping it creates drift and implies unfinished work.
+3. For trust-sensitive PRs, run iterative adversarial review rounds against the full diff. Fix every finding of any severity before the next round. Repeat until the reviewer outputs exactly `LGTM` (zero findings).
+4. Verify reviewer findings against full files before accepting or rejecting them.
+5. Re-read the actual diff before each review round and before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
+6. Delete stale review artifacts; do not rely on headers or markers to neutralize stale claims.
+7. Ensure the PR is not in Draft state before claiming it is ready for review.
+8. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
+9. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
+10. After merge: delete the local worktree (`git worktree remove`) and the feature branch (`git branch -d` or remote deletion). The branch should not persist on origin once merged; keeping it creates drift and implies unfinished work.
 </pr_protocol>
 
 <trust_boundaries>
@@ -52,6 +55,8 @@ After approval:
 - Source-bound proof requires a clean immutable source commit.
 - If a changed file is a manifest subject, commit it first, then regenerate release proof in a separate commit.
 - Do not close task checkboxes, ledgers, or docs after source-bound proof without another source-bound cycle if those files are manifest subjects.
+- Security docs must not list unverified contact information. Email addresses and reporting channels must be confirmed deliverable or explicitly marked `not_assessed`.
+- Scanner counts in docs must match the exact output of the documented command. Update docs or commands until they match.
 </trust_boundaries>
 
 <anti_rationalization>

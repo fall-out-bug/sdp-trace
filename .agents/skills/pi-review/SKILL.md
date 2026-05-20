@@ -32,7 +32,9 @@ For trust-sensitive work, run separate planes:
 5. Verify every finding against full files before accepting or rejecting it.
 6. Record disposition as accepted, accepted_fixed, rejected_false_positive, deferred_not_assessed, cannot_verify, or advisory.
 7. Re-run relevant verification after fixes.
-8. Do not count review as merge/sign-off unless the user explicitly requested that authority and the repo process permits it.
+8. For PR-ready trust work, run review rounds iteratively against the full diff. Fix every finding of any severity before the next round. Repeat until the reviewer outputs exactly `LGTM` (zero findings). Do not treat a partial review or non-zero finding count as sufficient.
+9. Delete stale review artifacts rather than marking them superseded; a header or marker is insufficient to prevent stale claims from being cited as evidence.
+10. Do not count review as merge/sign-off unless the user explicitly requested that authority and the repo process permits it.
 </process>
 
 <evidence_rules>
@@ -40,6 +42,8 @@ For trust-sensitive work, run separate planes:
 - A green test run does not prove requirements coverage unless the test actually covers the requirement.
 - Absent GitHub checks are CI `not_assessed`, never green.
 - Checked-in review JSON is not authority unless live-verified or externally signed.
+- Scanner counts claimed in docs must match the actual output of copy-pasteable commands. Verify command reproducibility (e.g., `gitleaks` auto-loads `.gitleaks.toml` from CWD; default-config scans require directory isolation or config exclusion).
+- Stale review artifacts with incorrect counts or outdated findings must be deleted, not annotated.
 </evidence_rules>
 
 <output_format>
@@ -67,4 +71,6 @@ When producing or updating `reviews/synthesis.md` (or any review ledger):
 - Cross-model output is accepted without checking file/line evidence.
 - A model/harness failure is hidden instead of recorded as fallback, replacement, `cannot_verify`, or `not_assessed`.
 - The synthesis says "approved" while Critical/Important findings remain unresolved.
+- Stale review artifacts with incorrect counts are left in the repository with only a "superseded" header.
+- Scanner verification commands are not copy-pasteable, change the caller's working directory, or produce different counts depending on where they are run.
 </red_flags>

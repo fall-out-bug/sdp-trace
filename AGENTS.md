@@ -41,9 +41,14 @@ The repository has already failed once by letting prose, task checkboxes, and ch
 - Source-bound proof requires a clean immutable source commit; if a changed file is a manifest subject, commit it first, then regenerate release proof in a separate commit.
 - Do not close task checkboxes, review ledgers, or docs after source-bound proof without another source-bound cycle if those files are manifest subjects.
 - Keep mirrored self-trace data synchronized: `assessment-input.json` must mirror self-trace arrays, and hash references must match current files.
+- Scanner verification commands in docs must be copy-pasteable and reproducible. If a command changes working directory or depends on local state, use subshell isolation (e.g., `(cd /tmp && ...)`).
+- Default-config scanner scans must isolate custom configuration (e.g., exclude `.gitleaks.toml` from the scan source or run from a different directory) so they reflect what an external scanner sees.
+- Security docs must not list unverified contact information. Email addresses and reporting channels must be confirmed deliverable or explicitly marked `not_assessed`.
 
 ## Required Work Loop
 Every non-trivial implementation chunk needs a SpecKit delta, Socratic review before approval handoff, trace coverage for verifier/trust changes, test-first behavior for behavior changes, drift checks, live verifier state (`pass`, `fail`, `cannot_verify`, or `not_assessed`), strict review, fresh verification, and a scoped commit.
+
+Iterative adversarial review is required for PR-ready trust work: run review rounds against the full diff, fix every finding of any severity, and repeat until the reviewer outputs exactly `LGTM` (zero findings). Do not treat a partial review or non-zero finding count as sufficient.
 
 If a chunk cannot be traced or verified yet, mark `not_assessed` or `cannot_verify` with a concrete reason and create a tracked follow-up before closing.
 
