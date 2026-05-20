@@ -20,11 +20,12 @@ Status: in_progress
   focused recorder tests. Fixing the drift remains out of scope.
 - [x] T017-030 WS-017-C: Build OPA/Rego or CUE assessment-profile prototype.
   Pi ownership: docs/examples for policy prototype only.
-- [x] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.
+- [ ] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.
   Pi ownership: docs/examples for supply-chain prototype only.
-  Status: prototype complete; automated harness probes for in-toto wrapping,
-  Cosign blob signing, and SLSA negative path are manual-only (`cannot_verify`).
-  Full automated coverage is deferred to a future spec update.
+  Status: docs/examples complete; automated harness probes for in-toto wrapping,
+  Cosign blob signing, and SLSA negative path remain open. Current probes are
+  manual-only (`cannot_verify`). Full automated coverage is deferred to a
+  future spec update.
 - [x] T017-050 WS-017-E: Add benchmark harness and benchmark report.
   Pi ownership: `tools/ossbench/*` and benchmark docs.
   Note: the harness satisfies FR-017-004 structurally for sdp-trace built-in

@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 )
 
@@ -121,5 +123,50 @@ func TestRunBenchmark_PartialFailure(t *testing.T) {
 	}
 	if res2.AttemptedIterations != 3 {
 		t.Errorf("expected AttemptedIterations=3, got %d", res2.AttemptedIterations)
+	}
+}
+
+func TestRunBenchmark_MixedSuccessFailure(t *testing.T) {
+	// Build a tiny helper that fails on first invocation and succeeds on second.
+	src := `package main
+import "os"
+func main() {
+	f := os.Args[1]
+	if _, err := os.Stat(f); err == nil {
+		os.Remove(f)
+		return
+	}
+	os.WriteFile(f, []byte("x"), 0644)
+	os.Exit(1)
+}`
+	tmpDir := t.TempDir()
+	srcFile := filepath.Join(tmpDir, "toggle.go")
+	if err := os.WriteFile(srcFile, []byte(src), 0644); err != nil {
+		t.Fatalf("write toggle source: %v", err)
+	}
+	bin := filepath.Join(tmpDir, "toggle")
+	if err := exec.Command("go", "build", "-o", bin, srcFile).Run(); err != nil {
+		t.Skip("cannot build toggle helper:", err)
+	}
+	sentinel := filepath.Join(tmpDir, "sentinel")
+	def := benchmarkDef{
+		Name: "toggle",
+		Cmd:  bin,
+		Args: []string{sentinel},
+	}
+	// First iteration fails (no sentinel), second succeeds (sentinel exists),
+	// third fails (sentinel removed).
+	res := runBenchmark(def, 3)
+	if res.AttemptedIterations != 3 {
+		t.Errorf("attempted = %d, want 3", res.AttemptedIterations)
+	}
+	if res.SucceededIterations != 1 {
+		t.Errorf("succeeded = %d, want 1", res.SucceededIterations)
+	}
+	if len(res.AllMs) != 1 {
+		t.Errorf("got %d measurements, want 1", len(res.AllMs))
+	}
+	if res.Error == "" {
+		t.Error("expected error because at least one iteration failed")
 	}
 }

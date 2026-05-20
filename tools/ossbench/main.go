@@ -35,6 +35,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *list {
+		if len(fs.Args()) > 0 {
+			fmt.Fprintf(stderr, "unexpected positional args with -list: %s\n", strings.Join(fs.Args(), " "))
+			return 2
+		}
 		for _, b := range builtIns {
 			fmt.Fprintf(stdout, "%s\t%s\n", b.Name, b.Description)
 		}
