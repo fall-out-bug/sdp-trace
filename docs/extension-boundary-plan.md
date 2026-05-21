@@ -1,6 +1,6 @@
 # Extension Boundary Plan
 
-Status: machine review complete for Spec 018; maintainer human review not_assessed
+Status: in_review for Spec 018; maintainer human review not_assessed
 
 This plan documents how non-core surfaces can move toward extension or
 deprecation without deleting behavior or weakening trust-state language.

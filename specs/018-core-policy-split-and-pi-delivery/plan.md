@@ -1,6 +1,6 @@
 # Plan: Core/Policy Split And Pi Delivery
 
-Status: machine review complete; maintainer human review not_assessed
+Status: in_review for Spec 018; maintainer human review not_assessed
 
 ## Workstreams
 
