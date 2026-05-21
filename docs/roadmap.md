@@ -32,7 +32,7 @@ These are editorial conventions, not enforced gates:
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
 | [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `draft` | Awaiting review |
-| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `draft` | Awaiting review |
+| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Slice review in progress; workstreams A–C and E implemented; WS-017-D automated probes remain open (manual-only). Final PR review pending |
 | [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 open; repeat review in progress |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX, command guidance, profile selection | `draft` | Awaiting Socratic review |
 | [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | `draft` | Awaiting Socratic review |
@@ -93,7 +93,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Docs UX / command guidance | 014 | Draft |
 | Spec governance / roadmap | 015 | In progress |
 | Production adoption / security baseline | 016 | In progress |
-| OSS replacement compatibility / benchmarks | 017 | Draft |
+| OSS replacement compatibility / benchmarks | 017 | In progress |
 | Core/policy split and Pi delivery | 018 | Draft |
 
 ## Claim-Tag Enforcement Scope
@@ -143,6 +143,6 @@ Historical block records in `blocks/` are exempt from these expectations. They a
 
 - Update this file when a new spec is opened or an active spec's status changes.
 - Owner: the spec author or current block worker.
-- Last updated: 2026-05-16.
+- Last updated: 2026-05-20.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->

@@ -1,6 +1,6 @@
 # Spec 017: OSS Replacement Compatibility And Benchmarks
 
-Status: draft
+Status: in_progress
 
 ## Objective
 
@@ -14,37 +14,51 @@ accident.
 
 ## Evidence From 2026-05-20 Probe
 
-- `check-jsonschema` validates checked flight-recorder fixtures against
-  locally rewired schema refs.
-- Current live `sdp-trace wrap` output does not validate against
-  `schema/flight-recorder-run.schema.json`; required fields and timestamp
-  format differ.
-- `check-jsonschema` validates representative assessment, gate, and release
-  example files.
-- `OPA` can express a simplified adapter-capture pass/fail rule and detects the
-  `test_provenance_not_overclaimed` failure fixture.
-- `CUE` can import JSON Schema, but direct validation is blocked until schema
-  refs are packaged as a CUE module.
-- `in-toto-run` can wrap a command, sign link metadata, and record material and
-  product hashes.
-- `cosign` can sign and verify a local `run.json` blob with a local key when
-  transparency-log verification is explicitly disabled.
-- `slsa-verifier` does not accept the local DSSE fixture as production SLSA
-  evidence; it fails because no matching Rekor entries are found.
+- `check-jsonschema` fixture validation: expected `pass` when tool available;
+  in the current environment (no optional tools installed) the probe reports
+  `not_assessed`. When available, it validates checked flight-recorder fixtures
+  against locally rewired schema refs.
+- The `run.json` artifact produced by `sdp-trace wrap true` (portable no-op)
+  has been observed not to validate against `schema/flight-recorder-run.schema.json`.
+  When `check-jsonschema` is available, the `osscompat` harness confirms this
+  drift with a temp-dir probe that builds from source, runs `wrap`, locates the
+  generated `run.json` inside the reported `run_dir`, and reports `fail` because
+  the manifest is missing required fields and uses an incorrect `schema_version`.
+  When `check-jsonschema` is absent, the probe reports `not_assessed`.
+- `OPA` adapter-capture rule evaluation: expected `pass` when tool available;
+  in the current environment the probe reports `not_assessed`. When available,
+  the checked-in positive fixture evaluates to true and negative fixtures
+  evaluate to false.
+- `CUE` JSON Schema import: expected `pass` when tool available; in the
+  current environment the probe reports `not_assessed`. Direct validation is
+  blocked until schema refs are packaged as a CUE module.
+- `in-toto-run` command wrapping: automated harness probe reports
+  `cannot_verify` (manual-only). No automated conformance verdict is issued.
+- `cosign` local blob sign/verify: automated harness probe reports
+  `cannot_verify` (manual-only). No automated conformance verdict is issued.
+- `slsa-verifier` local DSSE fixture: automated harness probe reports
+  `cannot_verify` (manual-only expected-fail). No automated conformance
+  verdict is issued.
 
 ## Benchmark Snapshot
 
-Local 20-iteration benchmark, compiled `sdp-trace`, Linux amd64:
+Local 20-iteration benchmark, compiled `sdp-trace` from source, Linux amd64.
+All rows below are reproducible via `tools/ossbench`.
 
-| Probe | Median ms | Notes |
-| --- | ---: | --- |
-| shell prototype wrap | 6.0 | Minimal JSON, no hash chain semantics |
-| `sdp-trace verify` | 8.0 | Existing local run |
-| OPA adapter policy eval | 14.0 | Simplified policy |
-| `sdp-trace wrap` | 26.0 | Local `/bin/true` |
-| Cosign local verify | 30.5 | Transparency log ignored |
-| `in-toto-run` | 148.0 | Signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | Python validator startup cost |
+| Probe | Median ms | Min ms | Max ms | Command |
+| --- | ---: | ---: | ---: | --- |
+| `sdp-trace version` | 4.60 | 4.39 | 5.03 | `sdp-trace version` |
+| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | `sdp-trace wrap true` |
+
+The harness builds `sdp-trace` from source into a temp directory on every run;
+the displayed command is a display name (`filepath.Base`), while the actual
+binary path is recorded in JSON `binary_path` and `binary_source`. Reproduce
+with: `go run ./tools/ossbench -json -n 20`.
+
+One-shot historical numbers for external tools (OPA, Cosign, in-toto,
+check-jsonschema) are not included because min/max were not preserved and
+the harness does not yet automate those probes. See `docs/oss-benchmark-results.md`
+for scope context.
 
 ## Requirements
 

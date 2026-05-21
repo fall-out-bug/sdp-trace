@@ -1,0 +1,7 @@
+{
+  "trace_id": "test-trace-001",
+  "provenance": [
+    {"source": "git", "commit": "abc123"},
+    {"source": "ci", "run_id": "run-456"}
+  ]
+}

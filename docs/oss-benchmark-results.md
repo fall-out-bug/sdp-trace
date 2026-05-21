@@ -1,6 +1,6 @@
 # OSS Benchmark Results
 
-Status: draft
+Status: in_progress
 Spec: [017](../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This document records local benchmark numbers for OSS tools and `sdp-trace`
@@ -18,15 +18,24 @@ decisions but do not prove production readiness.
 
 ## Benchmark Table
 
-| Probe | Median (ms) | Notes |
-|---|---:|---|
-| Shell prototype `wrap` | 6.0 | Minimal JSON, no hash-chain semantics |
-| `sdp-trace verify` | 8.0 | Existing local run |
-| OPA adapter policy eval | 14.0 | Simplified policy |
-| `sdp-trace wrap` | 26.0 | Local `/bin/true` |
-| Cosign local verify | 30.5 | Transparency log ignored |
-| `in-toto-run` | 148.0 | Signed link metadata |
-| `check-jsonschema` fixture validation | 271.5 | Python validator startup cost |
+| Probe | Median (ms) | Min (ms) | Max (ms) | Iterations | Exact Command | Notes |
+|---|---:|---:|---:|---|---|---|
+| `sdp-trace version` | 4.60 | 4.39 | 5.03 | 20 | `sdp-trace version` | Built-in, measured via `tools/ossbench` |
+| `sdp-trace wrap` | 16.08 | 15.64 | 17.53 | 20 | `sdp-trace wrap true` | Built-in, measured via `tools/ossbench` (portable no-op; `true` on Unix, `cmd /c exit 0` on Windows) |
+
+**Exact Command note:** the harness builds `sdp-trace` from source into a temp
+directory on every run. The displayed command is a display name
+(`filepath.Base`); the actual binary path and source are recorded in JSON
+`binary_path` / `binary_source`. `binary_path` is ephemeral (deleted after the
+run); `binary_source: "temp-build"` means the binary was compiled from the
+current checkout, not a durable artifact. Reproduce with:
+`go run ./tools/ossbench -json -n 20`.
+
+External-tool benchmarks (OPA, Cosign, in-toto, check-jsonschema) are
+**not yet covered by the harness** and are excluded from this table.
+One-shot historical numbers from the original run were not preserved with
+min/max, so they cannot be reproduced. This table is a **local markdown
+ledger only**. Do not use these numbers for approval decisions.
 
 ## Observations
 
@@ -74,13 +83,15 @@ or production trust decisions. They are scope-informative only.
 
 ## Follow-Ups
 
-- **Reproducible harness:** T017-050 tracks adding a checked-in benchmark
-  harness before this table is used for approval. The current table is a local
-  markdown ledger only.
+- **Built-in harness:** `tools/ossbench` now automates the 20-iteration
+  protocol for built-in `sdp-trace` probes and emits structured JSON with
+  `min_ms`, `max_ms`, `median_ms`, `attempted_iterations`, and
+  `succeeded_iterations`. Run with `-json` for machine-readable output.
+- **External-tool benchmarks:** Probes requiring `opa`, `cosign`, `in-toto-run`,
+  `check-jsonschema`, or `slsa-verifier` are not yet covered by the harness
+  because they depend on optional external CLIs.
 - **CUE module packaging:** Once `schema/` files are exported as CUE modules,
   add `cue vet` benchmark numbers to this table.
 - **SLSA verifier negative benchmark:** Time `slsa-verifier` rejecting local
   DSSE fixture to understand its rejection latency vs. acceptance latency
   for future production scenarios.
-- **Reproducible benchmark harness:** A Go tool under `tools/ossbench/` could
-  automate the 20-iteration protocol and emit structured JSON output.

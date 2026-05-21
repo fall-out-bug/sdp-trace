@@ -1,0 +1,81 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"io"
+	"os"
+)
+
+func main() {
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, registry))
+}
+
+func run(args []string, stdout, stderr io.Writer, reg []probe) int {
+	fs := flag.NewFlagSet("osscompat", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	fs.Usage = func() {
+		fmt.Fprintf(stderr, "Usage: osscompat [flags]\n")
+		fmt.Fprintf(stderr, "Run compatibility probes and emit results.\n")
+		fmt.Fprintf(stderr, "Exit 0 means no probe returned fail; it does NOT mean all probes passed.\n\n")
+		fs.PrintDefaults()
+	}
+	var (
+		asJSON = fs.Bool("json", false, "emit JSON output")
+		list   = fs.Bool("list", false, "list available probes")
+		probe  = fs.String("probe", "", "run a single probe by name")
+	)
+	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return 0
+		}
+		return 2
+	}
+	if len(fs.Args()) > 0 {
+		fmt.Fprintf(stderr, "unexpected positional args: %v\n", fs.Args())
+		return 2
+	}
+
+	if *list {
+		for _, p := range reg {
+			if _, err := fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description); err != nil {
+				fmt.Fprintf(stderr, "write error: %v\n", err)
+				return 2
+			}
+		}
+		return 0
+	}
+
+	if *probe != "" {
+		for _, p := range reg {
+			if p.Name == *probe {
+				r := runProbe(p)
+				if err := printResults(stdout, []probeResult{r}, *asJSON); err != nil {
+					fmt.Fprintf(stderr, "print results: %v\n", err)
+					return 2
+				}
+				return exitCode([]probeResult{r})
+			}
+		}
+		fmt.Fprintf(stderr, "unknown probe: %s\n", *probe)
+		return 2
+	}
+
+	results := runAllProbes(reg)
+	if err := printResults(stdout, results, *asJSON); err != nil {
+		fmt.Fprintf(stderr, "print results: %v\n", err)
+		return 2
+	}
+	return exitCode(results)
+}
+
+// exitCode returns 1 if any probe failed; 0 otherwise.
+// not_assessed and cannot_verify do not cause a non-zero exit.
+func exitCode(results []probeResult) int {
+	for _, r := range results {
+		if r.State == stateFail {
+			return 1
+		}
+	}
+	return 0
+}

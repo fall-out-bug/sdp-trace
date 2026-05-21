@@ -1,0 +1,234 @@
+package main
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+)
+
+func main() {
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+func run(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("ossbench", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	fs.Usage = func() {
+		fmt.Fprintf(stderr, "Usage: ossbench [flags] [command args...]\n")
+		fmt.Fprintf(stderr, "Run built-in or custom benchmarks with min/max/median stats.\n")
+		fmt.Fprintf(stderr, "Use -list to see built-in benchmarks.\n\n")
+		fs.PrintDefaults()
+	}
+	var (
+		asJSON     = fs.Bool("json", false, "emit JSON output")
+		iterations = fs.Int("n", 20, "number of iterations")
+		list       = fs.Bool("list", false, "list built-in benchmarks")
+		name       = fs.String("bench", "", "run a single built-in benchmark by name")
+		raw        = fs.Bool("raw", false, "include all_ms in JSON output")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+
+	if *list {
+		if len(fs.Args()) > 0 {
+			fmt.Fprintf(stderr, "unexpected positional args with -list: %s\n", strings.Join(fs.Args(), " "))
+			return 2
+		}
+		for _, b := range builtIns {
+			fmt.Fprintf(stdout, "%s\t%s\n", b.Name, b.Description)
+		}
+		return 0
+	}
+
+	var defs []benchmarkDef
+	if *name != "" {
+		found := false
+		for _, b := range builtIns {
+			if b.Name == *name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			fmt.Fprintf(stderr, "unknown benchmark: %s\n", *name)
+			return 2
+		}
+		if len(fs.Args()) > 0 {
+			fmt.Fprintf(stderr, "unexpected positional args with -bench: %s\n", strings.Join(fs.Args(), " "))
+			return 2
+		}
+		if err := resolveBuiltIns(); err != nil {
+			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
+			return 2
+		}
+		defer cleanupTempBinary()
+		for _, b := range builtIns {
+			if b.Name == *name {
+				defs = append(defs, b)
+				break
+			}
+		}
+	} else {
+		// If no name given and extra args look like a command, run a custom benchmark.
+		remaining := fs.Args()
+		if len(remaining) > 0 {
+			defs = append(defs, benchmarkDef{
+				Name:        strings.Join(remaining, " "),
+				Description: "custom command",
+				Cmd:         remaining[0],
+				Args:        remaining[1:],
+			})
+		} else {
+			if err := resolveBuiltIns(); err != nil {
+				fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
+				return 2
+			}
+			defer cleanupTempBinary()
+			defs = builtIns
+		}
+	}
+
+	results := make([]benchmarkResult, 0, len(defs))
+	for i := range defs {
+		d := &defs[i]
+		if d.Name == "sdp-trace-wrap" {
+			tmpDir, err := os.MkdirTemp("", "ossbench-wrap-*")
+			if err != nil {
+				fmt.Fprintf(stderr, "mkdir temp: %v\n", err)
+				return 2
+			}
+			d.Dir = tmpDir
+			d.Cleanup = func() {
+				_ = os.RemoveAll(tmpDir)
+			}
+		}
+		res := runBenchmark(*d, *iterations)
+		if d.Cleanup != nil {
+			d.Cleanup()
+		}
+		if !*raw {
+			res.AllMs = nil
+		}
+		results = append(results, res)
+	}
+
+	if err := printResults(stdout, results, *asJSON); err != nil {
+		fmt.Fprintf(stderr, "print results: %v\n", err)
+		return 2
+	}
+	return exitCode(results)
+}
+
+func printResults(w io.Writer, results []benchmarkResult, asJSON bool) error {
+	if asJSON {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(results)
+	}
+	width := maxNameWidth(results)
+	for _, r := range results {
+		var err error
+		if r.Error != "" {
+			_, err = fmt.Fprintf(w, "%*s  error: %s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+				-width, r.Name, r.Error, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
+		} else {
+			_, err = fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+				-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func maxNameWidth(results []benchmarkResult) int {
+	maxW := 24
+	for _, r := range results {
+		if len(r.Name) > maxW {
+			maxW = len(r.Name)
+		}
+	}
+	return maxW
+}
+
+func exitCode(results []benchmarkResult) int {
+	for _, r := range results {
+		if r.Error != "" {
+			return 1
+		}
+	}
+	return 0
+}
+
+// builtIns are the standard OSS tool benchmarks.
+var builtIns = []benchmarkDef{
+	{
+		Name:        "sdp-trace-version",
+		Description: "sdp-trace version command",
+		Cmd:         "sdp-trace",
+		Args:        []string{"version"},
+		Source:      "PATH",
+	},
+	{
+		Name:        "sdp-trace-wrap",
+		Description: "sdp-trace wrap no-op",
+		Cmd:         "sdp-trace",
+		Args:        func() []string {
+			if runtime.GOOS == "windows" {
+				return []string{"wrap", "cmd", "/c", "exit", "0"}
+			}
+			return []string{"wrap", "true"}
+		}(),
+		Source:      "PATH",
+	},
+}
+
+// builtInsOrig holds the original Cmd and Source values so resolveBuiltIns
+// can mutate the global slice and cleanupTempBinary can restore it.
+var builtInsOrig = make([]benchmarkDef, len(builtIns))
+
+func init() {
+	copy(builtInsOrig, builtIns)
+}
+
+// tempBinaryPath is set when the harness builds sdp-trace into a temp dir.
+var tempBinaryPath string
+
+// resolveBuiltIns builds the sdp-trace binary from current source into a temp
+// dir and updates builtIns. It never uses a pre-existing repo-root binary so
+// that benchmark results always reflect the checked-out source.
+func resolveBuiltIns() error {
+	tmpDir, err := os.MkdirTemp("", "ossbench-bin-*")
+	if err != nil {
+		return fmt.Errorf("mkdir temp for build: %w", err)
+	}
+	bin := filepath.Join(tmpDir, "sdp-trace")
+	if err := buildSDPTrace(bin); err != nil {
+		_ = os.RemoveAll(tmpDir)
+		return fmt.Errorf("sdp-trace build failed: %w", err)
+	}
+	tempBinaryPath = bin
+	for i := range builtIns {
+		builtIns[i].Cmd = bin
+		builtIns[i].Source = "temp-build"
+	}
+	return nil
+}
+
+// cleanupTempBinary removes the temp-built binary if one was created and
+// restores builtIns to their original values so subsequent runs in the same
+// process do not reference a deleted path.
+func cleanupTempBinary() {
+	if tempBinaryPath != "" {
+		_ = os.RemoveAll(filepath.Dir(tempBinaryPath))
+		tempBinaryPath = ""
+	}
+	copy(builtIns, builtInsOrig)
+}

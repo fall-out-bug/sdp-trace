@@ -1,0 +1,10 @@
+{
+  "payloadType": "application/vnd.in-toto+json",
+  "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJzdWJqZWN0IjpbeyJuYW1lIjoidGVzdCIsImRpZ2VzdCI6eyJzaGEyNTYiOiJhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTAifX1dLCJwcmVkaWNhdGVUeXBlIjoiaHR0cHM6Ly9zbHNhLmRldi9wcm92ZW5hbmNlL3YxIiwicHJlZGljYXRlIjp7ImJ1aWxkZXIiOnsiaWQiOiJsb2NhbC90ZXN0In0sImJ1aWxkVHlwZSI6ImxvY2FsL3Rlc3QiLCJpbnZvY2F0aW9uIjp7ImNvbmZpZ1NvdXJjZSI6eyJ1cmkiOiJsb2NhbC90ZXN0In19LCJtZXRhZGF0YSI6eyJidWlsZFN0YXJ0ZWRPbiI6IjIwMjYtMDUtMjBUMDA6MDA6MDBaIiwiYnVpbGRGaW5pc2hlZE9uIjoiMjAyNi0wNS0yMFQwMDowMDowMFoifX19Cg==",
+  "signatures": [
+    {
+      "keyid": "local-test-key",
+      "sig": "MEUCIQDtVdxRBBT..."
+    }
+  ]
+}

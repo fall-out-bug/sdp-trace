@@ -1,0 +1,61 @@
+# OSS Policy Prototype
+
+Status: in_progress
+Spec: [017](../specs/017-oss-replacement-compatibility-and-benchmarks/)
+
+This document records the OPA/Rego policy-as-code prototype for an
+simplified adapter-capture profile. It is a **local experiment only**;
+it does not approve replacing sdp-trace verifier behavior with OPA.
+
+## Probe Result
+
+The table below reflects the **committed state** as `not_assessed` because no
+live harness output is embedded in this document. Run
+`go run ./tools/osscompat -json` to produce live harness output for your
+environment. When `opa` is available, the expected results are shown in the
+**Expected (tool available)** column.
+
+| Probe | Current State | Expected (tool available) | Reason |
+|---|---|---|---|
+| OPA adapter-capture pass rule | `not_assessed` | `pass` | Positive fixture evaluates to true |
+| OPA adapter-capture fail rule | `not_assessed` | `pass` | Negative fixture correctly evaluates to false |
+| OPA gate verdict replacement | `cannot_verify` | `cannot_verify` | OPA does not understand sdp-trace gate semantics without adapter glue |
+| CUE direct validation | `cannot_verify` | `cannot_verify` | Schema refs not packaged as CUE modules |
+
+## Files
+
+- `examples/oss-policy/adapter.rego`
+- `examples/oss-policy/test-fixture.json` (positive)
+- `examples/oss-policy/test-fixture-fail.json` (negative)
+
+## Substitution Boundary
+
+### What OPA Can Replace
+
+- Simplified policy expressions for adapter-capture profiles (e.g.,
+  trace_id presence, provenance array bounds).
+- External CI policy checks when the input is a flat JSON event.
+
+### What Needs Adapter Glue
+
+- Gate verdict semantics (`pass`, `fail`, `cannot_verify`, `not_assessed`)
+  are sdp-trace-specific. OPA returns `true`/`false` or a data structure;
+  mapping this to a gate verdict requires an explicit translation layer.
+- `sdp-trace-claim` tags are not native OPA concepts.
+- Trace provenance (hash chains, recorder profiles, witness references)
+  must be flattened into JSON before OPA can reason about them.
+
+### What Remains sdp-trace-Specific
+
+- Evidence collection (`assess`, `verify`, `witness`) is controlled by the
+  product verifier, not by OPA evaluation.
+- Source-bound proof requires immutable source commits; OPA does not
+  verify git hashes or file digests.
+- Release-proof and checkpoint semantics are outside OPA's scope.
+
+## Non-Goals
+
+- No production migration to OPA without a spec update.
+- No replacement of verifier evidence collection.
+- No OPA evaluation of live recorder output until the wrap output/schema
+  drift is resolved.
