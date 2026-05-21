@@ -1,6 +1,6 @@
 # Plan: Core/Policy Split And Pi Delivery
 
-Status: draft
+Status: approved for implementation
 
 ## Workstreams
 
