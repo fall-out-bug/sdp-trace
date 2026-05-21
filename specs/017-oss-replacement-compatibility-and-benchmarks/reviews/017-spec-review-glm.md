@@ -77,7 +77,7 @@ Date: 2026-05-20
 
 **Evidence:** The second acceptance criterion says probe results must distinguish four states. The compatibility doc table uses `pass`, `fail`, `cannot_verify`, `partial`, `local_pass`, and `blocked` — six distinct states rather than the four specified. The states `partial`, `local_pass`, and `blocked` are not in the accepted set. This is either an over-specification in the AC (too narrow) or an inconsistency in the doc (too broad).
 
-**Recommendation:** Align the compatibility doc's status values with the acceptance criterion's four-state model, or update the AC to include `partial`, `local_pass`, and `blocked` as valid states. The spec and doc should use the same state vocabulary.
+**Recommendation:** Normalize the compatibility doc's status values to the canonical four-state model (`pass`, `fail`, `cannot_verify`, `not_assessed`). Do not expand the AC to include `partial`, `local_pass`, or `blocked`; the Slice 1 validator intentionally accepts only narrow evidence forms.
 
 ---
 
