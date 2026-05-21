@@ -31,9 +31,10 @@ Owned files:
 Deliverable:
 
 - Document the live `wrap` output / `flight-recorder-run.schema.json` drift as
-  a blocker in `docs/oss-replacement-compatibility.md` and add a failing test or
-  schema example that captures the exact mismatch. Fixing the drift is out of
-  scope for this workstream unless a separate spec delta explicitly rescopes it.
+  a blocker in `docs/oss-replacement-compatibility.md` and add a passing
+  negative test that asserts the mismatch is detected, or a schema example that
+  captures the exact mismatch. Fixing the drift is out of scope for this
+  workstream unless a separate spec delta explicitly rescopes it.
 
 ### WS-017-C: Policy-As-Code Prototype
 
