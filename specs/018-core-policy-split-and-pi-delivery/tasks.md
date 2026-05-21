@@ -6,7 +6,8 @@ Status: approved for implementation
 
 - [x] T018-001 Review core command list against `sdp-trace command-surface`.
   Verified: `go run ./cmd/sdp-trace command-surface`, `go run ./tools/doccheck`.
-  Maintainer human review is `not_assessed` for this controlled-pilot block.
+- [ ] T018-001b Maintainer human review of core command list.
+  Status: `not_assessed` for this controlled-pilot block.
 - [x] T018-002 Verify docs and implementation slices preserve the spec
   decision that extension surfaces stay in the same binary for this phase.
   Verified: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`.
