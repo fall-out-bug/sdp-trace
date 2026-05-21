@@ -21,4 +21,4 @@ All Advisory findings addressed in commit 8f72914.
 - git diff --check: pass
 
 ## Verdict After Fix
-**Approved** — all Advisory findings from the initial GLM/Kimi reviews were addressed in commit 8f72914. Advisory finding GLM-1 (tests verify only hard-coded returns) was re-reviewed and accepted with rationale: structural evidence is provided by `TestWrapOutputIsNotJSONObject`.
+**Conditionally approved** — GLM and Kimi review planes only. The MiniMax-M2.7 plane failed with `404` and was not retried, so that plane is `not_assessed`. All Advisory findings from the GLM/Kimi reviews were addressed in commit 8f72914. Advisory finding GLM-1 (tests verify only hard-coded returns) was re-reviewed and accepted with rationale: structural evidence is provided by `TestWrapOutputIsNotJSONObject`.
