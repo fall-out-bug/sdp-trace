@@ -35,6 +35,10 @@ After edits, re-read modified files to ensure:
 **Not LGTM** — Important findings must be resolved.
 
 ## Fixes Applied
+The following fixes were applied in separate commits prior to this synthesis.
+They are not included in the diff of this file alone; inspect the branch history
+for the actual edits.
+
 1. `plan.md`: WS-017-A deliverable tightened; WS-017-B deliverable clarified to doc+test only; merge-order note added.
 2. `docs/oss-replacement-compatibility.md`: Status vocabulary aligned to canonical 4 states; `Reproduction Commands` section added with subshell-isolated copy-pasteable commands.
 3. `docs/oss-benchmark-results.md`: Commands added; min/max marked `—` with explicit note that one-shot data was not preserved; FR-017-004 gap documented.
