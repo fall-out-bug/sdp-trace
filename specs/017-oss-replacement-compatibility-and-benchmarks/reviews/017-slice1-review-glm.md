@@ -3,7 +3,7 @@
 **Reviewer:** GLM adversarial plane
 **Date:** 2026-05-20
 **Files reviewed:** `main.go`, `main_test.go`, `probe.go`, `probe_test.go`, `runner.go`
-**Build status:** `go vet` clean, all tests pass, 54.9% statement coverage
+**Build status (local checkout only, not source-bound proof):** `go vet` clean, all tests pass, 54.9% statement coverage. Reproduce with `go test -count=1 ./tools/osscompat/...` and `go vet ./tools/osscompat/...`.
 
 ---
 
@@ -148,7 +148,7 @@ The test suite covers `-json` alone and `-probe` alone but never both together. 
 
 **Positive observations:**
 - Clean file decomposition (main / probe / runner).
-- `go vet` clean, all tests pass.
+- `go vet` clean, all tests pass (local checkout evidence; reproduce with `go test -count=1 ./tools/osscompat/...`).
 - No command injection risk — all `exec.Command` args are fixed strings, no user input flows into commands.
 - Honest `cannot_verify` and `not_assessed` states in the runner infrastructure.
 - Good separation of `run()` for testability with dependency injection for stdout/stderr.
