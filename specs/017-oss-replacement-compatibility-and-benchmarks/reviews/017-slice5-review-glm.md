@@ -111,7 +111,7 @@ The actual probe was likely run with a real key in a different environment.
 The reproduction command should either use a generated key (like the Cosign
 example does) or note that the key must be provided.
 
-**Suggestion:** Add `in-toto-key-gen` or a pre-step that generates a throwaway
+**Suggestion:** Add `in-toto-keygen` or a pre-step that generates a throwaway
 key, similar to the Cosign reproduction command's `cosign generate-key-pair`.
 
 ---
@@ -158,4 +158,4 @@ verification requirements.
 | F4 | Advisory | DX | Prototype docs `Status: draft` vs parent spec `in_progress` |
 | F5 | Advisory | Quality | in-toto reproduction command uses `/dev/null` key; won't reproduce claimed `pass` |
 
-**Verdict:** 2 Important, 3 Advisory. Not LGTM. Fix F1 and F2 before PR merge.
+**Verdict:** 2 Important, 3 Advisory. Not LGTM. Fix F1 through F5 before PR merge.
