@@ -9,10 +9,11 @@ it does not approve replacing sdp-trace verifier behavior with OPA.
 
 ## Probe Result
 
-The table below reflects the **current environment**, where `opa` is not
-available. Run `go run ./tools/osscompat -json` to produce live harness output
-for your environment. When `opa` is available, the expected results are shown
-in the **Expected (tool available)** column.
+The table below reflects the **committed state** as `not_assessed` because no
+live harness output is embedded in this document. Run
+`go run ./tools/osscompat -json` to produce live harness output for your
+environment. When `opa` is available, the expected results are shown in the
+**Expected (tool available)** column.
 
 | Probe | Current State | Expected (tool available) | Reason |
 |---|---|---|---|
