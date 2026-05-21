@@ -11,7 +11,7 @@ CI/customer witness profiles, forensic query packs, cross-repository posture
 export, PR review packets и source-bound release proof являются extension
 surfaces. См.
 [`command-stability-matrix.md`](command-stability-matrix.md) для
-authoritative classification каждого command family. Это не automatic merge
+current stability classification каждого command family. Это не automatic merge
 blocking, не production release approval, не external audit proof и не гарантия
 обнаружения каждого unwrapped agent run.
 

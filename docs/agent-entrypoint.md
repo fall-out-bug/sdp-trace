@@ -11,7 +11,7 @@ exact observed slice and its current verifier limitations without turning the
 run into broad harness or model support.
 
 For the stability classification of each command family, see
-[`docs/command-stability-matrix.md`](command-stability-matrix.md). Core
+[`command-stability-matrix.md`](command-stability-matrix.md). Core
 commands are the stable adoption path; extension, experimental, and fixture-only
 commands are optional or diagnostic surfaces.
 

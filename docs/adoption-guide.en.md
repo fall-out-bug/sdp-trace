@@ -11,7 +11,7 @@ advisory/protected gate facts, CI/customer witness profiles, forensic query
 packs, cross-repository posture export, PR review packets, and local
 source-bound release proof are extension surfaces. See
 [`command-stability-matrix.md`](command-stability-matrix.md) for the
-authoritative classification of every command family. None of these mean
+current stability classification of every command family. None of these mean
 automatic merge blocking, production release approval, external audit proof, or
 guaranteed detection of every unwrapped agent run.
 
