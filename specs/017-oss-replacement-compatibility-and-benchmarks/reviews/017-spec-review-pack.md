@@ -18,15 +18,15 @@ This spec tests substitution boundaries and records the replacement decisions
 for this phase. It does not approve replacing product code by implementation
 accident.
 
-## Evidence From 2026-05-20 Probe
-- check-jsonschema validates checked flight-recorder fixtures against locally rewired schema refs.
-- Current live sdp-trace wrap output does not validate against schema/flight-recorder-run.schema.json; required fields and timestamp format differ.
+## Evidence From 2026-05-20 Probe (local checkout notes, not source-bound proof)
+- check-jsonschema validates checked flight-recorder fixtures against locally rewired schema refs. Reproduce: `check-jsonschema --schemafile schema/flight-recorder-run.schema.json examples/flight-recorder/local-positive/run.json`
+- Current live sdp-trace wrap output does not validate against schema/flight-recorder-run.schema.json; required fields and timestamp format differ. Reproduce: `go run ./tools/osscompat -probe jsonschema-wrap-drift`
 - check-jsonschema validates representative assessment, gate, and release example files.
-- OPA can express a simplified adapter-capture pass/fail rule and detects the test_provenance_not_overclaimed failure fixture.
-- CUE can import JSON Schema, but direct validation is blocked until schema refs are packaged as a CUE module.
-- in-toto-run can wrap a command, sign link metadata, and record material and product hashes.
-- cosign can sign and verify a local run.json blob with a local key when transparency-log verification is explicitly disabled.
-- slsa-verifier does not accept the local DSSE fixture as production SLSA evidence; it fails because no matching Rekor entries are found.
+- OPA can express a simplified adapter-capture pass/fail rule and detects the negative failure fixture. Reproduce: `opa eval --data examples/oss-policy/adapter.rego --input examples/oss-policy/test-fixture.json --format raw 'data.sdp_trace.adapter.pass'`
+- CUE can import JSON Schema, but direct validation is blocked until schema refs are packaged as a CUE module. Reproduce: `cue import --package sdptrace schema/flight-recorder-run.schema.json -o -`
+- in-toto-run can wrap a command, sign link metadata, and record material and product hashes (requires throwaway key; see docs/oss-replacement-compatibility.md).
+- cosign can sign and verify a local run.json blob with a local key when transparency-log verification is explicitly disabled (see docs/oss-replacement-compatibility.md).
+- slsa-verifier does not accept the local DSSE fixture as production SLSA evidence; it fails because no matching Rekor entries are found. Reproduce: see docs/oss-replacement-compatibility.md SLSA negative path command.
 
 ## Benchmark Snapshot
 Local 20-iteration benchmark, compiled sdp-trace, Linux amd64:
@@ -98,8 +98,12 @@ Deliverable: Repeatable local benchmarks with environment, command lines, iterat
 ## Verification
 go test -count=1 ./...
 go vet ./...
+jq empty schema/*.json
 go run ./tools/doccheck
 go run ./tools/hygienecheck
+go run ./tools/qualitycheck -gocyclo cmd internal tools
+go test -count=1 ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
 git diff --check
 
 ## Pi Handoff Notes
