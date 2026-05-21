@@ -1,6 +1,6 @@
 # Package Ownership Map
 
-Status: draft
+Status: approved for Spec 018
 
 This map separates core substrate packages from extension packages. It is a
 design boundary for simplification work, not a package-removal plan.

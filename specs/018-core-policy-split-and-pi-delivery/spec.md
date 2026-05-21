@@ -1,6 +1,6 @@
 # Spec 018: Core/Policy Split And Pi Delivery Plan
 
-Status: draft
+Status: approved for implementation
 
 ## Objective
 
@@ -84,10 +84,14 @@ agents.
 
 ## Acceptance Criteria
 
-- A core/extension command matrix exists.
-- Documentation reading order points new adopters to the core path first.
-- Extension surfaces have explicit owner, status, and spec decision.
+- A core/extension command matrix exists. ✅ `docs/command-stability-matrix.md`
+- Documentation reading order points new adopters to the core path first. ✅
+  `README.md`, `docs/install.md`, `docs/contributor-quickstart.md`,
+  `docs/adoption-guide.en.md`, `docs/adoption-guide.ru.md`
+- Extension surfaces have explicit owner, status, and spec decision. ✅
+  `docs/extension-boundary-plan.md`
 - Source-file locality policy identifies numbered Go shards as transitional
   and requires future cleanup slices to replace them with cohesive named files.
+  ✅ `docs/package-ownership-map.md`
 - Pi handoff slices are small enough to run in isolated worktrees without
-  overlapping write sets.
+  overlapping write sets. ✅ `plan.md` workstream definitions
