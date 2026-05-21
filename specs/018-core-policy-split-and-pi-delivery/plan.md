@@ -1,6 +1,6 @@
 # Plan: Core/Policy Split And Pi Delivery
 
-Status: accepted for implementation; machine review complete, maintainer human review not_assessed
+Status: machine review complete; accepted for implementation pending maintainer human review
 
 ## Workstreams
 
