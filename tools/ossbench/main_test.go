@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -43,8 +44,18 @@ func TestRun_JSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
-	if !strings.HasPrefix(strings.TrimSpace(out.String()), "[") {
-		t.Fatalf("expected JSON array output, got: %s", out.String())
+	var results []benchmarkResult
+	if err := json.Unmarshal(out.Bytes(), &results); err != nil {
+		t.Fatalf("expected valid JSON output, got: %s, err: %v", out.String(), err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 benchmark result, got %d", len(results))
+	}
+	if results[0].Name != "go env GOOS" {
+		t.Fatalf("expected name %q, got %q", "go env GOOS", results[0].Name)
+	}
+	if results[0].Error != "" {
+		t.Fatalf("unexpected error: %s", results[0].Error)
 	}
 }
 
