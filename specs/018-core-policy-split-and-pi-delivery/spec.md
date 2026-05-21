@@ -1,6 +1,6 @@
 # Spec 018: Core/Policy Split And Pi Delivery Plan
 
-Status: approved for implementation
+Status: accepted for implementation; machine review complete, maintainer human review not_assessed
 
 ## Objective
 

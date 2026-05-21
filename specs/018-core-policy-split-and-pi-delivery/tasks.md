@@ -1,6 +1,6 @@
 # Tasks: Core/Policy Split And Pi Delivery
 
-Status: approved for implementation
+Status: accepted for implementation; machine review complete, maintainer human review not_assessed
 
 ## Phase 0 - Review
 
