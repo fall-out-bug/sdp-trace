@@ -103,7 +103,9 @@ go run ./tools/doccheck
 go run ./tools/hygienecheck
 go run ./tools/qualitycheck -gocyclo cmd internal tools
 go test -count=1 ./... -coverprofile=coverage.out
-go tool cover -func=coverage.out
+go tool cover -func=coverage.out > coverage-func.txt
+go run ./tools/qualitycheck -gocyclo cmd internal tools > gocyclo.txt
+go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less
 git diff --check
 
 ## Pi Handoff Notes
