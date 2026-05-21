@@ -11,6 +11,7 @@ Usage:
   sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>
   sdp-trace doctor [--contract <file>]
   sdp-trace doctor --profile github-actions-git-hooks-v1 [--out <file>]
+  sdp-trace override request --out <file> --id <id> --by <actor> --reason <reason> --source-ref <ref> --scope <scope> [--external-reference <ref>]
   sdp-trace install repo-observer --profile github-actions-git-hooks-v1 [--repository-id <safe-id>] [--write] [--force] [--out <file>]
   sdp-trace interaction relay --task-id <safe-id> --event-type <type> --out <file> -- <forward-command...>
   sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id <safe-id> --events-jsonl <file> --out <file>
@@ -39,6 +40,8 @@ Usage:
   sdp-trace assess explain --assessment-result <file>
   sdp-trace report --out <dir> <runs-root-or-run-dir>
   sdp-trace gate --out <file> <runs-root-or-run-dir>
+  sdp-trace checkpoint create --run <run-dir> --out <file> --private-key <file> [--signer-id <id>] [--id <id>]
+  sdp-trace checkpoint verify --run <run-dir> --checkpoint <file> [--policy <file>]
   sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>
   sdp-trace release-proof --manifest <file> --out <file>
   sdp-trace pr-review packet --out <dir> --repo-id <safe-id> --change-ref <pr|mr|change-id> --base <sha> --head <sha> --diff <file> [--ci-state <state>] [--created-by <actor>]

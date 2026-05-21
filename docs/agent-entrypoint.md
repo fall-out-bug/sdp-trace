@@ -134,6 +134,7 @@ Current command surface:
 - `sdp-trace preview [--contract <file> | --use-default-contract] -- <command...>`
 - `sdp-trace doctor [--contract <file>]`
 - `sdp-trace doctor --profile github-actions-git-hooks-v1 [--out <file>]`
+- `sdp-trace override request --out <file> --id <id> --by <actor> --reason <reason> --source-ref <ref> --scope <scope> [--external-reference <ref>]`
 - `sdp-trace install repo-observer --profile github-actions-git-hooks-v1 [--repository-id <safe-id>] [--write] [--force] [--out <file>]`
 - `sdp-trace interaction relay --task-id <safe-id> --event-type <type> --out <file> -- <forward-command...>`
 - `sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id <safe-id> --events-jsonl <file> --out <file>`
@@ -161,6 +162,8 @@ Current command surface:
 - `sdp-trace assess preview --profile <adapter-capture|managed-harness|forensic-retention|ci-artifact-observation|authority-envelope> [profile inputs]`
 - `sdp-trace assess explain --assessment-result <file>`
 - `sdp-trace report --out <dir> <runs-root-or-run-dir>`
+- `sdp-trace checkpoint create --run <run-dir> --out <file> --private-key <file> [--signer-id <id>] [--id <id>]`
+- `sdp-trace checkpoint verify --run <run-dir> --checkpoint <file> [--policy <file>]`
 - `sdp-trace gate --out <file> <runs-root-or-run-dir>`
 - `sdp-trace witness --kind <github-actions|gitlab-ci|buildkite|customer-pki> --out <file> [--report-dir <dir>] [--witness-envelope <file>] [--customer-pki-authority-policy <file>] [--customer-pki-public-cert <file> | --customer-pki-public-key <file>] [--customer-pki-payload-digest <sha256>] [--customer-pki-freshness-evidence <file>] <runs-root-or-run-dir>`
 - `sdp-trace release-proof --manifest <file> --out <file>`
@@ -190,6 +193,7 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `preview` | Preview command/contract implications before execution. | `sdp-trace preview -- /bin/echo ok` | Read-only preview; any unavailable profile remains `not_assessed`. |
 | `doctor` | Inspect local environment and contract prerequisites. | `sdp-trace doctor` | Emits structural readiness; offline or missing prerequisites can produce `cannot_verify`. |
 | `doctor --profile github-actions-git-hooks-v1` | Inspect repository observer installation and proof state without relying on agent prompts. | `sdp-trace doctor --profile github-actions-git-hooks-v1 --out repo-observer-status.json` | Emits machine JSON plus a human table. Local hooks/config are `local_structural`; CI artifact proof remains `not_assessed` until uploaded artifacts are observed. |
+| `override request` | Record an override request event with required trace fields. | `sdp-trace override request --out override.json --id O1 --by owner --reason "emergency fix" --source-ref run-1 --scope runtime` | Experimental surface; records an advisory override event only. It does not approve the override or change downstream policy state. |
 | `install repo-observer` | Install portable repo observer files for local git hooks and GitHub Actions artifact upload. | `sdp-trace install repo-observer --profile github-actions-git-hooks-v1 --write --out repo-observer-status.json` | Dry-run by default. With `--write`, writes only the documented allowlist and refuses existing hooks-path conflicts unless `--force` is used after review. |
 | `interaction relay` | Record an interaction event before forwarding message content to a command. | `printf 'correct plan boundary\n' \| sdp-trace interaction relay --task-id T1 --event-type corrective_feedback --out trace.json -- /bin/cat` | Writes a local interaction trace before delivery. If recording fails, forwarding does not happen. This records observation, not agent compliance. |
 | `interaction import-transcript` | Import pre-classified interaction events from JSONL. | `sdp-trace interaction import-transcript --source preclassified-transcript-import --task-id T1 --events-jsonl events.jsonl --out trace.json` | Post-hoc import only. Source completeness can be `complete`, `partial`, `not_assessed`, or `cannot_verify`; free-form chat parsing is out of scope. |
@@ -218,6 +222,8 @@ entrypoints unless this document and `--help` are updated in the same change.
 | `assess explain` | Explain an assessment result. | `sdp-trace assess explain --assessment-result assessment.json` | Explanation only; unsupported schema versions can produce `cannot_verify`. |
 | `report` | Build `.sdp-trace-report/` from one run or run root. | `sdp-trace report --out .sdp-trace-report .sdp-trace-runs` | Packages observed data and gaps; report presence is not proof of completeness. |
 | `gate` | Produce advisory/protected gate facts for a run root. | `sdp-trace gate --out .sdp-trace-report/gate-result.json .sdp-trace-runs` | Caveat: `gate` emits verifier facts and states; it is not a native merge, release, risk, or production-trust decision. Missing evidence stays `fail` or `cannot_verify`. |
+| `checkpoint create` | Create a signed checkpoint for a run directory. | `sdp-trace checkpoint create --run .sdp-trace-runs/run-1 --out checkpoint.json --private-key key.pem` | Extension surface; emits a signed checkpoint artifact for downstream policy consumers. Missing run or key yields `cannot_verify`. |
+| `checkpoint verify` | Verify a signed checkpoint against a run and optional policy. | `sdp-trace checkpoint verify --run .sdp-trace-runs/run-1 --checkpoint checkpoint.json [--policy policy.json]` | Replays checkpoint evidence; does not upgrade trust scope beyond the checkpoint's original authority. |
 | `witness --kind github-actions` | Bind report/run evidence to GitHub Actions identity when OIDC evidence is available. | `sdp-trace witness --kind github-actions --out ci-witness.json --report-dir .sdp-trace-report .sdp-trace-runs` | Caveat: CI witness is not external production trust by itself. Missing OIDC or binding data yields `cannot_verify`. |
 | `witness --kind gitlab-ci` | Record GitLab CI witness profile evidence. | `sdp-trace witness --kind gitlab-ci --out gitlab-witness.json --witness-envelope envelope.json .sdp-trace-runs` | Caveat: profile output depends on supplied envelope and policy evidence; unsupported or incomplete fields stay `cannot_verify`. |
 | `witness --kind buildkite` | Record Buildkite witness profile evidence. | `sdp-trace witness --kind buildkite --out buildkite-witness.json --witness-envelope envelope.json .sdp-trace-runs` | Caveat: CI-bound evidence is not a transparency log or release approval. |
