@@ -17,7 +17,7 @@ The core adoption path is intentionally small: `wrap` or `run`, then `verify`,
 gate facts, witness artifacts, release proof, PR review packets, telemetry, and
 forensic packages are optional extension surfaces. See
 [`docs/command-stability-matrix.md`](docs/command-stability-matrix.md) for the
-authoritative classification of every command family.
+current stability classification of every command family.
 
 ## Start Here
 

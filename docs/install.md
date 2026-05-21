@@ -35,7 +35,7 @@ Assessment profiles, gate facts, witness artifacts, release proof, and PR
 packet proof are extension surfaces. Add them only after the core run/report
 path is working and an external policy consumer needs those facts. See
 [`command-stability-matrix.md`](command-stability-matrix.md) for the
-authoritative command classification.
+current stability classification.
 
 For PR packet proof, run `packet build-pr --source github-actions` inside
 GitHub Actions with `GITHUB_EVENT_PATH`, `GITHUB_RUN_ID`, repository identity,
