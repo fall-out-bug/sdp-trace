@@ -1,6 +1,6 @@
 # Command Stability Matrix
 
-Status: draft
+Status: approved for Spec 018
 
 This matrix classifies the current `sdp-trace command-surface` into the
 smallest stable adoption path and optional extension surfaces. The

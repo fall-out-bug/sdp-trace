@@ -10,6 +10,11 @@ For the sidecar-first CI pilot evidence package, start with
 exact observed slice and its current verifier limitations without turning the
 run into broad harness or model support.
 
+For the stability classification of each command family, see
+[`docs/command-stability-matrix.md`](command-stability-matrix.md). Core
+commands are the stable adoption path; extension, experimental, and fixture-only
+commands are optional or diagnostic surfaces.
+
 ## Profile Selection
 
 Each assertion is anchored to one of these profile IDs:
