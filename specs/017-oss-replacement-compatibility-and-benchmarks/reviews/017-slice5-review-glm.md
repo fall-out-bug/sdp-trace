@@ -21,10 +21,10 @@ git diff --check             — PASS (no whitespace errors)
 Tool spot-checks:
 
 ```
-go run ./tools/osscompat -list   — 10 probes listed; 8 not_assessed (tools absent), 2 cannot_verify (manual-only probes when tool present), 0 pass (live wrap drift confirmed fail in environment with check-jsonschema)
+go run ./tools/osscompat -list   — 10 probes listed; in current environment all 10 are not_assessed (no optional tools installed). With check-jsonschema present: 1 pass (fixture validation), 1 fail (live wrap drift), 8 not_assessed (remaining tools absent). Manual-only probes report cannot_verify when their tools are present.
 go run ./tools/osscompat -json   — structured JSON output with state/reason
 go run ./tools/ossbench -list    — 2 built-in benchmarks (sdp-trace-version, sdp-trace-wrap)
-go run ./tools/ossbench -n 3 -json — produces min_ms, max_ms, median_ms
+go run ./tools/ossbench -n 3 -json — produces min_ms, max_ms, median_ms, iterations, command, working_directory, binary_path, and argv
 ```
 
 ---
@@ -58,7 +58,7 @@ to reflect the current state: the tool can produce full stats for its 2
 built-in probes, and the doc table should be regenerated from the tool or
 the disclaimer rewritten to state what subset is covered.
 
-Note: the ossbench tool only has 2 built-in probes (sdp-trace-verify,
+Note: the ossbench tool only has 2 built-in probes (sdp-trace-version,
 sdp-trace-wrap). The other 5 probes in the doc table (shell, OPA, Cosign,
 in-toto, check-jsonschema) require external tools and are not automatable
 by the Go harness without those tools installed. This limitation is
