@@ -58,8 +58,8 @@ required fields:
 | `harness_summary` | Absent | Required object |
 | `evidence_retention_summary` | Absent | Required object |
 | `verifier_states` | Absent | Required array |
-| `event_refs` / `event_chain_head` | Absent | At least one required (`anyOf`) |
-| `witness_ref` + `event_chain_head` | Absent | Required for witnessed profiles (`allOf`) |
+| `event_refs` / `event_chain_head` | `event_chain_head` present; `event_refs` absent | At least one required (`anyOf`) |
+| `witness_ref` + `event_chain_head` | `event_chain_head` present; `witness_ref` absent | Required for witnessed profiles (`allOf`) |
 
 ## Blocker Status
 
