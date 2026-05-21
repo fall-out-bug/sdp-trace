@@ -9,8 +9,11 @@ Core pilot path: trace capture, local verification, explanation, report и
 missing-evidence query. Assessment profiles, advisory/protected gate facts,
 CI/customer witness profiles, forensic query packs, cross-repository posture
 export, PR review packets и source-bound release proof являются extension
-surfaces. Это не automatic merge blocking, не production release approval, не
-external audit proof и не гарантия обнаружения каждого unwrapped agent run.
+surfaces. См.
+[`command-stability-matrix.md`](command-stability-matrix.md) для
+authoritative classification каждого command family. Это не automatic merge
+blocking, не production release approval, не external audit proof и не гарантия
+обнаружения каждого unwrapped agent run.
 
 ## Что дает sdp-trace
 

@@ -15,7 +15,9 @@ every unwrapped agent run was detected.
 The core adoption path is intentionally small: `wrap` or `run`, then `verify`,
 `explain`, `report`, and `query --query missing-evidence`. Assessment profiles,
 gate facts, witness artifacts, release proof, PR review packets, telemetry, and
-forensic packages are optional extension surfaces.
+forensic packages are optional extension surfaces. See
+[`docs/command-stability-matrix.md`](docs/command-stability-matrix.md) for the
+authoritative classification of every command family.
 
 ## Start Here
 

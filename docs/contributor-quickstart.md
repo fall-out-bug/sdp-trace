@@ -66,9 +66,11 @@ machine-authoritative.
 ## Full Command Surface
 
 For the authoritative command, state, trust-scope, and exit-code contract, see
-[Agent Entrypoint](agent-entrypoint.md). This quick start shows only the
-smallest core verification path; it does not duplicate the full command table
-or optional extension surfaces.
+[Agent Entrypoint](agent-entrypoint.md). For the stability classification of
+each command family, see
+[Command Stability Matrix](command-stability-matrix.md). This quick start shows
+only the smallest core verification path; it does not duplicate the full
+command table or optional extension surfaces.
 
 ## Trust Scope Note
 
