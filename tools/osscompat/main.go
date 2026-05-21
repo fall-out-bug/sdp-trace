@@ -26,6 +26,9 @@ func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 		probe  = fs.String("probe", "", "run a single probe by name")
 	)
 	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return 0
+		}
 		return 2
 	}
 	if len(fs.Args()) > 0 {
@@ -35,7 +38,10 @@ func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 
 	if *list {
 		for _, p := range reg {
-			fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description)
+			if _, err := fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description); err != nil {
+				fmt.Fprintf(stderr, "write error: %v\n", err)
+				return 2
+			}
 		}
 		return 0
 	}
