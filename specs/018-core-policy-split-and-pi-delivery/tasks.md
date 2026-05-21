@@ -44,8 +44,11 @@ Status: approved for implementation
 ## Phase 2 - Integration
 
 - [x] T018-050 Verify command docs still match `sdp-trace command-surface`.
-  Verified: `go run ./cmd/sdp-trace command-surface`, `go run ./tools/doccheck`.
+  Verified: `go run ./cmd/sdp-trace command-surface`, `go run ./tools/doccheck`,
+  `go test -count=1 ./...`, `go vet ./...`, `gofmt` for changed Go files,
+  `git diff --check`.
 - [x] T018-060 Run docs and hygiene checks.
-  Verified: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`.
+  Verified: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`,
+  `git diff --check`.
 - [ ] T018-070 Prepare follow-up implementation specs only after core/extension
   direction is approved. Status: `not_assessed` until follow-up specs are filed.
