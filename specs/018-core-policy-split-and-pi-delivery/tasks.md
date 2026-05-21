@@ -47,7 +47,7 @@ Status: in_review for Spec 018; maintainer human review not_assessed
 - [ ] T018-050 Verify command docs still match `sdp-trace command-surface`.
   Session verification: `go run ./cmd/sdp-trace command-surface`,
   `go run ./tools/doccheck`, `go test -count=1 ./...`, `go vet ./...`,
-  `test -z "$(gofmt -l cmd/sdp-trace/doctor_515_usagetext.go cmd/sdp-trace/main_540_commandsurfaceregistryassess.go cmd/sdp-trace/main_541_commandsurfaceregistryother.go)"`,
+  `unformatted=$(gofmt -l cmd/sdp-trace/doctor_515_usagetext.go cmd/sdp-trace/main_540_commandsurfaceregistryassess.go cmd/sdp-trace/main_541_commandsurfaceregistryother.go) \&\& test -z "$unformatted"`,
   `git diff --check`.
 - [ ] T018-060 Run docs and hygiene checks.
   Session verification: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`,
