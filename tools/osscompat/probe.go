@@ -241,10 +241,41 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(schemaOut)))
 }
 
+// opaPreflight checks whether the installed OPA supports `import rego.v1`.
+// If not, it returns `cannot_verify` so that version-mismatch failures are
+// not misreported as conformance `fail`.
+func opaPreflight(ctx context.Context) (verifierState, string) {
+	tmpDir, err := os.MkdirTemp("", "osscompat-opa-preflight-*")
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("mkdir temp for opa preflight: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+	preflight := `package sdp_trace.preflight
+import rego.v1
+allow := true
+`
+	preflightPath := filepath.Join(tmpDir, "preflight.rego")
+	if err := os.WriteFile(preflightPath, []byte(preflight), 0644); err != nil {
+		return stateCannotVerify, fmt.Sprintf("write opa preflight: %v", err)
+	}
+	out, err := exec.CommandContext(ctx, "opa", "eval",
+		"--data", preflightPath,
+		"--format", "raw",
+		"data.sdp_trace.preflight.allow",
+	).CombinedOutput()
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("opa does not support rego.v1 syntax (version too old?): %v\n%s", err, strings.TrimSpace(string(out)))
+	}
+	return "", "" // sentinel: preflight passed
+}
+
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
 func runOPAPolicy() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	if s, r := opaPreflight(ctx); s != "" {
+		return s, r
+	}
 	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
 	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture.json")
 	if _, err := os.Stat(regoPath); err != nil {

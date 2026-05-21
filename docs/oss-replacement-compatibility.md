@@ -77,7 +77,7 @@ and report `not_assessed`.
 # in a subsequent spec. Build the binary from the repo root, run it from an
 # isolated temp dir, then validate the generated run.json artifact.
 (
-  set -e
+  set -euo pipefail
   command -v check-jsonschema >/dev/null || { echo "check-jsonschema not found"; exit 1; }
   REPO_ROOT=$(git rev-parse --show-toplevel)
   TMPDIR=$(mktemp -d)
@@ -89,12 +89,31 @@ and report `not_assessed`.
   check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
     "$REPO_ROOT/examples/flight-recorder/local-positive/run.json"
-  RUN_DIR=$("$TMPDIR/sdp-trace" wrap true | awk '{print $2}')
+  WRAP_OUT=$("$TMPDIR/sdp-trace" wrap true)
+  if ! printf '%s' "$WRAP_OUT" | grep -qE '^run_dir: '; then
+    echo "ERROR: unexpected wrap stdout: $WRAP_OUT"
+    exit 1
+  fi
+  RUN_DIR=$(printf '%s' "$WRAP_OUT" | awk '{print $2}')
   RUN_JSON="$TMPDIR/$RUN_DIR/run.json"
-  if check-jsonschema \
+  if [ ! -f "$RUN_JSON" ]; then
+    echo "ERROR: run.json not found at $RUN_JSON"
+    exit 1
+  fi
+  # Only schema-validation failure (exit 1) is the expected drift.
+  # Other exits are treated as harness/tool errors.
+  set +e
+  check-jsonschema \
     --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
-    "$RUN_JSON"; then
+    "$RUN_JSON"
+  STATUS=$?
+  set -e
+  if [ "$STATUS" -eq 0 ]; then
     echo "ERROR: expected schema validation to fail"
+    exit 1
+  fi
+  if [ "$STATUS" -ne 1 ]; then
+    echo "ERROR: check-jsonschema exited abnormally (status=$STATUS); not a schema-validation failure"
     exit 1
   fi
 )
