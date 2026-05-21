@@ -198,9 +198,23 @@ and report `not_assessed`.
   cosign generate-key-pair
   cosign sign-blob --key cosign.key --yes --tlog-upload=false run.json > run.json.sig
   # This command omits --insecure-ignore-tlog so Rekor verification is attempted.
-  if cosign verify-blob --key cosign.pub --signature run.json.sig run.json; then
+  set +e
+  OUT=$(cosign verify-blob --key cosign.pub --signature run.json.sig run.json 2>&1)
+  STATUS=$?
+  set -e
+  if [ "$STATUS" -eq 0 ]; then
     echo "ERROR: expected Rekor verification to fail"
     exit 1
+  fi
+  if [ "$STATUS" -ne 1 ]; then
+    echo "ERROR: cosign exited abnormally (status=$STATUS); not a Rekor-missing failure"
+    echo "$OUT"
+    exit 1
+  fi
+  # Sanity-check that the failure relates to the transparency log.
+  if ! printf '%s' "$OUT" | grep -qiE 'rekor|tlog|transparency'; then
+    echo "WARNING: cosign failed but output does not mention Rekor/transparency log"
+    echo "$OUT"
   fi
 )
 ```
@@ -214,11 +228,26 @@ and report `not_assessed`.
 (
   set -e
   command -v slsa-verifier >/dev/null || { echo "slsa-verifier not found"; exit 1; }
-  if slsa-verifier verify-artifact \
-    --provenance-path examples/oss-supply-chain/local-dsse.json \
+  REPO_ROOT=$(git rev-parse --show-toplevel)
+  FIXTURE="$REPO_ROOT/examples/oss-supply-chain/local-dsse.json"
+  if [ ! -f "$FIXTURE" ]; then
+    echo "ERROR: fixture not found at $FIXTURE"
+    exit 1
+  fi
+  set +e
+  OUT=$(slsa-verifier verify-artifact \
+    --provenance-path "$FIXTURE" \
     --source-uri local/test \
-    /dev/null; then
+    /dev/null 2>&1)
+  STATUS=$?
+  set -e
+  if [ "$STATUS" -eq 0 ]; then
     echo "ERROR: expected SLSA verification to fail"
+    exit 1
+  fi
+  if [ "$STATUS" -ne 1 ]; then
+    echo "ERROR: slsa-verifier exited abnormally (status=$STATUS); not an expected-validation failure"
+    echo "$OUT"
     exit 1
   fi
 )
