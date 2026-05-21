@@ -324,6 +324,9 @@ func runOPAPolicy() (verifierState, string) {
 func runOPANegativeFixture() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	if s, r := opaPreflight(ctx); s != "" {
+		return s, r
+	}
 	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
 	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture-fail.json")
 	if _, err := os.Stat(regoPath); err != nil {
@@ -381,6 +384,9 @@ func runOPANegativeProvenance() (verifierState, string) {
 func runOPANegativeFixturePath(fixtureName, label string) (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	if s, r := opaPreflight(ctx); s != "" {
+		return s, r
+	}
 	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
 	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy", fixtureName)
 	if _, err := os.Stat(regoPath); err != nil {
