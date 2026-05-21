@@ -58,7 +58,7 @@ func commandSurfaceAssessCommands() []commandSurfaceCmd {
 				"sdp-trace checkpoint verify --run \u003crun-dir\u003e --checkpoint \u003cfile\u003e [--policy \u003cfile\u003e]",
 			},
 			TrustNote: "Extension surface; create signs run artifacts, verify replays existing checkpoint evidence.",
-			State:       "partial",
+			State:     "partial",
 		},
 	}
 }

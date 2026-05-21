@@ -45,7 +45,8 @@ Status: approved for implementation
 
 - [x] T018-050 Verify command docs still match `sdp-trace command-surface`.
   Verified: `go run ./cmd/sdp-trace command-surface`, `go run ./tools/doccheck`,
-  `go test -count=1 ./...`, `go vet ./...`, `gofmt` for changed Go files,
+  `go test -count=1 ./...`, `go vet ./...`,
+  `gofmt -l cmd/sdp-trace/doctor_515_usagetext.go cmd/sdp-trace/main_540_commandsurfaceregistryassess.go cmd/sdp-trace/main_541_commandsurfaceregistryother.go`,
   `git diff --check`.
 - [x] T018-060 Run docs and hygiene checks.
   Verified: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`,
