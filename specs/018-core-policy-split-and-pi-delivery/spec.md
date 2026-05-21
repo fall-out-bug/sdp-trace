@@ -1,6 +1,6 @@
 # Spec 018: Core/Policy Split And Pi Delivery Plan
 
-Status: machine review complete; accepted for implementation pending maintainer human review
+Status: machine review complete; maintainer human review not_assessed
 
 ## Objective
 
@@ -92,6 +92,8 @@ agents.
   Verify with `go run ./tools/doccheck`.
 - Source-file locality policy identifies numbered Go shards as transitional
   and requires future cleanup slices to replace them with cohesive named files.
-  Verify in `docs/package-ownership-map.md`.
+  Verify with `go run ./tools/doccheck` and read `docs/package-ownership-map.md`
+  section "Numbered Go shards".
 - Pi handoff slices are small enough to run in isolated worktrees without
-  overlapping write sets. Verify in `plan.md` workstream definitions.
+  overlapping write sets. Verify by reading `plan.md` workstream definitions
+  and checking file lists do not overlap.
