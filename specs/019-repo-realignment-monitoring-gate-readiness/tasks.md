@@ -110,13 +110,14 @@ Status: draft; maintainer human review not_assessed
   1) runCheckJSONSchema output preservation restored, 2) Direct tests skip when
   external tools are present to avoid environment sensitivity. Re-verified all gates pass.
 
-- [ ] T019-110 Query live CI for the final source commit or PR head.
-  Status: `cannot_verify` — changes are uncommitted on main; CI only runs on pushed
-  commits. Pre-existing CI on base commit 45ad723 failed due to quality issues that
-  local changes fix. Live CI evidence requires commit and push.
+- [x] T019-110 Query live CI for the final source commit or PR head.
+  Status: completed; CI run 26313909770 on commit `65c469f` passed.
+  GitHub Actions URL: https://github.com/fall-out-bug/sdp-trace/actions/runs/26313909770
 
 - [ ] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
-  Status: blocked on T019-110 (CI evidence) and Phase 0 HITL gates (T019-001/002/003).
+  Status: blocked on Phase 0 HITL gates (T019-001/002/003). All AFK workstreams,
+  local verification, Pi review (T019-100), and live CI evidence (T019-110)
+  are complete. Phase 0 maintainer review remains `not_assessed`.
 
