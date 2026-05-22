@@ -47,7 +47,11 @@ func TestRepoRoot_Fallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Chdir(origWd)
+	defer func() {
+		if err := os.Chdir(origWd); err != nil {
+			t.Fatalf("restore wd: %v", err)
+		}
+	}()
 	if err := os.Chdir(tmpDir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -156,7 +160,7 @@ func skipUnlessIntegration(t *testing.T) {
 }
 
 func TestRunExternalTool_Success(t *testing.T) {
-	out, err := runExternalTool(nil, "go", "version")
+	out, err := runExternalTool(context.TODO(), "go", "version")
 	if err != nil {
 		t.Fatalf("expected go version to succeed: %v\n%s", err, out)
 	}
@@ -166,7 +170,7 @@ func TestRunExternalTool_Success(t *testing.T) {
 }
 
 func TestRunExternalTool_Missing(t *testing.T) {
-	_, err := runExternalTool(nil, "this-tool-definitely-does-not-exist-017")
+	_, err := runExternalTool(context.TODO(), "this-tool-definitely-does-not-exist-017")
 	if err == nil {
 		t.Fatal("expected error for missing tool")
 	}

@@ -185,7 +185,11 @@ func TestRepoRoot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Chdir(originalWd)
+	defer func() {
+		if err := os.Chdir(originalWd); err != nil {
+			t.Fatalf("restore wd: %v", err)
+		}
+	}()
 	if err := os.Chdir(subDir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -201,7 +205,11 @@ func TestRepoRoot_Fallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Chdir(originalWd)
+	defer func() {
+		if err := os.Chdir(originalWd); err != nil {
+			t.Fatalf("restore wd: %v", err)
+		}
+	}()
 	if err := os.Chdir(tmpDir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
