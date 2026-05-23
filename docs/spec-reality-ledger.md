@@ -3,8 +3,8 @@
 > Reconciles roadmap rows, spec files, task checkboxes, and live verification
 > states for specs 001–019.
 >
-> **Date**: 2026-05-22  
-> **Commit**: `715f72a` on branch `feat/019-repo-realignment` (not merged to `main`)  
+> **Date**: 2026-05-23  
+> **Commit**: branch `feat/019-repo-realignment` (PR #60) + `chore/regenerate-mi-baselines` (PR #61)  
 > **Source of truth**: `docs/roadmap.md`, `specs/*/spec.md`, `specs/*/plan.md`, `specs/*/tasks.md`
 
 ## Live Verification State (as of 2026-05-22)

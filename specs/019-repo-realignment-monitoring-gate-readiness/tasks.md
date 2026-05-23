@@ -111,9 +111,9 @@ Status: draft; maintainer human review not_assessed
   external tools are present to avoid environment sensitivity. Re-verified all gates pass.
 
 - [x] T019-110 Query live CI for the final source commit or PR head.
-  Status: completed; CI run 26313909770 on commit `65c469f` of branch
-  `feat/019-repo-realignment` passed. Work is isolated from `main`.
-  GitHub Actions URL: https://github.com/fall-out-bug/sdp-trace/actions/runs/26313909770
+  Status: completed; CI on PR #60 requires MI baseline PR #61 to merge first.
+  PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
+  PR #61 (MI baseline): https://github.com/fall-out-bug/sdp-trace/pull/61
 
 - [ ] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
