@@ -11,7 +11,24 @@ func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, registry))
 }
 
+// run parses flags and executes the requested mode.
 func run(args []string, stdout, stderr io.Writer, reg []probe) int {
+	_, asJSON, list, probeName, code := parseFlags(args, stderr)
+	if code >= 0 {
+		return code
+	}
+	if *list {
+		return listProbes(stdout, stderr, reg)
+	}
+	if *probeName != "" {
+		return runSingleProbe(stdout, stderr, reg, *probeName, *asJSON)
+	}
+	return runAllAndPrint(stdout, stderr, reg, *asJSON)
+}
+
+// parseFlags builds the flag set, parses args, and returns the flags.
+// A non-negative code means the caller should return immediately.
+func parseFlags(args []string, stderr io.Writer) (*flag.FlagSet, *bool, *bool, *string, int) {
 	fs := flag.NewFlagSet("osscompat", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
@@ -27,42 +44,48 @@ func run(args []string, stdout, stderr io.Writer, reg []probe) int {
 	)
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
-			return 0
+			return fs, asJSON, list, probe, 0
 		}
-		return 2
+		return fs, asJSON, list, probe, 2
 	}
 	if len(fs.Args()) > 0 {
 		fmt.Fprintf(stderr, "unexpected positional args: %v\n", fs.Args())
-		return 2
+		return fs, asJSON, list, probe, 2
 	}
+	return fs, asJSON, list, probe, -1
+}
 
-	if *list {
-		for _, p := range reg {
-			if _, err := fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description); err != nil {
-				fmt.Fprintf(stderr, "write error: %v\n", err)
+// listProbes prints all registered probes.
+func listProbes(stdout, stderr io.Writer, reg []probe) int {
+	for _, p := range reg {
+		if _, err := fmt.Fprintf(stdout, "%s\t%s\n", p.Name, p.Description); err != nil {
+			fmt.Fprintf(stderr, "write error: %v\n", err)
+			return 2
+		}
+	}
+	return 0
+}
+
+// runSingleProbe runs one probe by name and prints its result.
+func runSingleProbe(stdout, stderr io.Writer, reg []probe, name string, asJSON bool) int {
+	for _, p := range reg {
+		if p.Name == name {
+			r := runProbe(p)
+			if err := printResults(stdout, []probeResult{r}, asJSON); err != nil {
+				fmt.Fprintf(stderr, "print results: %v\n", err)
 				return 2
 			}
+			return exitCode([]probeResult{r})
 		}
-		return 0
 	}
+	fmt.Fprintf(stderr, "unknown probe: %s\n", name)
+	return 2
+}
 
-	if *probe != "" {
-		for _, p := range reg {
-			if p.Name == *probe {
-				r := runProbe(p)
-				if err := printResults(stdout, []probeResult{r}, *asJSON); err != nil {
-					fmt.Fprintf(stderr, "print results: %v\n", err)
-					return 2
-				}
-				return exitCode([]probeResult{r})
-			}
-		}
-		fmt.Fprintf(stderr, "unknown probe: %s\n", *probe)
-		return 2
-	}
-
+// runAllAndPrint runs every probe and prints the results.
+func runAllAndPrint(stdout, stderr io.Writer, reg []probe, asJSON bool) int {
 	results := runAllProbes(reg)
-	if err := printResults(stdout, results, *asJSON); err != nil {
+	if err := printResults(stdout, results, asJSON); err != nil {
 		fmt.Fprintf(stderr, "print results: %v\n", err)
 		return 2
 	}

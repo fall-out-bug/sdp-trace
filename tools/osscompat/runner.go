@@ -36,18 +36,19 @@ func runProbe(p probe) probeResult {
 // summarize counts results by state.
 func summarize(results []probeResult) (pass, fail, cant, na int) {
 	for _, r := range results {
-		switch r.State {
-		case statePass:
-			pass++
-		case stateFail:
-			fail++
-		case stateCannotVerify:
-			cant++
-		case stateNotAssessed:
-			na++
-		}
+		pass += boolToInt(r.State == statePass)
+		fail += boolToInt(r.State == stateFail)
+		cant += boolToInt(r.State == stateCannotVerify)
+		na += boolToInt(r.State == stateNotAssessed)
 	}
 	return
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func maxNameWidth(results []probeResult) int {
@@ -63,16 +64,21 @@ func maxNameWidth(results []probeResult) int {
 // printResults writes probe results as text or JSON.
 func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 	if asJSON {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return enc.Encode(results)
+		return printResultsJSON(w, results)
 	}
+	return printResultsText(w, results)
+}
+
+func printResultsJSON(w io.Writer, results []probeResult) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(results)
+}
+
+func printResultsText(w io.Writer, results []probeResult) error {
 	width := maxNameWidth(results)
 	for _, r := range results {
-		line := fmt.Sprintf("%*s %s", -width, r.Name, r.State)
-		if r.Reason != "" {
-			line += "  - " + strings.ReplaceAll(r.Reason, "\n", " ")
-		}
+		line := formatResultLine(r, width)
 		if _, err := fmt.Fprintln(w, line); err != nil {
 			return err
 		}
@@ -81,4 +87,12 @@ func printResults(w io.Writer, results []probeResult, asJSON bool) error {
 	_, err := fmt.Fprintf(w, "\n%d pass, %d fail, %d cannot_verify, %d not_assessed\n",
 		pass, fail, cant, na)
 	return err
+}
+
+func formatResultLine(r probeResult, width int) string {
+	line := fmt.Sprintf("%*s %s", -width, r.Name, r.State)
+	if r.Reason != "" {
+		line += "  - " + strings.ReplaceAll(r.Reason, "\n", " ")
+	}
+	return line
 }

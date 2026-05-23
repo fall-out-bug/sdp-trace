@@ -1,6 +1,6 @@
 # OSS Supply-Chain Prototype
 
-Status: experimental; verification not_assessed/cannot_verify as listed below
+Status: experimental; automated probe states are `cannot_verify` with explicit, actionable reasons when tools are present. See `tools/osscompat/probe.go` and `probe_test.go` for harness coverage.
 Spec: [017](../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
 This directory contains minimal supply-chain tooling probes:
@@ -77,6 +77,18 @@ negative-path testing. These are local experiments only.
 Expected: failure because the fixture is intentionally invalid for local
 negative-path testing. The exact verifier failure mode is not separately
 evidence-backed.
+
+## Automated Probe States
+
+The `tools/osscompat` harness runs automated probes for all three tools:
+
+- `intoto-wrap`: returns `cannot_verify` with explicit reason when `in-toto-run` is present
+- `cosign-local-sign`: returns `cannot_verify` with explicit reason when `cosign` is present
+- `slsa-negative`: returns `cannot_verify` with explicit reason when `slsa-verifier` is present
+
+When the required tool is absent, the harness reports `not_assessed`. Direct
+test coverage lives in `tools/osscompat/probe_test.go` (`TestRunInTotoWrap_Direct`,
+`TestRunCosignLocalSign_Direct`, `TestRunSLSANegative_Direct`).
 
 ## Substitution Boundary
 

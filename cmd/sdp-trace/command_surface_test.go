@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -179,6 +180,27 @@ func TestCommandSurfaceDriftError(t *testing.T) {
 	}
 	if err := commandSurfaceDriftError(nil, []string{"b"}); err == nil {
 		t.Fatal("expected error for stale drift")
+	}
+}
+
+func TestCommandSurfaceRegistrySlicesUnchanged(t *testing.T) {
+	assessWant, err := os.ReadFile("testdata/command_surface_assess_commands.json")
+	if err != nil {
+		t.Fatalf("read assess testdata: %v", err)
+	}
+	otherWant, err := os.ReadFile("testdata/command_surface_other_commands.json")
+	if err != nil {
+		t.Fatalf("read other testdata: %v", err)
+	}
+
+	assessGot, _ := json.Marshal(commandSurfaceAssessCommands())
+	otherGot, _ := json.Marshal(commandSurfaceOtherCommands())
+
+	if string(assessGot) != string(assessWant) {
+		t.Errorf("commandSurfaceAssessCommands output changed; update testdata/command_surface_assess_commands.json to match current output")
+	}
+	if string(otherGot) != string(otherWant) {
+		t.Errorf("commandSurfaceOtherCommands output changed; update testdata/command_surface_other_commands.json to match current output")
 	}
 }
 

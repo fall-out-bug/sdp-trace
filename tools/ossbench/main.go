@@ -16,6 +16,26 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	cfg, err := parseFlagsAndArgs(args, stderr)
+	if err != nil {
+		return 2
+	}
+	if cfg.list {
+		return handleList(stdout, stderr, cfg.args)
+	}
+	return executeBenchmarks(cfg, stdout, stderr)
+}
+
+type runConfig struct {
+	asJSON     bool
+	iterations int
+	list       bool
+	name       string
+	raw        bool
+	args       []string
+}
+
+func parseFlagsAndArgs(args []string, stderr io.Writer) (runConfig, error) {
 	fs := flag.NewFlagSet("ossbench", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
@@ -24,101 +44,136 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "Use -list to see built-in benchmarks.\n\n")
 		fs.PrintDefaults()
 	}
-	var (
-		asJSON     = fs.Bool("json", false, "emit JSON output")
-		iterations = fs.Int("n", 20, "number of iterations")
-		list       = fs.Bool("list", false, "list built-in benchmarks")
-		name       = fs.String("bench", "", "run a single built-in benchmark by name")
-		raw        = fs.Bool("raw", false, "include all_ms in JSON output")
-	)
+	var cfg runConfig
+	fs.BoolVar(&cfg.asJSON, "json", false, "emit JSON output")
+	fs.IntVar(&cfg.iterations, "n", 20, "number of iterations")
+	fs.BoolVar(&cfg.list, "list", false, "list built-in benchmarks")
+	fs.StringVar(&cfg.name, "bench", "", "run a single built-in benchmark by name")
+	fs.BoolVar(&cfg.raw, "raw", false, "include all_ms in JSON output")
 	if err := fs.Parse(args); err != nil {
+		return runConfig{}, err
+	}
+	cfg.args = fs.Args()
+	return cfg, nil
+}
+
+func handleList(stdout, stderr io.Writer, args []string) int {
+	if len(args) > 0 {
+		fmt.Fprintf(stderr, "unexpected positional args with -list: %s\n", strings.Join(args, " "))
 		return 2
 	}
-
-	if *list {
-		if len(fs.Args()) > 0 {
-			fmt.Fprintf(stderr, "unexpected positional args with -list: %s\n", strings.Join(fs.Args(), " "))
-			return 2
-		}
-		for _, b := range builtIns {
-			fmt.Fprintf(stdout, "%s\t%s\n", b.Name, b.Description)
-		}
-		return 0
+	for _, b := range builtIns {
+		fmt.Fprintf(stdout, "%s\t%s\n", b.Name, b.Description)
 	}
+	return 0
+}
 
-	var defs []benchmarkDef
-	if *name != "" {
-		found := false
-		for _, b := range builtIns {
-			if b.Name == *name {
-				found = true
-				break
-			}
+func executeBenchmarks(cfg runConfig, stdout, stderr io.Writer) int {
+	defs, cleanup, err := resolveBenchmarkDefs(cfg)
+	if err != nil {
+		fmt.Fprintf(stderr, "%v\n", err)
+		return 2
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+	results, err := runAllBenchmarks(defs, cfg.iterations, cfg.raw)
+	if err != nil {
+		fmt.Fprintf(stderr, "%v\n", err)
+		return 2
+	}
+	return printAndExit(stdout, stderr, results, cfg.asJSON)
+}
+
+func resolveBenchmarkDefs(cfg runConfig) ([]benchmarkDef, func(), error) {
+	if cfg.name != "" {
+		if len(cfg.args) > 0 {
+			return nil, nil, fmt.Errorf("unexpected positional args with -bench: %s", strings.Join(cfg.args, " "))
 		}
-		if !found {
-			fmt.Fprintf(stderr, "unknown benchmark: %s\n", *name)
-			return 2
-		}
-		if len(fs.Args()) > 0 {
-			fmt.Fprintf(stderr, "unexpected positional args with -bench: %s\n", strings.Join(fs.Args(), " "))
-			return 2
-		}
-		if err := resolveBuiltIns(); err != nil {
-			fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
-			return 2
-		}
-		defer cleanupTempBinary()
-		for _, b := range builtIns {
-			if b.Name == *name {
-				defs = append(defs, b)
-				break
-			}
-		}
-	} else {
-		// If no name given and extra args look like a command, run a custom benchmark.
-		remaining := fs.Args()
-		if len(remaining) > 0 {
-			defs = append(defs, benchmarkDef{
-				Name:        strings.Join(remaining, " "),
-				Description: "custom command",
-				Cmd:         remaining[0],
-				Args:        remaining[1:],
-			})
-		} else {
-			if err := resolveBuiltIns(); err != nil {
-				fmt.Fprintf(stderr, "resolve built-ins: %v\n", err)
-				return 2
-			}
-			defer cleanupTempBinary()
-			defs = builtIns
+		return resolveSingleBuiltin(cfg.name)
+	}
+	if len(cfg.args) > 0 {
+		defs := []benchmarkDef{{
+			Name:        strings.Join(cfg.args, " "),
+			Description: "custom command",
+			Cmd:         cfg.args[0],
+			Args:        cfg.args[1:],
+		}}
+		return defs, nil, nil
+	}
+	return resolveAllBuiltins()
+}
+
+func findBuiltin(name string) (benchmarkDef, bool) {
+	for _, b := range builtIns {
+		if b.Name == name {
+			return b, true
 		}
 	}
+	return benchmarkDef{}, false
+}
 
+func resolveSingleBuiltin(name string) ([]benchmarkDef, func(), error) {
+	def, ok := findBuiltin(name)
+	if !ok {
+		return nil, nil, fmt.Errorf("unknown benchmark: %s", name)
+	}
+	if err := resolveBuiltIns(); err != nil {
+		return nil, nil, fmt.Errorf("resolve built-ins: %w", err)
+	}
+	def.Cmd = tempBinaryPath
+	def.Source = "temp-build"
+	return []benchmarkDef{def}, cleanupTempBinary, nil
+}
+
+func resolveAllBuiltins() ([]benchmarkDef, func(), error) {
+	if err := resolveBuiltIns(); err != nil {
+		return nil, nil, fmt.Errorf("resolve built-ins: %w", err)
+	}
+	return builtIns, cleanupTempBinary, nil
+}
+
+func runAllBenchmarks(defs []benchmarkDef, iterations int, raw bool) ([]benchmarkResult, error) {
 	results := make([]benchmarkResult, 0, len(defs))
 	for i := range defs {
 		d := &defs[i]
-		if d.Name == "sdp-trace-wrap" {
-			tmpDir, err := os.MkdirTemp("", "ossbench-wrap-*")
-			if err != nil {
-				fmt.Fprintf(stderr, "mkdir temp: %v\n", err)
-				return 2
-			}
-			d.Dir = tmpDir
-			d.Cleanup = func() {
-				_ = os.RemoveAll(tmpDir)
-			}
+		if err := setupWrap(d); err != nil {
+			return nil, err
 		}
-		res := runBenchmark(*d, *iterations)
-		if d.Cleanup != nil {
-			d.Cleanup()
-		}
-		if !*raw {
-			res.AllMs = nil
-		}
+		res := runBenchmark(*d, iterations)
+		res = finalizeResult(res, d.Cleanup, raw)
 		results = append(results, res)
 	}
+	return results, nil
+}
 
-	if err := printResults(stdout, results, *asJSON); err != nil {
+func setupWrap(def *benchmarkDef) error {
+	if def.Name != "sdp-trace-wrap" {
+		return nil
+	}
+	tmpDir, err := os.MkdirTemp("", "ossbench-wrap-*")
+	if err != nil {
+		return fmt.Errorf("mkdir temp: %w", err)
+	}
+	def.Dir = tmpDir
+	def.Cleanup = func() {
+		_ = os.RemoveAll(tmpDir)
+	}
+	return nil
+}
+
+func finalizeResult(res benchmarkResult, cleanup func(), raw bool) benchmarkResult {
+	if cleanup != nil {
+		cleanup()
+	}
+	if !raw {
+		res.AllMs = nil
+	}
+	return res
+}
+
+func printAndExit(stdout, stderr io.Writer, results []benchmarkResult, asJSON bool) int {
+	if err := printResults(stdout, results, asJSON); err != nil {
 		fmt.Fprintf(stderr, "print results: %v\n", err)
 		return 2
 	}
@@ -133,19 +188,20 @@ func printResults(w io.Writer, results []benchmarkResult, asJSON bool) error {
 	}
 	width := maxNameWidth(results)
 	for _, r := range results {
-		var err error
-		if r.Error != "" {
-			_, err = fmt.Fprintf(w, "%*s  error: %s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
-				-width, r.Name, r.Error, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
-		} else {
-			_, err = fmt.Fprintf(w, "%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
-				-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
-		}
-		if err != nil {
+		if _, err := fmt.Fprint(w, formatResultLine(r, width)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func formatResultLine(r benchmarkResult, width int) string {
+	if r.Error != "" {
+		return fmt.Sprintf("%*s  error: %s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+			-width, r.Name, r.Error, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
+	}
+	return fmt.Sprintf("%*s  median=%6.2f ms  min=%6.2f ms  max=%6.2f ms  attempted=%d succeeded=%d\n",
+		-width, r.Name, r.MedianMs, r.MinMs, r.MaxMs, r.AttemptedIterations, r.SucceededIterations)
 }
 
 func maxNameWidth(results []benchmarkResult) int {
@@ -180,13 +236,13 @@ var builtIns = []benchmarkDef{
 		Name:        "sdp-trace-wrap",
 		Description: "sdp-trace wrap no-op",
 		Cmd:         "sdp-trace",
-		Args:        func() []string {
+		Args: func() []string {
 			if runtime.GOOS == "windows" {
 				return []string{"wrap", "cmd", "/c", "exit", "0"}
 			}
 			return []string{"wrap", "true"}
 		}(),
-		Source:      "PATH",
+		Source: "PATH",
 	},
 }
 
@@ -210,7 +266,7 @@ func resolveBuiltIns() error {
 		return fmt.Errorf("mkdir temp for build: %w", err)
 	}
 	bin := filepath.Join(tmpDir, "sdp-trace")
-	if err := buildSDPTrace(bin); err != nil {
+	if err := buildBinary(bin); err != nil {
 		_ = os.RemoveAll(tmpDir)
 		return fmt.Errorf("sdp-trace build failed: %w", err)
 	}
