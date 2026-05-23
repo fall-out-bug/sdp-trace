@@ -344,7 +344,10 @@ func runWrapCommand(ctx context.Context, bin string, args []string, dir string) 
 }
 
 func runSchemaValidation(ctx context.Context, root, tmpDir, runDir string) (verifierState, string) {
-	checkCtx, checkCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	checkCtx, checkCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer checkCancel()
 	schemaPath := filepath.Join(root, "schema/flight-recorder-run.schema.json")
 	positiveFixture := filepath.Join(root, "examples/flight-recorder/local-positive/run.json")

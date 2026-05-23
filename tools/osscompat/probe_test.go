@@ -535,6 +535,7 @@ func TestRunOPANegativeProvenance_Direct(t *testing.T) {
 }
 
 func TestRunJSONSchemaWrapDrift_Direct(t *testing.T) {
+	skipUnlessIntegration(t)
 
 	state, reason := runJSONSchemaWrapDrift()
 	// This probe builds sdp-trace; if go is present it should at least get
