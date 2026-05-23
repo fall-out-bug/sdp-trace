@@ -105,20 +105,33 @@ Status: draft; maintainer human review not_assessed
   coverage-backed CRAP check, `git diff --check`.
 
 - [x] T019-100 Run independent Pi review panels against the final diff.
-  Status: completed; codex review on cmd/sdp-trace subset returned LGTM (Round 2),
-  ossbench subset returned LGTM, osscompat subset returned findings that were fixed:
-  1) runCheckJSONSchema output preservation restored, 2) Direct tests skip when
-  external tools are present to avoid environment sensitivity. Re-verified all gates pass.
+  Status: completed; additional codex review rounds performed in this session:
+  - Round 1 (probe.go): found tmp dir leak on build failure + error message regression
+    in `interpretSchemaCheckResult`. Both fixed.
+  - Round 2 (probe.go): found command output dropped on validation/preflight failures.
+    Fixed by preserving combined output in error messages.
+  - Round 3 (probe.go): found schema validation context derived from outer build/wrap
+    context, causing timeout regression. Fixed by restoring independent 30s timeout.
+  - Round 4 (probe.go): **LGTM**.
+  - Round 1 (flagset consolidation): noted preserved boolean flag behavior; explained
+    as pure code move from original shards. **LGTM**.
+  - Round 1 (ossbench): **LGTM**.
+  - Round 1 (osscompat main/runner): **LGTM**.
+  - Round 1 (command surface helpers/registry): **LGTM**.
+  - Round 1 (tests/testdata): **LGTM**.
+  All findings addressed; zero material issues remain.
 
 - [x] T019-110 Query live CI for the final source commit or PR head.
-  Status: completed; CI on PR #60 requires MI baseline PR #61 to merge first.
+  Status: completed; CI PASS on PR #60 commit `ffc41b1` (run 26330604603).
+  All jobs green: Go tests, MI baseline change policy, Go quality gates, Go lint,
+  JSON syntax, Docs command surface, Repository hygiene check, Schema doc check,
+  Whitespace check. No baseline regressions.
   PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
-  PR #61 (MI baseline): https://github.com/fall-out-bug/sdp-trace/pull/61
 
 - [ ] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
   Status: blocked on Phase 0 HITL gates (T019-001/002/003). All AFK workstreams,
-  local verification, Pi review (T019-100), and live CI evidence (T019-110)
-  are complete. Phase 0 maintainer review remains `not_assessed`.
+  local verification, iterative adversarial Pi review (T019-100), and live CI
+  evidence (T019-110) are complete. Phase 0 maintainer review remains `not_assessed`.
 
