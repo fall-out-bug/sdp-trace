@@ -1,0 +1,35 @@
+name: pre-action-guard
+description: Auto-checks before edit/write operations.
+
+triggers:
+  - before_edit
+  - before_write
+  - before_apply_patch
+
+checks:
+  - name: MI baseline drift (Go files)
+    condition: changed_files_match "*.go"
+    run: |
+      go vet ./...
+      go run ./tools/qualitycheck -gocyclo cmd internal tools > gocyclo.txt
+      go run ./tools/qualitycheck -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools
+      go run ./tools/qualitycheck -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal tools
+      rm -f gocyclo.txt
+
+  - name: Schema validity (JSON files)
+    condition: changed_files_match "schema/*.json"
+    run: |
+      for f in schema/*.json; do jq empty "$f" || exit 1; done
+
+  - name: Go tests (changed packages)
+    condition: changed_files_match "*.go"
+    run: |
+      go test -count=1 ./...
+
+  - name: Doccheck (docs changes)
+    condition: changed_files_match "docs/*"
+    run: go run ./tools/doccheck
+
+  - name: Hygiene (any tracked file)
+    condition: changed_files_match "*"
+    run: git diff --check

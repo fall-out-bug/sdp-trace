@@ -1,0 +1,60 @@
+name: pr-review
+description: Iterative adversarial review pipeline for PR-ready trust work.
+
+triggers:
+  - before_pr_ready
+  - manual
+
+steps:
+  - name: Local quality gates
+    workflow: quality-gates
+
+  - name: Build diff context
+    run: git diff main...HEAD
+
+  - name: Codex review — cmd/sdp-trace
+    run: |
+      git diff main...HEAD -- cmd/sdp-trace/ | \
+        codex exec -m gpt-5.5 \
+        "Adversarial code review. Find material issues: security, logic errors, race conditions, error handling gaps, resource leaks, behavior regressions. Ignore style and docs. State file, line numbers, what can go wrong, concrete fix. If no material issues, output exactly 'LGTM'."
+
+  - name: Codex review — tools/
+    run: |
+      git diff main...HEAD -- tools/ | \
+        codex exec -m gpt-5.5 \
+        "Adversarial code review. Find material issues: security, logic errors, race conditions, error handling gaps, resource leaks, behavior regressions. Ignore style and docs. State file, line numbers, what can go wrong, concrete fix. If no material issues, output exactly 'LGTM'."
+
+  - name: Codex review — internal/
+    run: |
+      git diff main...HEAD -- internal/ | \
+        codex exec -m gpt-5.5 \
+        "Adversarial code review. Find material issues: security, logic errors, race conditions, error handling gaps, resource leaks, behavior regressions. Ignore style and docs. State file, line numbers, what can go wrong, concrete fix. If no material issues, output exactly 'LGTM'."
+
+  - name: Codex review — docs and schemas
+    run: |
+      git diff main...HEAD -- docs/ schema/ | \
+        codex exec -m gpt-5.5 \
+        "Adversarial review: verify docs match code, schema examples match schema, command references match actual CLI surface. If no material issues, output exactly 'LGTM'."
+
+  - name: Fix findings
+    manual: true
+    prompt: Fix every finding of any severity before the next review round.
+
+  - name: Re-review until LGTM
+    loop:
+      condition: "last_review_output != 'LGTM'"
+      max_iterations: 5
+      steps:
+        - name: Re-run affected review planes
+          workflow: pr-review
+        - name: Record findings
+          template: review-disposition
+
+  - name: Query live CI
+    run: |
+      gh run list --branch $(git branch --show-current) --limit 1 --json conclusion,status
+    note: If checks are absent, record CI as not_assessed.
+
+  - name: Update tasks and ledger
+    manual: true
+    prompt: Record review rounds, CI evidence, and remaining not_assessed states.

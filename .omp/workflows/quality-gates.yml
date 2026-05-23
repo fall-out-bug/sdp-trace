@@ -1,0 +1,65 @@
+name: quality-gates
+description: Run the full sdp-trace verification suite before any claim.
+
+triggers:
+  - before_claim
+  - before_commit
+  - manual
+
+steps:
+  - name: Go tests
+    run: go test -count=1 ./...
+
+  - name: Go vet
+    run: go vet ./...
+
+  - name: Doc check
+    run: go run ./tools/doccheck
+
+  - name: Hygiene check
+    run: go run ./tools/hygienecheck
+
+  - name: Schema doc check
+    run: go run ./tools/schemadoc
+
+  - name: JSON syntax
+    run: |
+      for f in schema/*.json; do
+        jq empty "$f" || exit 1
+      done
+
+  - name: Coverage profile
+    run: |
+      go test -count=1 ./... -coverprofile=coverage.out
+      go tool cover -func=coverage.out > coverage-func.txt
+
+  - name: Cyclomatic complexity
+    run: go run ./tools/qualitycheck -gocyclo cmd internal tools > gocyclo.txt
+
+  - name: CRAP check
+    run: |
+      go run ./tools/crapcheck \
+        -cover-func coverage-func.txt \
+        -gocyclo gocyclo.txt \
+        -threshold 5 -strict-less
+
+  - name: File MI baseline
+    run: |
+      go run ./tools/qualitycheck \
+        -mi-baseline tools/qualitycheck/file-mi-baseline.json \
+        cmd internal tools
+
+  - name: Function MI baseline
+    run: |
+      go run ./tools/qualitycheck \
+        -function-mi-baseline tools/qualitycheck/function-mi-baseline.json \
+        cmd internal tools
+
+  - name: Whitespace check
+    run: git diff --check
+
+  - name: Clean artifacts
+    run: rm -f coverage.out coverage-func.txt gocyclo.txt
+    on_failure: ignore
+
+fail_fast: true
