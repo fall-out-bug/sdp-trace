@@ -289,10 +289,12 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	defer cancel()
 	root := repoRoot()
 	bin, tmpDir, err := buildSDPTraceInTemp(ctx, root)
+	if tmpDir != "" {
+		defer os.RemoveAll(tmpDir)
+	}
 	if err != nil {
 		return stateCannotVerify, err.Error()
 	}
-	defer os.RemoveAll(tmpDir)
 	return checkWrapDrift(ctx, root, bin, tmpDir)
 }
 
@@ -363,7 +365,7 @@ func interpretSchemaCheckResult(out []byte, err error) (verifierState, string) {
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
 		return stateFail, fmt.Sprintf("live wrap run.json fails schema validation (conformance failure): %s", strings.TrimSpace(string(out)))
 	}
-	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %s", strings.TrimSpace(string(out)))
+	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(out)))
 }
 
 // opaPreflight checks whether the installed OPA supports `import rego.v1`.
