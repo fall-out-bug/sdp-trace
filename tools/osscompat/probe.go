@@ -271,11 +271,12 @@ func runJSONSchemaFixtures() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	root := repoRoot()
-	if _, err := runCheckJSONSchema(ctx,
+	out, err := runCheckJSONSchema(ctx,
 		filepath.Join(root, "schema/flight-recorder-run.schema.json"),
 		filepath.Join(root, "examples/flight-recorder/local-positive/run.json"),
-	); err != nil {
-		return stateFail, fmt.Sprintf("fixture validation failed: %v", err)
+	)
+	if err != nil {
+		return stateFail, fmt.Sprintf("fixture validation failed: %v\n%s", err, strings.TrimSpace(string(out)))
 	}
 	return statePass, "fixture validates against schema"
 }
@@ -381,8 +382,9 @@ func opaPreflight(ctx context.Context) (verifierState, string) {
 	if err := os.WriteFile(preflightPath, []byte(opaPreflightRego), 0644); err != nil {
 		return stateCannotVerify, fmt.Sprintf("write opa preflight: %v", err)
 	}
-	if _, err := runExternalTool(ctx, "opa", "eval", "--data", preflightPath, "--format", "raw", "data.sdp_trace.preflight.allow"); err != nil {
-		return stateCannotVerify, fmt.Sprintf("opa does not support rego.v1 syntax (version too old?): %v", err)
+	out, err := runExternalTool(ctx, "opa", "eval", "--data", preflightPath, "--format", "raw", "data.sdp_trace.preflight.allow")
+	if err != nil {
+		return stateCannotVerify, fmt.Sprintf("opa does not support rego.v1 syntax (version too old?): %v\n%s", err, strings.TrimSpace(string(out)))
 	}
 	return "", ""
 }
