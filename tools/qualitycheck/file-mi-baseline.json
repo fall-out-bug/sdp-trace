@@ -3,6 +3,21 @@
   "threshold": 70,
   "files": [
     {
+      "key": "cmd/sdp-trace/flagset_consume.go",
+      "file": "cmd/sdp-trace/flagset_consume.go",
+      "maintainability_index": 69.4
+    },
+    {
+      "key": "cmd/sdp-trace/flagset_parse.go",
+      "file": "cmd/sdp-trace/flagset_parse.go",
+      "maintainability_index": 69.7
+    },
+    {
+      "key": "cmd/sdp-trace/main_536_commandsurfacehelpers.go",
+      "file": "cmd/sdp-trace/main_536_commandsurfacehelpers.go",
+      "maintainability_index": 62.9
+    },
+    {
       "key": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "file": "cmd/sdp-trace/main_537_commandsurfaceconstants.go",
       "maintainability_index": 62.6
@@ -20,12 +35,12 @@
     {
       "key": "cmd/sdp-trace/main_540_commandsurfaceregistryassess.go",
       "file": "cmd/sdp-trace/main_540_commandsurfaceregistryassess.go",
-      "maintainability_index": 53.7
+      "maintainability_index": 54.2
     },
     {
       "key": "cmd/sdp-trace/main_541_commandsurfaceregistryother.go",
       "file": "cmd/sdp-trace/main_541_commandsurfaceregistryother.go",
-      "maintainability_index": 45.7
+      "maintainability_index": 47
     },
     {
       "key": "cmd/sdp-trace/main_542_commandsurfaceregistrypacket.go",
@@ -40,12 +55,7 @@
     {
       "key": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
       "file": "cmd/sdp-trace/main_546_commandsurfacedrift.go",
-      "maintainability_index": 56.2
-    },
-    {
-      "key": "tools/doccheck/registry.go",
-      "file": "tools/doccheck/registry.go",
-      "maintainability_index": 42.5
+      "maintainability_index": 56.3
     },
     {
       "key": "tools/doccheck/main.go",
@@ -56,6 +66,36 @@
       "key": "tools/doccheck/quickstart.go",
       "file": "tools/doccheck/quickstart.go",
       "maintainability_index": 45.1
+    },
+    {
+      "key": "tools/doccheck/registry.go",
+      "file": "tools/doccheck/registry.go",
+      "maintainability_index": 42.9
+    },
+    {
+      "key": "tools/ossbench/bench.go",
+      "file": "tools/ossbench/bench.go",
+      "maintainability_index": 45.4
+    },
+    {
+      "key": "tools/ossbench/main.go",
+      "file": "tools/ossbench/main.go",
+      "maintainability_index": 36
+    },
+    {
+      "key": "tools/osscompat/main.go",
+      "file": "tools/osscompat/main.go",
+      "maintainability_index": 55.8
+    },
+    {
+      "key": "tools/osscompat/probe.go",
+      "file": "tools/osscompat/probe.go",
+      "maintainability_index": 28.9
+    },
+    {
+      "key": "tools/osscompat/runner.go",
+      "file": "tools/osscompat/runner.go",
+      "maintainability_index": 54.3
     }
   ]
 }
