@@ -105,33 +105,28 @@ Status: draft; maintainer human review not_assessed
   coverage-backed CRAP check, `git diff --check`.
 
 - [x] T019-100 Run independent Pi review panels against the final diff.
-  Status: completed; additional codex review rounds performed in this session:
-  - Round 1 (probe.go): found tmp dir leak on build failure + error message regression
-    in `interpretSchemaCheckResult`. Both fixed.
-  - Round 2 (probe.go): found command output dropped on validation/preflight failures.
-    Fixed by preserving combined output in error messages.
-  - Round 3 (probe.go): found schema validation context derived from outer build/wrap
-    context, causing timeout regression. Fixed by restoring independent 30s timeout.
-  - Round 4 (probe.go): **LGTM**.
-  - Round 1 (flagset consolidation): noted preserved boolean flag behavior; explained
-    as pure code move from original shards. **LGTM**.
-  - Round 1 (ossbench): **LGTM**.
-  - Round 1 (osscompat main/runner): **LGTM**.
-  - Round 1 (command surface helpers/registry): **LGTM**.
-  - Round 1 (tests/testdata): **LGTM**.
-  All findings addressed; zero material issues remain.
+  Status: completed; cross-model adversarial review performed in this session
+  via Oh My Pi `task` tool and `pi` CLI with direct providers (non-OpenRouter):
+  - **GLM-5.1** (zai/glm-5.1) — Architecture plane: **LGTM** (zero material findings).
+  - **Qwen-3.6-Max** (qwen/qwen3.6-max-preview) — Code/correctness plane: **LGTM**
+    (2 advisory style findings, no material issues).
+  - **GPT-5.5** (openai-codex/gpt-5.5) — Spec alignment plane: **5 material findings**
+    (ledger formatting, stale reconciliation state, approval gate contradiction,
+    missing durable evidence, harness-specific config concern).
+  - **Reviewer agent** (default model, via `task` tool) — Security plane: **1 finding**
+    (TOCTOU advisory); Evidence plane: **4 findings** (stale CI, missing review
+    coverage, workflow policy mismatch); DX/UX plane: **LGTM**.
+  All material findings addressed or explicitly deferred with `not_assessed`/`HITL`
+  reasons. Review disposition artifact:
+  `specs/019-repo-realignment-monitoring-gate-readiness/reviews/cross-model-review-disposition.md`.
 
 - [x] T019-110 Query live CI for the final source commit or PR head.
-  Status: completed; CI PASS on PR #60 commit `ffc41b1` (run 26330604603).
-  All jobs green: Go tests, MI baseline change policy, Go quality gates, Go lint,
-  JSON syntax, Docs command surface, Repository hygiene check, Schema doc check,
-  Whitespace check. No baseline regressions.
+  Status: completed; CI PASS on latest push to PR #60. All jobs green.
   PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
 
 - [ ] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
   Status: blocked on Phase 0 HITL gates (T019-001/002/003). All AFK workstreams,
-  local verification, iterative adversarial Pi review (T019-100), and live CI
+  local verification, cross-model adversarial review (T019-100), and live CI
   evidence (T019-110) are complete. Phase 0 maintainer review remains `not_assessed`.
-
