@@ -534,12 +534,19 @@ func TestRunOPANegativeProvenance_Direct(t *testing.T) {
 	}
 }
 
+func TestRunJSONSchemaWrapDrift_Unit(t *testing.T) {
+	state, reason := runJSONSchemaWrapDrift()
+	if state != statePass && state != stateFail && state != stateCannotVerify {
+		t.Fatalf("unexpected state %s: %s", state, reason)
+	}
+	if reason == "" {
+		t.Fatal("expected reason")
+	}
+}
+
 func TestRunJSONSchemaWrapDrift_Direct(t *testing.T) {
 	skipUnlessIntegration(t)
-
 	state, reason := runJSONSchemaWrapDrift()
-	// This probe builds sdp-trace; if go is present it should at least get
-	// past the build step.
 	if state != statePass && state != stateFail && state != stateCannotVerify {
 		t.Fatalf("unexpected state %s: %s", state, reason)
 	}
