@@ -3,7 +3,8 @@
 **Date**: 2026-05-23
 **Branch**: `feat/019-repo-realignment`
 **Base**: `main`
-**Review type**: Adversarial cross-model review (Spec 019 PR-ready)
+**HEAD**: `cfe85f6` (post-cross-model-fixes), now `HEAD` after OmPi reviewer re-run
+**Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
 ## Review Planes
 
@@ -16,6 +17,10 @@
 | Security | reviewer agent | default (kimi-for-coding) | Security/forgery | **1 finding** |
 | Evidence/tracing | reviewer agent | default (kimi-for-coding) | Tracing/provenance | **4 findings** |
 | DX/UX | reviewer agent | default (kimi-for-coding) | DX/UX | **LGTM** |
+| OmPi re-run — cmd/sdp-trace | reviewer agent | default (kimi-for-coding) | Code/correctness | **LGTM** |
+| OmPi re-run — tools/osscompat | reviewer agent | default (kimi-for-coding) | Code/correctness | **LGTM** |
+| OmPi re-run — tools/ossbench | reviewer agent | default (kimi-for-coding) | Code/correctness | **LGTM** |
+| OmPi re-run — docs/config | reviewer agent | default (kimi-for-coding) | Spec alignment / workflow | **3 findings addressed** |
 
 *Note: MiniMax-M2.7 and Kimi direct provider not available in this environment (no API keys configured). Review planes 4-7 executed via Oh My Pi `task` tool with bundled reviewer agent.*
 
@@ -31,7 +36,8 @@
 | TOCTOU in run.json validation | reviewer (security) | `tools/osscompat/probe.go` | **advisory** — acknowledged, accepted as known limitation (probe runs isolated temp binary in sequential test context) |
 | Global mutable benchmark state | reviewer (architecture) | `tools/ossbench/main.go` | **advisory** — acknowledged, accepted as test-only pattern |
 | Bespoke flag parser vs stdlib | reviewer (architecture) | `cmd/sdp-trace/flagset*.go` | **rejected_false_positive** — pure code move from existing shards, not new abstraction |
-| Recursive pr-review workflow | reviewer (architecture) | `.omp/workflows/pr-review.yml` | **accepted_fixed** — loop clarified |
+| Recursive pr-review workflow | reviewer (architecture) | `.omp/workflows/pr-review.yml` | **accepted_fixed** — loop replaced with manual step to prevent self-recursion |
+| Worktree isolation ineffective in block-intake | reviewer (workflow) | `.omp/templates/block-intake.yml` | **accepted_fixed** — replaced broken worktree with branch creation; `cd` in subshell did not persist across steps |
 | Pre-action hook too heavy | reviewer (architecture) | `.omp/hooks/pre-action.yml` | **advisory** — intentional, full gates at claim time |
 | Duplicate process surface (.omp + .agents) | reviewer (architecture) | `AGENTS.md` | **advisory** — `.omp/` is harness config, `.agents/` is skills; intentional separation |
 | Windows executable suffix (ossbench) | reviewer (code) | `tools/ossbench/main.go` | **accepted_fixed** — `go build -o` behavior on Windows addressed in existing tests |
@@ -57,6 +63,9 @@
 - [x] CI evidence updated to current HEAD (not pinned to old commit)
 - [x] PR review workflow covers AGENTS.md and .omp/
 - [x] Quality gates workflow aligned with spec
+- [x] Recursive loop removed from pr-review workflow (replaced with manual re-review step)
+- [x] Worktree isolation fixed in block-intake (replaced with branch creation)
+- [x] OmPi reviewer re-run completed: 3 LGTM (cmd, osscompat, ossbench), 3 findings addressed (docs/config)
 
 ## Remaining Open States
 

@@ -12,11 +12,10 @@ steps:
       git diff --check
       # Land or explicitly park approved work through review/PR discipline.
 
-  - name: Fresh worktree
+  - name: Fresh branch
     run: |
-      git worktree add ../sdp-trace-block-$(date +%s) -b feat/block-$(date +%s)
-      cd ../sdp-trace-block-*
-    note: When practical, isolate new block work from current workspace.
+      git checkout -b feat/block-$(date +%s)
+    note: Isolate new block work on a feature branch. Park current work first if needed.
 
   - name: SpecKit delta
     manual: true

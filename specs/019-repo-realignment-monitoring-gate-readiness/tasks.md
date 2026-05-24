@@ -105,17 +105,21 @@ Status: draft; maintainer human review not_assessed
   coverage-backed CRAP check, `git diff --check`.
 
 - [x] T019-100 Run independent Pi review panels against the final diff.
-  Status: completed; cross-model adversarial review performed in this session
-  via Oh My Pi `task` tool and `pi` CLI with direct providers (non-OpenRouter):
+  Status: completed; cross-model adversarial review performed in two rounds.
+  **Round 1**: via `pi` CLI with direct providers (non-OpenRouter):
   - **GLM-5.1** (zai/glm-5.1) — Architecture plane: **LGTM** (zero material findings).
   - **Qwen-3.6-Max** (qwen/qwen3.6-max-preview) — Code/correctness plane: **LGTM**
     (2 advisory style findings, no material issues).
   - **GPT-5.5** (openai-codex/gpt-5.5) — Spec alignment plane: **5 material findings**
     (ledger formatting, stale reconciliation state, approval gate contradiction,
     missing durable evidence, harness-specific config concern).
-  - **Reviewer agent** (default model, via `task` tool) — Security plane: **1 finding**
-    (TOCTOU advisory); Evidence plane: **4 findings** (stale CI, missing review
-    coverage, workflow policy mismatch); DX/UX plane: **LGTM**.
+  **Round 2** (OmPi instrumentation, post-fix): via Oh My Pi `task` tool with bundled
+  reviewer agent on 4 focused planes:
+  - **cmd/sdp-trace/** — **LGTM**
+  - **tools/osscompat/** — **LGTM**
+  - **tools/ossbench/** — **LGTM**
+  - **docs/config/** — **3 findings addressed** (recursive workflow, governance blind
+    spot, broken worktree isolation).
   All material findings addressed or explicitly deferred with `not_assessed`/`HITL`
   reasons. Review disposition artifact:
   `specs/019-repo-realignment-monitoring-gate-readiness/reviews/cross-model-review-disposition.md`.
