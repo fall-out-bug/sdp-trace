@@ -3,7 +3,7 @@
 **Date**: 2026-05-23
 **Branch**: `feat/019-repo-realignment`
 **Base**: `main`
-**HEAD**: `cfe85f6` (post-cross-model-fixes), now `HEAD` after OmPi reviewer re-run
+**HEAD**: `9dd1eb9` (OmPi reviewer fixes applied)
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
 ## Review Planes

@@ -3,8 +3,8 @@
 > Reconciles roadmap rows, spec files, task checkboxes, and live verification
 > states for specs 001–019.
 >
-> **Date**: 2026-05-23
-> **Commit**: branch `feat/019-repo-realignment` (PR #60) @ current HEAD
+**Date**: 2026-05-23
+**Commit**: branch `feat/019-repo-realignment` (PR #60) @ `9dd1eb9`
 
 > **Source of truth**: `docs/roadmap.md`, `specs/*/spec.md`, `specs/*/plan.md`, `specs/*/tasks.md`
 
