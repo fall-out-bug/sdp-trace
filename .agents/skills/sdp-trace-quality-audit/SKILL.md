@@ -12,7 +12,7 @@ Use this skill for requests mentioning repository polish, CRAP, cognitive comple
 </when_to_use>
 
 <when_not_to_use>
-Do not use this skill to bypass SpecKit deltas for feature work, to claim live CI from checked-in artifacts, or to perform product deployment/release authority. Use `sdp-trace-trust-workflow` for block implementation and `pi-review` for adversarial review.
+Do not use this skill to bypass SpecKit deltas for feature work, to claim live CI from checked-in artifacts, or to perform product deployment/release authority. Use `sdp-trace-trust-workflow` for block implementation and the OmPi `reviewer` agent for adversarial review.
 </when_not_to_use>
 
 <principles>

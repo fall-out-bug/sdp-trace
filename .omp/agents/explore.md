@@ -1,35 +1,35 @@
 ---
 name: explore
 description: Fast read-only codebase scout returning compressed context for handoff
-tools: 
+tools:
   - read
   - search
   - find
   - web_search
   - yield
-model: 
+model:
   - pi/smol
-output: 
-  properties: 
-    summary: 
-      metadata: 
+output:
+  properties:
+    summary:
+      metadata:
         description: Brief summary of findings and conclusions
       type: string
-    files: 
-      metadata: 
+    files:
+      metadata:
         description: Files examined with relevant code references
-      elements: 
-        properties: 
-          ref: 
-            metadata: 
+      elements:
+        properties:
+          ref:
+            metadata:
               description: "Project-relative path or paths to the most relevant code reference(s), optionally suffixed with line ranges like `:12-34` when relevant"
             type: string
-          description: 
-            metadata: 
+          description:
+            metadata:
               description: Section contents
             type: string
-    architecture: 
-      metadata: 
+    architecture:
+      metadata:
         description: Brief explanation of how pieces connect
       type: string
 ---

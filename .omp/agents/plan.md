@@ -1,7 +1,7 @@
 ---
 name: plan
 description: "Software architect for complex multi-file architectural decisions. NOT for simple tasks, single-file changes, or tasks completable in <5 tool calls."
-tools: 
+tools:
   - read
   - search
   - find
@@ -10,9 +10,9 @@ tools:
   - web_search
   - ast_grep
   - yield
-spawns: 
+spawns:
   - explore
-model: 
+model:
   - pi/plan
   - pi/slow
 thinkingLevel: high

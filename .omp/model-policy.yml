@@ -31,9 +31,9 @@ roles:
   implementation_integration:
     primary: gpt-5.5
     provider: openai
-    harness: codex-cli
-    note: Codex CLI review is a valid review plane. Pipe diff via stdin.
-    command: git diff <base>..HEAD | codex exec -m gpt-5.5 --reasoning-effort high "<prompt>"
+    harness: omPi-task-tool
+    note: OmPi task tool with reviewer agent is the default review plane. External model APIs may be configured per user authorization.
+    command: task agent=reviewer on focused diff planes via git diff main...HEAD -- <path>
 
 requirements:
   - Verify model availability with the auth broker before selecting unless fresh inventory exists.

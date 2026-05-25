@@ -12,36 +12,27 @@ steps:
   - name: Build diff context
     run: git diff main...HEAD
 
-  - name: Codex review — cmd/sdp-trace
-    run: |
-      git diff main...HEAD -- cmd/sdp-trace/ | \
-        codex exec -m gpt-5.5 \
-        "Adversarial code review. Find material issues: security, logic errors, race conditions, error handling gaps, resource leaks, behavior regressions. Ignore style and docs. State file, line numbers, what can go wrong, concrete fix. If no material issues, output exactly 'LGTM'."
+  - name: OmPi reviewer — code planes
+    manual: true
+    prompt: |
+      Run focused review planes via the OmPi `task` tool with `agent: reviewer`:
+      - cmd/sdp-trace/
+      - tools/
+      - internal/
+      For each plane, the reviewer agent uses `git diff` (read-only), `report_finding`,
+      and `yield` for verdict. Fix every finding before the next plane.
+    note: External CLI review is not used in this workflow.
 
-  - name: Codex review — tools/
-    run: |
-      git diff main...HEAD -- tools/ | \
-        codex exec -m gpt-5.5 \
-        "Adversarial code review. Find material issues: security, logic errors, race conditions, error handling gaps, resource leaks, behavior regressions. Ignore style and docs. State file, line numbers, what can go wrong, concrete fix. If no material issues, output exactly 'LGTM'."
+  - name: OmPi reviewer — docs and governance
+    manual: true
+    prompt: |
+      Run focused review planes via the OmPi `task` tool with `agent: reviewer`:
+      - docs/ and schema/
+      - AGENTS.md, .omp/, .claude/, specs/, .github/
+      Verify docs match code, schema examples match schema, config files are
+      internally consistent, and spec files match implemented code.
+    note: External CLI review is not used in this workflow.
 
-  - name: Codex review — internal/
-    run: |
-      git diff main...HEAD -- internal/ | \
-        codex exec -m gpt-5.5 \
-        "Adversarial code review. Find material issues: security, logic errors, race conditions, error handling gaps, resource leaks, behavior regressions. Ignore style and docs. State file, line numbers, what can go wrong, concrete fix. If no material issues, output exactly 'LGTM'."
-
-  - name: Codex review — docs and schemas
-    run: |
-      git diff main...HEAD -- docs/ schema/ | \
-        codex exec -m gpt-5.5 \
-        "Adversarial review: verify docs match code, schema examples match schema, command references match actual CLI surface. If no material issues, output exactly 'LGTM'."
-
-  - name: Codex review — governance and config
-    run: |
-      git diff main...HEAD -- AGENTS.md .omp/ .claude/ specs/ .github/ | \
-        codex exec -m gpt-5.5 \
-        "Adversarial review: verify governance docs match actual harness behavior, config files are internally consistent, and spec files match implemented code. If no material issues, output exactly 'LGTM'."
-    note: OpenAI gpt-5.5 used per model-policy implementation_integration role.
   - name: Fix findings
     manual: true
     prompt: Fix every finding of any severity before the next review round.
@@ -54,6 +45,7 @@ steps:
       Repeat until all review planes return LGTM or max 5 iterations.
       Record findings using template review-disposition.
     note: Manual re-review prevents workflow self-recursion.
+
   - name: Query live CI
     run: |
       gh run list --branch $(git branch --show-current) --limit 1 --json conclusion,status

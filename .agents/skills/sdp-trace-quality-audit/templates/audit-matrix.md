@@ -13,8 +13,8 @@ Artifact checklist:
 | Diff whitespace | `git diff --check` | pass/fail/cannot_verify/not_assessed | command output |  |
 | Docs drift | `go run ./tools/doccheck` or scoped equivalent | pass/fail/cannot_verify/not_assessed | command output |  |
 | CRAP | coverage-backed CRAP command sequence | pass/fail/cannot_verify/not_assessed | command output |  |
-| Security/trust review | pi-review plane | accepted/accepted_fixed/advisory/cannot_verify/not_assessed | review disposition |  |
-| DX/docs review | pi-review or manual review | accepted/accepted_fixed/advisory/cannot_verify/not_assessed | review disposition |  |
+| Security/trust review | OmPi reviewer agent plane | accepted/accepted_fixed/advisory/cannot_verify/not_assessed | review disposition |  |
+| DX/docs review | OmPi reviewer agent or manual review | accepted/accepted_fixed/advisory/cannot_verify/not_assessed | review disposition |  |
 
 Findings:
 | Severity | Area | Finding | Evidence | Disposition |

@@ -19,7 +19,7 @@ Trace map:
 - Provenance:
 
 Review before implementation:
-- Socratic/pi-review plane:
+- Socratic/adversarial review plane:
 - Findings:
 - Disposition:
 - User approval status:

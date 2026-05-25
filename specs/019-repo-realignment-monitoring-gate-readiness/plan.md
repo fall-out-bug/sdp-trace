@@ -275,4 +275,3 @@ git diff --check
 - Do not assign overlapping write sets to parallel workers.
 - Do not allow Pi workers to merge, publish, close trust, or mark checklist
   items complete outside their accepted slice.
-

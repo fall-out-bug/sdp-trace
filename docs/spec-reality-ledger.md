@@ -17,7 +17,7 @@
 | `go run ./tools/doccheck` | **PASS** | — |
 | `go run ./tools/hygienecheck` | **PASS** | — |
 | `go run ./tools/schemadoc` | **PASS** | — |
-| `go run ./tools/crapcheck -threshold 5 -strict-less` | **PASS** | All functions within threshold |
+| `go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less` | **PASS** | All functions within threshold |
 | `go run ./tools/qualitycheck -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools` | **PASS** | No regressions |
 | GitHub Actions CI | **PASS** | Latest run on `feat/019-repo-realignment` — all jobs green |
 
@@ -54,9 +54,8 @@
 
 | **017** | OSS Replacement Compatibility And Benchmarks | `in_progress` | `in_progress` | 8 / 11 | T017-040, T017-080, T017-090 | `go test` PASS (`tools/osscompat`, `tools/ossbench`). **CRAP PASS**. **MI PASS**. Supply-chain probes (in-toto, Cosign, SLSA) explicitly preserved as `cannot_verify` with reproducible reasons and test coverage. | **Partial** — compatibility harness and benchmark tooling exist and pass unit tests and quality gates. Live `wrap` output/schema drift remains an open blocker (HITL). |
 
-| **018** | Core/Policy Split And Pi Delivery Plan | `draft` | `in_review` | 0 / 11 | T018-001–T018-070 | `go test` PASS, `doccheck` PASS. | **No** — planning spec in review; no implementation tasks completed. |
-| **019** | Repo Realignment, Monitoring, And Gate Readiness | `draft` | `draft` | 11 / 15 | T019-001–T019-003 (HITL), T019-040 (HITL), T019-050 (HITL), T019-070 (blocked), T019-120 (blocked on Phase 0) | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI PASS**, CI PASS (run TBD, current HEAD on branch `feat/019-repo-realignment`). Cross-model adversarial review: GLM-5.1 (LGTM), Qwen-3.6-Max (LGTM), GPT-5.5 (5 findings addressed). | **Partial** — spec reality ledger created (T019-010), OSS tool quality restored (T019-020/021), command-surface ratchets repaired (T019-030), flagset shards consolidated (T019-060), supply-chain gaps explicitly preserved (T019-080), full local verification passed (T019-090), cross-model adversarial review completed (T019-100), live CI evidence captured (T019-110). Blocked on Phase 0 HITL maintainer review. |
-
+|| **018** | Core/Policy Split And Pi Delivery Plan | `draft` | `in_review` | 0 / 11 | T018-001–T018-070 | `go test` PASS, `doccheck` PASS. | **No** — planning spec in review; no implementation tasks completed. |
+|| **019** | Repo Realignment, Monitoring, And Gate Readiness | `draft` | `draft` | 11 / 15 | T019-001–T019-003 (HITL), T019-040 (HITL), T019-050 (HITL), T019-070 (blocked), T019-120 (blocked on Phase 0) | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI PASS**, CI PASS (run 26412276380, current HEAD `c73856f` on branch `feat/019-repo-realignment`). Cross-model adversarial review: GLM-5.1 (LGTM), Qwen-3.6-Max (LGTM), GPT-5.5 (5 findings addressed), OmPi reviewer re-run (3 LGTM, 3 findings addressed). | **Partial** — spec reality ledger created (T019-010), OSS tool quality restored (T019-020), command-surface ratchets repaired (T019-030), flagset shards consolidated (T019-060), supply-chain gaps explicitly preserved (T019-080), full local verification passed (T019-090), cross-model adversarial review completed (T019-100), live CI evidence captured (T019-110). Blocked on Phase 0 HITL maintainer review. |
 
 ## Qualification Notes
 

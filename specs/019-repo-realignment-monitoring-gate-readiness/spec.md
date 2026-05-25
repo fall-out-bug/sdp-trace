@@ -130,4 +130,3 @@ Observed inputs:
   leaves command behavior unchanged.
 - Each Pi-ready slice names owned files, dependencies, verification commands,
   and HITL versus AFK status.
-
