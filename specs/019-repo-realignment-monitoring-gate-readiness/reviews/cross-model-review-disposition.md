@@ -82,6 +82,8 @@
 - [x] OmPi reviewer re-run completed: 3 LGTM (cmd, osscompat, ossbench), 3 findings addressed (docs/config)
 - [x] Post-merge Qwen3.6 Plus static diff review completed; findings addressed except one verified false positive
 - [x] Final post-fix Qwen3.6 Plus re-review completed: LGTM
+- [x] PR #62 CI passed on `85013c59aa48cba3544daf321b1da64ea3d82090`
+  (run `26423828332`)
 
 ## Remaining Open States
 
@@ -103,10 +105,8 @@
 - Pre-action hook weight: monitor for DX friction; consider lighter preflight if needed
 
 **What this review does not prove**:
-- That the Phase 0 approval gate was actually satisfied (it remains `not_assessed`)
-- That the current post-merge branch has live CI evidence; local verification
-  passed, but CI remains `not_assessed` until the branch or PR is pushed
-- That CI on the exact final HEAD was queried (CI runs automatically on PR; manual query performed)
+- That the Phase 0 approval gate was retroactively satisfied by review or CI;
+  maintainer approval remains `not_assessed`
 - That Spec 018 status is correct (out of scope)
 
 ---

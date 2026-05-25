@@ -145,13 +145,16 @@ Status: post-merge partial; maintainer human review not_assessed
 - [x] T019-110 Query live CI for the final source commit or PR head.
   Status: completed for merged PR #60 source commit; CI PASS on `main` at
   `657a343a5f310538def9afd509e6c610c713cab0` was observed after merge.
-  This is CI evidence, not merge approval evidence.
+  Current post-merge closure branch PR #62 also passed CI on
+  `85013c59aa48cba3544daf321b1da64ea3d82090` (run `26423828332`). This is CI
+  evidence, not merge approval evidence.
   PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
 
 - [ ] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
-  Status: blocked on T019-004 and live CI evidence for the current branch.
-  Final post-merge Qwen3.6 Plus alternative-LLM review is LGTM after findings
-  were addressed. PR #60 is a partial merge, not Spec 019 closure.
+  Status: blocked on T019-004. Final post-merge Qwen3.6 Plus alternative-LLM
+  review is LGTM after findings were addressed, and PR #62 CI passed on
+  `85013c59aa48cba3544daf321b1da64ea3d82090`. PR #60 is a partial merge, not
+  Spec 019 closure.
   `merge_approval` remains `not_assessed`.
