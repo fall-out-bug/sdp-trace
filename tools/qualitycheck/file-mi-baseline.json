@@ -58,6 +58,11 @@
       "maintainability_index": 56.3
     },
     {
+      "key": "internal/prreview/prreview_184_renderprompt.go",
+      "file": "internal/prreview/prreview_184_renderprompt.go",
+      "maintainability_index": 36.9
+    },
+    {
       "key": "tools/doccheck/main.go",
       "file": "tools/doccheck/main.go",
       "maintainability_index": 63.4
