@@ -38,7 +38,7 @@ Do not use this skill to bypass SpecKit deltas for feature work, to claim live C
    - `go run ./tools/qualitycheck -fail-only -cyclo-over 10 -cognitive-over 10 cmd internal tools`
    - `go run ./tools/qualitycheck -fail-only -mi-under 70.1 cmd internal tools`
    - `go run ./tools/qualitycheck -fail-only -function-mi-under 70.1 cmd internal tools`
-   - coverage-backed CRAP: `go test -count=1 ./... -coverprofile=coverage.out`, `go tool cover -func=coverage.out`, `go run ./tools/qualitycheck -gocyclo cmd internal tools`, then `go run ./tools/crapcheck -threshold 5 -strict-less`.
+   - coverage-backed CRAP: `go test -count=1 ./... -coverprofile=coverage.out`, `go tool cover -func=coverage.out > coverage-func.txt`, `go run ./tools/qualitycheck -gocyclo cmd internal tools > gocyclo.txt`, then `go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less`.
 5. Run or collect separate security/trust, spec/no-spec, and Clean Code/DX/UX review planes. Treat subagent output as advisory until checked against files and commands.
 6. Update durable docs only for stable policy, open gaps, and audit mappings. Do not check in exact "CI passed on this head" proof that a later doc commit will invalidate.
 7. Commit in scoped slices and query final-head PR CI after each push.

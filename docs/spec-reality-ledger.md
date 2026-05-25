@@ -6,6 +6,7 @@
 **Date**: 2026-05-23
 **Commit**: branch `feat/019-repo-realignment` (PR #60) @ `2121285c3afa85b3f5b9ac9e4ad270662c0c377b`
 
+> **Note**: This checked-in file covers source commit `2121285`. Final PR-head CI must be queried live from GitHub and is not represented by this file.
 > **Source of truth**: `docs/roadmap.md`, `specs/*/spec.md`, `specs/*/plan.md`, `specs/*/tasks.md`
 
 ## Live Verification State (as of 2026-05-23)
@@ -55,7 +56,7 @@
 | **017** | OSS Replacement Compatibility And Benchmarks | `in_progress` | `in_progress` | 8 / 11 | T017-040, T017-080, T017-090 | `go test` PASS (`tools/osscompat`, `tools/ossbench`). **CRAP PASS**. **MI PASS**. Supply-chain probes (in-toto, Cosign, SLSA) explicitly preserved as `cannot_verify` with reproducible reasons and test coverage. | **Partial** — compatibility harness and benchmark tooling exist and pass unit tests and quality gates. Live `wrap` output/schema drift remains an open blocker (HITL). |
 
 | **018** | Core/Policy Split And Pi Delivery Plan | `draft` | `in_review` | 0 / 11 | T018-001–T018-070 | `go test` PASS, `doccheck` PASS. | **No** — planning spec in review; no implementation tasks completed. |
-| **019** | Repo Realignment, Monitoring, And Gate Readiness | `draft` | `draft` | 11 / 15 | T019-001–T019-003 (HITL), T019-040 (HITL), T019-050 (HITL), T019-070 (blocked), T019-120 (blocked on Phase 0) | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI PASS**, CI PASS (run 26414711376, current HEAD on branch `feat/019-repo-realignment`). Cross-model adversarial review: GLM-5.1 (LGTM), Qwen-3.6-Max (LGTM), GPT-5.5 (5 findings addressed), OmPi reviewer re-run (3 LGTM, 3 findings addressed). | **Partial** — spec reality ledger created (T019-010), OSS tool quality restored (T019-020), command-surface ratchets repaired (T019-030), flagset shards consolidated (T019-060), supply-chain gaps explicitly preserved (T019-080), full local verification passed (T019-090), cross-model adversarial review completed (T019-100), live CI evidence captured (T019-110). Blocked on Phase 0 HITL maintainer review. |
+| **019** | Repo Realignment, Monitoring, And Gate Readiness | `draft` | `draft` | 11 / 15 | T019-001–T019-003 (HITL), T019-040 (HITL), T019-050 (HITL), T019-070 (blocked), T019-120 (blocked on Phase 0) | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI PASS**, CI PASS (run 26414711376, source commit `2121285` on branch `feat/019-repo-realignment`; final PR-head CI must be queried live). Cross-model adversarial review: GLM-5.1 (LGTM), Qwen-3.6-Max (LGTM), GPT-5.5 (5 findings addressed), OmPi reviewer re-run (3 LGTM, 3 findings addressed). | **Partial** — spec reality ledger created (T019-010), OSS tool quality restored (T019-020), command-surface ratchets repaired (T019-030), flagset shards consolidated (T019-060), supply-chain gaps explicitly preserved (T019-080), full local verification passed (T019-090), cross-model adversarial review completed (T019-100), live CI evidence captured (T019-110). Blocked on Phase 0 HITL maintainer review. |
 
 ## Qualification Notes
 

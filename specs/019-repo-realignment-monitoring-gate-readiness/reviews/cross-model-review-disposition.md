@@ -3,7 +3,10 @@
 **Date**: 2026-05-23
 **Branch**: `feat/019-repo-realignment`
 **Base**: `main`
-**HEAD**: `2121285c3afa85b3f5b9ac9e4ad270662c0c377b` (round 3 fixes: ledger HEAD/CI/pipes, spec.md crapcheck, router duplicate)
+**Source commit covered by this file**: `2121285c3afa85b3f5b9ac9e4ad270662c0c377b` (round 3 fixes: ledger HEAD/CI/pipes, spec.md crapcheck, router duplicate)
+
+> **Note**: Final PR-head CI must be queried live from GitHub and is not represented by this checked-in file.
+
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
 ## Review Planes
