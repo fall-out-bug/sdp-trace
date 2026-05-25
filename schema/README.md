@@ -35,6 +35,7 @@ The canonical schema list and metadata live in `schema/index.json`. The table be
 | `external-verdict-input.schema.json` | current | Records externally produced gate, readiness, override, or custom verdicts as external evidence. |
 | `flight-recorder-event.schema.json` | current | Records one ordered recorder event with canonical hash fields, provenance, evidence, redaction, and optional witness reference. |
 | `flight-recorder-run.schema.json` | current | Records run-level recorder metadata, source/task locks, event-chain closure, gaps, and profile state. |
+| `run-manifest.schema.json` | current | Records the current live run.json manifest emitted by sdp-trace wrap. |
 | `flight-recorder-witness.schema.json` | current | Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head. |
 | `forensics-query-pack-result.schema.json` | current | Records read-only forensic query-pack rows, input artifact digests, source references, row evidence states, and output-safety assertions without a policy verdict. |
 | `gate-result.schema.json` | current | Records version-separated advisory and protected gate facts, including selected profile, protected gate state, checkpoint verification summary, protected conditions, and next-action hints without native policy ownership. |

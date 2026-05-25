@@ -31,10 +31,10 @@ These are editorial conventions, not enforced gates:
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
-| [019](../specs/019-repo-realignment-monitoring-gate-readiness/) | Repo realignment, monitoring, and gate readiness | `draft` | Awaiting maintainer review and adversarial spec review before implementation |
+| [019](../specs/019-repo-realignment-monitoring-gate-readiness/) | Repo realignment, monitoring, and gate readiness | `in_progress` | PR #60 merged partial implementation to `main`; post-merge closure completed wrap/schema compatibility, monitoring proof pack, and scoped harness/gate cleanup. Current-branch alternative LLM review is LGTM; maintainer approval and live CI evidence remain open. See `post-merge-closure-plan.md`. |
 | [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `draft` | Awaiting review |
-| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Slice review in progress; workstreams A–C and E implemented; WS-017-D automated probes remain open (manual-only). **CRAP and MI gates PASS** for `tools/ossbench` and `tools/osscompat` after WS-019-B refactor. Live `wrap` output/schema drift remains open (HITL). See `docs/spec-reality-ledger.md`. Final PR review pending. |
-| [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 open; repeat review in progress |
+| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Slice review in progress; workstreams A–C and E implemented; WS-017-D automated probes remain open (manual-only). **CRAP and MI gates PASS** for `tools/ossbench` and `tools/osscompat` after WS-019-B refactor. Live `wrap` manifest now has `schema/run-manifest.schema.json`; richer flight-recorder profile schema remains separate. See `docs/spec-reality-ledger.md`. Final PR review pending. |
+| [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 merged; external audit and production adoption evidence remain `not_assessed`. |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX, command guidance, profile selection | `draft` | Awaiting Socratic review |
 | [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | `draft` | Awaiting Socratic review |
 | [012](../specs/012-repo-hygiene-and-artifact-boundary/) | Repository hygiene and artifact boundary rules | `draft` | Awaiting Socratic review |
@@ -46,7 +46,7 @@ These are editorial conventions, not enforced gates:
 
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
-| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `draft` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. **Also blocked on:** CRAP check FAIL (21 functions > threshold) and MI baseline FAIL (regressions + missing baselines). See `docs/spec-reality-ledger.md`. `blocks/` directory preserved as evidence. |
+| [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `draft` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. Historical CRAP/MI failures were remediated by later quality work; current baseline quality gates pass, while absolute MI remains an assessed gap. See `docs/spec-reality-ledger.md`. `blocks/` directory preserved as evidence. |
 | [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `in_progress` | → Blocked on: post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
 
 ## Older Draft Specs (No Active Work)
@@ -55,7 +55,7 @@ These are editorial conventions, not enforced gates:
 | --- | --- | --- | --- |
 | [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `draft` | Revised after initial Socratic review; focused re-review pending. No `blocks/` directory. |
 | [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `draft` | Roadmap artifact; Socratic review completed; revisions pending. No `blocks/` directory. |
-| [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Revised after initial Socratic review; approval pending. **CRAP and MI gates currently FAIL**, blocking any MVP readiness claim. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
+| [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Revised after initial Socratic review; approval pending. Current baseline CRAP/MI gates pass, but absolute MI remains an assessed gap and the spec is not approved. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
 | [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `draft` | Revised after full review; re-review pending. No `blocks/` directory. |
 | [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
 | [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
@@ -96,7 +96,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Production adoption / security baseline | 016 | In progress |
 | OSS replacement compatibility / benchmarks | 017 | In progress |
 | Core/policy split and Pi delivery | 018 | Draft |
-| Repo realignment / monitoring / gate readiness | 019 | Draft |
+| Repo realignment / monitoring / gate readiness | 019 | In progress |
 
 ## Claim-Tag Enforcement Scope
 
@@ -145,6 +145,6 @@ Historical block records in `blocks/` are exempt from these expectations. They a
 
 - Update this file when a new spec is opened or an active spec's status changes.
 - Owner: the spec author or current block worker.
-- Last updated: 2026-05-22.
+- Last updated: 2026-05-26.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->

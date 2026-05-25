@@ -454,7 +454,6 @@ func TestRunInTotoWrap_Direct(t *testing.T) {
 	}
 }
 
-
 func TestRunCosignLocalSign_Direct(t *testing.T) {
 	if hasTool("cosign") {
 		t.Skip("cosign is present; skipping environment-sensitive test")
@@ -467,7 +466,6 @@ func TestRunCosignLocalSign_Direct(t *testing.T) {
 		t.Fatalf("expected actionable reason when tool missing, got: %s", reason)
 	}
 }
-
 
 func TestRunSLSANegative_Direct(t *testing.T) {
 	if hasTool("slsa-verifier") {
@@ -534,8 +532,8 @@ func TestRunOPANegativeProvenance_Direct(t *testing.T) {
 	}
 }
 
-func TestRunJSONSchemaWrapDrift_Unit(t *testing.T) {
-	state, reason := runJSONSchemaWrapDrift()
+func TestRunJSONSchemaWrapManifest_Unit(t *testing.T) {
+	state, reason := runJSONSchemaWrapManifest()
 	if state != statePass && state != stateFail && state != stateCannotVerify {
 		t.Fatalf("unexpected state %s: %s", state, reason)
 	}
@@ -544,9 +542,9 @@ func TestRunJSONSchemaWrapDrift_Unit(t *testing.T) {
 	}
 }
 
-func TestRunJSONSchemaWrapDrift_Direct(t *testing.T) {
+func TestRunJSONSchemaWrapManifest_Direct(t *testing.T) {
 	skipUnlessIntegration(t)
-	state, reason := runJSONSchemaWrapDrift()
+	state, reason := runJSONSchemaWrapManifest()
 	if state != statePass && state != stateFail && state != stateCannotVerify {
 		t.Fatalf("unexpected state %s: %s", state, reason)
 	}
@@ -565,9 +563,9 @@ func TestRunJSONSchemaFixtures(t *testing.T) {
 	}
 }
 
-func TestRunJSONSchemaWrapDrift(t *testing.T) {
+func TestRunJSONSchemaWrapManifest(t *testing.T) {
 	skipUnlessIntegration(t)
-	state, reason := runJSONSchemaWrapDrift()
+	state, reason := runJSONSchemaWrapManifest()
 	if !hasTool("check-jsonschema") {
 		if state != stateCannotVerify {
 			t.Errorf("expected stateCannotVerify when check-jsonschema missing, got %s: %s", state, reason)
@@ -751,8 +749,9 @@ func TestRunSLSANegative(t *testing.T) {
 
 func TestWrapRunJSONDriftFixture(t *testing.T) {
 	// Structural evidence that the captured run.json does not conform to
-	// flight-recorder-run.schema.json. This test checks the frozen snapshot
-	// without invoking an external schema validator.
+	// flight-recorder-run.schema.json. The current live manifest contract is
+	// run-manifest.schema.json; this test preserves the historical drift
+	// snapshot without invoking an external schema validator.
 	data, err := os.ReadFile("../../examples/flight-recorder/wrap-output-drift/run.json")
 	if err != nil {
 		t.Fatalf("read drift fixture: %v", err)

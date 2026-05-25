@@ -6,6 +6,11 @@
 **Source commit covered by this file**: `2121285c3afa85b3f5b9ac9e4ad270662c0c377b` (round 3 fixes: ledger HEAD/CI/pipes, spec.md crapcheck, router duplicate)
 
 > **Note**: Final PR-head CI must be queried live from GitHub and is not represented by this checked-in file.
+> **Post-merge note (2026-05-26)**: PR #60 was later merged as
+> `657a343a5f310538def9afd509e6c610c713cab0`. GitHub PR metadata contains no
+> recorded review approval, and the PR body left review checklist items
+> unchecked. Treat merge approval as `not_assessed`; this file is review
+> evidence for implemented slices, not merge approval.
 
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
@@ -24,8 +29,10 @@
 | OmPi re-run — tools/osscompat | reviewer agent | default (kimi-for-coding) | Code/correctness | **LGTM** |
 | OmPi re-run — tools/ossbench | reviewer agent | default (kimi-for-coding) | Code/correctness | **LGTM** |
 | OmPi re-run — docs/config | reviewer agent | default (kimi-for-coding) | Spec alignment / workflow | **3 findings addressed** |
+| Post-merge branch — static diff | Qwen3.6 Plus | opencode-go via OmPi | Full diff review | **LGTM after findings addressed** |
 
 *Note: MiniMax-M2.7 and Kimi direct provider not available in this environment (no API keys configured). Review planes 4-7 executed via Oh My Pi `task` tool with bundled reviewer agent.*
+*Post-merge note: GLM-5.1 (`zai/glm-5.1`) and Kimi (`kimi-code/kimi-for-coding`) OmPi reviewer attempts hung or timed out with empty output, so they are recorded as `cannot_verify`, not review evidence. Qwen3.6 Plus completed via static diff input with tools disabled.*
 
 ## Findings Summary
 
@@ -57,6 +64,10 @@
 | OmPi migration untraced | reviewer (spec) | `AGENTS.md` | **accepted_fixed** — tracked as part of WS-019-A/OmPi setup |
 | boolToInt less idiomatic | Qwen-3.6-Max | `tools/osscompat/runner.go` | **advisory** — style preference, not bug |
 | TestExitError fragility | Qwen-3.6-Max | `tools/osscompat/probe_test.go` | **advisory** — test-only concern |
+| Stale internal wrap-drift function name | Qwen3.6 Plus post-merge | `tools/osscompat/probe.go` | **accepted_fixed** — renamed to `runJSONSchemaWrapManifest` / `checkWrapManifest` |
+| Manifest probe preflight used flight-recorder fixture | Qwen3.6 Plus post-merge | `tools/osscompat/probe.go` | **accepted_fixed** — preflight now uses `examples/agentic-sdlc/local-wrap-positive/run.json` with `run-manifest.schema.json` |
+| Legacy probe name removed | Qwen3.6 Plus post-merge | `tools/osscompat/probe.go` | **accepted_fixed** — `jsonschema-wrap-drift` retained as alias for `jsonschema-wrap-manifest` |
+| `schema_version` const could mismatch emitter | Qwen3.6 Plus post-merge | `schema/run-manifest.schema.json` | **rejected_verified_false_positive** — live `wrap` output and manifest fixture both emit `block10-event-v1` |
 
 ## Verification After Fixes
 
@@ -69,15 +80,17 @@
 - [x] Recursive loop removed from pr-review workflow (replaced with manual re-review step)
 - [x] Worktree isolation fixed in block-intake (replaced with branch creation)
 - [x] OmPi reviewer re-run completed: 3 LGTM (cmd, osscompat, ossbench), 3 findings addressed (docs/config)
+- [x] Post-merge Qwen3.6 Plus static diff review completed; findings addressed except one verified false positive
+- [x] Final post-fix Qwen3.6 Plus re-review completed: LGTM
 
 ## Remaining Open States
 
 | Item | State | Reason |
 |---|---|---|
 | Phase 0 approval gate (T019-001/002/003) | `not_assessed` | HITL — requires human maintainer review |
-| Wrap/schema compatibility (T019-040) | `HITL` | Requires human contract decision |
-| Monitoring proof pack (T019-050) | `HITL` | Blocked on T019-040 |
-| Harness/gate shard cleanup (T019-070) | `blocked` | Blocked on T019-050 |
+| Wrap/schema compatibility (T019-040) | `completed_after_merge` | Dedicated live manifest schema added as `schema/run-manifest.schema.json` |
+| Monitoring proof pack (T019-050) | `completed_after_merge` | Reproducible proof pack added under `examples/spec019-monitoring-gate-proof/` with CLI replay tests |
+| Harness/gate shard cleanup (T019-070) | `completed_after_merge` | Scoped gate/report CLI and foundational harnessobs type shards renamed to behavior-named files |
 | Spec 018 status mismatch | `not_assessed` | Roadmap says `draft`, spec says `in_review` — out of scope for this PR |
 
 ## Synthesis
@@ -91,7 +104,8 @@
 
 **What this review does not prove**:
 - That the Phase 0 approval gate was actually satisfied (it remains `not_assessed`)
-- That wrap/schema drift is resolved (remains HITL)
+- That the current post-merge branch has live CI evidence; local verification
+  passed, but CI remains `not_assessed` until the branch or PR is pushed
 - That CI on the exact final HEAD was queried (CI runs automatically on PR; manual query performed)
 - That Spec 018 status is correct (out of scope)
 

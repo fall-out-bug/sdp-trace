@@ -68,18 +68,29 @@ func listProbes(stdout, stderr io.Writer, reg []probe) int {
 
 // runSingleProbe runs one probe by name and prints its result.
 func runSingleProbe(stdout, stderr io.Writer, reg []probe, name string, asJSON bool) int {
+	// Keep legacy one-off probe names usable without adding duplicate entries
+	// to the default all-probe run.
+	if canonical, ok := legacyProbeNames[name]; ok {
+		name = canonical
+	}
 	for _, p := range reg {
 		if p.Name == name {
-			r := runProbe(p)
-			if err := printResults(stdout, []probeResult{r}, asJSON); err != nil {
-				fmt.Fprintf(stderr, "print results: %v\n", err)
-				return 2
-			}
-			return exitCode([]probeResult{r})
+			return printSingleProbeResult(stdout, stderr, p, asJSON)
 		}
 	}
 	fmt.Fprintf(stderr, "unknown probe: %s\n", name)
 	return 2
+}
+
+func printSingleProbeResult(stdout, stderr io.Writer, p probe, asJSON bool) int {
+	// Keep single-probe output on the same path as all-probe output so JSON
+	// formatting and failure exit semantics cannot drift between modes.
+	r := runProbe(p)
+	if err := printResults(stdout, []probeResult{r}, asJSON); err != nil {
+		fmt.Fprintf(stderr, "print results: %v\n", err)
+		return 2
+	}
+	return exitCode([]probeResult{r})
 }
 
 // runAllAndPrint runs every probe and prints the results.

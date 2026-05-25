@@ -46,10 +46,14 @@ var registry = []probe{
 		Run:         runJSONSchemaFixtures,
 	},
 	{
-		Name:        "jsonschema-wrap-drift",
+		// Keep this probe pointed at the live manifest schema. The richer
+		// flight-recorder-run schema is a separate profile artifact.
+		// The drift-era name remains an alias so old reproduction commands do
+		// not silently lose coverage after the semantic split.
+		Name:        "jsonschema-wrap-manifest",
 		NeedsTool:   "check-jsonschema",
-		Description: "Document live wrap output vs flight-recorder-run.schema.json drift",
-		Run:         runJSONSchemaWrapDrift,
+		Description: "Validate live wrap manifest schema",
+		Run:         runJSONSchemaWrapManifest,
 	},
 	{
 		Name:        "opa-policy",
@@ -99,6 +103,10 @@ var registry = []probe{
 		Description: "Verify slsa-verifier is present and responds to version query",
 		Run:         runSLSANegative,
 	},
+}
+
+var legacyProbeNames = map[string]string{
+	"jsonschema-wrap-drift": "jsonschema-wrap-manifest",
 }
 
 // hasTool reports whether tool is in $PATH.
@@ -268,6 +276,8 @@ func runJSONSchemaFixtures() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	root := repoRoot()
+	// Fixture validation checks the richer profile schema, not the live wrap
+	// manifest schema.
 	out, err := runCheckJSONSchema(ctx,
 		filepath.Join(root, "schema/flight-recorder-run.schema.json"),
 		filepath.Join(root, "examples/flight-recorder/local-positive/run.json"),
@@ -278,14 +288,16 @@ func runJSONSchemaFixtures() (verifierState, string) {
 	return statePass, "fixture validates against schema"
 }
 
-// runJSONSchemaWrapDrift builds sdp-trace from source, runs wrap in an isolated
-// temp directory, and checks the live stdout against the schema. The probe
-// reports fail when schema validation fails (conformance failure) and pass
-// only if the drift is unexpectedly fixed.
-func runJSONSchemaWrapDrift() (verifierState, string) {
+// runJSONSchemaWrapManifest builds sdp-trace from source, runs wrap in an isolated
+// temp directory, and validates the generated run.json against the schema for
+// the current live recorder manifest.
+func runJSONSchemaWrapManifest() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	root := repoRoot()
+	// Build from the current checkout so probe output tracks local source.
+	// This intentionally avoids checked-in run.json fixtures for the final
+	// verdict; fixtures are only a validator/schema preflight below.
 	bin, tmpDir, err := buildSDPTraceInTemp(ctx, root)
 	if tmpDir != "" {
 		defer os.RemoveAll(tmpDir)
@@ -293,10 +305,14 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	if err != nil {
 		return stateCannotVerify, err.Error()
 	}
-	return checkWrapDrift(ctx, root, bin, tmpDir)
+	return checkWrapManifest(ctx, root, bin, tmpDir)
 }
 
-func checkWrapDrift(ctx context.Context, root, bin, tmpDir string) (verifierState, string) {
+func checkWrapManifest(ctx context.Context, root, bin, tmpDir string) (verifierState, string) {
+	// The wrap step is separated from schema validation so command/runtime
+	// failures remain distinct from manifest conformance failures. Missing
+	// check-jsonschema is not a conformance result; it is explicitly
+	// cannot_verify/not_assessed depending on the probe runner path.
 	runDir, s, r := runWrapAndParse(ctx, bin, tmpDir)
 	if s != "" {
 		return s, r
@@ -346,8 +362,10 @@ func runWrapCommand(ctx context.Context, bin string, args []string, dir string) 
 func runSchemaValidation(ctx context.Context, root, tmpDir, runDir string) (verifierState, string) {
 	checkCtx, checkCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer checkCancel()
-	schemaPath := filepath.Join(root, "schema/flight-recorder-run.schema.json")
-	positiveFixture := filepath.Join(root, "examples/flight-recorder/local-positive/run.json")
+	// The checked fixture exercises the external validator before the generated
+	// live manifest is treated as conformance evidence.
+	schemaPath := filepath.Join(root, "schema/run-manifest.schema.json")
+	positiveFixture := filepath.Join(root, "examples/agentic-sdlc/local-wrap-positive/run.json")
 	if _, err := runCheckJSONSchema(checkCtx, schemaPath, positiveFixture); err != nil {
 		return stateCannotVerify, fmt.Sprintf("check-jsonschema preflight failed on known-positive fixture (harness/tool error, not conformance): %v", err)
 	}
@@ -358,10 +376,11 @@ func runSchemaValidation(ctx context.Context, root, tmpDir, runDir string) (veri
 
 func interpretSchemaCheckResult(out []byte, err error) (verifierState, string) {
 	if err == nil {
-		return statePass, "local wrap run.json passed schema validation — this is local checkout evidence only, not source-bound drift closure"
+		return statePass, "live wrap run.json validates against run-manifest schema"
 	}
+	// Exit code 1 is a schema verdict; other exits are validator/runtime errors.
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-		return stateFail, fmt.Sprintf("live wrap run.json fails schema validation (conformance failure): %s", strings.TrimSpace(string(out)))
+		return stateFail, fmt.Sprintf("live wrap run.json fails run-manifest schema: %s", strings.TrimSpace(string(out)))
 	}
 	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(out)))
 }
@@ -375,6 +394,7 @@ func opaPreflight(ctx context.Context) (verifierState, string) {
 		return stateCannotVerify, fmt.Sprintf("mkdir temp for opa preflight: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
+	// Probe syntax support before running fixtures that require rego.v1.
 	preflightPath := filepath.Join(tmpDir, "preflight.rego")
 	if err := os.WriteFile(preflightPath, []byte(opaPreflightRego), 0644); err != nil {
 		return stateCannotVerify, fmt.Sprintf("write opa preflight: %v", err)

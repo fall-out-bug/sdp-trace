@@ -40,7 +40,7 @@ tools are available, the expected results are shown in the
 | Proxy / Tool | Capability Tested | Current Result | Expected (tool available) | Status |
 |---|---|---|---|---|
 | `check-jsonschema` | Validate `examples/flight-recorder/local-positive/run.json` against `flight-recorder-run.schema.json` | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `check-jsonschema` present [^1] |
-| `check-jsonschema` | Validate `run.json` artifact from `sdp-trace wrap` vs `flight-recorder-run.schema.json` | `not_assessed` | `fail` | Not assessed in current environment; expected `fail` (generated manifest is missing required fields) when `check-jsonschema` present [^1] |
+| `check-jsonschema` | Validate live `run.json` artifact from `sdp-trace wrap` against `run-manifest.schema.json` | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `check-jsonschema` present [^1] |
 | OPA/Rego | Express simplified adapter-capture pass rule | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | OPA/Rego | Combined negative fixture (both rules broken) | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | OPA/Rego | Negative trace_id rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
@@ -70,12 +70,12 @@ and report `not_assessed`.
 )
 ```
 
-### JSON Schema live wrap drift (expected fail)
+### JSON Schema live wrap manifest validation
 
 ```bash
-# This command is expected to fail until a source-bound schema/wrap fix lands
-# in a subsequent spec. Build the binary from the repo root, run it from an
-# isolated temp dir, then validate the generated run.json artifact.
+# Build the binary from the repo root, run it from an isolated temp dir, then
+# validate the generated run.json artifact against the current live manifest
+# schema.
 (
   set -euo pipefail
   command -v check-jsonschema >/dev/null || { echo "check-jsonschema not found"; exit 1; }
@@ -85,10 +85,11 @@ and report `not_assessed`.
   cd "$REPO_ROOT"
   go build -o "$TMPDIR/sdp-trace" ./cmd/sdp-trace
   cd "$TMPDIR"
-  # Preflight: confirm the tool and schema are functional against a known-good fixture.
+  # Preflight: confirm the tool and schema are functional against a known-good
+  # live-manifest fixture.
   check-jsonschema \
-    --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
-    "$REPO_ROOT/examples/flight-recorder/local-positive/run.json"
+    --schemafile "$REPO_ROOT/schema/run-manifest.schema.json" \
+    "$REPO_ROOT/examples/agentic-sdlc/local-wrap-positive/run.json"
   WRAP_OUT=$("$TMPDIR/sdp-trace" wrap true)
   if ! printf '%s' "$WRAP_OUT" | grep -qE '^run_dir: '; then
     echo "ERROR: unexpected wrap stdout: $WRAP_OUT"
@@ -100,22 +101,9 @@ and report `not_assessed`.
     echo "ERROR: run.json not found at $RUN_JSON"
     exit 1
   fi
-  # Only schema-validation failure (exit 1) is the expected drift.
-  # Other exits are treated as harness/tool errors.
-  set +e
   check-jsonschema \
-    --schemafile "$REPO_ROOT/schema/flight-recorder-run.schema.json" \
+    --schemafile "$REPO_ROOT/schema/run-manifest.schema.json" \
     "$RUN_JSON"
-  STATUS=$?
-  set -e
-  if [ "$STATUS" -eq 0 ]; then
-    echo "ERROR: expected schema validation to fail"
-    exit 1
-  fi
-  if [ "$STATUS" -ne 1 ]; then
-    echo "ERROR: check-jsonschema exited abnormally (status=$STATUS); not a schema-validation failure"
-    exit 1
-  fi
 )
 ```
 
@@ -257,7 +245,10 @@ and report `not_assessed`.
 
 ### JSON Schema (`check-jsonschema`)
 - **Can replace:** External CI/schema validation steps against published `schema/` refs or example fixtures.
-- **Adapter glue required:** Live `sdp-trace wrap` output currently mismatches `flight-recorder-run.schema.json`. Requires either fixing the recorder schema alignment or a separate current recorder schema.
+- **Adapter glue required:** Live `sdp-trace wrap` output is validated against
+  `run-manifest.schema.json`. The richer `flight-recorder-run.schema.json`
+  remains a separate run-level profile artifact and must not be inferred from
+  the live manifest alone.
 - **Remains sdp-trace-specific:** Embedded Go validation, hash-chain semantics, and internal recorder profiles.
 
 ### OPA/Rego
