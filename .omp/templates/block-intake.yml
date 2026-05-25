@@ -22,7 +22,7 @@ steps:
     prompt: |
       Prepare SpecKit delta and implementation plan covering:
       - spec, plan, task, evidence, gate, decision, trace, provenance impact
-      - Socratic review with pi-review skill
+      - Socratic review with adversarial review
       - Fix or record findings
 
   - name: Commit spec handoff

@@ -72,8 +72,6 @@ Skills are auto-discovered from `.agents/skills/<name>/SKILL.md`. Each skill dec
 |---|---|
 | `sdp-trace-router` | Entrypoint skill. Routes work to the correct downstream skill and quarantines generic global skills that can bypass evidence rules. |
 | `sdp-trace-trust-workflow` | Block intake, SpecKit review, implementation slicing, PR/review/merge discipline. Invoke on "берем блок в работу" or any block-intake request. |
-| `pi-review` | Adversarial review orchestration, reviewer model policy, retries, finding verification, and disposition records. |
-| `sdp-trace-pi-handoff` | Delegate approved implementation work to external coding agents through codex-subagent with worktree isolation, monitoring, review panels, and PR handoff. |
 | `sdp-trace-quality-audit` | Repository polish, quality gates, CRAP/MI checks, docs/DX/UX/security review, spec drift detection, and completion evidence mapping. |
 
 ### Skill Routing
@@ -89,20 +87,12 @@ For adversarial review in this repo, prefer non-OpenAI, non-Anthropic, and non-G
 
 Use provider-qualified model IDs when reproducibility or fallback control matters. Record exact model, provider, harness, date, prompt class, timeout, retries, and fallback in the review artifact.
 
-Review prompts and model policy details are in:
-- `.agents/skills/pi-review/references/model-policy.md`
-- `.agents/skills/pi-review/workflows/claim-doubt-cycle.md`
-- `.agents/skills/pi-review/templates/review-disposition.md`
-
-For external implementation handoff, use `codex-subagent` with isolated worktrees and recorded model/profile resolution. Commit the reviewed spec handoff before launching workers, monitor status/events/logs/structured result, then run independent review planes before PR-ready claims.
 
 ## Skills Router
 
 Use local project skills for detailed workflows instead of expanding this file:
 
 - `sdp-trace-trust-workflow`: block intake, SpecKit review, implementation slicing, PR/review/merge discipline.
-- `sdp-trace-pi-handoff`: external Pi/codex-subagent worker delegation, worktree isolation, monitoring, review panels, and PR handoff.
-- `pi-review`: adversarial reviewer orchestration, retries, model policy, and disposition rules.
 - `sdp-trace-quality-audit`: repository polish, quality gates, completion audits, docs/UX/DX/security review, and final evidence mapping.
 
 When the user says "берем блок в работу", use `sdp-trace-trust-workflow`.

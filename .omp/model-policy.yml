@@ -21,7 +21,7 @@ roles:
   wide_context_spec:
     primary: kimi-coding/kimi-for-coding
     fallback: openrouter/moonshotai/kimi-k2.5
-    note: Verify credentials with pi --list-models kimi before launch.
+    note: Verify credentials with the auth broker before launch.
 
   reasoning:
     primary: openrouter/deepseek/deepseek-v4-pro
@@ -36,7 +36,7 @@ roles:
     command: git diff <base>..HEAD | codex exec -m gpt-5.5 --reasoning-effort high "<prompt>"
 
 requirements:
-  - Run pi --list-models <family> before selecting unless fresh inventory exists.
+  - Verify model availability with the auth broker before selecting unless fresh inventory exists.
   - Use provider-qualified IDs. Bare IDs can route through wrong provider.
   - Record model, provider, harness, date, prompt class, timeout, retries, fallback.
   - Prefer read-only permissions for reviewers.
