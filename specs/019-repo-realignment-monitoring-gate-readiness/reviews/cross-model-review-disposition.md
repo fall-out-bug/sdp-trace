@@ -3,7 +3,7 @@
 **Date**: 2026-05-23
 **Branch**: `feat/019-repo-realignment`
 **Base**: `main`
-**HEAD**: `9bf1139` (OmPi cleanup: removed legacy Pi skills)
+**HEAD**: `2c8ebfb` (non-OmPi external tool references removed)
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
 ## Review Planes

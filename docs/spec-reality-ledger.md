@@ -4,7 +4,7 @@
 > states for specs 001–019.
 >
 **Date**: 2026-05-23
-**Commit**: branch `feat/019-repo-realignment` (PR #60) @ `9bf1139`
+**Commit**: branch `feat/019-repo-realignment` (PR #60) @ `2c8ebfb`
 
 > **Source of truth**: `docs/roadmap.md`, `specs/*/spec.md`, `specs/*/plan.md`, `specs/*/tasks.md`
 
