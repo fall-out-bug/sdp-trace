@@ -74,7 +74,8 @@
 - [x] Ledger table formatting fixed
 - [x] Roadmap Spec 017 status updated to PASS
 - [x] Review disposition artifact created
-- [x] CI evidence updated to current HEAD (not pinned to old commit)
+- [x] PR #60 CI evidence updated after merge; current PR-head CI is live
+  external evidence and must be queried from GitHub
 - [x] PR review workflow covers AGENTS.md and .omp/
 - [x] Quality gates workflow aligned with spec
 - [x] Recursive loop removed from pr-review workflow (replaced with manual re-review step)
@@ -82,8 +83,8 @@
 - [x] OmPi reviewer re-run completed: 3 LGTM (cmd, osscompat, ossbench), 3 findings addressed (docs/config)
 - [x] Post-merge Qwen3.6 Plus static diff review completed; findings addressed except one verified false positive
 - [x] Final post-fix Qwen3.6 Plus re-review completed: LGTM
-- [x] PR #62 CI passed on `85013c59aa48cba3544daf321b1da64ea3d82090`
-  (run `26423828332`)
+- [x] PR #62 CI passed in GitHub at the time of review; see the PR check
+  surface for final-head evidence
 
 ## Remaining Open States
 
