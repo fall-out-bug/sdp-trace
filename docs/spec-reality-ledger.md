@@ -68,8 +68,12 @@
   `-function-mi-under 70.1` checks still report historical files/functions
   below the absolute bar. This is an assessed quality gap, not a baseline
   regression.
-- **PR #61**: Open and failing as of 2026-05-26. The branch predates PR #60 and
-  is stale; it must be closed, rebased, or superseded before any merge.
+- **PR #61**: Closed as superseded by PR #62. The branch predated PR #60 and
+  was not the correct path for post-merge baseline or quality closure.
+- **PR #31**: Open Block 32 CI PR-review integration branch remains outside
+  `main` and has no recorded review approval. Its 2026-05-11 CI pass is stale
+  for merge readiness; it must be rebased/reviewed or explicitly closed before
+  repo-wide completion.
 
 ### Remaining Blockers
 - **Spec 017**: Supply-chain external evidence remains `cannot_verify` where optional tools or external trust anchors are unavailable.
