@@ -3,7 +3,7 @@
 **Date**: 2026-05-23
 **Branch**: `feat/019-repo-realignment`
 **Base**: `main`
-**HEAD**: `2c8ebfb` (non-OmPi external tool references removed)
+**HEAD**: `87a00dd1d6d40afff9c40e542476fcc76fec4d4d` (round 3 fixes: ledger HEAD/CI/pipes, spec.md crapcheck, router duplicate)
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
 ## Review Planes

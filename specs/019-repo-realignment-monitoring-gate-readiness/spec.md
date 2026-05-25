@@ -37,8 +37,7 @@ Observed inputs:
   `tools/osscompat` and `tools/ossbench`.
 - Local `go test -count=1 ./...`, `go vet ./...`, `go build ./cmd/sdp-trace`,
   `doccheck`, `hygienecheck`, `schemadoc`, `jq`, and `git diff --check` passed.
-- CRAP check (`go run ./tools/crapcheck -threshold 5 -strict-less`) **FAIL**:
-  21 functions exceed threshold, mostly in `tools/ossbench` and `tools/osscompat`.
+- CRAP check (coverage-backed: `go test -count=1 ./... -coverprofile=coverage.out`, `go tool cover -func=coverage.out > coverage-func.txt`, `go run ./tools/qualitycheck -gocyclo cmd internal tools > gocyclo.txt`, then `go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less`) **FAIL**: 21 functions exceed threshold, mostly in `tools/ossbench` and `tools/osscompat`.
 - MI baseline check (`go run ./tools/qualitycheck -fail-only -function-mi-under 70
   -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal tools`)
   **FAIL**: 2 regressions in `cmd/sdp-trace/main_540_commandsurfaceregistryassess.go`

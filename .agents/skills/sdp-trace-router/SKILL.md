@@ -13,7 +13,7 @@ Use this skill at the start of sdp-trace work, when choosing a workflow, when a 
 
 <routing>
 - Block intake, SpecKit delta, implementation, PR-ready closure, or "берем блок в работу" -> use `sdp-trace-trust-workflow`.
-- Block intake, SpecKit delta, implementation, PR-ready closure, or "берем блок в работу" -> use `sdp-trace-trust-workflow`.
+- Adversarial, Socratic, PR, implementation, requirements, security, evidence, or provenance review -> use `sdp-trace-quality-audit` or the OmPi `reviewer` agent via the `task` tool.
 - Adversarial, Socratic, PR, implementation, requirements, security, evidence, or provenance review -> use `sdp-trace-quality-audit` or the OmPi `reviewer` agent via the `task` tool.
 - Repository polish, quality gates, CRAP, MI, docs/DX/security audit, spec drift, or readiness -> use `sdp-trace-quality-audit`.
 - Skill authoring or skill cleanup -> use a skill-authoring workflow, but keep project-local files portable across Codex/OpenCode/Claude-style agents.
