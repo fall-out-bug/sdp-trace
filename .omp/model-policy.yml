@@ -1,0 +1,42 @@
+name: model-policy
+description: Reviewer model routing defaults for sdp-trace adversarial review.
+
+principles:
+  - Prefer non-OpenAI, non-Anthropic, non-Google models unless explicitly permitted.
+  - Use provider-qualified IDs. Record exact model, provider, harness, date, prompt class, timeout, retries, and fallback in review artifact.
+  - Replace failed reviewers when the review plane is required; otherwise mark cannot_verify or not_assessed.
+  - Do not count hung, empty, generic, or off-task output.
+
+roles:
+  architecture_doubt:
+    primary: openrouter/z-ai/glm-5.1
+    fallback: openrouter/z-ai/glm-4.6
+    note: Prefer current Z.AI coding model. Avoid glm-4.6 as normal default.
+
+  wide_context_code:
+    primary: openrouter/qwen/qwen3.6-max-preview
+    fallback: openrouter/qwen/qwen3.6-plus
+    note: Avoid qwen3-coder as normal default.
+
+  wide_context_spec:
+    primary: kimi-coding/kimi-for-coding
+    fallback: openrouter/moonshotai/kimi-k2.5
+    note: Verify credentials with the auth broker before launch.
+
+  reasoning:
+    primary: openrouter/deepseek/deepseek-v4-pro
+    fallback: openrouter/deepseek/deepseek-v3.2
+    note: Avoid deepseek-chat-v3.1 as normal default.
+
+  implementation_integration:
+    primary: gpt-5.5
+    provider: openai
+    harness: omPi-task-tool
+    note: OmPi task tool with reviewer agent is the default review plane. External model APIs may be configured per user authorization.
+    command: task agent=reviewer on focused diff planes via git diff main...HEAD -- <path>
+
+requirements:
+  - Verify model availability with the auth broker before selecting unless fresh inventory exists.
+  - Use provider-qualified IDs. Bare IDs can route through wrong provider.
+  - Record model, provider, harness, date, prompt class, timeout, retries, fallback.
+  - Prefer read-only permissions for reviewers.

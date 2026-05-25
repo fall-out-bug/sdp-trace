@@ -115,8 +115,12 @@ func repoRoot() string {
 	if err != nil {
 		return "."
 	}
+	return findGitRoot(cwd)
+}
+
+func findGitRoot(cwd string) string {
 	for {
-		if _, err := os.Stat(filepath.Join(cwd, ".git")); err == nil {
+		if hasGitDir(cwd) {
 			return cwd
 		}
 		parent := filepath.Dir(cwd)
@@ -127,14 +131,147 @@ func repoRoot() string {
 	}
 }
 
+func hasGitDir(dir string) bool {
+	_, err := os.Stat(filepath.Join(dir, ".git"))
+	return err == nil
+}
+
+// runExternalTool executes an external command and returns combined output.
+func runExternalTool(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return exec.CommandContext(ctx, name, args...).CombinedOutput()
+}
+
+// buildSDPTraceInTemp builds the sdp-trace binary in a temporary directory.
+func buildSDPTraceInTemp(ctx context.Context, root string) (bin string, tmpDir string, err error) {
+	tmpDir, err = os.MkdirTemp("", "osscompat-wrap-*")
+	if err != nil {
+		return "", "", fmt.Errorf("mkdir temp: %w", err)
+	}
+	bin = filepath.Join(tmpDir, "sdp-trace")
+	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", bin, "./cmd/sdp-trace")
+	buildCmd.Dir = root
+	buildOut, err := buildCmd.CombinedOutput()
+	if err != nil {
+		return "", tmpDir, fmt.Errorf("go build failed: %w\n%s", err, strings.TrimSpace(string(buildOut)))
+	}
+	return bin, tmpDir, nil
+}
+
+// parseWrapRunDir extracts the run directory from wrap stdout.
+func parseWrapRunDir(stdout string) (string, error) {
+	fields := strings.Fields(strings.TrimSpace(stdout))
+	if len(fields) != 2 || fields[0] != "run_dir:" {
+		return "", fmt.Errorf("unexpected wrap stdout format: %q", stdout)
+	}
+	return fields[1], nil
+}
+
+// validateRunDirUnderTmp ensures runDir is safely contained within tmpDir.
+func validateRunDirUnderTmp(runDir, tmpDir string) error {
+	if err := checkRunDirSafe(runDir); err != nil {
+		return err
+	}
+	runJSONPath := filepath.Join(tmpDir, filepath.Clean(runDir), "run.json")
+	if err := checkRunJSONUnderTmp(runJSONPath, tmpDir); err != nil {
+		return err
+	}
+	if _, err := os.Stat(runJSONPath); err != nil {
+		return fmt.Errorf("run.json not found at expected path %s: %w", runJSONPath, err)
+	}
+	return nil
+}
+
+func checkRunDirSafe(runDir string) error {
+	if filepath.IsAbs(runDir) {
+		return fmt.Errorf("run_dir is absolute (possible traversal): %q", runDir)
+	}
+	if strings.HasPrefix(filepath.Clean(runDir), "..") {
+		return fmt.Errorf("run_dir escapes tmpDir (possible traversal): %q", runDir)
+	}
+	return nil
+}
+
+func checkRunJSONUnderTmp(runJSONPath, tmpDir string) error {
+	resolvedPath, err := filepath.EvalSymlinks(runJSONPath)
+	if err != nil {
+		return fmt.Errorf("run.json path resolution failed: %w", err)
+	}
+	resolvedTmp, err := filepath.EvalSymlinks(tmpDir)
+	if err != nil {
+		return fmt.Errorf("tmpDir path resolution failed: %w", err)
+	}
+	if !strings.HasPrefix(resolvedPath, resolvedTmp+string(filepath.Separator)) {
+		return fmt.Errorf("run.json resolved outside tmpDir: %s", resolvedPath)
+	}
+	return nil
+}
+
+// runCheckJSONSchema runs check-jsonschema against a JSON file.
+func runCheckJSONSchema(ctx context.Context, schemaPath, jsonPath string) ([]byte, error) {
+	out, err := runExternalTool(ctx, "check-jsonschema", "--schemafile", schemaPath, jsonPath)
+	return out, err
+}
+
+// runOPAEval executes OPA evaluation and returns the boolean result of the query.
+func runOPAEval(ctx context.Context, regoPath, fixturePath, query string) (bool, error) {
+	cmd := exec.CommandContext(ctx, "opa", "eval",
+		"--data", regoPath,
+		"--input", fixturePath,
+		"--format", "json",
+		query,
+	)
+	stdout, err := cmd.Output()
+	if err != nil {
+		var stderr []byte
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			stderr = exitErr.Stderr
+		}
+		return false, fmt.Errorf("opa eval failed: %w\nstderr: %s", err, strings.TrimSpace(string(stderr)))
+	}
+	return parseOPAEvalResult(stdout)
+}
+
+type opaEvalOutput struct {
+	Result []opaExpressionSet `json:"result"`
+}
+
+type opaExpressionSet struct {
+	Expressions []struct {
+		Value interface{} `json:"value"`
+	} `json:"expressions"`
+}
+
+func parseOPAEvalResult(stdout []byte) (bool, error) {
+	var out opaEvalOutput
+	if err := json.Unmarshal(stdout, &out); err != nil {
+		return false, fmt.Errorf("opa eval output is not valid JSON: %w", err)
+	}
+	if err := checkOPAExpressions(out.Result); err != nil {
+		return false, err
+	}
+	v, ok := out.Result[0].Expressions[0].Value.(bool)
+	if !ok {
+		return false, fmt.Errorf("opa eval result is not a boolean")
+	}
+	return v, nil
+}
+
+func checkOPAExpressions(result []opaExpressionSet) error {
+	if len(result) == 0 || len(result[0].Expressions) == 0 {
+		return fmt.Errorf("opa eval returned no expressions")
+	}
+	return nil
+}
+
 // runJSONSchemaFixtures validates a checked fixture against the schema.
 func runJSONSchemaFixtures() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, "check-jsonschema",
-		"--schemafile", filepath.Join(repoRoot(), "schema/flight-recorder-run.schema.json"),
-		filepath.Join(repoRoot(), "examples/flight-recorder/local-positive/run.json"),
-	).CombinedOutput()
+	root := repoRoot()
+	out, err := runCheckJSONSchema(ctx,
+		filepath.Join(root, "schema/flight-recorder-run.schema.json"),
+		filepath.Join(root, "examples/flight-recorder/local-positive/run.json"),
+	)
 	if err != nil {
 		return stateFail, fmt.Sprintf("fixture validation failed: %v\n%s", err, strings.TrimSpace(string(out)))
 	}
@@ -149,96 +286,84 @@ func runJSONSchemaWrapDrift() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	root := repoRoot()
-	tmpDir, err := os.MkdirTemp("", "osscompat-wrap-*")
-	if err != nil {
-		return stateCannotVerify, fmt.Sprintf("mkdir temp: %v", err)
+	bin, tmpDir, err := buildSDPTraceInTemp(ctx, root)
+	if tmpDir != "" {
+		defer os.RemoveAll(tmpDir)
 	}
-	defer os.RemoveAll(tmpDir)
-
-	bin := filepath.Join(tmpDir, "sdp-trace")
-	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", bin, "./cmd/sdp-trace")
-	buildCmd.Dir = root
-	buildOut, err := buildCmd.CombinedOutput()
 	if err != nil {
-		return stateCannotVerify, fmt.Sprintf("go build failed: %v\n%s", err, strings.TrimSpace(string(buildOut)))
+		return stateCannotVerify, err.Error()
 	}
+	return checkWrapDrift(ctx, root, bin, tmpDir)
+}
 
-	// Use a portable no-op command so the probe works on non-Unix platforms.
-	wrapArgs := []string{"wrap", "true"}
+func checkWrapDrift(ctx context.Context, root, bin, tmpDir string) (verifierState, string) {
+	runDir, s, r := runWrapAndParse(ctx, bin, tmpDir)
+	if s != "" {
+		return s, r
+	}
+	if !hasTool("check-jsonschema") {
+		return stateCannotVerify, "check-jsonschema not in PATH; cannot validate live wrap output"
+	}
+	return runSchemaValidation(ctx, root, tmpDir, runDir)
+}
+
+func runWrapAndParse(ctx context.Context, bin, tmpDir string) (string, verifierState, string) {
+	stdout, err := runWrapCommand(ctx, bin, wrapArgs(), tmpDir)
+	if err != nil {
+		return "", stateFail, err.Error()
+	}
+	runDir, err := parseWrapRunDir(string(stdout))
+	if err != nil {
+		return "", stateCannotVerify, err.Error()
+	}
+	if err := validateRunDirUnderTmp(runDir, tmpDir); err != nil {
+		return "", stateCannotVerify, err.Error()
+	}
+	return runDir, "", ""
+}
+
+func wrapArgs() []string {
 	if runtime.GOOS == "windows" {
-		wrapArgs = []string{"wrap", "cmd", "/c", "exit", "0"}
+		return []string{"wrap", "cmd", "/c", "exit", "0"}
 	}
-	cmd := exec.CommandContext(ctx, bin, wrapArgs...)
-	cmd.Dir = tmpDir
+	return []string{"wrap", "true"}
+}
+
+func runWrapCommand(ctx context.Context, bin string, args []string, dir string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, bin, args...)
+	cmd.Dir = dir
 	stdout, err := cmd.Output()
 	if err != nil {
 		var stderr []byte
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			stderr = exitErr.Stderr
 		}
-		return stateFail, fmt.Sprintf("wrap failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
+		return nil, fmt.Errorf("wrap failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
 	}
-	// Parse stdout to locate the generated run_dir.
-	// Expected format: "run_dir: <path>\n"
-	fields := strings.Fields(strings.TrimSpace(string(stdout)))
-	if len(fields) != 2 || fields[0] != "run_dir:" {
-		return stateCannotVerify, fmt.Sprintf("unexpected wrap stdout format: %q", string(stdout))
-	}
-	runDir := fields[1]
-	// Sanitize run_dir to prevent path traversal outside tmpDir.
-	if filepath.IsAbs(runDir) {
-		return stateCannotVerify, fmt.Sprintf("run_dir is absolute (possible traversal): %q", runDir)
-	}
-	cleanRunDir := filepath.Clean(runDir)
-	if strings.HasPrefix(cleanRunDir, "..") {
-		return stateCannotVerify, fmt.Sprintf("run_dir escapes tmpDir (possible traversal): %q", runDir)
-	}
-	// The run_dir path printed by wrap is relative to cmd.Dir (tmpDir).
-	runJSONPath := filepath.Join(tmpDir, cleanRunDir, "run.json")
-	resolvedPath, err := filepath.EvalSymlinks(runJSONPath)
-	if err != nil {
-		return stateCannotVerify, fmt.Sprintf("run.json path resolution failed: %v", err)
-	}
-	resolvedTmp, err := filepath.EvalSymlinks(tmpDir)
-	if err != nil {
-		return stateCannotVerify, fmt.Sprintf("tmpDir path resolution failed: %v", err)
-	}
-	if !strings.HasPrefix(resolvedPath, resolvedTmp+string(filepath.Separator)) {
-		return stateCannotVerify, fmt.Sprintf("run.json resolved outside tmpDir: %s", resolvedPath)
-	}
-	if _, err := os.Stat(runJSONPath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("run.json not found at expected path %s: %v", runJSONPath, err)
-	}
+	return stdout, nil
+}
 
-	if !hasTool("check-jsonschema") {
-		return stateCannotVerify, "check-jsonschema not in PATH; cannot validate live wrap output"
-	}
+func runSchemaValidation(ctx context.Context, root, tmpDir, runDir string) (verifierState, string) {
 	checkCtx, checkCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer checkCancel()
 	schemaPath := filepath.Join(root, "schema/flight-recorder-run.schema.json")
-	// Preflight: validate a known-good fixture to confirm the tool and schema
-	// are functional. If this fails, the harness or schema is broken, not the
-	// wrap output.
 	positiveFixture := filepath.Join(root, "examples/flight-recorder/local-positive/run.json")
-	if _, err := exec.CommandContext(checkCtx, "check-jsonschema",
-		"--schemafile", schemaPath,
-		positiveFixture,
-	).CombinedOutput(); err != nil {
+	if _, err := runCheckJSONSchema(checkCtx, schemaPath, positiveFixture); err != nil {
 		return stateCannotVerify, fmt.Sprintf("check-jsonschema preflight failed on known-positive fixture (harness/tool error, not conformance): %v", err)
 	}
-	schemaOut, err := exec.CommandContext(checkCtx, "check-jsonschema",
-		"--schemafile", schemaPath,
-		runJSONPath,
-	).CombinedOutput()
+	runJSONPath := filepath.Join(tmpDir, filepath.Clean(runDir), "run.json")
+	out, err := runCheckJSONSchema(checkCtx, schemaPath, runJSONPath)
+	return interpretSchemaCheckResult(out, err)
+}
+
+func interpretSchemaCheckResult(out []byte, err error) (verifierState, string) {
 	if err == nil {
 		return statePass, "local wrap run.json passed schema validation — this is local checkout evidence only, not source-bound drift closure"
 	}
-	// Distinguish schema-validation failure (exit code 1) from harness/tool
-	// errors (other exit codes, signals, crashes).
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-		return stateFail, fmt.Sprintf("live wrap run.json fails schema validation (conformance failure): %s", strings.TrimSpace(string(schemaOut)))
+		return stateFail, fmt.Sprintf("live wrap run.json fails schema validation (conformance failure): %s", strings.TrimSpace(string(out)))
 	}
-	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(schemaOut)))
+	return stateCannotVerify, fmt.Sprintf("check-jsonschema exited abnormally on wrap run.json (harness/tool error, not conformance): %v\n%s", err, strings.TrimSpace(string(out)))
 }
 
 // opaPreflight checks whether the installed OPA supports `import rego.v1`.
@@ -250,23 +375,46 @@ func opaPreflight(ctx context.Context) (verifierState, string) {
 		return stateCannotVerify, fmt.Sprintf("mkdir temp for opa preflight: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
-	preflight := `package sdp_trace.preflight
-import rego.v1
-allow := true
-`
 	preflightPath := filepath.Join(tmpDir, "preflight.rego")
-	if err := os.WriteFile(preflightPath, []byte(preflight), 0644); err != nil {
+	if err := os.WriteFile(preflightPath, []byte(opaPreflightRego), 0644); err != nil {
 		return stateCannotVerify, fmt.Sprintf("write opa preflight: %v", err)
 	}
-	out, err := exec.CommandContext(ctx, "opa", "eval",
-		"--data", preflightPath,
-		"--format", "raw",
-		"data.sdp_trace.preflight.allow",
-	).CombinedOutput()
+	out, err := runExternalTool(ctx, "opa", "eval", "--data", preflightPath, "--format", "raw", "data.sdp_trace.preflight.allow")
 	if err != nil {
 		return stateCannotVerify, fmt.Sprintf("opa does not support rego.v1 syntax (version too old?): %v\n%s", err, strings.TrimSpace(string(out)))
 	}
-	return "", "" // sentinel: preflight passed
+	return "", ""
+}
+
+const opaPreflightRego = `package sdp_trace.preflight
+import rego.v1
+allow := true
+`
+
+func opaFixturePaths(name string) (regoPath, fixturePath string, err error) {
+	root := repoRoot()
+	regoPath = filepath.Join(root, "examples/oss-policy/adapter.rego")
+	fixturePath = filepath.Join(root, "examples/oss-policy", name)
+	if _, err := os.Stat(regoPath); err != nil {
+		return "", "", fmt.Errorf("adapter.rego not found: %w", err)
+	}
+	if _, err := os.Stat(fixturePath); err != nil {
+		return "", "", fmt.Errorf("%s not found: %w", name, err)
+	}
+	return regoPath, fixturePath, nil
+}
+
+func assertOPAResult(pass bool, expectPass bool, label string) (verifierState, string) {
+	if pass == expectPass {
+		if expectPass {
+			return statePass, fmt.Sprintf("adapter.rego evaluates %s as expected", label)
+		}
+		return statePass, fmt.Sprintf("adapter.rego correctly rejects %s", label)
+	}
+	if expectPass {
+		return stateFail, "opa eval did not return boolean true for expected pass fixture"
+	}
+	return stateFail, fmt.Sprintf("opa eval did not return boolean false for %s negative fixture", label)
 }
 
 // runOPAPolicy evaluates the checked-in adapter.rego against the test fixture.
@@ -276,47 +424,7 @@ func runOPAPolicy() (verifierState, string) {
 	if s, r := opaPreflight(ctx); s != "" {
 		return s, r
 	}
-	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
-	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture.json")
-	if _, err := os.Stat(regoPath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("adapter.rego not found: %v", err)
-	}
-	if _, err := os.Stat(fixturePath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("test-fixture.json not found: %v", err)
-	}
-	cmd := exec.CommandContext(ctx, "opa", "eval",
-		"--data", regoPath,
-		"--input", fixturePath,
-		"--format", "json",
-		"data.sdp_trace.adapter.pass",
-	)
-	stdout, err := cmd.Output()
-	if err != nil {
-		var stderr []byte
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			stderr = exitErr.Stderr
-		}
-		return stateFail, fmt.Sprintf("opa eval failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
-	}
-	// Parse OPA JSON output to assert the expression evaluates to true.
-	// Expected top-level structure: {"result":[{"expressions":[{"value":true}]}]}
-	var opaResult struct {
-		Result []struct {
-			Expressions []struct {
-				Value interface{} `json:"value"`
-			} `json:"expressions"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal(stdout, &opaResult); err != nil {
-		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
-	}
-	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
-		return stateFail, "opa eval returned no expressions"
-	}
-	if v, ok := opaResult.Result[0].Expressions[0].Value.(bool); !ok || !v {
-		return stateFail, "opa eval did not return boolean true for expected pass fixture"
-	}
-	return statePass, "adapter.rego evaluates test-fixture.json as expected"
+	return runOPAPolicyEval(ctx, "test-fixture.json", true, "test-fixture.json")
 }
 
 // runOPANegativeFixture evaluates the checked-in adapter.rego against the
@@ -327,45 +435,7 @@ func runOPANegativeFixture() (verifierState, string) {
 	if s, r := opaPreflight(ctx); s != "" {
 		return s, r
 	}
-	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
-	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy/test-fixture-fail.json")
-	if _, err := os.Stat(regoPath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("adapter.rego not found: %v", err)
-	}
-	if _, err := os.Stat(fixturePath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("test-fixture-fail.json not found: %v", err)
-	}
-	cmd := exec.CommandContext(ctx, "opa", "eval",
-		"--data", regoPath,
-		"--input", fixturePath,
-		"--format", "json",
-		"data.sdp_trace.adapter.pass",
-	)
-	stdout, err := cmd.Output()
-	if err != nil {
-		var stderr []byte
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			stderr = exitErr.Stderr
-		}
-		return stateFail, fmt.Sprintf("opa eval failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
-	}
-	var opaResult struct {
-		Result []struct {
-			Expressions []struct {
-				Value interface{} `json:"value"`
-			} `json:"expressions"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal(stdout, &opaResult); err != nil {
-		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
-	}
-	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
-		return stateFail, "opa eval returned no expressions"
-	}
-	if v, ok := opaResult.Result[0].Expressions[0].Value.(bool); !ok || v {
-		return stateFail, "opa eval did not return boolean false for expected fail fixture"
-	}
-	return statePass, "adapter.rego correctly rejects test-fixture-fail.json"
+	return runOPAPolicyEval(ctx, "test-fixture-fail.json", false, "test-fixture-fail.json")
 }
 
 // runOPANegativeTraceID evaluates adapter.rego against the trace_id-only
@@ -387,45 +457,19 @@ func runOPANegativeFixturePath(fixtureName, label string) (verifierState, string
 	if s, r := opaPreflight(ctx); s != "" {
 		return s, r
 	}
-	regoPath := filepath.Join(repoRoot(), "examples/oss-policy/adapter.rego")
-	fixturePath := filepath.Join(repoRoot(), "examples/oss-policy", fixtureName)
-	if _, err := os.Stat(regoPath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("adapter.rego not found: %v", err)
-	}
-	if _, err := os.Stat(fixturePath); err != nil {
-		return stateCannotVerify, fmt.Sprintf("%s not found: %v", fixtureName, err)
-	}
-	cmd := exec.CommandContext(ctx, "opa", "eval",
-		"--data", regoPath,
-		"--input", fixturePath,
-		"--format", "json",
-		"data.sdp_trace.adapter.pass",
-	)
-	stdout, err := cmd.Output()
+	return runOPAPolicyEval(ctx, fixtureName, false, label)
+}
+
+func runOPAPolicyEval(ctx context.Context, fixtureName string, expectPass bool, label string) (verifierState, string) {
+	regoPath, fixturePath, err := opaFixturePaths(fixtureName)
 	if err != nil {
-		var stderr []byte
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			stderr = exitErr.Stderr
-		}
-		return stateFail, fmt.Sprintf("opa eval failed: %v\nstderr: %s", err, strings.TrimSpace(string(stderr)))
+		return stateCannotVerify, err.Error()
 	}
-	var opaResult struct {
-		Result []struct {
-			Expressions []struct {
-				Value interface{} `json:"value"`
-			} `json:"expressions"`
-		} `json:"result"`
+	pass, err := runOPAEval(ctx, regoPath, fixturePath, "data.sdp_trace.adapter.pass")
+	if err != nil {
+		return stateFail, err.Error()
 	}
-	if err := json.Unmarshal(stdout, &opaResult); err != nil {
-		return stateFail, fmt.Sprintf("opa eval output is not valid JSON: %v", err)
-	}
-	if len(opaResult.Result) == 0 || len(opaResult.Result[0].Expressions) == 0 {
-		return stateFail, "opa eval returned no expressions"
-	}
-	if v, ok := opaResult.Result[0].Expressions[0].Value.(bool); !ok || v {
-		return stateFail, fmt.Sprintf("opa eval did not return boolean false for %s negative fixture", label)
-	}
-	return statePass, fmt.Sprintf("adapter.rego correctly rejects %s negative fixture", label)
+	return assertOPAResult(pass, expectPass, label)
 }
 
 // runCUEImport tests CUE JSON Schema import.
@@ -438,7 +482,7 @@ func runCUEImport() (verifierState, string) {
 		"-o", "-",
 		filepath.Join(repoRoot(), "schema/flight-recorder-run.schema.json"),
 	}
-	if out, err := exec.CommandContext(ctx, "cue", args...).CombinedOutput(); err != nil {
+	if out, err := runExternalTool(ctx, "cue", args...); err != nil {
 		return stateFail, fmt.Sprintf("cue import failed: %v\n%s", err, strings.TrimSpace(string(out)))
 	}
 	return statePass, "cue can import flight-recorder JSON Schema to stdout"
@@ -448,7 +492,7 @@ func runCUEImport() (verifierState, string) {
 func runInTotoWrap() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if _, err := exec.CommandContext(ctx, "in-toto-run", "--version").CombinedOutput(); err != nil {
+	if _, err := runExternalTool(ctx, "in-toto-run", "--version"); err != nil {
 		return stateCannotVerify, fmt.Sprintf("in-toto-run version check failed: %v", err)
 	}
 	return stateCannotVerify, "in-toto-run present; run manual wrap per docs/oss-replacement-compatibility.md"
@@ -458,7 +502,7 @@ func runInTotoWrap() (verifierState, string) {
 func runCosignLocalSign() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if _, err := exec.CommandContext(ctx, "cosign", "version").CombinedOutput(); err != nil {
+	if _, err := runExternalTool(ctx, "cosign", "version"); err != nil {
 		return stateCannotVerify, fmt.Sprintf("cosign version check failed: %v", err)
 	}
 	return stateCannotVerify, "cosign present; run manual sign/verify per docs/oss-replacement-compatibility.md"
@@ -468,7 +512,7 @@ func runCosignLocalSign() (verifierState, string) {
 func runSLSANegative() (verifierState, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if _, err := exec.CommandContext(ctx, "slsa-verifier", "version").CombinedOutput(); err != nil {
+	if _, err := runExternalTool(ctx, "slsa-verifier", "version"); err != nil {
 		return stateCannotVerify, fmt.Sprintf("slsa-verifier version check failed: %v", err)
 	}
 	return stateCannotVerify, "slsa-verifier present; run manual negative test per docs/oss-replacement-compatibility.md"

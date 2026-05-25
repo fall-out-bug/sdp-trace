@@ -1,0 +1,52 @@
+name: block-intake
+description: Standardized intake protocol for new trust-sensitive blocks.
+
+triggers:
+  - user_says_берем_блок_в_работу
+  - block_intake_request
+
+steps:
+  - name: Park current work
+    run: |
+      git status --short
+      git diff --check
+      # Land or explicitly park approved work through review/PR discipline.
+
+  - name: Fresh branch
+    run: |
+      git checkout -b feat/block-$(date +%s)
+    note: Isolate new block work on a feature branch. Park current work first if needed.
+
+  - name: SpecKit delta
+    manual: true
+    prompt: |
+      Prepare SpecKit delta and implementation plan covering:
+      - spec, plan, task, evidence, gate, decision, trace, provenance impact
+      - Socratic review with adversarial review
+      - Fix or record findings
+
+  - name: Commit spec handoff
+    run: |
+      git add specs/ docs/
+      git commit -m "spec: add block intake plan for <block-id>"
+    note: Commit or explicitly park the reviewed spec before implementation.
+
+  - name: User approval gate
+    manual: true
+    prompt: Stop for explicit user approval before delegating or writing implementation code.
+
+  - name: Implementation (approved)
+    workflow: sdp-trace-trust-workflow
+    note: Follow implementation_loop after approval.
+
+  - name: Verification
+    workflow: quality-gates
+
+  - name: Review
+    workflow: pr-review
+
+  - name: PR and handoff
+    manual: true
+    prompt: |
+      Prepare PR with code, tracing/evidence, docs, and requirements mapping.
+      Do NOT merge. Leave merge decision to user.

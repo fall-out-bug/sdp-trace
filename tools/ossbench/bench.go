@@ -23,24 +23,26 @@ type benchmarkDef struct {
 	Source      string // "repo-root", "temp-build", or "PATH"
 }
 
-// repoRoot returns the repository root by walking up from the current
-// working directory until it finds a .git directory or reaches the filesystem
-// root. It falls back to "." if the root cannot be determined.
 func repoRoot() string {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "."
 	}
-	for {
+	for cwd != "" {
 		if _, err := os.Stat(filepath.Join(cwd, ".git")); err == nil {
 			return cwd
 		}
-		parent := filepath.Dir(cwd)
-		if parent == cwd {
-			return "."
-		}
-		cwd = parent
+		cwd = parentDir(cwd)
 	}
+	return "."
+}
+
+func parentDir(dir string) string {
+	parent := filepath.Dir(dir)
+	if parent == dir {
+		return ""
+	}
+	return parent
 }
 
 // buildSDPTrace compiles the sdp-trace binary from source into outPath.
@@ -55,6 +57,10 @@ func buildSDPTrace(outPath string) error {
 	}
 	return nil
 }
+
+// buildBinary is used by resolveBuiltIns to compile the sdp-trace binary.
+// Tests may replace it to avoid real builds.
+var buildBinary = buildSDPTrace
 
 // benchmarkResult holds the measured statistics for one benchmark.
 type benchmarkResult struct {
@@ -93,54 +99,48 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		}
 	}
 
+	times, attempted, lastErr := runIterations(def, iterations)
+	argv := append([]string{filepath.Base(def.Cmd)}, def.Args...)
+	cmdDisplay := strings.Join(argv, " ")
+	return buildResult(def, cmdDisplay, argv, attempted, times, lastErr)
+}
+
+func runIterations(def benchmarkDef, iterations int) ([]time.Duration, int, string) {
 	times := make([]time.Duration, 0, iterations)
 	var lastErr string
 	attempted := 0
 	for i := 0; i < iterations; i++ {
 		attempted++
-		start := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		cmd := exec.CommandContext(ctx, def.Cmd, def.Args...)
-		if def.Dir != "" {
-			cmd.Dir = def.Dir
-		}
-		err := cmd.Run()
-		cancel()
+		dur, err, timedOut := runSingleCommand(def.Cmd, def.Args, def.Dir)
 		if err != nil {
 			lastErr = fmt.Sprintf("iteration %d failed: %v", i, err)
-			// Fail-fast on timeout so a hanging command does not accumulate
-			// 30s per remaining iteration.
-			if ctx.Err() == context.DeadlineExceeded {
+			if timedOut {
 				break
 			}
 			continue
 		}
-		times = append(times, time.Since(start))
+		times = append(times, dur)
 	}
+	return times, attempted, lastErr
+}
 
-	argv := append([]string{filepath.Base(def.Cmd)}, def.Args...)
-	cmdDisplay := strings.Join(argv, " ")
-	if len(times) == 0 {
-		return benchmarkResult{
-			Name:                def.Name,
-			Description:         def.Description,
-			Command:             cmdDisplay,
-			Argv:                argv,
-			WorkingDirectory:    def.Dir,
-			BinaryPath:          def.Cmd,
-			BinarySource:        def.Source,
-			Environment:         getEnv(),
-			AttemptedIterations: attempted,
-			Error:               lastErr,
-		}
+func runSingleCommand(cmd string, args []string, dir string) (time.Duration, error, bool) {
+	start := time.Now()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	c := exec.CommandContext(ctx, cmd, args...)
+	if dir != "" {
+		c.Dir = dir
 	}
+	err := c.Run()
+	if err != nil {
+		return 0, err, ctx.Err() == context.DeadlineExceeded
+	}
+	return time.Since(start), nil, false
+}
 
-	ms := make([]float64, len(times))
-	for i, d := range times {
-		ms[i] = float64(d) / float64(time.Millisecond)
-	}
-	min, max, median := stats(ms)
-	return benchmarkResult{
+func buildResult(def benchmarkDef, cmdDisplay string, argv []string, attempted int, times []time.Duration, lastErr string) benchmarkResult {
+	res := benchmarkResult{
 		Name:                def.Name,
 		Description:         def.Description,
 		Command:             cmdDisplay,
@@ -150,13 +150,22 @@ func runBenchmark(def benchmarkDef, iterations int) benchmarkResult {
 		BinarySource:        def.Source,
 		Environment:         getEnv(),
 		AttemptedIterations: attempted,
-		SucceededIterations: len(times),
-		MinMs:               min,
-		MaxMs:               max,
-		MedianMs:            median,
-		AllMs:               ms,
 		Error:               lastErr,
 	}
+	if len(times) == 0 {
+		return res
+	}
+	ms := make([]float64, len(times))
+	for i, d := range times {
+		ms[i] = float64(d) / float64(time.Millisecond)
+	}
+	min, max, median := stats(ms)
+	res.SucceededIterations = len(times)
+	res.MinMs = min
+	res.MaxMs = max
+	res.MedianMs = median
+	res.AllMs = ms
+	return res
 }
 
 // envInfo captures the benchmark environment.

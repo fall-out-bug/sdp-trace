@@ -170,3 +170,77 @@ func main() {
 		t.Error("expected error because at least one iteration failed")
 	}
 }
+
+func TestRepoRoot(t *testing.T) {
+	tmpDir := t.TempDir()
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("mkdir .git: %v", err)
+	}
+	subDir := filepath.Join(tmpDir, "a", "b")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("mkdir subdir: %v", err)
+	}
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(originalWd); err != nil {
+			t.Fatalf("restore wd: %v", err)
+		}
+	}()
+	if err := os.Chdir(subDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	got := repoRoot()
+	if got != tmpDir {
+		t.Errorf("repoRoot() = %q, want %q", got, tmpDir)
+	}
+}
+
+func TestRepoRoot_Fallback(t *testing.T) {
+	tmpDir := t.TempDir()
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(originalWd); err != nil {
+			t.Fatalf("restore wd: %v", err)
+		}
+	}()
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	got := repoRoot()
+	if got != "." {
+		t.Errorf("repoRoot() = %q, want %q", got, ".")
+	}
+}
+
+func TestBuildSDPTrace_Error(t *testing.T) {
+	tmpDir := t.TempDir()
+	// Create a file where a directory is expected.
+	blockingFile := filepath.Join(tmpDir, "block")
+	if err := os.WriteFile(blockingFile, []byte("x"), 0644); err != nil {
+		t.Fatalf("write blocking file: %v", err)
+	}
+	outPath := filepath.Join(blockingFile, "sdp-trace")
+	err := buildSDPTrace(outPath)
+	if err == nil {
+		t.Fatal("expected error for invalid output path")
+	}
+}
+
+func TestBuildSDPTrace(t *testing.T) {
+	skipUnlessIntegration(t)
+	tmpDir := t.TempDir()
+	outPath := filepath.Join(tmpDir, "sdp-trace")
+	if err := buildSDPTrace(outPath); err != nil {
+		t.Fatalf("buildSDPTrace: %v", err)
+	}
+	if _, err := os.Stat(outPath); err != nil {
+		t.Fatalf("output binary not found: %v", err)
+	}
+}

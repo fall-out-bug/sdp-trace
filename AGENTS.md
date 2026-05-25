@@ -3,9 +3,11 @@
 `sdp-trace` is the portable trust substrate for AI-assisted delivery.
 
 ## Purpose
+
 Define traceability, provenance, evidence, gate verdicts, and decision records that work across coding agents and harnesses.
 
 ## Boundary
+
 This repo must stay independent from `sdp_lab`, Beads, Operator Mode, agentloop, and any specific harness runtime.
 
 Allowed: JSON schemas, Markdown docs, portable examples, and tiny Go validation/rendering tools when needed.
@@ -13,12 +15,15 @@ Allowed: JSON schemas, Markdown docs, portable examples, and tiny Go validation/
 Not allowed: dependencies on SDP Operator Mode, Beads, agentloop, or hidden assumptions about Claude, Codex, OpenCode, GitHub, or any harness.
 
 ## Product Language
+
 Use SpecKit-aligned terms first: spec, plan, task, evidence, gate, decision, trace, provenance. Avoid internal SDP terms unless a doc explicitly maps them.
 
 ## Quality Bar
+
 Every claim about a gate or verdict must be evidence-backed or marked `not_assessed`. No opaque health scores.
 
 ## Engineering Stack
+
 Target product code is Go.
 
 No Node.js, npm, JavaScript, TypeScript, or `.mjs` tooling is allowed in the active product path.
@@ -28,9 +33,11 @@ Bash is allowed only as a thin command launcher when Go would add no product val
 New Go code must be small, readable, testable, covered by focused tests, and free of TODO/FIXME markers. Put measurable complexity gates in CI or docs, not only in prose.
 
 ## Decomposition Rule
+
 Keep this root router under 100 lines. If a module needs more than 10 skills, the module is too large, under-decomposed, or overengineered.
 
 ## Trust Rules
+
 The repository has already failed once by letting prose, task checkboxes, and checked-in JSON overclaim what current verification could not replay. Do not repeat that failure.
 
 - Machine proof wins over prose, task checkboxes, reports, review ledgers, and mirrors.
@@ -46,49 +53,58 @@ The repository has already failed once by letting prose, task checkboxes, and ch
 - Security docs must not list unverified contact information. Email addresses and reporting channels must be confirmed deliverable or explicitly marked `not_assessed`.
 
 ## Required Work Loop
+
 Every non-trivial implementation chunk needs a SpecKit delta, Socratic review before approval handoff, trace coverage for verifier/trust changes, test-first behavior for behavior changes, drift checks, live verifier state (`pass`, `fail`, `cannot_verify`, or `not_assessed`), strict review, fresh verification, and a scoped commit.
 
 Iterative adversarial review is required for PR-ready trust work: run review rounds against the full diff, fix every finding of any severity, and repeat until the reviewer outputs exactly `LGTM` (zero findings). Do not treat a partial review or non-zero finding count as sufficient.
 
 If a chunk cannot be traced or verified yet, mark `not_assessed` or `cannot_verify` with a concrete reason and create a tracked follow-up before closing.
 
-## Pi Harness Setup
-This repository includes project-level Pi configuration in `.pi/settings.json` and prompt templates in `.pi/prompts/`.
+## Oh My Pi Setup
 
-At the start of every session in this repo, run `/sdp-trace-boot` to load the mandatory process reminder.
+This repository uses Oh My Pi (OmPi) with project-local skills in `.agents/skills/`.
 
-Available review prompts:
-- `/review-glm` — architecture doubt review (GLM via ZAI)
-- `/review-qwen` — wide-context code review (Qwen via OpenRouter)
-- `/review-kimi` — wide-context code/spec review when Kimi credentials are available
-- `/review-deepseek` — reasoning review (DeepSeek via OpenRouter)
-- `/review-codex` — adversarial review via Codex CLI with OpenAI model (e.g., `gpt-5.5`), high reasoning effort, full diff via stdin; use for iterative rounds until zero findings.
+Skills are auto-discovered from `.agents/skills/<name>/SKILL.md`. Each skill declares `name`, `description`, `objective`, `when_to_use`, and project-local process rules in the SKILL.md frontmatter and body.
 
-For external implementation handoff, use `codex-subagent` with isolated
-worktrees and recorded Pi model/profile resolution. Commit the reviewed spec
-handoff before launching workers, monitor status/events/logs/structured result,
-then run independent review planes before PR-ready claims.
+### Available Project Skills
 
-Codex CLI review is a valid review plane for trust-sensitive PRs. Run as:
-`git diff <base>..HEAD | codex exec -m gpt-5.5 --reasoning-effort high "<prompt>"`
-Fix every finding before the next round; repeat until output is exactly `LGTM`.
+| Skill | Purpose |
+|---|---|
+| `sdp-trace-router` | Entrypoint skill. Routes work to the correct downstream skill and quarantines generic global skills that can bypass evidence rules. |
+| `sdp-trace-trust-workflow` | Block intake, SpecKit review, implementation slicing, PR/review/merge discipline. Invoke on "берем блок в работу" or any block-intake request. |
+| `sdp-trace-quality-audit` | Repository polish, quality gates, CRAP/MI checks, docs/DX/UX/security review, spec drift detection, and completion evidence mapping. |
+
+### Skill Routing
+
+At the start of sdp-trace work:
+1. Load `AGENTS.md` and the `sdp-trace-router` skill.
+2. Select the project-local skill matching the request before any generic global skill.
+3. Do NOT improvise process steps outside the loaded skills.
+
+### Review Model Policy
+
+For adversarial review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
+
+Use provider-qualified model IDs when reproducibility or fallback control matters. Record exact model, provider, harness, date, prompt class, timeout, retries, and fallback in the review artifact.
+
 
 ## Skills Router
+
 Use local project skills for detailed workflows instead of expanding this file:
 
 - `sdp-trace-trust-workflow`: block intake, SpecKit review, implementation slicing, PR/review/merge discipline.
-- `sdp-trace-pi-handoff`: external Pi/codex-subagent worker delegation, worktree isolation, monitoring, review panels, and PR handoff.
-- `pi-review`: adversarial reviewer orchestration, retries, model policy, and disposition rules.
 - `sdp-trace-quality-audit`: repository polish, quality gates, completion audits, docs/UX/DX/security review, and final evidence mapping.
 
 When the user says "берем блок в работу", use `sdp-trace-trust-workflow`.
 
-For adversarial pi review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
+For adversarial review in this repo, prefer non-OpenAI, non-Anthropic, and non-Google models unless the user explicitly permits otherwise.
 
 ## Claim Tags
+
 Use `docs/claim-authoring.md` for authoritative claim syntax. Current Slice 1 validator intentionally accepts only narrow evidence forms; do not introduce arbitrary `proof:*`, `state:*`, or `none` evidence unless cross-reference verification has been implemented.
 
 ## Commands
+
 Use current command contracts in `docs/agent-entrypoint.md` and `docs/reviewer-entrypoint.md`.
 
 - Defaults: `go test ./...`, `jq empty schema/*.json`, `gofmt` for changed Go files, and `git diff --check`.

@@ -94,6 +94,30 @@ func TestRun_SingleProbeJSON(t *testing.T) {
 	}
 }
 
+func TestRun_HelpFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-h"}, &out, &out, testRegistry)
+	if code != 0 {
+		t.Fatalf("expected exit 0 for help, got %d", code)
+	}
+}
+
+func TestRun_InvalidFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-invalid-flag-017"}, &out, &out, testRegistry)
+	if code != 2 {
+		t.Fatalf("expected exit 2 for invalid flag, got %d", code)
+	}
+}
+
+func TestRun_PositionalArgs(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"extra"}, &out, &out, testRegistry)
+	if code != 2 {
+		t.Fatalf("expected exit 2 for positional args, got %d", code)
+	}
+}
+
 func TestExitCode(t *testing.T) {
 	tests := []struct {
 		name    string

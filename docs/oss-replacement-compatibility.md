@@ -47,10 +47,10 @@ tools are available, the expected results are shown in the
 | OPA/Rego | Negative provenance rule only | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `opa` present [^1] |
 | CUE | JSON Schema import to stdout | `not_assessed` | `pass` | Not assessed in current environment; expected `pass` when `cue` present [^1] |
 | CUE | Validate flight-recorder fixture via imported CUE | `cannot_verify` | `cannot_verify` | Docs-only/manual; no automated harness probe. Direct validation is blocked until schema refs are packaged as a CUE module |
-| in-toto | Wrap command, sign link metadata, record material/product hashes | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
-| Cosign | Sign/verify local `run.json` blob | `not_assessed` | `cannot_verify` | Manual-only; no automated harness probe run [^1] |
+| in-toto | Wrap command, sign link metadata, record material/product hashes | `not_assessed` | `cannot_verify` | Automated probe returns `cannot_verify` with reproducible reason when `in-toto-run` is present; no automated conformance verdict is issued [^1] [^2] |
+| Cosign | Sign/verify local `run.json` blob | `not_assessed` | `cannot_verify` | Automated probe returns `cannot_verify` with reproducible reason when `cosign` is present; no automated conformance verdict is issued [^1] [^2] |
 | Cosign | Verify with transparency log / Rekor | `not_assessed` | `cannot_verify` | Manual-only expected-fail probe; run reproduction command for evidence |
-| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `not_assessed` | `cannot_verify` | Manual-only expected-fail probe; intentionally invalid local fixture (see reproduction command) |
+| SLSA verifier | Accept local DSSE fixture as production SLSA evidence | `not_assessed` | `cannot_verify` | Automated probe returns `cannot_verify` with reproducible reason when `slsa-verifier` is present; intentionally invalid local fixture (see reproduction command) [^1] [^2] |
 
 ## Reproduction Commands
 
@@ -285,8 +285,12 @@ and report `not_assessed`.
 | Cosign production trust | `not_assessed` | Local key signing excludes keyless/OIDC/transparency verification |
 | JSON Schema fixture alignment | `not_assessed` | `check-jsonschema` not available in current environment; expected `pass` when tool present |
 | OPA policy prototype | `not_assessed` | `opa` not available in current environment; expected `pass` when tool present |
+| in-toto wrap probe | `cannot_verify` | Automated probe reports `cannot_verify` when `in-toto-run` present; see `tools/osscompat/probe.go` and `probe_test.go` |
+| Cosign local sign probe | `cannot_verify` | Automated probe reports `cannot_verify` when `cosign` present; see `tools/osscompat/probe.go` and `probe_test.go` |
+| SLSA verifier negative probe | `cannot_verify` | Automated probe reports `cannot_verify` when `slsa-verifier` present; see `tools/osscompat/probe.go` and `probe_test.go` |
 
-All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust.
+
+All `not_assessed` states remain open until external, reproducible evidence is provided. Local fixture success does not imply production readiness or external trust. The in-toto, Cosign, and SLSA verifier probes are explicitly preserved as `cannot_verify` with reproducible state reporting: when the required tool is present, the probe runs and records an explicit, actionable reason; when the tool is absent, the harness reports `not_assessed`. Test coverage for these states lives in `tools/osscompat/probe_test.go` (`TestRunInTotoWrap_Direct`, `TestRunCosignLocalSign_Direct`, `TestRunSLSANegative_Direct`).
 
 [^1]: Automated probes in `tools/osscompat` run the full validation when
 safe to do so (JSON Schema fixture check, live wrap drift confirmation,
@@ -294,3 +298,7 @@ OPA eval against checked-in fixtures, CUE import). For probes that mutate
 state or require external services, the tool reports `cannot_verify` and
 the doc records the manual result. Run the reproduction commands above for
 the actual validation.
+
+[^2]: Direct probe function tests assert the `cannot_verify` state and verify
+that the reason string contains explicit, actionable guidance for both the
+tool-present and tool-missing cases. See `tools/osscompat/probe_test.go`.

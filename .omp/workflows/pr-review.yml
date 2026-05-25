@@ -1,0 +1,56 @@
+name: pr-review
+description: Iterative adversarial review pipeline for PR-ready trust work.
+
+triggers:
+  - before_pr_ready
+  - manual
+
+steps:
+  - name: Local quality gates
+    workflow: quality-gates
+
+  - name: Build diff context
+    run: git diff main...HEAD
+
+  - name: OmPi reviewer — code planes
+    manual: true
+    prompt: |
+      Run focused review planes via the OmPi `task` tool with `agent: reviewer`:
+      - cmd/sdp-trace/
+      - tools/
+      - internal/
+      For each plane, the reviewer agent uses `git diff` (read-only), `report_finding`,
+      and `yield` for verdict. Fix every finding before the next plane.
+    note: External CLI review is not used in this workflow.
+
+  - name: OmPi reviewer — docs and governance
+    manual: true
+    prompt: |
+      Run focused review planes via the OmPi `task` tool with `agent: reviewer`:
+      - docs/ and schema/
+      - AGENTS.md, .omp/, .claude/, specs/, .github/
+      Verify docs match code, schema examples match schema, config files are
+      internally consistent, and spec files match implemented code.
+    note: External CLI review is not used in this workflow.
+
+  - name: Fix findings
+    manual: true
+    prompt: Fix every finding of any severity before the next review round.
+
+  - name: Re-review until LGTM
+    manual: true
+    prompt: |
+      After fixing findings, re-run the affected review planes manually.
+      Do not loop back to this workflow automatically to avoid recursion.
+      Repeat until all review planes return LGTM or max 5 iterations.
+      Record findings using template review-disposition.
+    note: Manual re-review prevents workflow self-recursion.
+
+  - name: Query live CI
+    run: |
+      gh run list --branch $(git branch --show-current) --limit 1 --json conclusion,status
+    note: If checks are absent, record CI as not_assessed.
+
+  - name: Update tasks and ledger
+    manual: true
+    prompt: Record review rounds, CI evidence, and remaining not_assessed states.
