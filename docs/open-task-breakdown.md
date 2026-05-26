@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 16 open task boxes one by one. It is a
+This file decomposes the remaining 15 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T215 | Add sanitized Block 25 report and artifact summary only after successful demo CI and digest verification. | No sanitized Block 25 report has been identified for the active demo repo path. | No, until T213-T214 are resolved. | Produce or map report only after digest and negative-state evidence is resolved. |
 | 001 T216 | Run technical executive customer, Head of Engineering, and Head of InfoSec role reviews against actual demo repo and artifacts. | Block 25 review ledger has historical role-review dispositions, but current active-demo artifact mapping has not been re-reviewed. | No, until T213-T215 are resolved. | Run focused role reviews against the actual `sdp-trace-demo-jvm-gsd` evidence packet. |
 | 001 T217 | Run `sdp-trace` local verification and PR-level review before claiming Block 25 closure. | Blocked by T211-T216. | No. | Run only after Block 25 demo evidence exists. |
 | 001 T226 | Add and validate a customer-usable first-run OpenCode/GSD observation path. | Current `minimax/MiniMax-M2.5` route observes setup/model/source/digest facts, but current OpenCode/GSD lacks `/gsd-plan-phase`; tool/phase/mutation/test remain `not_assessed`. | No. | Restore/replace current GSD route, then replay first-run delivery-loop observation. |
@@ -36,7 +35,9 @@ and downloaded artifacts from demo CI run `25724386343` replayed successfully
 with the new verifier. T214 is closed through demo PR #26, merged to
 `sdp-trace-demo-jvm-gsd` `main` as
 `a4d1f755552ba1f411af5edcb7d6caf24a9c39bf`; GitHub run `26447797437`
-confirmed the Block 25 negative matrix in `build-and-test`.
+confirmed the Block 25 negative matrix in `build-and-test`. T215 is closed by
+`docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`, which records the
+sanitized report and artifact summary without upgrading residual trust states.
 
 The other open tasks need one of:
 

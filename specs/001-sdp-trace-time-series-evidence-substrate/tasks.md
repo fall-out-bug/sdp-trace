@@ -663,8 +663,8 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   no-self-index verification, digest/size verification, and a Bazel mutation
   negative test. Local demo verification passed with
   `bazel test //... --test_output=errors`. Real downloaded GitHub Actions
-  artifacts from demo CI run `25724386343` were replayed from
-  `/tmp/t213-demo-artifacts`: `scripts/write-v2-artifact-index.sh` emitted
+  artifacts from demo CI run `25724386343` were replayed from a downloaded
+  artifact work directory: `scripts/write-v2-artifact-index.sh` emitted
   deterministic JSON with 18 entries, `scripts/verify-v2-artifact-index.sh`
   recomputed every retained digest and size successfully, and intentional
   mutation of `change-evidence-packets/feature-1.md` failed with
@@ -689,20 +689,28 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   `bazel test //... --test_output=errors`; GitHub PR #26 `build-and-test`
   passed in run `26447797437`, including build, test, and artifact upload
   steps.
-- [ ] T215 [US4] Add sanitized Block 25 report and artifact summary only after
+- [x] T215 [US4] Add sanitized Block 25 report and artifact summary only after
   a successful demo CI run and artifact digest verification.
-  Status: `cannot_verify` for the same demo-repository access reason as T211.
+  Evidence: `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md` records the
+  sanitized Block 25 report and artifact summary after T213 downloaded-artifact
+  digest replay and T214 negative-matrix CI evidence. The report is Markdown
+  under `docs/reviews/`, not a schema fixture under `examples/`, and keeps
+  production trust, owner independence, non-GitHub portability,
+  release-binary acquisition, broad JVM/Bazel compatibility, and signed
+  external attestation as `not_assessed`.
 - [ ] T216 [US4] Run technical executive customer, Head of Engineering, and Head of InfoSec role
   reviews against the actual demo repository and downloaded artifacts; fix
   every valid critical or major finding, and record all findings and
   dispositions in `blocks/25-compiled-ci-demo-pilot-review-ledger.md`.
-  Status: `cannot_verify` for the same demo-repository access reason as T211.
+  Status: open. T211-T215 now identify the active demo repository, v2 artifact
+  contract, downloaded-artifact digest replay, negative matrix, and sanitized
+  report; focused role reviews against that current evidence packet still need
+  to run.
 - [ ] T217 [US4] Run `sdp-trace` local verification and PR-level review before
   claiming Block 25 closure.
-  Status: `blocked` on T211-T216 live demo-repository evidence. `sdp-trace` PR
-  #19 is merged and its `verify` check passed, but Block 25 closure still
-  requires demo repository and artifact evidence that is not currently
-  live-verifiable here.
+  Status: `blocked` on T216 role-review evidence. Block 25 final closure still
+  requires fresh `sdp-trace` local verification and PR-level review after role
+  review dispositions are recorded.
 
 **Checkpoint**: Block 25 can support a pilot claim only for the selected
 compiled JVM/Bazel target and CI artifact path. Production trust,

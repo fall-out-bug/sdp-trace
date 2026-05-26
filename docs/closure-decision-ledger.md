@@ -13,7 +13,7 @@ For one-row-per-task detail, see
 
 | Evidence | State |
 | --- | --- |
-| Task ledger | 589 / 605 checked; 16 open |
+| Task ledger | 590 / 605 checked; 15 open |
 | PR surface | PR #64 open, green, and `CLEAN` at `b8e7cf1e342ce7780da48c4f5ed9289bd12e6080` before this local update |
 | Merge approval | `not_assessed` |
 | Maintainer approval | `not_assessed` unless explicitly recorded per row below |
@@ -30,7 +30,7 @@ For one-row-per-task detail, see
 | D004 | 007 T008 | Decide demo-track option, first implementation slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | Maintainer decision approving, rejecting, or splitting demo-track direction. | `not_assessed` |
 | D005 | 018 T018-001, T018-070 | Review core/extension direction and decide whether follow-up specs may be prepared. | Machine review, command stability matrix, ownership map, docs, and local verification exist; maintainer review is absent. | Maintainer review outcome plus follow-up specs if direction is approved. | `not_assessed` |
 | D006 | 019 T019-001/T002/T003/T004/T120 | Decide post-merge governance for PR #60/Spec 019: accept partial merge state, reject it, or split remaining debt. | PR #60 merged with missed gates; PR #63 final-head CI passed; post-merge closure plan exists. | Maintainer decision recorded against the closure plan. | `not_assessed` |
-| D007 | 001 T215-T217 | Complete remaining Block 25 sanitized-report, role-review, and final verification evidence against `fall-out-bug/sdp-trace-demo-jvm-gsd`. | T211 is accepted with active demo repo evidence and `kt_jvm_test` wording recorded as drift; T212 is accepted as superseded by the v2 packet/bundle CI artifact contract; T213 is accepted with demo PR #25 merged to `main` and downloaded-artifact replay over CI run `25724386343`; T214 is accepted with demo PR #26 merged to `main` and GitHub `build-and-test` run `26447797437` preserving the negative matrix. | Sanitized report, role reviews, and local/PR-level verification. | `not_assessed` |
+| D007 | 001 T216-T217 | Complete remaining Block 25 role-review and final verification evidence against `fall-out-bug/sdp-trace-demo-jvm-gsd`. | T211 is accepted with active demo repo evidence and `kt_jvm_test` wording recorded as drift; T212 is accepted as superseded by the v2 packet/bundle CI artifact contract; T213 is accepted with demo PR #25 merged to `main` and downloaded-artifact replay over CI run `25724386343`; T214 is accepted with demo PR #26 merged to `main` and GitHub `build-and-test` run `26447797437` preserving the negative matrix; T215 is accepted with sanitized report `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`. | Role reviews and local/PR-level verification. | `not_assessed` |
 | D008 | 001 T226 | Restore or replace current OpenCode/GSD route so first-run delivery-loop evidence can be observed. | `minimax/MiniMax-M2.5` route observes setup/model/source/digest facts, but `/gsd-plan-phase` is unavailable and tool/phase/mutation/test remain `not_assessed`. | Live first-run observation with setup metadata, command digest, source commit, time bounds, output/normalized digests, and delivery-loop evidence; unavailable dimensions explicitly retained. | `not_assessed` |
 
 ## Closure Rule
