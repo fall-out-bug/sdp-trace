@@ -41,10 +41,10 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 
 | Measure | Current Value |
 | --- | --- |
-| Spec directories | 19 |
-| SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 585 / 605 |
-| Specs with all task boxes checked | 9 |
+| Spec directories | 21 |
+| SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 21 / 21 |
+| Checked task boxes | 600 / 605 |
+| Specs with all task boxes checked | 18 |
 | Formal `complete` roadmap rows | 0 |
 
 Interpretation: the repository has substantial implemented work. Formal
@@ -58,7 +58,7 @@ reality notes and the spec-specific task state.
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
 | [019](../specs/019-repo-realignment-monitoring-gate-readiness/) | Repo realignment, monitoring, and gate readiness | `in_progress` | PR #60 merged partial implementation to `main` without recorded approval; integration PR #63 superseded PR #62 and PR #31 by combining post-merge closure with PR-review CI enforcement and merged after final-head CI passed. Maintainer approval remains `not_assessed`. See `post-merge-closure-plan.md`. |
-| [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `in_progress` | Workstreams A-E and integration verification are mapped in `tasks.md` (9 / 11 checked); maintainer review remains `not_assessed`; follow-up implementation specs remain open. |
+| [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `in_progress` | Workstreams A-E, integration verification, maintainer `approve_core_extension_direction` decision, and follow-up Spec 020 / Spec 021 filing are mapped in `tasks.md` (11 / 11 checked). |
 | [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Task ledger is 11 / 11 checked after controlled supply-chain prototype and docs index closure. Optional external tools remain `not_assessed` when absent and supply-chain conformance remains `cannot_verify`; final maintainer closure remains pending. See `docs/spec-reality-ledger.md`. |
 | [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 merged; external audit and production adoption evidence remain `not_assessed`. |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX, command guidance, profile selection | `draft` | Awaiting Socratic review |
@@ -103,6 +103,8 @@ for the claimed scope.
 | [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `in_progress` | Task ledger is 20 / 20 checked after mapping implementation placeholders to Spec 006 packet artifacts and maintainer `accept_gap` decision for the historical approval gap. No production approval, release approval, or external trust is claimed. No `blocks/` directory. |
 | [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, PR-level evidence, merge evidence, post-merge CI evidence, and maintainer `accept_gap` decision are mapped in `tasks.md` (27 / 27 checked). No production readiness, release approval, or external trust is claimed. No `blocks/` directory. |
 | [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Task ledger is 22 / 22 checked after external demo evidence review, v1 baseline tag, buyer rehearsal, and maintainer `approve_existing_demo_track` decision for the existing demo repository route. No release, production trust, compliance, semantic-quality, or signed external-trust approval is claimed. No `blocks/` directory. |
+| [020](../specs/020-core-query-package-split/) | Core query package split | `draft` | Follow-up implementation spec prepared by Spec 018 closure. It has no active task checkboxes in the current closure route. |
+| [021](../specs/021-source-file-locality-cleanup/) | Source file locality cleanup | `draft` | Follow-up implementation spec prepared by Spec 018 closure. It has no active task checkboxes in the current closure route. |
 
 > **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon implementation, review, merge, and trust closure, move to Formally Closed Specs.
 
@@ -139,7 +141,9 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Spec governance / roadmap | 015 | Implemented; formal closure open |
 | Production adoption / security baseline | 016 | Implemented locally; production trust remains `not_assessed` |
 | OSS replacement compatibility / benchmarks | 017 | Implemented local / trust-bounded; optional external tools and external supply-chain trust remain `not_assessed` / `cannot_verify` |
-| Core/policy split and Pi delivery | 018 | Workstreams A-E implemented locally; maintainer review and follow-up-spec decision remain open |
+| Core/policy split and Pi delivery | 018 | Workstreams A-E implemented locally; maintainer direction approved; follow-up Spec 020 and Spec 021 filed |
+| Core query package split | 020 | Follow-up implementation spec prepared; not active closure debt |
+| Source file locality cleanup | 021 | Follow-up implementation spec prepared; not active closure debt |
 | Repo realignment / monitoring / gate readiness | 019 | Partial; HITL and closure blockers remain |
 
 ## Claim-Tag Enforcement Scope

@@ -1,6 +1,6 @@
 # Command Stability Matrix
 
-Status: in_review for Spec 018; maintainer human review not_assessed
+Status: reviewed for Spec 018; core/extension direction approved
 
 This matrix classifies the current `sdp-trace command-surface` into the
 smallest stable adoption path and optional extension surfaces. The

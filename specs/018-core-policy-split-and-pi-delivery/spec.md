@@ -1,6 +1,6 @@
 # Spec 018: Core/Policy Split And Pi Delivery Plan
 
-Status: in_review for Spec 018; maintainer human review not_assessed
+Status: reviewed; core/extension direction approved
 
 ## Objective
 
