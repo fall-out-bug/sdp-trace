@@ -40,7 +40,7 @@ T216 is closed by active-demo role reviews in
 one major InfoSec redaction-scan evidence gap was fixed and focused re-review
 returned no critical or major findings. T217 is closed by fresh local
 `sdp-trace` verification plus PR #64 `verify` and `pr-review-evidence-only`
-success at head `ea00be499abe9a211f3fa639be6124863afad36c`. T226 is closed
+success at head `5c47e09a223c318968f3e6099c59ed51f9995520`. T226 is closed
 by the current OpenCode/GSD-Redux first-run observation path:
 `opencode run --command gsd-plan-phase` and `--command gsd-execute-phase`
 under `sdp-trace observe session` produced setup metadata, command digest,

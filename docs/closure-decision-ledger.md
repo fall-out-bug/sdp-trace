@@ -14,7 +14,7 @@ For one-row-per-task detail, see
 | Evidence | State |
 | --- | --- |
 | Task ledger | 593 / 605 checked; 12 open |
-| PR surface | PR #64 open, green, and `CLEAN` at `b8e7cf1e342ce7780da48c4f5ed9289bd12e6080` before this local update |
+| PR surface | PR #64 open, green, and `CLEAN` at `5c47e09a223c318968f3e6099c59ed51f9995520` |
 | Merge approval | `not_assessed` |
 | Maintainer approval | `not_assessed` unless explicitly recorded per row below |
 | External demo repo | `fall-out-bug/sdp-trace-demo-jvm-gsd` is the active demo repository for current closure |
