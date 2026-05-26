@@ -11,6 +11,8 @@ import (
 func bytesContainHomePath(data []byte) bool {
 	needle := []byte("/home/")
 	for {
+		// Re-slice after every prose false positive so later real paths are
+		// still detected in the same file.
 		i := bytes.Index(data, needle)
 		if i == -1 {
 			return false

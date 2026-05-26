@@ -31,7 +31,7 @@ Quality gate policy:
 | CRAP | `< 5` per Go function in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | Compute from `go test -count=1 ./... -coverprofile`, `go tool cover -func`, and `go run ./tools/qualitycheck -gocyclo` output through `go run ./tools/crapcheck -strict-less`. Do not claim pass while local CRAP rows exceed the threshold. |
 | Cyclomatic complexity | `<= 10` per Go function in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -cyclo-over 10 cmd internal tools` must pass. `-fail-only` keeps passing CI logs quiet; failures still print to stderr. |
 | Cognitive complexity | `<= 10` per Go function in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -cognitive-over 10 cmd internal tools` must pass. `-fail-only` keeps passing CI logs quiet; failures still print to stderr. |
-| Function Maintainability Index | ratchet toward `>= 70` per production function in `cmd` and `internal` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal` must pass. Historical below-threshold functions may not regress; new below-threshold functions fail. This is not an absolute MI `> 70` pass claim. |
+| Function Maintainability Index | ratchet toward `>= 70` per non-trivial production function in `cmd` and `internal` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal` must pass. Historical below-threshold functions may not regress; new below-threshold functions fail. Tiny/simple helpers are omitted because CRAP, cyclomatic, and cognitive gates are the stronger signal for that shape. This is not an absolute MI `> 70` pass claim. |
 | File Maintainability Index | ratchet toward `> 70` per executable production file in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools` must pass. Historical below-threshold files may not regress; new below-threshold files fail. Declaration-only and tiny files are omitted from file MI because their Halstead volume is noisy without executable behavior. This is not an absolute MI `> 70` pass claim. |
 | Spec drift / work without spec | no implementation-only trust change | review-required, not CI-enforced | Review must compare changed behavior against the active spec, plan, and task. If no applicable spec delta exists, record `cannot_verify` or `not_assessed` instead of pass. |
 | CleanCode / CleanArchitecture review | behavior remains small, cohesive, and dependency-direction neutral | review-required, not CI-enforced | Review changed Go packages for avoidable complexity, hidden product coupling, and boundary violations. Record findings with evidence refs; absence of review is `not_assessed`. |
@@ -63,8 +63,10 @@ regeneration.
 Maintainability Index is a local ratchet/refactor heuristic, not an external
 quality proof. The formula is implemented in `tools/qualitycheck/halstead.go`;
 file-level MI aggregates whole Go files, so same-package file splits can improve
-the metric without changing behavior. Use MI alongside CRAP, complexity,
-coverage, review evidence, and spec-drift checks before making quality claims.
+the metric without changing behavior. Function-level MI omits tiny/simple
+helpers where raw Halstead volume is noisier than CRAP, cyclomatic, and
+cognitive evidence. Use MI alongside CRAP, complexity, coverage, review
+evidence, and spec-drift checks before making quality claims.
 Raw file-MI threshold failures include `lines`, `cyclo`, and
 `halstead_volume` so remediation can distinguish oversized files from
 high-branching or token-heavy files without treating the metric as an opaque

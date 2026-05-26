@@ -5,9 +5,12 @@ func staleQuickstartCommands(qsCmds, registry []string) []string {
 	var stale []string
 	for _, qs := range qsCmds {
 		if qs == "go run ./cmd/sdp-trace --help" {
-			continue // meta-flag, not a registry command
+			// The top-level help probe is a docs smoke test, not a registry row.
+			continue
 		}
 		if !isKnownCommand(qs, registrySet) {
+			// Anything not recognized by exact, prefix, or base-command matching
+			// is stale public documentation.
 			stale = append(stale, qs)
 		}
 	}

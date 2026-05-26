@@ -22,10 +22,13 @@ func checkForbiddenTrackedPaths(tracked []string) []string {
 func forbiddenPathReason(f string) string {
 	switch {
 	case strings.HasPrefix(f, ".worktrees/"):
+		// Local worktrees are operator state and must not become repo evidence.
 		return ".worktrees"
 	case strings.HasPrefix(f, ".codex-subagents/runs/"):
+		// Subagent run logs are local execution artifacts, not product fixtures.
 		return ".codex-subagents/runs"
 	case strings.HasPrefix(f, ".sdp-trace-"):
+		// Hidden trace scratch paths are generated state unless explicitly moved.
 		return ".sdp-trace-*"
 	}
 	return ""

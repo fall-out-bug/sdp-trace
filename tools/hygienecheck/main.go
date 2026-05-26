@@ -34,6 +34,8 @@ func run() error {
 func runAt(root string) error {
 	var findings []string
 
+	// All checks share the same tracked-file snapshot so the report is stable
+	// even if git state changes while the process runs.
 	tracked, err := gitLsFiles(root)
 	if err != nil {
 		return err

@@ -45,8 +45,10 @@ func buildIndexedMap(entries []SchemaEntry) (map[string]*SchemaEntry, []string) 
 	indexed := make(map[string]*SchemaEntry, len(entries))
 	var issues []string
 	for i := range entries {
+		// Take the address from the slice element, not the loop variable.
 		entry := &entries[i]
 		if _, exists := indexed[entry.Name]; exists {
+			// Duplicate names make one schema unreachable from the generated map.
 			issues = append(issues, "duplicate index entry: "+entry.Name)
 			continue
 		}

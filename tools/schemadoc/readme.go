@@ -49,6 +49,7 @@ func checkReadmeAt(path string, idx *Index) error {
 	if err != nil {
 		return fmt.Errorf("read %s: %w", path, err)
 	}
+	// Marker slicing keeps the generated table editable only through index.json.
 	c := string(data)
 	start := "<!-- schemadoc-start -->\n"
 	end := "\n<!-- schemadoc-end -->"
@@ -68,6 +69,7 @@ func checkReadmeAt(path string, idx *Index) error {
 // checkMarkers validates that both markers exist and are in the correct order.
 func checkMarkers(startIdx, endIdx int) error {
 	if startIdx < 0 {
+		// Missing markers make it impossible to distinguish generated content.
 		return errors.New("README missing schemadoc-start marker")
 	}
 	if endIdx < 0 {

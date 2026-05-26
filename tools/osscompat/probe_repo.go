@@ -23,6 +23,7 @@ func findGitRoot(cwd string) string {
 		}
 		parent := filepath.Dir(cwd)
 		if parent == cwd {
+			// Reaching filesystem root means the probe is not inside a checkout.
 			return "."
 		}
 		cwd = parent

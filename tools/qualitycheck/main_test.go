@@ -347,6 +347,55 @@ func Build(name string) string {
 	}
 }
 
+func TestRunFunctionMaintainabilityGateOmitsTinySimpleHelpers(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sample.go")
+	src := `package sample
+
+func Pick(ok bool) string {
+	if ok {
+		return "yes"
+	}
+	return "no"
+}
+`
+	if err := os.WriteFile(path, []byte(src), 0o600); err != nil {
+		t.Fatalf("write sample: %v", err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	exit := run([]string{"-function-mi-under", "70.1", path}, &stdout, &stderr)
+	if exit != 0 {
+		t.Fatalf("exit = %d, want pass; stdout=%s stderr=%s", exit, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Pick") {
+		t.Fatalf("stdout missing measured function row: %s", stdout.String())
+	}
+}
+
+func TestFunctionMIOmittedOnlyTinySimpleHelpers(t *testing.T) {
+	tests := []struct {
+		name      string
+		lines     int
+		cyclo     int
+		cognitive int
+		want      bool
+	}{
+		{name: "tiny simple", lines: 7, cyclo: 2, cognitive: 1, want: true},
+		{name: "too long", lines: 18, cyclo: 2, cognitive: 1, want: false},
+		{name: "too branchy", lines: 7, cyclo: 5, cognitive: 1, want: false},
+		{name: "too nested", lines: 7, cyclo: 2, cognitive: 4, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := functionMIOmitted(tt.lines, tt.cyclo, tt.cognitive)
+			if got != tt.want {
+				t.Fatalf("functionMIOmitted(%d, %d, %d) = %v, want %v", tt.lines, tt.cyclo, tt.cognitive, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRunFailOnlySuppressesPassingMetricRows(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "sample.go")
