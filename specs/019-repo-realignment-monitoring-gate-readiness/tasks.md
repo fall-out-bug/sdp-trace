@@ -1,25 +1,27 @@
 # Tasks: Repo Realignment, Monitoring, And Gate Readiness
 
-Status: post-merge partial; maintainer human review not_assessed
+Status: split_successor; residual governance moved to Spec 022
 
 ## Phase 0 - Review And Approval
 
-- [ ] T019-001 Review Spec 019 scope with maintainers.
-  Status: `missed_pre_merge_gate`. PR #60 merged before this approval was
-  recorded; this cannot be retroactively satisfied as a pre-implementation
-  review.
-- [ ] T019-002 Run adversarial spec review before implementation approval.
-  Status: `partial_after_merge`. Cross-model review ran for implemented slices,
-  but GitHub PR #60 has no recorded approval and the PR body checklist was
-  unchecked at merge time.
-- [ ] T019-003 Approval gate: implementation and Pi handoff may start only
+- [x] T019-001 Review Spec 019 scope with maintainers.
+  Status: `split_successor`. PR #60 merged before this approval was recorded;
+  this cannot be retroactively satisfied as a pre-implementation review.
+  Maintainer decision in the 2026-05-26 closure thread moves residual
+  governance to follow-up Spec 022 instead of claiming this gate was met.
+- [x] T019-002 Run adversarial spec review before implementation approval.
+  Status: `split_successor`. Cross-model review ran for implemented slices, but
+  GitHub PR #60 has no recorded approval and the PR body checklist was
+  unchecked at merge time. Remaining governance review is split to Spec 022.
+- [x] T019-003 Approval gate: implementation and Pi handoff may start only
   after reviewed spec direction is approved.
-  Status: `missed_pre_merge_gate`. Treat the missed gate as process evidence,
-  not as a remaining task that can still be completed before implementation.
-- [ ] T019-004 Post-merge approval gate: maintainers must either approve the
+  Status: `split_successor`. The missed pre-merge gate remains process
+  evidence and is moved to Spec 022; no retroactive approval is claimed.
+- [x] T019-004 Post-merge approval gate: maintainers must either approve the
   partial merge state and the closure plan or explicitly reject/split the
   remaining work.
-  Status: `not_assessed`. Closure plan:
+  Status: `split_successor`. Maintainer decision in the 2026-05-26 closure
+  thread splits remaining governance debt to Spec 022. Closure plan:
   `specs/019-repo-realignment-monitoring-gate-readiness/post-merge-closure-plan.md`.
 
 ## Phase 1 - Pi-Ready Workstreams
@@ -152,11 +154,12 @@ Status: post-merge partial; maintainer human review not_assessed
   PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
   PR #63: https://github.com/fall-out-bug/sdp-trace/pull/63
 
-- [ ] T019-120 Approval gate: close this spec only after review findings,
+- [x] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
-  Status: blocked on T019-004. Final post-merge Qwen3.6 Plus alternative-LLM
+  Status: `split_successor`. Final post-merge Qwen3.6 Plus alternative-LLM
   review is LGTM after findings were addressed. PR #63 final-head CI passed
-  before merge, but PR #60 remains a partial merge and Spec 019 closure still
-  requires T019-004 maintainer approval or explicit rejection/split decision.
-  `merge_approval` remains `not_assessed`.
+  before merge, but PR #60 remains a partial merge. The 2026-05-26 maintainer
+  decision explicitly splits remaining governance debt to Spec 022 instead of
+  claiming full Spec 019 approval. `merge_approval` for PR #60 remains
+  `not_assessed`.

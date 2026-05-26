@@ -59,7 +59,8 @@
 | **018** | Core/Policy Split And Pi Delivery Plan | `draft` | reviewed / follow-ups prepared | 11 / 11 | — | `go test` PASS, `doccheck` PASS, `hygienecheck` PASS. Maintainer decision `approve_core_extension_direction` was recorded in the 2026-05-26 closure thread. Follow-up Spec 020 and Spec 021 are filed as draft implementation specs. | **Reviewed direction / follow-ups prepared** — workstreams A-E, integration verification, maintainer review, and follow-up spec filing are complete; command removal, separate binaries, production readiness, release approval, and external trust are not claimed. |
 | **020** | Core Query Package Split | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future task backlog is present as non-active table rows. | **Prepared future implementation spec** — not current closure debt until explicitly taken into work. |
 | **021** | Source File Locality Cleanup | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future task backlog is present as non-active table rows. | **Prepared future implementation spec** — not current closure debt until explicitly taken into work. |
-| **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | post-merge partial | 11 / 16 | T019-001, T019-002, T019-003, T019-004, T019-120 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. Integration PR #63 superseded PR #62/PR #31 as the handoff surface, passed final-head CI, and merged as `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Current-branch alternative-LLM reviews are LGTM after findings were addressed. | **Partial** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. PR #63 added PR-review CI enforcement and pinned workflow action checks. Phase 0 approval gates and post-merge approval remain open. GitHub PR metadata has no recorded review approval; `merge_approval` remains `not_assessed`. |
+| **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | split successor | 16 / 16 | — | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. Integration PR #63 superseded PR #62/PR #31 as the handoff surface, passed final-head CI, and merged as `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Maintainer decision `split_successor` moves residual governance debt to Spec 022. | **Split successor** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. PR #63 added PR-review CI enforcement and pinned workflow action checks. Missed Phase 0 gates remain historical process evidence; PR #60 merge approval remains `not_assessed`; future governance belongs to Spec 022. |
+| **022** | Post-Merge Governance Closure | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future governance backlog is present as non-active table rows. | **Prepared future governance spec** — not current closure debt until explicitly taken into work. |
 
 ## Qualification Notes
 
@@ -80,16 +81,9 @@
 
 ### Remaining Blockers
 - **Spec 017**: Supply-chain external evidence remains `cannot_verify` where optional tools or external trust anchors are unavailable.
-- **Spec 019 T019-001/T019-002/T019-003**: Pre-implementation review and
-  approval gates were missed before PR #60 merged; they remain process evidence
-  and cannot be retroactively marked complete.
-- **Spec 019 T019-004**: Post-merge approval is `not_assessed`.
-- **Spec 019 T019-120**: Final post-merge branch review is complete and
-  integration PR #63 final-head CI passed before merge. Spec closure remains
-  blocked on T019-004 maintainer approval.
-- **Approval-gated specs**: 019 T019-004/T019-120 require explicit maintainer
-  acceptance, waiver, rejection, or successor-spec split before stronger
-  closure claims.
+- **Spec 019 governance debt**: Pre-implementation review and approval gates
+  were missed before PR #60 merged; they remain process evidence and cannot be
+  retroactively marked complete. Residual governance is split to Spec 022.
 - **Demo / first-run specs**: 001 Block 25/T226 and 007 buyer rehearsal are
   represented by real external demo-repository or first-run observation
   evidence, not local ledger cleanup. Future non-no-op GSD runs still need

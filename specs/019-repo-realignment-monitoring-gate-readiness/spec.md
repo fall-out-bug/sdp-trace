@@ -1,6 +1,6 @@
 # Spec 019: Repo Realignment, Monitoring, And Gate Readiness
 
-Status: draft; maintainer human review not_assessed
+Status: split_successor; residual governance moved to Spec 022
 
 ## Objective
 

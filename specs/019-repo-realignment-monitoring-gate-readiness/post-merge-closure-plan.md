@@ -141,15 +141,15 @@ Verification:
 
 ### S019-P4: Final Trust Review And Closure
 
-Status: pending on maintainer approval.
+Status: split to follow-up Spec 022.
 
 Deliverables:
 
 - Fresh local verification bundle.
 - Fresh live CI evidence for final HEAD.
 - Adversarial review until exact `LGTM` with zero findings.
-- Maintainer approval or explicit rejection recorded after the post-merge state
-  is visible.
+- Maintainer approval, rejection, or further split recorded in follow-up
+  Spec 022 after the post-merge state is visible.
 
 Verification:
 
@@ -169,9 +169,11 @@ Current checked-in evidence:
 - GLM-4.6 full integration review returned LGTM.
 - GLM-4.6 PR-review CI hygiene re-review returned LGTM after parser/test fixes.
 - PR #63 final-head CI passed before merge.
-- Maintainer approval remains `not_assessed`.
+- Maintainer approval for PR #60 remains `not_assessed`; residual governance
+  is split to Spec 022.
 
 Exit criteria:
 
-- Spec 019 can move to `complete` only after all pending closure work is either
-  verified or explicitly retained as non-blocking with maintainer approval.
+- Spec 019 residual governance has moved to Spec 022 by maintainer decision in
+  the 2026-05-26 closure thread. Spec 019 must not claim retroactive
+  pre-implementation approval or PR #60 merge approval.
