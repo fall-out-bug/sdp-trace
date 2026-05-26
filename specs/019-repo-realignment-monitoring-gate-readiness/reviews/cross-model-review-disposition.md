@@ -5,12 +5,15 @@
 **Base**: `main`
 **Source commit covered by this file**: `2121285c3afa85b3f5b9ac9e4ad270662c0c377b` (round 3 fixes: ledger HEAD/CI/pipes, spec.md crapcheck, router duplicate)
 
-> **Note**: Final PR-head CI must be queried live from GitHub and is not represented by this checked-in file.
+> **Note**: Final PR-head CI is `not_assessed` in this checked-in file because
+> live GitHub state is external evidence.
 > **Post-merge note (2026-05-26)**: PR #60 was later merged as
 > `657a343a5f310538def9afd509e6c610c713cab0`. GitHub PR metadata contains no
 > recorded review approval, and the PR body left review checklist items
 > unchecked. Treat merge approval as `not_assessed`; this file is review
 > evidence for implemented slices, not merge approval.
+> Integration note: PR #63 supersedes PR #62 and PR #31 as the current handoff
+> surface by combining post-merge closure with PR-review CI enforcement.
 
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
@@ -30,6 +33,8 @@
 | OmPi re-run — tools/ossbench | reviewer agent | default (kimi-for-coding) | Code/correctness | **LGTM** |
 | OmPi re-run — docs/config | reviewer agent | default (kimi-for-coding) | Spec alignment / workflow | **3 findings addressed** |
 | Post-merge branch — static diff | Qwen3.6 Plus | opencode-go via OmPi | Full diff review | **LGTM after findings addressed** |
+| Integration branch — static diff | GLM-4.6 | OpenRouter via pi | Full diff review | **LGTM** |
+| PR-review CI hygiene | GLM-4.6 | OpenRouter via pi | Action pinning review | **LGTM after findings addressed** |
 
 *Note: MiniMax-M2.7 and Kimi direct provider not available in this environment (no API keys configured). Review planes 4-7 executed via Oh My Pi `task` tool with bundled reviewer agent.*
 *Post-merge note: GLM-5.1 (`zai/glm-5.1`) and Kimi (`kimi-code/kimi-for-coding`) OmPi reviewer attempts hung or timed out with empty output, so they are recorded as `cannot_verify`, not review evidence. Qwen3.6 Plus completed via static diff input with tools disabled.*
@@ -83,8 +88,9 @@
 - [x] OmPi reviewer re-run completed: 3 LGTM (cmd, osscompat, ossbench), 3 findings addressed (docs/config)
 - [x] Post-merge Qwen3.6 Plus static diff review completed; findings addressed except one verified false positive
 - [x] Final post-fix Qwen3.6 Plus re-review completed: LGTM
-- [x] PR #62 CI passed in GitHub at the time of review; see the PR check
-  surface for final-head evidence
+- [x] PR #62 CI passed in GitHub at the time of review; superseded by PR #63
+- [ ] PR #63 final-head CI is `not_assessed` in this checked-in review file
+  because checked-in review files are not live CI authority
 
 ## Remaining Open States
 

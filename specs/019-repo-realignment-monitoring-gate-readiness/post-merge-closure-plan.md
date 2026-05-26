@@ -25,6 +25,16 @@ Therefore the post-merge state is:
   satisfied as a pre-implementation gate.
 - `final_closure_gate`: open.
 
+## Current Handoff Surface
+
+PR #63 is the current integration surface for closure work:
+
+- combines PR #62 post-merge closure with PR #31 PR-review CI integration;
+- supersedes PR #62 and PR #31 for repo-wide handoff;
+- keeps PR #63 final-head CI as `not_assessed` in checked-in docs;
+- has no recorded maintainer approval, so `merge_approval` remains
+  `not_assessed`.
+
 ## 10/10 Closure Work
 
 ### S019-P0: Post-Merge Truth Repair
@@ -130,7 +140,7 @@ Verification:
 
 ### S019-P4: Final Trust Review And Closure
 
-Status: pending.
+Status: pending on maintainer approval.
 
 Deliverables:
 
@@ -151,6 +161,14 @@ Verification:
 - coverage-backed CRAP check
 - MI baseline checks
 - final live CI query
+
+Current checked-in evidence:
+
+- Local full verification passed before the docs drift repair commit.
+- GLM-4.6 full integration review returned LGTM.
+- GLM-4.6 PR-review CI hygiene re-review returned LGTM after parser/test fixes.
+- PR #63 final-head CI is `not_assessed` in checked-in docs.
+- Maintainer approval remains `not_assessed`.
 
 Exit criteria:
 

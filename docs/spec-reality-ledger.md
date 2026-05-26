@@ -57,7 +57,7 @@
 | **017** | OSS Replacement Compatibility And Benchmarks | `in_progress` | `in_progress` | 9 / 11 | T017-040, T017-080 | `go test` PASS (`tools/osscompat`, `tools/ossbench`). **CRAP PASS**. **MI PASS**. Supply-chain probes (in-toto, Cosign, SLSA) explicitly preserved as `cannot_verify` with reproducible reasons and test coverage. Live `wrap` manifest has `schema/run-manifest.schema.json`; optional external validation is `not_assessed` when `check-jsonschema` is absent. | **Partial** — compatibility harness and benchmark tooling exist and pass unit tests and quality gates. Supply-chain external evidence and roadmap/index closure remain open. |
 
 | **018** | Core/Policy Split And Pi Delivery Plan | `draft` | `in_review` | 0 / 11 | T018-001–T018-070 | `go test` PASS, `doccheck` PASS. | **No** — planning spec in review; no implementation tasks completed. |
-| **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | post-merge partial | 14 / 16 | T019-004 (post-merge approval), T019-120 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. PR #62 final-head CI is live external evidence and must be queried from GitHub at handoff. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Current-branch Qwen3.6 Plus alternative-LLM review is LGTM after findings were addressed. | **Partial** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. Current-branch review is complete; post-merge approval remains open. GitHub PR metadata has no recorded review approval; `merge_approval` remains `not_assessed`. |
+| **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | post-merge partial | 14 / 16 | T019-004 (post-merge approval), T019-120 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. Integration PR #63 supersedes PR #62/PR #31 as the current handoff surface; PR #63 final-head CI is `not_assessed` in checked-in docs. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Current-branch alternative-LLM reviews are LGTM after findings were addressed. | **Partial** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. PR #63 adds PR-review CI enforcement and pinned workflow action checks. Post-merge approval remains open. GitHub PR metadata has no recorded review approval; `merge_approval` remains `not_assessed`. |
 
 ## Qualification Notes
 
@@ -70,15 +70,19 @@
   regression.
 - **PR #61**: Closed as superseded by PR #62. The branch predated PR #60 and
   was not the correct path for post-merge baseline or quality closure.
-- **PR #31**: Open Block 32 CI PR-review integration branch remains outside
-  `main` and has no recorded review approval. Its 2026-05-11 CI pass is stale
-  for merge readiness; it must be rebased/reviewed or explicitly closed before
-  repo-wide completion.
+- **PR #62**: Superseded by integration PR #63. Its CI pass remains historical
+  evidence for that head, not the current handoff surface.
+- **PR #31**: Superseded by integration PR #63. Its live checks are green, but
+  the branch is no longer the repo-wide completion surface because PR #63
+  includes the CI PR-review integration changes.
 
 ### Remaining Blockers
 - **Spec 017**: Supply-chain external evidence remains `cannot_verify` where optional tools or external trust anchors are unavailable.
 - **Spec 019 T019-004**: Post-merge approval is `not_assessed`.
-- **Spec 019 T019-120**: Final post-merge branch review is complete; final PR-head CI must be queried live from GitHub at handoff, and spec closure remains blocked on T019-004 maintainer approval.
+- **Spec 019 T019-120**: Final post-merge branch review is complete for the
+  superseded PR #62 branch; integration PR #63 final-head CI is
+  `not_assessed` in checked-in docs, and spec closure remains blocked on
+  T019-004 maintainer approval.
 ### Specs with Completed Tasks but Draft Status
 Specs **009, 010, 011, 012, 014** have all tasks checked and local verification passes, yet their `spec.md` status remains `draft`. The discrepancy means implementation exists but has not been formally approved/merged. They must not be treated as `complete` until the spec status transitions and any pending PI review or merge is recorded.
 
