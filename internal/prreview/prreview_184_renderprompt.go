@@ -1,6 +1,7 @@
 package prreview
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -29,7 +30,7 @@ func renderPromptTemplate(packet Packet, role ReviewRole) (string, error) {
 	}
 	data, err := os.ReadFile(role.PromptTemplateRef)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: prompt_template_ref", errPromptTemplateCannotVerify)
 	}
 	return applyPromptReplacements(string(data), packet, role), nil
 }
