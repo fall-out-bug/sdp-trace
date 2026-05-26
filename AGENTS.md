@@ -113,3 +113,11 @@ Use current command contracts in `docs/agent-entrypoint.md` and `docs/reviewer-e
 - For schema/contract changes, also check refs, changed examples, fixture shape, and Go struct/schema alignment.
 
 Bash verification commands are not product architecture. Keep them only when they are thin launchers around Go commands or external tools.
+
+<!-- SPECKIT START -->
+Spec Kit is installed for Codex skills in `.agents/skills/speckit-*`.
+Before using a Spec Kit skill, load `sdp-trace-router`; project-local
+trust rules remain authoritative. If `.specify/feature.json` points to
+an active feature, read that feature's `spec.md`, `plan.md`, and
+`tasks.md` as additional context.
+<!-- SPECKIT END -->
