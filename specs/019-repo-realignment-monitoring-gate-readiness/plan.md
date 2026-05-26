@@ -1,16 +1,18 @@
 # Plan: Repo Realignment, Monitoring, And Gate Readiness
 
-Status: post-merge partial; maintainer human review not_assessed
+Status: split_successor; residual governance moved to Spec 022
 
 ## Post-Merge Closure
 
 PR #60 was merged on 2026-05-25 as commit
 `657a343a5f310538def9afd509e6c610c713cab0`, but it did not complete this
 spec. The remaining closure work is tracked in
-`post-merge-closure-plan.md`.
+`post-merge-closure-plan.md` and follow-up Spec 022.
 
-The merge approval state is `not_assessed`: GitHub PR metadata contains no
-recorded review approval, and the PR body left the review checklist unchecked.
+The PR #60 merge approval state remains `not_assessed`: GitHub PR metadata
+contains no recorded review approval, and the PR body left the review checklist
+unchecked. The 2026-05-26 maintainer decision splits residual governance debt
+to Spec 022 instead of retroactively approving the missed gate.
 
 ## Workstreams
 

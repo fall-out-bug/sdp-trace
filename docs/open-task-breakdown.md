@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 5 open task boxes one by one. It is a
+This file decomposes the remaining 0 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,11 +10,7 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 019 T019-001 | Review Spec 019 scope with maintainers. | PR #60 merged before this approval was recorded; this is a missed pre-merge gate. | No. | Maintainer decides whether to accept, reject, or split the already-merged state. |
-| 019 T019-002 | Run adversarial spec review before implementation approval. | Cross-model review ran after implemented slices; pre-implementation approval evidence is absent. | No. | Treat as `partial_after_merge`; maintainer decides whether to accept or split. |
-| 019 T019-003 | Start implementation/Pi handoff only after reviewed direction is approved. | Already missed before merge; cannot be retroactively satisfied as pre-implementation approval. | No. | Maintainer records acceptance/waiver/rejection/split for missed gate. |
-| 019 T019-004 | Post-merge approval gate: maintainers approve partial merge state and closure plan or reject/split remaining work. | `post-merge-closure-plan.md` exists; maintainer decision is `not_assessed`. | No. | Maintainer approves, rejects, or splits the closure plan. |
-| 019 T019-120 | Close Spec 019 only after review findings, local verification, and live CI evidence are recorded. | Review and CI evidence exist, but this task is blocked on T019-004 maintainer decision. | No. | Complete only after T019-004 has an explicit outcome. |
+| — | — | No open task checkboxes remain in the current closure route. | — | — |
 
 ## Local Closure Candidate
 
@@ -74,9 +70,8 @@ follow-up Spec 020 `core-query-package-split` and Spec 021
 surfaces and do not approve command removal, separate binaries, production
 readiness, release approval, or external trust.
 
-The other open tasks need one of:
-
-- explicit maintainer approval;
-- or an explicit successor split / rejection decision.
+No open task checkboxes remain in the current closure route. Follow-up specs
+020, 021, and 022 are prepared draft successor surfaces and are not active
+closure debt until explicitly taken into work.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=open-task-breakdown; state=pass; profile=open_tasks_classified; evidence=state:claim_tags_consistent -->
