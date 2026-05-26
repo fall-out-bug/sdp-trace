@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 18 open task boxes one by one. It is a
+This file decomposes the remaining 17 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T213 | Replace the obsolete Block 25 artifact-index shape with v2 verification over downloaded packet/bundle CI artifacts. | Active demo PR `fall-out-bug/sdp-trace-demo-jvm-gsd#25` adds deterministic v2 artifact-index generation, no-self-index verification, digest/size verification, and a Bazel mutation negative test; local demo `bazel test //... --test_output=errors` passes at `539acef1cbb29ffd859ffef5f0075f6262efec06`. GitHub has not emitted a PR workflow run for #25, so downloaded CI artifacts are not available for replay. | No. | Resolve the demo PR workflow-event gap, then download `change-evidence-packets` and `evidence-bundles` artifacts from #25 and run `scripts/verify-v2-artifact-index.sh` over the downloaded artifact root. |
 | 001 T214 | Preserve no-OIDC, stale digest, and source/run mismatch cases as intentional `cannot_verify` or `fail` states. | Active demo repo has a negative PR #21 and negative packet evidence, but this has not yet been mapped to the Block 25 no-OIDC/stale/source-run mismatch cases. | Possibly, if current negative evidence satisfies the cases. | Compare PR #21 / negative bundle against the three required failure modes. |
 | 001 T215 | Add sanitized Block 25 report and artifact summary only after successful demo CI and digest verification. | No sanitized Block 25 report has been identified for the active demo repo path. | No, until T213-T214 are resolved. | Produce or map report only after digest and negative-state evidence is resolved. |
 | 001 T216 | Run technical executive customer, Head of Engineering, and Head of InfoSec role reviews against actual demo repo and artifacts. | Block 25 review ledger has historical role-review dispositions, but current active-demo artifact mapping has not been re-reviewed. | No, until T213-T215 are resolved. | Run focused role reviews against the actual `sdp-trace-demo-jvm-gsd` evidence packet. |
@@ -31,11 +30,13 @@ external attestation.
 
 ## Local Closure Candidate
 
-T213 is not a literal old artifact-index repair anymore: the old shape is
-obsolete for the v2 packet/bundle track, but the downloaded-artifact digest
-verification gap remains open. T214 may still have a local/external replay path
-against the active `fall-out-bug/sdp-trace-demo-jvm-gsd` evidence; do not close
-it until the negative-state requirements are mapped.
+T213 is closed through the active v2 packet/bundle track: demo PR #25 is merged
+to `sdp-trace-demo-jvm-gsd` `main` as
+`3a9491f734e5214c72014db5d893f125eb254a11`, local Bazel verification passed,
+and downloaded artifacts from demo CI run `25724386343` replayed successfully
+with the new verifier. T214 may still have a local/external replay path against
+the active `fall-out-bug/sdp-trace-demo-jvm-gsd` evidence; do not close it until
+the negative-state requirements are mapped.
 
 The other open tasks need one of:
 

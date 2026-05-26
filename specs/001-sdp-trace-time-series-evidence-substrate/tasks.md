@@ -653,24 +653,26 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   packet/bundle data as evidence organization rather than CI authority. The old
   `.sdp-trace-report/`, `.sdp-trace-runs/`, and `.sdp-trace-tools/` directory
   names are not required for the v2 demo track.
-- [ ] T213 [US5] Fix artifact index generation so it emits deterministic JSON,
+- [x] T213 [US5] Fix artifact index generation so it emits deterministic JSON,
   does not self-index, and add digest verification over downloaded CI artifacts.
-  Status: `open` as replacement work. The old Block 25 `artifact-index`
-  implementation shape is accepted as obsolete for the active
-  `sdp-trace-demo-jvm-gsd` v2 packet/bundle track, but the underlying trust gap
-  remains: current evidence records bundle manifests and GitHub artifact refs,
-  not replayed digest verification over downloaded CI artifact contents. Close
-  this only with v2 bundle artifact verification that downloads the GitHub
-  artifacts, recomputes retained content digests, and records unavailable
-  archive/service digest metadata explicitly as `not_assessed` when absent.
-  Current implementation progress: demo PR
-  `fall-out-bug/sdp-trace-demo-jvm-gsd#25` adds deterministic v2 artifact-index
-  generation, no-self-index verification, digest/size verification, and a Bazel
-  mutation negative test; local `bazel test //... --test_output=errors` passes
-  at demo commit `539acef1cbb29ffd859ffef5f0075f6262efec06`. Live closure is
-  still blocked because GitHub has not emitted a PR workflow run for #25 after
-  push, an empty synchronize commit, and close/reopen, so downloaded CI
-  artifacts do not yet exist for replay.
+  Evidence: accepted as completed through the active `sdp-trace-demo-jvm-gsd`
+  v2 packet/bundle track. The old Block 25 `artifact-index` shape is obsolete,
+  but the underlying trust property is now covered by demo `main` commit
+  `3a9491f734e5214c72014db5d893f125eb254a11`, merged from demo PR #25. That
+  commit adds deterministic v2 artifact-index generation,
+  no-self-index verification, digest/size verification, and a Bazel mutation
+  negative test. Local demo verification passed with
+  `bazel test //... --test_output=errors`. Real downloaded GitHub Actions
+  artifacts from demo CI run `25724386343` were replayed from
+  `/tmp/t213-demo-artifacts`: `scripts/write-v2-artifact-index.sh` emitted
+  deterministic JSON with 18 entries, `scripts/verify-v2-artifact-index.sh`
+  recomputed every retained digest and size successfully, and intentional
+  mutation of `change-evidence-packets/feature-1.md` failed with
+  `digest mismatch for change-evidence-packets/feature-1.md`. Post-merge
+  GitHub Actions event emission for new demo pushes remains `not_assessed` for
+  T213 closure because GitHub did not create new runs after PR, branch, or main
+  push events; this is a CI-trigger availability issue, not missing
+  downloaded-artifact digest verification.
 - [ ] T214 [US5] Preserve no-OIDC, stale digest, and source/run mismatch cases
   as intentional `cannot_verify` or `fail` evidence states independent of clean
   artifact-index correctness.
