@@ -15,7 +15,7 @@ coordination artifact, not proof that any spec is complete.
 | Latest `main` CI | pass, run `26453881873` at `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd` |
 | Spec directories | 19 |
 | SpecKit triplets | 19 / 19 |
-| Task checkboxes | 595 / 605 checked |
+| Task checkboxes | 596 / 605 checked |
 | Formal roadmap `complete` rows | 0 |
 
 Commands used for this audit:
@@ -46,7 +46,7 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 | 002 Authority Envelope Boundary Observation | Implementation appears present: authority schemas, docs, fixtures, Go parser/evaluator, and tests are checked in; tasks are 35 / 35. PR-level closure review exists for PR #64, explicit merge approval was recorded in the 2026-05-26 closure thread, PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`, and post-merge `main` CI run `26453881873` passed. | Close Spec 002 as implemented and post-merge verified for its scoped authority-envelope boundary observation. Do not claim external policy approval or production trust. |
 | 003 Agent Supply Chain Roadmap | Roadmap/spec discovery artifact only; tasks are 42 / 42 after retirement. It was not implemented as product. | Retired as `retired_superseded` by concrete later specs and blocks. Do not use Spec 003 as implementation authority. |
 | 004 MVP Readiness Hardening | Implementation work is checked off: 43 / 43. PR-level review and named reviewer sign-off are recorded for PR #64; explicit merge approval was recorded in the 2026-05-26 closure thread; PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; post-merge `main` CI run `26453881873` passed. Absolute MI remains an assessed gap, not a pass claim. | Close Spec 004 as controlled-pilot MVP hardening merged and post-merge verified. Do not upgrade controlled-pilot readiness to production readiness or absolute MI pass. |
-| 005 Product Contract v0 | Contract design and reviews exist; tasks are 19 / 20 after mapping implementation placeholders to Spec 006 packet artifacts. Historical explicit approval remains `not_assessed`. | Do not claim Product Contract approval until maintainers accept, waive, or explicitly preserve the approval gap. |
+| 005 Product Contract v0 | Contract design and reviews exist; tasks are 20 / 20 after mapping implementation placeholders to Spec 006 packet artifacts. Maintainer decision `accept_gap` was recorded in the 2026-05-26 closure thread for the historical approval gap. | Close Spec 005 as reviewed contract with accepted historical approval gap. Do not claim production approval, release approval, or external trust. |
 | 006 Change Evidence Packet Core | Task ledger now maps 26 / 27 implemented, locally verified, and reviewed tasks to packet schemas, docs, Go package `internal/packet`, CLI surfaces, fixtures, tests, this branch's verification commands, closure review, and PR #64 evidence. Historical pre-implementation approval remains open / `not_assessed`. | Do not close as complete until maintainers decide whether the historical approval gap is accepted, waived, or kept as a permanent trace boundary. |
 | 007 GitHub OSS Demo Packet | Draft/demo plan plus focused split re-review; tasks are 21 / 22. External demo repo evidence now covers setup PR, feature packets 1-5, negative draft PR, CI, local Bazel smoke tests, first-packet gate replay, v1 baseline tag, and buyer rehearsal. Explicit demo-track approval remains open. | Keep approval open. Rehearsal evidence does not claim merge, release, production trust, compliance, or semantic-quality approval. |
 | 008 Invisible Flight Recorder | Tasks are 26 / 26 and implementation/review artifacts exist. Roadmap still says PR/final-head CI evidence pending. | Verify whether the PR/merge happened historically. If already merged, update closure state from current `main`; if not, run final-head CI/review equivalent and close as implemented-local or historical. |
@@ -64,11 +64,11 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 
 ## Open Task Classification
 
-Current task ledger state is 595 / 605 checked, leaving 10 open task boxes.
+Current task ledger state is 596 / 605 checked, leaving 9 open task boxes.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
-| Approval or maintainer gates | 005 T014; 006 T003; 018 T018-001/T018-070; 019 T019-001/T019-002/T019-003/T019-004/T019-120 | Cannot be converted to `pass` locally. Needs explicit maintainer acceptance, waiver, rejection, merge/post-merge evidence, or successor-spec split. |
+| Approval or maintainer gates | 006 T003; 018 T018-001/T018-070; 019 T019-001/T019-002/T019-003/T019-004/T019-120 | Cannot be converted to `pass` locally. Needs explicit maintainer acceptance, waiver, rejection, merge/post-merge evidence, or successor-spec split. |
 | Review / PR evidence closure | none currently isolated as review-only after this refresh | Future review gaps must still be closed with fresh review, live PR evidence, and explicit trust-boundary wording, not task-box cleanup alone. |
 | Retire or re-scope stale planning | none currently isolated as stale after this refresh | Future stale specs should be retired only with an explicit supersession map. |
 
@@ -77,8 +77,8 @@ Current task ledger state is 595 / 605 checked, leaving 10 open task boxes.
 The implemented-local and stale-ledger backlog has been reduced to explicit
 approval and external-evidence surfaces. The next closure work is:
 
-1. **Maintainer decision surface**: resolve or preserve 005 T014, 006 T003, 007
-   T008, 018 T018-001/T018-070, and 019 T019-001/T019-004/T019-120 with explicit
+1. **Maintainer decision surface**: resolve or preserve 006 T003, 007 T008,
+   018 T018-001/T018-070, and 019 T019-001/T019-004/T019-120 with explicit
    accept / waive / reject / split decisions. Do not infer approval from this
    document or from green CI.
 2. **External demo surface**: T226 is closed for the current first-run
@@ -93,7 +93,7 @@ The durable row-by-row decision ledger lives in
 
 | Decision needed | Open tasks | Current evidence | Valid closure outcomes |
 | --- | --- | --- | --- |
-| Historical approval gaps | 005 T014, 006 T003, 007 T008 | Implementation and review evidence exists, but historical approval evidence is not represented. | Maintainer acceptance of the gap, explicit waiver, rejection, or successor split. |
+| Historical approval gaps | 006 T003, 007 T008 | Implementation and review evidence exists, but historical approval evidence is not represented. | Maintainer acceptance of the gap, explicit waiver, rejection, or successor split. |
 | Spec 018 direction | T018-001, T018-070 | Machine review and implementation workstreams exist; maintainer review is `not_assessed`. | Maintainer approval of core/extension direction, then follow-up specs; or keep/split. |
 | Spec 019 post-merge governance | T019-001/T002/T003/T004/T120 | PR #60 merged with missed pre-merge gates; PR #63 final-head CI passed; merge approval remains `not_assessed`. | Accept partial merge state and closure plan, reject it, or split remaining governance debt. |
 | T226 first-run OpenCode/GSD observation | 001 T226 | GSD-Redux replacement observes setup/model/source/digest/tool/phase facts. Mutation/test remain `not_assessed` because the replayed phase was already complete and execute-phase performed no mutation or test action. | Closed as observed first-run path with unavailable dimensions retained, not green. |
