@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 9 open task boxes one by one. It is a
+This file decomposes the remaining 8 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 006 T003 | Get explicit user approval before implementation. | Implementation, review, local verification, and PR evidence exist; historical pre-implementation approval is not represented. | No. | Maintainer decides `accepted_gap`, `waived`, `rejected`, or `split_successor`. |
 | 007 T008 | Ask for explicit approval of demo-track option, first slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | No. | Maintainer approves, rejects, or splits demo-track direction. |
 | 018 T018-001 | Review core command list with maintainers. | Machine review and command-surface verification exist; maintainer review is `not_assessed`. | No. | Maintainer reviews command list or explicitly keeps review pending. |
 | 018 T018-070 | Prepare follow-up implementation specs only after core/extension direction is approved. | Follow-up specs are blocked on T018-001. | No. | After maintainer approval, prepare follow-up specs; otherwise keep open. |
@@ -56,6 +55,12 @@ Spec 005 T014 is now closed by maintainer decision `accept_gap` in the
 the reviewed Product Contract v0 because later implementation is represented by
 Spec 006; it does not create production approval, release approval, or external
 trust.
+
+Spec 006 T003 is now closed by maintainer decision `accept_gap` in the
+2026-05-26 closure thread. The decision accepts the historical
+pre-implementation approval gap after implementation, review, merge, and
+post-merge CI evidence; it does not retroactively invent approval, approve
+production readiness, or create external trust.
 
 The other open tasks need one of:
 

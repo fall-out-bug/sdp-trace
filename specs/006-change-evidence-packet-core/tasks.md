@@ -9,10 +9,12 @@
   `reviews/2026-05-10-socratic-review.md`.
   Evidence: `reviews/2026-05-26-closure-review.md` supersedes the pending
   2026-05-10 ledger for closure-route review.
-- [ ] T003 Get explicit user approval before implementation.
-  Status: `not_assessed`; later implementation exists, but approval evidence is
-  not represented in this spec directory. Current user approval covers the
-  closure route, not the historical pre-implementation gate.
+- [x] T003 Get explicit user approval before implementation.
+  Evidence: maintainer decision `accept_gap` recorded in the 2026-05-26
+  closure thread. This accepts the historical pre-implementation approval gap
+  for Change Evidence Packet Core after implementation, review, merge, and
+  post-merge CI evidence; it does not retroactively invent approval, approve
+  production readiness, or create external trust.
 
 ## Phase 2: Contract
 

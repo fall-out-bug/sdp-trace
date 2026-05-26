@@ -101,7 +101,7 @@ for the claimed scope.
 | [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `retired_superseded` | Roadmap artifact retired as stale planning; task ledger is 42 / 42 checked as superseded, not implemented. No `blocks/` directory. |
 | [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Task ledger is 43 / 43 checked after PR-level review, named reviewer sign-off, explicit merge approval, PR #64 merge as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`, and post-merge `main` CI run `26453881873`; absolute MI remains an assessed gap. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
 | [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `in_progress` | Task ledger is 20 / 20 checked after mapping implementation placeholders to Spec 006 packet artifacts and maintainer `accept_gap` decision for the historical approval gap. No production approval, release approval, or external trust is claimed. No `blocks/` directory. |
-| [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, and PR-level evidence are mapped in `tasks.md` (26 / 27 checked). Historical pre-implementation approval remains `not_assessed`. No `blocks/` directory. |
+| [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, PR-level evidence, merge evidence, post-merge CI evidence, and maintainer `accept_gap` decision are mapped in `tasks.md` (27 / 27 checked). No production readiness, release approval, or external trust is claimed. No `blocks/` directory. |
 | [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Task ledger is 21 / 22 checked after external demo evidence review, v1 baseline tag, and buyer rehearsal. Explicit demo-track approval remains open. No `blocks/` directory. |
 
 > **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon implementation, review, merge, and trust closure, move to Formally Closed Specs.
@@ -127,7 +127,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Evidence substrate / trace format | 001 | Largely implemented; Block 21 and Block 32 closure refreshes recorded, while demo/first-run work remains open |
 | Authority envelope / trust boundary | 002 | PR-level review complete; merge/post-merge closure open |
 | Product contract schema | 005 | Contract and implementation placeholders are artifact-complete via Spec 006; approval remains `not_assessed` |
-| Change evidence packet | 006 | Implemented and reviewed locally; historical pre-implementation approval remains `not_assessed` |
+| Change evidence packet | 006 | Implemented and reviewed locally; historical pre-implementation approval gap accepted |
 | GitHub demo workflow | 007 | Spec reviewed; approval and demo-repository implementation remain open |
 | Flight recorder / wrap command | 008 | Implemented; formal closure open |
 | Command surface (JSON schema, registry) | 009 | Implemented; review closure open |
