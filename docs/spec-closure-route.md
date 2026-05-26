@@ -15,7 +15,7 @@ coordination artifact, not proof that any spec is complete.
 | Latest `main` CI | pass, run `26453881873` at `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd` |
 | Spec directories | 19 |
 | SpecKit triplets | 19 / 19 |
-| Task checkboxes | 597 / 605 checked |
+| Task checkboxes | 598 / 605 checked |
 | Formal roadmap `complete` rows | 0 |
 
 Commands used for this audit:
@@ -48,7 +48,7 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 | 004 MVP Readiness Hardening | Implementation work is checked off: 43 / 43. PR-level review and named reviewer sign-off are recorded for PR #64; explicit merge approval was recorded in the 2026-05-26 closure thread; PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; post-merge `main` CI run `26453881873` passed. Absolute MI remains an assessed gap, not a pass claim. | Close Spec 004 as controlled-pilot MVP hardening merged and post-merge verified. Do not upgrade controlled-pilot readiness to production readiness or absolute MI pass. |
 | 005 Product Contract v0 | Contract design and reviews exist; tasks are 20 / 20 after mapping implementation placeholders to Spec 006 packet artifacts. Maintainer decision `accept_gap` was recorded in the 2026-05-26 closure thread for the historical approval gap. | Close Spec 005 as reviewed contract with accepted historical approval gap. Do not claim production approval, release approval, or external trust. |
 | 006 Change Evidence Packet Core | Task ledger now maps 27 / 27 implemented, locally verified, and reviewed tasks to packet schemas, docs, Go package `internal/packet`, CLI surfaces, fixtures, tests, verification commands, closure review, PR/merge evidence, and maintainer decision `accept_gap` for the historical pre-implementation approval gap. | Close Spec 006 as implemented, reviewed, merged, and post-merge verified with accepted historical approval gap. Do not claim production readiness, release approval, or external trust. |
-| 007 GitHub OSS Demo Packet | Draft/demo plan plus focused split re-review; tasks are 21 / 22. External demo repo evidence now covers setup PR, feature packets 1-5, negative draft PR, CI, local Bazel smoke tests, first-packet gate replay, v1 baseline tag, and buyer rehearsal. Explicit demo-track approval remains open. | Keep approval open. Rehearsal evidence does not claim merge, release, production trust, compliance, or semantic-quality approval. |
+| 007 GitHub OSS Demo Packet | Draft/demo plan plus focused split re-review; tasks are 22 / 22. Maintainer decision `approve_existing_demo_track` approves the existing `fall-out-bug/sdp-trace-demo-jvm-gsd` route, setup PR #16, feature PRs #16-#20 as first slices, negative draft PR #21 for theater explanation, and no separate polished sales repository for this closure. External demo repo evidence covers setup PR, feature packets 1-5, negative draft PR, CI, local Bazel smoke tests, first-packet gate replay, v1 baseline tag, and buyer rehearsal. | Close Spec 007 as scoped existing-demo-track evidence. Rehearsal evidence does not claim release, production trust, compliance, semantic-quality approval, or signed external trust. |
 | 008 Invisible Flight Recorder | Tasks are 26 / 26 and implementation/review artifacts exist. Roadmap still says PR/final-head CI evidence pending. | Verify whether the PR/merge happened historically. If already merged, update closure state from current `main`; if not, run final-head CI/review equivalent and close as implemented-local or historical. |
 | 009 Machine-Readable Command Surface | Tasks are 14 / 14 and command-surface output works. Review directory absent, but tasks claim PI review and implementation review happened. | Reconstruct missing review evidence or mark review evidence `not_assessed`. Run command-surface drift checks against docs and close as implemented if review gap is accepted. |
 | 010 Command Package Organization | Tasks are 14 / 14; review artifacts exist; current main contains the command-family split. | Run current behavior snapshot checks and close. This is likely closeable with no product code if review artifacts are sufficient. |
@@ -64,7 +64,7 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 
 ## Open Task Classification
 
-Current task ledger state is 597 / 605 checked, leaving 8 open task boxes.
+Current task ledger state is 598 / 605 checked, leaving 7 open task boxes.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
@@ -77,8 +77,8 @@ Current task ledger state is 597 / 605 checked, leaving 8 open task boxes.
 The implemented-local and stale-ledger backlog has been reduced to explicit
 approval and external-evidence surfaces. The next closure work is:
 
-1. **Maintainer decision surface**: resolve or preserve 007 T008,
-   018 T018-001/T018-070, and 019 T019-001/T019-004/T019-120 with explicit
+1. **Maintainer decision surface**: resolve or preserve 018 T018-001/T018-070
+   and 019 T019-001/T019-004/T019-120 with explicit
    accept / waive / reject / split decisions. Do not infer approval from this
    document or from green CI.
 2. **External demo surface**: T226 is closed for the current first-run
@@ -93,7 +93,6 @@ The durable row-by-row decision ledger lives in
 
 | Decision needed | Open tasks | Current evidence | Valid closure outcomes |
 | --- | --- | --- | --- |
-| Historical approval gaps | 007 T008 | Implementation and review evidence exists, but historical approval evidence is not represented. | Maintainer acceptance of the gap, explicit waiver, rejection, or successor split. |
 | Spec 018 direction | T018-001, T018-070 | Machine review and implementation workstreams exist; maintainer review is `not_assessed`. | Maintainer approval of core/extension direction, then follow-up specs; or keep/split. |
 | Spec 019 post-merge governance | T019-001/T002/T003/T004/T120 | PR #60 merged with missed pre-merge gates; PR #63 final-head CI passed; merge approval remains `not_assessed`. | Accept partial merge state and closure plan, reject it, or split remaining governance debt. |
 | T226 first-run OpenCode/GSD observation | 001 T226 | GSD-Redux replacement observes setup/model/source/digest/tool/phase facts. Mutation/test remain `not_assessed` because the replayed phase was already complete and execute-phase performed no mutation or test action. | Closed as observed first-run path with unavailable dimensions retained, not green. |
