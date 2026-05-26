@@ -40,7 +40,7 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | --- | --- |
 | Spec directories | 19 |
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 525 / 605 |
+| Checked task boxes | 528 / 605 |
 | Specs with all task boxes checked | 8 |
 | Formal `complete` roadmap rows | 0 |
 
@@ -94,9 +94,9 @@ for the claimed scope.
 
 | Spec | Capability | Status | Notes |
 | --- | --- | --- | --- |
-| [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `draft` | Revised after initial Socratic review; focused re-review pending. No `blocks/` directory. |
+| [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `draft` | Task ledger is 34 / 35 checked after PR-level closure review on PR #64. Merge/post-merge closure remains open. No `blocks/` directory. |
 | [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `draft` | Roadmap artifact; Socratic review completed; revisions pending. No `blocks/` directory. |
-| [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Revised after initial Socratic review; approval pending. Current baseline CRAP/MI gates pass, but absolute MI remains an assessed gap and the spec is not approved. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
+| [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Task ledger is 42 / 43 checked after PR-level review and named reviewer sign-off. Explicit merge approval remains `not_assessed`; absolute MI remains an assessed gap. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
 | [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `in_progress` | Task ledger is 19 / 20 checked after mapping implementation placeholders to Spec 006 packet artifacts. Historical explicit approval remains `not_assessed`. No `blocks/` directory. |
 | [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, and PR-level evidence are mapped in `tasks.md` (26 / 27 checked). Historical pre-implementation approval remains `not_assessed`. No `blocks/` directory. |
 | [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
@@ -122,7 +122,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Capability | Owner Spec(s) | Current Repository Reality |
 | --- | --- | --- |
 | Evidence substrate / trace format | 001 | Largely implemented but blocked on explicit trust closure and open tasks |
-| Authority envelope / trust boundary | 002 | Mostly checked; re-review / closure open |
+| Authority envelope / trust boundary | 002 | PR-level review complete; merge/post-merge closure open |
 | Product contract schema | 005 | Contract and implementation placeholders are artifact-complete via Spec 006; approval remains `not_assessed` |
 | Change evidence packet | 006 | Implemented and reviewed locally; historical pre-implementation approval remains `not_assessed` |
 | GitHub demo workflow | 007 | Partial planning / demo work |

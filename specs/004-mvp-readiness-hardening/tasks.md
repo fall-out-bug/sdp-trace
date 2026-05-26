@@ -64,6 +64,9 @@
 - [x] T037 Verify branch/commit delta against the intake baseline commit and record any stale evidence as `assessed_gap` or `cannot_verify`.
 - [x] T038 Run implementation pi-review across code/correctness, tracing/evidence, and requirements-vs-implementation planes.
 - [x] T039 Fix valid review findings and rerun focused review.
-- [ ] T040 Open PR and run PR-level review planes before ready state.
-- [ ] T041 Record named reviewer sign-off for MVP bar conditions before ready state.
+- [x] T040 Open PR and run PR-level review planes before ready state.
+  Evidence: PR #64 and `pr-level-closure-review-2026-05-26.md`.
+- [x] T041 Record named reviewer sign-off for MVP bar conditions before ready state.
+  Evidence: `pr-level-closure-review-2026-05-26.md`.
 - [ ] T042 Stop before merge unless explicit merge approval is present.
+  Status: `not_assessed`; explicit merge approval is not represented.

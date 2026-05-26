@@ -30,9 +30,9 @@
 |---|---|---|---|---|---|---|---|
 | **001** | sdp-trace Time-Series Evidence Substrate | `draft` (blocked) | Draft | 232 / 244 | T192, T209–T217, T226, T244 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `schemadoc` PASS. **CRAP PASS**. **MI baseline PASS**. **Absolute MI gap remains assessed**. | **Partial** — many blocks implemented and tested locally, but open review/demo/first-run tasks remain and spec status is draft. |
 
-| **002** | Authority Envelope Boundary Observation | `draft` (old) | Draft — revised, re-review pending | 33 / 35 | T034, T035 | `go test` PASS, schema validation PASS. | **Partial** — implementation and fixtures complete locally; PR closure and merge not done. |
+| **002** | Authority Envelope Boundary Observation | `draft` (old) | PR-level reviewed / merge pending | 34 / 35 | T035 | `go test` PASS, schema validation PASS. Authority fixture replay produced `outside_authority` with downstream-policy next action. PR #64 checks passed at observed head before this ledger update. | **Partial** — implementation, fixtures, docs, and PR-level closure review exist; merge/post-merge closure remains open. |
 | **003** | Agent Supply Chain Roadmap | `draft` (old) | Draft — roadmap artifact, revisions pending | 5 / 42 | T006–T042 (all phases 1–8) | `go test` PASS, `doccheck` PASS. | **No** — remains a draft roadmap with no implemented deliverables beyond spec files. |
-| **004** | MVP Readiness Hardening | `draft` (old) | Draft — revised, approval pending | 40 / 43 | T040, T041, T042 | `go test` PASS, `doccheck` PASS. **CRAP PASS**. **MI baseline PASS**. **Absolute MI gap remains assessed**. | **Partial** — docs and code hygiene work done, but MVP readiness claim remains blocked by open approval/tasks and absolute quality debt. |
+| **004** | MVP Readiness Hardening | `draft` (old) | PR-level reviewed / merge approval pending | 42 / 43 | T042 | `go test` PASS, `doccheck` PASS. **CRAP PASS**. **MI baseline PASS**. **Absolute MI gap remains assessed**. PR-level review and named reviewer sign-off exist for the controlled-pilot scope. | **Partial** — controlled-pilot MVP review/sign-off exists, but explicit merge approval remains `not_assessed` and production readiness is not claimed. |
 
 | **005** | Product Contract v0 | `draft` (old) | implemented-local | 19 / 20 | T014 | `go test` PASS, `doccheck` PASS. Spec 006 provides packet schema/model, renderer, fixtures, theater tests, and CLI surface. | **Implemented local / approval-gated** — contract drafted and implementation placeholders are covered by Spec 006 artifacts; historical explicit approval remains `not_assessed`. |
 | **006** | Change Evidence Packet Core | `draft` (old) | implemented-local | 26 / 27 | T003 | `go test` PASS, `doccheck` PASS. Packet schema/model, renderer, CLI validation/render behavior, fixtures, theater tests, closure review, and PR #64 evidence exist. | **Implemented local / approval-gated** — implementation and review evidence are mapped; historical pre-implementation approval remains `not_assessed`. |
@@ -82,6 +82,8 @@
 - **Spec 019 T019-120**: Final post-merge branch review is complete and
   integration PR #63 final-head CI passed before merge. Spec closure remains
   blocked on T019-004 maintainer approval.
+- **Spec 002 T035**: Merge and post-merge verification remain open.
+- **Spec 004 T042**: Explicit merge approval remains `not_assessed`.
 - **Approval-gated specs**: 005 T014, 006 T003, 018 T018-001/T018-070, and
   019 T019-004/T019-120 require explicit maintainer acceptance, waiver,
   rejection, or successor-spec split before stronger closure claims.
