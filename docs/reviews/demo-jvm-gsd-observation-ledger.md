@@ -763,6 +763,71 @@ string-valued part.state.input.prompt only, object prompt remains forbidden
 focused safety re-review: pass; no remaining critical or major findings
 ```
 
+#### Recheck on 2026-05-26 during spec closure route
+
+Status remains `open`.
+
+Verified:
+
+- `opencode --version` returned `1.15.10`.
+- External demo repository `fall-out-bug/sdp-trace-demo-jvm-gsd` was cloned and
+  used as the harness target.
+- `sdp-trace observe session` created session and observed-run directories with
+  setup isolation, command digest, process id, source commit, time bounds, raw
+  OpenCode JSONL collection, and normalized digest states.
+
+Attempted customer-case replay:
+
+```text
+sdp-trace observe session --profile .tmp-t226-run/session-profile.json \
+  --out .tmp-t226-run/session-run -- \
+  sh -c 'opencode run --format json \
+    --model minimax-coding-plan/MiniMax-M2.5 \
+    --dir /tmp/.../sdp-trace-demo-jvm-gsd \
+    "/gsd-plan-phase 1 --skip-research --text" \
+    --dangerously-skip-permissions > .tmp-t226-run/opencode-gsd-run.jsonl'
+```
+
+OpenCode 1.15.10 rejected the historical provider-qualified model id:
+
+```text
+Model not found: minimax-coding-plan/MiniMax-M2.5. Did you mean: MiniMax-M2.5, MiniMax-M2.5-highspeed?
+```
+
+A retry with `--model MiniMax-M2.5` was also rejected:
+
+```text
+Model not found: MiniMax-M2.5/.
+```
+
+Observed result:
+
+```text
+SESSION
+"command_model_state": "pass"
+"process_id_state": "pass"
+"source_commit_state": "pass"
+"collection_state": "pass"
+
+RUN
+"event_count": 3
+interaction: pass
+model: pass
+
+VALIDATION
+"validation_state": "not_assessed"
+harness/tool/phase/mutation/test: not_assessed
+```
+
+This recheck proves the current `sdp-trace` session path can collect and
+normalize the failed OpenCode run without retaining raw prompt or response
+bodies. It does not close T226 because the customer-case GSD workflow did not
+execute: the model route rejected before tool, phase, mutation, or test evidence
+could be emitted. T226 remains open until the OpenCode/MiniMax model route is
+updated or a current equivalent approved route produces a real first-run GSD
+delivery-loop observation with required missing dimensions preserved as
+`not_assessed` or `cannot_verify`.
+
 ## P1
 
 No P1 findings recorded yet.
