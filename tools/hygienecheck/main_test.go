@@ -172,6 +172,32 @@ func TestCheckActionPins(t *testing.T) {
 	}
 }
 
+func TestCheckCurrentDemoRepoDrift(t *testing.T) {
+	dir := t.TempDir()
+	gitInit(t, dir)
+
+	writeFile(t, dir, "docs/spec-closure-route.md", "active repo fall-out-bug/sdp-trace-demo-jvm-gsd\n")
+	writeFile(t, dir, "docs/closure-decision-ledger.md", "old repo sdp-trace-demo-ci-pilot\n")
+	writeFile(t, dir, "specs/001/blocks/25.md", "historical sdp-trace-demo-ci-pilot reference\n")
+	gitAdd(t, dir, "docs/spec-closure-route.md")
+	gitAdd(t, dir, "docs/closure-decision-ledger.md")
+	gitAdd(t, dir, "specs/001/blocks/25.md")
+	gitCommit(t, dir, "init")
+
+	tracked := []string{
+		"docs/spec-closure-route.md",
+		"docs/closure-decision-ledger.md",
+		"specs/001/blocks/25.md",
+	}
+	got := checkCurrentDemoRepoDrift(dir, tracked)
+	if len(got) != 1 {
+		t.Fatalf("got %d findings, want 1: %v", len(got), got)
+	}
+	if !strings.Contains(got[0], "docs/closure-decision-ledger.md") {
+		t.Fatalf("finding does not identify current closure doc: %s", got[0])
+	}
+}
+
 func TestRunPassesCleanRepo(t *testing.T) {
 	dir := t.TempDir()
 	gitInit(t, dir)
