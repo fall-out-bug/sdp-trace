@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 15 open task boxes one by one. It is a
+This file decomposes the remaining 14 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,8 +10,7 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T216 | Run technical executive customer, Head of Engineering, and Head of InfoSec role reviews against actual demo repo and artifacts. | Block 25 review ledger has historical role-review dispositions, but current active-demo artifact mapping has not been re-reviewed. | No, until T213-T215 are resolved. | Run focused role reviews against the actual `sdp-trace-demo-jvm-gsd` evidence packet. |
-| 001 T217 | Run `sdp-trace` local verification and PR-level review before claiming Block 25 closure. | Blocked by T211-T216. | No. | Run only after Block 25 demo evidence exists. |
+| 001 T217 | Run `sdp-trace` local verification and PR-level review before claiming Block 25 closure. | T211-T216 now have active-demo evidence and focused role-review dispositions. | Yes, after fresh local verification and PR-level review. | Run final Block 25 verification and PR-level review against the current PR head. |
 | 001 T226 | Add and validate a customer-usable first-run OpenCode/GSD observation path. | Current `minimax/MiniMax-M2.5` route observes setup/model/source/digest facts, but current OpenCode/GSD lacks `/gsd-plan-phase`; tool/phase/mutation/test remain `not_assessed`. | No. | Restore/replace current GSD route, then replay first-run delivery-loop observation. |
 | 002 T035 | Merge only after fresh CI, local verification, PR review, and post-merge verification. | PR #64 is open, green, and `CLEAN`; merge approval and post-merge verification are absent. | No. | Requires explicit merge approval, merge, final `main` CI query, and post-merge verification note. |
 | 004 T042 | Stop before merge unless explicit merge approval is present. | PR #64 is green/CLEAN; explicit merge approval remains `not_assessed`. | No. | Requires explicit merge approval or an explicit decision to keep the task open. |
@@ -38,6 +37,10 @@ with the new verifier. T214 is closed through demo PR #26, merged to
 confirmed the Block 25 negative matrix in `build-and-test`. T215 is closed by
 `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`, which records the
 sanitized report and artifact summary without upgrading residual trust states.
+T216 is closed by active-demo role reviews in
+`specs/001-sdp-trace-time-series-evidence-substrate/blocks/25-compiled-ci-demo-pilot-review-ledger.md`;
+one major InfoSec redaction-scan evidence gap was fixed and focused re-review
+returned no critical or major findings.
 
 The other open tasks need one of:
 

@@ -698,19 +698,26 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   production trust, owner independence, non-GitHub portability,
   release-binary acquisition, broad JVM/Bazel compatibility, and signed
   external attestation as `not_assessed`.
-- [ ] T216 [US4] Run technical executive customer, Head of Engineering, and Head of InfoSec role
+- [x] T216 [US4] Run technical executive customer, Head of Engineering, and Head of InfoSec role
   reviews against the actual demo repository and downloaded artifacts; fix
   every valid critical or major finding, and record all findings and
-  dispositions in `blocks/25-compiled-ci-demo-pilot-review-ledger.md`.
-  Status: open. T211-T215 now identify the active demo repository, v2 artifact
-  contract, downloaded-artifact digest replay, negative matrix, and sanitized
-  report; focused role reviews against that current evidence packet still need
-  to run.
+  dispositions in
+  `specs/001-sdp-trace-time-series-evidence-substrate/blocks/25-compiled-ci-demo-pilot-review-ledger.md`.
+  Evidence: active-demo role reviews are recorded in
+  `specs/001-sdp-trace-time-series-evidence-substrate/blocks/25-compiled-ci-demo-pilot-review-ledger.md`.
+  `pi` / `openrouter/minimax/minimax-m2.7` technical executive customer review
+  returned `APPROVE` with no findings. `pi` / `openrouter/z-ai/glm-4.7` Head of
+  Engineering review returned `APPROVE` with no findings. `pi` /
+  `openrouter/deepseek/deepseek-v4-pro` Head of InfoSec review found one major
+  redaction-scan reproducibility gap and one minor residual-scope note; the
+  major was fixed by adding `docs/reviews/block25-redaction-patterns.txt` and
+  redaction scan details to
+  `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`. Focused InfoSec
+  re-review returned `APPROVE` with no critical or major findings.
 - [ ] T217 [US4] Run `sdp-trace` local verification and PR-level review before
   claiming Block 25 closure.
-  Status: `blocked` on T216 role-review evidence. Block 25 final closure still
-  requires fresh `sdp-trace` local verification and PR-level review after role
-  review dispositions are recorded.
+  Status: open. Block 25 final closure still requires fresh `sdp-trace` local
+  verification and PR-level review after the T216 role-review dispositions.
 
 **Checkpoint**: Block 25 can support a pilot claim only for the selected
 compiled JVM/Bazel target and CI artifact path. Production trust,

@@ -103,6 +103,25 @@ artifact upload steps.
 | Broad JVM/Bazel compatibility | `not_assessed` | Evidence is limited to the selected demo repository and target. |
 | Signed external attestation | `not_assessed` | No signed external attestation was provided. |
 
+## Redaction Scan
+
+The downloaded artifact roots from run `25724386343` were scanned with the
+project-local Block 25 pattern file:
+
+| Field | Value |
+| --- | --- |
+| Pattern file | `docs/reviews/block25-redaction-patterns.txt` |
+| Pattern file SHA-256 | `494d868e528f8a017b0c320aead26ca227d70d2c31d955b1ff0d0b5e77ca52b3` |
+| Scanned roots | downloaded `change-evidence-packets` and `evidence-bundles` under the artifact work directory |
+| Command | `artifact_root=<downloaded-artifact-root>; rg -n --hidden -i -f docs/reviews/block25-redaction-patterns.txt "$artifact_root"` |
+| Exit code | `1` |
+| State | `pass`; `rg` returned no matches |
+
+The scan covers high-signal token, password, private key, bearer header,
+GitHub token, OpenAI-style key, and AWS access key patterns. It is a redaction
+guard over retained artifacts, not proof that every possible secret format is
+impossible.
+
 ## Verification Commands
 
 The report is backed by these verification classes:
@@ -113,6 +132,9 @@ The report is backed by these verification classes:
   `scripts/verify-v2-artifact-index.sh` over downloaded packet/bundle artifacts;
 - negative replay: intentional retained artifact mutation fails with the
   expected digest mismatch.
+- redaction scan: `artifact_root=<downloaded-artifact-root>; rg -n --hidden
+  -i -f docs/reviews/block25-redaction-patterns.txt "$artifact_root"`
+  returned exit code `1` with no matches.
 
 ## Closure Boundary
 
