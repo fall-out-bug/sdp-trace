@@ -10,7 +10,7 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T226 | Add and validate a customer-usable first-run OpenCode/GSD observation path. | Current `minimax/MiniMax-M2.5` route observes setup/model/source/digest facts, but current OpenCode/GSD lacks `/gsd-plan-phase`; tool/phase/mutation/test remain `not_assessed`. | No. | Restore/replace current GSD route, then replay first-run delivery-loop observation. |
+| 001 T226 | Add and validate a customer-usable first-run OpenCode/GSD observation path. | Local GSD-Redux replacement makes `/gsd-plan-phase` available and observes setup/model/source/digest/tool facts, but phase/mutation/test remain `not_assessed`. | No. | Close the route/normalizer evidence gap so the GSD-Redux run emits required phase, mutation, and test families or explicitly split the missing dimensions. |
 | 002 T035 | Merge only after fresh CI, local verification, PR review, and post-merge verification. | PR #64 is open, green, and `CLEAN`; merge approval and post-merge verification are absent. | No. | Requires explicit merge approval, merge, final `main` CI query, and post-merge verification note. |
 | 004 T042 | Stop before merge unless explicit merge approval is present. | PR #64 is green/CLEAN; explicit merge approval remains `not_assessed`. | No. | Requires explicit merge approval or an explicit decision to keep the task open. |
 | 005 T014 | Stop for explicit user approval of reviewed Product Contract v0. | Contract and later packet implementation evidence exist; historical approval evidence is not represented. | No. | Maintainer decides `accepted_gap`, `waived`, `rejected`, or `split_successor`. |
@@ -47,7 +47,8 @@ The other open tasks need one of:
 
 - explicit maintainer or merge approval;
 - a post-merge verification cycle;
-- a current OpenCode/GSD route that emits delivery-loop evidence;
+- a current OpenCode/GSD-Redux route that emits phase, mutation, and test
+  delivery-loop evidence;
 - or an explicit successor split / rejection decision.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=open-task-breakdown; state=pass; profile=open_tasks_classified; evidence=state:claim_tags_consistent -->

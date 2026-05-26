@@ -799,12 +799,13 @@ direction is explicitly approved.
   artifact digests. If the real workflow cannot provide required dimensions,
   record those dimensions as `not_assessed` or `cannot_verify` without weakening
   the core claim that the delivery loop was observed.
-  Status: still open after the 2026-05-26 closure-route recheck. Current
-  OpenCode 1.15.10 route `minimax/MiniMax-M2.5` can be observed with setup
-  metadata, command digest, source commit, time bounds, output digest, normalized
-  digest, and harness/interaction/model events, but the current OpenCode/GSD
-  environment does not expose `/gsd-plan-phase`; validation remains
-  `not_assessed` for tool, phase, mutation, and test evidence.
+  Status: still open after the 2026-05-26 GSD-Redux recheck. Replacing the
+  historical GSD route with local `@opengsd/get-shit-done-redux` v1.1.0 made
+  `/gsd-plan-phase` available and produced a live OpenCode run with setup
+  metadata, command digest, source commit, time bounds, output digest,
+  normalized digest, and tool events. Validation remains `not_assessed` for
+  phase, mutation, and test evidence, so T226 now needs route/normalizer
+  evidence closure rather than a missing command replacement.
 
 **Checkpoint**: Block 31 remains incomplete for the demo until `sdp-trace` can
 observe the customer-case OpenCode/GSD workflow through a supported first-run

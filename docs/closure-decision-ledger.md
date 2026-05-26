@@ -18,7 +18,7 @@ For one-row-per-task detail, see
 | Merge approval | `not_assessed` |
 | Maintainer approval | `not_assessed` unless explicitly recorded per row below |
 | External demo repo | `fall-out-bug/sdp-trace-demo-jvm-gsd` is the active demo repository for current closure |
-| First-run GSD route | `not_assessed` for tool/phase/mutation/test because current OpenCode/GSD lacks `/gsd-plan-phase` |
+| First-run GSD route | GSD-Redux local replacement makes `/gsd-plan-phase` available; phase/mutation/test remain `not_assessed` in normalized evidence |
 
 ## Decision Rows
 
@@ -30,7 +30,7 @@ For one-row-per-task detail, see
 | D004 | 007 T008 | Decide demo-track option, first implementation slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | Maintainer decision approving, rejecting, or splitting demo-track direction. | `not_assessed` |
 | D005 | 018 T018-001, T018-070 | Review core/extension direction and decide whether follow-up specs may be prepared. | Machine review, command stability matrix, ownership map, docs, and local verification exist; maintainer review is absent. | Maintainer review outcome plus follow-up specs if direction is approved. | `not_assessed` |
 | D006 | 019 T019-001/T002/T003/T004/T120 | Decide post-merge governance for PR #60/Spec 019: accept partial merge state, reject it, or split remaining debt. | PR #60 merged with missed gates; PR #63 final-head CI passed; post-merge closure plan exists. | Maintainer decision recorded against the closure plan. | `not_assessed` |
-| D008 | 001 T226 | Restore or replace current OpenCode/GSD route so first-run delivery-loop evidence can be observed. | `minimax/MiniMax-M2.5` route observes setup/model/source/digest facts, but `/gsd-plan-phase` is unavailable and tool/phase/mutation/test remain `not_assessed`. | Live first-run observation with setup metadata, command digest, source commit, time bounds, output/normalized digests, and delivery-loop evidence; unavailable dimensions explicitly retained. | `not_assessed` |
+| D008 | 001 T226 | Close current OpenCode/GSD-Redux route evidence so first-run delivery-loop evidence can be observed. | GSD-Redux local replacement makes `/gsd-plan-phase` available and observes setup/model/source/digest/tool facts, but phase/mutation/test remain `not_assessed` in normalized evidence. | Live first-run observation with setup metadata, command digest, source commit, time bounds, output/normalized digests, and phase/mutation/test delivery-loop evidence; unavailable dimensions explicitly retained or split. | `not_assessed` |
 
 ## Closure Rule
 

@@ -848,6 +848,71 @@ phase, mutation, or test evidence was emitted. T226 remains open until a current
 GSD route is available and produces a real first-run delivery-loop observation,
 with unavailable dimensions preserved as `not_assessed` or `cannot_verify`.
 
+#### Recheck with GSD-Redux on 2026-05-26
+
+Status remains `open`.
+
+The historical GSD route was replaced locally in the active demo checkout with
+GSD-Redux:
+
+```text
+npx -y @opengsd/get-shit-done-redux@latest --opencode --local --profile=core
+```
+
+Observed installer result:
+
+- package: `@opengsd/get-shit-done-redux`;
+- version: `1.1.0`;
+- runtime: OpenCode;
+- install scope: local demo repository `.opencode`;
+- installed commands included `/gsd-plan-phase`;
+- global OpenCode configuration was not used for the replacement.
+
+Live replay:
+
+```text
+sdp-trace observe session --profile tmp/t226-gsd-redux-live/session-profile.json \
+  --out tmp/t226-gsd-redux-live/session-run -- \
+  sh -c 'opencode run --format json \
+    --model minimax/MiniMax-M2.5 \
+    --dir /tmp/sdp-trace-demo-jvm-gsd-full \
+    "/gsd-plan-phase 1 --skip-research --text --skip-verify" \
+    --dangerously-skip-permissions > tmp/t226-gsd-redux-live/opencode-gsd-redux-run.jsonl'
+```
+
+Observed session result:
+
+```text
+"command_model": "minimax/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"source_commit": "a4d1f755552ba1f411af5edcb7d6caf24a9c39bf"
+"source_commit_state": "pass"
+"collection_state": "pass"
+"output_digest": "23490b30622df97d766cae84c06b7e91235896bb9b72f17d140c55feec1e5359"
+"normalized_digest": "90ebbb3fc5352e08f658baf8c09bb3d6db77c1a07ded67ffbb29fa74d6b78b35"
+```
+
+Validation result:
+
+```text
+"event_count": 39
+harness: pass, 24 events
+tool: pass, 13 events
+interaction: pass, 1 event
+model: pass, 1 event
+phase: not_assessed
+mutation: not_assessed
+test: not_assessed
+```
+
+The GSD-Redux route is materially better than the previous recheck:
+`/gsd-plan-phase` is now available and emits real OpenCode tool activity over
+the demo planning files. T226 still cannot close because current normalization
+does not produce `phase`, `mutation`, or `test` event families from this run.
+This is now a remaining `sdp-trace` route/normalizer evidence gap, not a missing
+`/gsd-plan-phase` command.
+
 ## P1
 
 No P1 findings recorded yet.

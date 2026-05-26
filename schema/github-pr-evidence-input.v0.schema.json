@@ -86,7 +86,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["opencode", "gsd", "minimax", "minimax-m2", "minimax-m2.5"]
+        "enum": ["opencode", "gsd", "gsd-redux", "minimax", "minimax-m2", "minimax-m2.5"]
       },
       "uniqueItems": true
     }
