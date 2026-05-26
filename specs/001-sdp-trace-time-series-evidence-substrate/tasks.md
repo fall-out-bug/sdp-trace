@@ -789,7 +789,7 @@ direction is explicitly approved.
 - [x] T225 [US5] Run implementation review across code/correctness,
   trace/evidence, and requirements-vs-implementation planes; fix and re-review
   every valid critical or major finding.
-- [ ] T226 [US4] Add and validate a customer-usable first-run OpenCode/GSD
+- [x] T226 [US4] Add and validate a customer-usable first-run OpenCode/GSD
   observation path before moving P0-001 out of `open`; a pre-shaped fixture or
   customer-built adapter is not enough. Bounded setup before delivery is
   allowed, but the delivery loop must stay "set up and forget" with no extra
@@ -799,18 +799,27 @@ direction is explicitly approved.
   artifact digests. If the real workflow cannot provide required dimensions,
   record those dimensions as `not_assessed` or `cannot_verify` without weakening
   the core claim that the delivery loop was observed.
-  Status: still open after the 2026-05-26 GSD-Redux recheck. Replacing the
-  historical GSD route with local `@opengsd/get-shit-done-redux` v1.1.0 made
-  `/gsd-plan-phase` available and produced a live OpenCode run with setup
-  metadata, command digest, source commit, time bounds, output digest,
-  normalized digest, and tool events. Validation remains `not_assessed` for
-  phase, mutation, and test evidence, so T226 now needs route/normalizer
-  evidence closure rather than a missing command replacement.
+  Status: closed on 2026-05-26 by the GSD-Redux route replay and normalizer
+  fixes. Replacing the historical GSD route with local
+  `@opengsd/get-shit-done-redux` v1.1.0 made the OpenCode command surface
+  available through `opencode run --command gsd-plan-phase` and
+  `--command gsd-execute-phase`. `sdp-trace observe session` now regenerates
+  normalized events from the current raw OpenCode JSONL instead of reusing a
+  stale normalized source, and the GSD-Redux run emits setup metadata, command
+  digest, process id, source commit, time bounds, output digest, normalized
+  digest, model, interaction, tool, and phase evidence. `mutation` and `test`
+  remain explicit `not_assessed` dimensions for this replay because the target
+  phase was already complete and `gsd-execute-phase 1 --interactive` took no
+  file-mutation or test action. This closes the customer-usable first-run
+  observation path without claiming feature delivery, harness compliance, test
+  success, PR approval, merge approval, or production trust.
 
-**Checkpoint**: Block 31 remains incomplete for the demo until `sdp-trace` can
-observe the customer-case OpenCode/GSD workflow through a supported first-run
-path. It still must not claim harness compliance, feature delivery, PR approval,
-merge approval, or production trust.
+**Checkpoint**: Block 31 has a supported first-run observation path for the
+current customer-case OpenCode/GSD-Redux workflow. It still must not claim
+harness compliance, feature delivery, test success, PR approval, merge
+approval, production trust, or broad GSD/OpenCode support. Future non-no-op
+GSD runs need separate mutation/test evidence before those dimensions can move
+beyond `not_assessed`.
 
 ## Phase 23: Automated PR Review Evidence Mechanism
 

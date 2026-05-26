@@ -13,12 +13,12 @@ For one-row-per-task detail, see
 
 | Evidence | State |
 | --- | --- |
-| Task ledger | 592 / 605 checked; 13 open |
+| Task ledger | 593 / 605 checked; 12 open |
 | PR surface | PR #64 open, green, and `CLEAN` at `b8e7cf1e342ce7780da48c4f5ed9289bd12e6080` before this local update |
 | Merge approval | `not_assessed` |
 | Maintainer approval | `not_assessed` unless explicitly recorded per row below |
 | External demo repo | `fall-out-bug/sdp-trace-demo-jvm-gsd` is the active demo repository for current closure |
-| First-run GSD route | GSD-Redux local replacement makes `/gsd-plan-phase` available; phase/mutation/test remain `not_assessed` in normalized evidence |
+| First-run GSD route | GSD-Redux local replacement works through `opencode run --command`; model/interaction/tool/phase observed; mutation/test remain `not_assessed` for the no-op completed phase |
 
 ## Decision Rows
 
@@ -30,7 +30,7 @@ For one-row-per-task detail, see
 | D004 | 007 T008 | Decide demo-track option, first implementation slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | Maintainer decision approving, rejecting, or splitting demo-track direction. | `not_assessed` |
 | D005 | 018 T018-001, T018-070 | Review core/extension direction and decide whether follow-up specs may be prepared. | Machine review, command stability matrix, ownership map, docs, and local verification exist; maintainer review is absent. | Maintainer review outcome plus follow-up specs if direction is approved. | `not_assessed` |
 | D006 | 019 T019-001/T002/T003/T004/T120 | Decide post-merge governance for PR #60/Spec 019: accept partial merge state, reject it, or split remaining debt. | PR #60 merged with missed gates; PR #63 final-head CI passed; post-merge closure plan exists. | Maintainer decision recorded against the closure plan. | `not_assessed` |
-| D008 | 001 T226 | Close current OpenCode/GSD-Redux route evidence so first-run delivery-loop evidence can be observed. | GSD-Redux local replacement makes `/gsd-plan-phase` available and observes setup/model/source/digest/tool facts, but phase/mutation/test remain `not_assessed` in normalized evidence. | Live first-run observation with setup metadata, command digest, source commit, time bounds, output/normalized digests, and phase/mutation/test delivery-loop evidence; unavailable dimensions explicitly retained or split. | `not_assessed` |
+| D008 | 001 T226 | Close current OpenCode/GSD-Redux route evidence so first-run delivery-loop evidence can be observed. | GSD-Redux local replacement works through `opencode run --command gsd-plan-phase` and `--command gsd-execute-phase`; `sdp-trace observe session` records setup metadata, command digest, process id, source commit, time bounds, output/normalized digests, and model/interaction/tool/phase evidence. Mutation/test remain `not_assessed` because the replayed phase is already complete and execute-phase performs no mutation or test action. | Closed as observed first-run route with unavailable dimensions retained; no mutation, test success, feature delivery, harness compliance, PR approval, merge approval, or production trust is claimed. | `accepted_closed` |
 
 ## Closure Rule
 

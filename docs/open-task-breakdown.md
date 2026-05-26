@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 13 open task boxes one by one. It is a
+This file decomposes the remaining 12 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T226 | Add and validate a customer-usable first-run OpenCode/GSD observation path. | Local GSD-Redux replacement makes `/gsd-plan-phase` available and observes setup/model/source/digest/tool facts, but phase/mutation/test remain `not_assessed`. | No. | Close the route/normalizer evidence gap so the GSD-Redux run emits required phase, mutation, and test families or explicitly split the missing dimensions. |
 | 002 T035 | Merge only after fresh CI, local verification, PR review, and post-merge verification. | PR #64 is open, green, and `CLEAN`; merge approval and post-merge verification are absent. | No. | Requires explicit merge approval, merge, final `main` CI query, and post-merge verification note. |
 | 004 T042 | Stop before merge unless explicit merge approval is present. | PR #64 is green/CLEAN; explicit merge approval remains `not_assessed`. | No. | Requires explicit merge approval or an explicit decision to keep the task open. |
 | 005 T014 | Stop for explicit user approval of reviewed Product Contract v0. | Contract and later packet implementation evidence exist; historical approval evidence is not represented. | No. | Maintainer decides `accepted_gap`, `waived`, `rejected`, or `split_successor`. |
@@ -41,14 +40,19 @@ T216 is closed by active-demo role reviews in
 one major InfoSec redaction-scan evidence gap was fixed and focused re-review
 returned no critical or major findings. T217 is closed by fresh local
 `sdp-trace` verification plus PR #64 `verify` and `pr-review-evidence-only`
-success at head `ea00be499abe9a211f3fa639be6124863afad36c`.
+success at head `ea00be499abe9a211f3fa639be6124863afad36c`. T226 is closed
+by the current OpenCode/GSD-Redux first-run observation path:
+`opencode run --command gsd-plan-phase` and `--command gsd-execute-phase`
+under `sdp-trace observe session` produced setup metadata, command digest,
+process id, source commit, time bounds, output and normalized digests, and
+model/interaction/tool/phase evidence. `mutation` and `test` remain explicit
+`not_assessed` dimensions because the target phase was already complete and the
+execute workflow performed no mutation or test action.
 
 The other open tasks need one of:
 
 - explicit maintainer or merge approval;
 - a post-merge verification cycle;
-- a current OpenCode/GSD-Redux route that emits phase, mutation, and test
-  delivery-loop evidence;
 - or an explicit successor split / rejection decision.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=open-task-breakdown; state=pass; profile=open_tasks_classified; evidence=state:claim_tags_consistent -->

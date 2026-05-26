@@ -399,6 +399,86 @@ func TestNormalizeOpenCodeRawLineClassifiesFamilies(t *testing.T) {
 	}
 }
 
+func TestNormalizeOpenCodeRawLineClassifiesGSDReduxPlanReadsAsPhase(t *testing.T) {
+	now := time.Date(2026, 5, 26, 13, 0, 0, 0, time.UTC)
+	raw := map[string]any{
+		"type":      "tool_use",
+		"tool":      "read",
+		"timestamp": "2026-05-26T13:00:00Z",
+		"part": map[string]any{
+			"state": map[string]any{
+				"input": map[string]any{
+					"filePath": "/workspace/.planning/phases/01-project-skeleton/01-03-PLAN.md",
+				},
+			},
+		},
+	}
+
+	events := normalizeOpenCodeRawLine(raw, 3, now)
+	got := map[string]Event{}
+	for _, event := range events {
+		got[event.EventFamily] = event
+	}
+	if _, ok := got["tool"]; !ok {
+		t.Fatalf("missing tool family in %+v", events)
+	}
+	if _, ok := got["phase"]; !ok {
+		t.Fatalf("missing phase family in %+v", events)
+	}
+}
+
+func TestNormalizeOpenCodeRawLineClassifiesGSDReduxPhaseMetadataAsPhase(t *testing.T) {
+	now := time.Date(2026, 5, 26, 13, 0, 0, 0, time.UTC)
+	raw := map[string]any{
+		"type":      "tool_use",
+		"tool":      "bash",
+		"timestamp": "2026-05-26T13:00:00Z",
+		"part": map[string]any{
+			"state": map[string]any{
+				"metadata": map[string]any{
+					"phase_dir":         ".planning/phases/01-project-skeleton",
+					"verification_path": ".planning/phases/01-project-skeleton/01-VERIFICATION.md",
+				},
+			},
+		},
+	}
+
+	events := normalizeOpenCodeRawLine(raw, 3, now)
+	got := map[string]Event{}
+	for _, event := range events {
+		got[event.EventFamily] = event
+	}
+	if _, ok := got["tool"]; !ok {
+		t.Fatalf("missing tool family in %+v", events)
+	}
+	if _, ok := got["phase"]; !ok {
+		t.Fatalf("missing phase family in %+v", events)
+	}
+}
+
+func TestNormalizeOpenCodeRawLineDoesNotClassifyArbitraryFilePathAsPhase(t *testing.T) {
+	now := time.Date(2026, 5, 26, 13, 0, 0, 0, time.UTC)
+	raw := map[string]any{
+		"type":      "tool_use",
+		"tool":      "read",
+		"timestamp": "2026-05-26T13:00:00Z",
+		"part": map[string]any{
+			"state": map[string]any{
+				"input": map[string]any{
+					"filePath": "/workspace/docs/spec-closure-route.md",
+				},
+			},
+		},
+	}
+
+	events := normalizeOpenCodeRawLine(raw, 3, now)
+	for _, event := range events {
+		if event.EventFamily == "phase" {
+			t.Fatalf("unexpected phase family in %+v", events)
+		}
+	}
+}
+
 func keys(events map[string]Event) []string {
 	out := make([]string, 0, len(events))
 	for key := range events {
@@ -931,6 +1011,65 @@ func TestCollectSessionNormalizesRawEventsWhenSourceIsMissing(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "normalized-events.jsonl")); err != nil {
 		t.Fatalf("normalized source was not written: %v", err)
+	}
+}
+
+func TestCollectSessionRegeneratesExistingNormalizedSourceFromRawEvents(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"tool"}, nil)
+	stale := eventMap("stale", "harness")
+	if err := os.WriteFile(filepath.Join(dir, "normalized-events.jsonl"), []byte(marshalCompact(t, stale)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "opencode-raw.jsonl"), []byte(`{"type":"tool_use","model":"qwen","tool":"edit"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(dir, "session-profile.json"), SessionProfile{
+		SchemaVersion:      SessionProfileSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "opencode-raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+	})
+	runDir := filepath.Join(dir, "session-run")
+	if err := os.Mkdir(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONFixture(t, filepath.Join(runDir, "session.json"), SessionRun{
+		SchemaVersion:      SessionRunSchemaVersion,
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "normalized-events.jsonl",
+		RawEventSourcePath: "opencode-raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+		CommandModel:       "qwen",
+		CommandModelState:  StatePass,
+		CreatedAt:          "2026-05-10T12:00:00Z",
+	})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	session, observed, err := CollectSession(SessionCollectOptions{
+		ProfilePath: "session-profile.json",
+		RunDir:      "session-run",
+		Now:         time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("CollectSession() error = %v", err)
+	}
+	if session.CollectionState != StatePass || session.NormalizedDigest == "" {
+		t.Fatalf("session = %+v, want regenerated normalized pass", session)
+	}
+	if observed.EventCount != 4 || observed.SourcePath != "normalized-events.jsonl" {
+		t.Fatalf("observed = %+v, want regenerated raw-derived events", observed)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "normalized-events.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), `"event_id":"stale"`) {
+		t.Fatalf("stale normalized source was reused: %s", string(data))
 	}
 }
 

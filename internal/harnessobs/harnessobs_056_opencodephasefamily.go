@@ -6,6 +6,6 @@ func openCodePhaseFamily(raw map[string]any, signals []string) bool {
 	// This helper renders or aggregates harness evidence; it does not create external proof.
 
 	return hasKey(raw, "phase") ||
-		hasSignal(signals, "phase") ||
+		hasSignal(signals, "phase", "gsd.phase_path", "gsd-plan-phase") ||
 		hasSignalPrefix(signals, "phase.", "gsd.", "gsd_")
 }

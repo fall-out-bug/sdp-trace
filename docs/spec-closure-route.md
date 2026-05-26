@@ -15,7 +15,7 @@ coordination artifact, not proof that any spec is complete.
 | Latest `main` CI | pass, run `26436136055` |
 | Spec directories | 19 |
 | SpecKit triplets | 19 / 19 |
-| Task checkboxes | 592 / 605 checked |
+| Task checkboxes | 593 / 605 checked |
 | Formal roadmap `complete` rows | 0 |
 
 Commands used for this audit:
@@ -42,7 +42,7 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 
 | Spec | Current Reality | Closure Route |
 | --- | --- | --- |
-| 001 Time-Series Evidence Substrate | Broad substrate is substantially implemented through historical blocks; `tasks.md` is 243 / 244 checked and `blocks/` has 93 files. Not closed: T226 remains open. Active demo evidence is in `fall-out-bug/sdp-trace-demo-jvm-gsd`: T211 is accepted with `sh_test` semantic behavior evidence over the compiled app, T212 is accepted as superseded by the v2 packet/bundle CI artifact contract, T213 is accepted with demo PR #25 merged to `main` plus downloaded-artifact replay over demo CI run `25724386343`, T214 is accepted with demo PR #26 merged to `main` plus GitHub `build-and-test` run `26447797437`, T215 is accepted with `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`, T216 is accepted with active-demo role reviews plus fixed redaction-scan evidence, and T217 is accepted with fresh local verification plus PR #64 `verify` and `pr-review-evidence-only` success at head `ea00be499abe9a211f3fa639be6124863afad36c`. T226 GSD-Redux replay observes `minimax/MiniMax-M2.5`, source commit, output digest, normalized digest, and tool events; validation remains `not_assessed` for phase/mutation/test. | Split into closed historical blocks vs live blockers. T226 requires the GSD-Redux route to emit required delivery-loop evidence or a successor split for unavailable dimensions; keep unavailable dimensions explicit, not green. |
+| 001 Time-Series Evidence Substrate | Broad substrate is substantially implemented through historical blocks; `tasks.md` is 244 / 244 checked and `blocks/` has 93 files. Active demo evidence is in `fall-out-bug/sdp-trace-demo-jvm-gsd`: T211 is accepted with `sh_test` semantic behavior evidence over the compiled app, T212 is accepted as superseded by the v2 packet/bundle CI artifact contract, T213 is accepted with demo PR #25 merged to `main` plus downloaded-artifact replay over demo CI run `25724386343`, T214 is accepted with demo PR #26 merged to `main` plus GitHub `build-and-test` run `26447797437`, T215 is accepted with `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`, T216 is accepted with active-demo role reviews plus fixed redaction-scan evidence, T217 is accepted with fresh local verification plus PR #64 `verify` and `pr-review-evidence-only` success at head `ea00be499abe9a211f3fa639be6124863afad36c`, and T226 is accepted with current OpenCode/GSD-Redux first-run observation evidence. T226 observes `minimax/MiniMax-M2.5`, setup metadata, command digest, process id, source commit, time bounds, output digest, normalized digest, and model/interaction/tool/phase families; mutation and test remain explicit `not_assessed` because the target phase was already complete and execute-phase performed no file-mutation or test action. | Close Spec 001 as historical/demo evidence complete for the scoped pilot path. Do not claim feature delivery, harness compliance, test success, PR approval, merge approval, production trust, or broad GSD/OpenCode support from T226. |
 | 002 Authority Envelope Boundary Observation | Implementation appears present: authority schemas, docs, fixtures, Go parser/evaluator, and tests are checked in; tasks are 34 / 35. PR-level closure review exists for PR #64. Missing merge/post-merge closure remains T035. | Keep T035 open until merge, fresh CI, local verification, PR review, and post-merge verification are all represented. |
 | 003 Agent Supply Chain Roadmap | Roadmap/spec discovery artifact only; tasks are 42 / 42 after retirement. It was not implemented as product. | Retired as `retired_superseded` by concrete later specs and blocks. Do not use Spec 003 as implementation authority. |
 | 004 MVP Readiness Hardening | Most implementation work is checked off: 42 / 43. PR-level review and named reviewer sign-off are recorded for PR #64. Explicit merge approval remains open as T042; absolute MI remains an assessed gap, not a pass claim. | Keep T042 open until explicit merge approval exists. Do not upgrade controlled-pilot readiness to production readiness or absolute MI pass. |
@@ -64,12 +64,11 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 
 ## Open Task Classification
 
-Current task ledger state is 592 / 605 checked, leaving 13 open task boxes.
+Current task ledger state is 593 / 605 checked, leaving 12 open task boxes.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
 | Approval or maintainer gates | 002 T035; 004 T042; 005 T014; 006 T003; 018 T018-001/T018-070; 019 T019-001/T019-002/T019-003/T019-004/T019-120 | Cannot be converted to `pass` locally. Needs explicit maintainer acceptance, waiver, rejection, merge/post-merge evidence, or successor-spec split. |
-| External demo / first-run work | 001 T226 | Real remaining work outside this repo's current local artifacts. Needs current GSD-Redux route execution, retained phase/mutation/test evidence, and review. |
 | Review / PR evidence closure | none currently isolated as review-only after this refresh | Future review gaps must still be closed with fresh review, live PR evidence, and explicit trust-boundary wording, not task-box cleanup alone. |
 | Retire or re-scope stale planning | none currently isolated as stale after this refresh | Future stale specs should be retired only with an explicit supersession map. |
 
@@ -85,10 +84,10 @@ approval, merge, and external-evidence surfaces. The next closure work is:
 2. **PR #64 merge surface**: resolve 002 T035 and 004 T042 only after explicit
    merge approval exists, then merge, query final-head CI/post-merge state, and
    record post-merge verification.
-3. **External demo surface**: resolve 001 T226 only after a current
-   OpenCode/GSD-Redux route emits first-run delivery-loop evidence or the
-   missing normalized dimensions are explicitly split into a successor
-   task/spec.
+3. **External demo surface**: T226 is closed for the current first-run
+   OpenCode/GSD-Redux observation path. Keep mutation/test as explicit
+   `not_assessed` for the replayed no-op phase and do not upgrade that closure
+   into feature-delivery or test-success evidence.
 
 ## Decision Surface
 
@@ -101,10 +100,10 @@ The durable row-by-row decision ledger lives in
 | Historical approval gaps | 005 T014, 006 T003, 007 T008 | Implementation and review evidence exists, but historical approval evidence is not represented. | Maintainer acceptance of the gap, explicit waiver, rejection, or successor split. |
 | Spec 018 direction | T018-001, T018-070 | Machine review and implementation workstreams exist; maintainer review is `not_assessed`. | Maintainer approval of core/extension direction, then follow-up specs; or keep/split. |
 | Spec 019 post-merge governance | T019-001/T002/T003/T004/T120 | PR #60 merged with missed pre-merge gates; PR #63 final-head CI passed; merge approval remains `not_assessed`. | Accept partial merge state and closure plan, reject it, or split remaining governance debt. |
-| T226 first-run OpenCode/GSD observation | 001 T226 | GSD-Redux replacement observes setup/model/source/digest/tool facts, but phase/mutation/test remain `not_assessed`. | Close normalizer evidence for GSD-Redux phase/mutation/test, or split unavailable dimensions from observer capability. |
+| T226 first-run OpenCode/GSD observation | 001 T226 | GSD-Redux replacement observes setup/model/source/digest/tool/phase facts. Mutation/test remain `not_assessed` because the replayed phase was already complete and execute-phase performed no mutation or test action. | Closed as observed first-run path with unavailable dimensions retained, not green. |
 
 The remaining risk is no longer hidden implementation work. It is authority:
-merge approval, maintainer approval/waiver/split decisions, and external
-repository or harness availability.
+merge approval, maintainer approval/waiver/split decisions, and future
+repository or harness drift.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=spec-closure-route-audit; state=pass; profile=repo_baseline_structural; evidence=state:claim_tags_consistent -->
