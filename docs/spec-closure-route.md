@@ -15,7 +15,7 @@ coordination artifact, not proof that any spec is complete.
 | Latest `main` CI | pass, run `26436136055` |
 | Spec directories | 19 |
 | SpecKit triplets | 19 / 19 |
-| Task checkboxes | 528 / 605 checked |
+| Task checkboxes | 530 / 605 checked |
 | Formal roadmap `complete` rows | 0 |
 
 Commands used for this audit:
@@ -48,7 +48,7 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 | 004 MVP Readiness Hardening | Most implementation work is checked off: 42 / 43. PR-level review and named reviewer sign-off are recorded for PR #64. Explicit merge approval remains open as T042; absolute MI remains an assessed gap, not a pass claim. | Keep T042 open until explicit merge approval exists. Do not upgrade controlled-pilot readiness to production readiness or absolute MI pass. |
 | 005 Product Contract v0 | Contract design and reviews exist; tasks are 19 / 20 after mapping implementation placeholders to Spec 006 packet artifacts. Historical explicit approval remains `not_assessed`. | Do not claim Product Contract approval until maintainers accept, waive, or explicitly preserve the approval gap. |
 | 006 Change Evidence Packet Core | Task ledger now maps 26 / 27 implemented, locally verified, and reviewed tasks to packet schemas, docs, Go package `internal/packet`, CLI surfaces, fixtures, tests, this branch's verification commands, closure review, and PR #64 evidence. Historical pre-implementation approval remains open / `not_assessed`. | Do not close as complete until maintainers decide whether the historical approval gap is accepted, waived, or kept as a permanent trace boundary. |
-| 007 GitHub OSS Demo Packet | Draft/demo plan plus historical review ledger only; tasks are 5 / 22. Review ledger says focused re-review after split was still required, and Phase 2 requires external demo-repository packetization work. | Keep open. Do not close as implemented from this repository. Either re-scope the demo path after 006 approval is reconciled, or explicitly retire it in favor of the later Block 24/25/31/32 evidence path. |
+| 007 GitHub OSS Demo Packet | Draft/demo plan plus focused split re-review; tasks are 7 / 22. Phase 1 review is closed, but explicit demo-track approval and Phase 2 demo-repository packetization work remain open. | Keep open. Do not close as implemented from this repository. The local demo repo is not present in this environment, so T009-T022 remain `not_assessed` until real demo-repository evidence exists. |
 | 008 Invisible Flight Recorder | Tasks are 26 / 26 and implementation/review artifacts exist. Roadmap still says PR/final-head CI evidence pending. | Verify whether the PR/merge happened historically. If already merged, update closure state from current `main`; if not, run final-head CI/review equivalent and close as implemented-local or historical. |
 | 009 Machine-Readable Command Surface | Tasks are 14 / 14 and command-surface output works. Review directory absent, but tasks claim PI review and implementation review happened. | Reconstruct missing review evidence or mark review evidence `not_assessed`. Run command-surface drift checks against docs and close as implemented if review gap is accepted. |
 | 010 Command Package Organization | Tasks are 14 / 14; review artifacts exist; current main contains the command-family split. | Run current behavior snapshot checks and close. This is likely closeable with no product code if review artifacts are sufficient. |
@@ -64,13 +64,13 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 
 ## Open Task Classification
 
-Current task ledger state is 528 / 605 checked, leaving 77 open task boxes.
+Current task ledger state is 530 / 605 checked, leaving 75 open task boxes.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
 | Approval or maintainer gates | 002 T035; 004 T042; 005 T014; 006 T003; 018 T018-001/T018-070; 019 T019-004/T019-120 | Cannot be converted to `pass` locally. Needs explicit maintainer acceptance, waiver, rejection, merge/post-merge evidence, or successor-spec split. |
-| External demo / first-run work | 001 T209-T217, T226; 007 T010-T022 | Real remaining work outside this repo's current local artifacts. Needs demo-repository execution, retained evidence, and review. |
-| Review / PR evidence closure | 001 T192/T244; 007 T006-T008 | Potentially closeable with fresh review, live PR evidence, and explicit trust-boundary wording, but not by task-box cleanup alone. |
+| External demo / first-run work | 001 T209-T217, T226; 007 T009-T022 | Real remaining work outside this repo's current local artifacts. Needs demo-repository execution, retained evidence, and review. |
+| Review / PR evidence closure | 001 T192/T244 | Potentially closeable with fresh review, live PR evidence, and explicit trust-boundary wording, but not by task-box cleanup alone. |
 | Retire or re-scope stale planning | 003 T006-T042; 007 if demo direction is superseded | Needs a maintainer decision: preserve as draft, retire as superseded, or create a smaller successor spec. |
 
 ## Recommended Route

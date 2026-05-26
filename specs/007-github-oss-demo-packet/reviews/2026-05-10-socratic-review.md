@@ -231,3 +231,52 @@ Disposition:
    packetization track.
 7. Produce one CTO-readable Change Evidence Packet v0 before attempting the
    full five-feature demo.
+
+## 2026-05-26 Focused Split Re-Review
+
+Reviewer: Codex GPT-5, sdp-trace closure route
+Scope: focused review of the split 007 spec package after 006 implementation
+and closure-route reconciliation.
+
+Files reviewed:
+
+- `spec.md`
+- `plan.md`
+- `demo-repo-plan.md`
+- `tasks.md`
+- this review ledger
+
+Verdict: `LGTM_FOR_SPEC_REVIEW_SCOPE`
+
+The split-specific concern recorded on 2026-05-10 is addressed for the spec
+package: 007 no longer allows hand-authored CTO-visible packets, requires 006
+renderer/validator output for demo proof, preserves the OpenCode/GSD/MiniMax
+route boundary, and keeps Codex-authored feature behavior out of CTO-visible
+route proof.
+
+No critical or major spec-review finding remains open for Phase 1.
+
+Dispositions:
+
+| id | severity | plane | finding | disposition | evidence |
+| --- | --- | --- | --- | --- | --- |
+| SPLIT-001 | major | product proof | 007 needed focused re-review after 006/007 split removed hand-authored CTO-visible packets. | `accepted_fixed` | `spec.md` and `plan.md` require 006-generated and 006-validated packets for demo proof. |
+| SPLIT-002 | major | demo truth | Demo implementation must not start merely because 006 artifacts exist locally; explicit approval and demo-repo evidence are still required. | `accepted_boundary` | `tasks.md` keeps T008 and Phase 2 tasks open. |
+| SPLIT-003 | major | evidence boundary | Checked-in recorder JSON or historical review prose could be mistaken for demo authority. | `accepted_fixed` | `spec.md` and `demo-repo-plan.md` require live validation or CI-retained resolver/digest binding, with `partial` / `cannot_verify` for weaker evidence. |
+
+Current blocked states:
+
+- T008 remains open: explicit approval of demo track and first implementation
+  slice is not represented.
+- T009-T022 remain open: the demo repository is not present in this worktree
+  environment, so demo-environment availability, tagging, PR setup, feature
+  packets, negative theater PR, and buyer rehearsal are `not_assessed`.
+- External CI, signed attestation, and production trust remain `not_assessed`.
+
+Verification:
+
+- inspected the current 007 spec package and existing review ledger;
+- inspected current task state;
+- checked local demo repository availability at
+  `/home/fall_out_bug/projects/vibe_coding/sdp-trace-demo-jvm-gsd`: not present
+  in this environment.

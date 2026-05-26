@@ -21,10 +21,12 @@ review before implementation approval.
 
 ## Phase 1: Review Before Implementation
 
-- [ ] T006 Run Socratic review of the 007 spec package across product proof,
+- [x] T006 Run Socratic review of the 007 spec package across product proof,
   demo contamination, GitHub-first scope, and theater semantics.
-- [ ] T007 Fix or explicitly defer all critical/major review findings and record
+- [x] T007 Fix or explicitly defer all critical/major review findings and record
   dispositions in `reviews/2026-05-10-socratic-review.md`.
+  Evidence: `reviews/2026-05-10-socratic-review.md`, including the 2026-05-26
+  focused split re-review.
 - [ ] T008 Ask for explicit approval of:
   - demo-track option;
   - first implementation slice;
