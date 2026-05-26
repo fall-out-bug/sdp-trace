@@ -17,6 +17,7 @@
 | `blocked` | Cannot proceed until external dependency or blocker resolved. |
 | `complete` | Implementation merged to `main`; maintenance mode only. |
 | `historical` | Block records preserved for evidence; not live work. |
+| `retired_superseded` | Planning artifact retired because later specs or blocks replaced it; not a product completion claim. |
 
 These labels are navigation shortcuts. They do not replace the separate
 `spec_state`, `task_state`, `implementation_state`, `review_state`,
@@ -31,6 +32,8 @@ These are editorial conventions, not enforced gates:
 - `blocked` returns to `in_progress` when the blocker is resolved, not `complete`.
 - `complete` is final for a slice; new work opens a new spec.
 - `historical` is assigned by maintainers when a spec is archived, not by the original author.
+- `retired_superseded` is assigned when a stale planning artifact is closed as
+  non-authoritative and mapped to successor specs or blocks.
 
 ## Current Reality Snapshot
 
@@ -40,8 +43,8 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | --- | --- |
 | Spec directories | 19 |
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 532 / 605 |
-| Specs with all task boxes checked | 8 |
+| Checked task boxes | 569 / 605 |
+| Specs with all task boxes checked | 9 |
 | Formal `complete` roadmap rows | 0 |
 
 Interpretation: the repository has substantial implemented work. Formal
@@ -95,7 +98,7 @@ for the claimed scope.
 | Spec | Capability | Status | Notes |
 | --- | --- | --- | --- |
 | [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `draft` | Task ledger is 34 / 35 checked after PR-level closure review on PR #64. Merge/post-merge closure remains open. No `blocks/` directory. |
-| [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `draft` | Roadmap artifact; Socratic review completed; revisions pending. No `blocks/` directory. |
+| [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `retired_superseded` | Roadmap artifact retired as stale planning; task ledger is 42 / 42 checked as superseded, not implemented. No `blocks/` directory. |
 | [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Task ledger is 42 / 43 checked after PR-level review and named reviewer sign-off. Explicit merge approval remains `not_assessed`; absolute MI remains an assessed gap. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
 | [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `in_progress` | Task ledger is 19 / 20 checked after mapping implementation placeholders to Spec 006 packet artifacts. Historical explicit approval remains `not_assessed`. No `blocks/` directory. |
 | [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, and PR-level evidence are mapped in `tasks.md` (26 / 27 checked). Historical pre-implementation approval remains `not_assessed`. No `blocks/` directory. |
