@@ -6,6 +6,9 @@ This ledger tracks the remaining non-local decisions blocking full spec closure.
 It is not approval, merge authorization, production trust, release readiness, or
 external attestation.
 
+For one-row-per-task detail, see
+[`docs/open-task-breakdown.md`](open-task-breakdown.md).
+
 ## Current State
 
 | Evidence | State |
