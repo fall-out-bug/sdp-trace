@@ -54,5 +54,7 @@
 
 - [x] T032 Run implementation pi-review across code/correctness, tracing/evidence, and requirements-vs-implementation planes.
 - [x] T033 Fix valid findings and rerun focused review.
-- [ ] T034 Open PR and run PR-level review planes.
+- [x] T034 Open PR and run PR-level review planes.
+  Evidence: PR #64 and `pr-level-closure-review-2026-05-26.md`.
 - [ ] T035 Merge only after fresh CI, local verification, PR review, and post-merge verification.
+  Status: `not_assessed`; PR #64 is open and not merged.

@@ -55,6 +55,15 @@ The repo has a path to enforce claim tags for future authoritative prose without
 
 **Scope Rule**: Claim tags are required for new authoritative claims in any file created or materially modified after this slice. Historical specs (001–014), their `blocks/` directories, and existing checked-in review JSON are exempt unless separately approved for migration.
 
+### US-005 - Multi-Axis Status Discipline (P0)
+
+A contributor can distinguish spec review, task completion, implementation,
+review closure, merge state, and trust state without treating one field as a
+complete readiness verdict.
+
+**Independent Test**: Roadmap guidance names separate status axes and lists
+implemented-but-not-formally-closed specs separately from formal completion.
+
 ## Functional Requirements
 
 - **FR-001**: Add a short roadmap/navigation artifact for current specs at `docs/roadmap.md`.
@@ -63,12 +72,15 @@ The repo has a path to enforce claim tags for future authoritative prose without
 - **FR-004**: Define where claim tags are required for new authoritative claims.
 - **FR-005**: Avoid rewriting historical evidence packages unless required by a scoped follow-up.
 - **FR-006**: Roadmap freshness: update `docs/roadmap.md` when a new spec is opened or an active spec's status changes. Owner = the spec author or current block worker.
+- **FR-007**: Roadmap status must not collapse implementation, review, merge,
+  and trust evidence into one lifecycle label.
 
 ## Acceptance Criteria
 
 - Roadmap covers specs 001 through 015 at the capability/status level.
 - Each new spec created after this slice has consistent status and tasks.
 - Reviewers can identify active next work without reading every historical block.
+- Reviewers can identify specs that are implemented but not formally closed.
 - Any claim-tag enforcement plan is scoped to new or touched files unless separately approved.
 
 ## PI Review Prompt

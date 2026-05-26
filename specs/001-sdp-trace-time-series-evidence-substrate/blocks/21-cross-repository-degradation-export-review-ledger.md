@@ -80,3 +80,44 @@ Block 20 dependency drift; implementation and PR-level review are in progress.
   findings were fixed. Focused re-reviews returned `APPROVE`.
 - GitHub CI: assessed on PR #14. The GitHub Actions `verify` check reported
   success during the PR merge gate.
+
+## 2026-05-26 Closure-Route Refresh
+
+Reviewer: Codex GPT-5, sdp-trace closure route
+Scope: parent task T192 reconciliation against current repository behavior.
+
+Verdict: `LGTM_FOR_BLOCK_21_CLOSURE_REFRESH`
+
+No critical or major finding remains open for the current Block 21 local
+behavior. This refresh does not create a degradation verdict, dashboard score,
+portfolio-risk decision, merge approval, release approval, or production trust.
+
+Fresh verification:
+
+- `go test -count=1 ./internal/posture ./cmd/sdp-trace ./internal/prreview`
+- `sdp-trace export cross-repo-posture --profile cross-repo-evidence-posture-v1 --selection examples/block21-cross-repo-posture/valid-movement/selection.json --out <tmp>/cross-repo-posture.json`
+- `sdp-trace export cross-repo-posture explain --result <tmp>/cross-repo-posture.json`
+
+Observed replay evidence:
+
+- schema: `block21-cross-repo-posture-export-v1`
+- profile: `cross-repo-evidence-posture-v1`
+- grouping set: `repo_window_v1`
+- movement summary: comparable `13`, non-comparable `0`
+- output safety: every declared sensitive class rendered as absent
+
+Review planes:
+
+| Plane | Result | Evidence |
+| --- | --- | --- |
+| Code / correctness | pass | Focused package tests and command replay passed |
+| Trace / evidence | pass | Output preserves numerator, denominator, `not_assessed_count`, movement rows, and output-safety absence facts |
+| Requirements vs implementation | pass | Replay uses the Block 21 selection fixture and supported profile |
+| Product boundary | pass | Output is movement fact export only; no native degradation verdict |
+| PR-level review | pass | Historical PR #14 review ledger plus current PR #64 closure-route evidence |
+
+Remaining boundaries:
+
+- Historical PR #14 evidence remains historical for that head.
+- Current PR #64 evidence covers closure-route reconciliation only.
+- Merge approval and production trust are not assessed by Block 21.

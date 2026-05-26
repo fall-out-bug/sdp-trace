@@ -257,7 +257,7 @@ func TestBuildGitHubVerificationPassCitesArtifactRefs(t *testing.T) {
 func TestCheckDemoRejectsSelfDeclaredRouteEvidence(t *testing.T) {
 	input := validGitHubInput()
 	input.AgentRouteEvidenceKind = "harness_route_observation"
-	input.AgentRouteComponents = []string{"opencode", "gsd", "minimax-m2.5"}
+	input.AgentRouteComponents = []string{"opencode", "gsd-redux", "minimax-m2.5"}
 	bundle := BuildFromGitHubInput(input, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
 	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
 	if result.State != StateFail || !hasError(result.Errors, "retained structured OpenCode/GSD/MiniMax") {
@@ -269,6 +269,22 @@ func TestCheckDemoRejectsSelfDeclaredRouteEvidence(t *testing.T) {
 	result = CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
 	if result.State != StatePass {
 		t.Fatalf("digest-bound route evidence failed: %+v", result)
+	}
+}
+
+func TestCheckDemoAcceptsLegacyAndReduxGSDRouteEvidence(t *testing.T) {
+	for _, gsdComponent := range []string{"gsd", "gsd-redux"} {
+		t.Run(gsdComponent, func(t *testing.T) {
+			input := validGitHubInput()
+			input.AgentRouteEvidenceKind = "harness_route_observation"
+			input.AgentRouteDigest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			input.AgentRouteComponents = []string{"opencode", gsdComponent, "minimax-m2.5"}
+			bundle := BuildFromGitHubInput(input, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StatePass {
+				t.Fatalf("route evidence failed: %+v", result)
+			}
+		})
 	}
 }
 

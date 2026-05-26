@@ -763,6 +763,260 @@ string-valued part.state.input.prompt only, object prompt remains forbidden
 focused safety re-review: pass; no remaining critical or major findings
 ```
 
+#### Recheck on 2026-05-26 during spec closure route
+
+Status remains `open`.
+
+Verified:
+
+- `opencode --version` returned `1.15.10`.
+- `opencode models | rg -i 'minimax|m2'` returned current provider-qualified
+  MiniMax routes including `minimax/MiniMax-M2.5`.
+- External demo repository `fall-out-bug/sdp-trace-demo-jvm-gsd` was cloned and
+  used as the harness target.
+- `sdp-trace observe session` created session and observed-run directories with
+  setup isolation, command digest, process id, source commit, time bounds, raw
+  OpenCode JSONL collection, and normalized digest states.
+
+Attempted customer-case replay:
+
+```text
+sdp-trace observe session --profile .tmp-t226-run/session-profile.json \
+  --out .tmp-t226-run/session-run -- \
+  sh -c 'opencode run --format json \
+    --model minimax-coding-plan/MiniMax-M2.5 \
+    --dir /tmp/.../sdp-trace-demo-jvm-gsd \
+    "/gsd-plan-phase 1 --skip-research --text" \
+    --dangerously-skip-permissions > .tmp-t226-run/opencode-gsd-run.jsonl'
+```
+
+OpenCode 1.15.10 rejected the historical provider-qualified model id:
+
+```text
+Model not found: minimax-coding-plan/MiniMax-M2.5. Did you mean: MiniMax-M2.5, MiniMax-M2.5-highspeed?
+```
+
+A retry with `--model MiniMax-M2.5` was also rejected:
+
+```text
+Model not found: MiniMax-M2.5/.
+```
+
+Current-route replay:
+
+```text
+sdp-trace observe session --profile tmp/t226-live/session-profile.json \
+  --out tmp/t226-live/session-run -- \
+  sh -c 'opencode run --format json \
+    --model minimax/MiniMax-M2.5 \
+    --dir /tmp/sdp-trace-demo-jvm-gsd-full \
+    "/gsd-plan-phase 1 --skip-research --text" \
+    --dangerously-skip-permissions > tmp/t226-live/opencode-gsd-run.jsonl'
+```
+
+Observed session result from the current provider-qualified route:
+
+```text
+SESSION
+"command_model": "minimax/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"source_commit": "50b7ed5ca146a32ce289dc9ee29aa34c8919439d"
+"source_commit_state": "pass"
+"collection_state": "pass"
+"output_digest": "aca2e567edf3541fdf697f634477fad67258937f931d1302dec4d0a2da292a96"
+"normalized_digest": "af321c50bcd5627b78bcc49a05d3cc26227727235db3d6d868a8252c9d2f9ddb"
+
+RUN
+"event_count": 4
+harness: pass
+interaction: pass
+model: pass
+
+VALIDATION
+"validation_state": "not_assessed"
+tool/phase/mutation/test: not_assessed
+```
+
+This recheck proves the current `sdp-trace` session path can collect and
+normalize OpenCode 1.15.10 output with the current MiniMax route while retaining
+setup metadata, command digest, source commit, time bounds, output digest, and
+normalized digest. It does not close T226 because the current OpenCode/GSD
+environment did not expose `/gsd-plan-phase`; the observed run stopped at a
+text response that no matching skill was available, so no customer-case tool,
+phase, mutation, or test evidence was emitted. At that point T226 remained open
+until a current GSD route became available and produced a real first-run
+delivery-loop observation, with unavailable dimensions preserved as
+`not_assessed` or `cannot_verify`.
+
+#### Recheck with GSD-Redux on 2026-05-26
+
+Status superseded by the closure replay below.
+
+The historical GSD route was replaced locally in the active demo checkout with
+GSD-Redux:
+
+```text
+npx -y @opengsd/get-shit-done-redux@latest --opencode --local --profile=core
+```
+
+Observed installer result:
+
+- package: `@opengsd/get-shit-done-redux`;
+- version: `1.1.0`;
+- runtime: OpenCode;
+- install scope: local demo repository `.opencode`;
+- installed commands included `/gsd-plan-phase`;
+- global OpenCode configuration was not used for the replacement.
+
+Live replay:
+
+```text
+sdp-trace observe session --profile tmp/t226-gsd-redux-live/session-profile.json \
+  --out tmp/t226-gsd-redux-live/session-run -- \
+  sh -c 'opencode run --format json \
+    --model minimax/MiniMax-M2.5 \
+    --dir /tmp/sdp-trace-demo-jvm-gsd-full \
+    "/gsd-plan-phase 1 --skip-research --text --skip-verify" \
+    --dangerously-skip-permissions > tmp/t226-gsd-redux-live/opencode-gsd-redux-run.jsonl'
+```
+
+Observed session result:
+
+```text
+"command_model": "minimax/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"source_commit": "a4d1f755552ba1f411af5edcb7d6caf24a9c39bf"
+"source_commit_state": "pass"
+"collection_state": "pass"
+"output_digest": "23490b30622df97d766cae84c06b7e91235896bb9b72f17d140c55feec1e5359"
+"normalized_digest": "90ebbb3fc5352e08f658baf8c09bb3d6db77c1a07ded67ffbb29fa74d6b78b35"
+```
+
+Validation result:
+
+```text
+"event_count": 39
+harness: pass, 24 events
+tool: pass, 13 events
+interaction: pass, 1 event
+model: pass, 1 event
+phase: not_assessed
+mutation: not_assessed
+test: not_assessed
+```
+
+The GSD-Redux route is materially better than the previous recheck:
+`/gsd-plan-phase` is now available and emits real OpenCode tool activity over
+the demo planning files. At that point T226 still could not close because
+current normalization did not produce `phase`, `mutation`, or `test` event
+families from this run. That made the remaining issue a `sdp-trace`
+route/normalizer evidence gap, not a missing `/gsd-plan-phase` command.
+
+#### Closure replay with GSD-Redux on 2026-05-26
+
+Status: `accepted_closed_with_not_assessed_dimensions`.
+
+The previous replay used slash-command text as a message. OpenCode `run` does
+not execute local command files that way; it requires `--command`. The working
+route is:
+
+```text
+opencode run --format json --command gsd-plan-phase \
+  --model minimax/MiniMax-M2.5 \
+  --dir /tmp/sdp-trace-demo-jvm-gsd-full \
+  "1 --skip-research --text --skip-verify" \
+  --dangerously-skip-permissions
+```
+
+and:
+
+```text
+opencode run --format json --command gsd-execute-phase \
+  --model minimax/MiniMax-M2.5 \
+  --dir /tmp/sdp-trace-demo-jvm-gsd-full \
+  "1 --interactive" \
+  --dangerously-skip-permissions
+```
+
+Two `sdp-trace` normalizer issues were found and fixed during this replay:
+
+- session collection now regenerates normalized events from
+  `raw_event_source_path` instead of reusing a stale existing
+  `event_source_path`;
+- GSD-Redux phase metadata paths such as `phase_dir` and `verification_path`
+  now classify as `phase` evidence without retaining raw command bodies.
+
+Plan-phase replay result:
+
+```text
+SESSION
+"command_model": "minimax/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"source_commit": "a4d1f755552ba1f411af5edcb7d6caf24a9c39bf"
+"source_commit_state": "pass"
+"collection_state": "pass"
+"output_digest": "e0feeba3144dd209125ccdf89f97e8c7f119279fb639bb062c22f25e436d493f"
+"normalized_digest": "e5bb7d238f79e4d5cba04cebc9c05f981ae8d1f5f780aa60a387206ef0d3846d"
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass, event_count=40
+interaction: pass, event_count=1
+model: pass, event_count=1
+phase: pass, event_count=4
+tool: pass, event_count=19
+mutation: not_assessed, event_count=0
+test: not_assessed, event_count=0
+```
+
+Execute-phase replay result:
+
+```text
+SESSION
+"command_model": "minimax/MiniMax-M2.5"
+"command_model_state": "pass"
+"process_id_state": "pass"
+"source_commit": "a4d1f755552ba1f411af5edcb7d6caf24a9c39bf"
+"source_commit_state": "pass"
+"collection_state": "pass"
+"output_digest": "729f7765b1c387e22c69f05f2b32d044f67bb3d2cf93ac273e78d2cfc83e1618"
+"normalized_digest": "57b9f4c633188641c518480a21317c75d606e5bd7cb1175332d255254cb2151b"
+
+VALIDATION
+"validation_state": "not_assessed"
+harness: pass, event_count=22
+interaction: pass, event_count=1
+model: pass, event_count=1
+phase: pass, event_count=4
+tool: pass, event_count=10
+mutation: not_assessed, event_count=0
+test: not_assessed, event_count=0
+```
+
+The missing mutation/test dimensions are not promoted to green. The GSD-Redux
+workflow reported the target phase already complete (`incomplete_count: 0`) and
+`gsd-execute-phase 1 --interactive` took no file-mutation or test action. That
+is a replay fact, not product success evidence.
+
+T226 is closed for the customer-usable first-run observation path because the
+delivery loop is now observable without prompt relay, hand-authored events, or a
+customer-built adapter, and unavailable dimensions are retained as
+`not_assessed`. This does not claim feature delivery, harness compliance, test
+success, PR approval, merge approval, production trust, or broad GSD/OpenCode
+support.
+
+Focused diff review:
+
+```text
+model: openrouter/z-ai/glm-4.7
+scope: stale raw normalization, GSD-Redux phase classification, overclaiming,
+missing tests
+result: LGTM
+```
+
 ## P1
 
 No P1 findings recorded yet.

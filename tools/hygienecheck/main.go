@@ -46,6 +46,7 @@ func runAt(root string) error {
 	findings = append(findings, checkRootExecutables(root, tracked)...)
 	findings = append(findings, checkAbsoluteHomePaths(root, tracked)...)
 	findings = append(findings, checkActionPins(root, tracked)...)
+	findings = append(findings, checkCurrentDemoRepoDrift(root, tracked)...)
 
 	if len(findings) > 0 {
 		return fmt.Errorf("hygiene findings:\n%s", strings.Join(findings, "\n"))

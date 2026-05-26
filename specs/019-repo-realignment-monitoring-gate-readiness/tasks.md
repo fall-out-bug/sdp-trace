@@ -145,8 +145,9 @@ Status: post-merge partial; maintainer human review not_assessed
 - [x] T019-110 Query live CI for the final source commit or PR head.
   Status: completed for merged PR #60 source commit; CI PASS on `main` at
   `657a343a5f310538def9afd509e6c610c713cab0` was observed after merge.
-  Integration PR #63 supersedes PR #62 and PR #31 as the current handoff
-  surface; PR #63 final-head CI is `not_assessed` in checked-in docs.
+  Integration PR #63 superseded PR #62 and PR #31 as the handoff surface; PR
+  #63 final-head CI passed before merge and PR #63 merged as
+  `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e` on 2026-05-26.
   CI evidence is not merge approval evidence.
   PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
   PR #63: https://github.com/fall-out-bug/sdp-trace/pull/63
@@ -155,7 +156,7 @@ Status: post-merge partial; maintainer human review not_assessed
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
   Status: blocked on T019-004. Final post-merge Qwen3.6 Plus alternative-LLM
-  review is LGTM after findings were addressed. PR #63 final-head CI is
-  `not_assessed` in checked-in docs, and PR #60 remains a partial merge, not
-  Spec 019 closure.
+  review is LGTM after findings were addressed. PR #63 final-head CI passed
+  before merge, but PR #60 remains a partial merge and Spec 019 closure still
+  requires T019-004 maintainer approval or explicit rejection/split decision.
   `merge_approval` remains `not_assessed`.

@@ -13,5 +13,9 @@ func hasOpenCodeGSDMiniMax(observed []string) bool {
 
 		components[strings.ToLower(strings.TrimSpace(component))] = true
 	}
-	return components["opencode"] && components["gsd"] && hasMiniMaxComponent(components)
+	return components["opencode"] && hasGSDComponent(components) && hasMiniMaxComponent(components)
+}
+
+func hasGSDComponent(components map[string]bool) bool {
+	return components["gsd"] || components["gsd-redux"]
 }

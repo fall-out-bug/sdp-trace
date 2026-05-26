@@ -12,8 +12,10 @@
 > recorded review approval, and the PR body left review checklist items
 > unchecked. Treat merge approval as `not_assessed`; this file is review
 > evidence for implemented slices, not merge approval.
-> Integration note: PR #63 supersedes PR #62 and PR #31 as the current handoff
-> surface by combining post-merge closure with PR-review CI enforcement.
+> Integration note: PR #63 superseded PR #62 and PR #31 as the handoff surface
+> by combining post-merge closure with PR-review CI enforcement. PR #63 merged
+> as `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e` on 2026-05-26 after final-head
+> CI passed.
 
 **Review type**: Adversarial cross-model review (Spec 019 PR-ready), plus Oh My Pi `task` reviewer re-run
 
@@ -89,8 +91,7 @@
 - [x] Post-merge Qwen3.6 Plus static diff review completed; findings addressed except one verified false positive
 - [x] Final post-fix Qwen3.6 Plus re-review completed: LGTM
 - [x] PR #62 CI passed in GitHub at the time of review; superseded by PR #63
-- [ ] PR #63 final-head CI is `not_assessed` in this checked-in review file
-  because checked-in review files are not live CI authority
+- [x] PR #63 final-head CI passed before merge
 
 ## Remaining Open States
 

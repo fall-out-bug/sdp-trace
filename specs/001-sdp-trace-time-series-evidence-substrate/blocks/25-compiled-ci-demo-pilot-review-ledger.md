@@ -52,6 +52,20 @@ Status: initialized for Socratic spec review.
 | PR25-REQ-01 | none | requirements-vs-implementation | No unmet Block 25 acceptance criteria or scope drift found from the PR evidence packet. | `pass` | Qwen PR-level requirements review on PR #19 |
 | PR25-SEC-01 | none | security/privacy | No leakage or misleading security claim found within Block 25 scope; explicit residual non-goals remain `not_assessed`. | `pass` | MiniMax-M2.7 PR-level security focused review on PR #19 |
 
+## Current Active Demo Role Review Findings
+
+These reviews target the active `fall-out-bug/sdp-trace-demo-jvm-gsd` evidence
+packet after T211-T215 closure, not the retired `sdp-trace-demo-ci-pilot`
+artifact track.
+
+| ID | Severity | Review plane | Finding | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| T216-TE-01 | none | technical executive customer | No customer-credibility overclaim, missing residual state, or pilot-claim blocker found in the active evidence packet. | `pass` | `pi` / `openrouter/minimax/minimax-m2.7`, 2026-05-26, role review, no tools, no session; verdict `APPROVE`, no findings. |
+| T216-ENG-01 | none | Head of Engineering | No replayability, path consistency, CI/run/artifact consistency, or task-closure blocker found in the active evidence packet. | `pass` | `pi` / `openrouter/z-ai/glm-4.7`, 2026-05-26, role review, no tools, no session; verdict `APPROVE`, no findings. |
+| T216-SEC-01 | major | Head of InfoSec | The sanitized report did not include redaction scan command, pattern-file digest, scanned roots, exit code, or state, making the redaction evidence unreplayable. | Accepted and fixed. `docs/reviews/block25-redaction-patterns.txt` now records the pattern set with SHA-256 `494d868e528f8a017b0c320aead26ca227d70d2c31d955b1ff0d0b5e77ca52b3`; `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md` records the `rg` command template, scanned roots, exit code `1`, and `pass` state for no matches without embedding the local artifact path. | `pi` / `openrouter/deepseek/deepseek-v4-pro`, 2026-05-26, role review, no tools, no session; local scan over the downloaded artifact work directory returned exit code `1`. |
+| T216-SEC-02 | minor | Head of InfoSec | Artifact download authentication remains `not_assessed`. | Accepted as residual scope. The active report keeps artifact/download authentication-adjacent trust outside Block 25 proof and does not upgrade it to `pass`. | `pi` / `openrouter/deepseek/deepseek-v4-pro`, 2026-05-26, role review, no tools, no session. |
+| T216-SEC-RR-01 | none | Head of InfoSec focused re-review | No critical or major security/privacy finding remained after the redaction-scan evidence fix. | `pass` | `pi` / `openrouter/deepseek/deepseek-v4-pro`, 2026-05-26, focused re-review, no tools, no session; verdict `APPROVE`, no critical or major findings. |
+
 ## Current Review Evidence State
 
 - Socratic spec review: initial review assessed with MiniMax-M2.7,
