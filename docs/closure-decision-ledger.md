@@ -13,7 +13,7 @@ For one-row-per-task detail, see
 
 | Evidence | State |
 | --- | --- |
-| Task ledger | 595 / 605 checked; 10 open |
+| Task ledger | 596 / 605 checked; 9 open |
 | PR surface | PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; post-merge `main` CI run `26453881873` passed |
 | Merge approval | explicit maintainer approval recorded in the 2026-05-26 closure thread |
 | Maintainer approval | `not_assessed` unless explicitly recorded per row below |
@@ -25,7 +25,7 @@ For one-row-per-task detail, see
 | ID | Open tasks | Decision needed | Current evidence | Acceptable evidence to close | Current state |
 | --- | --- | --- | --- | --- | --- |
 | D001 | 002 T035, 004 T042 | Approve PR #64 merge, then verify post-merge state. | Explicit maintainer approval recorded in the 2026-05-26 closure thread; PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; post-merge `main` CI run `26453881873` passed. | Explicit maintainer merge approval, successful merge, final `main` CI evidence, post-merge verification note. | `accepted_closed` |
-| D002 | 005 T014 | Decide whether Product Contract v0 historical approval gap is accepted, waived, rejected, or split. | Contract and later packet implementation evidence exist; historical approval evidence is not represented. | Maintainer decision recorded with one of: `accepted_gap`, `waived`, `rejected`, or `split_successor`. | `not_assessed` |
+| D002 | 005 T014 | Decide whether Product Contract v0 historical approval gap is accepted, waived, rejected, or split. | Maintainer decision `accept_gap` recorded in the 2026-05-26 closure thread; contract and later packet implementation evidence exist, and Spec 006 represents implementation. | Maintainer decision recorded with one of: `accepted_gap`, `waived`, `rejected`, or `split_successor`. | `accepted_gap` |
 | D003 | 006 T003 | Decide whether Change Evidence Packet Core historical pre-implementation approval gap is accepted, waived, rejected, or split. | Implementation, review, local verification, and PR evidence exist; historical pre-implementation approval evidence is not represented. | Maintainer decision recorded with one of: `accepted_gap`, `waived`, `rejected`, or `split_successor`. | `not_assessed` |
 | D004 | 007 T008 | Decide demo-track option, first implementation slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | Maintainer decision approving, rejecting, or splitting demo-track direction. | `not_assessed` |
 | D005 | 018 T018-001, T018-070 | Review core/extension direction and decide whether follow-up specs may be prepared. | Machine review, command stability matrix, ownership map, docs, and local verification exist; maintainer review is absent. | Maintainer review outcome plus follow-up specs if direction is approved. | `not_assessed` |

@@ -41,9 +41,11 @@ before approval.
   row-specific rules, and local enterprise baseline example.
 - [x] T013 Run reshuffled role/model re-review and record dispositions in
   `reviews/2026-05-10-rereview.md`.
-- [ ] T014 Stop for explicit user approval of reviewed Product Contract v0.
-  Status: `not_assessed`; later implementation exists, but historical explicit
-  approval for this reviewed contract is not represented in this spec directory.
+- [x] T014 Stop for explicit user approval of reviewed Product Contract v0.
+  Evidence: maintainer decision `accept_gap` recorded in the 2026-05-26
+  closure thread. This accepts the historical approval gap for the reviewed
+  Product Contract v0 because later implementation is represented by Spec 006;
+  it does not create production approval, release approval, or external trust.
 
 ## Phase 3: Future Implementation Planning After Approval
 
