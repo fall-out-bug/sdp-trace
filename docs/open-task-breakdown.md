@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 17 open task boxes one by one. It is a
+This file decomposes the remaining 16 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T214 | Preserve no-OIDC, stale digest, and source/run mismatch cases as intentional `cannot_verify` or `fail` states. | Active demo repo has a negative PR #21 and negative packet evidence, but this has not yet been mapped to the Block 25 no-OIDC/stale/source-run mismatch cases. | Possibly, if current negative evidence satisfies the cases. | Compare PR #21 / negative bundle against the three required failure modes. |
 | 001 T215 | Add sanitized Block 25 report and artifact summary only after successful demo CI and digest verification. | No sanitized Block 25 report has been identified for the active demo repo path. | No, until T213-T214 are resolved. | Produce or map report only after digest and negative-state evidence is resolved. |
 | 001 T216 | Run technical executive customer, Head of Engineering, and Head of InfoSec role reviews against actual demo repo and artifacts. | Block 25 review ledger has historical role-review dispositions, but current active-demo artifact mapping has not been re-reviewed. | No, until T213-T215 are resolved. | Run focused role reviews against the actual `sdp-trace-demo-jvm-gsd` evidence packet. |
 | 001 T217 | Run `sdp-trace` local verification and PR-level review before claiming Block 25 closure. | Blocked by T211-T216. | No. | Run only after Block 25 demo evidence exists. |
@@ -34,9 +33,10 @@ T213 is closed through the active v2 packet/bundle track: demo PR #25 is merged
 to `sdp-trace-demo-jvm-gsd` `main` as
 `3a9491f734e5214c72014db5d893f125eb254a11`, local Bazel verification passed,
 and downloaded artifacts from demo CI run `25724386343` replayed successfully
-with the new verifier. T214 may still have a local/external replay path against
-the active `fall-out-bug/sdp-trace-demo-jvm-gsd` evidence; do not close it until
-the negative-state requirements are mapped.
+with the new verifier. T214 is closed through demo PR #26, merged to
+`sdp-trace-demo-jvm-gsd` `main` as
+`a4d1f755552ba1f411af5edcb7d6caf24a9c39bf`; GitHub run `26447797437`
+confirmed the Block 25 negative matrix in `build-and-test`.
 
 The other open tasks need one of:
 

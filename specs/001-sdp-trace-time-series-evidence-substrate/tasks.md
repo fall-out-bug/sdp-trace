@@ -673,10 +673,22 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   T213 closure because GitHub did not create new runs after PR, branch, or main
   push events; this is a CI-trigger availability issue, not missing
   downloaded-artifact digest verification.
-- [ ] T214 [US5] Preserve no-OIDC, stale digest, and source/run mismatch cases
+- [x] T214 [US5] Preserve no-OIDC, stale digest, and source/run mismatch cases
   as intentional `cannot_verify` or `fail` evidence states independent of clean
   artifact-index correctness.
-  Status: `cannot_verify` for the same demo-repository access reason as T211.
+  Evidence: accepted as completed through the active `sdp-trace-demo-jvm-gsd`
+  v2 negative matrix. Demo `main` commit
+  `a4d1f755552ba1f411af5edcb7d6caf24a9c39bf`, merged from demo PR #26,
+  preserves exactly three Block 25 cases:
+  `missing-ci-oidc` -> `cannot_verify` / `missing_ci_oidc`,
+  `stale-artifact-digest` -> `fail` / `artifact_digest_mismatch`, and
+  `source-run-mismatch` -> `fail` / `source_run_mismatch`. The matrix verifier
+  enforces those states and requires each case to be independent of clean
+  artifact-index correctness. Local demo verification passed with
+  `bazel test //:block25_negative_matrix_test --test_output=errors` and
+  `bazel test //... --test_output=errors`; GitHub PR #26 `build-and-test`
+  passed in run `26447797437`, including build, test, and artifact upload
+  steps.
 - [ ] T215 [US4] Add sanitized Block 25 report and artifact summary only after
   a successful demo CI run and artifact digest verification.
   Status: `cannot_verify` for the same demo-repository access reason as T211.
