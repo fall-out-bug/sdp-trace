@@ -41,6 +41,10 @@ evidence and gaps; it does not approve changes.
 ## Governance And Rollout Docs
 
 - [Spec Roadmap](roadmap.md): current spec statuses, capability ownership, and lifecycle labels.
+- [Spec Status Discipline](spec-status-discipline.md): separate spec, task,
+  implementation, review, merge, and trust states.
+- [Spec Closure Route](spec-closure-route.md): audit of specs 001-019 and the
+  route for closing or deferring each one.
 - [Adoption Guide, English](adoption-guide.en.md)
 - [Adoption Guide, Russian](adoption-guide.ru.md)
 - [Production Adoption Readiness](production-adoption-readiness.md): what is known, pilot-capable, and `not_assessed`.

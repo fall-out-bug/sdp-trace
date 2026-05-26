@@ -2,6 +2,7 @@
 
 > Lightweight navigation for active and historical specs.
 > Status is editorial lifecycle guidance, not a trust verdict.
+> For multi-axis status rules, see `docs/spec-status-discipline.md`.
 > For authoritative claims, see `docs/claim-authoring.md`.
 
 ## Legend
@@ -17,6 +18,11 @@
 | `complete` | Implementation merged to `main`; maintenance mode only. |
 | `historical` | Block records preserved for evidence; not live work. |
 
+These labels are navigation shortcuts. They do not replace the separate
+`spec_state`, `task_state`, `implementation_state`, `review_state`,
+`merge_state`, and `trust_state` axes defined in
+[`spec-status-discipline.md`](spec-status-discipline.md).
+
 ### Minimal Transitions
 
 These are editorial conventions, not enforced gates:
@@ -25,6 +31,23 @@ These are editorial conventions, not enforced gates:
 - `blocked` returns to `in_progress` when the blocker is resolved, not `complete`.
 - `complete` is final for a slice; new work opens a new spec.
 - `historical` is assigned by maintainers when a spec is archived, not by the original author.
+
+## Current Reality Snapshot
+
+Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
+
+| Measure | Current Value |
+| --- | --- |
+| Spec directories | 19 |
+| SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
+| Checked task boxes | 470 / 605 |
+| Specs with all task boxes checked | 8 |
+| Formal `complete` roadmap rows | 0 |
+
+Interpretation: the repository has substantial implemented work. Formal
+completion remains open because review, merge, or trust axes are not uniformly
+closed or represented. Do not read `draft` as "not implemented"; read the
+reality notes and the spec-specific task state.
 
 ## Active Specs
 
@@ -49,6 +72,23 @@ These are editorial conventions, not enforced gates:
 | [001](../specs/001-sdp-trace-time-series-evidence-substrate/) | Time-series evidence substrate, trace format, data model | `draft` | → Blocked on: self-attestation proof incomplete; external production trust blocked until signed release process. Historical CRAP/MI failures were remediated by later quality work; current baseline quality gates pass, while absolute MI remains an assessed gap. See `docs/spec-reality-ledger.md`. `blocks/` directory preserved as evidence. |
 | [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder (wrap command, session capture) | `in_progress` | → Blocked on: post-implementation review recorded; PR/final-head CI evidence pending. See spec blockers. |
 
+## Implemented But Not Formally Closed
+
+These specs have all current task boxes checked in `tasks.md`, but they are not
+formal `complete` rows until review, merge, and trust closure are represented
+for the claimed scope.
+
+| Spec | Capability | Task State | Missing Closure Axis |
+| --- | --- | --- | --- |
+| [008](../specs/008-invisible-flight-recorder/) | Invisible flight recorder | 26 / 26 checked | PR/final-head CI and merge closure not represented |
+| [009](../specs/009-machine-readable-command-surface/) | Machine-readable command surface | 14 / 14 checked | PI review / approval not represented |
+| [010](../specs/010-command-package-organization/) | Command package organization | 14 / 14 checked | PI review / approval not represented |
+| [011](../specs/011-schema-docs-generation/) | Schema documentation validation | 14 / 14 checked | PI review / approval not represented |
+| [012](../specs/012-repo-hygiene-and-artifact-boundary/) | Repository hygiene and artifact boundary | 12 / 12 checked | PI review / approval not represented |
+| [014](../specs/014-docs-ux-command-guidance/) | Docs UX and command guidance | 15 / 15 checked | PI review / approval not represented |
+| [015](../specs/015-spec-governance-and-roadmap/) | Spec governance and roadmap navigation | 17 / 17 checked | Formal post-merge closure not represented |
+| [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | 10 / 10 checked | External audit, customer adoption, signed release, and production trust remain `not_assessed` |
+
 ## Older Draft Specs (No Active Work)
 
 | Spec | Capability | Status | Notes |
@@ -60,9 +100,9 @@ These are editorial conventions, not enforced gates:
 | [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
 | [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
 
-> **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon completion and merge, move to Completed Specs.
+> **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon implementation, review, merge, and trust closure, move to Formally Closed Specs.
 
-## Completed Specs
+## Formally Closed Specs
 
 | Spec | Capability | Status | Notes |
 | --- | --- | --- | --- |
@@ -78,25 +118,25 @@ These are editorial conventions, not enforced gates:
 
 Use this to find which spec owns a product surface. A capability may be touched by multiple specs; the listed owner is the primary spec, not an exclusive boundary.
 
-| Capability | Owner Spec(s) | Live? |
+| Capability | Owner Spec(s) | Current Repository Reality |
 | --- | --- | --- |
-| Evidence substrate / trace format | 001 | Draft (blocked) |
-| Authority envelope / trust boundary | 002 | Draft (old) |
-| Product contract schema | 005 | Draft (old) |
-| Change evidence packet | 006 | Draft (old) |
-| GitHub demo workflow | 007 | Draft (old) |
-| Flight recorder / wrap command | 008 | In progress (blocked) |
-| Command surface (JSON schema, registry) | 009 | Draft |
-| Command package organization | 010 | Draft |
-| Schema docs generation | 011 | Draft |
-| Repo hygiene / artifact boundary | 012 | Draft |
-| Contributor onboarding | 013 | Draft |
-| Docs UX / command guidance | 014 | Draft |
-| Spec governance / roadmap | 015 | In progress |
-| Production adoption / security baseline | 016 | In progress |
-| OSS replacement compatibility / benchmarks | 017 | In progress |
-| Core/policy split and Pi delivery | 018 | Draft |
-| Repo realignment / monitoring / gate readiness | 019 | In progress |
+| Evidence substrate / trace format | 001 | Largely implemented but blocked on explicit trust closure and open tasks |
+| Authority envelope / trust boundary | 002 | Mostly checked; re-review / closure open |
+| Product contract schema | 005 | Partial |
+| Change evidence packet | 006 | Spec-only / not implemented |
+| GitHub demo workflow | 007 | Partial planning / demo work |
+| Flight recorder / wrap command | 008 | Implemented; formal closure open |
+| Command surface (JSON schema, registry) | 009 | Implemented; review closure open |
+| Command package organization | 010 | Implemented; review closure open |
+| Schema docs generation | 011 | Implemented; review closure open |
+| Repo hygiene / artifact boundary | 012 | Implemented; review closure open |
+| Contributor onboarding | 013 | Spec-only / not implemented |
+| Docs UX / command guidance | 014 | Implemented; review closure open |
+| Spec governance / roadmap | 015 | Implemented; formal closure open |
+| Production adoption / security baseline | 016 | Implemented locally; production trust remains `not_assessed` |
+| OSS replacement compatibility / benchmarks | 017 | Partial; automated external probes remain open / `not_assessed` |
+| Core/policy split and Pi delivery | 018 | Planning / in review |
+| Repo realignment / monitoring / gate readiness | 019 | Partial; HITL and closure blockers remain |
 
 ## Claim-Tag Enforcement Scope
 
