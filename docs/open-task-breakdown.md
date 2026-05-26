@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 8 open task boxes one by one. It is a
+This file decomposes the remaining 7 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 007 T008 | Ask for explicit approval of demo-track option, first slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | No. | Maintainer approves, rejects, or splits demo-track direction. |
 | 018 T018-001 | Review core command list with maintainers. | Machine review and command-surface verification exist; maintainer review is `not_assessed`. | No. | Maintainer reviews command list or explicitly keeps review pending. |
 | 018 T018-070 | Prepare follow-up implementation specs only after core/extension direction is approved. | Follow-up specs are blocked on T018-001. | No. | After maintainer approval, prepare follow-up specs; otherwise keep open. |
 | 019 T019-001 | Review Spec 019 scope with maintainers. | PR #60 merged before this approval was recorded; this is a missed pre-merge gate. | No. | Maintainer decides whether to accept, reject, or split the already-merged state. |
@@ -61,6 +60,14 @@ Spec 006 T003 is now closed by maintainer decision `accept_gap` in the
 pre-implementation approval gap after implementation, review, merge, and
 post-merge CI evidence; it does not retroactively invent approval, approve
 production readiness, or create external trust.
+
+Spec 007 T008 is now closed by maintainer decision
+`approve_existing_demo_track` in the 2026-05-26 closure thread. The decision
+approves the existing `fall-out-bug/sdp-trace-demo-jvm-gsd` route, setup PR #16,
+feature PRs #16-#20 as first slices, negative draft PR #21 for theater
+explanation, and no separate polished sales repository for this closure. It
+does not approve release, production trust, compliance, semantic quality, or
+signed external trust.
 
 The other open tasks need one of:
 

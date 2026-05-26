@@ -27,11 +27,18 @@ review before implementation approval.
   dispositions in `reviews/2026-05-10-socratic-review.md`.
   Evidence: `reviews/2026-05-10-socratic-review.md`, including the 2026-05-26
   focused split re-review.
-- [ ] T008 Ask for explicit approval of:
+- [x] T008 Ask for explicit approval of:
   - demo-track option;
   - first implementation slice;
   - whether to continue in the existing demo repo or create a later polished
     sales repo.
+  Evidence: maintainer decision `approve_existing_demo_track` recorded in the
+  2026-05-26 closure thread. The approved route is the existing
+  `fall-out-bug/sdp-trace-demo-jvm-gsd` demo repository, PR #16 setup plus
+  feature PRs #16-#20 as first slices, negative draft PR #21 for theater
+  explanation, and no separate polished sales repository for this closure.
+  This does not approve release, production trust, compliance, semantic
+  quality, or signed external trust.
 
 ## Phase 2: Demo Repository V2 After 006 Completion
 
