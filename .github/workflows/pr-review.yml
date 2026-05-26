@@ -16,10 +16,14 @@ jobs:
       PR_REVIEW_MODEL_CONFIGURED: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' }}
     steps:
       - name: Checkout trusted base
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          fetch-depth: 0
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin https://github.com/${{ github.repository }}.git
+          git fetch --no-tags --depth=1 origin "${BASE_SHA}"
+          git checkout --detach "${BASE_SHA}"
 
       - name: Go toolchain
         run: go version
@@ -35,8 +39,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p review/input review/runs
-          git fetch origin "pull/${PR_NUMBER}/head:pr-head"
-          git diff --binary "${BASE_SHA}" pr-head > review/input/change.diff
+          git fetch --no-tags --depth=1 origin "pull/${PR_NUMBER}/head"
+          git diff --binary "${BASE_SHA}" FETCH_HEAD > review/input/change.diff
           printf 'PR #%s\nBase: %s\nHead: %s\n' "${PR_NUMBER}" "${BASE_SHA}" "${HEAD_SHA}" > review/input/metadata.txt
           printf 'Ordinary CI state is assessed by the separate verify workflow.\n' > review/input/verification.txt
 
