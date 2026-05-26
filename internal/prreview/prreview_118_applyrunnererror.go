@@ -23,6 +23,9 @@ func applyRunnerError(result *ReviewerResult, err error) error {
 }
 
 func runnerErrorState(err error) (string, string) {
+	// Prompt evidence failures mean the review packet cannot be replayed.
+	// Missing runner binaries are configuration gaps, so they stay not_assessed.
+	// Other process failures are failed reviewer executions.
 	if errors.Is(err, errPromptEvidenceCannotVerify) {
 		return StatusCannotVerify, "prompt_evidence_cannot_verify"
 	}

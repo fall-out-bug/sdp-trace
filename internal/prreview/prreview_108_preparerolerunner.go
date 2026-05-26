@@ -23,6 +23,9 @@ func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions)
 }
 
 func markNotAssessedOverride(result *ReviewerResult, reason string) bool {
+	// CI may intentionally publish an evidence row without running a model.
+	// The override is an explicit not_assessed reason, not a reviewer pass.
+	// Normalizing the reason keeps downstream ledgers machine-comparable.
 	if strings.TrimSpace(reason) == "" {
 		return false
 	}
@@ -32,5 +35,7 @@ func markNotAssessedOverride(result *ReviewerResult, reason string) bool {
 }
 
 func runnerAllowed(role ReviewRole, allowed map[string]bool) bool {
+	// Manual imports are local evidence and do not need external runner opt-in.
+	// Every executable runner remains disabled unless the caller allow-lists it.
 	return role.Runner == RunnerManualExternal || allowed[role.Runner]
 }

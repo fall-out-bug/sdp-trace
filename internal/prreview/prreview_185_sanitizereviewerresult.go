@@ -1,6 +1,9 @@
 package prreview
 
 func sanitizeReviewerResult(result ReviewerResult) ReviewerResult {
+	// Reviewer output is untrusted even when structurally valid JSON.
+	// Every user-visible text channel is redacted before runs, ledgers, and
+	// summaries can persist or upload it.
 	result.Reason = safeText(result.Reason)
 	for i := range result.Findings {
 		result.Findings[i].Summary = safeText(result.Findings[i].Summary)
