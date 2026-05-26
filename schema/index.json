@@ -164,6 +164,15 @@
       "example_coverage": "not_assessed"
     },
     {
+      "name": "run-manifest.schema.json",
+      "status": "current",
+      "purpose": "Records the current live run.json manifest emitted by sdp-trace wrap.",
+      "examples": [
+        "examples/agentic-sdlc/local-wrap-positive/run.json"
+      ],
+      "example_coverage": "present"
+    },
+    {
       "name": "flight-recorder-witness.schema.json",
       "status": "current",
       "purpose": "Records a witness anchor that binds run id, source baseline, task hash, recorder version, and chain head.",

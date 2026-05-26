@@ -17,9 +17,11 @@ func executePRReviewRun(opts *flagSet, args []string) (prreview.RunSet, *prrevie
 	// Runner allow-list values are reconstructed from raw args so repeated flags
 	// cannot be collapsed by the flag parser.
 	return prreview.RunReview(packet, profile, prreview.RunOptions{
-		OutDir:         opts.stringValue("out"),
-		AllowedRunners: allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
-		Preview:        opts.boolValue("preview"),
-		WorkDir:        opts.stringValue("work-dir"),
+		OutDir:            opts.stringValue("out"),
+		PacketDir:         packetDir(opts.stringValue("packet")),
+		AllowedRunners:    allowedRunnerSet(repeatedFlagValues(args, "allow-external-runner", opts.stringValue("allow-external-runner"))),
+		Preview:           opts.boolValue("preview"),
+		WorkDir:           opts.stringValue("work-dir"),
+		NotAssessedReason: opts.stringValue("not-assessed-reason"),
 	})
 }

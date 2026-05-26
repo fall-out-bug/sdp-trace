@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 )
 
@@ -36,6 +34,8 @@ func run() error {
 func runAt(root string) error {
 	var findings []string
 
+	// All checks share the same tracked-file snapshot so the report is stable
+	// even if git state changes while the process runs.
 	tracked, err := gitLsFiles(root)
 	if err != nil {
 		return err
@@ -45,20 +45,10 @@ func runAt(root string) error {
 	findings = append(findings, checkRootArtifactClutter(tracked)...)
 	findings = append(findings, checkRootExecutables(root, tracked)...)
 	findings = append(findings, checkAbsoluteHomePaths(root, tracked)...)
+	findings = append(findings, checkActionPins(root, tracked)...)
 
 	if len(findings) > 0 {
 		return fmt.Errorf("hygiene findings:\n%s", strings.Join(findings, "\n"))
 	}
 	return nil
-}
-
-// repoRoot resolves the repository root from the source file location so that
-// the tool checks the same tree regardless of the working directory. It falls
-// back to the current directory when caller resolution fails.
-func repoRoot() string {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		return "."
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
 }

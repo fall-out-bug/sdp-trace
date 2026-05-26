@@ -15,6 +15,15 @@ Required CI evidence:
 - `go run ./tools/schemadoc -verify-readme`
 - `git diff --check`
 
+Workflow dependencies:
+
+- GitHub Actions used by repository workflows must be pinned to immutable commit
+  SHAs, with the reviewed upstream tag retained as a comment for operator
+  readability.
+- Updating a pinned action SHA is a dependency update and requires review of the
+  upstream tag/ref being pinned. Do not treat a movable tag such as `@v6` as
+  sufficient evidence for trust-sensitive workflows.
+
 Quality gate policy:
 
 | Gate | Threshold | CI state | Evidence rule |
@@ -22,7 +31,7 @@ Quality gate policy:
 | CRAP | `< 5` per Go function in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | Compute from `go test -count=1 ./... -coverprofile`, `go tool cover -func`, and `go run ./tools/qualitycheck -gocyclo` output through `go run ./tools/crapcheck -strict-less`. Do not claim pass while local CRAP rows exceed the threshold. |
 | Cyclomatic complexity | `<= 10` per Go function in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -cyclo-over 10 cmd internal tools` must pass. `-fail-only` keeps passing CI logs quiet; failures still print to stderr. |
 | Cognitive complexity | `<= 10` per Go function in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -cognitive-over 10 cmd internal tools` must pass. `-fail-only` keeps passing CI logs quiet; failures still print to stderr. |
-| Function Maintainability Index | ratchet toward `>= 70` per production function in `cmd` and `internal` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal` must pass. Historical below-threshold functions may not regress; new below-threshold functions fail. This is not an absolute MI `> 70` pass claim. |
+| Function Maintainability Index | ratchet toward `>= 70` per non-trivial production function in `cmd` and `internal` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -function-mi-under 70 -function-mi-baseline tools/qualitycheck/function-mi-baseline.json cmd internal` must pass. Historical below-threshold functions may not regress; new below-threshold functions fail. Tiny/simple helpers are omitted because CRAP, cyclomatic, and cognitive gates are the stronger signal for that shape. This is not an absolute MI `> 70` pass claim. |
 | File Maintainability Index | ratchet toward `> 70` per executable production file in `cmd`, `internal`, and `tools` | CI-enforced by `Go quality gates` | `go run ./tools/qualitycheck -fail-only -mi-under 70 -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools` must pass. Historical below-threshold files may not regress; new below-threshold files fail. Declaration-only and tiny files are omitted from file MI because their Halstead volume is noisy without executable behavior. This is not an absolute MI `> 70` pass claim. |
 | Spec drift / work without spec | no implementation-only trust change | review-required, not CI-enforced | Review must compare changed behavior against the active spec, plan, and task. If no applicable spec delta exists, record `cannot_verify` or `not_assessed` instead of pass. |
 | CleanCode / CleanArchitecture review | behavior remains small, cohesive, and dependency-direction neutral | review-required, not CI-enforced | Review changed Go packages for avoidable complexity, hidden product coupling, and boundary violations. Record findings with evidence refs; absence of review is `not_assessed`. |
@@ -54,20 +63,35 @@ regeneration.
 Maintainability Index is a local ratchet/refactor heuristic, not an external
 quality proof. The formula is implemented in `tools/qualitycheck/halstead.go`;
 file-level MI aggregates whole Go files, so same-package file splits can improve
-the metric without changing behavior. Use MI alongside CRAP, complexity,
-coverage, review evidence, and spec-drift checks before making quality claims.
+the metric without changing behavior. Function-level MI omits tiny/simple
+helpers where raw Halstead volume is noisier than CRAP, cyclomatic, and
+cognitive evidence. Use MI alongside CRAP, complexity, coverage, review
+evidence, and spec-drift checks before making quality claims.
 Raw file-MI threshold failures include `lines`, `cyclo`, and
 `halstead_volume` so remediation can distinguish oversized files from
 high-branching or token-heavy files without treating the metric as an opaque
 score.
 
-As of the 2026-05-13 polish head, absolute file and function MI checks without
-baselines pass locally for Go under `cmd`, `internal`, and `tools` using a
-`70.1` threshold replay for the user-facing `> 70` claim. CI keeps the baseline
-ratchet commands because they are the policy mechanism that prevents future PRs
-from adding or worsening MI exceptions without review.
+As of the 2026-05-26 integration audit, absolute file and function MI checks
+without baselines do not pass across all Go under `cmd`, `internal`, and
+`tools` with a `70.1` threshold replay for the user-facing `> 70` claim. CI
+therefore keeps the baseline ratchet commands as the enforceable policy
+mechanism: they prevent future PRs from adding or worsening MI exceptions
+without review, but they are not an absolute MI closure claim.
 
 If GitHub does not report checks for a PR, record CI as `not_assessed`; do not
 treat local verification as a substitute for remote CI evidence. Local
 verification may support implementation review, but CI-backed closure requires
 the workflow result or an explicit repo-tracked replacement policy.
+
+## PR Review Evidence
+
+`pr-review-evidence-only` records automated model-review evidence for a frozen
+PR packet. It is deliberately named as evidence-only because a green model-review
+check is not human approval, merge approval, release readiness, production
+trust, or risk acceptance.
+
+Do not configure `pr-review-evidence-only` as a substitute for required human
+review or release approval. If model-review coverage is missing because provider
+secrets are unavailable, the job must record `not_assessed` rather than claim
+review coverage is satisfied.

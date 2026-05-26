@@ -1,6 +1,16 @@
 # Plan: Repo Realignment, Monitoring, And Gate Readiness
 
-Status: draft; maintainer human review not_assessed
+Status: post-merge partial; maintainer human review not_assessed
+
+## Post-Merge Closure
+
+PR #60 was merged on 2026-05-25 as commit
+`657a343a5f310538def9afd509e6c610c713cab0`, but it did not complete this
+spec. The remaining closure work is tracked in
+`post-merge-closure-plan.md`.
+
+The merge approval state is `not_assessed`: GitHub PR metadata contains no
+recorded review approval, and the PR body left the review checklist unchecked.
 
 ## Workstreams
 
@@ -92,7 +102,7 @@ Risk: high
 
 Depends: WS-019-A
 
-Mode: HITL
+Mode: AFK with maintainer review
 
 Owned files:
 
@@ -102,16 +112,20 @@ Owned files:
 - focused schema and recorder tests
 - affected docs that describe the recorder contract
 
+Decision:
+
+- Add a dedicated schema for the current live `run.json` manifest emitted by
+  `wrap`, with migration notes that keep the richer flight-recorder schema
+  separate from the live recorder manifest contract.
+
 Deliverable:
 
-- Choose and implement one reviewed contract path: change live `wrap` output to
-  match the current schema, update the schema to match current output, or add a
-  versioned recorder schema with migration notes.
+- Implement the reviewed contract path selected above.
 
 After this:
 
-- The Spec 017 live `wrap` output/schema drift is no longer an ambiguous
-  blocker.
+- The Spec 017 live `wrap` manifest has a schema contract and is no longer an
+  ambiguous blocker.
 
 ### WS-019-E: Monitoring And Advisory Gate Proof Pack
 

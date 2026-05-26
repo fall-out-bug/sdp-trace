@@ -17,6 +17,7 @@ func run(generate, verifyReadme bool) error {
 	}
 
 	if generate {
+		// Generate mode writes only the table body for manual README updates.
 		_, err := io.WriteString(os.Stdout, generateTable(idx))
 		return err
 	}

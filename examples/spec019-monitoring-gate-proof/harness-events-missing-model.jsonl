@@ -1,0 +1,1 @@
+{"event_id":"e1","event_schema_version":"harness-event-v1","event_family":"harness","event_type":"harness_observed","observed_at":"2026-05-09T12:00:00Z","source_ref":"src-e1","source_digest":"ca8d66e6411d091b6e95d180ba949fde96f5b68cb6e8d5f152e77259e2c208d5","content_state":"digest_only"}

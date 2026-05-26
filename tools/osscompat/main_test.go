@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -62,6 +63,28 @@ func TestRun_SingleProbe(t *testing.T) {
 	}
 }
 
+func TestRun_SingleProbeAlias(t *testing.T) {
+	reg := []probe{
+		{
+			Name:        "canonical-probe",
+			Description: "test probe with legacy alias",
+			Run:         func() (verifierState, string) { return statePass, "ok" },
+		},
+	}
+	legacyProbeNames["legacy-probe"] = "canonical-probe"
+	t.Cleanup(func() {
+		delete(legacyProbeNames, "legacy-probe")
+	})
+	var out bytes.Buffer
+	code := run([]string{"-probe", "legacy-probe"}, &out, &out, reg)
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if !strings.Contains(out.String(), "canonical-probe") {
+		t.Fatalf("expected canonical probe output, got: %s", out.String())
+	}
+}
+
 func TestRun_ListProbes(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-list"}, &out, &out, testRegistry)
@@ -94,12 +117,29 @@ func TestRun_SingleProbeJSON(t *testing.T) {
 	}
 }
 
+func TestRun_SingleProbeWriteError(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-probe", testRegistry[0].Name}, failingWriter{}, &out, testRegistry)
+	if code != 2 {
+		t.Fatalf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(out.String(), "print results") {
+		t.Fatalf("expected print error, got: %s", out.String())
+	}
+}
+
 func TestRun_HelpFlag(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-h"}, &out, &out, testRegistry)
 	if code != 0 {
 		t.Fatalf("expected exit 0 for help, got %d", code)
 	}
+}
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
 }
 
 func TestRun_InvalidFlag(t *testing.T) {

@@ -16,14 +16,36 @@ func applyRunnerError(result *ReviewerResult, err error) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
-
-		result.Status = StatusNotAssessed
-		result.Reason = "runner_unavailable"
-	} else {
-
-		result.Status = StatusFailed
-		result.Reason = "runner_failed"
-	}
+	status, reason := runnerErrorState(err)
+	result.Status = status
+	result.Reason = reason
 	return err
+}
+
+func runnerErrorState(err error) (string, string) {
+	// Prompt evidence failures mean the review packet cannot be replayed.
+	// Missing runner binaries are configuration gaps, so they stay not_assessed.
+	// Other process failures are failed reviewer executions.
+	if promptTemplateCannotVerify(err) {
+		return StatusCannotVerify, "prompt_ref_cannot_verify"
+	}
+	if promptEvidenceCannotVerify(err) {
+		return StatusCannotVerify, "prompt_evidence_cannot_verify"
+	}
+	if runnerUnavailable(err) {
+		return StatusNotAssessed, "runner_unavailable"
+	}
+	return StatusFailed, "runner_failed"
+}
+
+func promptTemplateCannotVerify(err error) bool {
+	return errors.Is(err, errPromptTemplateCannotVerify)
+}
+
+func promptEvidenceCannotVerify(err error) bool {
+	return errors.Is(err, errPromptEvidenceCannotVerify)
+}
+
+func runnerUnavailable(err error) bool {
+	return errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found")
 }

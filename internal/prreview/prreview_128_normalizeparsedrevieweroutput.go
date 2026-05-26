@@ -10,5 +10,5 @@ func normalizeParsedReviewerOutput(parsed, base ReviewerResult, role ReviewRole)
 	normalizeParsedReviewerModels(&parsed, role)
 	attachParsedReviewerExecution(&parsed, base)
 	normalizeParsedReviewerStatus(&parsed)
-	return parsed
+	return sanitizeReviewerResult(parsed)
 }

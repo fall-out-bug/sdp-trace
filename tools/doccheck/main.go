@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 )
 
 const agentEntrypoint = "docs/agent-entrypoint.md"
@@ -38,26 +37,4 @@ func run() error {
 		return err
 	}
 	return checkQuickstart(registry)
-}
-
-func checkAgentEntrypoint(help string, registry []string) error {
-	docPath := filepath.Join(repoRoot(), agentEntrypoint)
-	doc, err := os.ReadFile(docPath)
-	if err != nil {
-		return fmt.Errorf("read %s: %w", agentEntrypoint, err)
-	}
-	docStr := string(doc)
-	if err := compareCommandSurface(help, docStr); err != nil {
-		return err
-	}
-	return compareRegistryWithDocs(docStr, registry)
-}
-
-func checkQuickstart(registry []string) error {
-	qsPath := filepath.Join(repoRoot(), contributorQuickstart)
-	qs, err := os.ReadFile(qsPath)
-	if err != nil {
-		return fmt.Errorf("read %s: %w", contributorQuickstart, err)
-	}
-	return compareQuickstartWithRegistry(string(qs), registry)
 }

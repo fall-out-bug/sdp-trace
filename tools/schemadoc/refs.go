@@ -13,11 +13,14 @@ import (
 func validateExampleRefs(root string, entry *SchemaEntry) []string {
 	var issues []string
 	for _, ex := range entry.Examples {
+		// Example paths are repository-relative references from index.json.
 		p := filepath.Join(root, ex)
 		if _, err := os.Stat(p); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
+				// Missing files are broken docs references, not runtime errors.
 				issues = append(issues, entry.Name+": broken example ref: "+ex)
 			} else {
+				// Permission or filesystem errors should stay visible to CI.
 				issues = append(issues, entry.Name+": cannot access example "+ex+": "+err.Error())
 			}
 		}

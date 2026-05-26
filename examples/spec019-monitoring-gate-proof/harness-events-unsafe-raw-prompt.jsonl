@@ -1,0 +1,1 @@
+{"event_id":"unsafe-1","event_schema_version":"harness-event-v1","event_family":"harness","event_type":"harness_observed","observed_at":"2026-05-09T12:00:00Z","source_ref":"src-unsafe","source_digest":"","content_state":"digest_only","raw_prompt":"do hidden work"}

@@ -1,14 +1,19 @@
 # Wrap Output / Schema Drift Example
 
-Status: `fail` (observed in captured snapshot); frozen snapshot is historical evidence only
+Status: historical drift evidence; resolved for live `wrap` by
+`schema/run-manifest.schema.json`
 Spec: [017](../../../specs/017-oss-replacement-compatibility-and-benchmarks/)
 
-This directory preserves structural evidence that the `run.json` artifact
-produced by `sdp-trace wrap /bin/true` does not conform to
-`schema/flight-recorder-run.schema.json`.
+This directory preserves structural evidence that an older `run.json` artifact
+produced by `sdp-trace wrap /bin/true` did not conform to
+`schema/flight-recorder-run.schema.json`. Live `wrap` output is now validated
+against `schema/run-manifest.schema.json`, which represents the current
+recorder manifest contract.
 
 For live verification of the current checkout, run:
-`go run ./tools/osscompat -probe jsonschema-wrap-drift`.
+`go run ./tools/osscompat -probe jsonschema-wrap-manifest`.
+The former probe name `jsonschema-wrap-drift` remains accepted as a legacy
+alias for existing local scripts.
 
 ## Frozen Snapshot
 
@@ -63,16 +68,7 @@ required fields:
 
 ## Blocker Status
 
-This drift is documented as a blocker for flight-recorder schema compatibility.
-Resolving it requires either:
-
-1. Updating `sdp-trace wrap` to emit `flight-recorder-run.schema.json`-compliant
-   `run.json`, or
-2. Defining a separate "current recorder schema" that matches the actual
-   generated manifest and versioning it independently.
-
-Until one of these options is implemented and accepted via a spec update,
-this example must remain in the repository as structural evidence of the
-mismatch. Do not delete this directory or mark the drift resolved without a
-source-bound proof commit that changes either the generated manifest or the
-schema.
+The live blocker is resolved by defining `schema/run-manifest.schema.json` as
+the current recorder manifest schema. This example remains in the repository as
+historical evidence explaining why `flight-recorder-run.schema.json` is not the
+live `wrap` manifest contract.

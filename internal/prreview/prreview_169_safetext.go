@@ -9,7 +9,7 @@ func safeText(text string) string {
 		return ""
 	}
 	if containsUnsafeTextMarker(text) || containsUnsafeTextPattern(text) {
-		return "[redacted unsafe reviewer text]"
+		return redactedUnsafeReviewerText
 	}
 	return text
 }

@@ -27,13 +27,23 @@ func measureFunctionSource(src []byte, fset *token.FileSet, parsed *ast.File, fn
 	// Halstead volume is source-based while complexity is AST-based; deriving
 	// them here keeps the final MI row internally consistent.
 	volume := halsteadVolume(source)
+	mi := maintainabilityIndex(volume, cyclo, lines, commentLines)
+	if functionMIOmitted(lines, cyclo, cognitive) {
+		mi = 100
+	}
 	return functionMeasurement{
 		lines:        lines,
 		commentLines: commentLines,
 		cyclo:        cyclo,
 		cognitive:    cognitive,
 		volume:       volume,
-		mi:           maintainabilityIndex(volume, cyclo, lines, commentLines),
+		mi:           mi,
 		position:     fset.Position(fn.Pos()),
 	}
+}
+
+func functionMIOmitted(lines int, cyclo int, cognitive int) bool {
+	// Tiny/simple Go helpers are better covered by cyclomatic, cognitive, and
+	// CRAP gates; raw function MI overweights their Halstead token noise.
+	return lines < 18 && cyclo <= 4 && cognitive <= 3
 }

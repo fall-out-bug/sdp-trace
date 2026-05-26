@@ -1,16 +1,26 @@
 # Tasks: Repo Realignment, Monitoring, And Gate Readiness
 
-Status: draft; maintainer human review not_assessed
+Status: post-merge partial; maintainer human review not_assessed
 
 ## Phase 0 - Review And Approval
 
 - [ ] T019-001 Review Spec 019 scope with maintainers.
-  Status: `not_assessed`.
+  Status: `missed_pre_merge_gate`. PR #60 merged before this approval was
+  recorded; this cannot be retroactively satisfied as a pre-implementation
+  review.
 - [ ] T019-002 Run adversarial spec review before implementation approval.
-  Status: `not_assessed`.
+  Status: `partial_after_merge`. Cross-model review ran for implemented slices,
+  but GitHub PR #60 has no recorded approval and the PR body checklist was
+  unchecked at merge time.
 - [ ] T019-003 Approval gate: implementation and Pi handoff may start only
   after reviewed spec direction is approved.
-  Status: `not_assessed`.
+  Status: `missed_pre_merge_gate`. Treat the missed gate as process evidence,
+  not as a remaining task that can still be completed before implementation.
+- [ ] T019-004 Post-merge approval gate: maintainers must either approve the
+  partial merge state and the closure plan or explicitly reject/split the
+  remaining work.
+  Status: `not_assessed`. Closure plan:
+  `specs/019-repo-realignment-monitoring-gate-readiness/post-merge-closure-plan.md`.
 
 ## Phase 1 - Pi-Ready Workstreams
 
@@ -45,18 +55,23 @@ Status: draft; maintainer human review not_assessed
   `go test -count=1 ./...`, `git diff --check`.
 
 
-- [ ] T019-040 WS-019-D: Resolve live `wrap` output/schema compatibility.
-  Status: `HITL` — requires human contract decision on wrap/schema drift path.
-  Pi ownership: schema, recorder/wrap output code, affected examples, focused
-  tests, and docs selected after the HITL contract decision.
+- [x] T019-040 WS-019-D: Resolve live `wrap` output/schema compatibility.
+  Status: completed; live `wrap` output has a dedicated current-run manifest
+  schema at `schema/run-manifest.schema.json`. The richer
+  `flight-recorder-run.schema.json` remains a separate profile artifact, not
+  the live `wrap` manifest contract.
+  Pi ownership: schema, recorder/wrap output contract docs, affected examples,
+  focused tests, and OSS compatibility probe docs.
   Session verification: schema validation for a live `wrap` output,
   `go test -count=1 ./...`, `go run ./tools/osscompat -json` when optional
   prerequisites are available, `go run ./tools/doccheck`,
   `go run ./tools/hygienecheck`, `git diff --check`.
 
 
-- [ ] T019-050 WS-019-E: Create monitoring and advisory gate proof pack.
-  Status: `HITL` — blocked on WS-019-D contract decision.
+- [x] T019-050 WS-019-E: Create monitoring and advisory gate proof pack.
+  Status: completed; deliverable is
+  `examples/spec019-monitoring-gate-proof/` plus focused CLI replay tests in
+  `cmd/sdp-trace/spec019_proof_pack_cli_test.go`.
   Pi ownership: selected examples, monitoring/gate docs, focused tests for
   unsafe event rejection and missing evidence states.
   Session verification: reproduce the proof pack commands, verify unsafe raw
@@ -75,8 +90,11 @@ Status: draft; maintainer human review not_assessed
   `git diff --check`.
 
 
-- [ ] T019-070 WS-019-G: Clean numeric shards in harness and gate code.
-  Status: `blocked` — depends on WS-019-E (HITL) and WS-019-F (done).
+- [x] T019-070 WS-019-G: Clean numeric shards in harness and gate code.
+  Status: completed; selected gate/report CLI shards and foundational
+  `internal/harnessobs` type shards were renamed to behavior-named files.
+  Scoped numeric shard count for owned harness/gate paths moved from 463 to
+  435.
   Pi ownership: selected `internal/harnessobs/*`, selected harness and gate CLI
   glue, focused tests.
   Session verification: monitoring/gate proof pack still passes,
@@ -125,12 +143,19 @@ Status: draft; maintainer human review not_assessed
   `specs/019-repo-realignment-monitoring-gate-readiness/reviews/cross-model-review-disposition.md`.
 
 - [x] T019-110 Query live CI for the final source commit or PR head.
-  Status: completed; CI PASS on latest push to PR #60. All jobs green.
+  Status: completed for merged PR #60 source commit; CI PASS on `main` at
+  `657a343a5f310538def9afd509e6c610c713cab0` was observed after merge.
+  Integration PR #63 supersedes PR #62 and PR #31 as the current handoff
+  surface; PR #63 final-head CI is `not_assessed` in checked-in docs.
+  CI evidence is not merge approval evidence.
   PR #60: https://github.com/fall-out-bug/sdp-trace/pull/60
+  PR #63: https://github.com/fall-out-bug/sdp-trace/pull/63
 
 - [ ] T019-120 Approval gate: close this spec only after review findings,
   local verification, and live CI evidence are recorded. Missing external
   evidence must remain `cannot_verify` or `not_assessed`.
-  Status: blocked on Phase 0 HITL gates (T019-001/002/003). All AFK workstreams,
-  local verification, cross-model adversarial review (T019-100), and live CI
-  evidence (T019-110) are complete. Phase 0 maintainer review remains `not_assessed`.
+  Status: blocked on T019-004. Final post-merge Qwen3.6 Plus alternative-LLM
+  review is LGTM after findings were addressed. PR #63 final-head CI is
+  `not_assessed` in checked-in docs, and PR #60 remains a partial merge, not
+  Spec 019 closure.
+  `merge_approval` remains `not_assessed`.

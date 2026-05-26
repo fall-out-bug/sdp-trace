@@ -15,8 +15,8 @@ func runRole(packet Packet, role ReviewRole, opts RunOptions, rawDir string) (Re
 	if err != nil || !ready {
 		return result, err
 	}
-	output, timedOut, err := runRoleCommand(role, opts)
+	output, timedOut, err := runRoleCommand(packet, role, opts)
 	result.EndedAt = time.Now().UTC().Format(time.RFC3339)
 	result = completeRoleResult(result, role, packet, opts.WorkDir, baseline, output, timedOut, err)
-	return writeRawResult(result, rawDir, output)
+	return writeRawResult(result, role, rawDir, output)
 }

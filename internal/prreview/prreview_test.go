@@ -2,7 +2,9 @@ package prreview
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -479,6 +481,77 @@ func TestValidationAndSummaryRedactUnsafeMarkerClasses(t *testing.T) {
 	}
 }
 
+func TestRunReviewArtifactPipelineRedactsUnsafeReviewerText(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("9")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "artifact-safety",
+		RequiredPlanes: []string{PlanePrivacySafety},
+		Roles: []ReviewRole{{
+			RoleID:             "privacy",
+			Plane:              PlanePrivacySafety,
+			Runner:             RunnerPI,
+			RequestedModel:     "fake-pi",
+			Command:            []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "unsafe-structured-output"},
+			RawOutputRetention: RedactionDigestOnly,
+		}},
+	}
+	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
+	runs, _, err := RunReview(packet, profile, RunOptions{
+		OutDir:         filepath.Join(root, "runs"),
+		AllowedRunners: map[string]bool{RunnerPI: true},
+		Now:            time.Date(2026, 5, 9, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ledger := SynthesizeLedger(packet, runs, nil)
+	validation := Validate(packet, profile, runs, ledger)
+	summary := Summarize(validation, ledger)
+	artifactPaths := []string{
+		filepath.Join(root, "runs", "results.json"),
+		filepath.Join(root, "ledger.json"),
+		filepath.Join(root, "validation.json"),
+		filepath.Join(root, "summary.md"),
+	}
+	if err := WriteJSON(artifactPaths[1], ledger); err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteJSON(artifactPaths[2], validation); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(artifactPaths[3], []byte(summary), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range artifactPaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, marker := range []string{
+			"SYNTHETIC_TOKEN_SECRET_PIPELINE",
+			"SYNTHETIC_PROMPT_SECRET_PIPELINE",
+			"https://access_token=secret@example.invalid/review",
+			"/Users/private/repo",
+		} {
+			if strings.Contains(string(data), marker) {
+				t.Fatalf("%s leaked marker %q:\n%s", path, marker, string(data))
+			}
+		}
+		if !strings.Contains(string(data), "[redacted unsafe reviewer text]") && path != filepath.Join(root, "summary.md") {
+			t.Fatalf("%s missing redaction marker:\n%s", path, string(data))
+		}
+		if strings.Contains(string(data), "SYNTHETIC_RATIONALE_SECRET_PIPELINE") {
+			t.Fatalf("%s leaked rationale marker:\n%s", path, string(data))
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "runs", "raw", "run-privacy.out")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("digest-only raw output should not persist raw bytes, err=%v", err)
+	}
+}
+
 func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	root := t.TempDir()
 	workDir := filepath.Join(root, "work")
@@ -501,7 +574,7 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 			{RoleID: "malformed", Plane: PlaneTraceEvidence, Runner: RunnerManualExternal, RequestedModel: "fake-malformed", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "malformed"}},
 			{RoleID: "offtask", Plane: PlaneRequirements, Runner: RunnerManualExternal, RequestedModel: "fake-offtask", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "offtask"}},
 			{RoleID: "readonly", Plane: PlanePrivacySafety, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: false, Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "success"}},
-			{RoleID: "pi-success", Plane: PlaneSecurity, Runner: RunnerPI, RequestedModel: "fake-pi", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "pi-success"}},
+			{RoleID: "pi-success", Plane: PlaneSecurity, Runner: RunnerPI, RequestedModel: "fake-pi", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "pi-success"}, PromptTemplateRef: promptPath, RawOutputRetention: RedactionDigestOnly},
 			{RoleID: "opencode-mutation", Plane: PlaneDXReplayability, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: true, WorkingTreeMode: "clean_required", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "opencode-mutation"}},
 		},
 	}
@@ -543,6 +616,12 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	}
 	if statuses["empty"].RawOutputRef == nil || statuses["malformed"].RawOutputRef == nil || statuses["offtask"].RawOutputRef == nil {
 		t.Fatalf("raw output digest refs missing: %+v", statuses)
+	}
+	if statuses["pi-success"].RawOutputRef == nil || !strings.HasPrefix(statuses["pi-success"].RawOutputRef.Ref, "digest-only:") {
+		t.Fatalf("pi digest-only raw output ref missing: %+v", statuses["pi-success"])
+	}
+	if _, err := os.Stat(filepath.Join(root, "runs", "raw", "run-pi-success.out")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("digest-only raw output should not persist raw bytes, err=%v", err)
 	}
 	if statuses["readonly"].Reason != "opencode_read_only_not_enforced" {
 		t.Fatalf("opencode read-only reason missing: %+v", statuses["readonly"])
@@ -695,19 +774,124 @@ func TestPacketProfileAndSmallHelpers(t *testing.T) {
 }
 
 func TestApplyRunnerErrorClassifiesUnavailableAndFailure(t *testing.T) {
-	result := ReviewerResult{}
-	if err := applyRunnerError(&result, exec.ErrNotFound); err == nil {
-		t.Fatalf("expected error returned")
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus string
+		wantReason string
+	}{
+		{name: "prompt template", err: errPromptTemplateCannotVerify, wantStatus: StatusCannotVerify, wantReason: "prompt_ref_cannot_verify"},
+		{name: "prompt evidence", err: errPromptEvidenceCannotVerify, wantStatus: StatusCannotVerify, wantReason: "prompt_evidence_cannot_verify"},
+		{name: "runner unavailable", err: exec.ErrNotFound, wantStatus: StatusNotAssessed, wantReason: "runner_unavailable"},
+		{name: "runner failed", err: fmt.Errorf("boom"), wantStatus: StatusFailed, wantReason: "runner_failed"},
 	}
-	if result.Status != StatusNotAssessed || result.Reason != "runner_unavailable" {
-		t.Fatalf("unavailable result = %+v", result)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := ReviewerResult{}
+			if err := applyRunnerError(&result, test.err); err == nil {
+				t.Fatalf("expected error returned")
+			}
+			if result.Status != test.wantStatus || result.Reason != test.wantReason {
+				t.Fatalf("result = %+v, want status=%s reason=%s", result, test.wantStatus, test.wantReason)
+			}
+		})
 	}
-	result = ReviewerResult{}
-	if err := applyRunnerError(&result, fmt.Errorf("boom")); err == nil {
-		t.Fatalf("expected error returned")
+}
+
+func TestRunReviewNotAssessedReasonDoesNotInvokeRunner(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("7")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "missing-secrets",
+		RequiredPlanes: []string{PlaneCodeCorrectness, PlaneTraceEvidence},
+		Roles: []ReviewRole{
+			{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerPI, RequestedModel: "minimax/MiniMax-M2.7", Command: []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"}},
+			{RoleID: "trace", Plane: PlaneTraceEvidence, Runner: RunnerPI, RequestedModel: "zai/glm-5.1", Command: []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"}},
+		},
 	}
-	if result.Status != StatusFailed || result.Reason != "runner_failed" {
-		t.Fatalf("failed result = %+v", result)
+	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs"), NotAssessedReason: "ci_model_review_not_configured"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs.Results) != 2 {
+		t.Fatalf("unexpected result count: %+v", runs.Results)
+	}
+	for _, result := range runs.Results {
+		if result.Status != StatusNotAssessed || result.Reason != "ci_model_review_not_configured" {
+			t.Fatalf("missing-secret result should be not_assessed: %+v", result)
+		}
+	}
+}
+
+func TestRunReviewCannotVerifyUnreadablePromptTemplate(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("8")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "missing-prompt",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{{
+			RoleID:            "code",
+			Plane:             PlaneCodeCorrectness,
+			Runner:            RunnerManualExternal,
+			RequestedModel:    "fake",
+			Command:           []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"},
+			PromptTemplateRef: filepath.Join(root, "missing.md"),
+		}},
+	}
+	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs.Results) != 1 || runs.Results[0].Status != StatusCannotVerify || runs.Results[0].Reason != "prompt_ref_cannot_verify" {
+		t.Fatalf("missing prompt should be cannot_verify without runner execution: %+v", runs.Results)
+	}
+}
+
+func TestRunReviewPromptIncludesPacketEvidence(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n+package main\n")
+	metadataPath := writeText(t, root, "metadata.txt", "PR #123\n")
+	verificationPath := writeText(t, root, "verification.txt", "verify: pass\n")
+	packetDir := filepath.Join(root, "packet")
+	packet, err := BuildPacket(PacketOptions{
+		OutDir:            packetDir,
+		RepoID:            "demo_repo",
+		ChangeRef:         "pr-123",
+		BaseCommit:        forty("a"),
+		HeadCommit:        forty("b"),
+		DiffPath:          diffPath,
+		MetadataPath:      metadataPath,
+		VerificationPaths: []string{verificationPath},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	promptPath := writeText(t, root, "prompt.md", "review {{packet_digest}}\n")
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "prompt-evidence",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{{
+			RoleID:            "code",
+			Plane:             PlaneCodeCorrectness,
+			Runner:            RunnerManualExternal,
+			RequestedModel:    "fake",
+			Command:           []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "prompt-includes-evidence"},
+			PromptTemplateRef: promptPath,
+		}},
+	}
+	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
+	t.Setenv("PR_REVIEW_EXPECTED_DIGEST", packet.PacketDigest)
+	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs"), PacketDir: packetDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs.Results) != 1 || runs.Results[0].Status != StatusNoFindings {
+		t.Fatalf("prompt evidence run failed: %+v", runs.Results)
 	}
 }
 
@@ -761,6 +945,18 @@ func TestSafeID(t *testing.T) {
 	}
 }
 
+func TestSafeEvidenceRefPreservesRefsAndRedactsUnsafeText(t *testing.T) {
+	if got := safeEvidenceRef("diff"); got != "diff" {
+		t.Fatalf("safe ref = %q", got)
+	}
+	if got := safeEvidenceRef("context.ref-1"); got != "context.ref-1" {
+		t.Fatalf("safe dotted ref = %q", got)
+	}
+	if got := safeEvidenceRef("https://access_token=secret@example.invalid/review"); got != "[redacted unsafe reviewer text]" {
+		t.Fatalf("unsafe ref = %q", got)
+	}
+}
+
 func TestPRReviewFakeRunnerHelper(t *testing.T) {
 	if os.Getenv("GO_WANT_PR_REVIEW_HELPER_PROCESS") != "1" {
 		return
@@ -780,8 +976,26 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"privacy_output_safety","role_id":"readonly","runner":"opencode","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"fake","status":"no_findings","findings":[]}`)
 		os.Exit(0)
 	case "pi-success":
+		stdin, err := io.ReadAll(os.Stdin)
+		if err != nil || !strings.Contains(string(stdin), "sha256:"+sixtyFour("4")) {
+			os.Exit(3)
+		}
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"security_forgery_overclaim","role_id":"pi-success","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
 		os.Exit(0)
+	case "unsafe-structured-output":
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("9") + `","plane":"privacy_output_safety","role_id":"privacy","runner":"pi","requested_model":"fake-pi","observed_model":"fake-pi","model_family":"fake","model_version":"v1","status":"findings_reported","findings":[{"id":"F1","severity":"minor","citation":{"context_ref_id":"diff","diff_hunk_id":"hunk-1"},"summary":"SYNTHETIC_TOKEN_SECRET_PIPELINE","rationale":"SYNTHETIC_RATIONALE_SECRET_PIPELINE","suggested_fix":"remove SYNTHETIC_PROMPT_SECRET_PIPELINE","question":"is /Users/private/repo visible?","evidence_refs":["https://access_token=secret@example.invalid/review"]}]}`)
+		os.Exit(0)
+	case "prompt-includes-evidence":
+		stdin, err := io.ReadAll(os.Stdin)
+		expectedDigest := os.Getenv("PR_REVIEW_EXPECTED_DIGEST")
+		prompt := string(stdin)
+		if err != nil || expectedDigest == "" || !strings.Contains(prompt, expectedDigest) || !strings.Contains(prompt, "diff --git a/a.go b/a.go") || !strings.Contains(prompt, "PR #123") || !strings.Contains(prompt, "verify: pass") {
+			os.Exit(3)
+		}
+		fmt.Print(`{"packet_digest":"` + expectedDigest + `","plane":"code_correctness","role_id":"code","runner":"manual_external","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"v1","status":"no_findings","findings":[]}`)
+		os.Exit(0)
+	case "should-not-run":
+		os.Exit(4)
 	case "opencode-mutation":
 		if err := os.WriteFile("mutated-by-helper.txt", []byte("mutation\n"), 0o644); err != nil {
 			os.Exit(2)

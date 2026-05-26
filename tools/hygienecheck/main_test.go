@@ -130,6 +130,48 @@ func TestCheckAbsoluteHomePaths(t *testing.T) {
 	}
 }
 
+func TestCheckActionPins(t *testing.T) {
+	dir := t.TempDir()
+	gitInit(t, dir)
+
+	writeFile(t, dir, ".github/workflows/ci.yml", strings.Join([]string{
+		"name: CI",
+		"jobs:",
+		"  reusable:",
+		"    uses : owner/repo/.github/workflows/reuse.yml@34e114876b0b11c390a56381ad16ebd13914f8d5",
+		"  verify:",
+		"    steps:",
+		"      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6",
+		"      - uses: \"actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c\" # v6",
+		"      - uses: ./local/action",
+		"",
+	}, "\n"))
+	writeFile(t, dir, ".github/workflows/bad.yml", strings.Join([]string{
+		"name: Bad",
+		"jobs:",
+		"  verify:",
+		"    steps:",
+		"      - uses: actions/setup-go@v6",
+		"      - uses: actions/upload-artifact@012345678901234567890123456789012345678",
+		"",
+	}, "\n"))
+	gitAdd(t, dir, ".github/workflows/ci.yml")
+	gitAdd(t, dir, ".github/workflows/bad.yml")
+	gitCommit(t, dir, "init")
+
+	tracked := []string{".github/workflows/ci.yml", ".github/workflows/bad.yml"}
+	got := checkActionPins(dir, tracked)
+	if len(got) != 2 {
+		t.Fatalf("got %d findings, want 2: %v", len(got), got)
+	}
+	if !strings.Contains(got[0], ".github/workflows/bad.yml") || !strings.Contains(got[0], "actions/setup-go@v6") {
+		t.Fatalf("finding does not identify unpinned action: %s", got[0])
+	}
+	if !strings.Contains(got[1], "actions/upload-artifact@012345678901234567890123456789012345678") {
+		t.Fatalf("finding does not identify short sha: %s", got[1])
+	}
+}
+
 func TestRunPassesCleanRepo(t *testing.T) {
 	dir := t.TempDir()
 	gitInit(t, dir)
