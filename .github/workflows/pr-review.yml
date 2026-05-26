@@ -12,6 +12,8 @@ jobs:
   pr-review-evidence-only:
     name: pr-review-evidence-only
     runs-on: ubuntu-latest
+    env:
+      PR_REVIEW_MODEL_CONFIGURED: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' }}
     steps:
       - name: Checkout trusted base
         uses: actions/checkout@v6
@@ -113,17 +115,17 @@ jobs:
             --created-by github-actions
 
       - name: Set up Node for pi runner
-        if: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
+        if: ${{ env.PR_REVIEW_MODEL_CONFIGURED == 'true' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
         uses: actions/setup-node@v6
         with:
           node-version: '24'
 
       - name: Install pinned pi runner
-        if: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
+        if: ${{ env.PR_REVIEW_MODEL_CONFIGURED == 'true' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
         run: npm install -g @mariozechner/pi-coding-agent@0.74.0
 
       - name: Run configured model reviewers
-        if: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
+        if: ${{ env.PR_REVIEW_MODEL_CONFIGURED == 'true' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
           KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
@@ -138,7 +140,7 @@ jobs:
             --allow-external-runner pi
 
       - name: Record model review not assessed
-        if: ${{ secrets.ZAI_API_KEY == '' || secrets.KIMI_API_KEY == '' || secrets.MINIMAX_API_KEY == '' || hashFiles('.github/scripts/pr-review-pi.sh') == '' }}
+        if: ${{ env.PR_REVIEW_MODEL_CONFIGURED != 'true' || hashFiles('.github/scripts/pr-review-pi.sh') == '' }}
         run: |
           set -euo pipefail
           packet_digest="$(jq -r '.packet_digest' review/packet/packet.json)"
