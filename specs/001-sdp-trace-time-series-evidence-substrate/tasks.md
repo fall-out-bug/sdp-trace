@@ -785,6 +785,54 @@ approved.
 evidence mechanism, not merely a runbook. Merge, release, production trust, risk
 acceptance, and human approval remain outside `sdp-trace`.
 
+## Phase 24: CI PR Review Integration
+
+**Goal**: Run Block 30 PR-review evidence in GitHub Actions through configured
+GLM, Kimi, and MiniMax `pi` reviewers without turning model review into merge
+approval.
+
+**Independent Test**: Given a PR, the workflow produces a safe artifact bundle
+with packet, run results, ledger, validation, and summary. When provider secrets
+are configured, GLM, Kimi, and MiniMax reviewer planes run through `pi`. When
+secrets are unavailable, the workflow records explicit `not_assessed` evidence
+instead of reporting review coverage as satisfied.
+
+**Activation Gate**: Do not implement Block 32 until
+`blocks/32-ci-pr-review-integration.md` and
+`blocks/32-ci-pr-review-integration-implementation-plan.md` pass Socratic
+review across product boundary, trace/evidence, implementation feasibility, and
+secret-handling planes, and the reviewed direction is explicitly approved.
+
+- [x] T237 [US5] Run recipe discovery for GLM, Kimi, and MiniMax `pi`/OpenCode
+  configuration and record usable recipe evidence in
+  `blocks/32-ci-pr-review-integration-review-ledger.md`.
+- [x] T238 [US5] Run Socratic spec review for Block 32, fix every valid
+  critical or major finding, and record focused re-review disposition before
+  implementation approval.
+- [x] T239 [US4] Add CI-specific PR-review profile and deterministic prompt
+  templates for GLM, Kimi, and MiniMax `pi` reviewers with digest-only raw
+  output retention.
+- [x] T240 [US5] Add explicit no-secret CI reviewer-result path that records
+  all required planes as `not_assessed` with reason
+  `ci_model_review_not_configured` without invoking external runners.
+- [x] T241 [US5] Add `pr-review-evidence-only` GitHub Actions workflow that
+  builds trusted-base `sdp-trace`, treats PR-head code only as diff/context
+  data in the secret-bearing job, uploads safe artifacts, and writes an
+  evidence-only Step Summary.
+- [x] T242 [US5] Add safety tests and workflow checks proving provider keys,
+  raw prompts, raw model responses, raw `pi` stderr, private paths,
+  authenticated URLs, and token-shaped markers are not persisted or rendered.
+- [x] T243 [US4] Update CI policy and command docs so maintainers cannot
+  mistake `pr-review-evidence-only` for human approval, release readiness, risk
+  acceptance, or production trust.
+- [ ] T244 [US5] Run local verification, implementation multi-plane review,
+  PR-level multi-plane review, and GitHub workflow evidence before claiming
+  Block 32 complete.
+
+**Checkpoint**: Block 32 is complete only when CI can emit safe PR-review
+evidence artifacts. Merge approval, branch-protection policy, release,
+production trust, and risk acceptance remain outside `sdp-trace`.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -946,6 +994,9 @@ acceptance, and human approval remain outside `sdp-trace`.
 25. Complete Block 30 automated PR review evidence mechanism only after
     explicit spec approval, preserving model reviews as evidence and keeping
     merge, release, risk acceptance, and human approval outside `sdp-trace`.
+26. Complete Block 32 CI PR review integration only after explicit spec
+    approval, preserving CI model review as evidence, not approval, and keeping
+    missing secrets visible as `not_assessed`.
 
 ### Evidence Discipline
 

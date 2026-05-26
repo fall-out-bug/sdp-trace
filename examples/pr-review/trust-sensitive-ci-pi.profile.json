@@ -1,0 +1,44 @@
+{
+  "schema_version": "block30-pr-review-profile-v1",
+  "profile_id": "trust-sensitive-ci-pi",
+  "required_planes": [
+    "code_correctness",
+    "trace_evidence_provenance",
+    "requirements_vs_implementation"
+  ],
+  "roles": [
+    {
+      "role_id": "code-correctness-minimax",
+      "plane": "code_correctness",
+      "runner": "pi",
+      "requested_model": "minimax/MiniMax-M2.7",
+      "command": [".github/scripts/pr-review-pi.sh", "minimax", "MiniMax-M2.7"],
+      "timeout_seconds": 600,
+      "prompt_template_ref": "examples/pr-review/prompt-templates/code-correctness.md",
+      "required_output_schema": "schema/pr-review-result.schema.json",
+      "raw_output_retention": "digest_only"
+    },
+    {
+      "role_id": "trace-evidence-glm",
+      "plane": "trace_evidence_provenance",
+      "runner": "pi",
+      "requested_model": "zai/glm-5.1",
+      "command": [".github/scripts/pr-review-pi.sh", "zai", "glm-5.1"],
+      "timeout_seconds": 600,
+      "prompt_template_ref": "examples/pr-review/prompt-templates/trace-evidence.md",
+      "required_output_schema": "schema/pr-review-result.schema.json",
+      "raw_output_retention": "digest_only"
+    },
+    {
+      "role_id": "requirements-kimi",
+      "plane": "requirements_vs_implementation",
+      "runner": "pi",
+      "requested_model": "kimi-coding/k2p6",
+      "command": [".github/scripts/pr-review-pi.sh", "kimi-coding", "k2p6"],
+      "timeout_seconds": 600,
+      "prompt_template_ref": "examples/pr-review/prompt-templates/requirements.md",
+      "required_output_schema": "schema/pr-review-result.schema.json",
+      "raw_output_retention": "digest_only"
+    }
+  ]
+}

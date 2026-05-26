@@ -15,6 +15,15 @@ Required CI evidence:
 - `go run ./tools/schemadoc -verify-readme`
 - `git diff --check`
 
+Workflow dependencies:
+
+- GitHub Actions used by repository workflows must be pinned to immutable commit
+  SHAs, with the reviewed upstream tag retained as a comment for operator
+  readability.
+- Updating a pinned action SHA is a dependency update and requires review of the
+  upstream tag/ref being pinned. Do not treat a movable tag such as `@v6` as
+  sufficient evidence for trust-sensitive workflows.
+
 Quality gate policy:
 
 | Gate | Threshold | CI state | Evidence rule |
@@ -61,13 +70,26 @@ Raw file-MI threshold failures include `lines`, `cyclo`, and
 high-branching or token-heavy files without treating the metric as an opaque
 score.
 
-As of the 2026-05-13 polish head, absolute file and function MI checks without
-baselines pass locally for Go under `cmd`, `internal`, and `tools` using a
-`70.1` threshold replay for the user-facing `> 70` claim. CI keeps the baseline
-ratchet commands because they are the policy mechanism that prevents future PRs
-from adding or worsening MI exceptions without review.
+As of the 2026-05-26 integration audit, absolute file and function MI checks
+without baselines do not pass across all Go under `cmd`, `internal`, and
+`tools` with a `70.1` threshold replay for the user-facing `> 70` claim. CI
+therefore keeps the baseline ratchet commands as the enforceable policy
+mechanism: they prevent future PRs from adding or worsening MI exceptions
+without review, but they are not an absolute MI closure claim.
 
 If GitHub does not report checks for a PR, record CI as `not_assessed`; do not
 treat local verification as a substitute for remote CI evidence. Local
 verification may support implementation review, but CI-backed closure requires
 the workflow result or an explicit repo-tracked replacement policy.
+
+## PR Review Evidence
+
+`pr-review-evidence-only` records automated model-review evidence for a frozen
+PR packet. It is deliberately named as evidence-only because a green model-review
+check is not human approval, merge approval, release readiness, production
+trust, or risk acceptance.
+
+Do not configure `pr-review-evidence-only` as a substitute for required human
+review or release approval. If model-review coverage is missing because provider
+secrets are unavailable, the job must record `not_assessed` rather than claim
+review coverage is satisfied.
