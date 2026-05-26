@@ -1,6 +1,7 @@
 # Block 25 Implementation Plan: Compiled CI Demo Pilot
 
-Status: draft, pending Socratic review and user approval.
+Status: partially reviewed; implementation evidence is `cannot_verify` in this
+environment until the external demo repository and CI artifacts are accessible.
 
 ## Execution Rule
 

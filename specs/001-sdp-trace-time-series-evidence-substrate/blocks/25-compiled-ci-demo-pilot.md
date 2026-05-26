@@ -1,6 +1,7 @@
 # Block 25: Compiled CI Demo Pilot
 
-Status: spec draft, pending Socratic review.
+Status: partially reviewed; demo repository evidence cannot be live-verified in
+this environment.
 
 Parent artifacts:
 

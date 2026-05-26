@@ -43,7 +43,7 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | --- | --- |
 | Spec directories | 19 |
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 569 / 605 |
+| Checked task boxes | 571 / 605 |
 | Specs with all task boxes checked | 9 |
 | Formal `complete` roadmap rows | 0 |
 
