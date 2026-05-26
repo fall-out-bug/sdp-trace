@@ -929,6 +929,54 @@ secret-handling planes, and the reviewed direction is explicitly approved.
 evidence artifacts. Merge approval, branch-protection policy, release,
 production trust, and risk acceptance remain outside `sdp-trace`.
 
+## Phase 25: Repository CI Trust System
+
+**Goal**: Make CI for the `sdp-trace` repository itself prove fast code
+health, contract consistency, and safe evidence boundaries without claiming
+merge approval, release readiness, production trust, or customer-repo CI
+coverage.
+
+**Independent Test**: Given a PR, a maintainer can inspect GitHub checks and
+safe artifacts and distinguish required code/syntax verification from
+contract-validation facts, PR-review evidence, source-bound release proof, and
+explicit `not_assessed` or `cannot_verify` gaps.
+
+**Activation Gate**: Do not implement Block 33 until
+`blocks/33-repository-ci-trust-system.md` and
+`blocks/33-repository-ci-trust-system-implementation-plan.md` pass Socratic
+review across product-boundary/UX, trace/evidence, and DX/maintainability
+planes, and the reviewed direction is explicitly approved.
+
+- [x] T245 [US5] Add Block 33 draft spec, implementation plan, and review
+  ledger for repository CI layers, branch-protection boundaries, evidence-only
+  workflow semantics, and source-bound release separation.
+- [ ] T246 [US5] Run fresh Socratic spec review for Block 33, fix every valid
+  critical or major finding, and record focused re-review disposition before
+  implementation approval. Historical review notes imported from
+  `origin/codex/block-33-repo-ci-trust-system` are `cannot_verify` in the
+  current checkout because raw review outputs were not committed.
+- [ ] T247 [US4] Harden the required `verify` workflow so it checks Go tests,
+  Go formatting, broad JSON syntax, workflow YAML syntax, and whitespace without
+  claiming release proof or production trust.
+- [ ] T248 [US5] Add or document `contract-validate` checks for schema/example
+  alignment, fixture replay, self-trace mirror/hash sync, claim tags,
+  PR-review profile refs, and source-bound manifest-subject drift, keeping
+  unavailable validators outside required CI and tracked as future work.
+- [ ] T249 [US5] Document evidence-only artifact workflow boundaries so
+  PR-review, future trace/report/gate/query artifacts, and future source-bound
+  release verification stay safe, inspectable, and separate from
+  branch-protection approval.
+- [ ] T250 [US4] Update CI policy and command docs so maintainers can tell
+  which checks are required, which are evidence-only, which are release
+  verification, and which customer-repo CI concerns are deferred.
+- [ ] T251 [US5] Run local verification, implementation multi-plane review,
+  PR-level multi-plane review, and GitHub workflow evidence before claiming
+  Block 33 complete.
+
+**Checkpoint**: Block 33 is complete only when `sdp-trace` repository CI has a
+reviewed, working, non-overclaiming check taxonomy. Customer-repository CI
+templates and downstream policy decisions remain future work.
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -982,6 +1030,10 @@ production trust, and risk acceptance remain outside `sdp-trace`.
   repository observer UX, Block 29 delivery trace envelopes, and the durable
   review-ledger/evidence/provenance contracts. It must make automated PR review
   observable without becoming a native merge gate or hosted-model dependency.
+- **Phase 24**: Depends on Block 30 automated PR-review mechanism and must keep
+  CI model review as evidence-only, not approval.
+- **Phase 25**: Depends on Block 32 review-evidence boundaries and must harden
+  repository CI before designing customer-repository CI templates.
 
 ### Parallel Opportunities
 
@@ -1093,6 +1145,9 @@ production trust, and risk acceptance remain outside `sdp-trace`.
 26. Complete Block 32 CI PR review integration only after explicit spec
     approval, preserving CI model review as evidence, not approval, and keeping
     missing secrets visible as `not_assessed`.
+27. Complete Block 33 repository CI trust system only after explicit spec
+    approval, preserving required checks, evidence-only workflows, and
+    source-bound release verification as separate trust surfaces.
 
 ### Evidence Discipline
 
