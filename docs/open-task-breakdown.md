@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 7 open task boxes one by one. It is a
+This file decomposes the remaining 5 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,8 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 018 T018-001 | Review core command list with maintainers. | Machine review and command-surface verification exist; maintainer review is `not_assessed`. | No. | Maintainer reviews command list or explicitly keeps review pending. |
-| 018 T018-070 | Prepare follow-up implementation specs only after core/extension direction is approved. | Follow-up specs are blocked on T018-001. | No. | After maintainer approval, prepare follow-up specs; otherwise keep open. |
 | 019 T019-001 | Review Spec 019 scope with maintainers. | PR #60 merged before this approval was recorded; this is a missed pre-merge gate. | No. | Maintainer decides whether to accept, reject, or split the already-merged state. |
 | 019 T019-002 | Run adversarial spec review before implementation approval. | Cross-model review ran after implemented slices; pre-implementation approval evidence is absent. | No. | Treat as `partial_after_merge`; maintainer decides whether to accept or split. |
 | 019 T019-003 | Start implementation/Pi handoff only after reviewed direction is approved. | Already missed before merge; cannot be retroactively satisfied as pre-implementation approval. | No. | Maintainer records acceptance/waiver/rejection/split for missed gate. |
@@ -68,6 +66,13 @@ feature PRs #16-#20 as first slices, negative draft PR #21 for theater
 explanation, and no separate polished sales repository for this closure. It
 does not approve release, production trust, compliance, semantic quality, or
 signed external trust.
+
+Spec 018 T018-001 and T018-070 are now closed by maintainer decision
+`approve_core_extension_direction` in the 2026-05-26 closure thread plus filed
+follow-up Spec 020 `core-query-package-split` and Spec 021
+`source-file-locality-cleanup`. The follow-up specs are draft implementation
+surfaces and do not approve command removal, separate binaries, production
+readiness, release approval, or external trust.
 
 The other open tasks need one of:
 

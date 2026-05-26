@@ -56,7 +56,9 @@
 
 | **017** | OSS Replacement Compatibility And Benchmarks | `in_progress` | `in_progress` | 11 / 11 | none in task ledger | `go test` PASS (`tools/osscompat`, `tools/ossbench`). **CRAP PASS**. **MI PASS**. Supply-chain probes (in-toto, Cosign, SLSA) explicitly preserve optional-tool absence as `not_assessed` and conformance as `cannot_verify`. Live `wrap` manifest has `schema/run-manifest.schema.json`; optional external validation is `not_assessed` when `check-jsonschema` is absent. | **Implemented local / trust-bounded** — compatibility harness, benchmark tooling, controlled supply-chain probes, and docs index updates exist. External supply-chain trust remains out of scope. |
 
-| **018** | Core/Policy Split And Pi Delivery Plan | `draft` | `in_review` | 9 / 11 | T018-001, T018-070 | `go test` PASS, `doccheck` PASS, `hygienecheck` PASS. | **Implemented local / review-gated** — workstreams A-E and integration verification are complete; maintainer review and follow-up-spec decision remain open. |
+| **018** | Core/Policy Split And Pi Delivery Plan | `draft` | reviewed / follow-ups prepared | 11 / 11 | — | `go test` PASS, `doccheck` PASS, `hygienecheck` PASS. Maintainer decision `approve_core_extension_direction` was recorded in the 2026-05-26 closure thread. Follow-up Spec 020 and Spec 021 are filed as draft implementation specs. | **Reviewed direction / follow-ups prepared** — workstreams A-E, integration verification, maintainer review, and follow-up spec filing are complete; command removal, separate binaries, production readiness, release approval, and external trust are not claimed. |
+| **020** | Core Query Package Split | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future task backlog is present as non-active table rows. | **Prepared future implementation spec** — not current closure debt until explicitly taken into work. |
+| **021** | Source File Locality Cleanup | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future task backlog is present as non-active table rows. | **Prepared future implementation spec** — not current closure debt until explicitly taken into work. |
 | **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | post-merge partial | 11 / 16 | T019-001, T019-002, T019-003, T019-004, T019-120 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. Integration PR #63 superseded PR #62/PR #31 as the handoff surface, passed final-head CI, and merged as `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Current-branch alternative-LLM reviews are LGTM after findings were addressed. | **Partial** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. PR #63 added PR-review CI enforcement and pinned workflow action checks. Phase 0 approval gates and post-merge approval remain open. GitHub PR metadata has no recorded review approval; `merge_approval` remains `not_assessed`. |
 
 ## Qualification Notes
@@ -85,9 +87,9 @@
 - **Spec 019 T019-120**: Final post-merge branch review is complete and
   integration PR #63 final-head CI passed before merge. Spec closure remains
   blocked on T019-004 maintainer approval.
-- **Approval-gated specs**: 018 T018-001/T018-070 and
-  019 T019-004/T019-120 require explicit maintainer acceptance, waiver,
-  rejection, or successor-spec split before stronger closure claims.
+- **Approval-gated specs**: 019 T019-004/T019-120 require explicit maintainer
+  acceptance, waiver, rejection, or successor-spec split before stronger
+  closure claims.
 - **Demo / first-run specs**: 001 Block 25/T226 and 007 buyer rehearsal are
   represented by real external demo-repository or first-run observation
   evidence, not local ledger cleanup. Future non-no-op GSD runs still need

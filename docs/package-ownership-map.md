@@ -1,6 +1,6 @@
 # Package Ownership Map
 
-Status: in_review for Spec 018; maintainer human review not_assessed
+Status: reviewed for Spec 018; core/extension direction approved
 
 This map separates core substrate packages from extension packages. It is a
 design boundary for simplification work, not a package-removal plan.

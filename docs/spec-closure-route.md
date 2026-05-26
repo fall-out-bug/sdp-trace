@@ -13,9 +13,9 @@ coordination artifact, not proof that any spec is complete.
 | Source commit inspected | `main` merge commit `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd` |
 | PR #64 | merged on 2026-05-26 after explicit maintainer approval; final PR checks passed at head `537612723f7dad7f6e3a92657336fafa4ce6bbd5` |
 | Latest `main` CI | pass, run `26453881873` at `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd` |
-| Spec directories | 19 |
-| SpecKit triplets | 19 / 19 |
-| Task checkboxes | 598 / 605 checked |
+| Spec directories | 21 |
+| SpecKit triplets | 21 / 21 |
+| Task checkboxes | 600 / 605 checked |
 | Formal roadmap `complete` rows | 0 |
 
 Commands used for this audit:
@@ -59,16 +59,18 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 | 015 Spec Governance And Roadmap | Tasks are 17 / 17 after the status-discipline update; roadmap and status discipline exist. | Close after this audit route is linked and verified. The remaining risk is stale roadmap facts after future merges; keep freshness rule active. |
 | 016 Production Adoption Security Baseline | Tasks are 10 / 10; docs exist; PR #59 is now merged per roadmap. External audit, customer adoption, signed release, and production trust remain `not_assessed`. | Close only as controlled-pilot/security-baseline docs. Do not close production adoption. Update wording to separate local security baseline from external production trust. |
 | 017 OSS Replacement Compatibility And Benchmarks | Tasks are 11 / 11. Tooling, benchmark harnesses, controlled supply-chain probes, docs index, and roadmap updates exist. Optional external tools remain `not_assessed` when absent; supply-chain conformance remains `cannot_verify`. | Treat as implemented-local with explicit optional-tool boundaries. Do not upgrade to external supply-chain trust without new evidence. |
-| 018 Core/Policy Split And Pi Delivery | Task ledger now maps 9 / 11 implemented and locally verified tasks to command stability, package ownership, extension boundary, source locality, core-first docs, and integration verification. Maintainer review and follow-up implementation specs remain open / `not_assessed`. | Keep maintainer review open as `not_assessed` until explicit approval exists; prepare follow-up specs only after that direction is accepted. |
+| 018 Core/Policy Split And Pi Delivery | Task ledger now maps 11 / 11 implemented, reviewed, and locally verified tasks to command stability, package ownership, extension boundary, source locality, core-first docs, integration verification, maintainer decision `approve_core_extension_direction`, and follow-up Spec 020 / Spec 021. | Close Spec 018 as approved core/extension direction and prepared follow-up implementation specs. Do not claim command removal, separate binaries, production readiness, release approval, or external trust. |
+| 020 Core Query Package Split | Draft follow-up implementation spec prepared by Spec 018 closure. No active task checkboxes are opened in the current closure route. | Future implementation surface only; do not treat as current closure debt until explicitly taken into work. |
+| 021 Source File Locality Cleanup | Draft follow-up implementation spec prepared by Spec 018 closure. No active task checkboxes are opened in the current closure route. | Future implementation surface only; do not treat as current closure debt until explicitly taken into work. |
 | 019 Repo Realignment, Monitoring, And Gate Readiness | Tasks are 11 / 16. Major workstreams are implemented, PR #63 merged after final-head CI passed, and Phase 0 approval gates plus T019-120 remain open. | Treat as post-merge governance debt. Maintainers must decide whether to accept the already-merged work, reject it, or split remaining governance closure into a successor spec. |
 
 ## Open Task Classification
 
-Current task ledger state is 598 / 605 checked, leaving 7 open task boxes.
+Current task ledger state is 600 / 605 checked, leaving 5 open task boxes.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
-| Approval or maintainer gates | 018 T018-001/T018-070; 019 T019-001/T019-002/T019-003/T019-004/T019-120 | Cannot be converted to `pass` locally. Needs explicit maintainer acceptance, waiver, rejection, merge/post-merge evidence, or successor-spec split. |
+| Approval or maintainer gates | 019 T019-001/T019-002/T019-003/T019-004/T019-120 | Cannot be converted to `pass` locally. Needs explicit maintainer acceptance, waiver, rejection, merge/post-merge evidence, or successor-spec split. |
 | Review / PR evidence closure | none currently isolated as review-only after this refresh | Future review gaps must still be closed with fresh review, live PR evidence, and explicit trust-boundary wording, not task-box cleanup alone. |
 | Retire or re-scope stale planning | none currently isolated as stale after this refresh | Future stale specs should be retired only with an explicit supersession map. |
 
@@ -77,8 +79,8 @@ Current task ledger state is 598 / 605 checked, leaving 7 open task boxes.
 The implemented-local and stale-ledger backlog has been reduced to explicit
 approval and external-evidence surfaces. The next closure work is:
 
-1. **Maintainer decision surface**: resolve or preserve 018 T018-001/T018-070
-   and 019 T019-001/T019-004/T019-120 with explicit
+1. **Maintainer decision surface**: resolve or preserve
+   019 T019-001/T019-004/T019-120 with explicit
    accept / waive / reject / split decisions. Do not infer approval from this
    document or from green CI.
 2. **External demo surface**: T226 is closed for the current first-run
@@ -93,7 +95,6 @@ The durable row-by-row decision ledger lives in
 
 | Decision needed | Open tasks | Current evidence | Valid closure outcomes |
 | --- | --- | --- | --- |
-| Spec 018 direction | T018-001, T018-070 | Machine review and implementation workstreams exist; maintainer review is `not_assessed`. | Maintainer approval of core/extension direction, then follow-up specs; or keep/split. |
 | Spec 019 post-merge governance | T019-001/T002/T003/T004/T120 | PR #60 merged with missed pre-merge gates; PR #63 final-head CI passed; merge approval remains `not_assessed`. | Accept partial merge state and closure plan, reject it, or split remaining governance debt. |
 | T226 first-run OpenCode/GSD observation | 001 T226 | GSD-Redux replacement observes setup/model/source/digest/tool/phase facts. Mutation/test remain `not_assessed` because the replayed phase was already complete and execute-phase performed no mutation or test action. | Closed as observed first-run path with unavailable dimensions retained, not green. |
 

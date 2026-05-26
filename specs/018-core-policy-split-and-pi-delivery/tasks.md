@@ -1,11 +1,15 @@
 # Tasks: Core/Policy Split And Pi Delivery
 
-Status: in_review for Spec 018; maintainer human review not_assessed
+Status: reviewed for Spec 018; core/extension direction approved
 
 ## Phase 0 - Review
 
-- [ ] T018-001 Review core command list with maintainers.
-  Status: `not_assessed` for this controlled-pilot block.
+- [x] T018-001 Review core command list with maintainers.
+  Evidence: maintainer decision `approve_core_extension_direction` recorded in
+  the 2026-05-26 closure thread. Approved core commands are `wrap`, `run`,
+  `verify`, `explain`, `report`, and `query --query missing-evidence`; other
+  current command families remain extension, experimental, or fixture-only in
+  the same binary for this phase.
 - [x] T018-001a Machine review of core command list against `sdp-trace command-surface`.
   Session verification: `go run ./cmd/sdp-trace command-surface`,
   `go run ./tools/doccheck`.
@@ -52,5 +56,10 @@ Status: in_review for Spec 018; maintainer human review not_assessed
 - [x] T018-060 Run docs and hygiene checks.
   Session verification: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`,
   `git diff --check`.
-- [ ] T018-070 Prepare follow-up implementation specs only after core/extension
-  direction is approved. Status: `not_assessed` until follow-up specs are filed.
+- [x] T018-070 Prepare follow-up implementation specs only after core/extension
+  direction is approved.
+  Evidence: follow-up Spec 020 `core-query-package-split` and Spec 021
+  `source-file-locality-cleanup` are filed as draft implementation specs. They
+  prepare future implementation work without opening active closure-route task
+  checkboxes or approving command removal, separate binaries, production
+  readiness, release approval, or external trust.
