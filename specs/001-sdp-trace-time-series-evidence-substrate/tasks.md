@@ -655,7 +655,22 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   names are not required for the v2 demo track.
 - [ ] T213 [US5] Fix artifact index generation so it emits deterministic JSON,
   does not self-index, and add digest verification over downloaded CI artifacts.
-  Status: `cannot_verify` for the same demo-repository access reason as T211.
+  Status: `open` as replacement work. The old Block 25 `artifact-index`
+  implementation shape is accepted as obsolete for the active
+  `sdp-trace-demo-jvm-gsd` v2 packet/bundle track, but the underlying trust gap
+  remains: current evidence records bundle manifests and GitHub artifact refs,
+  not replayed digest verification over downloaded CI artifact contents. Close
+  this only with v2 bundle artifact verification that downloads the GitHub
+  artifacts, recomputes retained content digests, and records unavailable
+  archive/service digest metadata explicitly as `not_assessed` when absent.
+  Current implementation progress: demo PR
+  `fall-out-bug/sdp-trace-demo-jvm-gsd#25` adds deterministic v2 artifact-index
+  generation, no-self-index verification, digest/size verification, and a Bazel
+  mutation negative test; local `bazel test //... --test_output=errors` passes
+  at demo commit `539acef1cbb29ffd859ffef5f0075f6262efec06`. Live closure is
+  still blocked because GitHub has not emitted a PR workflow run for #25 after
+  push, an empty synchronize commit, and close/reopen, so downloaded CI
+  artifacts do not yet exist for replay.
 - [ ] T214 [US5] Preserve no-OIDC, stale digest, and source/run mismatch cases
   as intentional `cannot_verify` or `fail` evidence states independent of clean
   artifact-index correctness.
