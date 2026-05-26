@@ -160,7 +160,7 @@ func skipUnlessIntegration(t *testing.T) {
 }
 
 func TestRunExternalTool_Success(t *testing.T) {
-	out, err := runExternalTool(context.TODO(), "go", "version")
+	out, err := runExternalTool(context.Background(), "go", "version")
 	if err != nil {
 		t.Fatalf("expected go version to succeed: %v\n%s", err, out)
 	}
@@ -170,7 +170,7 @@ func TestRunExternalTool_Success(t *testing.T) {
 }
 
 func TestRunExternalTool_Missing(t *testing.T) {
-	_, err := runExternalTool(context.TODO(), "this-tool-definitely-does-not-exist-017")
+	_, err := runExternalTool(context.Background(), "this-tool-definitely-does-not-exist-017")
 	if err == nil {
 		t.Fatal("expected error for missing tool")
 	}
