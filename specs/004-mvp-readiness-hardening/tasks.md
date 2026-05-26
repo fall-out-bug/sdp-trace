@@ -68,5 +68,9 @@
   Evidence: PR #64 and `pr-level-closure-review-2026-05-26.md`.
 - [x] T041 Record named reviewer sign-off for MVP bar conditions before ready state.
   Evidence: `pr-level-closure-review-2026-05-26.md`.
-- [ ] T042 Stop before merge unless explicit merge approval is present.
-  Status: `not_assessed`; explicit merge approval is not represented.
+- [x] T042 Stop before merge unless explicit merge approval is present.
+  Evidence: explicit maintainer approval in the 2026-05-26 closure thread;
+  PR #64 merged to `main` as
+  `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; `main` CI run
+  `26453881873` passed after merge. This is merge approval only, not
+  production readiness, release approval, or external trust.

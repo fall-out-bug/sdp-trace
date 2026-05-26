@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 12 open task boxes one by one. It is a
+This file decomposes the remaining 10 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,8 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 002 T035 | Merge only after fresh CI, local verification, PR review, and post-merge verification. | PR #64 is open, green, and `CLEAN`; merge approval and post-merge verification are absent. | No. | Requires explicit merge approval, merge, final `main` CI query, and post-merge verification note. |
-| 004 T042 | Stop before merge unless explicit merge approval is present. | PR #64 is green/CLEAN; explicit merge approval remains `not_assessed`. | No. | Requires explicit merge approval or an explicit decision to keep the task open. |
 | 005 T014 | Stop for explicit user approval of reviewed Product Contract v0. | Contract and later packet implementation evidence exist; historical approval evidence is not represented. | No. | Maintainer decides `accepted_gap`, `waived`, `rejected`, or `split_successor`. |
 | 006 T003 | Get explicit user approval before implementation. | Implementation, review, local verification, and PR evidence exist; historical pre-implementation approval is not represented. | No. | Maintainer decides `accepted_gap`, `waived`, `rejected`, or `split_successor`. |
 | 007 T008 | Ask for explicit approval of demo-track option, first slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | No. | Maintainer approves, rejects, or splits demo-track direction. |
@@ -40,7 +38,7 @@ T216 is closed by active-demo role reviews in
 one major InfoSec redaction-scan evidence gap was fixed and focused re-review
 returned no critical or major findings. T217 is closed by fresh local
 `sdp-trace` verification plus PR #64 `verify` and `pr-review-evidence-only`
-success at head `5c47e09a223c318968f3e6099c59ed51f9995520`. T226 is closed
+success at head `537612723f7dad7f6e3a92657336fafa4ce6bbd5`. T226 is closed
 by the current OpenCode/GSD-Redux first-run observation path:
 `opencode run --command gsd-plan-phase` and `--command gsd-execute-phase`
 under `sdp-trace observe session` produced setup metadata, command digest,
@@ -49,10 +47,14 @@ model/interaction/tool/phase evidence. `mutation` and `test` remain explicit
 `not_assessed` dimensions because the target phase was already complete and the
 execute workflow performed no mutation or test action.
 
+Spec 002 T035 and Spec 004 T042 are now closed by explicit maintainer merge
+approval in the 2026-05-26 closure thread, PR #64 merge commit
+`e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`, and post-merge `main` CI run
+`26453881873`.
+
 The other open tasks need one of:
 
-- explicit maintainer or merge approval;
-- a post-merge verification cycle;
+- explicit maintainer approval;
 - or an explicit successor split / rejection decision.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=open-task-breakdown; state=pass; profile=open_tasks_classified; evidence=state:claim_tags_consistent -->

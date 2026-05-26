@@ -56,5 +56,8 @@
 - [x] T033 Fix valid findings and rerun focused review.
 - [x] T034 Open PR and run PR-level review planes.
   Evidence: PR #64 and `pr-level-closure-review-2026-05-26.md`.
-- [ ] T035 Merge only after fresh CI, local verification, PR review, and post-merge verification.
-  Status: `not_assessed`; PR #64 is open and not merged.
+- [x] T035 Merge only after fresh CI, local verification, PR review, and post-merge verification.
+  Evidence: explicit maintainer approval in the 2026-05-26 closure thread;
+  PR #64 merged to `main` as
+  `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; `main` CI run
+  `26453881873` passed after merge.
