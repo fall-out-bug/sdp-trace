@@ -13,9 +13,9 @@ For one-row-per-task detail, see
 
 | Evidence | State |
 | --- | --- |
-| Task ledger | 593 / 605 checked; 12 open |
-| PR surface | PR #64 open, green, and `CLEAN` at `5c47e09a223c318968f3e6099c59ed51f9995520` |
-| Merge approval | `not_assessed` |
+| Task ledger | 595 / 605 checked; 10 open |
+| PR surface | PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; post-merge `main` CI run `26453881873` passed |
+| Merge approval | explicit maintainer approval recorded in the 2026-05-26 closure thread |
 | Maintainer approval | `not_assessed` unless explicitly recorded per row below |
 | External demo repo | `fall-out-bug/sdp-trace-demo-jvm-gsd` is the active demo repository for current closure |
 | First-run GSD route | GSD-Redux local replacement works through `opencode run --command`; model/interaction/tool/phase observed; mutation/test remain `not_assessed` for the no-op completed phase |
@@ -24,7 +24,7 @@ For one-row-per-task detail, see
 
 | ID | Open tasks | Decision needed | Current evidence | Acceptable evidence to close | Current state |
 | --- | --- | --- | --- | --- | --- |
-| D001 | 002 T035, 004 T042 | Approve PR #64 merge, then verify post-merge state. | PR #64 is open, green, and `CLEAN`; PR review evidence exists; explicit merge approval is absent. | Explicit maintainer merge approval, successful merge, final `main` CI evidence, post-merge verification note. | `not_assessed` |
+| D001 | 002 T035, 004 T042 | Approve PR #64 merge, then verify post-merge state. | Explicit maintainer approval recorded in the 2026-05-26 closure thread; PR #64 merged as `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd`; post-merge `main` CI run `26453881873` passed. | Explicit maintainer merge approval, successful merge, final `main` CI evidence, post-merge verification note. | `accepted_closed` |
 | D002 | 005 T014 | Decide whether Product Contract v0 historical approval gap is accepted, waived, rejected, or split. | Contract and later packet implementation evidence exist; historical approval evidence is not represented. | Maintainer decision recorded with one of: `accepted_gap`, `waived`, `rejected`, or `split_successor`. | `not_assessed` |
 | D003 | 006 T003 | Decide whether Change Evidence Packet Core historical pre-implementation approval gap is accepted, waived, rejected, or split. | Implementation, review, local verification, and PR evidence exist; historical pre-implementation approval evidence is not represented. | Maintainer decision recorded with one of: `accepted_gap`, `waived`, `rejected`, or `split_successor`. | `not_assessed` |
 | D004 | 007 T008 | Decide demo-track option, first implementation slice, and demo-repo strategy. | External demo packet evidence, v1 baseline tag, and buyer rehearsal exist; explicit demo-track approval is absent. | Maintainer decision approving, rejecting, or splitting demo-track direction. | `not_assessed` |
