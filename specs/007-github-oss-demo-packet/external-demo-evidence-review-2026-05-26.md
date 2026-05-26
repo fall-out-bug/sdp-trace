@@ -31,8 +31,8 @@ production trust, semantic quality approval, or signed external trust.
 | Feature CI | Demo PRs #16-#20 all have `build-and-test` SUCCESS in GitHub. | pass |
 | Negative theater PR | Demo PR #21 is open draft with `DEMO-NEGATIVE` title, CI SUCCESS, negative packet and bundle on branch. | pass for draft negative artifact existence |
 | First-packet gate | Feature bundles 1-5 pass `packet check-demo`. | pass |
-| Buyer rehearsal | No live rehearsal artifact found in the checked external repository or PR metadata. | not_assessed |
-| Demo v1 archival tag/note | No tag was visible in the shallow clone; no dedicated archival note was identified. | not_assessed |
+| Buyer rehearsal | `buyer-demo-rehearsal-2026-05-26.md` checks happy-path PR #20 and negative PR #21. | pass |
+| Demo v1 archival tag/note | External tag `demo-v1-observation-baseline` resolves to PR #16 base commit `a8f37aad8500761693feb6ce68517bd65cabc8cc`. | pass |
 
 ## Boundaries
 
@@ -41,5 +41,5 @@ production trust, semantic quality approval, or signed external trust.
   local or input-ref based.
 - `PC-AUTHORITY`, `PC-ATTESTATION`, and `PC-DECISION` remain `not_assessed`
   where packet rows say so.
-- Buyer-demo rehearsal remains open until a retained happy-path plus negative
-  rehearsal artifact exists.
+- Buyer-demo rehearsal is evidence organization only and does not approve merge,
+  release, production trust, compliance, or semantic quality.

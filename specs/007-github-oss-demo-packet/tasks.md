@@ -42,7 +42,11 @@ review before implementation approval.
   and `.sdp-trace/bundles/`; current closure-route replay ran
   `sdp-trace packet validate` and `sdp-trace packet check-demo` successfully
   for feature bundles 1-5.
-- [ ] T010 Preserve current demo v1 history with tag or archival note.
+- [x] T010 Preserve current demo v1 history with tag or archival note.
+  Evidence: external tag `demo-v1-observation-baseline` was created in
+  `fall-out-bug/sdp-trace-demo-jvm-gsd`. The tag object resolves to pre-v2 base
+  commit `a8f37aad8500761693feb6ce68517bd65cabc8cc`, which is PR #16's
+  `baseRefOid`.
 - [x] T011 Create `demo-v2-packetization` tracker in the existing demo repo.
   Evidence: external repository `docs/demo-tracker.md`.
 - [x] T012 Create packetization setup PR with artifact upload, PR template, and
@@ -121,8 +125,13 @@ review before implementation approval.
   `sdp-trace packet check-demo` against external feature bundles 1-5; all
   returned state `pass`. External `bazel test //app:smoke_test
   --test_output=errors` passed on main and PR #21 branch.
-- [ ] T022 Run buyer-demo rehearsal against one happy-path PR and one negative
+- [x] T022 Run buyer-demo rehearsal against one happy-path PR and one negative
   PR.
+  Evidence: `buyer-demo-rehearsal-2026-05-26.md` records rehearsal against
+  happy-path PR #20 and negative PR #21. Feature 5 packet validate/check-demo
+  returned `pass`; negative packet validate returned `pass` and negative
+  check-demo returned `fail` with missing route/verification evidence, which is
+  the intended non-green theater contrast.
 
 ## Demo Feature Route Rule
 

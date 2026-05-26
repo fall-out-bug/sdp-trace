@@ -43,7 +43,7 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | --- | --- |
 | Spec directories | 19 |
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 583 / 605 |
+| Checked task boxes | 585 / 605 |
 | Specs with all task boxes checked | 9 |
 | Formal `complete` roadmap rows | 0 |
 
@@ -102,7 +102,7 @@ for the claimed scope.
 | [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Task ledger is 42 / 43 checked after PR-level review and named reviewer sign-off. Explicit merge approval remains `not_assessed`; absolute MI remains an assessed gap. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
 | [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `in_progress` | Task ledger is 19 / 20 checked after mapping implementation placeholders to Spec 006 packet artifacts. Historical explicit approval remains `not_assessed`. No `blocks/` directory. |
 | [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, and PR-level evidence are mapped in `tasks.md` (26 / 27 checked). Historical pre-implementation approval remains `not_assessed`. No `blocks/` directory. |
-| [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Task ledger is 19 / 22 checked after external demo evidence review. Explicit demo-track approval, demo v1 archival note/tag, and buyer rehearsal remain open. No `blocks/` directory. |
+| [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Task ledger is 21 / 22 checked after external demo evidence review, v1 baseline tag, and buyer rehearsal. Explicit demo-track approval remains open. No `blocks/` directory. |
 
 > **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon implementation, review, merge, and trust closure, move to Formally Closed Specs.
 

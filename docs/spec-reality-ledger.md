@@ -36,7 +36,7 @@
 
 | **005** | Product Contract v0 | `draft` (old) | implemented-local | 19 / 20 | T014 | `go test` PASS, `doccheck` PASS. Spec 006 provides packet schema/model, renderer, fixtures, theater tests, and CLI surface. | **Implemented local / approval-gated** — contract drafted and implementation placeholders are covered by Spec 006 artifacts; historical explicit approval remains `not_assessed`. |
 | **006** | Change Evidence Packet Core | `draft` (old) | implemented-local | 26 / 27 | T003 | `go test` PASS, `doccheck` PASS. Packet schema/model, renderer, CLI validation/render behavior, fixtures, theater tests, closure review, and PR #64 evidence exist. | **Implemented local / approval-gated** — implementation and review evidence are mapped; historical pre-implementation approval remains `not_assessed`. |
-| **007** | GitHub OSS Demo Packet | `draft` (old) | External demo evidence reviewed / approval and rehearsal pending | 19 / 22 | T008, T010, T022 | `go test` PASS, `doccheck` PASS. Historical review ledger includes 2026-05-26 focused split re-review. External demo repo `fall-out-bug/sdp-trace-demo-jvm-gsd` was cloned at `b101882`; PRs #16-#23 were queried; main and negative PR #21 branch Bazel smoke tests passed; feature bundles 1-5 passed `packet validate` and `packet check-demo`. | **Partial** — demo setup, feature packets, negative draft PR, CI, and first-packet gate have current external evidence, but explicit demo-track approval, v1 archival note/tag, and buyer rehearsal remain open. |
+| **007** | GitHub OSS Demo Packet | `draft` (old) | External demo evidence reviewed / approval pending | 21 / 22 | T008 | `go test` PASS, `doccheck` PASS. Historical review ledger includes 2026-05-26 focused split re-review. External demo repo `fall-out-bug/sdp-trace-demo-jvm-gsd` was cloned at `b101882`; PRs #16-#23 were queried; main and negative PR #21 branch Bazel smoke tests passed; feature bundles 1-5 passed `packet validate` and `packet check-demo`; external tag `demo-v1-observation-baseline` preserves PR #16 base commit; buyer rehearsal artifact covers happy-path PR #20 and negative PR #21. | **Partial** — demo setup, feature packets, negative draft PR, CI, first-packet gate, v1 archival tag, and buyer rehearsal have current external evidence, but explicit demo-track approval remains open. |
 | **008** | Invisible Flight Recorder | `in_progress` (blocked) | Implemented locally; PR/final-head CI evidence pending | 35 / 35 | — | `go test` PASS, `go vet` PASS, `doccheck` PASS. | **Partial** — all tasks checked and local tests pass; PR merge and CI evidence at final head are pending, blocking completion. |
 | **009** | Machine-Readable Command Surface | `draft` | Draft for PI review | 14 / 14 | — | `go test` PASS, `doccheck` PASS. | **Partial** — implementation appears complete (tasks checked, tests pass), but spec status remains draft and no PI review approval is recorded. |
 
@@ -93,8 +93,7 @@
 - **Demo / first-run specs**: 001 Block 25/T226 and 007 buyer rehearsal remain
   real external demo-repository or first-run observation work, not local ledger
   cleanup.
-- **Spec 007 T008/T010/T022**: Demo-track approval, v1 archival note/tag, and
-  buyer rehearsal remain open.
+- **Spec 007 T008**: Demo-track approval remains open.
 ### Specs with Completed Tasks but Draft Status
 Specs **009, 010, 011, 012, 014** have all tasks checked and local verification passes, yet their `spec.md` status remains `draft`. The discrepancy means implementation exists but has not been formally approved/merged. They must not be treated as `complete` until the spec status transitions and any pending PI review or merge is recorded.
 
