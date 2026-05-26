@@ -10,8 +10,8 @@ coordination artifact, not proof that any spec is complete.
 
 | Evidence | Current State |
 | --- | --- |
-| Source commit inspected | PR #64 head `76fc3ac5ee61bc3b6c0c2554c53c67f14a9520b7` plus local closure-route reconciliation updates |
-| Open GitHub PRs | PR #64 open, not draft, merge state `CLEAN`; final observed head checks passed before these local updates |
+| Source commit inspected | PR #64 head `16ca9413bd8d8c555b8fd23239014bf382955f68` plus this local closure-route decision-surface refresh |
+| Open GitHub PRs | PR #64 open, not draft, merge state `CLEAN`; `verify` and `pr-review-evidence-only` passed at head `16ca9413bd8d8c555b8fd23239014bf382955f68` before this local docs refresh |
 | Latest `main` CI | pass, run `26436136055` |
 | Spec directories | 19 |
 | SpecKit triplets | 19 / 19 |
@@ -42,7 +42,7 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 
 | Spec | Current Reality | Closure Route |
 | --- | --- | --- |
-| 001 Time-Series Evidence Substrate | Broad substrate is substantially implemented through historical blocks; `tasks.md` is 236 / 244 checked and `blocks/` has 93 files. Not closed: T211-T217 and T226 remain open. | Split into closed historical blocks vs live blockers. Block 21 and Block 32 closure refreshes are recorded; Block 25 demo-repository evidence and T226 remain real demo / first-run observation work. Do not try to close 001 wholesale. |
+| 001 Time-Series Evidence Substrate | Broad substrate is substantially implemented through historical blocks; `tasks.md` is 236 / 244 checked and `blocks/` has 93 files. Not closed: T211-T217 and T226 remain open. `fall-out-bug/sdp-trace-demo-ci-pilot` is not resolvable through current GitHub or SSH access. T226 current-route replay observes `minimax/MiniMax-M2.5`, source commit, output digest, and normalized digest, but current OpenCode/GSD lacks `/gsd-plan-phase`; validation remains `not_assessed` for tool/phase/mutation/test. | Split into closed historical blocks vs live blockers. Block 25 requires demo-repository access and artifact evidence. T226 requires a current GSD route that emits delivery-loop evidence; keep unavailable dimensions explicit, not green. |
 | 002 Authority Envelope Boundary Observation | Implementation appears present: authority schemas, docs, fixtures, Go parser/evaluator, and tests are checked in; tasks are 34 / 35. PR-level closure review exists for PR #64. Missing merge/post-merge closure remains T035. | Keep T035 open until merge, fresh CI, local verification, PR review, and post-merge verification are all represented. |
 | 003 Agent Supply Chain Roadmap | Roadmap/spec discovery artifact only; tasks are 42 / 42 after retirement. It was not implemented as product. | Retired as `retired_superseded` by concrete later specs and blocks. Do not use Spec 003 as implementation authority. |
 | 004 MVP Readiness Hardening | Most implementation work is checked off: 42 / 43. PR-level review and named reviewer sign-off are recorded for PR #64. Explicit merge approval remains open as T042; absolute MI remains an assessed gap, not a pass claim. | Keep T042 open until explicit merge approval exists. Do not upgrade controlled-pilot readiness to production readiness or absolute MI pass. |
@@ -75,30 +75,35 @@ Current task ledger state is 585 / 605 checked, leaving 20 open task boxes.
 
 ## Recommended Route
 
-1. **Finish verification for repaired ledgers**: specs 006 and 018 now map
-   existing implementation artifacts to their task files, but fresh local
-   verification and review evidence still need to be recorded before closure.
-2. **Close low-risk implemented specs**: 010, 011, 012, 014, 015 can likely be
-   closed with docs/tool verification and review-evidence reconstruction.
-3. **Close trust-sensitive implemented specs**: 002, 008, 009, 016 need focused
-   review and explicit trust-boundary wording before closure.
-4. **Resolve partial/blocked specs**: 004, 005, 017, 019 need targeted closure
-   work or explicit deferral.
-5. **Retire or re-scope stale planning specs**: 003 and 007 should not remain
-   open forever if their product direction has been superseded.
-6. **Do not close 001 as one giant spec**: split it into historical completed
-   block evidence plus a small successor list for the remaining open tasks.
+The implemented-local and stale-ledger backlog has been reduced to explicit
+approval, merge, and external-evidence surfaces. The next closure work is:
 
-## Immediate Next Slice
+1. **Maintainer decision surface**: resolve or preserve 005 T014, 006 T003, 007
+   T008, 018 T018-001/T018-070, and 019 T019-001/T019-004/T019-120 with explicit
+   accept / waive / reject / split decisions. Do not infer approval from this
+   document or from green CI.
+2. **PR #64 merge surface**: resolve 002 T035 and 004 T042 only after explicit
+   merge approval exists, then merge, query final-head CI/post-merge state, and
+   record post-merge verification.
+3. **External demo surface**: resolve 001 T211-T217 only after
+   `fall-out-bug/sdp-trace-demo-ci-pilot` is accessible and its CI/artifact
+   evidence can be replayed. Resolve 001 T226 only after a current OpenCode/GSD
+   route emits first-run delivery-loop evidence or the missing route is
+   explicitly split into a successor task/spec.
 
-Continue with specs 006 and 018:
+## Decision Surface
 
-- run the relevant local verification commands;
-- record review gaps as `not_assessed`, not as implicit approval;
-- update closure state only after verification and review evidence are current.
+| Decision needed | Open tasks | Current evidence | Valid closure outcomes |
+| --- | --- | --- | --- |
+| Merge PR #64 | 002 T035, 004 T042 | PR #64 is open, green, and `CLEAN`; merge approval is still `not_assessed`. | Explicit merge approval followed by merge/post-merge verification; or keep tasks open. |
+| Historical approval gaps | 005 T014, 006 T003, 007 T008 | Implementation and review evidence exists, but historical approval evidence is not represented. | Maintainer acceptance of the gap, explicit waiver, rejection, or successor split. |
+| Spec 018 direction | T018-001, T018-070 | Machine review and implementation workstreams exist; maintainer review is `not_assessed`. | Maintainer approval of core/extension direction, then follow-up specs; or keep/split. |
+| Spec 019 post-merge governance | T019-001/T002/T003/T004/T120 | PR #60 merged with missed pre-merge gates; PR #63 final-head CI passed; merge approval remains `not_assessed`. | Accept partial merge state and closure plan, reject it, or split remaining governance debt. |
+| Block 25 demo evidence | 001 T211-T217 | Current credentials cannot resolve `fall-out-bug/sdp-trace-demo-ci-pilot` via GitHub or SSH. | Restore access and replay demo CI/artifacts/reviews; or mark as external blocked/split. |
+| T226 first-run OpenCode/GSD observation | 001 T226 | Current MiniMax route observes setup/model/source/digest facts, but `/gsd-plan-phase` is unavailable and tool/phase/mutation/test remain `not_assessed`. | Restore/replace current GSD route and replay; or split route availability from observer capability. |
 
-The stale-ledger contradiction has been reduced. The remaining risk is more
-specific: implemented-local work may still be missing approval, review, or
-fresh PR-level evidence.
+The remaining risk is no longer hidden implementation work. It is authority:
+merge approval, maintainer approval/waiver/split decisions, and external
+repository or harness availability.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=spec-closure-route-audit; state=pass; profile=repo_baseline_structural; evidence=state:claim_tags_consistent -->
