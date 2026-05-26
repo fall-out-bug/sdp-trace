@@ -70,11 +70,13 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] T004 Map requirements to evidence, gate, decision, trace, and provenance
   artifacts
-- [ ] T005 [P] Update JSON schema or contract fixtures if behavior changes
-- [ ] T006 [P] Update docs/examples that demonstrate the changed surface
-- [ ] T007 Confirm no Node/npm/JS/TS tooling enters the active product path
-- [ ] T008 Record `not_assessed` or `cannot_verify` for unavailable evidence
-- [ ] T009 Confirm branch, commit, PR, and merge approval boundaries
+- [ ] T005 [P] Map result state, trust scope, and authority scope boundaries
+- [ ] T006 [P] Update JSON schema or contract fixtures if behavior changes
+- [ ] T007 [P] Update docs/examples that demonstrate the changed surface
+- [ ] T008 Confirm no Node/npm/JS/TS tooling enters the active product path
+- [ ] T009 Record `not_assessed` or `cannot_verify` for unavailable evidence
+- [ ] T010 Confirm local verification, CI, review, PR readiness, merge approval,
+  release approval, and production trust remain distinct
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -90,17 +92,18 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Go test for [behavior] in [package]/[file]_test.go
-- [ ] T011 [P] [US1] Fixture or schema validation for [artifact] in [path]
+- [ ] T011 [P] [US1] Go test for [behavior] in [package]/[file]_test.go
+- [ ] T012 [P] [US1] Fixture or schema validation for [artifact] in [path]
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Update Go type or parser in internal/[package]/[file].go
-- [ ] T013 [P] [US1] Update CLI/tool surface in cmd/[command]/ or tools/[tool]/
-- [ ] T014 [US1] Implement [behavior] in [package]/[file].go (depends on T012, T013)
-- [ ] T015 [US1] Update docs/examples/spec evidence in [path]
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T013 [P] [US1] Update Go type or parser in internal/[package]/[file].go
+- [ ] T014 [P] [US1] Update CLI/tool surface in cmd/[command]/ or tools/[tool]/
+- [ ] T015 [US1] Implement [behavior] in [package]/[file].go (depends on T013, T014)
+- [ ] T016 [US1] Update docs/examples/spec evidence in [path]
+- [ ] T017 [US1] Preserve explicit evidence states for all unavailable or
+  out-of-scope proof
+- [ ] T018 [US1] Add validation and error handling
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -114,15 +117,15 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 2 (required for behavior/verifier/trust changes) ⚠️
 
-- [ ] T018 [P] [US2] Go test for [behavior] in [package]/[file]_test.go
-- [ ] T019 [P] [US2] Fixture or schema validation for [artifact] in [path]
+- [ ] T019 [P] [US2] Go test for [behavior] in [package]/[file]_test.go
+- [ ] T020 [P] [US2] Fixture or schema validation for [artifact] in [path]
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Update Go type or parser in internal/[package]/[file].go
-- [ ] T021 [US2] Implement [behavior] in [package]/[file].go
-- [ ] T022 [US2] Update CLI/tool or docs surface in [path]
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T021 [P] [US2] Update Go type or parser in internal/[package]/[file].go
+- [ ] T022 [US2] Implement [behavior] in [package]/[file].go
+- [ ] T023 [US2] Update CLI/tool or docs surface in [path]
+- [ ] T024 [US2] Integrate with User Story 1 components (if needed)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -136,14 +139,14 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 3 (required for behavior/verifier/trust changes) ⚠️
 
-- [ ] T024 [P] [US3] Go test for [behavior] in [package]/[file]_test.go
-- [ ] T025 [P] [US3] Fixture or schema validation for [artifact] in [path]
+- [ ] T025 [P] [US3] Go test for [behavior] in [package]/[file]_test.go
+- [ ] T026 [P] [US3] Fixture or schema validation for [artifact] in [path]
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Update Go type or parser in internal/[package]/[file].go
-- [ ] T027 [US3] Implement [behavior] in [package]/[file].go
-- [ ] T028 [US3] Update CLI/tool or docs surface in [path]
+- [ ] T027 [P] [US3] Update Go type or parser in internal/[package]/[file].go
+- [ ] T028 [US3] Implement [behavior] in [package]/[file].go
+- [ ] T029 [US3] Update CLI/tool or docs surface in [path]
 
 **Checkpoint**: All user stories should now be independently functional
 

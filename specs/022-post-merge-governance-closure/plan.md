@@ -1,6 +1,6 @@
 # Plan: Post-Merge Governance Closure
 
-Status: draft follow-up split from Spec 019.
+Status: active clarification complete; implementation tasks opened.
 
 ## Workstreams
 
@@ -11,11 +11,15 @@ Owned files:
 - `specs/019-repo-realignment-monitoring-gate-readiness/`
 - `docs/spec-reality-ledger.md`
 - `docs/closure-decision-ledger.md`
+- `docs/roadmap.md`
 
 Deliverable:
 
 - Summarize PR #60, PR #63, and Spec 019 review/CI evidence without converting
   it into approval.
+- Refresh live PR/CI state for the cited PRs when available; if unavailable,
+  preserve the missing live evidence as `not_assessed` or `cannot_verify`.
+- Keep closure decision, reality, and roadmap surfaces synchronized.
 
 ### WS-022-B: Maintainer Decision
 
@@ -26,8 +30,9 @@ Owned files:
 
 Deliverable:
 
-- Record whether the already-merged Spec 019 work is accepted, rejected, or
-  split into additional remediation specs.
+- Cite the existing `split_successor` maintainer decision and preserve it as
+  the current Spec 019 residual-governance outcome unless a new maintainer
+  decision explicitly supersedes it.
 
 ### WS-022-C: Remediation Planning
 
@@ -37,8 +42,10 @@ Owned files:
 
 Deliverable:
 
-- Create reviewed implementation tasks only for residual work that is still
-  required after the maintainer decision.
+- Create reviewed implementation tasks only for residual work that remains
+  after applying the existing `split_successor` decision.
+- If no residual work remains, record that state explicitly with the evidence
+  cited by WS-022-A and WS-022-B.
 
 ## Verification
 
@@ -51,3 +58,6 @@ go run ./tools/schemadoc
 git diff --check
 ```
 
+Live PR/CI refresh is required before any `complete` claim. If live GitHub state
+cannot be refreshed, the closure artifact must name the missing state and keep
+it `not_assessed` or `cannot_verify`.

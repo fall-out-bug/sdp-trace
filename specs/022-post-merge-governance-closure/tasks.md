@@ -1,17 +1,22 @@
 # Tasks: Post-Merge Governance Closure
 
-Status: draft follow-up split from Spec 019; no active implementation tasks are
-opened in the current closure route.
+Status: active clarification complete; implementation tasks opened.
 
-## Prepared Backlog
+## Active Tasks
 
-These rows define future governance work. Convert them to active task
-checkboxes only when this follow-up spec is explicitly taken into work.
-
-| ID | Future task | Verification |
-| --- | --- | --- |
-| T022-001 | Summarize PR #60, PR #63, and Spec 019 governance evidence. | Exact PR, commit, CI, and review references recorded. |
-| T022-002 | Record maintainer decision for accepting, rejecting, or further splitting Spec 019 residual governance. | Decision row updated with explicit outcome. |
-| T022-003 | Prepare remediation specs if the residual governance state is rejected or split further. | Successor specs have reviewed triplets before implementation. |
-| T022-004 | Verify closure docs after decision recording. | `go run ./tools/doccheck`; `go run ./tools/hygienecheck`; `git diff --check`. |
-
+- [ ] T022-001 Summarize PR #60, PR #63, and Spec 019 governance evidence,
+  refreshing live PR/CI state when available. Verification: exact PR, commit,
+  CI, and review references recorded; unavailable live state remains
+  `not_assessed` or `cannot_verify`.
+- [ ] T022-002 Cite the existing `split_successor` maintainer decision for Spec
+  019 residual governance. Verification: decision row, roadmap, Spec 019
+  plan/tasks, and post-merge closure plan references match.
+- [ ] T022-003 Prepare remediation specs only for work still required after the
+  existing split decision, or explicitly record that no residual remediation
+  remains. Verification: successor specs have reviewed triplets before
+  implementation, or the no-remediation state has cited evidence.
+- [ ] T022-004 Update closure decision ledger, spec reality ledger, and roadmap
+  together. Verification: the three surfaces report the same Spec 022 closure
+  state.
+- [ ] T022-005 Verify closure docs after decision recording. Verification:
+  `go run ./tools/doccheck`; `go run ./tools/hygienecheck`; `git diff --check`.

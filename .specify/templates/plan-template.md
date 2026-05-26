@@ -37,9 +37,9 @@ examples.
 
 **Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
 
-**Constraints**: Harness-independent, evidence-backed or explicitly
-`not_assessed`, no opaque health scores, no Node/npm/JS/TS in active product
-path.
+**Constraints**: Harness-independent evidence recorder, not an approval
+authority; evidence-backed or explicitly `not_assessed` / `cannot_verify`; no
+opaque health scores; no Node/npm/JS/TS in active product path.
 
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
@@ -49,15 +49,22 @@ path.
 
 Evaluate these gates from `.specify/memory/constitution.md`:
 
-- Portable evidence substrate: no dependency on a specific harness/runtime.
-- Evidence-backed claim states: gate/verdict/readiness claims are backed by
-  evidence or marked `not_assessed` / `cannot_verify`.
-- SpecKit trace flow: requirements map to plan, tasks, evidence, gates,
-  decisions, trace, and provenance.
-- Go-first product path: product code stays Go-first; Bash remains a thin
-  launcher; Node/npm/JS/TS are out of active product scope.
-- Review and approval boundaries: verification, review, CI, PR readiness, and
-  merge approval remain distinct.
+- Portable evidence recorder, not authority: no dependency on a specific
+  harness/runtime and no native merge, release, risk, degradation, or production
+  trust decision.
+- Evidence state honesty: gate/verifier/external verdict/readiness claims are
+  backed by current evidence or marked `not_assessed` / `cannot_verify`.
+- SpecKit-compatible trace flow: requirements map to plan, tasks, evidence,
+  gates, decisions, trace, and provenance without making SpecKit a runtime
+  dependency.
+- Go-first, small product path: product code stays Go-first; Bash remains a
+  thin launcher; Node/npm/JS/TS are out of active product scope; schema,
+  fixtures, examples, Go types, docs, and command help stay aligned.
+- Separate review, verification, and approval: local verification, CI, review
+  evidence, PR readiness, merge approval, release approval, and production
+  trust remain distinct.
+- Authority and scope constraints: result state, trust scope, and authority
+  scope use the canonical vocabulary from `docs/agent-entrypoint.md`.
 
 ## Project Structure
 

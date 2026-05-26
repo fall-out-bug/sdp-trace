@@ -78,6 +78,20 @@
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
+### Scope and Authority Boundaries *(mandatory for trust/evidence changes)*
+
+<!--
+  ACTION REQUIRED: Keep sdp-trace as an evidence recorder, not an approval
+  authority. Replace placeholders with concrete boundaries or mark
+  not_assessed/cannot_verify where the feature cannot assess them.
+-->
+
+- Result states affected: [observed/pass/fail/not_assessed/cannot_verify or N/A]
+- Trust scopes affected: [local_observed/ci_witnessed/external_witnessed or N/A]
+- Authority scopes affected: [demo_pilot_only/local_dirty_structural_only/other or N/A]
+- Decisions explicitly out of scope: [merge approval/release approval/risk acceptance/production trust/other]
+- Evidence that remains `not_assessed` or `cannot_verify`: [list with reason]
+
 ## Requirements *(mandatory)*
 
 <!--
@@ -92,11 +106,14 @@
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-006**: System MUST preserve missing or unavailable evidence as
+  `not_assessed` or `cannot_verify` when the feature touches verifier, gate,
+  witness, review, release-proof, or trust surfaces.
 
 *Example of marking unclear requirements:*
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- **FR-007**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
+- **FR-008**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
 ### Key Entities *(include if feature involves data)*
 
