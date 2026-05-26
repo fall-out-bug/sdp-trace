@@ -28,7 +28,7 @@
 
 | Spec | Title | Roadmap Status | Spec Status | Tasks (Checked / Total) | Key Open Tasks | Live Verification for Claimed Deliverables | Claims Backed by Current Evidence? |
 |---|---|---|---|---|---|---|---|
-| **001** | sdp-trace Time-Series Evidence Substrate | `draft` (blocked) | Draft | 232 / 244 | T192, T209–T217, T226, T244 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `schemadoc` PASS. **CRAP PASS**. **MI baseline PASS**. **Absolute MI gap remains assessed**. | **Partial** — many blocks implemented and tested locally, but open review/demo/first-run tasks remain and spec status is draft. |
+| **001** | sdp-trace Time-Series Evidence Substrate | `draft` (blocked) | Draft | 234 / 244 | T209–T217, T226 | `go test` PASS, `go vet` PASS, `doccheck` PASS, `schemadoc` PASS. **CRAP PASS**. **MI baseline PASS**. **Absolute MI gap remains assessed**. Block 21 export replay passed; PR #64 `pr-review-evidence-only` workflow evidence passed for Block 32 closure refresh. | **Partial** — many blocks implemented and tested locally, but open demo/first-run tasks remain and spec status is draft. |
 
 | **002** | Authority Envelope Boundary Observation | `draft` (old) | PR-level reviewed / merge pending | 34 / 35 | T035 | `go test` PASS, schema validation PASS. Authority fixture replay produced `outside_authority` with downstream-policy next action. PR #64 checks passed at observed head before this ledger update. | **Partial** — implementation, fixtures, docs, and PR-level closure review exist; merge/post-merge closure remains open. |
 | **003** | Agent Supply Chain Roadmap | `draft` (old) | Draft — roadmap artifact, revisions pending | 5 / 42 | T006–T042 (all phases 1–8) | `go test` PASS, `doccheck` PASS. | **No** — remains a draft roadmap with no implemented deliverables beyond spec files. |
@@ -96,7 +96,7 @@
 Specs **009, 010, 011, 012, 014** have all tasks checked and local verification passes, yet their `spec.md` status remains `draft`. The discrepancy means implementation exists but has not been formally approved/merged. They must not be treated as `complete` until the spec status transitions and any pending PI review or merge is recorded.
 
 ### Blocked Specs
-- **001**: Blocked on open review/demo/first-run tasks. Historical baseline quality failures were remediated; absolute MI remains an assessed gap.
+- **001**: Blocked on open demo/first-run tasks. Historical baseline quality failures were remediated; absolute MI remains an assessed gap.
 - **008**: Blocked on PR/final-head CI evidence.
 - **017**: Task ledger closed as implemented-local; external supply-chain trust remains out of scope and requires new evidence before any stronger claim.
 

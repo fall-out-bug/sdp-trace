@@ -40,7 +40,7 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | --- | --- |
 | Spec directories | 19 |
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 530 / 605 |
+| Checked task boxes | 532 / 605 |
 | Specs with all task boxes checked | 8 |
 | Formal `complete` roadmap rows | 0 |
 
@@ -121,7 +121,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 
 | Capability | Owner Spec(s) | Current Repository Reality |
 | --- | --- | --- |
-| Evidence substrate / trace format | 001 | Largely implemented but blocked on explicit trust closure and open tasks |
+| Evidence substrate / trace format | 001 | Largely implemented; Block 21 and Block 32 closure refreshes recorded, while demo/first-run work remains open |
 | Authority envelope / trust boundary | 002 | PR-level review complete; merge/post-merge closure open |
 | Product contract schema | 005 | Contract and implementation placeholders are artifact-complete via Spec 006; approval remains `not_assessed` |
 | Change evidence packet | 006 | Implemented and reviewed locally; historical pre-implementation approval remains `not_assessed` |

@@ -526,7 +526,9 @@ readiness decisions, or cross-repository raw personal identifiers.
 - [x] T189 [US4] Add committed Block 21 fixtures and a machine-checkable fixture matrix for valid multi-repo movement, stale input, digest mismatch, missing required input, missing optional input, non-comparable windows, unsupported observer rows, local-only versus CI-witnessed rows from posture signal manifests, external-witnessed rows from posture signal manifests, override rows, late-attach rows, contract-change rows, unsafe labels, unsafe digest-manifest paths, and unsafe external verdict payloads. The matrix must enumerate expected metric rows, numerator, denominator, active grouping keys, dimension key, input trust state, source input refs, source digest set hash, movement comparability, non-comparable reason, movement summary, and refusal rows.
 - [x] T190 [US4] Add safety-sensitive negative tests proving cross-repository export and explain output does not print raw command args, command names, executable paths, script paths, unsafe test identifiers, stdout/stderr bodies, prompts, source snippets, tool-call input/output bodies, adapter configuration, gateway evidence refs, credentials, OIDC request tokens, adapter secrets, gateway tokens, PR tokens, authenticated provider URLs, raw model request/response payloads, raw review bodies, unsafe raw-reference access notes, private filesystem paths, or unsafe personal identifiers. Test fixtures must use synthetic values and negative leak assertions must not echo candidate secrets in failure output.
 - [x] T191 [US5] Run Socratic spec review across product-boundary, tracing/evidence, and privacy/safety planes; record every valid finding in `blocks/21-cross-repository-degradation-export-review-ledger.md` and fix every critical or major finding before implementation approval handoff.
-- [ ] T192 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 21 review disposition before PR closure.
+- [x] T192 [US5] After implementation approval, run Go-first verification, schema checks, strict code/correctness review, tracing/evidence review, requirements-vs-implementation review, PR-level review, and record Block 21 review disposition before PR closure.
+  Evidence: `blocks/21-cross-repository-degradation-export-review-ledger.md`,
+  including the 2026-05-26 closure-route refresh.
 
 **Checkpoint**: technical executive-level consumers get comparable movement facts across
 repositories, but `sdp-trace` still emits evidence substrate exports only. Any
@@ -825,9 +827,11 @@ secret-handling planes, and the reviewed direction is explicitly approved.
 - [x] T243 [US4] Update CI policy and command docs so maintainers cannot
   mistake `pr-review-evidence-only` for human approval, release readiness, risk
   acceptance, or production trust.
-- [ ] T244 [US5] Run local verification, implementation multi-plane review,
+- [x] T244 [US5] Run local verification, implementation multi-plane review,
   PR-level multi-plane review, and GitHub workflow evidence before claiming
   Block 32 complete.
+  Evidence: `blocks/32-ci-pr-review-integration-review-ledger.md`, including
+  the 2026-05-26 closure-route refresh and PR #64 workflow evidence.
 
 **Checkpoint**: Block 32 is complete only when CI can emit safe PR-review
 evidence artifacts. Merge approval, branch-protection policy, release,

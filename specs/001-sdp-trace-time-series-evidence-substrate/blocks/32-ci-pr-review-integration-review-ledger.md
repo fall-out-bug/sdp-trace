@@ -123,3 +123,41 @@ not committed.
   suppressing raw `pi` stderr.
 - Critical findings remaining: 0
 - Major findings remaining: 0
+
+## 2026-05-26 Closure-Route Refresh
+
+Reviewer: Codex GPT-5, sdp-trace closure route
+Scope: parent task T244 reconciliation against current repository behavior and
+PR #64 workflow evidence.
+
+Verdict: `LGTM_FOR_BLOCK_32_CLOSURE_REFRESH`
+
+No critical or major finding remains open for the current Block 32 CI PR-review
+evidence mechanism. This refresh does not create human approval, merge
+approval, branch-protection policy, release approval, production trust, or risk
+acceptance.
+
+Fresh verification:
+
+- `go test -count=1 ./internal/posture ./cmd/sdp-trace ./internal/prreview`
+- PR #64 head `8a85b0f702987065776c71604e9725043b0cb742`
+- PR #64 check `verify`: success
+- PR #64 check `pr-review-evidence-only`: success
+
+Review planes:
+
+| Plane | Result | Evidence |
+| --- | --- | --- |
+| Code / correctness | pass | Focused package tests passed |
+| Trace / evidence | pass | PR #64 emitted `pr-review-evidence-only` as separate evidence-only workflow |
+| Requirements vs implementation | pass | Workflow evidence remains separate from `verify` and from merge approval |
+| Security / secret boundary | pass | Current checked-in workflow avoids `pull_request_target` and keeps evidence-only wording |
+| PR-level review | pass | PR #64 final-head workflow evidence observed for this closure route |
+
+Remaining boundaries:
+
+- `pr-review-evidence-only` is not merge approval.
+- Missing configured reviewer secrets must remain explicit `not_assessed`
+  evidence, not green review coverage.
+- Human approval, release readiness, production trust, and risk acceptance
+  remain outside Block 32.
