@@ -774,19 +774,27 @@ func TestPacketProfileAndSmallHelpers(t *testing.T) {
 }
 
 func TestApplyRunnerErrorClassifiesUnavailableAndFailure(t *testing.T) {
-	result := ReviewerResult{}
-	if err := applyRunnerError(&result, exec.ErrNotFound); err == nil {
-		t.Fatalf("expected error returned")
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus string
+		wantReason string
+	}{
+		{name: "prompt template", err: errPromptTemplateCannotVerify, wantStatus: StatusCannotVerify, wantReason: "prompt_ref_cannot_verify"},
+		{name: "prompt evidence", err: errPromptEvidenceCannotVerify, wantStatus: StatusCannotVerify, wantReason: "prompt_evidence_cannot_verify"},
+		{name: "runner unavailable", err: exec.ErrNotFound, wantStatus: StatusNotAssessed, wantReason: "runner_unavailable"},
+		{name: "runner failed", err: fmt.Errorf("boom"), wantStatus: StatusFailed, wantReason: "runner_failed"},
 	}
-	if result.Status != StatusNotAssessed || result.Reason != "runner_unavailable" {
-		t.Fatalf("unavailable result = %+v", result)
-	}
-	result = ReviewerResult{}
-	if err := applyRunnerError(&result, fmt.Errorf("boom")); err == nil {
-		t.Fatalf("expected error returned")
-	}
-	if result.Status != StatusFailed || result.Reason != "runner_failed" {
-		t.Fatalf("failed result = %+v", result)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := ReviewerResult{}
+			if err := applyRunnerError(&result, test.err); err == nil {
+				t.Fatalf("expected error returned")
+			}
+			if result.Status != test.wantStatus || result.Reason != test.wantReason {
+				t.Fatalf("result = %+v, want status=%s reason=%s", result, test.wantStatus, test.wantReason)
+			}
+		})
 	}
 }
 
@@ -934,6 +942,18 @@ func TestSafeID(t *testing.T) {
 				t.Fatalf("safeID(%q) = %q, want %q", tc.in, got, tc.out)
 			}
 		})
+	}
+}
+
+func TestSafeEvidenceRefPreservesRefsAndRedactsUnsafeText(t *testing.T) {
+	if got := safeEvidenceRef("diff"); got != "diff" {
+		t.Fatalf("safe ref = %q", got)
+	}
+	if got := safeEvidenceRef("context.ref-1"); got != "context.ref-1" {
+		t.Fatalf("safe dotted ref = %q", got)
+	}
+	if got := safeEvidenceRef("https://access_token=secret@example.invalid/review"); got != "[redacted unsafe reviewer text]" {
+		t.Fatalf("unsafe ref = %q", got)
 	}
 }
 

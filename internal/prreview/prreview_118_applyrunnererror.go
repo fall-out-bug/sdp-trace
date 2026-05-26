@@ -26,14 +26,26 @@ func runnerErrorState(err error) (string, string) {
 	// Prompt evidence failures mean the review packet cannot be replayed.
 	// Missing runner binaries are configuration gaps, so they stay not_assessed.
 	// Other process failures are failed reviewer executions.
-	if errors.Is(err, errPromptTemplateCannotVerify) {
+	if promptTemplateCannotVerify(err) {
 		return StatusCannotVerify, "prompt_ref_cannot_verify"
 	}
-	if errors.Is(err, errPromptEvidenceCannotVerify) {
+	if promptEvidenceCannotVerify(err) {
 		return StatusCannotVerify, "prompt_evidence_cannot_verify"
 	}
-	if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
+	if runnerUnavailable(err) {
 		return StatusNotAssessed, "runner_unavailable"
 	}
 	return StatusFailed, "runner_failed"
+}
+
+func promptTemplateCannotVerify(err error) bool {
+	return errors.Is(err, errPromptTemplateCannotVerify)
+}
+
+func promptEvidenceCannotVerify(err error) bool {
+	return errors.Is(err, errPromptEvidenceCannotVerify)
+}
+
+func runnerUnavailable(err error) bool {
+	return errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found")
 }

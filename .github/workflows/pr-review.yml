@@ -16,13 +16,13 @@ jobs:
       PR_REVIEW_MODEL_CONFIGURED: ${{ secrets.ZAI_API_KEY != '' && secrets.KIMI_API_KEY != '' && secrets.MINIMAX_API_KEY != '' }}
     steps:
       - name: Checkout trusted base
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: go.mod
           cache: false
@@ -116,7 +116,7 @@ jobs:
 
       - name: Set up Node for pi runner
         if: ${{ env.PR_REVIEW_MODEL_CONFIGURED == 'true' && hashFiles('.github/scripts/pr-review-pi.sh') != '' }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
 
@@ -228,7 +228,7 @@ jobs:
 
       - name: Upload safe review artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: sdp-trace-pr-review
           if-no-files-found: warn

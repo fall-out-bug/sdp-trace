@@ -11,8 +11,17 @@ func sanitizeReviewerResult(result ReviewerResult) ReviewerResult {
 		result.Findings[i].SuggestedFix = safeText(result.Findings[i].SuggestedFix)
 		result.Findings[i].Question = safeText(result.Findings[i].Question)
 		for j := range result.Findings[i].EvidenceRefs {
-			result.Findings[i].EvidenceRefs[j] = safeText(result.Findings[i].EvidenceRefs[j])
+			result.Findings[i].EvidenceRefs[j] = safeEvidenceRef(result.Findings[i].EvidenceRefs[j])
 		}
 	}
 	return result
+}
+
+func safeEvidenceRef(ref string) string {
+	values := map[bool]string{true: redactedUnsafeReviewerText, false: safeID(ref)}
+	return values[unsafeEvidenceRef(ref)]
+}
+
+func unsafeEvidenceRef(ref string) bool {
+	return containsUnsafeTextMarker(ref) || containsUnsafeTextPattern(ref)
 }
