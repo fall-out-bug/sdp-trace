@@ -29,9 +29,10 @@ Therefore the post-merge state is:
 
 PR #63 is the current integration surface for closure work:
 
-- combines PR #62 post-merge closure with PR #31 PR-review CI integration;
-- supersedes PR #62 and PR #31 for repo-wide handoff;
-- keeps PR #63 final-head CI as `not_assessed` in checked-in docs;
+- combined PR #62 post-merge closure with PR #31 PR-review CI integration;
+- superseded PR #62 and PR #31 for repo-wide handoff;
+- passed final-head CI before merge and merged as
+  `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e` on 2026-05-26;
 - has no recorded maintainer approval, so `merge_approval` remains
   `not_assessed`.
 
@@ -167,7 +168,7 @@ Current checked-in evidence:
 - Local full verification passed before the docs drift repair commit.
 - GLM-4.6 full integration review returned LGTM.
 - GLM-4.6 PR-review CI hygiene re-review returned LGTM after parser/test fixes.
-- PR #63 final-head CI is `not_assessed` in checked-in docs.
+- PR #63 final-head CI passed before merge.
 - Maintainer approval remains `not_assessed`.
 
 Exit criteria:

@@ -20,12 +20,15 @@ Status: in_progress
   focused recorder tests. Fixing the drift remains out of scope.
 - [x] T017-030 WS-017-C: Build OPA/Rego or CUE assessment-profile prototype.
   Pi ownership: docs/examples for policy prototype only.
-- [ ] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.
+- [x] T017-040 WS-017-D: Build in-toto/Cosign/SLSA supply-chain prototype.
   Pi ownership: docs/examples for supply-chain prototype only.
-  Status: docs/examples complete; automated harness probes for in-toto wrapping,
-  Cosign blob signing, and SLSA negative path remain open. Current probes are
-  manual-only (`cannot_verify`). Full automated coverage is deferred to a
-  future spec update.
+  Verification: `tools/osscompat` includes `intoto-wrap`,
+  `cosign-local-sign`, and `slsa-negative` probes. Current environment output
+  from `go run ./tools/osscompat -json` reports these as `not_assessed`
+  because optional CLIs are absent. When tools are present, the probes return
+  `cannot_verify` with explicit manual follow-up reasons rather than issuing a
+  conformance verdict. This closes the controlled prototype, not external
+  supply-chain trust.
 - [x] T017-050 WS-017-E: Add benchmark harness and benchmark report.
   Pi ownership: `tools/ossbench/*` and benchmark docs.
   Note: the harness satisfies FR-017-004 structurally for sdp-trace built-in
@@ -46,7 +49,9 @@ Status: in_progress
   `min_ms`/`max_ms`/`median_ms` for both built-in benchmarks.
 - [x] T017-070 Mark unavailable external services as `not_assessed` or
   `cannot_verify`; do not infer pass from local fixture success.
-- [ ] T017-080 Update roadmap and docs index after accepted implementation.
+- [x] T017-080 Update roadmap and docs index after accepted implementation.
+  Evidence: `docs/README.md`, `docs/roadmap.md`,
+  `docs/spec-closure-route.md`, and `docs/spec-reality-ledger.md`.
 - [x] T017-090 Keep the `wrap` output vs
   `schema/flight-recorder-run.schema.json` drift open as a blocker until a
   source-bound fix (schema update, wrap output change, or new recorder schema)

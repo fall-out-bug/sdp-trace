@@ -42,20 +42,35 @@ before approval.
 - [x] T013 Run reshuffled role/model re-review and record dispositions in
   `reviews/2026-05-10-rereview.md`.
 - [ ] T014 Stop for explicit user approval of reviewed Product Contract v0.
+  Status: `not_assessed`; later implementation exists, but historical explicit
+  approval for this reviewed contract is not represented in this spec directory.
 
 ## Phase 3: Future Implementation Planning After Approval
 
-- [ ] T015 Define `change-evidence-packet-v0` schema or Go model.
-- [ ] T016 Define packet renderer inputs and safe redaction behavior.
-- [ ] T017 Add baseline local/self-hosted fixture.
-- [ ] T018 Add rich GitHub fixture only as one evidence source.
-- [ ] T019 Add focused theater reason-code derivation tests.
-- [ ] T020 Add CLI or command surface only after schema/model and fixtures are
+- [x] T015 Define `change-evidence-packet-v0` schema or Go model.
+  Evidence: implemented by Spec 006 via
+  `schema/change-evidence-packet.v0.schema.json` and `internal/packet/`.
+- [x] T016 Define packet renderer inputs and safe redaction behavior.
+  Evidence: implemented by Spec 006 via `internal/packet/` renderer code,
+  `docs/change-evidence-packet.md`, and `docs/evidence-bundle-manifest.md`.
+- [x] T017 Add baseline local/self-hosted fixture.
+  Evidence: `examples/change-evidence-packet/happy-path.bundle.json` plus
+  Product Contract examples.
+- [x] T018 Add rich GitHub fixture only as one evidence source.
+  Evidence: `examples/change-evidence-packet/github-input.json` and
+  `sdp-trace packet build-github`; docs keep fixture/backfill authority
+  separate from live-demo proof.
+- [x] T019 Add focused theater reason-code derivation tests.
+  Evidence: `internal/packet/packet_test.go` and
+  `cmd/sdp-trace/packet_cli_test.go`.
+- [x] T020 Add CLI or command surface only after schema/model and fixtures are
   reviewed.
+  Evidence: Spec 006 closure review and packet CLI surfaces:
+  `validate`, `check-demo`, `render`, `build-github`, and `build-pr`.
 
 ## Completion Rule
 
 This slice is not complete until Product Contract v0 is re-reviewed and
-approved. Checked draft tasks are draft-complete, not product approval.
-Implementation tasks T015-T020 are placeholders for later planning, not
-authorization to write code.
+approved or maintainers explicitly accept the historical approval gap.
+Checked draft and implementation tasks are artifact-complete, not product
+approval.

@@ -2,16 +2,17 @@
 
 ## Phase 1: Spec Review
 
-- [ ] T001 Run Socratic spec review for product proof, evidence/forgery, and
+- [x] T001 Run Socratic spec review for product proof, evidence/forgery, and
   DX/replayability planes.
-  Status: `not_assessed`; the checked-in review ledger exists but records
-  pending planes only.
-- [ ] T002 Record findings and dispositions in
+  Evidence: `reviews/2026-05-26-closure-review.md`.
+- [x] T002 Record findings and dispositions in
   `reviews/2026-05-10-socratic-review.md`.
-  Status: `partial`; the ledger records pending planes, not findings.
+  Evidence: `reviews/2026-05-26-closure-review.md` supersedes the pending
+  2026-05-10 ledger for closure-route review.
 - [ ] T003 Get explicit user approval before implementation.
   Status: `not_assessed`; later implementation exists, but approval evidence is
-  not represented in this spec directory.
+  not represented in this spec directory. Current user approval covers the
+  closure route, not the historical pre-implementation gate.
 
 ## Phase 2: Contract
 
@@ -83,12 +84,13 @@
   `go run ./cmd/sdp-trace packet render --bundle examples/change-evidence-packet/happy-path.bundle.json --out "$tmp"`.
 - [x] T024 Run `git diff --check`.
   Session verification: `git diff --check`.
-- [ ] T025 Run implementation review planes: code/correctness,
+- [x] T025 Run implementation review planes: code/correctness,
   tracing/evidence, requirements-vs-implementation.
-  Status: `not_assessed`; no current implementation-review artifact found in
-  this spec directory.
-- [ ] T026 Fix accepted critical/major findings and re-review.
-  Status: `not_assessed`; depends on T025.
-- [ ] T027 Open PR and repeat PR-level review planes before ready.
-  Status: `not_assessed`; current branch has not yet opened a PR for this
-  closure-route reconciliation.
+  Evidence: `reviews/2026-05-26-closure-review.md`.
+- [x] T026 Fix accepted critical/major findings and re-review.
+  Evidence: `reviews/2026-05-26-closure-review.md` records no remaining
+  findings for the closure-route scope.
+- [x] T027 Open PR and repeat PR-level review planes before ready.
+  Evidence: PR #64, `pr-review-evidence-only` pass, and
+  `reviews/2026-05-26-closure-review.md`. Merge approval remains
+  `not_assessed`.

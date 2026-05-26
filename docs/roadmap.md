@@ -40,7 +40,7 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | --- | --- |
 | Spec directories | 19 |
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 19 / 19 |
-| Checked task boxes | 500 / 605 |
+| Checked task boxes | 525 / 605 |
 | Specs with all task boxes checked | 8 |
 | Formal `complete` roadmap rows | 0 |
 
@@ -54,12 +54,12 @@ reality notes and the spec-specific task state.
 | Spec | Capability | Status | Blocker / Next Step |
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
-| [019](../specs/019-repo-realignment-monitoring-gate-readiness/) | Repo realignment, monitoring, and gate readiness | `in_progress` | PR #60 merged partial implementation to `main` without recorded approval; integration PR #63 now supersedes PR #62 and PR #31 by combining post-merge closure with PR-review CI enforcement. PR #63 final-head CI is `not_assessed` in checked-in docs; maintainer approval remains `not_assessed`. See `post-merge-closure-plan.md`. |
+| [019](../specs/019-repo-realignment-monitoring-gate-readiness/) | Repo realignment, monitoring, and gate readiness | `in_progress` | PR #60 merged partial implementation to `main` without recorded approval; integration PR #63 superseded PR #62 and PR #31 by combining post-merge closure with PR-review CI enforcement and merged after final-head CI passed. Maintainer approval remains `not_assessed`. See `post-merge-closure-plan.md`. |
 | [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `in_progress` | Workstreams A-E and integration verification are mapped in `tasks.md` (9 / 11 checked); maintainer review remains `not_assessed`; follow-up implementation specs remain open. |
-| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Slice review in progress; workstreams A–C and E implemented; WS-017-D automated probes remain open (manual-only). **CRAP and MI gates PASS** for `tools/ossbench` and `tools/osscompat` after WS-019-B refactor. Live `wrap` manifest now has `schema/run-manifest.schema.json`; richer flight-recorder profile schema remains separate. See `docs/spec-reality-ledger.md`. Final PR review pending. |
+| [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Task ledger is 11 / 11 checked after controlled supply-chain prototype and docs index closure. Optional external tools remain `not_assessed` when absent and supply-chain conformance remains `cannot_verify`; final maintainer closure remains pending. See `docs/spec-reality-ledger.md`. |
 | [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 merged; external audit and production adoption evidence remain `not_assessed`. |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX, command guidance, profile selection | `draft` | Awaiting Socratic review |
-| [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | `draft` | Awaiting Socratic review |
+| [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | `in_progress` | Task ledger is 12 / 12 checked after contributor quick-start reconciliation, smoke replay, doccheck coverage, and closure review. Formal maintainer closure remains pending. |
 | [012](../specs/012-repo-hygiene-and-artifact-boundary/) | Repository hygiene and artifact boundary rules | `draft` | Awaiting Socratic review |
 | [011](../specs/011-schema-docs-generation/) | Schema documentation generation and validation | `draft` | Awaiting Socratic review |
 | [010](../specs/010-command-package-organization/) | Command package organization and surface structure | `draft` | Awaiting Socratic review |
@@ -86,6 +86,7 @@ for the claimed scope.
 | [011](../specs/011-schema-docs-generation/) | Schema documentation validation | 14 / 14 checked | PI review / approval not represented |
 | [012](../specs/012-repo-hygiene-and-artifact-boundary/) | Repository hygiene and artifact boundary | 12 / 12 checked | PI review / approval not represented |
 | [014](../specs/014-docs-ux-command-guidance/) | Docs UX and command guidance | 15 / 15 checked | PI review / approval not represented |
+| [013](../specs/013-contributor-onboarding-and-verification/) | Contributor onboarding and verification flow | 12 / 12 checked | Formal maintainer closure not represented |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance and roadmap navigation | 17 / 17 checked | Formal post-merge closure not represented |
 | [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | 10 / 10 checked | External audit, customer adoption, signed release, and production trust remain `not_assessed` |
 
@@ -96,8 +97,8 @@ for the claimed scope.
 | [002](../specs/002-authority-envelope-boundary-observation/) | Authority envelope boundary observation | `draft` | Revised after initial Socratic review; focused re-review pending. No `blocks/` directory. |
 | [003](../specs/003-agent-supply-chain-roadmap/) | Agent supply chain roadmap and product positioning | `draft` | Roadmap artifact; Socratic review completed; revisions pending. No `blocks/` directory. |
 | [004](../specs/004-mvp-readiness-hardening/) | MVP readiness hardening criteria | `draft` | Revised after initial Socratic review; approval pending. Current baseline CRAP/MI gates pass, but absolute MI remains an assessed gap and the spec is not approved. See `docs/spec-reality-ledger.md`. No `blocks/` directory. |
-| [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `draft` | Revised after full review; re-review pending. No `blocks/` directory. |
-| [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation and local verification artifacts are mapped in `tasks.md` (21 / 27 checked). Spec review, approval, implementation-review, and PR-level review evidence remain open / `not_assessed`. No `blocks/` directory. |
+| [005](../specs/005-product-contract-v0/) | Product contract schema and versioning | `in_progress` | Task ledger is 19 / 20 checked after mapping implementation placeholders to Spec 006 packet artifacts. Historical explicit approval remains `not_assessed`. No `blocks/` directory. |
+| [006](../specs/006-change-evidence-packet-core/) | Change evidence packet core format | `in_progress` | Implementation, local verification, Socratic closure review, implementation review, and PR-level evidence are mapped in `tasks.md` (26 / 27 checked). Historical pre-implementation approval remains `not_assessed`. No `blocks/` directory. |
 | [007](../specs/007-github-oss-demo-packet/) | GitHub OSS demo packet workflow | `draft` | Needs Socratic review before implementation approval. No `blocks/` directory. |
 
 > **Note**: These specs remain in `draft` per their own `spec.md` files. The roadmap does not override spec source-of-truth status. They are listed here separately because no active work is in progress. When work resumes, move to Active Specs. Upon implementation, review, merge, and trust closure, move to Formally Closed Specs.
@@ -122,20 +123,20 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | --- | --- | --- |
 | Evidence substrate / trace format | 001 | Largely implemented but blocked on explicit trust closure and open tasks |
 | Authority envelope / trust boundary | 002 | Mostly checked; re-review / closure open |
-| Product contract schema | 005 | Partial |
-| Change evidence packet | 006 | Implemented locally; task ledger now maps product artifacts, but review/approval/fresh verification remain open |
+| Product contract schema | 005 | Contract and implementation placeholders are artifact-complete via Spec 006; approval remains `not_assessed` |
+| Change evidence packet | 006 | Implemented and reviewed locally; historical pre-implementation approval remains `not_assessed` |
 | GitHub demo workflow | 007 | Partial planning / demo work |
 | Flight recorder / wrap command | 008 | Implemented; formal closure open |
 | Command surface (JSON schema, registry) | 009 | Implemented; review closure open |
 | Command package organization | 010 | Implemented; review closure open |
 | Schema docs generation | 011 | Implemented; review closure open |
 | Repo hygiene / artifact boundary | 012 | Implemented; review closure open |
-| Contributor onboarding | 013 | Spec-only / not implemented |
+| Contributor onboarding | 013 | Implemented local / reviewed; formal maintainer closure remains pending |
 | Docs UX / command guidance | 014 | Implemented; review closure open |
 | Spec governance / roadmap | 015 | Implemented; formal closure open |
 | Production adoption / security baseline | 016 | Implemented locally; production trust remains `not_assessed` |
-| OSS replacement compatibility / benchmarks | 017 | Partial; automated external probes remain open / `not_assessed` |
-| Core/policy split and Pi delivery | 018 | Workstreams A-E implemented locally; maintainer review and integration verification remain open |
+| OSS replacement compatibility / benchmarks | 017 | Implemented local / trust-bounded; optional external tools and external supply-chain trust remain `not_assessed` / `cannot_verify` |
+| Core/policy split and Pi delivery | 018 | Workstreams A-E implemented locally; maintainer review and follow-up-spec decision remain open |
 | Repo realignment / monitoring / gate readiness | 019 | Partial; HITL and closure blockers remain |
 
 ## Claim-Tag Enforcement Scope
