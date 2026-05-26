@@ -93,6 +93,9 @@ approval, merge, and external-evidence surfaces. The next closure work is:
 
 ## Decision Surface
 
+The durable row-by-row decision ledger lives in
+[`docs/closure-decision-ledger.md`](closure-decision-ledger.md).
+
 | Decision needed | Open tasks | Current evidence | Valid closure outcomes |
 | --- | --- | --- | --- |
 | Merge PR #64 | 002 T035, 004 T042 | PR #64 is open, green, and `CLEAN`; merge approval is still `not_assessed`. | Explicit merge approval followed by merge/post-merge verification; or keep tasks open. |
