@@ -714,10 +714,16 @@ and security/privacy planes, and the reviewed direction is explicitly approved.
   redaction scan details to
   `docs/reviews/block25-jvm-gsd-demo-sanitized-report.md`. Focused InfoSec
   re-review returned `APPROVE` with no critical or major findings.
-- [ ] T217 [US4] Run `sdp-trace` local verification and PR-level review before
+- [x] T217 [US4] Run `sdp-trace` local verification and PR-level review before
   claiming Block 25 closure.
-  Status: open. Block 25 final closure still requires fresh `sdp-trace` local
-  verification and PR-level review after the T216 role-review dispositions.
+  Evidence: after T216 role-review dispositions were recorded, local
+  `sdp-trace` verification passed with `go test ./...`, `go vet ./...`,
+  `jq empty schema/*.json`, `go run ./tools/doccheck`,
+  `go run ./tools/hygienecheck`, and `git diff --check`. PR #64 head
+  `ea00be499abe9a211f3fa639be6124863afad36c` has `verify` SUCCESS and
+  `pr-review-evidence-only` SUCCESS, with merge state `CLEAN`. This closes
+  Block 25 final verification evidence only; merge approval and other
+  repository-level decision gates remain separate.
 
 **Checkpoint**: Block 25 can support a pilot claim only for the selected
 compiled JVM/Bazel target and CI artifact path. Production trust,

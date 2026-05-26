@@ -2,7 +2,7 @@
 
 Status: working breakdown, current as of 2026-05-26.
 
-This file decomposes the remaining 14 open task boxes one by one. It is a
+This file decomposes the remaining 13 open task boxes one by one. It is a
 working map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
@@ -10,7 +10,6 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| 001 T217 | Run `sdp-trace` local verification and PR-level review before claiming Block 25 closure. | T211-T216 now have active-demo evidence and focused role-review dispositions. | Yes, after fresh local verification and PR-level review. | Run final Block 25 verification and PR-level review against the current PR head. |
 | 001 T226 | Add and validate a customer-usable first-run OpenCode/GSD observation path. | Current `minimax/MiniMax-M2.5` route observes setup/model/source/digest facts, but current OpenCode/GSD lacks `/gsd-plan-phase`; tool/phase/mutation/test remain `not_assessed`. | No. | Restore/replace current GSD route, then replay first-run delivery-loop observation. |
 | 002 T035 | Merge only after fresh CI, local verification, PR review, and post-merge verification. | PR #64 is open, green, and `CLEAN`; merge approval and post-merge verification are absent. | No. | Requires explicit merge approval, merge, final `main` CI query, and post-merge verification note. |
 | 004 T042 | Stop before merge unless explicit merge approval is present. | PR #64 is green/CLEAN; explicit merge approval remains `not_assessed`. | No. | Requires explicit merge approval or an explicit decision to keep the task open. |
@@ -40,7 +39,9 @@ sanitized report and artifact summary without upgrading residual trust states.
 T216 is closed by active-demo role reviews in
 `specs/001-sdp-trace-time-series-evidence-substrate/blocks/25-compiled-ci-demo-pilot-review-ledger.md`;
 one major InfoSec redaction-scan evidence gap was fixed and focused re-review
-returned no critical or major findings.
+returned no critical or major findings. T217 is closed by fresh local
+`sdp-trace` verification plus PR #64 `verify` and `pr-review-evidence-only`
+success at head `ea00be499abe9a211f3fa639be6124863afad36c`.
 
 The other open tasks need one of:
 
