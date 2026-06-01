@@ -24,3 +24,15 @@ func runExport(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintln(stderr, "export requires cross-repo-posture or telemetry")
 	return exitUsage
 }
+
+func exportTelemetryRequested(args []string) bool {
+	return exportCommandIs(args, "telemetry")
+}
+
+func exportCrossRepoPostureExplainRequested(args []string) bool {
+	return exportCommandIs(args, "cross-repo-posture") && exportSubcommandIs(args, "explain")
+}
+
+func exportCrossRepoPostureRequested(args []string) bool {
+	return exportCommandIs(args, "cross-repo-posture")
+}

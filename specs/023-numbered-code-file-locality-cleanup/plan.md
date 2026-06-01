@@ -68,6 +68,15 @@ Slice 3 groups `cmd/sdp-trace` envelope summarize command shards into:
 Single-file envelope grouping was rejected because it failed the absolute
 file-MI threshold.
 
+## Slice 4
+
+Slice 4 groups `cmd/sdp-trace` export dispatcher shards into:
+
+- `cmd/sdp-trace/export_command.go`
+
+The slice is bounded to command dispatch and predicate helpers; telemetry and
+cross-repo posture command implementations remain outside this slice.
+
 ## Verification
 
 ```text

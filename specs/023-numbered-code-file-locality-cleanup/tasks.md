@@ -57,3 +57,18 @@ Status: in_progress
 - [x] T023-190 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T023-200 Run three independent reviewer lanes and record Slice 3 evidence
   in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-3-evidence.md`.
+
+## Active Slice 4 Tasks
+
+- [x] T023-210 Confirm Slice 4 is bounded to `cmd/sdp-trace` export dispatcher
+  shards.
+- [x] T023-220 Move selected export declarations into
+  `cmd/sdp-trace/export_command.go`.
+- [x] T023-230 Run `gofmt` on changed Go files.
+- [x] T023-240 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T023-250 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T023-260 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T023-270 Run three independent reviewer lanes and record Slice 4 evidence
+  in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-4-evidence.md`.

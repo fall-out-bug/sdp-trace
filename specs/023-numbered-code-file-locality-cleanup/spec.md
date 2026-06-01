@@ -104,7 +104,7 @@ behavior, JSON field, schema contract, or command metadata value should change.
 
 ## Active Slice 3
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` envelope summarize command shards only.
 
@@ -129,3 +129,24 @@ Intended behavior boundary: this slice should only move the envelope summarize
 runner, argument parsing, required flags, and optional JSON output helper into
 behavior-named command files. No CLI behavior, JSON field, schema contract, or
 command metadata value should change.
+
+## Active Slice 4
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` export command dispatcher shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/export_452_run.go`
+- `cmd/sdp-trace/export_453_telemetryrequested.go`
+- `cmd/sdp-trace/export_454_crossrepopostureexplainrequested.go`
+- `cmd/sdp-trace/export_455_crossrepoposturerequested.go`
+
+Target file:
+
+- `cmd/sdp-trace/export_command.go`
+
+Intended behavior boundary: this slice should only move the export dispatcher
+and export subcommand predicates into a behavior-named command file. No CLI
+behavior, JSON field, schema contract, or command metadata value should change.

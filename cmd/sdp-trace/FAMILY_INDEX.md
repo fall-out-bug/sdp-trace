@@ -234,10 +234,7 @@
 - envelope_summary_run.go
 
 ### export
-- export_452_run.go
-- export_453_telemetryrequested.go
-- export_454_crossrepopostureexplainrequested.go
-- export_455_crossrepoposturerequested.go
+- export_command.go
 
 ### fixture
 - fixture_472_run.go
