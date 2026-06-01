@@ -11,17 +11,25 @@ completeness.
 
 ## Round 1
 
-| Lane | Harness | Model | State | Disposition |
-| --- | --- | --- | --- | --- |
-| DeepSeek | `opencode run` | `openrouter/deepseek/deepseek-v4-pro` | findings | Found stale task-count and timestamp drift. Findings fixed in this branch. |
-| Z.AI | `opencode run` | `opencode-go/glm-5.1` fallback for requested Z.AI lane | findings | Found stale task-count, task-state, and merge-approval ambiguity. Findings fixed in this branch. |
-| Kimi | `opencode run` | `kimi-for-coding/k2p6` | `cannot_verify` | Lane hung after reading stale committed diff and never produced a final verdict. Process was stopped; output is not used as review authority. |
+| Lane | Harness | Model | Prompt class | Timeout/retries | State | Disposition |
+| --- | --- | --- | --- | --- | --- | --- |
+| DeepSeek | `opencode run` | `openrouter/deepseek/deepseek-v4-pro` | full-diff PR-ready review | default command timeout; 0 retries | findings | Found stale task-count and timestamp drift. Findings fixed in this branch. |
+| Z.AI | `opencode run` | `opencode-go/glm-5.1` fallback for requested Z.AI lane | full-diff PR-ready review | default command timeout; 0 retries | findings | Found stale task-count, task-state, and merge-approval ambiguity. Findings fixed in this branch. |
+| Kimi | `opencode run` | `kimi-for-coding/k2p6` | full-diff PR-ready review | default command timeout; stopped after hang | `cannot_verify` | Lane hung after reading stale committed diff and never produced a final verdict. Process was stopped; output is not used as review authority. |
+
+## Round 2
+
+| Lane | Harness | Model | Prompt class | Timeout/retries | State | Disposition |
+| --- | --- | --- | --- | --- | --- | --- |
+| DeepSeek | `opencode run` | `openrouter/deepseek/deepseek-v4-pro` | fixed-handoff PR-ready re-review | `timeout 600`; 0 retries | LGTM | No retained findings. |
+| Kimi | `opencode run` | `kimi-for-coding/k2p6` | fixed-handoff PR-ready re-review | `timeout 600`; 0 retries | LGTM | No retained findings. |
+| Z.AI | `opencode run` | `opencode-go/glm-5.1` fallback for requested Z.AI lane | fixed-handoff PR-ready re-review | `timeout 600`; 0 retries | LGTM | No retained findings; advisory metadata note fixed in this artifact. |
 
 ## Round 1 Retained Findings
 
 | ID | Severity | Finding | Disposition |
 | --- | --- | --- | --- |
-| PRR1-M1 | major | Cross-surface task counts still reported `27 / 42`, `632 / 647`, `15 open`, and `T028-T042` after T028-T033 were checked. | Fixed by updating `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, `docs/roadmap.md`, `docs/spec-closure-route.md`, and `docs/open-task-breakdown.md`; after final local verification the current state is `39 / 42`, `644 / 647`, 3 open tasks, and `T039/T041/T042`. |
+| PRR1-M1 | major | Cross-surface task counts still reported `27 / 42`, `632 / 647`, `15 open`, and `T028-T042` after T028-T033 were checked. | Fixed by updating `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, `docs/roadmap.md`, `docs/spec-closure-route.md`, and `docs/open-task-breakdown.md`; after fixed-handoff re-review and final checkbox update the current state is `42 / 42`, `647 / 647`, and 0 open Spec 022 tasks. |
 | PRR1-M2 | major | `docs/open-task-breakdown.md` described completed US3 navigation tasks as still in progress. | Fixed by marking T028-T033 complete and pointing remaining work to final closure checks. |
 | PRR1-m1 | minor | `docs/closure-decision-ledger.md` merge-approval row could be misread as covering PR #60. | Fixed by qualifying the approval as PR #64 only and keeping PR #60 merge approval `not_assessed`. |
 | PRR1-m2 | minor | `docs/roadmap.md` and `docs/spec-reality-ledger.md` had stale final-update or live-verification dates. | Fixed to 2026-06-01. |

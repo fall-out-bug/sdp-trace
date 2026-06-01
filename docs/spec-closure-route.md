@@ -10,12 +10,12 @@ coordination artifact, not proof that any spec is complete.
 
 | Evidence | Current State |
 | --- | --- |
-| Source commit inspected | `codex/022-post-merge-governance-closure` at `0fc1f21a4f505a9d40d21400b883d42083bba9a5` |
+| Source commit inspected | `codex/022-post-merge-governance-closure` at `9438080464f0103144790e0336560deeafc893b6` |
 | PR #64 | merged on 2026-05-26 after explicit maintainer approval; final PR checks passed at head `537612723f7dad7f6e3a92657336fafa4ce6bbd5` |
 | Latest `main` CI | pass, run `26453881873` at `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd` |
 | Spec directories | 22 |
 | SpecKit triplets | 22 / 22 |
-| Task checkboxes | 644 / 647 checked |
+| Task checkboxes | 647 / 647 checked |
 | Formal roadmap `complete` rows | 0 |
 
 Commands used for this audit:
@@ -63,26 +63,25 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 | 019 Repo Realignment, Monitoring, And Gate Readiness | Tasks are 16 / 16. Major workstreams are implemented, PR #63 merged after final-head CI passed, and maintainer decision `split_successor` moves residual governance debt to Spec 022 without claiming retroactive pre-implementation approval or PR #60 merge approval. | Close Spec 019 as split-successor governance state. Do not claim full approval of PR #60, production trust, release approval, or signed external trust. |
 | 020 Core Query Package Split | Draft follow-up implementation spec prepared by Spec 018 closure. No active task checkboxes are opened in the current closure route. | Future implementation surface only; do not treat as current closure debt until explicitly taken into work. |
 | 021 Source File Locality Cleanup | Draft follow-up implementation spec prepared by Spec 018 closure. No active task checkboxes are opened in the current closure route. | Future implementation surface only; do not treat as current closure debt until explicitly taken into work. |
-| 022 Post-Merge Governance Closure | Active governance closure spec on `codex/022-post-merge-governance-closure`. Tasks are 39 / 42 after plan/task review closure, US1 evidence summary, US2 decision-state update, US3 navigation sync, and final local verification. PR #60 and PR #63 live refresh is recorded; PR #60 merge approval remains `not_assessed`. | Continue fixed-handoff PR-ready re-review, final checkbox update, and PR evidence. Do not claim retroactive PR #60 approval, production trust, release approval, or external attestation. |
+| 022 Post-Merge Governance Closure | Active governance closure spec on `codex/022-post-merge-governance-closure`. Tasks are 42 / 42 after plan/task review closure, US1 evidence summary, US2 decision-state update, US3 navigation sync, final local verification, and fixed-handoff PR-ready re-review. PR #60 and PR #63 live refresh is recorded; PR #60 merge approval remains `not_assessed`. | Create PR and collect live branch PR/CI evidence. Do not claim retroactive PR #60 approval, production trust, release approval, or external attestation. |
 
 ## Open Task Classification
 
-Current task ledger state is 644 / 647 checked, leaving 3 open Spec 022 task
+Current task ledger state is 647 / 647 checked, leaving 0 open Spec 022 task
 boxes.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
-| Approval or maintainer gates | Spec 022 T039/T041/T042 | Spec 022 is active governance closure debt; approval, trust, and PR-ready states remain separate. |
+| Approval or maintainer gates | none in current task ledger | Spec 022 is PR-ready governance closure evidence. Approval, trust, and merge states remain separate until PR review and live CI evidence exist. |
 | Review / PR evidence closure | none currently isolated as review-only after this refresh | Future review gaps must still be closed with fresh review, live PR evidence, and explicit trust-boundary wording, not task-box cleanup alone. |
 | Retire or re-scope stale planning | none currently isolated as stale after this refresh | Future stale specs should be retired only with an explicit supersession map. |
 
 ## Recommended Route
 
-The implemented-local and stale-ledger backlog has open Spec 022 governance
-task checkboxes. The next work is:
+The implemented-local and stale-ledger backlog has no open Spec 022 task
+checkboxes. The next work is:
 
-1. **Active governance closure**: finish Spec 022 fixed-handoff PR-ready
-   re-review, final checkbox update, and PR creation.
+1. **PR evidence**: create the Spec 022 PR and query live branch PR/CI state.
 2. **Successor surfaces**: Spec 020 and Spec 021 remain prepared as draft
    follow-up specs. Do not treat them as active implementation debt until
    maintainers explicitly take them into work.
@@ -98,7 +97,7 @@ The durable row-by-row decision ledger lives in
 
 | Decision needed | Open tasks | Current evidence | Valid closure outcomes |
 | --- | --- | --- | --- |
-| Spec 019 post-merge governance | T019-001/T019-002/T019-003/T019-004; Spec 022 T039/T041/T042 | Maintainer decision `split_successor` moves remaining governance debt to active Spec 022; PR #60 merge approval remains `not_assessed` after 2026-06-01 live refresh. | Split-successor state remains current; active Spec 022 closure must finish before any stronger closure claim. |
+| Spec 019 post-merge governance | T019-001/T019-002/T019-003/T019-004; Spec 022 closed for PR-ready evidence | Maintainer decision `split_successor` moves remaining governance debt to active Spec 022; PR #60 merge approval remains `not_assessed` after 2026-06-01 live refresh. | Split-successor state remains current; Spec 022 is PR-ready but must still collect live branch PR/CI evidence before any stronger closure claim. |
 | T226 first-run OpenCode/GSD observation | 001 T226 | GSD-Redux replacement observes setup/model/source/digest/tool/phase facts. Mutation/test remain `not_assessed` because the replayed phase was already complete and execute-phase performed no mutation or test action. | Closed as observed first-run path with unavailable dimensions retained, not green. |
 
 The remaining risk is active Spec 022 closure work, future successor-spec
