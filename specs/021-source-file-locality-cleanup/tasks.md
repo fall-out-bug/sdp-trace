@@ -436,3 +436,28 @@ Status: in_progress
 - [x] T021-1420 Run three independent reviewer lanes and record Slice 21
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-21-evidence.md`.
+
+## Active Slice 22 Tasks
+
+- [x] T021-1430 Confirm Slice 22 is bounded to numbered
+  `internal/harnessobs` event source scanning, safe decode, and parsed-event
+  validation shards `harnessobs_111` through `harnessobs_132`.
+- [x] T021-1431 Confirm Slice 22 is behavior-preserving: no JSONL scanning,
+  source hashing, limit handling, safe event rejection, typed event decoding,
+  digest validation, event identity/ref/content/unavailable-field behavior,
+  package boundary, dependency direction, or baseline change is planned.
+- [x] T021-1432 Record Slice 22 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-22-plan-review.md`.
+- [x] T021-1440 Move selected event scanning and validation declarations into
+  responsibility-named files for source scanning, line parsing, safe decoding,
+  parsed-event digest validation, identity/ref/content validation, and
+  unavailable-field validation.
+- [x] T021-1450 Run `gofmt` on changed Go files.
+- [x] T021-1460 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1470 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1480 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1490 Run three independent reviewer lanes and record Slice 22
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-22-evidence.md`.

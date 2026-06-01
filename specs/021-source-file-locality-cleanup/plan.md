@@ -170,6 +170,16 @@ rule validation into responsibility-named files. It intentionally excludes event
 source scanning and parsed-event validation (`harnessobs_111` onward) so the
 line-scanning behavior can keep a separate focused review trail.
 
+Slice 22 continues `internal/harnessobs` cleanup with event source scanning,
+safe event decoding, parsed event validation, event identity/ref/content
+validation, and unavailable-field validation shards (`harnessobs_111` through
+`harnessobs_132`). It moves JSONL file scanning, line limits, source hashing,
+safe raw-event rejection, typed event decoding, digest validation, observed-at
+validation, reference checks, content-state checks, and unavailable-field checks
+into responsibility-named files. It intentionally excludes evaluation/dimension
+composition (`harnessobs_133` onward) and path-safety helpers so those can keep
+separate review trails.
+
 ## Verification
 
 ```text

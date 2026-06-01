@@ -2,25 +2,29 @@ package harnessobs
 
 import (
 	"fmt"
-
 	"io"
 )
 
+// Event line parsing applies source hashing and event-count limits before
+// delegating JSON decoding and semantic validation.
 func readEventLine(profile Profile, line []byte, lineNo, eventCount, maxEvents int, sourceHash io.Writer) (Event, bool, error) {
-	// readEventLine keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if _, err := sourceHash.Write(line); err != nil {
 		return Event{}, false, err
 	}
 	if blankJSONLLine(line) {
-
 		return Event{}, false, nil
 	}
 	if eventCount >= maxEvents {
-
 		return Event{}, false, fmt.Errorf("source line %d: event limit exceeded", lineNo)
 	}
 	event, err := parseEvent(profile, line, lineNo)
 	return event, err == nil, err
+}
+
+func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
+	event, err := decodeSafeEventLine(line, lineNo)
+	if err != nil {
+		return Event{}, err
+	}
+	return event, validateParsedEvent(profile, event, line, lineNo)
 }

@@ -1,10 +1,19 @@
 package harnessobs
 
-func eventRefChecks(event Event) []eventRefCheck {
-	// eventRefChecks keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
+import "errors"
 
+// Event reference validation keeps all external references on the same safe
+// identifier policy before the event can contribute evidence.
+func validateEventRefs(event Event) error {
+	for _, check := range eventRefChecks(event) {
+		if !check.ok {
+			return errors.New(check.err)
+		}
+	}
+	return nil
+}
+
+func eventRefChecks(event Event) []eventRefCheck {
 	return []eventRefCheck{
 		{safeRef(event.SourceRef), "unsafe source_ref"},
 		{sha256Pattern.MatchString(event.SourceDigest), "invalid source_digest"},
