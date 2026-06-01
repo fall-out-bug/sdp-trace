@@ -224,3 +224,25 @@ Status: in_progress
 - [x] T021-790 Run three independent reviewer lanes and record Slice 12
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-12-evidence.md`.
+
+## Active Slice 13 Tasks
+
+- [x] T021-800 Confirm Slice 13 is bounded to the remaining numbered
+  `cmd/sdp-trace` assess command and preview shards.
+- [x] T021-801 Confirm Slice 13 is behavior-preserving: no command behavior,
+  JSON output contract, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-802 Record Slice 13 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-13-plan-review.md`.
+- [x] T021-810 Move selected assess declarations into responsibility-named
+  files for command dispatch, profile runs, input loading, artifact writing,
+  preview dispatch, preview report shapes, and profile-specific preview data.
+- [x] T021-820 Run `gofmt` on changed Go files.
+- [x] T021-830 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-840 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-850 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-860 Run three independent reviewer lanes and record Slice 13
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-13-evidence.md`.

@@ -96,6 +96,14 @@ slice intentionally excludes other families (`assess`, `core`, `gate`,
 `harnessobs`, `packet`, and `prreview`) so each family can keep a focused review
 and verification trail.
 
+Slice 13 removes the numbered `assess` command shards in `cmd/sdp-trace`. It
+keeps the cleanup behavior-preserving by splitting along user-visible assess
+responsibilities: command dispatch and flags, profile assessment runs, input
+loading, artifact writers, preview dispatch, preview report shapes, and
+profile-specific preview metadata. The slice intentionally excludes other
+remaining families (`core`, `gate`, `harnessobs`, `packet`, and `prreview`) so
+each family keeps a focused review and verification trail.
+
 ## Verification
 
 ```text
