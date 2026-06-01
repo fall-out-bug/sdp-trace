@@ -104,6 +104,13 @@ profile-specific preview metadata. The slice intentionally excludes other
 remaining families (`core`, `gate`, `harnessobs`, `packet`, and `prreview`) so
 each family keeps a focused review and verification trail.
 
+Slice 14 starts the numbered `core` cleanup with only the CLI kernel shards in
+`cmd/sdp-trace`: exit constants, process runtime variables, handler types and registry,
+top-level command dispatch, subcommand dispatch, required-flag helpers, JSON
+payload helpers, and string exit-code mapping. It intentionally excludes the
+remaining core assessment explain, preview action, export, and fixture helper
+shards so each area can keep a focused review and verification trail.
+
 ## Verification
 
 ```text

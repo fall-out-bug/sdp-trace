@@ -1,5 +1,14 @@
 package main
 
+import (
+	"context"
+	"io"
+)
+
+type commandHandler func(context.Context, []string, io.Writer, io.Writer) int
+
+type subcommandHandler func([]string, io.Writer, io.Writer) int
+
 var commandHandlers = map[string]commandHandler{
 	"version":           runVersion,
 	"wrap":              runWrap,

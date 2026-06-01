@@ -16,3 +16,8 @@ func writeJSONPayload(stdout, stderr io.Writer, value any, message string) bool 
 	fmt.Fprintf(stdout, "%s\n", payload)
 	return true
 }
+
+func writeJSONPayloadUnchecked(stdout io.Writer, value any) {
+	payload, _ := json.MarshalIndent(value, "", "  ")
+	fmt.Fprintf(stdout, "%s\n", payload)
+}
