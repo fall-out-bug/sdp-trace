@@ -32,32 +32,32 @@ outcomes rather than runtime user stories.
 **Purpose**: Confirm the planned Spec 022 closure route and available design
 artifacts.
 
-- [ ] T001 Confirm `specs/022-post-merge-governance-closure/spec.md`, `specs/022-post-merge-governance-closure/plan.md`, `specs/022-post-merge-governance-closure/research.md`, `specs/022-post-merge-governance-closure/data-model.md`, and `specs/022-post-merge-governance-closure/quickstart.md` are present and describe Spec 022.
-- [ ] T002 Confirm `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` resolves `specs/022-post-merge-governance-closure/` on branch `codex/022-post-merge-governance-closure`.
-- [ ] T003 Confirm Spec 022 still has no planned product code, schema, command, or `/contracts` changes in `specs/022-post-merge-governance-closure/plan.md`.
+- [x] T001 Confirm `specs/022-post-merge-governance-closure/spec.md`, `specs/022-post-merge-governance-closure/plan.md`, `specs/022-post-merge-governance-closure/research.md`, `specs/022-post-merge-governance-closure/data-model.md`, and `specs/022-post-merge-governance-closure/quickstart.md` are present and describe Spec 022.
+- [x] T002 Confirm `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` resolves `specs/022-post-merge-governance-closure/` on branch `codex/022-post-merge-governance-closure`.
+- [x] T003 Confirm Spec 022 still has no planned product code, schema, command, or `/contracts` changes in `specs/022-post-merge-governance-closure/plan.md`.
 
 ## Phase 2: Foundational
 
 **Purpose**: Establish the evidence sources and guardrails that all closure
 stories depend on.
 
-- [ ] T004 Map source evidence references from `specs/019-repo-realignment-monitoring-gate-readiness/plan.md`, `specs/019-repo-realignment-monitoring-gate-readiness/tasks.md`, and `specs/019-repo-realignment-monitoring-gate-readiness/post-merge-closure-plan.md`.
-- [ ] T005 [P] Map decision state references from `docs/closure-decision-ledger.md` and `docs/spec-reality-ledger.md`.
-- [ ] T006 [P] Map navigation state references from `docs/roadmap.md`.
-- [ ] T007 Confirm `merge_approval`, `maintainer_approval`, `not_assessed`, and `cannot_verify` remain explicit in `specs/022-post-merge-governance-closure/spec.md`.
-- [ ] T008 Confirm no task in `specs/022-post-merge-governance-closure/tasks.md` requires retroactive PR #60 approval or changes to existing commands.
-- [ ] T009 Confirm FR-022-009 is already represented by this active unchecked `specs/022-post-merge-governance-closure/tasks.md` task list before closure surface edits begin.
-- [ ] T010 Confirm D006's stale `T120` reference in `docs/closure-decision-ledger.md` is tracked for removal or correction during the US2 D006 update.
-- [ ] T011 Re-check the post-design constitution gate in `specs/022-post-merge-governance-closure/plan.md` after the active task and review-cadence changes.
+- [x] T004 Map source evidence references from `specs/019-repo-realignment-monitoring-gate-readiness/plan.md`, `specs/019-repo-realignment-monitoring-gate-readiness/tasks.md`, and `specs/019-repo-realignment-monitoring-gate-readiness/post-merge-closure-plan.md`.
+- [x] T005 [P] Map decision state references from `docs/closure-decision-ledger.md` and `docs/spec-reality-ledger.md`.
+- [x] T006 [P] Map navigation state references from `docs/roadmap.md`.
+- [x] T007 Confirm `merge_approval`, `maintainer_approval`, `not_assessed`, and `cannot_verify` remain explicit in `specs/022-post-merge-governance-closure/spec.md`.
+- [x] T008 Confirm no task in `specs/022-post-merge-governance-closure/tasks.md` requires retroactive PR #60 approval or changes to existing commands.
+- [x] T009 Confirm FR-022-009 is already represented by this active unchecked `specs/022-post-merge-governance-closure/tasks.md` task list before closure surface edits begin.
+- [x] T010 Confirm D006's stale `T120` reference in `docs/closure-decision-ledger.md` is tracked for removal or correction during the US2 D006 update.
+- [x] T011 Re-check the post-design constitution gate in `specs/022-post-merge-governance-closure/plan.md` after the active task and review-cadence changes.
 
 ## Phase 2A: Pre-Implementation Review Gate
 
 **Purpose**: Review and fix the active spec/plan/tasks before implementation.
 
-- [ ] T012 Run plan/task review for `specs/022-post-merge-governance-closure/spec.md`, `specs/022-post-merge-governance-closure/plan.md`, and `specs/022-post-merge-governance-closure/tasks.md` with Kimi for Coding 2.6, Z.AI 5.1, and MiniMax M3 or record exact unavailable model lanes.
-- [ ] T013 Record retained plan/task review findings and dispositions under `specs/022-post-merge-governance-closure/reviews/`.
-- [ ] T014 Fix all critical and major plan/task findings before editing `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, or `docs/roadmap.md`.
-- [ ] T015 Re-run the affected plan/task review lanes until no retained critical or major findings remain.
+- [x] T012 Run plan/task review for `specs/022-post-merge-governance-closure/spec.md`, `specs/022-post-merge-governance-closure/plan.md`, and `specs/022-post-merge-governance-closure/tasks.md` with Kimi for Coding 2.6, Z.AI 5.1, and MiniMax M3 or record exact unavailable model lanes.
+- [x] T013 Record retained plan/task review findings and dispositions under `specs/022-post-merge-governance-closure/reviews/`.
+- [x] T014 Fix all critical and major plan/task findings before editing `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, or `docs/roadmap.md`.
+- [x] T015 Re-run the affected plan/task review lanes until no retained critical or major findings remain.
 
 **Checkpoint**: Evidence sources and scope guardrails are ready before closure
 surface edits.
@@ -72,12 +72,12 @@ explicitly `not_assessed` unless new approval evidence exists.
 PR #63, Spec 019, and Spec 022 states are stated with exact references and no
 retroactive approval claim.
 
-- [ ] T016 [P] [US1] Refresh live state for PR #60 in `docs/spec-reality-ledger.md` using the quickstart commands from `specs/022-post-merge-governance-closure/quickstart.md`.
-- [ ] T017 [P] [US1] Refresh live state for PR #63 in `docs/spec-reality-ledger.md` using the quickstart commands from `specs/022-post-merge-governance-closure/quickstart.md`.
-- [ ] T018 [US1] Update the Spec 019 row in `docs/spec-reality-ledger.md` with current PR #60, PR #63, CI, review, and missing-approval evidence.
-- [ ] T019 [US1] Update the Spec 022 row in `docs/spec-reality-ledger.md` from prepared follow-up state to active closure state with the current residual-governance summary.
-- [ ] T020 [US1] Verify `docs/spec-reality-ledger.md` keeps PR #60 merge approval as `not_assessed`.
-- [ ] T021 [US1] Run a focused US1 review of `docs/spec-reality-ledger.md` and record the review result under `specs/022-post-merge-governance-closure/reviews/`.
+- [x] T016 [P] [US1] Refresh live state for PR #60 in `docs/spec-reality-ledger.md` using the quickstart commands from `specs/022-post-merge-governance-closure/quickstart.md`.
+- [x] T017 [P] [US1] Refresh live state for PR #63 in `docs/spec-reality-ledger.md` using the quickstart commands from `specs/022-post-merge-governance-closure/quickstart.md`.
+- [x] T018 [US1] Update the Spec 019 row in `docs/spec-reality-ledger.md` with current PR #60, PR #63, CI, review, and missing-approval evidence.
+- [x] T019 [US1] Update the Spec 022 row in `docs/spec-reality-ledger.md` from prepared follow-up state to active closure state with the current residual-governance summary.
+- [x] T020 [US1] Verify `docs/spec-reality-ledger.md` keeps PR #60 merge approval as `not_assessed`.
+- [x] T021 [US1] Run a focused US1 review of `docs/spec-reality-ledger.md` and record the review result under `specs/022-post-merge-governance-closure/reviews/`.
 
 **Checkpoint**: Governance evidence summary is independently reviewable.
 

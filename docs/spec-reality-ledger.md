@@ -1,13 +1,15 @@
 # Spec Reality Ledger
 
 > Reconciles roadmap rows, spec files, task checkboxes, and live verification
-> states for specs 001–019.
+> states for specs 001–022.
 >
-**Date**: 2026-05-26
-**Commit**: `main` @ `657a343a5f310538def9afd509e6c610c713cab0`
+**Date**: 2026-06-01
+**Commit**: `codex/022-post-merge-governance-closure` @
+`d799e67db9f95c0a469d2e7c0dc1ab482df4a4d5`
 
-> **Note**: This checked-in file records a post-merge reconciliation after PR
-> #60. It is repository evidence, not merge approval evidence.
+> **Note**: This checked-in file records a Spec 022 governance reconciliation
+> after PR #60 and PR #63. It is repository evidence, not merge approval
+> evidence.
 > **Source of truth**: `docs/roadmap.md`, `specs/*/spec.md`, `specs/*/plan.md`, `specs/*/tasks.md`
 
 ## Live Verification State (as of 2026-05-26)
@@ -22,6 +24,8 @@
 | `go run ./tools/crapcheck -cover-func coverage-func.txt -gocyclo gocyclo.txt -threshold 5 -strict-less` | **PASS** | All functions within threshold |
 | `go run ./tools/qualitycheck -mi-baseline tools/qualitycheck/file-mi-baseline.json cmd internal tools` | **PASS** | No regressions |
 | GitHub Actions CI | **PASS** | Latest observed `main` run 26417012453 passed on commit `657a343a5f310538def9afd509e6c610c713cab0` |
+| PR #60 live refresh | **verified** | `gh pr view 60 --json number,state,mergeCommit,headRefOid,reviewDecision,statusCheckRollup,url` on 2026-06-01: `state=MERGED`, merge commit `657a343a5f310538def9afd509e6c610c713cab0`, head `977179ba93e577cc51f05e634453deba80c383b6`, `reviewDecision=""`, CI `verify` success at run `26416733118`. |
+| PR #63 live refresh | **verified** | `gh pr view 63 --json number,state,mergeCommit,headRefOid,reviewDecision,statusCheckRollup,url` on 2026-06-01: `state=MERGED`, merge commit `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`, head `9ad4640828a204e66fe056dde0950542ed00f1c4`, `reviewDecision=""`, CI `verify` success at run `26428891169` and `pr-review-evidence-only` success at run `26428891168`. |
 
 
 ## Ledger
@@ -59,8 +63,8 @@
 | **018** | Core/Policy Split And Pi Delivery Plan | `draft` | reviewed / follow-ups prepared | 11 / 11 | — | `go test` PASS, `doccheck` PASS, `hygienecheck` PASS. Maintainer decision `approve_core_extension_direction` was recorded in the 2026-05-26 closure thread. Follow-up Spec 020 and Spec 021 are filed as draft implementation specs. | **Reviewed direction / follow-ups prepared** — workstreams A-E, integration verification, maintainer review, and follow-up spec filing are complete; command removal, separate binaries, production readiness, release approval, and external trust are not claimed. |
 | **020** | Core Query Package Split | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future task backlog is present as non-active table rows. | **Prepared future implementation spec** — not current closure debt until explicitly taken into work. |
 | **021** | Source File Locality Cleanup | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future task backlog is present as non-active table rows. | **Prepared future implementation spec** — not current closure debt until explicitly taken into work. |
-| **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | split successor | 16 / 16 | — | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. Integration PR #63 superseded PR #62/PR #31 as the handoff surface, passed final-head CI, and merged as `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Maintainer decision `split_successor` moves residual governance debt to Spec 022. | **Split successor** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. PR #63 added PR-review CI enforcement and pinned workflow action checks. Missed Phase 0 gates remain historical process evidence; PR #60 merge approval remains `not_assessed`; future governance belongs to Spec 022. |
-| **022** | Post-Merge Governance Closure | `draft` | follow-up prepared | 0 / 0 active checkboxes | — | SpecKit triplet exists. Future governance backlog is present as non-active table rows. | **Prepared future governance spec** — not current closure debt until explicitly taken into work. |
+| **019** | Repo Realignment, Monitoring, And Gate Readiness | `in_progress` | split successor | 16 / 16 | — | `go test` PASS, `go vet` PASS, `doccheck` PASS, `hygienecheck` PASS, `schemadoc` PASS, **CRAP PASS**, **MI baseline PASS**, CI PASS on `main` at `657a343a5f310538def9afd509e6c610c713cab0`. PR #60 live refresh on 2026-06-01 confirmed `state=MERGED`, merge commit `657a343a5f310538def9afd509e6c610c713cab0`, CI `verify` success, and empty `reviewDecision`. Integration PR #63 live refresh confirmed `state=MERGED`, merge commit `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`, CI `verify` success, and `pr-review-evidence-only` success. Live `wrap` manifest schema added as `schema/run-manifest.schema.json`. Monitoring/gate proof pack is replayed by `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. Scoped harness/gate numeric shard count moved from 463 to 435. Maintainer decision `split_successor` moves residual governance debt to Spec 022. | **Split successor** — PR #60 merged completed workstreams A/B/C/F/H and post-merge closure completed D/E/G. PR #63 added PR-review CI enforcement and pinned workflow action checks. Missed Phase 0 gates remain historical process evidence; PR #60 merge approval remains `not_assessed`; Spec 022 owns the residual governance closure. |
+| **022** | Post-Merge Governance Closure | `in_progress` | `in_progress` | 0 / 42 | T016-T042 remain open until evidence edits, focused story reviews, local docs checks, PR-ready drift review, and final checkbox update are complete. | SpecKit triplet exists and was activated on branch `codex/022-post-merge-governance-closure`. Plan/task review Round 1 found critical/major issues; fixes were committed in `fc8a1e1` and `be2b19e`; Round 2 recorded no retained critical or major findings in `specs/022-post-merge-governance-closure/reviews/plan-task-review-round-2.md`. Live PR #60 and PR #63 refresh is verified as recorded above. | **Active governance closure** — evidence summary implementation is in progress. The closure must not claim retroactive PR #60 approval, production trust, release approval, or external attestation. PR #60 merge approval remains `not_assessed`; closure readiness remains open until US1, US2, US3, focused reviews, local checks, and PR-ready review are complete. |
 
 ## Qualification Notes
 
@@ -83,7 +87,9 @@
 - **Spec 017**: Supply-chain external evidence remains `cannot_verify` where optional tools or external trust anchors are unavailable.
 - **Spec 019 governance debt**: Pre-implementation review and approval gates
   were missed before PR #60 merged; they remain process evidence and cannot be
-  retroactively marked complete. Residual governance is split to Spec 022.
+  retroactively marked complete. Residual governance is actively handled by
+  Spec 022. PR #60 merge approval remains `not_assessed` after the 2026-06-01
+  live refresh because GitHub `reviewDecision` is empty.
 - **Demo / first-run specs**: 001 Block 25/T226 and 007 buyer rehearsal are
   represented by real external demo-repository or first-run observation
   evidence, not local ledger cleanup. Future non-no-op GSD runs still need
