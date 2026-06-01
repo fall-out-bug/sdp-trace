@@ -143,6 +143,24 @@ Verify, query, and query-pack were split along runner, argument, dispatch, and
 validation responsibilities after combined files measured below the absolute
 file-MI threshold.
 
+## Slice 9
+
+Slice 9 groups `cmd/sdp-trace` witness command shards into:
+
+- `cmd/sdp-trace/witness_command.go`
+- `cmd/sdp-trace/witness_options.go`
+- `cmd/sdp-trace/witness_options_parse.go`
+- `cmd/sdp-trace/witness_options_build.go`
+- `cmd/sdp-trace/witness_flag_set.go`
+- `cmd/sdp-trace/witness_required_fields.go`
+- `cmd/sdp-trace/witness_kind_validation.go`
+- `cmd/sdp-trace/witness_record_builders.go`
+- `cmd/sdp-trace/witness_output.go`
+- `cmd/sdp-trace/witness_customer_pki.go`
+
+Options and required-field grouping were split after broader groupings measured
+below the absolute file-MI threshold.
+
 ## Verification
 
 ```text

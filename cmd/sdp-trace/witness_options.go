@@ -12,3 +12,9 @@ type witnessOptions struct {
 	customerPKIPayloadDigest  string
 	customerPKIFreshnessPath  string
 }
+
+type witnessRequiredFields struct {
+	target string
+	kind   string
+	out    string
+}

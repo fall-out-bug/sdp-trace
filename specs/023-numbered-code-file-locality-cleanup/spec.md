@@ -342,3 +342,62 @@ query-pack build, query-pack explain, parsing, validation, and exit policy into
 behavior-named command files. No CLI behavior, verifier artifact behavior,
 query JSON payload, query-pack artifact, schema contract, or command metadata
 value should change.
+
+## Active Slice 9
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` witness command shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/witness_374_run.go`
+- `cmd/sdp-trace/witness_375_options.go`
+- `cmd/sdp-trace/witness_376_parseoptions.go`
+- `cmd/sdp-trace/witness_377_parseflagset.go`
+- `cmd/sdp-trace/witness_378_optionsfromflags.go`
+- `cmd/sdp-trace/witness_379_requiredfields.go`
+- `cmd/sdp-trace/witness_380_requiredfieldsfromflags.go`
+- `cmd/sdp-trace/witness_381_kindoutfromflags.go`
+- `cmd/sdp-trace/witness_382_optionsfromrequiredfields.go`
+- `cmd/sdp-trace/witness_384_kindfromflags.go`
+- `cmd/sdp-trace/witness_385_outfromflags.go`
+- `cmd/sdp-trace/witness_386_validatekindflags.go`
+- `cmd/sdp-trace/witness_387_missingkindflags.go`
+- `cmd/sdp-trace/witness_388_buildrecord.go`
+- `cmd/sdp-trace/witness_389_builders.go`
+- `cmd/sdp-trace/witness_391_buildgithubactions.go`
+- `cmd/sdp-trace/witness_392_buildenvelope.go`
+- `cmd/sdp-trace/witness_393_buildcustomerpki.go`
+- `cmd/sdp-trace/witness_394_writerecordoutput.go`
+- `cmd/sdp-trace/witness_395_missingcustomerpkiflags.go`
+- `cmd/sdp-trace/witness_396_appendmissingstringflags.go`
+- `cmd/sdp-trace/witness_397_missingcustomerpkipubliccredential.go`
+- `cmd/sdp-trace/witness_398_allowedwitnesskind.go`
+
+Target files:
+
+- `cmd/sdp-trace/witness_command.go`
+- `cmd/sdp-trace/witness_options.go`
+- `cmd/sdp-trace/witness_options_parse.go`
+- `cmd/sdp-trace/witness_options_build.go`
+- `cmd/sdp-trace/witness_flag_set.go`
+- `cmd/sdp-trace/witness_required_fields.go`
+- `cmd/sdp-trace/witness_kind_validation.go`
+- `cmd/sdp-trace/witness_record_builders.go`
+- `cmd/sdp-trace/witness_output.go`
+- `cmd/sdp-trace/witness_customer_pki.go`
+
+Rejected grouping:
+
+- Keeping all option parsing and option construction in one file was rejected
+  because local MI analysis measured file MI `68.4`, below the absolute
+  threshold.
+- Keeping required-field and kind validation in one file was rejected because
+  local MI analysis measured file MI `65.2`, below the absolute threshold.
+
+Intended behavior boundary: this slice should only move witness command
+parsing, required-field validation, witness builders, customer-PKI missing flag
+helpers, and output rendering into behavior-named command files. No CLI
+behavior, witness JSON field, schema contract, or command metadata value should
+change.
