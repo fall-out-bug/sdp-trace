@@ -52,12 +52,18 @@ Quality notes:
 - Moved functions have CRAP `1.00`.
 - No MI baseline file was changed for this slice.
 
-## Targeted Review
+## Targeted Reviews
 
 Verified pass:
 
 - Harness: `opencode run`
 - Model: `opencode-go/glm-5.1`
+- Result: `LGTM`
+- Harness: `opencode run`
+- Model: `kimi-for-coding/k2p6`
+- Result: `LGTM`
+- Harness: `opencode run`
+- Model: `opencode-go/minimax-m3`
 - Result: `LGTM`
 
 Review notes:
@@ -67,6 +73,8 @@ Review notes:
 - Scope: no unrelated code, schema, package boundary, or baseline change found.
 - Evidence: no production, release, external attestation, or merge approval
   overclaim found.
+- Baseline/artifact discipline: no MI baseline, schema, coverage, or generated
+  artifact changes found.
 
 Not assessed:
 
