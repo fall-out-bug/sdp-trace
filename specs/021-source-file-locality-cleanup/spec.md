@@ -1,6 +1,6 @@
 # Spec 021: Source File Locality Cleanup
 
-Status: in_progress
+Status: complete
 
 ## Objective
 
@@ -41,7 +41,7 @@ turns that policy into bounded cleanup slices.
 
 ## Active Slice 1
 
-Status: implemented locally; post-implementation re-review pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface registry helpers only.
 
@@ -70,7 +70,7 @@ review evidence are recorded in
 
 ## Active Slice 2
 
-Status: implemented locally; targeted review LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface usage drift helpers only.
 
@@ -97,7 +97,7 @@ in `specs/021-source-file-locality-cleanup/reviews/slice-2-evidence.md`.
 
 ## Active Slice 3
 
-Status: implemented locally; targeted review LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface list helper shards only.
 
@@ -117,7 +117,7 @@ failed the absolute file-MI threshold during pre-change analysis.
 
 ## Active Slice 4
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface schema and runner shards only.
 
@@ -139,7 +139,7 @@ this slice because broader grouping failed pre-change MI analysis.
 
 ## Active Slice 5
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface core command metadata shards only.
 
@@ -164,7 +164,7 @@ behavior, JSON field, schema contract, or command metadata value should change.
 
 ## Active Slice 6
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface observe command metadata shards only.
 
@@ -275,7 +275,7 @@ behavior, JSON field, schema contract, or command metadata value should change.
 
 ## Active Slice 11
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: remaining `cmd/sdp-trace` numbered command-surface and CLI helper shards.
 
