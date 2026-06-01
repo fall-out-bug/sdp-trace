@@ -77,6 +77,11 @@ Slice 9 groups the command-surface other command metadata shards into
 `cmd/sdp-trace/command_surface_other_commands.go`. The combined file has no
 functions and local pre-change MI analysis measured file MI `100.0`.
 
+Slice 10 groups command-surface catalog metadata into
+`cmd/sdp-trace/command_surface_catalog.go`. Broader registry/constants/catalog
+grouping was rejected because pre-change MI analysis measured the candidate
+file below the absolute file-MI threshold.
+
 ## Verification
 
 ```text
