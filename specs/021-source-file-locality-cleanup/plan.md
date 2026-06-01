@@ -87,6 +87,15 @@ responsibility-named files: CLI argument helpers, command-surface metadata
 accessors, and command-surface registry assembly. A single combined file remains
 rejected because it would mix unrelated behavior and risks MI regression.
 
+Slice 12 removes the remaining numbered doctor local report/check shards in
+`cmd/sdp-trace`. It keeps the behavior-preserving cleanup split by local doctor
+responsibility instead of making one large file: report assembly, contract
+checks, writable path checks, expected evidence checks, event vocabulary, CI
+prerequisites, preview metadata, usage text, and small local result helpers. The
+slice intentionally excludes other families (`assess`, `core`, `gate`,
+`harnessobs`, `packet`, and `prreview`) so each family can keep a focused review
+and verification trail.
+
 ## Verification
 
 ```text

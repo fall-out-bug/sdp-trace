@@ -1,5 +1,9 @@
 package main
 
+import (
+	"strings"
+)
+
 func requiredCIWitnessEnvFields() []string {
 	// Require both OIDC request fields and workflow identity fields for CI
 	// witness construction.
@@ -17,4 +21,15 @@ func requiredCIWitnessEnvFields() []string {
 		"GITHUB_SHA",
 		"GITHUB_WORKFLOW",
 	}
+}
+
+func missingEnvFields(env map[string]string, required []string) []string {
+	missing := make([]string, 0)
+	for _, key := range required {
+		if strings.TrimSpace(env[key]) == "" {
+			// Trim whitespace so empty exported variables are treated as absent.
+			missing = append(missing, key)
+		}
+	}
+	return missing
 }

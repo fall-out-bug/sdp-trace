@@ -23,3 +23,12 @@ func ciWitnessPrerequisiteCheck(env map[string]string) doctorCheck {
 		Reason: "GitHub Actions identity and OIDC prerequisites are present",
 	}
 }
+
+func missingCIWitnessFields(env map[string]string) []string {
+	missing := missingEnvFields(env, requiredCIWitnessEnvFields())
+	if env["GITHUB_ACTIONS"] != "" && env["GITHUB_ACTIONS"] != "true" {
+		// GitHub exposes the flag as literal true for Actions-backed identity.
+		missing = append(missing, "GITHUB_ACTIONS=true")
+	}
+	return missing
+}

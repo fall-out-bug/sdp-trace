@@ -1,6 +1,6 @@
 # Tasks: Source File Locality Cleanup
 
-Status: complete
+Status: in_progress
 
 ## Active Tasks
 
@@ -202,3 +202,25 @@ Status: complete
 - [x] T021-710 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T021-720 Run three independent reviewer lanes and record Slice 11 evidence
   in `specs/021-source-file-locality-cleanup/reviews/slice-11-evidence.md`.
+
+## Active Slice 12 Tasks
+
+- [x] T021-730 Confirm Slice 12 is bounded to the remaining numbered
+  `cmd/sdp-trace` doctor local report/check shards.
+- [x] T021-731 Confirm Slice 12 is behavior-preserving: no command behavior,
+  JSON output contract, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-732 Record Slice 12 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-12-plan-review.md`.
+- [x] T021-740 Move selected doctor declarations into responsibility-named
+  files for report assembly, contract checks, writable paths, expected evidence,
+  CI prerequisites, preview metadata, and usage text.
+- [x] T021-750 Run `gofmt` on changed Go files.
+- [x] T021-760 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-770 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-780 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-790 Run three independent reviewer lanes and record Slice 12
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-12-evidence.md`.

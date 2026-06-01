@@ -38,3 +38,9 @@ var previewBoundaryRows = []previewBoundary{
 		Reason:   "external witness profile is not implemented in Block 13B",
 	},
 }
+
+func previewBoundaries() []previewBoundary {
+	// Preview is explicit about which observation boundaries are local,
+	// unsupported, or not integrated.
+	return append([]previewBoundary(nil), previewBoundaryRows...)
+}

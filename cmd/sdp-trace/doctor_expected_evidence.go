@@ -23,3 +23,25 @@ func expectedEvidenceReferenceCheck(contract trace.Contract) doctorCheck {
 		Contract: contract.ContractID,
 	}
 }
+
+func expectedEvidenceNoRequiredEventsCheck(contract trace.Contract) doctorCheck {
+	// A contract with no required events cannot prove evidence coverage.
+	return doctorCheck{
+		ID:       "expected_evidence_references",
+		State:    string(trace.VerdictCannotVerify),
+		Reason:   "contract has no required_events",
+		Contract: contract.ContractID,
+	}
+}
+
+func expectedEvidenceUnsupportedReferenceCheck(contract trace.Contract, missing []string) doctorCheck {
+	// Unsupported references are reported as explicit gaps, not hidden in a
+	// generic contract failure.
+	return doctorCheck{
+		ID:       "expected_evidence_references",
+		State:    string(trace.VerdictCannotVerify),
+		Reason:   "contract references unsupported event types",
+		Contract: contract.ContractID,
+		Missing:  missing,
+	}
+}
