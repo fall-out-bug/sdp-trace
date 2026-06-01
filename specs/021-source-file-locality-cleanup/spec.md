@@ -94,3 +94,23 @@ Intended behavior boundary: this slice should only consolidate usage-drift
 helpers into cohesive behavior-named files. The behavior-preserving claim
 remains `not_assessed` until post-change tests and review evidence are recorded
 in `specs/021-source-file-locality-cleanup/reviews/slice-2-evidence.md`.
+
+## Active Slice 3
+
+Status: implemented locally; targeted review LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface list helper shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_582_commandsurfaceflaglisthelpers.go`
+- `cmd/sdp-trace/main_583_commandsurfaceslicehelpers.go`
+
+Target file:
+
+- `cmd/sdp-trace/command_surface_list_helpers.go`
+
+Intended behavior boundary: this slice should only consolidate simple list
+helper functions into a cohesive behavior-named file. `isHelp` and
+`isBoolLiteral` were not included because the combined argument-helper file
+failed the absolute file-MI threshold during pre-change analysis.

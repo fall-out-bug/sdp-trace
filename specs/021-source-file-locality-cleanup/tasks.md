@@ -44,3 +44,20 @@ Status: in_progress
 - [x] T021-095 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T021-096 Record Slice 2 review and final evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-2-evidence.md`.
+
+## Active Slice 3 Tasks
+
+- [x] T021-100 Confirm Slice 3 is bounded to `cmd/sdp-trace`
+  command-surface list helper shards.
+- [x] T021-101 Reject broader argument-helper grouping when pre-change MI
+  analysis shows it would require a mixed code/baseline change.
+- [x] T021-110 Move selected list helpers into
+  `cmd/sdp-trace/command_surface_list_helpers.go`.
+- [x] T021-120 Run `gofmt` on changed Go files.
+- [x] T021-130 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-140 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-150 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-160 Record Slice 3 review and final evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-3-evidence.md`.

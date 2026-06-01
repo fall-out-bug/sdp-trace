@@ -47,6 +47,11 @@ Slice 2 groups command-surface usage-drift helpers into collection and diff
 files. A single combined drift file was rejected because it would fall below the
 absolute file-MI threshold and force a mixed code/baseline PR.
 
+Slice 3 groups only command-surface list helpers into
+`cmd/sdp-trace/command_surface_list_helpers.go`. A broader argument-helper file
+including `isHelp` and `isBoolLiteral` was rejected because local pre-change MI
+analysis measured it below the absolute file-MI threshold.
+
 ## Verification
 
 ```text
