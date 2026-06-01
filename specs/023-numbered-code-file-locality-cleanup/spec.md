@@ -345,7 +345,7 @@ value should change.
 
 ## Active Slice 9
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` witness command shards only.
 
