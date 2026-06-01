@@ -161,6 +161,15 @@ key lookup, string and numeric key extraction, and timestamp parsing into
 responsibility-named files. It intentionally excludes token safety, run loading,
 validation loading, and event scanning for later slices.
 
+Slice 21 continues `internal/harnessobs` cleanup with token safety, loaded run
+reading, validation summary/loading, and profile validation shards
+(`harnessobs_092` through `harnessobs_110`). It moves mutation-tool detection,
+safe token rendering, run JSON/event loading, validation summary rendering,
+validation artifact loading, profile metadata/family validation, and degradation
+rule validation into responsibility-named files. It intentionally excludes event
+source scanning and parsed-event validation (`harnessobs_111` onward) so the
+line-scanning behavior can keep a separate focused review trail.
+
 ## Verification
 
 ```text

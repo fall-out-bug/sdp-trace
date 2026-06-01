@@ -411,3 +411,28 @@ Status: in_progress
 - [x] T021-1350 Run three independent reviewer lanes and record Slice 20
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-20-evidence.md`.
+
+## Active Slice 21 Tasks
+
+- [x] T021-1360 Confirm Slice 21 is bounded to numbered
+  `internal/harnessobs` token safety, run loading, validation loading/summary,
+  and profile validation shards `harnessobs_092` through `harnessobs_110`.
+- [x] T021-1361 Confirm Slice 21 is behavior-preserving: no mutation-tool
+  classification, safe token rendering, run/event loading, validation summary,
+  profile validation, degradation rule behavior, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-1362 Record Slice 21 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-21-plan-review.md`.
+- [x] T021-1370 Move selected token/run/validation declarations into
+  responsibility-named files for mutation detection, safe token rendering, run
+  loading, validation summary/loading, profile metadata/family validation, and
+  degradation rule validation.
+- [x] T021-1380 Run `gofmt` on changed Go files.
+- [x] T021-1390 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1400 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1410 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1420 Run three independent reviewer lanes and record Slice 21
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-21-evidence.md`.
