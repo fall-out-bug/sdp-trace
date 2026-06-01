@@ -176,20 +176,12 @@
 - core_test.go
 
 ### doctor
-- doctor_416_rundoctor.go
-- doctor_417_parsedoctorargs.go
-- doctor_418_runrepoobserverdoctor.go
-- doctor_419_writerepoobserverdoctor.go
+- doctor_command.go
+- doctor_install.go
+- doctor_install_args.go
+- doctor_install_options.go
+- doctor_repo_observer.go
 - doctor_420_runlocaldoctor.go
-- doctor_421_runinstall.go
-- doctor_422_handlerepoobserverinstallerror.go
-- doctor_423_repoobserverinstallexitcode.go
-- doctor_424_parseinstallrepoobserverargs.go
-- doctor_425_requireinstallrepoobserverflags.go
-- doctor_426_hasinstallrepoobserversubcommand.go
-- doctor_427_installrepoobserverflagset.go
-- doctor_428_repoobserveroptionsfromflags.go
-- doctor_429_repoobserverexitcode.go
 - doctor_479_doctorreport.go
 - doctor_480_doctorcheck.go
 - doctor_481_doctoroptions.go

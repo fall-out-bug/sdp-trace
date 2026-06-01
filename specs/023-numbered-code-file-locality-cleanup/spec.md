@@ -401,3 +401,46 @@ parsing, required-field validation, witness builders, customer-PKI missing flag
 helpers, and output rendering into behavior-named command files. No CLI
 behavior, witness JSON field, schema contract, or command metadata value should
 change.
+
+## Active Slice 10
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` doctor repo-observer and install command shards only.
+The local doctor report/check shards remain outside this slice.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/doctor_416_rundoctor.go`
+- `cmd/sdp-trace/doctor_417_parsedoctorargs.go`
+- `cmd/sdp-trace/doctor_418_runrepoobserverdoctor.go`
+- `cmd/sdp-trace/doctor_419_writerepoobserverdoctor.go`
+- `cmd/sdp-trace/doctor_421_runinstall.go`
+- `cmd/sdp-trace/doctor_422_handlerepoobserverinstallerror.go`
+- `cmd/sdp-trace/doctor_423_repoobserverinstallexitcode.go`
+- `cmd/sdp-trace/doctor_424_parseinstallrepoobserverargs.go`
+- `cmd/sdp-trace/doctor_425_requireinstallrepoobserverflags.go`
+- `cmd/sdp-trace/doctor_426_hasinstallrepoobserversubcommand.go`
+- `cmd/sdp-trace/doctor_427_installrepoobserverflagset.go`
+- `cmd/sdp-trace/doctor_428_repoobserveroptionsfromflags.go`
+- `cmd/sdp-trace/doctor_429_repoobserverexitcode.go`
+
+Target files:
+
+- `cmd/sdp-trace/doctor_command.go`
+- `cmd/sdp-trace/doctor_repo_observer.go`
+- `cmd/sdp-trace/doctor_install.go`
+- `cmd/sdp-trace/doctor_install_args.go`
+- `cmd/sdp-trace/doctor_install_options.go`
+
+Rejected grouping:
+
+- Keeping install argument parsing, flag registration, and option conversion in
+  one file was rejected because local MI analysis measured file MI `68.1`,
+  below the absolute threshold.
+
+Intended behavior boundary: this slice should only move doctor routing,
+doctor argument parsing, repo-observer doctor output, repo-observer install
+execution, install argument parsing, and install option construction into
+behavior-named command files. No CLI behavior, repo-observer JSON field,
+schema contract, or command metadata value should change.

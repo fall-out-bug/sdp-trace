@@ -30,3 +30,24 @@ func runInstall(_ context.Context, args []string, stdout, stderr io.Writer) int 
 	fmt.Fprint(stdout, repoobserver.HumanTable(status))
 	return repoObserverInstallExitCode(opts.boolValue("write"), status)
 }
+
+func handleRepoObserverInstallError(status repoobserver.Status, err error, stdout, stderr io.Writer) (int, bool) {
+	if err == nil {
+		return 0, false
+	}
+	if status.SchemaVersion != "" {
+		// Partial status with a schema is still useful human evidence.
+		fmt.Fprint(stdout, repoobserver.HumanTable(status))
+	}
+	fmt.Fprintln(stderr, err)
+	return exitCannotVerify, true
+}
+
+func repoObserverInstallExitCode(write bool, status repoobserver.Status) int {
+	if !write {
+		// Preview mode reports planned changes but does not fail on an uninstalled
+		// repository state.
+		return 0
+	}
+	return repoObserverExitCode(status)
+}

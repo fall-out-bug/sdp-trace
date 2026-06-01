@@ -22,3 +22,24 @@ func runRepoObserverDoctor(opts *flagSet, stdout, stderr io.Writer) int {
 	}
 	return writeRepoObserverDoctor(opts, status, stdout, stderr)
 }
+
+func writeRepoObserverDoctor(opts *flagSet, status repoobserver.Status, stdout, stderr io.Writer) int {
+	if err := repoobserver.WriteJSON(opts.stringValue("out"), status); err != nil {
+		// Persisted doctor JSON is the machine-readable diagnostic artifact.
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprint(stdout, repoobserver.HumanTable(status))
+	return repoObserverExitCode(status)
+}
+
+func repoObserverExitCode(status repoobserver.Status) int {
+	if status.InstallState == repoobserver.StateCannotVerify || status.ProofState == repoobserver.StateCannotVerify {
+		// Cannot-verify install/proof state stays distinct from failed install.
+		return exitCannotVerify
+	}
+	if status.InstallState == repoobserver.StateFail {
+		return 1
+	}
+	return 0
+}

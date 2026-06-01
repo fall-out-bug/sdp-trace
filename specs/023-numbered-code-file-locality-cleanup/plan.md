@@ -161,6 +161,21 @@ Slice 9 groups `cmd/sdp-trace` witness command shards into:
 Options and required-field grouping were split after broader groupings measured
 below the absolute file-MI threshold.
 
+## Slice 10
+
+Slice 10 groups the `cmd/sdp-trace` doctor repo-observer and install command
+shards into:
+
+- `cmd/sdp-trace/doctor_command.go`
+- `cmd/sdp-trace/doctor_repo_observer.go`
+- `cmd/sdp-trace/doctor_install.go`
+- `cmd/sdp-trace/doctor_install_args.go`
+- `cmd/sdp-trace/doctor_install_options.go`
+
+The install argument grouping was split from flag/options construction after a
+combined file measured below the absolute file-MI threshold. Local doctor report
+checks remain outside this slice.
+
 ## Verification
 
 ```text

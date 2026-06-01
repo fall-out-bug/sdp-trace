@@ -161,3 +161,21 @@ Status: in_progress
 - [x] T023-610 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T023-620 Run three independent reviewer lanes and record Slice 9 evidence
   in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-9-evidence.md`.
+
+## Active Slice 10 Tasks
+
+- [x] T023-630 Confirm Slice 10 is bounded to `cmd/sdp-trace` doctor
+  repo-observer and install command shards.
+- [x] T023-631 Reject broader install-args grouping when local MI analysis
+  measures the candidate file below the absolute file-MI threshold.
+- [x] T023-640 Move selected doctor declarations into behavior-named command
+  files.
+- [x] T023-650 Run `gofmt` on changed Go files.
+- [x] T023-660 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T023-670 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T023-680 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T023-690 Run three independent reviewer lanes and record Slice 10
+  evidence in
+  `specs/023-numbered-code-file-locality-cleanup/reviews/slice-10-evidence.md`.
