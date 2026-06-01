@@ -1,6 +1,6 @@
 # Spec 022: Post-Merge Governance Closure
 
-Status: active clarification complete; implementation tasks opened.
+Status: in_progress
 
 ## Objective
 
