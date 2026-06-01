@@ -144,6 +144,15 @@ into responsibility-named files. The slice preserves behavior and intentionally
 keeps lower-level session setup execution, OpenCode normalization, raw signal
 extraction, token safety, and validation behavior in later slices.
 
+Slice 19 continues `internal/harnessobs` cleanup with OpenCode normalization
+and session command model event shards (`harnessobs_046` through
+`harnessobs_064`). It moves raw OpenCode line normalization, family detection
+rules, event construction, observed-at/actor extraction, session command model
+facts, and normalized event construction into responsibility-named files. It
+intentionally excludes raw signal traversal (`harnessobs_065` onward), token
+safety, validation loading, and event scanning so those behavior-heavy areas can
+keep separate verification and review trails.
+
 ## Verification
 
 ```text

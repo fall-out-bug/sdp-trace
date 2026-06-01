@@ -362,3 +362,28 @@ Status: in_progress
 - [x] T021-1210 Run three independent reviewer lanes and record Slice 18
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-18-evidence.md`.
+
+## Active Slice 19 Tasks
+
+- [x] T021-1220 Confirm Slice 19 is bounded to numbered
+  `internal/harnessobs` OpenCode normalization and session command model event
+  shards `harnessobs_046` through `harnessobs_064`.
+- [x] T021-1221 Confirm Slice 19 is behavior-preserving: no event family
+  detection semantics, event IDs, observed-at behavior, actor fallback,
+  command-model digesting, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-1222 Record Slice 19 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-19-plan-review.md`.
+- [x] T021-1230 Move selected OpenCode/session command declarations into
+  responsibility-named files for raw-line normalization, OpenCode event
+  construction, family maps/rules/order, observed-at/actor extraction, session
+  command facts/events/time, and normalized event construction.
+- [x] T021-1240 Run `gofmt` on changed Go files.
+- [x] T021-1250 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1260 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1270 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1280 Run three independent reviewer lanes and record Slice 19
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-19-evidence.md`.
