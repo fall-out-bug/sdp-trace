@@ -109,12 +109,12 @@ ledger, spec reality ledger, and roadmap.
 `docs/spec-reality-ledger.md`, and `docs/roadmap.md`; all three surfaces report
 the same Spec 022 state and next step.
 
-- [ ] T028 [P] [US3] Update Spec 022 status and next-step wording in `docs/roadmap.md`.
-- [ ] T029 [P] [US3] Update Spec 019 status and residual-governance wording in `docs/roadmap.md` to point to the current Spec 022 closure state.
-- [ ] T030 [US3] Cross-check `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, and `docs/roadmap.md` for consistent Spec 022 state wording.
-- [ ] T031 [US3] Ensure the three closure surfaces are committed together; do not split `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, and `docs/roadmap.md` into separate commits for closure-state changes.
-- [ ] T032 [US3] Update `specs/022-post-merge-governance-closure/spec.md` status if the implementation changes the lifecycle state.
-- [ ] T033 [US3] Run a focused US3 review of `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, `docs/roadmap.md`, and `specs/022-post-merge-governance-closure/spec.md`, then record the review result under `specs/022-post-merge-governance-closure/reviews/`.
+- [x] T028 [P] [US3] Update Spec 022 status and next-step wording in `docs/roadmap.md`.
+- [x] T029 [P] [US3] Update Spec 019 status and residual-governance wording in `docs/roadmap.md` to point to the current Spec 022 closure state.
+- [x] T030 [US3] Cross-check `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, and `docs/roadmap.md` for consistent Spec 022 state wording.
+- [x] T031 [US3] Ensure the three closure surfaces are committed together; do not split `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, and `docs/roadmap.md` into separate commits for closure-state changes.
+- [x] T032 [US3] Update `specs/022-post-merge-governance-closure/spec.md` status if the implementation changes the lifecycle state.
+- [x] T033 [US3] Run a focused US3 review of `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, `docs/roadmap.md`, and `specs/022-post-merge-governance-closure/spec.md`, then record the review result under `specs/022-post-merge-governance-closure/reviews/`.
 
 **Checkpoint**: Closure navigation surfaces are synchronized.
 

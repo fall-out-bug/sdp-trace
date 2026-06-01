@@ -10,8 +10,8 @@ external attestation.
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| Spec 022 T022-T027 | Update D006, inspect this breakdown for contradictions, record residual remediation state, and run focused US2 review. | Spec 022 is active; plan/task review Round 2 has no retained critical or major findings; US1 evidence summary is committed in `docs/spec-reality-ledger.md`. | Yes, for docs-governance scope only. | Complete US2 decision-ledger update and focused review. |
-| Spec 022 T028-T033 | Synchronize roadmap, decision ledger, spec reality ledger, and spec status wording. | Pending US2 completion. | Yes, after US2. | Complete synchronized navigation update in the same closure-surface change. |
+| Spec 022 T022-T027 | Update D006, inspect this breakdown for contradictions, record residual remediation state, and run focused US2 review. | Complete in `docs: record spec 022 governance decision state`; US2 review is recorded in `specs/022-post-merge-governance-closure/reviews/us2-review.md`. | Closed for docs-governance scope. | No further US2 action; continue with US3 and final checks. |
+| Spec 022 T028-T033 | Synchronize roadmap, decision ledger, spec reality ledger, and spec status wording. | US2 is complete; this navigation update is in progress. | Yes. | Complete synchronized navigation update in the same closure-surface change. |
 | Spec 022 T034-T042 | Run local checks, forbidden-claim review, drift/quality review, adversarial PR-ready review, and final checkbox update. | Pending US2/US3. | Partially; live PR/CI final-head checks require GitHub after PR. | Run after all story edits and focused reviews. |
 
 ## Local Closure Candidate
