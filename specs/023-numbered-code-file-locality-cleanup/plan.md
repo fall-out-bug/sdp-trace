@@ -47,6 +47,17 @@ Slice 1 groups `cmd/sdp-trace` release-proof command shards into:
 Single-file release-proof grouping was rejected because it failed the absolute
 file-MI threshold.
 
+## Slice 2
+
+Slice 2 groups `cmd/sdp-trace` observe command adapter and exit-policy shards
+into:
+
+- `cmd/sdp-trace/observe_command_adapters.go`
+- `cmd/sdp-trace/observe_exit_policy.go`
+
+Single-file observe grouping was rejected because it failed the absolute
+file-MI threshold.
+
 ## Verification
 
 ```text

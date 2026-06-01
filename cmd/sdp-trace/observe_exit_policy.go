@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/fall_out_bug/sdp-trace/internal/harnessobs"
-)
+import "github.com/fall_out_bug/sdp-trace/internal/harnessobs"
 
 var harnessStateExitCodes = map[string]int{
 	harnessobs.StatePass:         0,
