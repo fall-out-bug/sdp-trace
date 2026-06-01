@@ -132,7 +132,7 @@ command metadata value should change.
 
 ## Active Slice 4
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` export command dispatcher shards only.
 
@@ -150,3 +150,38 @@ Target file:
 Intended behavior boundary: this slice should only move the export dispatcher
 and export subcommand predicates into a behavior-named command file. No CLI
 behavior, JSON field, schema contract, or command metadata value should change.
+
+## Active Slice 5
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` fixture validation command shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/fixture_472_run.go`
+- `cmd/sdp-trace/fixture_473_rootarg.go`
+- `cmd/sdp-trace/fixture_474_validatefixtureruns.go`
+- `cmd/sdp-trace/fixture_475_validatefixturerun.go`
+- `cmd/sdp-trace/fixture_476_expectationfailed.go`
+- `cmd/sdp-trace/fixture_477_expectedresultfailed.go`
+- `cmd/sdp-trace/fixture_478_unexpectedresultfailed.go`
+
+Target files:
+
+- `cmd/sdp-trace/fixture_validation_run.go`
+- `cmd/sdp-trace/fixture_validation_args.go`
+- `cmd/sdp-trace/fixture_expectation_policy.go`
+
+Rejected grouping:
+
+- A single `fixture_validation_command.go` file was rejected because local MI
+  analysis measured file MI `65.4`, below the absolute threshold.
+- Keeping fixture root argument parsing in `fixture_validation_run.go` was
+  rejected because local MI analysis measured file MI `68.6`, below the
+  absolute threshold.
+
+Intended behavior boundary: this slice should only move fixture validation
+runner, root selection, per-run validation, and fixture expectation policy into
+behavior-named command files. No CLI behavior, verifier artifact behavior, JSON
+field, schema contract, or command metadata value should change.

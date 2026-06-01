@@ -77,6 +77,17 @@ Slice 4 groups `cmd/sdp-trace` export dispatcher shards into:
 The slice is bounded to command dispatch and predicate helpers; telemetry and
 cross-repo posture command implementations remain outside this slice.
 
+## Slice 5
+
+Slice 5 groups `cmd/sdp-trace` fixture validation shards into:
+
+- `cmd/sdp-trace/fixture_validation_run.go`
+- `cmd/sdp-trace/fixture_validation_args.go`
+- `cmd/sdp-trace/fixture_expectation_policy.go`
+
+Single-file fixture validation grouping and a runner+root-arg grouping were
+rejected because they failed the absolute file-MI threshold.
+
 ## Verification
 
 ```text

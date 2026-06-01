@@ -237,13 +237,9 @@
 - export_command.go
 
 ### fixture
-- fixture_472_run.go
-- fixture_473_rootarg.go
-- fixture_474_validatefixtureruns.go
-- fixture_475_validatefixturerun.go
-- fixture_476_expectationfailed.go
-- fixture_477_expectedresultfailed.go
-- fixture_478_unexpectedresultfailed.go
+- fixture_expectation_policy.go
+- fixture_validation_args.go
+- fixture_validation_run.go
 
 ### gate
 - gate_271_runcheckpoint.go

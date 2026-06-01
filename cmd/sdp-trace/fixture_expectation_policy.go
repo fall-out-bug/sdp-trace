@@ -22,3 +22,19 @@ func fixtureExpectationFailed(fixtureRoot, runDir string, result trace.VerifierR
 	// hard verifier failure or cannot-verify state.
 	return unexpectedFixtureResultFailed(result)
 }
+
+func expectedFixtureResultFailed(runDir string, result trace.VerifierResult, expectation fixtureExpectation, stderr io.Writer) bool {
+	if expectation.ExpectedResult == string(result.Result) {
+		return false
+	}
+	// Mismatches are printed with the run path so fixture corpus drift is
+	// actionable.
+	fmt.Fprintf(stderr, "%s expected %s, got %s\n", runDir, expectation.ExpectedResult, result.Result)
+	return true
+}
+
+func unexpectedFixtureResultFailed(result trace.VerifierResult) bool {
+	// Without an explicit expected result, only fail/cannot_verify are treated as
+	// fixture failures; observed/not_assessed remain inspectable but nonfatal.
+	return result.Result == trace.VerdictFail || result.Result == trace.VerdictCannotVerify
+}

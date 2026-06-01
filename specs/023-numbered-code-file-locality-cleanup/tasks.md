@@ -72,3 +72,22 @@ Status: in_progress
 - [x] T023-260 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T023-270 Run three independent reviewer lanes and record Slice 4 evidence
   in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-4-evidence.md`.
+
+## Active Slice 5 Tasks
+
+- [x] T023-280 Confirm Slice 5 is bounded to `cmd/sdp-trace` fixture validation
+  command shards.
+- [x] T023-281 Reject single-file fixture validation grouping when local MI
+  analysis measures the candidate file below the absolute file-MI threshold.
+- [x] T023-290 Move selected fixture declarations into
+  `cmd/sdp-trace/fixture_validation_run.go`,
+  `cmd/sdp-trace/fixture_validation_args.go`, and
+  `cmd/sdp-trace/fixture_expectation_policy.go`.
+- [x] T023-300 Run `gofmt` on changed Go files.
+- [x] T023-310 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T023-320 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T023-330 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T023-340 Run three independent reviewer lanes and record Slice 5 evidence
+  in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-5-evidence.md`.
