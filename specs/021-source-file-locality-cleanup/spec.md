@@ -67,3 +67,30 @@ generated-looking helper shards into cohesive behavior-named files. The
 behavior-preserving claim remains `not_assessed` until post-change tests and
 review evidence are recorded in
 `specs/021-source-file-locality-cleanup/reviews/slice-1-evidence.md`.
+
+## Active Slice 2
+
+Status: implemented locally; targeted review LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface usage drift helpers only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_576_commandsurfacedriftadd.go`
+- `cmd/sdp-trace/main_585_commandsurfacedrift.go`
+- `cmd/sdp-trace/main_586_commandsurfaceregistryusages.go`
+- `cmd/sdp-trace/main_587_commandsurfacehelpusages.go`
+- `cmd/sdp-trace/main_588_commandsurfacediffsets.go`
+- `cmd/sdp-trace/main_589_commandsurfacesorteddiffs.go`
+- `cmd/sdp-trace/main_590_commandsurfacedrifterror.go`
+- `cmd/sdp-trace/main_591_commandsurfacedriftparts.go`
+
+Target files:
+
+- `cmd/sdp-trace/command_surface_usage_collection.go`
+- `cmd/sdp-trace/command_surface_usage_diff.go`
+
+Intended behavior boundary: this slice should only consolidate usage-drift
+helpers into cohesive behavior-named files. The behavior-preserving claim
+remains `not_assessed` until post-change tests and review evidence are recorded
+in `specs/021-source-file-locality-cleanup/reviews/slice-2-evidence.md`.

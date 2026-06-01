@@ -43,6 +43,10 @@ Slice 1 is expected not to change package boundaries or dependency direction,
 so `docs/package-ownership-map.md` requires no content change unless review or
 verification finds otherwise.
 
+Slice 2 groups command-surface usage-drift helpers into collection and diff
+files. A single combined drift file was rejected because it would fall below the
+absolute file-MI threshold and force a mixed code/baseline PR.
+
 ## Verification
 
 ```text

@@ -22,3 +22,25 @@ Status: in_progress
   `not_assessed` / `cannot_verify` with reason.
 - [x] T021-070 Record Slice 1 review and final evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-1-evidence.md`.
+
+## Active Slice 2 Tasks
+
+- [x] T021-080 Confirm Slice 2 is bounded to `cmd/sdp-trace`
+  command-surface usage-drift helpers.
+- [x] T021-081 Confirm Slice 2 is behavior-preserving: no command behavior,
+  output contract, package boundary, dependency direction, or baseline change
+  is planned.
+- [x] T021-082 Record Slice 2 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-2-plan-review.md`.
+- [x] T021-090 Move selected usage collection helpers into
+  `cmd/sdp-trace/command_surface_usage_collection.go`.
+- [x] T021-091 Move selected usage diff/error helpers into
+  `cmd/sdp-trace/command_surface_usage_diff.go`.
+- [x] T021-092 Run `gofmt` on changed Go files.
+- [x] T021-093 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-094 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-095 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-096 Record Slice 2 review and final evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-2-evidence.md`.
