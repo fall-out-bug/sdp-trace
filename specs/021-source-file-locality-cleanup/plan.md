@@ -180,6 +180,15 @@ into responsibility-named files. It intentionally excludes evaluation/dimension
 composition (`harnessobs_133` onward) and path-safety helpers so those can keep
 separate review trails.
 
+Slice 23 continues `internal/harnessobs` cleanup with evaluation and dimension
+composition shards (`harnessobs_133` through `harnessobs_142`). It moves
+validation assembly and event-family dimension composition into
+responsibility-named files while preserving state ranking, schema-version
+mismatch handling, event-family counts, dimension ordering, and validation
+digest generation. It intentionally excludes path-safety helpers
+(`harnessobs_143` onward) so filesystem trust boundaries keep a separate
+review trail.
+
 ## Verification
 
 ```text

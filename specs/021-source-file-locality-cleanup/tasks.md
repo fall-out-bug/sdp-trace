@@ -461,3 +461,27 @@ Status: in_progress
 - [x] T021-1490 Run three independent reviewer lanes and record Slice 22
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-22-evidence.md`.
+
+## Active Slice 23 Tasks
+
+- [x] T021-1500 Confirm Slice 23 is bounded to numbered
+  `internal/harnessobs` evaluation and dimension-composition shards
+  `harnessobs_133` through `harnessobs_142`.
+- [x] T021-1501 Confirm Slice 23 is behavior-preserving: no validation state,
+  schema-version mismatch, event-family count, dimension ordering, state
+  ranking, validation digest, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-1502 Record Slice 23 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-23-plan-review.md`.
+- [x] T021-1510 Move selected evaluation declarations into
+  responsibility-named files for evaluation dispatch, validation assembly,
+  dimension collection, dimension ordering, and dimension state composition.
+- [x] T021-1520 Run `gofmt` on changed Go files.
+- [x] T021-1530 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1540 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1550 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1560 Run three independent reviewer lanes and record Slice 23
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-23-evidence.md`.
