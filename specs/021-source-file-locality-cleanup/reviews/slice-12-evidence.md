@@ -39,6 +39,9 @@ Status: in_progress
 - `jq empty schema/*.json`: pass
 - `git diff --check`: pass
 - coverage-backed CRAP and MI baseline gates: pass
+- live PR checks for commit `068e26f`:
+  - `pr-review-evidence-only`: pass
+  - `verify`: pass
 - `find cmd/sdp-trace -maxdepth 1 -type f -name 'doctor_[0-9]*_*.go' | sort`:
   pass, no output
 - `find cmd internal tools -type f -name '*.go' | rg '(^|/)[A-Za-z]+_[0-9]+_' | sort | wc -l`:
