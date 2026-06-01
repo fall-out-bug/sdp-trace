@@ -387,3 +387,27 @@ Status: in_progress
 - [x] T021-1280 Run three independent reviewer lanes and record Slice 19
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-19-evidence.md`.
+
+## Active Slice 20 Tasks
+
+- [x] T021-1290 Confirm Slice 20 is bounded to numbered
+  `internal/harnessobs` raw signal traversal, recursive key lookup, and
+  timestamp extraction shards `harnessobs_065` through `harnessobs_091`.
+- [x] T021-1291 Confirm Slice 20 is behavior-preserving: no raw signal
+  semantics, key matching semantics, timestamp fallback behavior, package
+  boundary, dependency direction, or baseline change is planned.
+- [x] T021-1292 Record Slice 20 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-20-plan-review.md`.
+- [x] T021-1300 Move selected raw signal/key/timestamp declarations into
+  responsibility-named files for raw signal dispatch, raw map/slice/string/
+  scalar extraction, signal matching, key presence traversal, generic key
+  lookup, string/numeric lookup, and timestamp parsing.
+- [x] T021-1310 Run `gofmt` on changed Go files.
+- [x] T021-1320 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1330 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1340 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1350 Run three independent reviewer lanes and record Slice 20
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-20-evidence.md`.

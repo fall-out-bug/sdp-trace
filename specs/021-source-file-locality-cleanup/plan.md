@@ -153,6 +153,14 @@ intentionally excludes raw signal traversal (`harnessobs_065` onward), token
 safety, validation loading, and event scanning so those behavior-heavy areas can
 keep separate verification and review trails.
 
+Slice 20 continues `internal/harnessobs` cleanup with raw signal traversal,
+recursive key lookup, and timestamp extraction shards (`harnessobs_065` through
+`harnessobs_091`). It moves raw signal dispatch, map/slice/string/scalar signal
+collection, exact and prefix signal matching, key presence traversal, generic
+key lookup, string and numeric key extraction, and timestamp parsing into
+responsibility-named files. It intentionally excludes token safety, run loading,
+validation loading, and event scanning for later slices.
+
 ## Verification
 
 ```text
