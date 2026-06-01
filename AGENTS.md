@@ -119,6 +119,7 @@ Spec Kit is installed for Codex skills in `.agents/skills/speckit-*`.
 Before using a Spec Kit skill, load `sdp-trace-router`; project-local
 trust rules remain authoritative. If `.specify/feature.json` points to
 an active feature, read that feature's `spec.md`, `plan.md`, and
-`tasks.md` as additional context. Current explicit planning context:
-`specs/022-post-merge-governance-closure/plan.md`.
+`tasks.md` as additional context. Do not hardcode a current feature in
+this repository-level file; use `.specify/feature.json`, the user's
+request, or the backlog status to select the active feature.
 <!-- SPECKIT END -->

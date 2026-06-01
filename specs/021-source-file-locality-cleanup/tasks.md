@@ -1,19 +1,24 @@
 # Tasks: Source File Locality Cleanup
 
-Status: draft follow-up prepared by Spec 018 closure; no active implementation
-tasks are opened in the current closure route.
+Status: in_progress
 
-## Prepared Backlog
+## Active Tasks
 
-These rows define the future implementation backlog. Convert them to active
-task checkboxes only when this follow-up spec is explicitly taken into work.
-
-| ID | Future task | Verification |
-| --- | --- | --- |
-| T021-001 | Review first cleanup slice and file ownership list. | Maintainer approval recorded before implementation. |
-| T021-002 | Confirm the slice is behavior-preserving. | Review note names behavior-preserving scope. |
-| T021-010 | Select one package or command family for cleanup. | Slice owner and file list recorded. |
-| T021-020 | Move related functions into cohesive behavior-named files. | Focused tests for touched package. |
-| T021-030 | Run `gofmt` on changed Go files. | `gofmt -w <changed-go-files>`. |
-| T021-040 | Run Go verification. | `go test ./...`; `go vet ./...`. |
-| T021-050 | Run docs and hygiene verification. | `go run ./tools/doccheck`; `go run ./tools/hygienecheck`; `git diff --check`. |
+- [x] T021-001 Confirm the first cleanup slice is bounded to one command
+  family: `cmd/sdp-trace` command-surface registry helpers.
+- [x] T021-002 Confirm the slice is behavior-preserving: no command behavior,
+  output contract, package boundary, or dependency direction change is planned.
+- [x] T021-010 Select exact files for cleanup and record the target grouped file
+  in `specs/021-source-file-locality-cleanup/spec.md`.
+- [x] T021-020 Move selected helper functions into
+  `cmd/sdp-trace/command_surface_registry_helpers.go` and
+  `cmd/sdp-trace/command_surface_metadata_helpers.go`.
+- [x] T021-030 Run `gofmt` on changed Go files.
+- [x] T021-040 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-050 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, and
+  `git diff --check`.
+- [x] T021-060 Run CRAP and MI quality gates or explicitly record
+  `not_assessed` / `cannot_verify` with reason.
+- [x] T021-070 Record Slice 1 review and final evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-1-evidence.md`.

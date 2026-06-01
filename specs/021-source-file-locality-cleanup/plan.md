@@ -1,6 +1,6 @@
 # Plan: Source File Locality Cleanup
 
-Status: draft follow-up prepared by Spec 018 closure.
+Status: in_progress
 
 ## Workstreams
 
@@ -8,18 +8,19 @@ Status: draft follow-up prepared by Spec 018 closure.
 
 Owned files:
 
-- one package or command family per slice
+- `cmd/sdp-trace` command-surface registry helpers for Slice 1
 
 Deliverable:
 
-- Pick the highest-value package or command family and define a bounded file
-  ownership list before moving code.
+- Group the selected command-surface helper shards into
+  `cmd/sdp-trace/command_surface_registry_helpers.go` and
+  `cmd/sdp-trace/command_surface_metadata_helpers.go`.
 
 ### WS-021-B: Behavior-Named Grouping
 
 Owned files:
 
-- selected package or command family
+- selected command-surface registry helper files
 
 Deliverable:
 
@@ -38,6 +39,10 @@ Deliverable:
 - Verify behavior and update ownership docs only when the cleanup changes
   package-level boundaries.
 
+Slice 1 is expected not to change package boundaries or dependency direction,
+so `docs/package-ownership-map.md` requires no content change unless review or
+verification finds otherwise.
+
 ## Verification
 
 ```text
@@ -49,3 +54,6 @@ go run ./tools/hygienecheck
 git diff --check
 ```
 
+CRAP and MI gates are required before any PR claim. If a consolidated file
+creates a new MI-baseline entry or stale ratchet behavior, split the slice more
+cohesively or move baseline changes into a separate reviewed PR.

@@ -1,6 +1,6 @@
 # Spec 021: Source File Locality Cleanup
 
-Status: draft follow-up prepared by Spec 018 closure.
+Status: in_progress
 
 ## Objective
 
@@ -39,3 +39,31 @@ turns that policy into bounded cleanup slices.
 - Tests and quality gates pass after each slice.
 - `docs/package-ownership-map.md` remains accurate for touched packages.
 
+## Active Slice 1
+
+Status: implemented locally; post-implementation re-review pending.
+
+Scope: `cmd/sdp-trace` command-surface registry helpers only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_538_commandsurfaceregistrycore.go`
+- `cmd/sdp-trace/main_539_commandsurfaceregistryobserve.go`
+- `cmd/sdp-trace/main_540_commandsurfaceregistryassess.go`
+- `cmd/sdp-trace/main_541_commandsurfaceregistryother.go`
+- `cmd/sdp-trace/main_542_commandsurfaceregistrypacket.go`
+- `cmd/sdp-trace/main_543_commandsurfaceregistry.go`
+- `cmd/sdp-trace/main_580_commandsurfaceflaghelper.go`
+- `cmd/sdp-trace/main_581_commandsurfaceposhelper.go`
+- `cmd/sdp-trace/main_584_commandsurfacereqpos.go`
+
+Target files:
+
+- `cmd/sdp-trace/command_surface_registry_helpers.go`
+- `cmd/sdp-trace/command_surface_metadata_helpers.go`
+
+Intended behavior boundary: this slice should only consolidate tiny
+generated-looking helper shards into cohesive behavior-named files. The
+behavior-preserving claim remains `not_assessed` until post-change tests and
+review evidence are recorded in
+`specs/021-source-file-locality-cleanup/reviews/slice-1-evidence.md`.
