@@ -404,7 +404,7 @@ change.
 
 ## Active Slice 10
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` doctor repo-observer and install command shards only.
 The local doctor report/check shards remain outside this slice.

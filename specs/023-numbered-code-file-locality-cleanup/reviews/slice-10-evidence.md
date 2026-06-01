@@ -1,6 +1,6 @@
 # Slice 10 Evidence: Doctor Repo-Observer Locality Cleanup
 
-Status: implementation verified locally; reviewer lanes LGTM; PR checks pending.
+Status: implemented and pushed; reviewer lanes LGTM; PR checks passed.
 
 ## Scope
 
@@ -88,4 +88,5 @@ Fallback subagent lanes:
 - Package boundary change: not intended.
 - MI baseline change: none.
 - CRAP threshold: verified locally as strict less than 5.
-- PR checks: not assessed for this slice until after commit and push.
+- PR checks: `verify` and `pr-review-evidence-only` passed on PR #73 after
+  push.
