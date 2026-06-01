@@ -189,6 +189,14 @@ digest generation. It intentionally excludes path-safety helpers
 (`harnessobs_143` onward) so filesystem trust boundaries keep a separate
 review trail.
 
+Slice 24 continues `internal/harnessobs` cleanup with existing path safety
+helpers (`harnessobs_143` through `harnessobs_149`). It moves existing
+file/directory validation, traversal rejection, symlink resolution,
+working-directory containment, and expected path-type checks into
+responsibility-named files. It intentionally excludes output file and output
+directory path helpers (`harnessobs_150` onward) so creation-path behavior keeps
+a separate review trail.
+
 ## Verification
 
 ```text

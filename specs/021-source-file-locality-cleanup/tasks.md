@@ -485,3 +485,32 @@ Status: in_progress
 - [x] T021-1560 Run three independent reviewer lanes and record Slice 23
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-23-evidence.md`.
+
+## Active Slice 24 Tasks
+
+- [x] T021-1570 Confirm Slice 24 is bounded to numbered
+  `internal/harnessobs` existing path-safety shards `harnessobs_143` through
+  `harnessobs_149`.
+- [x] T021-1571 Confirm Slice 24 is behavior-preserving: no traversal
+  rejection, symlink resolution, working-directory containment, expected
+  file/directory type behavior, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-1572 Record Slice 24 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-24-plan-review.md`.
+- [x] T021-1580 Move selected existing path-safety declarations into
+  responsibility-named files for public existing path checks and existing path
+  resolution/type validation.
+- [x] T021-1590 Run `gofmt` on changed Go files.
+- [x] T021-1600 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1601 Run focused path-safety regression evidence covering traversal
+  rejection, URL-like rejection, symlink resolution, working-directory
+  containment, and file/directory type checks, or mark any unverified behavior
+  `not_assessed` with reason.
+- [x] T021-1610 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1620 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1630 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  24 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-24-evidence.md`.
