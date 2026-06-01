@@ -187,7 +187,7 @@ change.
 
 ## Active Slice 7
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface assess command metadata shards only.
 
@@ -205,5 +205,26 @@ Target file:
 
 Intended behavior boundary: this slice should only move assess command-surface
 metadata values and the assess command list into one behavior-named file. No
+CLI behavior, JSON field, schema contract, or command metadata value should
+change.
+
+## Active Slice 8
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface packet command metadata shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_563_commandsurfacepacketpacket.go`
+- `cmd/sdp-trace/main_564_commandsurfacepacketprreview.go`
+- `cmd/sdp-trace/main_575_commandsurfacepacket.go`
+
+Target file:
+
+- `cmd/sdp-trace/command_surface_packet_commands.go`
+
+Intended behavior boundary: this slice should only move packet command-surface
+metadata values and the packet command list into one behavior-named file. No
 CLI behavior, JSON field, schema contract, or command metadata value should
 change.
