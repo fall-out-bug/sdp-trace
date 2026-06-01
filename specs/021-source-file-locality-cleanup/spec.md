@@ -256,7 +256,7 @@ change.
 
 ## Active Slice 10
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` command-surface catalog metadata shards only.
 
@@ -272,3 +272,27 @@ Target file:
 Intended behavior boundary: this slice should only move profile, witness-kind,
 and state metadata values into one behavior-named catalog file. No CLI
 behavior, JSON field, schema contract, or command metadata value should change.
+
+## Active Slice 11
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: remaining `cmd/sdp-trace` numbered command-surface and CLI helper shards.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_536_ishelp.go`
+- `cmd/sdp-trace/main_537_isboolliteral.go`
+- `cmd/sdp-trace/main_537_commandsurfaceconstants.go`
+- `cmd/sdp-trace/main_579_commandsurfaceregistryvar.go`
+
+Target files:
+
+- `cmd/sdp-trace/cli_arg_helpers.go`
+- `cmd/sdp-trace/command_surface_metadata.go`
+- `cmd/sdp-trace/command_surface_registry.go`
+
+Intended behavior boundary: this slice should only move the remaining numbered
+CLI helper, metadata accessor, and registry assembly declarations into
+behavior-named files. No CLI behavior, JSON field, schema contract, or command
+metadata value should change.

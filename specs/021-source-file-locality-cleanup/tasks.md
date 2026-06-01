@@ -182,3 +182,23 @@ Status: in_progress
 - [x] T021-640 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T021-650 Run three independent reviewer lanes and record Slice 10 evidence
   in `specs/021-source-file-locality-cleanup/reviews/slice-10-evidence.md`.
+
+## Active Slice 11 Tasks
+
+- [x] T021-660 Confirm Slice 11 is bounded to the remaining numbered
+  `cmd/sdp-trace` CLI helper and command-surface metadata/registry shards.
+- [x] T021-661 Reject a single combined file because earlier local MI analysis
+  showed broader metadata/registry grouping below the absolute file-MI
+  threshold.
+- [x] T021-670 Move selected declarations into
+  `cmd/sdp-trace/cli_arg_helpers.go`,
+  `cmd/sdp-trace/command_surface_metadata.go`, and
+  `cmd/sdp-trace/command_surface_registry.go`.
+- [x] T021-680 Run `gofmt` on changed Go files.
+- [x] T021-690 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-700 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-710 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-720 Run three independent reviewer lanes and record Slice 11 evidence
+  in `specs/021-source-file-locality-cleanup/reviews/slice-11-evidence.md`.

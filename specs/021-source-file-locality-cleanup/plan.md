@@ -82,6 +82,11 @@ Slice 10 groups command-surface catalog metadata into
 grouping was rejected because pre-change MI analysis measured the candidate
 file below the absolute file-MI threshold.
 
+Slice 11 removes the remaining numbered files by splitting them into
+responsibility-named files: CLI argument helpers, command-surface metadata
+accessors, and command-surface registry assembly. A single combined file remains
+rejected because it would mix unrelated behavior and risks MI regression.
+
 ## Verification
 
 ```text
