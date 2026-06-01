@@ -1,16 +1,8 @@
 package harnessobs
 
-import (
-	"path/filepath"
-
-	"time"
-)
+import "path/filepath"
 
 func newObservedRun(ctx observationContext) Run {
-	// newObservedRun keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
-
 	return Run{
 		SchemaVersion:      RunSchemaVersion,
 		ProfileID:          ctx.profile.ProfileID,
@@ -20,6 +12,6 @@ func newObservedRun(ctx observationContext) Run {
 		SourceDigest:       ctx.sourceDigest,
 		EventCount:         len(ctx.events),
 		EventRefs:          eventRefs(ctx.events),
-		CreatedAt:          ctx.now.Format(time.RFC3339),
+		CreatedAt:          ctx.now.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }

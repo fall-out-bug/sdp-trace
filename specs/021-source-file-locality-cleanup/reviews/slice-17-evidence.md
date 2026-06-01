@@ -42,6 +42,11 @@ Status: pass
   - `internal/packet`: 200
   - `cmd/sdp-trace`: 195
   - `internal/prreview`: 192
+- live PR checks for committed Slice 17 head
+  `7b1e85d8c506a6be3b1c1c22258a1fe847e6a5c2`: pass
+  - `CI / verify`: success
+  - `PR Review Evidence / pr-review-evidence-only`: success
+  - merge state: `CLEAN`
 
 ## Reviewer Lanes
 

@@ -136,6 +136,14 @@ intentionally excludes observation execution, parsing, path safety, and event
 validation behavior shards so those behavior-heavy areas can keep focused
 review trails.
 
+Slice 18 continues `internal/harnessobs` cleanup with observe and session setup
+entrypoint shards (`harnessobs_034` through `harnessobs_045`). It moves observe
+entrypoint, option validation, path resolution, source loading, event writing,
+run construction, observation context/time, and session setup entrypoint logic
+into responsibility-named files. The slice preserves behavior and intentionally
+keeps lower-level session setup execution, OpenCode normalization, raw signal
+extraction, token safety, and validation behavior in later slices.
+
 ## Verification
 
 ```text

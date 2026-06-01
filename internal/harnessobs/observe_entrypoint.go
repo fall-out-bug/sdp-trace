@@ -1,13 +1,10 @@
 package harnessobs
 
-import (
-	"path/filepath"
-)
+import "path/filepath"
 
 func Observe(opts ObserveOptions) (Run, error) {
-	// Observe keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
+	// Observe renders or aggregates replay-bound harness evidence; it does not
+	// create external proof.
 	ctx, err := prepareObservation(opts)
 	if err != nil {
 		return Run{}, err
