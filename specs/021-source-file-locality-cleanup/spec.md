@@ -161,3 +161,26 @@ Target file:
 Intended behavior boundary: this slice should only move core command-surface
 metadata values and the core command list into one behavior-named file. No CLI
 behavior, JSON field, schema contract, or command metadata value should change.
+
+## Active Slice 6
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface observe command metadata shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_555_commandsurfaceobserveinteraction.go`
+- `cmd/sdp-trace/main_556_commandsurfaceobserveobserve.go`
+- `cmd/sdp-trace/main_557_commandsurfaceobserveharness.go`
+- `cmd/sdp-trace/main_558_commandsurfaceobserveenvelope.go`
+- `cmd/sdp-trace/main_572_commandsurfaceobserve.go`
+
+Target file:
+
+- `cmd/sdp-trace/command_surface_observe_commands.go`
+
+Intended behavior boundary: this slice should only move observe command-surface
+metadata values and the observe command list into one behavior-named file. No
+CLI behavior, JSON field, schema contract, or command metadata value should
+change.

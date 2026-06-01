@@ -61,6 +61,10 @@ Slice 5 groups the command-surface core command metadata shards into
 `cmd/sdp-trace/command_surface_core_commands.go`. The combined file has no
 functions and local pre-change MI analysis measured file MI `100.0`.
 
+Slice 6 groups the command-surface observe command metadata shards into
+`cmd/sdp-trace/command_surface_observe_commands.go`. The combined file has no
+functions and local pre-change MI analysis measured file MI `100.0`.
+
 ## Verification
 
 ```text
