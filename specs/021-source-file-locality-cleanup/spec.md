@@ -136,3 +136,28 @@ Intended behavior boundary: this slice should only move schema type definitions
 and command-surface runner/JSON functions into behavior-named files. Metadata,
 registry, command family definitions, and argument helper shards remain outside
 this slice because broader grouping failed pre-change MI analysis.
+
+## Active Slice 5
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface core command metadata shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_548_commandsurfacecorebasic.go`
+- `cmd/sdp-trace/main_549_commandsurfacecorewrap.go`
+- `cmd/sdp-trace/main_550_commandsurfacecorerun.go`
+- `cmd/sdp-trace/main_551_commandsurfacecorepreview.go`
+- `cmd/sdp-trace/main_552_commandsurfacecoredoctor.go`
+- `cmd/sdp-trace/main_553_commandsurfacecoreinstall.go`
+- `cmd/sdp-trace/main_554_commandsurfacecorefixtures.go`
+- `cmd/sdp-trace/main_571_commandsurfacecore.go`
+
+Target file:
+
+- `cmd/sdp-trace/command_surface_core_commands.go`
+
+Intended behavior boundary: this slice should only move core command-surface
+metadata values and the core command list into one behavior-named file. No CLI
+behavior, JSON field, schema contract, or command metadata value should change.

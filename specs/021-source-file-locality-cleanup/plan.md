@@ -57,6 +57,10 @@ functions into `command_surface_schema.go` and `command_surface_runner.go`.
 Broader metadata/registry grouping was rejected because local pre-change MI
 analysis measured candidate files below the absolute file-MI threshold.
 
+Slice 5 groups the command-surface core command metadata shards into
+`cmd/sdp-trace/command_surface_core_commands.go`. The combined file has no
+functions and local pre-change MI analysis measured file MI `100.0`.
+
 ## Verification
 
 ```text
