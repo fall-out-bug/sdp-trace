@@ -91,12 +91,12 @@ reviewed successor specs before implementation.
 preserves `split_successor`, names any residual remediation state, and does not
 infer approval from CI, reviews, or checked task boxes.
 
-- [ ] T022 [P] [US2] Update D006 in `docs/closure-decision-ledger.md` to cite Spec 022 plan, tasks, and quickstart references from `specs/022-post-merge-governance-closure/`, and remove or correct the stale non-existent Spec 019 `T120` reference.
-- [ ] T023 [P] [US2] Inspect `docs/open-task-breakdown.md` for any Spec 019 or Spec 022 residual task references that contradict `split_successor`.
-- [ ] T024 [US2] Record the residual remediation state in `docs/closure-decision-ledger.md` as either no residual remediation remains or successor specs are required.
-- [ ] T025 [US2] If successor specs are required, add or update their reviewed triplet and review-artifact references in `docs/closure-decision-ledger.md`; otherwise record no-remediation evidence in `docs/closure-decision-ledger.md`.
-- [ ] T026 [US2] Confirm `docs/closure-decision-ledger.md` does not reopen accept/reject/split for Spec 019 unless a new maintainer decision explicitly supersedes `split_successor`.
-- [ ] T027 [US2] Run a focused US2 review of `docs/closure-decision-ledger.md` and `docs/open-task-breakdown.md` and record the review result under `specs/022-post-merge-governance-closure/reviews/`.
+- [x] T022 [P] [US2] Update D006 in `docs/closure-decision-ledger.md` to cite Spec 022 plan, tasks, and quickstart references from `specs/022-post-merge-governance-closure/`, and remove or correct the stale non-existent Spec 019 `T120` reference.
+- [x] T023 [P] [US2] Inspect `docs/open-task-breakdown.md` for any Spec 019 or Spec 022 residual task references that contradict `split_successor`.
+- [x] T024 [US2] Record the residual remediation state in `docs/closure-decision-ledger.md` as either no residual remediation remains or successor specs are required.
+- [x] T025 [US2] If successor specs are required, add or update their reviewed triplet and review-artifact references in `docs/closure-decision-ledger.md`; otherwise record no-remediation evidence in `docs/closure-decision-ledger.md`.
+- [x] T026 [US2] Confirm `docs/closure-decision-ledger.md` does not reopen accept/reject/split for Spec 019 unless a new maintainer decision explicitly supersedes `split_successor`.
+- [x] T027 [US2] Run a focused US2 review of `docs/closure-decision-ledger.md` and `docs/open-task-breakdown.md` and record the review result under `specs/022-post-merge-governance-closure/reviews/`.
 
 **Checkpoint**: Maintainer decision and remediation disposition are explicit.
 

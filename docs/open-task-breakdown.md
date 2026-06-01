@@ -1,16 +1,18 @@
 # Open Task Breakdown
 
-Status: working breakdown, current as of 2026-05-26.
+Status: working breakdown, current as of 2026-06-01.
 
-This file decomposes the remaining 0 open task boxes one by one. It is a
-working map for closure, not approval, merge authorization, production trust, or
+This file decomposes open governance closure tasks one by one. It is a working
+map for closure, not approval, merge authorization, production trust, or
 external attestation.
 
 ## Per-Task Breakdown
 
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
-| — | — | No open task checkboxes remain in the current closure route. | — | — |
+| Spec 022 T022-T027 | Update D006, inspect this breakdown for contradictions, record residual remediation state, and run focused US2 review. | Spec 022 is active; plan/task review Round 2 has no retained critical or major findings; US1 evidence summary is committed in `docs/spec-reality-ledger.md`. | Yes, for docs-governance scope only. | Complete US2 decision-ledger update and focused review. |
+| Spec 022 T028-T033 | Synchronize roadmap, decision ledger, spec reality ledger, and spec status wording. | Pending US2 completion. | Yes, after US2. | Complete synchronized navigation update in the same closure-surface change. |
+| Spec 022 T034-T042 | Run local checks, forbidden-claim review, drift/quality review, adversarial PR-ready review, and final checkbox update. | Pending US2/US3. | Partially; live PR/CI final-head checks require GitHub after PR. | Run after all story edits and focused reviews. |
 
 ## Local Closure Candidate
 
@@ -70,8 +72,9 @@ follow-up Spec 020 `core-query-package-split` and Spec 021
 surfaces and do not approve command removal, separate binaries, production
 readiness, release approval, or external trust.
 
-No open task checkboxes remain in the current closure route. Follow-up specs
-020, 021, and 022 are prepared draft successor surfaces and are not active
-closure debt until explicitly taken into work.
+Spec 022 is now active governance closure work. Follow-up specs 020 and 021
+remain prepared draft implementation surfaces and are not active closure debt
+until explicitly taken into work. No additional successor spec beyond active
+Spec 022 is currently identified for the Spec 019 residual governance closure.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=open-task-breakdown; state=pass; profile=open_tasks_classified; evidence=state:claim_tags_consistent -->
