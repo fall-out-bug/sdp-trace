@@ -38,6 +38,9 @@ Status: in_progress
 - `jq empty schema/*.json`: pass
 - `git diff --check`: pass
 - coverage-backed CRAP and MI baseline gates: pass
+- live PR checks for commit `19a887f`:
+  - `pr-review-evidence-only`: pass
+  - `verify`: pass
 - `find cmd internal tools -type f -name '*.go' | rg '(^|/)[A-Za-z]+_[0-9]+_' | sort | wc -l`:
   pass, `968`
 - remaining numbered families:
