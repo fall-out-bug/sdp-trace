@@ -1461,6 +1461,20 @@ func TestValidateRejectsUnsafePaths(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsUnsafeOutBasename(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	if err := os.Mkdir("run", 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Validate(ValidateOptions{ProfilePath: "profile.json", RunDir: "run", OutPath: "bad name.json"}); err == nil || !strings.Contains(err.Error(), "unsafe out path: unsafe output filename") {
+		t.Fatalf("Validate() out basename error = %v, want unsafe output filename", err)
+	}
+}
+
 func TestLoadValidationRejectsUnsafePathAndSchemaVersion(t *testing.T) {
 	dir := t.TempDir()
 	oldwd := chdir(t, dir)

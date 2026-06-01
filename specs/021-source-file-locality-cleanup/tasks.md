@@ -514,3 +514,32 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   24 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-24-evidence.md`.
+
+## Active Slice 25 Tasks
+
+- [x] T021-1640 Confirm Slice 25 is bounded to numbered
+  `internal/harnessobs` output file and parent path-safety shards
+  `harnessobs_150` through `harnessobs_161`.
+- [x] T021-1641 Confirm Slice 25 is behavior-preserving: no output traversal
+  rejection, output basename validation, missing-parent resolution, symlink
+  containment, working-directory relative conversion, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-1642 Record Slice 25 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-25-plan-review.md`.
+- [x] T021-1650 Move selected output file and parent path declarations into
+  responsibility-named files for output file validation and parent path
+  resolution/containment.
+- [x] T021-1660 Run `gofmt` on changed Go files.
+- [x] T021-1670 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1671 Run focused output path regression evidence covering output
+  traversal rejection, basename validation, missing-parent resolution, symlink
+  resolution, working-directory containment, and successful validation output
+  writing, or mark any unverified behavior `not_assessed` with reason.
+- [x] T021-1680 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1690 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1700 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  25 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-25-evidence.md`.

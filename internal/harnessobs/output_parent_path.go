@@ -1,10 +1,8 @@
 package harnessobs
 
 func safeParentDir(path string) (string, error) {
-	// safeParentDir keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
-
+	// Parent directories may be missing; containment is checked against the
+	// closest existing parent after resolving symlinks.
 	clean, err := normalizePotentialParentPath(path)
 	if err != nil {
 		return "", err

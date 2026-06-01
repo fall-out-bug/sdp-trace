@@ -197,6 +197,15 @@ responsibility-named files. It intentionally excludes output file and output
 directory path helpers (`harnessobs_150` onward) so creation-path behavior keeps
 a separate review trail.
 
+Slice 25 continues `internal/harnessobs` cleanup with output file and parent
+path helpers (`harnessobs_150` through `harnessobs_161`). It moves output file
+path validation, output basename validation, parent path normalization,
+missing-parent resolution, symlink-aware parent containment, and working
+directory relative path conversion into responsibility-named files. It
+intentionally excludes output directory creation/emptiness helpers
+(`harnessobs_162` onward) so directory materialization behavior keeps a
+separate review trail.
+
 ## Verification
 
 ```text
