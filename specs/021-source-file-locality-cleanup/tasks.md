@@ -543,3 +543,34 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   25 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-25-evidence.md`.
+
+## Active Slice 26 Tasks
+
+- [x] T021-1710 Confirm Slice 26 is bounded to numbered
+  `internal/harnessobs` output directory safety and emptiness shards
+  `harnessobs_162` through `harnessobs_173`.
+- [x] T021-1711 Confirm Slice 26 is behavior-preserving: no output directory
+  traversal rejection, existing output symlink containment, missing parent
+  containment, working-directory escape detection, empty/non-empty outdir
+  behavior, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-1712 Record Slice 26 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-26-plan-review.md`.
+- [x] T021-1720 Move selected output directory declarations into
+  responsibility-named files for output directory validation, symlink/parent
+  containment, and empty-or-missing directory checks.
+- [x] T021-1730 Run `gofmt` on changed Go files.
+- [x] T021-1740 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1741 Run focused output directory regression evidence covering
+  traversal rejection, existing symlink escape, parent symlink escape,
+  path-escape classification, missing/empty directory acceptance, and non-empty
+  directory rejection, or mark any unverified behavior `not_assessed` with
+  reason.
+- [x] T021-1750 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1760 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1770 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  26 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-26-evidence.md`.

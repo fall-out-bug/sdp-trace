@@ -206,6 +206,15 @@ intentionally excludes output directory creation/emptiness helpers
 (`harnessobs_162` onward) so directory materialization behavior keeps a
 separate review trail.
 
+Slice 26 continues `internal/harnessobs` cleanup with output directory safety
+and emptiness helpers (`harnessobs_162` through `harnessobs_173`). It moves
+output directory traversal rejection, existing-output symlink resolution,
+missing-output parent containment, working-directory escape checks, and
+empty-or-missing directory validation into responsibility-named files. It
+intentionally excludes JSON writing, event refs, and digest helpers
+(`harnessobs_174` onward) so artifact serialization keeps a separate review
+trail.
+
 ## Verification
 
 ```text
