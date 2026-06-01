@@ -122,13 +122,13 @@ the same Spec 022 state and next step.
 
 **Purpose**: Validate docs and keep trust-state claims bounded.
 
-- [ ] T034 Run `go run ./tools/doccheck` and record the result in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
-- [ ] T035 Run `go run ./tools/hygienecheck` and record the result in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
-- [ ] T036 Run `git diff --check` and record the result in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
-- [ ] T037 If implementation expands beyond docs, run `go test ./...`, `go vet ./...`, and `go run ./tools/schemadoc`; otherwise record those checks as `not_assessed` in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
-- [ ] T038 Review `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, `docs/roadmap.md`, and `specs/022-post-merge-governance-closure/spec.md` for forbidden claims about retroactive approval, production trust, release approval, or external attestation.
+- [x] T034 Run `go run ./tools/doccheck` and record the result in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
+- [x] T035 Run `go run ./tools/hygienecheck` and record the result in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
+- [x] T036 Run `git diff --check` and record the result in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
+- [x] T037 Run `go test ./...`, `go vet ./...`, and `go run ./tools/schemadoc`, then record those checks in `specs/022-post-merge-governance-closure/reviews/final-evidence.md`.
+- [x] T038 Review `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`, `docs/roadmap.md`, and `specs/022-post-merge-governance-closure/spec.md` for forbidden claims about retroactive approval, production trust, release approval, or external attestation.
 - [ ] T039 Run PR-ready review for spec drift, constitution drift, product drift, CRAP `< 5`, MI `> 70` / assessed baseline status, Clean Architecture hex boundaries, Clean Code, SOLID, DRY, and YAGNI; record unavailable planes as `not_assessed` or `cannot_verify`.
-- [ ] T040 Ensure new closure-state claims use `sdp-trace-claim` tags where authoritative claim syntax is supported by `docs/claim-authoring.md`; otherwise record why the claim remains prose context.
+- [x] T040 Ensure new closure-state claims use `sdp-trace-claim` tags where authoritative claim syntax is supported by `docs/claim-authoring.md`; otherwise record why the claim remains prose context.
 - [ ] T041 Run iterative adversarial full-diff review through the configured PR review lanes until retained findings are resolved or explicitly dispositioned.
 - [ ] T042 Update `specs/022-post-merge-governance-closure/tasks.md` checkboxes only after the matching evidence edits, review artifacts, and local verification exist.
 

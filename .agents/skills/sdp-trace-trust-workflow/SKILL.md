@@ -41,14 +41,15 @@ After approval:
 1. Prepare a PR with code, tracing/evidence, docs, and requirements mapping.
 2. Run separate review planes at PR level through the OmPi `reviewer` agent via the `task` tool: code/correctness, tracing/evidence/provenance, requirements-vs-implementation, and security/DX/UX when relevant.
 3. Additional review planes may use external model APIs when explicitly configured in `.omp/model-policy.yml`, recorded in the review artifact with model, provider, harness, date, and prompt class.
-4. For trust-sensitive PRs, run iterative adversarial review rounds against the full diff. Fix every finding of any severity before the next round. Repeat until the reviewer outputs exactly `LGTM` (zero findings).
-4. Verify reviewer findings against full files before accepting or rejecting them.
-5. Re-read the actual diff before each review round and before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
-6. Delete stale review artifacts; do not rely on headers or markers to neutralize stale claims.
-7. Ensure the PR is not in Draft state before claiming it is ready for review.
-8. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
-9. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
-10. After merge: delete the local worktree (`git worktree remove`) and the feature branch (`git branch -d` or remote deletion). The branch should not persist on origin once merged; keeping it creates drift and implies unfinished work.
+4. Run external review lanes only against a committed handoff or an isolated copy/worktree. If a lane mutates, resets, or rewrites local files, treat that lane as compromised evidence, restore from source control, and record the incident instead of using its output as review authority.
+5. For trust-sensitive PRs, run iterative adversarial review rounds against the full diff. Fix every finding of any severity before the next round. Repeat until the reviewer outputs exactly `LGTM` (zero findings).
+6. Verify reviewer findings against full files before accepting or rejecting them.
+7. Re-read the actual diff before each review round and before finalizing the PR description. Remove any claimed change that was reverted or never made (e.g., baseline updates that were later removed).
+8. Delete stale review artifacts; do not rely on headers or markers to neutralize stale claims.
+9. Ensure the PR is not in Draft state before claiming it is ready for review.
+10. Query live GitHub checks for the final head. If checks are absent, record CI as `not_assessed`.
+11. Do not claim ready/merge/sign-off until required review and live CI evidence are present.
+12. After merge: delete the local worktree (`git worktree remove`) and the feature branch (`git branch -d` or remote deletion). The branch should not persist on origin once merged; keeping it creates drift and implies unfinished work.
 </pr_protocol>
 
 <trust_boundaries>

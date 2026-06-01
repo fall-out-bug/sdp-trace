@@ -11,8 +11,9 @@ external attestation.
 | Task | What It Requires | Current Evidence | Can Close Locally? | Next Action |
 | --- | --- | --- | --- | --- |
 | Spec 022 T022-T027 | Update D006, inspect this breakdown for contradictions, record residual remediation state, and run focused US2 review. | Complete in `docs: record spec 022 governance decision state`; US2 review is recorded in `specs/022-post-merge-governance-closure/reviews/us2-review.md`. | Closed for docs-governance scope. | No further US2 action; continue with US3 and final checks. |
-| Spec 022 T028-T033 | Synchronize roadmap, decision ledger, spec reality ledger, and spec status wording. | US2 is complete; this navigation update is in progress. | Yes. | Complete synchronized navigation update in the same closure-surface change. |
-| Spec 022 T034-T042 | Run local checks, forbidden-claim review, drift/quality review, adversarial PR-ready review, and final checkbox update. | Pending US2/US3. | Partially; live PR/CI final-head checks require GitHub after PR. | Run after all story edits and focused reviews. |
+| Spec 022 T028-T033 | Synchronize roadmap, decision ledger, spec reality ledger, and spec status wording. | Complete in `docs: synchronize spec 022 closure navigation`; US3 review is recorded in `specs/022-post-merge-governance-closure/reviews/us3-review.md`. | Closed for docs-governance scope. | No further US3 action; continue with final closure checks. |
+| Spec 022 T034-T038/T040 | Run local checks, forbidden-claim review, and claim-tag review. | Complete in `specs/022-post-merge-governance-closure/reviews/final-evidence.md` and `specs/022-post-merge-governance-closure/reviews/pr-ready-review.md`. | Closed for local verification scope. | No further action unless PR-ready re-review finds drift. |
+| Spec 022 T039/T041/T042 | Run drift/quality/adversarial PR-ready review and final checkbox update. | Round 1 findings fixed; Kimi lane was `cannot_verify` due to hang. | Partially; live PR/CI final-head checks require GitHub after PR. | Re-run PR-ready review against the fixed handoff, then update final checkboxes. |
 
 ## Local Closure Candidate
 

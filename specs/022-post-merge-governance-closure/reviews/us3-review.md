@@ -18,7 +18,7 @@ Scope: `docs/closure-decision-ledger.md`, `docs/spec-reality-ledger.md`,
 
 | ID | Severity | Finding | Disposition |
 | --- | --- | --- | --- |
-| US3-H1 | high | D006 listed `022 T022-T042` as open even though US2 tasks T022-T027 were complete. | Fixed by changing D006 to `022 T028-T042`; MiniMax targeted re-review returned LGTM. |
+| US3-H1 | high | D006 listed `022 T022-T042` as open even though US2 tasks T022-T027 were complete. | Fixed during US3 by narrowing D006 to the remaining US3/final range; later PR-ready review narrowed the current open range after final local verification. MiniMax targeted re-review returned LGTM for the US3 fix. |
 | US3-M1 | medium | `docs/open-task-breakdown.md` still told readers to complete US2 after US2 was complete. | Fixed by marking US2 complete and pointing to US3/final checks; MiniMax targeted re-review returned LGTM. |
 | US3-L1 | low | Decision row numbering skipped D007 without explanation. | Fixed by adding a note that D007 is intentionally unused and existing IDs are preserved. |
 
