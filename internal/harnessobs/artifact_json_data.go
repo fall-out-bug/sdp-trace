@@ -1,0 +1,11 @@
+package harnessobs
+
+import "encoding/json"
+
+func jsonArtifactData(value any) ([]byte, error) {
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return append(data, '\n'), nil
+}

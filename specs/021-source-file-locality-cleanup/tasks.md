@@ -574,3 +574,30 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   26 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-26-evidence.md`.
+
+## Active Slice 27 Tasks
+
+- [x] T021-1780 Confirm Slice 27 is bounded to numbered
+  `internal/harnessobs` artifact serialization, event reference, and digest
+  helper shards `harnessobs_174` through `harnessobs_180`.
+- [x] T021-1781 Confirm Slice 27 is behavior-preserving: no JSON formatting,
+  event reference validation, digest canonicalization, command digest,
+  package boundary, dependency direction, or baseline change is planned.
+- [x] T021-1782 Record Slice 27 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-27-plan-review.md`.
+- [x] T021-1790 Move selected artifact serialization, event reference, and
+  digest declarations into responsibility-named files.
+- [x] T021-1800 Run `gofmt` on changed Go files.
+- [x] T021-1810 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1811 Run focused serialization/reference/digest regression evidence
+  covering JSON writing, safe/unsafe event refs, raw-line source digest
+  canonicalization, validation digest generation, and command digest generation,
+  or mark any unverified behavior `not_assessed` with reason.
+- [x] T021-1820 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1830 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1840 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  27 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-27-evidence.md`.

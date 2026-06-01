@@ -215,6 +215,14 @@ intentionally excludes JSON writing, event refs, and digest helpers
 (`harnessobs_174` onward) so artifact serialization keeps a separate review
 trail.
 
+Slice 27 continues `internal/harnessobs` cleanup with artifact serialization,
+event reference, and digest helpers (`harnessobs_174` through
+`harnessobs_180`). It moves JSON writing, event reference rendering and
+validation, raw-line digesting, validation digesting, and command digesting into
+responsibility-named files. It intentionally excludes command model extraction
+and shell field parsing (`harnessobs_181` onward) so command parsing behavior
+keeps a separate review trail.
+
 ## Verification
 
 ```text
