@@ -10,6 +10,15 @@ func witnessRequiredFieldsFromFlags(opts *flagSet) (witnessRequiredFields, strin
 	return witnessKindOutFromFlags(opts, target)
 }
 
+func witnessTargetFromFlags(opts *flagSet) (string, string, bool) {
+	targets := opts.rest()
+	if len(targets) != 1 {
+		// One target keeps witness provenance tied to a single run root.
+		return "", "witness requires <runs-root-or-run-dir>", false
+	}
+	return targets[0], "", true
+}
+
 func witnessKindOutFromFlags(opts *flagSet, target string) (witnessRequiredFields, string, bool) {
 	kind, message, ok := witnessKindFromFlags(opts)
 	if !ok {

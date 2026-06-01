@@ -8,6 +8,17 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/releaseproof"
 )
 
+func evaluateAndWriteReleaseProof(opts *flagSet, stderr io.Writer) (releaseproof.Verification, int, bool) {
+	repoRoot, err := releaseproof.RepoRoot(".")
+	if err != nil {
+		// Without a repository root, the manifest cannot be tied to an immutable
+		// source boundary.
+		fmt.Fprintln(stderr, err)
+		return releaseproof.Verification{}, exitCannotVerify, false
+	}
+	return writeReleaseProofResult(repoRoot, opts, stderr)
+}
+
 func writeReleaseProofResult(repoRoot string, opts *flagSet, stderr io.Writer) (releaseproof.Verification, int, bool) {
 	result, err := releaseproof.Evaluate(repoRoot, opts.stringValue("manifest"), time.Now())
 	if err != nil {

@@ -96,3 +96,12 @@ Status: pass
 - production trust: not_assessed
 - release approval: not_assessed
 - merge approval: not_assessed
+
+## Live PR Checks
+
+- PR: <https://github.com/fall-out-bug/sdp-trace/pull/73>
+- head: `4d7278cef1720893833ce57cfcf3a902348a1f59`
+- checked at: 2026-06-01
+- merge state: `CLEAN`
+- `CI / verify`: pass
+- `PR Review Evidence / pr-review-evidence-only`: pass

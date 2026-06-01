@@ -120,6 +120,13 @@ and exit-code semantics. It intentionally excludes release-proof, witness,
 export/posture, and fixture expectation shards so those smaller responsibilities
 can be reviewed independently.
 
+Slice 16 removes the remaining numbered `core` shards in `cmd/sdp-trace` by
+moving release-proof write helpers, witness target parsing, export command
+helpers, telemetry export helpers, cross-repo posture export/explain helpers,
+and fixture expectation metadata into responsibility-named files. The slice
+closes the `core` numbered-file family while preserving CLI behavior, output
+contracts, package boundaries, dependency direction, and MI/CRAP gates.
+
 ## Verification
 
 ```text

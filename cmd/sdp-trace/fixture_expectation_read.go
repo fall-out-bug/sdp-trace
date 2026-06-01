@@ -7,6 +7,26 @@ import (
 	"path/filepath"
 )
 
+type fixtureExpectation struct {
+	ExpectedResult string `json:"expected_result"`
+}
+
+func readFixtureExpectation(root, runDir string) (fixtureExpectation, error) {
+	// Expectations are optional corpus metadata; absence leaves default verifier
+	// failure handling in place.
+	expectations, err := readFixtureExpectations(root)
+	if err != nil {
+		return fixtureExpectation{}, err
+	}
+	if len(expectations) == 0 {
+		return fixtureExpectation{}, nil
+	}
+	name := filepath.Base(runDir)
+	// Fixture expectations are keyed by run directory basename so the corpus can
+	// move as a whole.
+	return fixtureExpectation{ExpectedResult: expectations[name]}, nil
+}
+
 func readFixtureExpectations(root string) (map[string]string, error) {
 	path := filepath.Join(root, "fixture-expectations.json")
 	// Fixture expectations are optional metadata outside the verifier result.
@@ -25,5 +45,3 @@ func readFixtureExpectations(root string) (map[string]string, error) {
 	}
 	return expectations, nil
 }
-
-// flagSet is a tiny local parser for limited CLI needs.

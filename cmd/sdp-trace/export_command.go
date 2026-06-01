@@ -36,3 +36,11 @@ func exportCrossRepoPostureExplainRequested(args []string) bool {
 func exportCrossRepoPostureRequested(args []string) bool {
 	return exportCommandIs(args, "cross-repo-posture")
 }
+
+func exportCommandIs(args []string, command string) bool {
+	return len(args) > 0 && args[0] == command
+}
+
+func exportSubcommandIs(args []string, subcommand string) bool {
+	return len(args) > 1 && args[1] == subcommand
+}
