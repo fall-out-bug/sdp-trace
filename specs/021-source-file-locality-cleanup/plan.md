@@ -73,6 +73,10 @@ Slice 8 groups the command-surface packet command metadata shards into
 `cmd/sdp-trace/command_surface_packet_commands.go`. The combined file has no
 functions and local pre-change MI analysis measured file MI `100.0`.
 
+Slice 9 groups the command-surface other command metadata shards into
+`cmd/sdp-trace/command_surface_other_commands.go`. The combined file has no
+functions and local pre-change MI analysis measured file MI `100.0`.
+
 ## Verification
 
 ```text
