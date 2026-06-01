@@ -153,7 +153,7 @@ behavior, JSON field, schema contract, or command metadata value should change.
 
 ## Active Slice 5
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` fixture validation command shards only.
 
@@ -185,3 +185,49 @@ Intended behavior boundary: this slice should only move fixture validation
 runner, root selection, per-run validation, and fixture expectation policy into
 behavior-named command files. No CLI behavior, verifier artifact behavior, JSON
 field, schema contract, or command metadata value should change.
+
+## Active Slice 6
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` interaction command shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/interaction_158_run.go`
+- `cmd/sdp-trace/interaction_159_runrelay.go`
+- `cmd/sdp-trace/interaction_160_relayoptions.go`
+- `cmd/sdp-trace/interaction_161_parserelayargs.go`
+- `cmd/sdp-trace/interaction_162_newrelayflagset.go`
+- `cmd/sdp-trace/interaction_163_relaystringflags.go`
+- `cmd/sdp-trace/interaction_164_requirerest.go`
+- `cmd/sdp-trace/interaction_165_requireonlyflagscode.go`
+- `cmd/sdp-trace/interaction_166_requiredflags.go`
+- `cmd/sdp-trace/interaction_167_runimporttranscript.go`
+- `cmd/sdp-trace/interaction_168_writeimportedtranscript.go`
+- `cmd/sdp-trace/interaction_169_importtranscriptfromoptions.go`
+- `cmd/sdp-trace/interaction_170_parseimporttranscriptargs.go`
+- `cmd/sdp-trace/interaction_171_runsummarize.go`
+- `cmd/sdp-trace/interaction_172_parsesummarizeargs.go`
+
+Target files:
+
+- `cmd/sdp-trace/interaction_command.go`
+- `cmd/sdp-trace/interaction_relay.go`
+- `cmd/sdp-trace/interaction_relay_args.go`
+- `cmd/sdp-trace/interaction_transcript_import.go`
+- `cmd/sdp-trace/interaction_transcript_import_args.go`
+- `cmd/sdp-trace/interaction_summary.go`
+- `cmd/sdp-trace/cli_flag_requirements.go`
+
+Rejected grouping:
+
+- Keeping transcript import runner, writer, options mapping, and args parsing
+  in one file was rejected because local MI analysis measured file MI `69.5`,
+  below the absolute threshold.
+
+Intended behavior boundary: this slice should only move interaction router,
+relay, transcript import, summarize, and directly related CLI flag helpers into
+behavior-named command files. No CLI behavior, command forwarding behavior,
+JSON field, trace import, summary, schema contract, or command metadata value
+should change.

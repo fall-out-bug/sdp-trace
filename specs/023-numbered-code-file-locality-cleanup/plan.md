@@ -88,6 +88,23 @@ Slice 5 groups `cmd/sdp-trace` fixture validation shards into:
 Single-file fixture validation grouping and a runner+root-arg grouping were
 rejected because they failed the absolute file-MI threshold.
 
+## Slice 6
+
+Slice 6 groups `cmd/sdp-trace` interaction command shards into:
+
+- `cmd/sdp-trace/interaction_command.go`
+- `cmd/sdp-trace/interaction_relay.go`
+- `cmd/sdp-trace/interaction_relay_args.go`
+- `cmd/sdp-trace/interaction_transcript_import.go`
+- `cmd/sdp-trace/interaction_transcript_import_args.go`
+- `cmd/sdp-trace/interaction_summary.go`
+- `cmd/sdp-trace/cli_flag_requirements.go`
+
+The transcript import grouping was split between import execution and argument
+parsing after the combined file measured below the absolute file-MI threshold.
+The `requireOnlyFlagsCode` helper moves to a behavior-named CLI requirements
+file because it is already shared outside interaction commands.
+
 ## Verification
 
 ```text

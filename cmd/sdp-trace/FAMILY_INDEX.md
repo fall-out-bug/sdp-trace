@@ -229,6 +229,9 @@
 - doctor_515_usagetext.go
 - doctor_516_printusage.go
 
+### cli
+- cli_flag_requirements.go
+
 ### envelope
 - envelope_summary_args.go
 - envelope_summary_run.go
@@ -347,21 +350,12 @@
 - gate_373_hasgatestate.go
 
 ### interaction
-- interaction_158_run.go
-- interaction_159_runrelay.go
-- interaction_160_relayoptions.go
-- interaction_161_parserelayargs.go
-- interaction_162_newrelayflagset.go
-- interaction_163_relaystringflags.go
-- interaction_164_requirerest.go
-- interaction_165_requireonlyflagscode.go
-- interaction_166_requiredflags.go
-- interaction_167_runimporttranscript.go
-- interaction_168_writeimportedtranscript.go
-- interaction_169_importtranscriptfromoptions.go
-- interaction_170_parseimporttranscriptargs.go
-- interaction_171_runsummarize.go
-- interaction_172_parsesummarizeargs.go
+- interaction_command.go
+- interaction_relay.go
+- interaction_relay_args.go
+- interaction_summary.go
+- interaction_transcript_import.go
+- interaction_transcript_import_args.go
 
 ### observe
 - observe_012_runcommand.go
