@@ -7,12 +7,12 @@ Scope: `specs/022-post-merge-governance-closure/spec.md`, `plan.md`,
 
 ## Review Lanes
 
-| Lane | Harness | Model | Result |
-| --- | --- | --- | --- |
-| Z.AI | `opencode run` | `openrouter/z-ai/glm-5.1` | Not LGTM; critical and major findings retained below |
-| Kimi | `opencode run` | `kimi-for-coding/k2p6` | Not LGTM; major finding retained below |
-| MiniMax | `opencode run` | `opencode-go/minimax-m3` | Not LGTM; major findings retained below |
-| Internal subagent | Codex multi-agent explorer | inherited model | Not LGTM; major findings retained below |
+| Lane | Harness | Model | Prompt class | Timeout/retries | Result |
+| --- | --- | --- | --- | --- | --- |
+| Z.AI | `opencode run` | `openrouter/z-ai/glm-5.1` | plan-task readiness review | default command timeout; 0 retries | Not LGTM; critical and major findings retained below |
+| Kimi | `opencode run` | `kimi-for-coding/k2p6` | plan-task readiness review | default command timeout; 1 retry after unavailable `kimi-coding/kimi-for-coding` | Not LGTM; major finding retained below |
+| MiniMax | `opencode run` | `opencode-go/minimax-m3` | plan-task readiness review | default command timeout; 1 retry after unavailable `minimax/minimax-m3` | Not LGTM; major findings retained below |
+| Internal subagent | Codex multi-agent explorer | inherited model | SpecKit readiness review | Codex subagent default timeout; 0 retries | Not LGTM; major findings retained below |
 
 Unavailable/fallback notes:
 
