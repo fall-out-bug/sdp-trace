@@ -184,3 +184,26 @@ Intended behavior boundary: this slice should only move observe command-surface
 metadata values and the observe command list into one behavior-named file. No
 CLI behavior, JSON field, schema contract, or command metadata value should
 change.
+
+## Active Slice 7
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface assess command metadata shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_559_commandsurfaceassessassess.go`
+- `cmd/sdp-trace/main_560_commandsurfaceassessreport.go`
+- `cmd/sdp-trace/main_561_commandsurfaceassessgate.go`
+- `cmd/sdp-trace/main_562_commandsurfaceassesscheckpoint.go`
+- `cmd/sdp-trace/main_573_commandsurfaceassess.go`
+
+Target file:
+
+- `cmd/sdp-trace/command_surface_assess_commands.go`
+
+Intended behavior boundary: this slice should only move assess command-surface
+metadata values and the assess command list into one behavior-named file. No
+CLI behavior, JSON field, schema contract, or command metadata value should
+change.
