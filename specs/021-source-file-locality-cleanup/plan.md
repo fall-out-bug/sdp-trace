@@ -127,6 +127,15 @@ and fixture expectation metadata into responsibility-named files. The slice
 closes the `core` numbered-file family while preserving CLI behavior, output
 contracts, package boundaries, dependency direction, and MI/CRAP gates.
 
+Slice 17 starts `internal/harnessobs` cleanup with numbered type, option,
+context, scanner, and lookup-map shards (`harnessobs_011` through
+`harnessobs_033`). It moves declarations into responsibility-named files for
+options/context, session model, validation lookup sets, event reference checks,
+existing path specs, shell field scanning, and isolation rule installers. It
+intentionally excludes observation execution, parsing, path safety, and event
+validation behavior shards so those behavior-heavy areas can keep focused
+review trails.
+
 ## Verification
 
 ```text

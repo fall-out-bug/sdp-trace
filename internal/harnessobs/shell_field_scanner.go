@@ -1,8 +1,6 @@
 package harnessobs
 
-import (
-	"strings"
-)
+import "strings"
 
 type shellFieldScanner struct {
 	fields  []string

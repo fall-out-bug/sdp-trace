@@ -314,3 +314,27 @@ Status: in_progress
 - [x] T021-1070 Run three independent reviewer lanes and record Slice 16
   evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-16-evidence.md`.
+
+## Active Slice 17 Tasks
+
+- [x] T021-1080 Confirm Slice 17 is bounded to numbered
+  `internal/harnessobs` type, option, context, scanner, and lookup-map shards
+  `harnessobs_011` through `harnessobs_033`.
+- [x] T021-1081 Confirm Slice 17 is behavior-preserving: no exported type
+  shape, JSON tag, package boundary, dependency direction, or baseline change
+  is planned.
+- [x] T021-1082 Record Slice 17 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-17-plan-review.md`.
+- [x] T021-1090 Move selected harnessobs declarations into
+  responsibility-named files for options/context, session model, validation
+  lookup sets, event reference checks, existing path specs, shell field
+  scanning, and isolation rule installers.
+- [x] T021-1100 Run `gofmt` on changed Go files.
+- [x] T021-1110 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1120 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1130 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1140 Run three independent reviewer lanes and record Slice 17
+  evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-17-evidence.md`.
