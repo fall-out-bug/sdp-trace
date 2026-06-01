@@ -47,7 +47,7 @@ stories depend on.
 - [ ] T007 Confirm `merge_approval`, `maintainer_approval`, `not_assessed`, and `cannot_verify` remain explicit in `specs/022-post-merge-governance-closure/spec.md`.
 - [ ] T008 Confirm no task in `specs/022-post-merge-governance-closure/tasks.md` requires retroactive PR #60 approval or changes to existing commands.
 - [ ] T009 Confirm FR-022-009 is already represented by this active unchecked `specs/022-post-merge-governance-closure/tasks.md` task list before closure surface edits begin.
-- [ ] T010 Confirm D006's stale `T120` reference in `docs/closure-decision-ledger.md` is removed or corrected when D006 is updated.
+- [ ] T010 Confirm D006's stale `T120` reference in `docs/closure-decision-ledger.md` is tracked for removal or correction during the US2 D006 update.
 - [ ] T011 Re-check the post-design constitution gate in `specs/022-post-merge-governance-closure/plan.md` after the active task and review-cadence changes.
 
 ## Phase 2A: Pre-Implementation Review Gate
@@ -91,7 +91,7 @@ reviewed successor specs before implementation.
 preserves `split_successor`, names any residual remediation state, and does not
 infer approval from CI, reviews, or checked task boxes.
 
-- [ ] T022 [P] [US2] Update D006 in `docs/closure-decision-ledger.md` to cite Spec 022 plan, tasks, and quickstart references from `specs/022-post-merge-governance-closure/`.
+- [ ] T022 [P] [US2] Update D006 in `docs/closure-decision-ledger.md` to cite Spec 022 plan, tasks, and quickstart references from `specs/022-post-merge-governance-closure/`, and remove or correct the stale non-existent Spec 019 `T120` reference.
 - [ ] T023 [P] [US2] Inspect `docs/open-task-breakdown.md` for any Spec 019 or Spec 022 residual task references that contradict `split_successor`.
 - [ ] T024 [US2] Record the residual remediation state in `docs/closure-decision-ledger.md` as either no residual remediation remains or successor specs are required.
 - [ ] T025 [US2] If successor specs are required, add or update their reviewed triplet and review-artifact references in `docs/closure-decision-ledger.md`; otherwise record no-remediation evidence in `docs/closure-decision-ledger.md`.
@@ -144,7 +144,8 @@ the same Spec 022 state and next step.
 - **US1 Governance Evidence Summary (Phase 3)**: Depends on Foundational and
   the Pre-Implementation Review Gate.
 - **US2 Maintainer Decision And Remediation Disposition (Phase 4)**: Depends on
-  Foundational; can start after T005 but should use US1 evidence when possible.
+  Foundational and the Pre-Implementation Review Gate; can start after Phase 2A
+  and should use US1 evidence when possible.
 - **US3 Synchronized Closure Navigation (Phase 5)**: Depends on US1 and US2.
 - **Polish (Phase 6)**: Depends on desired story edits and all focused story
   reviews.
@@ -153,7 +154,8 @@ the same Spec 022 state and next step.
 
 - **US1 (P1)**: First independently valuable slice; produces evidence summary.
 - **US2 (P2)**: Uses the decision ledger and remediation state; can partially
-  proceed in parallel with US1 after evidence sources are mapped.
+  proceed in parallel with US1 only after evidence sources are mapped and the
+  Pre-Implementation Review Gate is complete.
 - **US3 (P3)**: Must run after US1 and US2 so navigation reflects final state.
 
 ### Parallel Opportunities
