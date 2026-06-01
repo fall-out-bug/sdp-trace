@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 )
@@ -32,4 +33,13 @@ func runEnvelope(_ context.Context, args []string, stdout, stderr io.Writer) int
 	}
 	writeJSONPayloadUnchecked(stdout, summary)
 	return 0
+}
+
+func writeOptionalJSONFile(path string, value any) error {
+	if strings.TrimSpace(path) == "" {
+		// Optional JSON outputs are side effects; an omitted path must not change
+		// the command verdict.
+		return nil
+	}
+	return writeJSONFile(path, value)
 }

@@ -5,6 +5,10 @@ import (
 	"io"
 )
 
+var envelopeSummarizeRequiredFlags = []requiredCLIFlag{
+	{"envelope", "envelope summarize requires --envelope"},
+}
+
 func parseEnvelopeSummarizeArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
 	if len(args) == 0 || args[0] != "summarize" {
 		// The envelope namespace currently has one explicit verb, keeping room for

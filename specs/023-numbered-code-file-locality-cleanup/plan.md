@@ -58,6 +58,16 @@ into:
 Single-file observe grouping was rejected because it failed the absolute
 file-MI threshold.
 
+## Slice 3
+
+Slice 3 groups `cmd/sdp-trace` envelope summarize command shards into:
+
+- `cmd/sdp-trace/envelope_summary_run.go`
+- `cmd/sdp-trace/envelope_summary_args.go`
+
+Single-file envelope grouping was rejected because it failed the absolute
+file-MI threshold.
+
 ## Verification
 
 ```text

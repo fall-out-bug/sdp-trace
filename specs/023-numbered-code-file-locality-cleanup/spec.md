@@ -78,7 +78,7 @@ metadata value should change.
 
 ## Active Slice 2
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` observe command adapter and exit policy shards only.
 
@@ -101,3 +101,31 @@ Rejected grouping:
 Intended behavior boundary: this slice should only move observe command adapter
 functions and harness state exit-code policy into behavior-named files. No CLI
 behavior, JSON field, schema contract, or command metadata value should change.
+
+## Active Slice 3
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` envelope summarize command shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/envelope_173_run.go`
+- `cmd/sdp-trace/envelope_174_requiredflags.go`
+- `cmd/sdp-trace/envelope_174_writeoptionaljsonfile.go`
+- `cmd/sdp-trace/envelope_175_parsesummarizeargs.go`
+
+Target files:
+
+- `cmd/sdp-trace/envelope_summary_run.go`
+- `cmd/sdp-trace/envelope_summary_args.go`
+
+Rejected grouping:
+
+- A single `envelope_command.go` file was rejected because local MI analysis
+  measured file MI `69.0`, below the absolute threshold.
+
+Intended behavior boundary: this slice should only move the envelope summarize
+runner, argument parsing, required flags, and optional JSON output helper into
+behavior-named command files. No CLI behavior, JSON field, schema contract, or
+command metadata value should change.

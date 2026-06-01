@@ -230,10 +230,8 @@
 - doctor_516_printusage.go
 
 ### envelope
-- envelope_173_run.go
-- envelope_174_requiredflags.go
-- envelope_174_writeoptionaljsonfile.go
-- envelope_175_parsesummarizeargs.go
+- envelope_summary_args.go
+- envelope_summary_run.go
 
 ### export
 - export_452_run.go

@@ -39,3 +39,21 @@ Status: in_progress
 - [x] T023-120 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T023-130 Run three independent reviewer lanes and record Slice 2 evidence
   in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-2-evidence.md`.
+
+## Active Slice 3 Tasks
+
+- [x] T023-140 Confirm Slice 3 is bounded to `cmd/sdp-trace` envelope
+  summarize command shards.
+- [x] T023-141 Reject single-file envelope grouping when local MI analysis
+  measures the candidate file below the absolute file-MI threshold.
+- [x] T023-150 Move selected envelope declarations into
+  `cmd/sdp-trace/envelope_summary_run.go` and
+  `cmd/sdp-trace/envelope_summary_args.go`.
+- [x] T023-160 Run `gofmt` on changed Go files.
+- [x] T023-170 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T023-180 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T023-190 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T023-200 Run three independent reviewer lanes and record Slice 3 evidence
+  in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-3-evidence.md`.
