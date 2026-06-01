@@ -282,7 +282,7 @@ value should change.
 
 ## Active Slice 8
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` query, verify, explain, and query-pack command shards
 only.
