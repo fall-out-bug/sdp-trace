@@ -111,6 +111,15 @@ payload helpers, and string exit-code mapping. It intentionally excludes the
 remaining core assessment explain, preview action, export, and fixture helper
 shards so each area can keep a focused review and verification trail.
 
+Slice 15 continues the numbered `core` cleanup with the assessment explain,
+assessment preview setup, and assessment exit-code mapping shards in
+`cmd/sdp-trace`. It moves those declarations into responsibility-named
+`assess_explain_*`, `assess_preview_*`, and `assess_exit_code*` files while
+preserving command behavior, artifact interpretation, preview remediation text,
+and exit-code semantics. It intentionally excludes release-proof, witness,
+export/posture, and fixture expectation shards so those smaller responsibilities
+can be reviewed independently.
+
 ## Verification
 
 ```text

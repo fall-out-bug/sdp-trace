@@ -46,6 +46,15 @@ Status: pass
   - `core`: 59
   - `pr_review`: 53
 
+## Live PR Checks
+
+- PR: <https://github.com/fall-out-bug/sdp-trace/pull/73>
+- head: `bf263f9eb63c378518e2e030ee0e9c6779f17e14`
+- checked at: 2026-06-01
+- merge state: `CLEAN`
+- `CI / verify`: pass
+- `PR Review Evidence / pr-review-evidence-only`: pass
+
 ## Reviewer Lanes
 
 - behavior/spec drift lane: pass
