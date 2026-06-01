@@ -61,3 +61,22 @@ Status: in_progress
 - [x] T021-150 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T021-160 Record Slice 3 review and final evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-3-evidence.md`.
+
+## Active Slice 4 Tasks
+
+- [x] T021-170 Confirm Slice 4 is bounded to `cmd/sdp-trace`
+  command-surface schema and runner shards.
+- [x] T021-171 Reject broader metadata/registry grouping when pre-change MI
+  analysis shows it would require a mixed code/baseline change.
+- [x] T021-180 Move schema type definitions into
+  `cmd/sdp-trace/command_surface_schema.go`.
+- [x] T021-181 Move runner and JSON writer functions into
+  `cmd/sdp-trace/command_surface_runner.go`.
+- [x] T021-190 Run `gofmt` on changed Go files.
+- [x] T021-200 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-210 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-220 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-230 Run three independent reviewer lanes and record Slice 4 evidence
+  in `specs/021-source-file-locality-cleanup/reviews/slice-4-evidence.md`.

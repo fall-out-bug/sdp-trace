@@ -114,3 +114,25 @@ Intended behavior boundary: this slice should only consolidate simple list
 helper functions into a cohesive behavior-named file. `isHelp` and
 `isBoolLiteral` were not included because the combined argument-helper file
 failed the absolute file-MI threshold during pre-change analysis.
+
+## Active Slice 4
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` command-surface schema and runner shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/main_536_commandsurfaceschema.go`
+- `cmd/sdp-trace/main_544_commandsurfacejson.go`
+- `cmd/sdp-trace/main_545_runcommandsurface.go`
+
+Target files:
+
+- `cmd/sdp-trace/command_surface_schema.go`
+- `cmd/sdp-trace/command_surface_runner.go`
+
+Intended behavior boundary: this slice should only move schema type definitions
+and command-surface runner/JSON functions into behavior-named files. Metadata,
+registry, command family definitions, and argument helper shards remain outside
+this slice because broader grouping failed pre-change MI analysis.

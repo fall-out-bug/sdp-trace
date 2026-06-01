@@ -52,6 +52,11 @@ Slice 3 groups only command-surface list helpers into
 including `isHelp` and `isBoolLiteral` was rejected because local pre-change MI
 analysis measured it below the absolute file-MI threshold.
 
+Slice 4 groups command-surface schema type definitions and runner/JSON
+functions into `command_surface_schema.go` and `command_surface_runner.go`.
+Broader metadata/registry grouping was rejected because local pre-change MI
+analysis measured candidate files below the absolute file-MI threshold.
+
 ## Verification
 
 ```text
