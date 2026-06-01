@@ -122,6 +122,27 @@ The preview grouping was split between command flow, args/contract loading, and
 payload rendering after the combined preview file measured below the absolute
 file-MI threshold.
 
+## Slice 8
+
+Slice 8 groups `cmd/sdp-trace` query, verify, explain, and query-pack command
+shards into:
+
+- `cmd/sdp-trace/query_verify.go`
+- `cmd/sdp-trace/query_verify_args.go`
+- `cmd/sdp-trace/query_verify_exit.go`
+- `cmd/sdp-trace/query_explain.go`
+- `cmd/sdp-trace/query_run.go`
+- `cmd/sdp-trace/query_dispatch.go`
+- `cmd/sdp-trace/query_pack.go`
+- `cmd/sdp-trace/query_pack_build.go`
+- `cmd/sdp-trace/query_pack_explain.go`
+- `cmd/sdp-trace/query_pack_args.go`
+- `cmd/sdp-trace/query_pack_validation.go`
+
+Verify, query, and query-pack were split along runner, argument, dispatch, and
+validation responsibilities after combined files measured below the absolute
+file-MI threshold.
+
 ## Verification
 
 ```text

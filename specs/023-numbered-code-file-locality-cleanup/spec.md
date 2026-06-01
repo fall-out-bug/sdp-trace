@@ -234,7 +234,7 @@ should change.
 
 ## Active Slice 7
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` wrap, run, preview, and dry-run command shards only.
 
@@ -278,4 +278,67 @@ Intended behavior boundary: this slice should only move legacy wrap, modern
 run, preview, dry-run, recorder execution, and directly related argument and
 payload helpers into behavior-named command files. No CLI behavior, recorder
 artifact behavior, preview JSON field, schema contract, or command metadata
+value should change.
+
+## Active Slice 8
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` query, verify, explain, and query-pack command shards
+only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/query_430_runverify.go`
+- `cmd/sdp-trace/query_431_parseverifyargs.go`
+- `cmd/sdp-trace/query_432_existingdirectory.go`
+- `cmd/sdp-trace/query_433_verifierresultexitcodes.go`
+- `cmd/sdp-trace/query_434_verifierresultexitcode.go`
+- `cmd/sdp-trace/query_435_runexplain.go`
+- `cmd/sdp-trace/query_436_runquery.go`
+- `cmd/sdp-trace/query_437_runnamedquery.go`
+- `cmd/sdp-trace/query_438_capturedepthquery.go`
+- `cmd/sdp-trace/query_439_missingevidencequery.go`
+- `cmd/sdp-trace/query_440_runquerypack.go`
+- `cmd/sdp-trace/query_441_runquerypackbuild.go`
+- `cmd/sdp-trace/query_442_writequerypackartifact.go`
+- `cmd/sdp-trace/query_443_runquerypackexplain.go`
+- `cmd/sdp-trace/query_444_options.go`
+- `cmd/sdp-trace/query_446_parsequerypackargs.go`
+- `cmd/sdp-trace/query_447_parsequerypackexplainargs.go`
+- `cmd/sdp-trace/query_448_validatequerypackoptions.go`
+- `cmd/sdp-trace/query_449_requirequerypackrequiredinputs.go`
+- `cmd/sdp-trace/query_450_readquerypackresult.go`
+- `cmd/sdp-trace/query_451_validatequerypackexplainresult.go`
+
+Target files:
+
+- `cmd/sdp-trace/query_verify.go`
+- `cmd/sdp-trace/query_verify_args.go`
+- `cmd/sdp-trace/query_verify_exit.go`
+- `cmd/sdp-trace/query_explain.go`
+- `cmd/sdp-trace/query_run.go`
+- `cmd/sdp-trace/query_dispatch.go`
+- `cmd/sdp-trace/query_pack.go`
+- `cmd/sdp-trace/query_pack_build.go`
+- `cmd/sdp-trace/query_pack_explain.go`
+- `cmd/sdp-trace/query_pack_args.go`
+- `cmd/sdp-trace/query_pack_validation.go`
+
+Rejected grouping:
+
+- Keeping verify runner, args, directory check, and exit policy in one file was
+  rejected because local MI analysis measured file MI `66.7`, below the
+  absolute threshold.
+- Keeping query runner, dispatch, and diagnostic query execution in one file
+  was rejected because local MI analysis measured file MI `68.5`, below the
+  absolute threshold.
+- Keeping query-pack routing, build, artifact write, and explain in one file
+  was rejected because local MI analysis measured file MI `66.7`, below the
+  absolute threshold.
+
+Intended behavior boundary: this slice should only move query, verify, explain,
+query-pack build, query-pack explain, parsing, validation, and exit policy into
+behavior-named command files. No CLI behavior, verifier artifact behavior,
+query JSON payload, query-pack artifact, schema contract, or command metadata
 value should change.

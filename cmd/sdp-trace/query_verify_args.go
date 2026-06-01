@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 )
 
 func parseVerifyArgs(args []string, stderr io.Writer) (string, int, bool) {
@@ -19,4 +20,9 @@ func parseVerifyArgs(args []string, stderr io.Writer) (string, int, bool) {
 		return "", exitCannotVerify, false
 	}
 	return runDir, 0, true
+}
+
+func existingDirectory(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
