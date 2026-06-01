@@ -1,8 +1,17 @@
 package main
 
 import (
+	"context"
 	"io"
 )
+
+func runDryRun(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runPreviewCommand("dry-run", "simulation", args, stdout, stderr)
+}
+
+func runPreview(_ context.Context, args []string, stdout, stderr io.Writer) int {
+	return runPreviewCommand("preview", "preview", args, stdout, stderr)
+}
 
 func runPreviewCommand(commandName, mode string, args []string, stdout, stderr io.Writer) int {
 	if isHelp(args) {

@@ -108,3 +108,20 @@ Status: in_progress
 - [x] T023-400 Run CRAP and MI quality gates without changing MI baselines.
 - [x] T023-410 Run three independent reviewer lanes and record Slice 6 evidence
   in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-6-evidence.md`.
+
+## Active Slice 7 Tasks
+
+- [x] T023-420 Confirm Slice 7 is bounded to `cmd/sdp-trace` wrap, run,
+  preview, and dry-run command shards.
+- [x] T023-421 Reject combined preview grouping when local MI analysis measures
+  the candidate file below the absolute file-MI threshold.
+- [x] T023-430 Move selected wrap declarations into behavior-named command
+  files.
+- [x] T023-440 Run `gofmt` on changed Go files.
+- [x] T023-450 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T023-460 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T023-470 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T023-480 Run three independent reviewer lanes and record Slice 7 evidence
+  in `specs/023-numbered-code-file-locality-cleanup/reviews/slice-7-evidence.md`.

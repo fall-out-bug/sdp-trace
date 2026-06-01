@@ -542,23 +542,13 @@
 - witness_cli_test.go
 
 ### wrap
-- wrap_399_run.go
-- wrap_400_runlegacyrecorder.go
-- wrap_401_parseargs.go
-- wrap_402_command.go
-- wrap_403_writerunresult.go
-- wrap_404_runwrappedcommand.go
-- wrap_405_runtaskrecorder.go
-- wrap_406_parsewrappedcommandargs.go
-- wrap_407_requirewrappedcommandargs.go
-- wrap_408_missingrequiredcontract.go
-- wrap_409_rundryrun.go
-- wrap_410_runpreview.go
-- wrap_411_runpreviewcommand.go
-- wrap_412_writepreviewcommandpayload.go
-- wrap_413_previewcommandpayload.go
-- wrap_414_parsepreviewcommandargs.go
-- wrap_415_loadpreviewcontract.go
+- wrap_legacy.go
+- wrap_preview.go
+- wrap_preview_args.go
+- wrap_preview_payload.go
+- wrap_recorder.go
+- wrap_run.go
+- wrap_run_args.go
 
 ## Remaining main_ files
 

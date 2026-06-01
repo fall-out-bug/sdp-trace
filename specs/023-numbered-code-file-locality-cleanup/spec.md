@@ -188,7 +188,7 @@ field, schema contract, or command metadata value should change.
 
 ## Active Slice 6
 
-Status: implemented locally; targeted reviews LGTM; PR checks pending.
+Status: implemented and pushed; targeted reviews LGTM; PR checks passed.
 
 Scope: `cmd/sdp-trace` interaction command shards only.
 
@@ -231,3 +231,51 @@ relay, transcript import, summarize, and directly related CLI flag helpers into
 behavior-named command files. No CLI behavior, command forwarding behavior,
 JSON field, trace import, summary, schema contract, or command metadata value
 should change.
+
+## Active Slice 7
+
+Status: implemented locally; targeted reviews LGTM; PR checks pending.
+
+Scope: `cmd/sdp-trace` wrap, run, preview, and dry-run command shards only.
+
+Files selected for grouping:
+
+- `cmd/sdp-trace/wrap_399_run.go`
+- `cmd/sdp-trace/wrap_400_runlegacyrecorder.go`
+- `cmd/sdp-trace/wrap_401_parseargs.go`
+- `cmd/sdp-trace/wrap_402_command.go`
+- `cmd/sdp-trace/wrap_403_writerunresult.go`
+- `cmd/sdp-trace/wrap_404_runwrappedcommand.go`
+- `cmd/sdp-trace/wrap_405_runtaskrecorder.go`
+- `cmd/sdp-trace/wrap_406_parsewrappedcommandargs.go`
+- `cmd/sdp-trace/wrap_407_requirewrappedcommandargs.go`
+- `cmd/sdp-trace/wrap_408_missingrequiredcontract.go`
+- `cmd/sdp-trace/wrap_409_rundryrun.go`
+- `cmd/sdp-trace/wrap_410_runpreview.go`
+- `cmd/sdp-trace/wrap_411_runpreviewcommand.go`
+- `cmd/sdp-trace/wrap_412_writepreviewcommandpayload.go`
+- `cmd/sdp-trace/wrap_413_previewcommandpayload.go`
+- `cmd/sdp-trace/wrap_414_parsepreviewcommandargs.go`
+- `cmd/sdp-trace/wrap_415_loadpreviewcontract.go`
+
+Target files:
+
+- `cmd/sdp-trace/wrap_legacy.go`
+- `cmd/sdp-trace/wrap_recorder.go`
+- `cmd/sdp-trace/wrap_run.go`
+- `cmd/sdp-trace/wrap_run_args.go`
+- `cmd/sdp-trace/wrap_preview.go`
+- `cmd/sdp-trace/wrap_preview_args.go`
+- `cmd/sdp-trace/wrap_preview_payload.go`
+
+Rejected grouping:
+
+- Keeping preview runner, payload writing, and payload construction in one file
+  was rejected because local MI analysis measured file MI `67.9`, below the
+  absolute threshold.
+
+Intended behavior boundary: this slice should only move legacy wrap, modern
+run, preview, dry-run, recorder execution, and directly related argument and
+payload helpers into behavior-named command files. No CLI behavior, recorder
+artifact behavior, preview JSON field, schema contract, or command metadata
+value should change.

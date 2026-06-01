@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"io"
+
+	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
 func parsePreviewCommandArgs(commandName string, args []string, stderr io.Writer) (*flagSet, []string, int, bool) {
@@ -34,4 +36,20 @@ func parsePreviewCommandArgs(commandName string, args []string, stderr io.Writer
 	// The command slice is retained only as a descriptor input for the preview
 	// payload.
 	return opts, command, 0, true
+}
+
+func loadPreviewContract(opts *flagSet, stderr io.Writer) (trace.Contract, int, bool) {
+	contractPath := opts.stringValue("contract")
+	contract := trace.DefaultContract
+	if contractPath != "" {
+		// A malformed preview contract is cannot_verify because the preview
+		// cannot describe valid evidence requirements.
+		loaded, err := trace.LoadContract(contractPath)
+		if err != nil {
+			fmt.Fprintf(stderr, "failed to load contract: %v\n", err)
+			return trace.Contract{}, exitCannotVerify, false
+		}
+		contract = loaded
+	}
+	return contract, 0, true
 }

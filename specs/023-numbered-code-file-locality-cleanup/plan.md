@@ -105,6 +105,23 @@ parsing after the combined file measured below the absolute file-MI threshold.
 The `requireOnlyFlagsCode` helper moves to a behavior-named CLI requirements
 file because it is already shared outside interaction commands.
 
+## Slice 7
+
+Slice 7 groups `cmd/sdp-trace` wrap, run, preview, and dry-run command shards
+into:
+
+- `cmd/sdp-trace/wrap_legacy.go`
+- `cmd/sdp-trace/wrap_recorder.go`
+- `cmd/sdp-trace/wrap_run.go`
+- `cmd/sdp-trace/wrap_run_args.go`
+- `cmd/sdp-trace/wrap_preview.go`
+- `cmd/sdp-trace/wrap_preview_args.go`
+- `cmd/sdp-trace/wrap_preview_payload.go`
+
+The preview grouping was split between command flow, args/contract loading, and
+payload rendering after the combined preview file measured below the absolute
+file-MI threshold.
+
 ## Verification
 
 ```text
