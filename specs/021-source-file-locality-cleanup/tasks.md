@@ -1704,3 +1704,46 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 60 Tasks
+
+- [x] T021-4090 Confirm Slice 60 is bounded to numbered `cmd/sdp-trace` packet
+  build-pr input loading shards `packet_054` through `packet_059`.
+- [x] T021-4091 Confirm Slice 60 is behavior-preserving: no changes to allowed
+  source values, unsupported-source diagnostics, missing-event diagnostics,
+  GitHub Actions `GITHUB_EVENT_PATH` fallback rules, fixture explicit event
+  path handling, optional checks/artifacts JSON error prefixes, route manifest
+  error prefix, route application ordering after hydration, fixture-mode
+  hermeticity, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-4092 Record Slice 60 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-60-plan-review.md`.
+- [x] T021-4100 Move packet build-pr input loading helpers into
+  `packet_build_pr_input_source.go` and
+  `packet_build_pr_input_enrichment.go` after the single-file
+  `packet_build_pr_input_loading.go` attempt failed file-level MI at 65.4.
+  Record the failed command plus revised responsibility boundary in evidence.
+- [x] T021-4110 Run `gofmt` on changed Go files.
+- [x] T021-4120 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4121 Run focused packet build-pr input loading regression evidence
+  covering exact test existence for
+  `TestValidPRInputSourceAcceptsOnlyKnownSources`,
+  `TestPREventPathUsesActionsEnvOnlyWhenEventPathMissing`,
+  `TestLoadPRInputSourceEventRejectsUnsupportedAndMissingEvent`,
+  `TestReadOptionalPREvidenceKeepsErrorPrefixes`, and
+  `TestBuildPRInputFromOptionsAppliesOptionalEvidenceAndRoute`; allowed source
+  set; unsupported-source diagnostics; missing-event diagnostics; env fallback
+  rules; explicit fixture event path handling; checks/artifacts error prefixes;
+  route manifest error prefix; successful route application; fixture-mode
+  hermeticity; and no baseline changes.
+- [x] T021-4130 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4140 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4150 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  60 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-60-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

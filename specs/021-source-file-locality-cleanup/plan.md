@@ -668,6 +668,28 @@ through `packet_059`), event conversion (`packet_060` onward), and GitHub
 Actions hydration/API helpers so live gate readiness and evidence-source
 loading keep separate review trails.
 
+Slice 60 continues `cmd/sdp-trace` cleanup with `packet build-pr` PR input
+source loading and optional evidence enrichment (`packet_054` through
+`packet_059`). It moves PR input reconstruction from parsed options, source
+validation, event path selection, fixture/event loading, optional checks and
+artifact JSON reads, GitHub Actions hydration dispatch, route-manifest loading,
+and route application into `packet_build_pr_input_source.go` and
+`packet_build_pr_input_enrichment.go`; the first single-file attempt at
+`packet_build_pr_input_loading.go` failed file-level MI at 65.4, so the final
+implementation keeps source/event loading separate from optional evidence,
+hydration dispatch, and route enrichment. It preserves the
+allowed source set (`github-actions`, `github-fixture`), unsupported-source and
+missing-event diagnostics, GitHub Actions fallback to `GITHUB_EVENT_PATH` only
+when `--github-event` is empty, fixture mode using explicit event paths, local
+optional evidence error prefixes (`read checks json`, `read artifacts json`),
+route manifest error prefix (`read route manifest`), route application after
+hydration, fixture-mode hermeticity, package boundary, dependency direction,
+and MI baselines. It intentionally excludes event-to-input conversion
+(`packet_060` through `packet_062`), GitHub Actions hydration implementation
+(`packet_063` onward), route application internals (`packet_066`), and shared
+optional JSON reading (`packet_095`) so input loading, event conversion,
+hydration, route mutation, and shared IO keep separate review trails.
+
 ## Verification
 
 ```text

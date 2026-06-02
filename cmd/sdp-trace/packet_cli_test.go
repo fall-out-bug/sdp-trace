@@ -236,6 +236,147 @@ func TestPacketBuildPRVerificationErrorsRequirePass(t *testing.T) {
 	}
 }
 
+func TestValidPRInputSourceAcceptsOnlyKnownSources(t *testing.T) {
+	cases := map[string]bool{
+		"github-actions": true,
+		"github-fixture": true,
+		"":               false,
+		"local":          false,
+		"github":         false,
+	}
+	for source, want := range cases {
+		if got := validPRInputSource(source); got != want {
+			t.Fatalf("validPRInputSource(%q) = %v, want %v", source, got, want)
+		}
+	}
+}
+
+func TestPREventPathUsesActionsEnvOnlyWhenEventPathMissing(t *testing.T) {
+	getenv := func(name string) string {
+		if name != "GITHUB_EVENT_PATH" {
+			t.Fatalf("unexpected getenv key %s", name)
+		}
+		return "env-event.json"
+	}
+	if got := prEventPath("github-actions", "", getenv); got != "env-event.json" {
+		t.Fatalf("actions missing event path = %q", got)
+	}
+	if got := prEventPath("github-actions", "explicit-event.json", getenv); got != "explicit-event.json" {
+		t.Fatalf("actions explicit event path = %q", got)
+	}
+	if got := prEventPath("github-fixture", "fixture-event.json", getenv); got != "fixture-event.json" {
+		t.Fatalf("fixture explicit event path = %q", got)
+	}
+	if got := prEventPath("github-fixture", "", func(string) string {
+		t.Fatal("fixture mode must not read GITHUB_EVENT_PATH")
+		return "env-event.json"
+	}); got != "" {
+		t.Fatalf("fixture missing event path = %q, want empty", got)
+	}
+}
+
+func TestLoadPRInputSourceEventRejectsUnsupportedAndMissingEvent(t *testing.T) {
+	opts := packetBuildPROptionsForTest("unsupported", "")
+	source, _, err := loadPRInputSourceEvent(opts)
+	if err == nil || !strings.Contains(err.Error(), `unsupported packet build-pr source "unsupported"`) {
+		t.Fatalf("unsupported source=%q err=%v", source, err)
+	}
+
+	opts = packetBuildPROptionsForTest("github-fixture", "")
+	source, _, err = loadPRInputSourceEvent(opts)
+	if err == nil || err.Error() != "missing GitHub event JSON" {
+		t.Fatalf("missing event source=%q err=%v", source, err)
+	}
+
+	eventPath := writePRFixtureEventForTest(t, t.TempDir())
+	opts = packetBuildPROptionsForTest("github-fixture", eventPath)
+	source, event, err := loadPRInputSourceEvent(opts)
+	if err != nil {
+		t.Fatalf("load fixture event: %v", err)
+	}
+	if source != "github-fixture" || event.WorkflowRunID != "1001" || event.PullRequest.Number != 38 {
+		t.Fatalf("loaded source=%q event=%+v", source, event)
+	}
+}
+
+func TestReadOptionalPREvidenceKeepsErrorPrefixes(t *testing.T) {
+	root := t.TempDir()
+	badChecks := filepath.Join(root, "bad-checks.json")
+	if err := os.WriteFile(badChecks, []byte(`{`), 0o644); err != nil {
+		t.Fatalf("write bad checks: %v", err)
+	}
+	opts := packetBuildPROptionsForTest("github-fixture", "")
+	opts.setString("checks-json", badChecks)
+	var input packet.GitHubPREvidenceInput
+	if err := readOptionalPREvidence(opts, &input); err == nil || !strings.Contains(err.Error(), "read checks json:") {
+		t.Fatalf("checks error = %v", err)
+	}
+
+	badArtifacts := filepath.Join(root, "bad-artifacts.json")
+	if err := os.WriteFile(badArtifacts, []byte(`{`), 0o644); err != nil {
+		t.Fatalf("write bad artifacts: %v", err)
+	}
+	opts = packetBuildPROptionsForTest("github-fixture", "")
+	opts.setString("artifacts-json", badArtifacts)
+	if err := readOptionalPREvidence(opts, &input); err == nil || !strings.Contains(err.Error(), "read artifacts json:") {
+		t.Fatalf("artifacts error = %v", err)
+	}
+}
+
+func TestBuildPRInputFromOptionsAppliesOptionalEvidenceAndRoute(t *testing.T) {
+	root := t.TempDir()
+	eventPath := writePRFixtureEventForTest(t, root)
+	checksPath := filepath.Join(root, "checks.json")
+	artifactsPath := filepath.Join(root, "artifacts.json")
+	routePath := filepath.Join(root, "route.json")
+	writeTestJSON(t, checksPath, []packet.GitHubCheck{{
+		Name: "ci", URL: "https://github.com/example/repo/actions/runs/1001", Conclusion: "success",
+	}})
+	writeTestJSON(t, artifactsPath, []packet.GitHubArtifact{{
+		Name: "packet", Resolver: "https://github.com/example/repo/actions/runs/1001/artifacts/2002", RetainedForm: "external_ref",
+	}})
+	writeTestJSON(t, routePath, packet.GitHubPREvidenceInput{
+		AgentRouteRefs:         []string{"recorder:run-1"},
+		AgentRouteComponents:   []string{"opencode", "gsd", "minimax-m2.5"},
+		AgentRouteDigest:       "sha256:route",
+		AgentRouteEvidenceKind: "harness_route_observation",
+		PromptBoundary:         packet.PromptBoundary{Text: "Implement and verify."},
+	})
+
+	opts := packetBuildPROptionsForTest("github-fixture", eventPath)
+	opts.setString("checks-json", checksPath)
+	opts.setString("artifacts-json", artifactsPath)
+	opts.setString("route-manifest", routePath)
+	input, err := buildPRInputFromOptions(opts)
+	if err != nil {
+		t.Fatalf("build PR input: %v", err)
+	}
+	if input.WorkflowRunID != "1001" || input.PR.Number != 38 || input.CommitRange.Base != "base-sha" || input.CommitRange.Head != "head-sha" {
+		t.Fatalf("event-derived input changed: %+v", input)
+	}
+	if len(input.Checks) != 1 || input.Checks[0].Name != "ci" {
+		t.Fatalf("checks not applied: %+v", input.Checks)
+	}
+	if len(input.Artifacts) != 1 || input.Artifacts[0].Name != "packet" {
+		t.Fatalf("artifacts not applied: %+v", input.Artifacts)
+	}
+	if !reflect.DeepEqual(input.AgentRouteRefs, []string{"recorder:run-1"}) ||
+		input.AgentRouteDigest != "sha256:route" ||
+		input.PromptBoundary.Text != "Implement and verify." {
+		t.Fatalf("route not applied: %+v", input)
+	}
+
+	badRoute := filepath.Join(root, "bad-route.json")
+	if err := os.WriteFile(badRoute, []byte(`{`), 0o644); err != nil {
+		t.Fatalf("write bad route: %v", err)
+	}
+	opts = packetBuildPROptionsForTest("github-fixture", eventPath)
+	opts.setString("route-manifest", badRoute)
+	if _, err := buildPRInputFromOptions(opts); err == nil || !strings.Contains(err.Error(), "read route manifest:") {
+		t.Fatalf("route manifest error = %v", err)
+	}
+}
+
 func TestRunPacketBuildPRWritesCannotVerifyJSONForInputFailure(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -1066,4 +1207,35 @@ func addPacketCLIGap(bundle *packet.Bundle, rowID, state, reason string) {
 		Reason:          reason,
 		ClosureEvidence: "regression fixture closure evidence",
 	})
+}
+
+func packetBuildPROptionsForTest(source, eventPath string) *flagSet {
+	opts := &flagSet{name: "packet build-pr"}
+	opts.setString("source", source)
+	opts.setString("github-event", eventPath)
+	opts.setString("checks-json", "")
+	opts.setString("artifacts-json", "")
+	opts.setString("route-manifest", "")
+	opts.setString("github-api-url", "")
+	opts.setString("out", "")
+	return opts
+}
+
+func writePRFixtureEventForTest(t *testing.T, root string) string {
+	t.Helper()
+	eventPath := filepath.Join(root, "event.json")
+	writeTestJSON(t, eventPath, map[string]any{
+		"workflow_run_id": "1001",
+		"pull_request": map[string]any{
+			"number":   38,
+			"html_url": "https://github.com/example/repo/pull/38",
+			"title":    "Demo feature",
+			"body_ref": "https://github.com/example/repo/pull/38",
+			"diff_url": "https://github.com/example/repo/pull/38/files",
+			"user":     map[string]any{"login": "developer"},
+			"base":     map[string]any{"ref": "main", "sha": "base-sha"},
+			"head":     map[string]any{"ref": "feature", "sha": "head-sha"},
+		},
+	})
+	return eventPath
 }
