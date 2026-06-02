@@ -522,6 +522,54 @@ func TestSafeProfileRelativeIsolationFileBranches(t *testing.T) {
 	}
 }
 
+func TestSessionProfilePathSafetyBranches(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, "profiles"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "profiles", "events.jsonl"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	sourcePath, err := safeProfileRelativeFile("profiles/session-profile.json", "events.jsonl")
+	if err != nil {
+		t.Fatalf("safeProfileRelativeFile() error = %v", err)
+	}
+	if sourcePath != filepath.Join("profiles", "events.jsonl") {
+		t.Fatalf("safeProfileRelativeFile() = %q", sourcePath)
+	}
+	outPath, err := safeProfileRelativeOutFile("profiles/session-profile.json", "normalized.jsonl")
+	if err != nil {
+		t.Fatalf("safeProfileRelativeOutFile() error = %v", err)
+	}
+	if outPath != filepath.Join("profiles", "normalized.jsonl") {
+		t.Fatalf("safeProfileRelativeOutFile() = %q", outPath)
+	}
+
+	for name, relPath := range map[string]string{
+		"absolute":  filepath.Join(string(filepath.Separator), "tmp", "events.jsonl"),
+		"traversal": "../events.jsonl",
+		"url":       "file://events.jsonl",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if !unsafeProfileRelativePath(relPath) {
+				t.Fatalf("unsafeProfileRelativePath(%q) = false", relPath)
+			}
+			if _, err := safeProfileRelativeFile("profiles/session-profile.json", relPath); err == nil {
+				t.Fatalf("safeProfileRelativeFile(%q) error = nil", relPath)
+			}
+			if _, err := safeProfileRelativeOutFile("profiles/session-profile.json", relPath); err == nil {
+				t.Fatalf("safeProfileRelativeOutFile(%q) error = nil", relPath)
+			}
+		})
+	}
+	if _, err := safeProfileRelativeFile("profiles/session-profile.json", "missing.jsonl"); err == nil {
+		t.Fatalf("safeProfileRelativeFile(missing) error = nil")
+	}
+}
+
 func TestEnsureJSONReadDenyRuleAndPresenceBranches(t *testing.T) {
 	dir := t.TempDir()
 	oldwd := chdir(t, dir)

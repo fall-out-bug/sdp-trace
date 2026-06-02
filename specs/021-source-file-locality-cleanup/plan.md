@@ -423,6 +423,16 @@ intentionally excludes profile-relative source/output path safety
 execution (`harnessobs_348` onward) so event reading handoff, path safety, and
 normalization keep separate review trails.
 
+Slice 45 continues `internal/harnessobs` cleanup with profile-relative
+source/output path safety (`harnessobs_345` through `harnessobs_347`). It moves
+`safeProfileRelativeFile`, `safeProfileRelativeOutFile`, and
+`unsafeProfileRelativePath` into a cohesive `session_profile_paths.go` file
+used by session collection, raw normalization, setup isolation, and isolation
+rule validation. It preserves absolute-path, URL-like, traversal, base
+directory, existing-file, and output-file policy behavior. It intentionally
+excludes raw-event normalization execution (`harnessobs_348` onward) so source
+path safety and event normalization keep separate review trails.
+
 ## Verification
 
 ```text

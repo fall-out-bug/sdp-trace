@@ -1128,3 +1128,36 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   44 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-44-evidence.md`.
+
+## Active Slice 45 Tasks
+
+- [x] T021-3040 Confirm Slice 45 is bounded to numbered
+  `internal/harnessobs` profile-relative source/output path safety shards
+  `harnessobs_345` through `harnessobs_347`.
+- [x] T021-3041 Confirm Slice 45 is behavior-preserving: no changes to
+  absolute path rejection, URL-like path rejection, traversal rejection, profile
+  base directory joining, existing-file validation, output-file validation,
+  package boundary, dependency direction, raw normalization execution, or
+  baseline change is planned.
+- [x] T021-3042 Record Slice 45 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-45-plan-review.md`.
+- [x] T021-3050 Move profile-relative source/output path safety into the
+  cohesive session profile paths file.
+- [x] T021-3060 Run `gofmt` on changed Go files.
+- [x] T021-3070 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-3071 Run focused profile-relative path regression evidence covering
+  profile-directory joining, traversal rejection, absolute path rejection,
+  URL-like path rejection, existing-file requirement, output-file parent
+  handling, session collect handoff, and raw-normalization path
+  preflight/handoff only, setup isolation handoff, and isolation rule
+  validation handoff, or mark any unverified behavior `not_assessed` with
+  reason. Raw-event normalization execution (`normalizeRawEvents` /
+  `harnessobs_348` onward) remains `not_assessed` for this slice.
+- [x] T021-3080 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3090 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3100 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  45 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-45-evidence.md`.
