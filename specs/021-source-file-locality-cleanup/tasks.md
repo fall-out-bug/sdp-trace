@@ -811,3 +811,33 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   34 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-34-evidence.md`.
+
+## Active Slice 35 Tasks
+
+- [x] T021-2340 Confirm Slice 35 is bounded to numbered
+  `internal/harnessobs` validation enum, safe reference, non-authority, and
+  validation decoding helper shards `harnessobs_245` through `harnessobs_255`.
+- [x] T021-2341 Confirm Slice 35 is behavior-preserving: no accepted enum
+  values, reference safety semantics, operation reference prefix rules,
+  digest-mismatch event redaction, non-authority boundary text, validation JSON
+  decoding, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-2342 Record Slice 35 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-35-plan-review.md`.
+- [x] T021-2350 Move selected validation lookup, safe reference, non-authority,
+  and validation decoding declarations into cohesive responsibility-named files.
+- [x] T021-2360 Run `gofmt` on changed Go files.
+- [x] T021-2370 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2371 Run focused validation helper regression evidence covering
+  profile family/state/rule-key validation, event content/reference validation,
+  unsafe operation reference rejection, digest-mismatch event fallback,
+  validation JSON decoding, and non-authority boundary rendering, or mark any
+  unverified behavior `not_assessed` with reason.
+- [x] T021-2380 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2390 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2400 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  35 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-35-evidence.md`.

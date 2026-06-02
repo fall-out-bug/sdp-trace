@@ -290,6 +290,16 @@ excludes validation enum helpers (`harnessobs_245` onward), session collect
 option validation, event source resolution, and raw-event normalization flow so
 schema validation and collection orchestration keep separate review trails.
 
+Slice 35 continues `internal/harnessobs` cleanup with validation enum, safe
+reference, non-authority boundary text, and validation decoding helpers
+(`harnessobs_245` through `harnessobs_255`). It moves validation lookup
+accessors, generic/source/task/operation/actor reference safety helpers,
+digest-mismatch event rendering, the evidence-only non-authority boundary, and
+validation JSON decoding into cohesive validation helper files. It intentionally
+excludes session collect option validation (`harnessobs_256` onward), profile
+loading, event source resolution, runtime collection, and validation command
+execution so option validation and orchestration keep separate review trails.
+
 ## Verification
 
 ```text
