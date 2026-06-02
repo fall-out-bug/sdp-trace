@@ -975,6 +975,87 @@ func TestApplyPRRouteOnlyOverwritesRouteAndReviewFields(t *testing.T) {
 	}
 }
 
+func TestGitHubActionsArtifactsBackfillsRetainedArtifacts(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"artifacts":[{"id":2002,"name":"evidence-bundles","expired":false,"expires_at":"2026-08-10T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2002/zip"},{"id":2003,"name":"expired-evidence","expired":true,"expires_at":"2026-01-01T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2003/zip"}]}`))
+	}))
+	defer server.Close()
+
+	artifacts, err := githubActionsArtifacts(server.URL, githubActionsArtifactTestEnv)
+	if err != nil {
+		t.Fatalf("githubActionsArtifacts() error = %v", err)
+	}
+	if len(artifacts) != 1 {
+		t.Fatalf("artifact count = %d, want 1 retained artifact", len(artifacts))
+	}
+	if artifacts[0].Name != "evidence-bundles" || artifacts[0].RetainedForm != "external_ref" {
+		t.Fatalf("retained artifact = %+v", artifacts[0])
+	}
+	if artifacts[0].Resolver == "" || artifacts[0].ExpiresAt != "2026-08-10T00:00:00Z" {
+		t.Fatalf("retained artifact binding = %+v", artifacts[0])
+	}
+}
+
+func TestGitHubActionsArtifactsFailsClosedWithoutRetainedArtifacts(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"artifacts":[{"id":2003,"name":"expired-evidence","expired":true,"expires_at":"2026-01-01T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2003/zip"}]}`))
+	}))
+	defer server.Close()
+
+	_, err := githubActionsArtifacts(server.URL, githubActionsArtifactTestEnv)
+	if err == nil {
+		t.Fatal("githubActionsArtifacts() error = nil, want empty retained artifact error")
+	}
+	if !strings.Contains(err.Error(), "GitHub Actions artifact discovery returned no retained artifacts") {
+		t.Fatalf("error = %q, want empty retained artifact diagnostic", err.Error())
+	}
+}
+
+func TestGitHubActionsArtifactsInvalidContextStopsBeforeFetch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("artifact fetch should not run when context validation fails")
+	}))
+	defer server.Close()
+
+	_, err := githubActionsArtifacts(server.URL, func(name string) string {
+		switch name {
+		case "GITHUB_REPOSITORY":
+			return ""
+		case "GITHUB_RUN_ID":
+			return "1001"
+		case "GITHUB_TOKEN":
+			return "test-token"
+		case "GITHUB_SERVER_URL":
+			return "https://github.com"
+		default:
+			return ""
+		}
+	})
+	if err == nil {
+		t.Fatal("githubActionsArtifacts() error = nil, want context validation error")
+	}
+	if !strings.Contains(err.Error(), "missing GITHUB_REPOSITORY or GITHUB_RUN_ID") {
+		t.Fatalf("error = %q, want repository/run validation error", err.Error())
+	}
+}
+
+func TestGitHubActionsArtifactsPropagatesFetchErrors(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	_, err := githubActionsArtifacts(server.URL, githubActionsArtifactTestEnv)
+	if err == nil {
+		t.Fatal("githubActionsArtifacts() error = nil, want fetch error")
+	}
+	if !strings.Contains(err.Error(), "list GitHub Actions artifacts: HTTP 503") {
+		t.Fatalf("error = %q, want propagated HTTP status", err.Error())
+	}
+}
+
 func githubActionsArtifactTestEnv(name string) string {
 	switch name {
 	case "GITHUB_REPOSITORY":

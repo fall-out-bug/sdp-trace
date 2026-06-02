@@ -726,6 +726,19 @@ intentionally excludes GitHub Actions artifact
 discovery/context/API helpers (`packet_067` onward) and shared optional JSON IO
 (`packet_095`) so route mutation and shared IO keep separate review trails.
 
+Slice 64 continues `cmd/sdp-trace` cleanup with the GitHub Actions artifact
+discovery facade and response type shards (`packet_067` through `packet_068`).
+It moves live artifact discovery orchestration and GitHub artifact payload/type
+definitions into `packet_build_pr_actions_artifacts.go`. It preserves validated
+context construction before network fetch, fetch error propagation, retained
+artifact filtering, fail-closed empty-retained-set diagnostics, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+artifact context validation and URL/token policy (`packet_071` through
+`packet_085`), HTTP request/fetch/decode/retention helpers (`packet_086`
+through `packet_092`), fixture IO (`packet_093` onward), and shared optional
+JSON IO (`packet_095`) so live API policy and response processing keep separate
+review trails.
+
 ## Verification
 
 ```text

@@ -1857,3 +1857,40 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 64 Tasks
+
+- [x] T021-4370 Confirm Slice 64 is bounded to numbered `cmd/sdp-trace` GitHub
+  Actions artifact discovery facade and response type shards `packet_067`
+  through `packet_068`.
+- [x] T021-4371 Confirm Slice 64 is behavior-preserving: no changes to context
+  validation before live fetch, fetch error propagation, retained artifact
+  filtering, empty-retained-set fail-closed diagnostics, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-4372 Record Slice 64 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-64-plan-review.md`.
+- [x] T021-4380 Move GitHub Actions artifact discovery facade and response
+  types into `packet_build_pr_actions_artifacts.go`. Split further only if MI
+  fails and record the failed command plus revised responsibility boundary in
+  evidence.
+- [x] T021-4390 Run `gofmt` on changed Go files.
+- [x] T021-4400 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4401 Run focused GitHub Actions artifact discovery regression
+  evidence covering exact test existence for
+  `TestGitHubActionsArtifactsBackfillsRetainedArtifacts`,
+  `TestGitHubActionsArtifactsFailsClosedWithoutRetainedArtifacts`, and
+  `TestGitHubActionsArtifactsInvalidContextStopsBeforeFetch`, and
+  `TestGitHubActionsArtifactsPropagatesFetchErrors`; context validation before
+  live fetch; retained artifact filtering; empty retained artifact fail-closed
+  diagnostic; fetch error propagation; and no baseline changes.
+- [x] T021-4410 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4420 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4430 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  64 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-64-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
