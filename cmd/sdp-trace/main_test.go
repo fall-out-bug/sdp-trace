@@ -2949,6 +2949,152 @@ func TestOverrideRequestAppendsFlightRecorderEvent(t *testing.T) {
 	}
 }
 
+func TestOverrideRequestPersistsExternalReferencePayload(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"override", "request",
+		"--out", runDir,
+		"--id", "override-2",
+		"--by", "release-captain",
+		"--reason", "external approval pending",
+		"--source-ref", "refs/heads/main",
+		"--scope", "verification_run",
+		"--external-reference", "ticket/INC-42",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("override request exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("open run: %v", err)
+	}
+	last := artifact.Events[len(artifact.Events)-1]
+	want := map[string]string{
+		"override_id":        "override-2",
+		"producer":           "sdp-trace-cli",
+		"origin":             "native_cli",
+		"requested_by":       "release-captain",
+		"reason":             "external approval pending",
+		"source_ref":         "refs/heads/main",
+		"scope":              "verification_run",
+		"external_reference": "ticket/INC-42",
+	}
+	for key, value := range want {
+		if got := last.EventPayload[key]; got != value {
+			t.Fatalf("payload[%s] = %v, want %s", key, got, value)
+		}
+	}
+	createdAt, ok := last.EventPayload["created_at"].(string)
+	if !ok {
+		t.Fatalf("created_at missing or non-string: %#v", last.EventPayload["created_at"])
+	}
+	if _, err := time.Parse(time.RFC3339Nano, createdAt); err != nil {
+		t.Fatalf("created_at is not RFC3339Nano: %q: %v", createdAt, err)
+	}
+}
+
+func TestOverrideRequestRejectsInvalidRequestArgsBeforeAppend(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("open run: %v", err)
+	}
+	before := len(artifact.Events)
+
+	cases := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{
+			name:    "non-request",
+			args:    []string{"override", "approve", "--out", runDir},
+			wantErr: "override requires request",
+		},
+		{
+			name:    "unknown flag",
+			args:    []string{"override", "request", "--out", runDir, "--unknown", "value"},
+			wantErr: "unknown flag --unknown",
+		},
+		{
+			name: "positional text",
+			args: []string{
+				"override", "request",
+				"--out", runDir,
+				"--id", "override-3",
+				"--by", "release-captain",
+				"--reason", "reason",
+				"--source-ref", "refs/heads/main",
+				"--scope", "verification_run",
+				"extra",
+			},
+			wantErr: "override request accepts only flags",
+		},
+		{
+			name:    "missing required flag",
+			args:    []string{"override", "request", "--out", runDir},
+			wantErr: "override request requires --id",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(tc.args, &out, &errOut)
+			if exit != exitUsage {
+				t.Fatalf("exit = %d, want %d; stdout=%s stderr=%s", exit, exitUsage, out.String(), errOut.String())
+			}
+			if !strings.Contains(errOut.String(), tc.wantErr) {
+				t.Fatalf("stderr = %q, want %q", errOut.String(), tc.wantErr)
+			}
+			if strings.Contains(out.String(), "override_event:") {
+				t.Fatalf("invalid request printed override event: %s", out.String())
+			}
+			after, err := trace.OpenRunArtifact(runDir)
+			if err != nil {
+				t.Fatalf("open run after invalid request: %v", err)
+			}
+			if len(after.Events) != before {
+				t.Fatalf("invalid request appended events: before=%d after=%d", before, len(after.Events))
+			}
+		})
+	}
+}
+
+func TestOverrideRequestAppendFailureDoesNotPrintEvent(t *testing.T) {
+	missingRunDir := filepath.Join(t.TempDir(), "missing-run")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"override", "request",
+		"--out", missingRunDir,
+		"--id", "override-4",
+		"--by", "release-captain",
+		"--reason", "reason",
+		"--source-ref", "refs/heads/main",
+		"--scope", "verification_run",
+	}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("exit = %d, want 1; stdout=%s stderr=%s", exit, out.String(), errOut.String())
+	}
+	if strings.Contains(out.String(), "override_event:") {
+		t.Fatalf("append failure printed override event: %s", out.String())
+	}
+	if strings.TrimSpace(errOut.String()) == "" {
+		t.Fatalf("append failure did not print stderr")
+	}
+}
+
 func TestGateOutputIncludesOverrideWithoutPassingMissingEvidence(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+
+	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
 
 func runOverride(_ context.Context, args []string, stdout, stderr io.Writer) int {
@@ -21,4 +23,8 @@ func runOverride(_ context.Context, args []string, stdout, stderr io.Writer) int
 	}
 	fmt.Fprintf(stdout, "override_event: %s\n", event.EventID)
 	return 0
+}
+
+func appendOverrideRequestEvent(opts *flagSet) (trace.Event, error) {
+	return trace.AppendRunEvent(opts.stringValue("out"), trace.EventPolicyOverrideRequested, overrideRequestPayload(opts), "sdp-trace-cli")
 }

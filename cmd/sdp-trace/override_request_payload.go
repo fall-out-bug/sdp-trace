@@ -1,8 +1,6 @@
 package main
 
-import (
-	"time"
-)
+import "time"
 
 func overrideRequestPayload(opts *flagSet) map[string]any {
 	// Override requests are appended as trace events; they request policy

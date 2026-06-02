@@ -570,6 +570,26 @@ helpers (`gate_360` onward), and preview mode/required-ID helper shards
 (`gate_365` onward) so preview input readiness, override, and generic IO keep
 separate review trails.
 
+Slice 54 continues `cmd/sdp-trace` cleanup with override request CLI handling
+(`gate_352` through `gate_359`). It first attempted to move override request
+dispatch, trace-event append, payload construction, request subcommand
+detection, flag parsing, required-flag validation, and required flag diagnostics
+into `override_request.go`; file-level MI failed, so the implementation split
+the same responsibility into `override_request.go`,
+`override_request_payload.go`, and `override_request_flags.go` without changing
+behavior or MI baselines. It preserves that only `override request` is accepted,
+parser errors and missing required flags exit with `exitUsage` before appending
+any trace event, positional text is rejected, persisted payload keys remain
+stable (`override_id`, `producer`, `origin`, `requested_by`, `reason`,
+`source_ref`, `scope`, `created_at`, optional `external_reference`),
+`created_at` remains UTC RFC3339Nano, stdout prints only `override_event:
+<event-id>`, append failure prints stderr and returns exit code 1, override
+events remain advisory/non-upgrading, package boundary, dependency direction,
+and MI baselines. It intentionally excludes shared JSON/text helpers
+(`gate_360` onward) and preview mode/required-ID helper shards (`gate_365`
+onward) so override write semantics, generic IO, and shared preview helpers
+keep separate review trails.
+
 ## Verification
 
 ```text

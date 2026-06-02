@@ -1459,3 +1459,45 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 54 Tasks
+
+- [x] T021-3670 Confirm Slice 54 is bounded to numbered `cmd/sdp-trace`
+  override request CLI shards `gate_352` through `gate_359`.
+- [x] T021-3671 Confirm Slice 54 is behavior-preserving: no changes to
+  accepting only `override request`, parser error handling, missing required
+  flag diagnostics, positional text rejection, append-before-print behavior,
+  append failure exit code/stderr, stable override payload keys, optional
+  `external_reference`, UTC RFC3339Nano `created_at`, advisory/non-upgrading
+  override semantics, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-3672 Record Slice 54 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-54-plan-review.md`.
+- [x] T021-3680 Move override request CLI handling into
+  `override_request.go`. Split further only if MI fails and record the failed
+  command plus revised responsibility boundary in evidence.
+- [x] T021-3690 Run `gofmt` on changed Go files.
+- [x] T021-3700 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3701 Run focused override request regression evidence covering
+  exact test existence for
+  `TestOverrideRequestAppendsFlightRecorderEvent`,
+  `TestOverrideRequestPersistsExternalReferencePayload`,
+  `TestOverrideRequestRejectsInvalidRequestArgsBeforeAppend`,
+  `TestOverrideRequestAppendFailureDoesNotPrintEvent`, and
+  `TestGateOutputIncludesOverrideWithoutPassingMissingEvidence`; successful
+  event append; stable persisted payload keys; optional
+  `external_reference`; rejection of non-`request` subcommands; unknown-flag
+  parser errors; positional text rejection; missing required flag diagnostics;
+  append failure behavior; advisory/non-upgrading gate output; and no baseline
+  changes.
+- [x] T021-3710 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3720 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3730 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  54 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-54-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
