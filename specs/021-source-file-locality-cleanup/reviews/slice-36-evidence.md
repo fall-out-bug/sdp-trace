@@ -14,6 +14,7 @@ Changed code:
 - added `internal/harnessobs/session_raw_normalization.go`
 - added `internal/harnessobs/session_source_unavailable.go`
 - added `internal/harnessobs/session_collect_observed.go`
+- added `internal/harnessobs/session_observed_output.go`
 - added `internal/harnessobs/session_runtime.go`
 - added `internal/harnessobs/session_runtime_finish.go`
 - added `internal/harnessobs/session_process.go`
@@ -57,8 +58,7 @@ Changed code:
 ## Focused Verification
 
 - `gofmt -w` on changed Go files: pass
-- `go test ./internal/harnessobs`: not_assessed for the final corrected diff;
-  use the focused and repository commands below instead.
+- `go test ./internal/harnessobs`: pass
 - `go run ./tools/qualitycheck -mi-under 70.1 -function-mi-under 70.1 <slice-36-new-go-files>`: pass
 - `go test ./internal/harnessobs -run 'Test(CollectSession|RunSession|ObserveSession|LoadSessionRun|NormalizeRawEvents|ValidateSessionProfile)'`: pass
 
@@ -93,18 +93,25 @@ Temporary generated verification artifacts were removed:
 
 ## Implementation Review
 
-- behavior/correctness lane (`019e8769-29b8-7ee3-a805-f4eaa693693e`):
-  LGTM
-- trust/evidence lane (`019e8769-6549-7fa3-bcf1-f74003417d05`): LGTM
-- maintainability/DX lane (`019e8773-6d62-7293-b254-cb0f3d87ad41`):
-  major finding on non-numbered one-helper microfile drift in the first
-  corrective split.
-- maintainability/DX re-review (`019e8775-5f8b-7ab3-8685-b711ac7e79da`):
-  LGTM after source collection and finalization were merged into one cohesive
-  observed-collection file while observed output remained a neighboring
-  multi-helper file to preserve MI above the local gate.
-- replacement behavior/correctness lane
-  (`019e8777-7ffc-7891-88c8-ebdaa168ffd3`): LGTM
+- trust/evidence lane (`019e8777-7ffc-7891-88c8-ebdaa168ffd3`): LGTM before
+  final docs-file-name correction.
+- behavior/correctness lane (`019e877e-8a44-7330-a601-57160804d236`):
+  non-evidence because the response claimed commit/push activity and did not
+  return exact `LGTM`.
+- maintainability/DX lane (`019e877e-acd2-7751-bd2a-d0af0ea5cf9f`): found
+  stale docs/evidence references to `session_observed_output.go`.
+- maintainability/DX re-review (`019e8780-a7ab-7732-b23e-20336c1f02c7`):
+  found that `session_observed_output.go` exists in the worktree and was
+  incorrectly omitted from final evidence.
+- final behavior/correctness lane (`019e8783-0dc5-7071-8979-57d26261f19e`):
+  LGTM after docs-file-name correction.
+- final trust/evidence lane (`019e8783-2a18-7a83-b29c-4ad6595bf359`): LGTM
+  after docs-file-name correction.
+- final maintainability/DX lane (`019e8783-4fa4-7f41-958c-afbafa4a33b3`):
+  found task/evidence incoherence because T021-2470 was marked complete while
+  the evidence still recorded final implementation review as pending.
+- final maintainability/DX re-review (`019e8784-c2c4-7001-99ac-073741c27ffe`):
+  LGTM after task/evidence correction.
 
-Implementation review verdict: LGTM across the required three lanes after
+Implementation review verdict: LGTM across the required three final lanes after
 corrective review.

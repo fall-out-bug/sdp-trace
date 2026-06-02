@@ -27,9 +27,10 @@ Updated consolidation after local MI preflight:
   normalized source digest recording.
 - `session_source_unavailable.go`: source-unavailable session and zero-event
   run fallback.
-- `session_collect_observed.go`: source collection orchestration, observed
-  event/run artifact writing, observed run summary construction, and session
+- `session_collect_observed.go`: source collection orchestration and session
   finalization after observed output.
+- `session_observed_output.go`: observed event/run artifact writing and observed
+  run summary construction.
 - `session_runtime.go`: `RunSession`, setup, and command requirement.
 - `session_runtime_finish.go`: finished-session write and collection after
   command completion.
@@ -81,8 +82,9 @@ Plan re-review:
   non-numbered one-helper microfile drift in the separate
   `session_collect_source.go` and `session_collect_finalize.go` split.
 - maintainability/DX re-review (`019e8775-5f8b-7ab3-8685-b711ac7e79da`):
-  LGTM after merging source collection, observed output serialization, and
-  finalization into one cohesive observed-collection file.
+  LGTM after keeping source collection/finalization in a cohesive
+  observed-collection file and observed output serialization in a related
+  multi-helper file.
 
 Final plan review verdict: LGTM across all three lanes. Implementation remains
 bounded to `harnessobs_256` through `harnessobs_280`.

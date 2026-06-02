@@ -315,9 +315,10 @@ observed output serialization, runtime setup, runtime finish, process execution,
 and process metadata. Maintainability review rejected a follow-up split that
 left observed source collection and finalization as tiny non-numbered helper
 files; a one-file observed collection merge then failed the local MI gate. The
-accepted split keeps source collection, observed event/run serialization, and
-finalization in `session_collect_observed.go`, avoiding both one-helper drift
-and an MI regression. It intentionally excludes validation command execution
+accepted split keeps source collection/finalization in
+`session_collect_observed.go` and observed event/run serialization in
+`session_observed_output.go`, avoiding both one-helper drift and an MI
+regression. It intentionally excludes validation command execution
 (`harnessobs_281` onward), validation evaluation, session profile validation,
 isolation rule installation, loaded session run validation, and raw
 normalization internals beyond dispatch from session collection so those
