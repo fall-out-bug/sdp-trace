@@ -447,6 +447,13 @@ func TestIsolationRulePresentBranches(t *testing.T) {
 	if err != nil || present {
 		t.Fatalf("isolationRulePresent(ignore_line absent) = %v/%v, want false/nil", present, err)
 	}
+	unreadableLinePath := filepath.Join(dir, "unreadable")
+	if err := os.Mkdir(unreadableLinePath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lineIsolationRulePresent(unreadableLinePath, ".evidence/"); err == nil {
+		t.Fatalf("lineIsolationRulePresent(unreadable directory) error = nil")
+	}
 	if _, err := isolationRulePresent(SessionIsolationRule{Kind: "unknown"}); err == nil || !strings.Contains(err.Error(), "unsupported isolation rule kind") {
 		t.Fatalf("isolationRulePresent(unknown) error = %v, want unsupported kind", err)
 	}

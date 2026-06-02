@@ -362,6 +362,25 @@ line/JSON rule materialization, loaded session run validation, session run
 construction, source commit discovery, and raw-event normalization execution so
 filesystem mutation and run-loading behavior keep separate review trails.
 
+Slice 40 continues `internal/harnessobs` cleanup with isolation rule target
+resolution, line/JSON rule materialization, verification readback, and isolation
+result digest construction shards (`harnessobs_310` through `harnessobs_334`).
+It moves profile-relative isolation file safety, parent/filename validation,
+installer dispatch, line rule append/read/write helpers, JSON read-deny object
+loading and mutation helpers, readback verification, cannot-verify fallback,
+and isolation result digest assignment into cohesive isolation installation
+files. The implementation keeps JSON mutation separate from optional object
+loading and keeps readback result construction separate from presence checks to
+meet the repository MI gate without returning to numbered one-helper shards.
+JSON readback continues to call the existing package-local JSON reader helpers,
+which remain numbered for a later slice. It intentionally excludes
+loaded session run validation (`harnessobs_335` through `harnessobs_336`),
+shared JSON read/decode helpers (`harnessobs_337` through `harnessobs_339`),
+session run construction (`harnessobs_340` onward), source commit discovery,
+event source reading, profile-relative source/output file safety, and raw-event
+normalization execution so run-loading, shared JSON IO, and event
+materialization behavior keep separate review trails.
+
 ## Verification
 
 ```text

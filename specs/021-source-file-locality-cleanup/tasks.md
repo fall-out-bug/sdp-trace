@@ -974,3 +974,38 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   39 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-39-evidence.md`.
+
+## Active Slice 40 Tasks
+
+- [x] T021-2690 Confirm Slice 40 is bounded to numbered
+  `internal/harnessobs` isolation target resolution, line/JSON rule
+  materialization, readback verification, and isolation result digest shards
+  `harnessobs_310` through `harnessobs_334`.
+- [x] T021-2691 Confirm Slice 40 is behavior-preserving: no changes to
+  profile-relative isolation path safety, parent/filename validation, installer
+  dispatch, line rule idempotence, optional line/object loading, blank JSON
+  handling, JSON read-deny mutation, readback cannot-verify semantics, digest
+  assignment, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-2692 Record Slice 40 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-40-plan-review.md`.
+- [x] T021-2700 Move selected isolation installation and readback declarations
+  into cohesive responsibility-named files.
+- [x] T021-2710 Run `gofmt` on changed Go files.
+- [x] T021-2720 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2721 Run focused isolation installation/readback regression evidence
+  covering profile-relative isolation path traversal, clean profile-relative
+  path joining, parent containment, unsafe filenames, unsupported installer
+  kind, line rule idempotence, optional missing/blank line reads, line writing,
+  line-read error propagation, JSON read-deny creation, missing/blank/invalid
+  JSON object loading, nested object preservation, readback pass/cannot-verify,
+  unsupported readback kind, digest assignment, and full setup-session isolation
+  installation, or mark any unverified behavior `not_assessed` with reason.
+- [x] T021-2730 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2740 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2750 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  40 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-40-evidence.md`.
