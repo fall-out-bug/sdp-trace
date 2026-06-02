@@ -2,14 +2,12 @@ package harnessobs
 
 import (
 	"errors"
-
 	"path/filepath"
 )
 
+// loadSessionCollectionInputs rejects profile/session mismatches before a
+// collect run can attach new observed evidence to the wrong setup session.
 func loadSessionCollectionInputs(profilePath, runDir string) (SessionProfile, SessionRun, error) {
-	// loadSessionCollectionInputs keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profile, err := LoadSessionProfile(profilePath)
 	if err != nil {
 		return SessionProfile{}, SessionRun{}, err
@@ -20,7 +18,6 @@ func loadSessionCollectionInputs(profilePath, runDir string) (SessionProfile, Se
 		return SessionProfile{}, SessionRun{}, err
 	}
 	if session.ProfileID != profile.ProfileID {
-
 		return SessionProfile{}, SessionRun{}, errors.New("session profile mismatch")
 	}
 

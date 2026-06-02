@@ -750,3 +750,33 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   32 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-32-evidence.md`.
+
+## Active Slice 33 Tasks
+
+- [x] T021-2200 Confirm Slice 33 is bounded to numbered
+  `internal/harnessobs` session collection entrypoint and input-loading shards
+  `harnessobs_217` through `harnessobs_222`.
+- [x] T021-2201 Confirm Slice 33 is behavior-preserving: no collect option
+  validation, profile/session loading, profile mismatch rejection, harness
+  profile loading, session source unavailable fallback, source collection
+  dispatch, time fallback, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-2202 Record Slice 33 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-33-plan-review.md`.
+- [x] T021-2210 Move selected session collection entrypoint, context, time, and
+  input-loading declarations into cohesive responsibility-named files.
+- [x] T021-2220 Run `gofmt` on changed Go files.
+- [x] T021-2230 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2231 Run focused session collection regression evidence covering
+  collection entrypoint dispatch to source-unavailable fallback, collect option
+  validation handoff, profile/session input loading, profile mismatch rejection,
+  harness profile loading handoff, and collection time fallback, or mark any
+  unverified behavior `not_assessed` with reason.
+- [x] T021-2240 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2250 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2260 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  33 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-33-evidence.md`.

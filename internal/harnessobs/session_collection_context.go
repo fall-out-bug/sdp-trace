@@ -1,14 +1,11 @@
 package harnessobs
 
-import (
-	"time"
-)
+import "time"
 
+// newSessionCollectionContext carries both setup profile identity and harness
+// profile identity so later source collection can report unavailable evidence
+// without losing provenance.
 func newSessionCollectionContext(profilePath, runDir string, now time.Time, profile SessionProfile, session SessionRun, harnessProfilePath string, harnessProfile Profile) sessionCollectionContext {
-	// newSessionCollectionContext keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
-
 	return sessionCollectionContext{
 		profilePath:        profilePath,
 		runDir:             runDir,

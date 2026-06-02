@@ -272,6 +272,16 @@ The correction preserves behavior and MI/CRAP gates while treating MI pressure
 as a reason for meaningful comments or tighter grouping, not as a blanket
 justification for shard churn.
 
+Slice 33 continues `internal/harnessobs` cleanup with session collection
+entrypoint and input-loading shards (`harnessobs_217` through
+`harnessobs_222`). It moves collection dispatch, collect-option validation
+handoff, profile/session input loading, profile mismatch rejection, harness
+profile loading handoff, context construction, and collection time fallback into
+cohesive session collection files. It intentionally excludes event source
+resolution, source normalization, observed-run writing, process execution, and
+raw-event unsafe rule semantics so source collection and rule-specific behavior
+keep separate review trails.
+
 ## Verification
 
 ```text
