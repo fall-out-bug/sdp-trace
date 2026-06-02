@@ -877,6 +877,104 @@ func TestHydrateGitHubActionsEvidencePropagatesLiveArtifactErrors(t *testing.T) 
 	}
 }
 
+func TestReadOptionalPRRouteKeepsOptionalJSONBehavior(t *testing.T) {
+	root := t.TempDir()
+	emptyRoute, err := readOptionalPRRoute("")
+	if err != nil {
+		t.Fatalf("read empty optional route: %v", err)
+	}
+	if !reflect.DeepEqual(emptyRoute, packet.GitHubPREvidenceInput{}) {
+		t.Fatalf("empty route = %+v, want empty", emptyRoute)
+	}
+
+	_, err = readOptionalPRRoute(filepath.Join(root, "missing.json"))
+	if err == nil {
+		t.Fatal("read missing explicit route error = nil")
+	}
+
+	routePath := filepath.Join(root, "route.json")
+	writeTestJSON(t, routePath, packet.GitHubPREvidenceInput{
+		AgentRouteRefs: []string{"recorder:run-1"},
+		Reviews:        []packet.GitHubReview{{Reviewer: "pi", Resolver: "external:review", State: packet.StatePass}},
+	})
+	route, err := readOptionalPRRoute(routePath)
+	if err != nil {
+		t.Fatalf("read route: %v", err)
+	}
+	if !reflect.DeepEqual(route.AgentRouteRefs, []string{"recorder:run-1"}) {
+		t.Fatalf("route refs = %+v", route.AgentRouteRefs)
+	}
+	if len(route.Reviews) != 1 || route.Reviews[0].Reviewer != "pi" {
+		t.Fatalf("route reviews = %+v", route.Reviews)
+	}
+}
+
+func TestApplyPRRouteOnlyOverwritesRouteAndReviewFields(t *testing.T) {
+	input := packet.GitHubPREvidenceInput{
+		SchemaVersion: "github-pr-evidence-input.v0",
+		PR: packet.GitHubPR{
+			Number:  38,
+			URL:     "https://github.com/example/repo/pull/38",
+			Title:   "Demo",
+			Author:  "developer",
+			BaseRef: "main",
+			HeadRef: "feature",
+			HeadSHA: "head-sha",
+		},
+		CommitRange:            packet.GitHubCommitRange{Base: "base-sha", Head: "head-sha", ChangedFilesRef: "https://github.com/example/repo/pull/38/files"},
+		Checks:                 []packet.GitHubCheck{{Name: "verify", URL: "https://github.com/example/repo/actions/runs/1001", Conclusion: "success"}},
+		Artifacts:              []packet.GitHubArtifact{{Name: "evidence-bundles", Resolver: "https://api.github.com/artifacts/1/zip", RetainedForm: "external_ref"}},
+		AgentRouteRefs:         []string{"old-route"},
+		AgentRouteComponents:   []string{"old-component"},
+		AgentRouteDigest:       "sha256:old",
+		AgentRouteEvidenceKind: "old-kind",
+		PromptBoundary:         packet.PromptBoundary{Text: "old prompt"},
+		IntegrationActions:     []packet.IntegrationAction{{Kind: "old", Actor: "old", Resolver: "old"}},
+		Reviews:                []packet.GitHubReview{{Reviewer: "old", Resolver: "old", State: packet.StateFail}},
+	}
+	identityBefore := input.PR
+	commitBefore := input.CommitRange
+	checksBefore := append([]packet.GitHubCheck(nil), input.Checks...)
+	artifactsBefore := append([]packet.GitHubArtifact(nil), input.Artifacts...)
+
+	route := packet.GitHubPREvidenceInput{
+		PR:                     packet.GitHubPR{Number: 99, URL: "https://github.com/wrong/repo/pull/99"},
+		Checks:                 []packet.GitHubCheck{{Name: "wrong"}},
+		Artifacts:              []packet.GitHubArtifact{{Name: "wrong"}},
+		AgentRouteRefs:         []string{"recorder:run-1"},
+		AgentRouteComponents:   []string{"opencode", "minimax"},
+		AgentRouteDigest:       "sha256:route",
+		AgentRouteEvidenceKind: "harness_route_observation",
+		PromptBoundary:         packet.PromptBoundary{Text: "new prompt", Digest: "sha256:prompt"},
+		IntegrationActions:     []packet.IntegrationAction{{Kind: "merge", Actor: "bot", Resolver: "external:action"}},
+		Reviews:                []packet.GitHubReview{{Reviewer: "pi", Resolver: "external:review", State: packet.StatePass}},
+	}
+
+	applyPRRoute(&input, route)
+
+	if !reflect.DeepEqual(input.PR, identityBefore) {
+		t.Fatalf("PR identity changed: %+v", input.PR)
+	}
+	if !reflect.DeepEqual(input.CommitRange, commitBefore) {
+		t.Fatalf("commit range changed: %+v", input.CommitRange)
+	}
+	if !reflect.DeepEqual(input.Checks, checksBefore) {
+		t.Fatalf("checks changed: %+v", input.Checks)
+	}
+	if !reflect.DeepEqual(input.Artifacts, artifactsBefore) {
+		t.Fatalf("artifacts changed: %+v", input.Artifacts)
+	}
+	if !reflect.DeepEqual(input.AgentRouteRefs, route.AgentRouteRefs) ||
+		!reflect.DeepEqual(input.AgentRouteComponents, route.AgentRouteComponents) ||
+		input.AgentRouteDigest != route.AgentRouteDigest ||
+		input.AgentRouteEvidenceKind != route.AgentRouteEvidenceKind ||
+		!reflect.DeepEqual(input.PromptBoundary, route.PromptBoundary) ||
+		!reflect.DeepEqual(input.IntegrationActions, route.IntegrationActions) ||
+		!reflect.DeepEqual(input.Reviews, route.Reviews) {
+		t.Fatalf("route-controlled fields not applied: %+v", input)
+	}
+}
+
 func githubActionsArtifactTestEnv(name string) string {
 	switch name {
 	case "GITHUB_REPOSITORY":

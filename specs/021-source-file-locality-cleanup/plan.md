@@ -716,6 +716,16 @@ excludes route manifest loading/application (`packet_065` through
 `packet_066`) and live artifact discovery/context/API helpers (`packet_067`
 onward) so route mutation and live API access keep separate review trails.
 
+Slice 63 continues `cmd/sdp-trace` cleanup with `packet build-pr` route manifest
+helpers (`packet_065` through `packet_066`). It moves optional route manifest
+reading and route, prompt-boundary, integration-action, and review field
+application into `packet_build_pr_route.go`. It preserves optional JSON read
+behavior, route manifest field overwrite semantics, PR identity and CI evidence
+preservation, package boundary, dependency direction, and MI baselines. It
+intentionally excludes GitHub Actions artifact
+discovery/context/API helpers (`packet_067` onward) and shared optional JSON IO
+(`packet_095`) so route mutation and shared IO keep separate review trails.
+
 ## Verification
 
 ```text

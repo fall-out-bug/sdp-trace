@@ -1823,3 +1823,37 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 63 Tasks
+
+- [x] T021-4300 Confirm Slice 63 is bounded to numbered `cmd/sdp-trace` packet
+  build-pr route manifest helper shards `packet_065` through `packet_066`.
+- [x] T021-4301 Confirm Slice 63 is behavior-preserving: no changes to optional
+  route JSON read behavior, route field, prompt boundary, integration action,
+  and review overwrite semantics, PR identity preservation, CI evidence
+  preservation, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-4302 Record Slice 63 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-63-plan-review.md`.
+- [x] T021-4310 Move packet build-pr route manifest helpers into
+  `packet_build_pr_route.go`. Split further only if MI fails and record the
+  failed command plus revised responsibility boundary in evidence.
+- [x] T021-4320 Run `gofmt` on changed Go files.
+- [x] T021-4330 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4331 Run focused packet build-pr route regression evidence covering
+  exact test existence for `TestReadOptionalPRRouteKeepsOptionalJSONBehavior`
+  and `TestApplyPRRouteOnlyOverwritesRouteAndReviewFields`; optional route JSON
+  read behavior; route field, prompt boundary, integration action, and review
+  overwrite semantics; PR identity preservation; CI evidence preservation; and
+  no baseline changes.
+- [x] T021-4340 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4350 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4360 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  63 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-63-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
