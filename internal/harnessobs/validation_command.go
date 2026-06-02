@@ -1,9 +1,8 @@
 package harnessobs
 
+// Validate resolves trusted local inputs, evaluates the observed run, and only
+// writes a validation artifact when the caller requested an output path.
 func Validate(opts ValidateOptions) (Validation, error) {
-	// Validate keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
 	profilePath, runDir, outPath, err := validateValidateInputs(opts)
 	if err != nil {
 		return Validation{}, err
@@ -19,4 +18,13 @@ func Validate(opts ValidateOptions) (Validation, error) {
 		return Validation{}, err
 	}
 	return validation, nil
+}
+
+// writeValidationIfRequested keeps validation previews side-effect free unless
+// an explicit safe output path was supplied.
+func writeValidationIfRequested(outPath string, validation Validation) error {
+	if outPath == "" {
+		return nil
+	}
+	return writeJSON(outPath, validation)
 }

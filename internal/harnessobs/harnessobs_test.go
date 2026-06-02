@@ -43,6 +43,15 @@ func TestObserveValidateCompleteHarnessExport(t *testing.T) {
 	if validation.ValidationState != StatePass {
 		t.Fatalf("ValidationState = %s, want pass: %+v", validation.ValidationState, validation)
 	}
+	if validation.ValidationDigest == "" {
+		t.Fatalf("ValidationDigest is empty")
+	}
+	if validation.NonAuthority == "" {
+		t.Fatalf("NonAuthority is empty")
+	}
+	if _, err := os.Stat("validation.json"); !os.IsNotExist(err) {
+		t.Fatalf("Validate() without out wrote validation.json or unexpected stat error: %v", err)
+	}
 }
 
 func TestValidateZeroEventSourceIsNotAssessed(t *testing.T) {
@@ -62,6 +71,36 @@ func TestValidateZeroEventSourceIsNotAssessed(t *testing.T) {
 	}
 	if validation.ValidationState != StateNotAssessed || validation.ReasonCode != "required_event_family_absent" {
 		t.Fatalf("state = %s/%s, want not_assessed/required_event_family_absent", validation.ValidationState, validation.ReasonCode)
+	}
+}
+
+func TestValidateRequiredOptionErrors(t *testing.T) {
+	for name, tc := range map[string]struct {
+		opts    ValidateOptions
+		wantErr string
+	}{
+		"missing-profile": {
+			opts:    ValidateOptions{RunDir: "run"},
+			wantErr: "harness validate requires --profile",
+		},
+		"blank-profile": {
+			opts:    ValidateOptions{ProfilePath: " \t", RunDir: "run"},
+			wantErr: "harness validate requires --profile",
+		},
+		"missing-run": {
+			opts:    ValidateOptions{ProfilePath: "profile.json"},
+			wantErr: "harness validate requires --run",
+		},
+		"blank-run": {
+			opts:    ValidateOptions{ProfilePath: "profile.json", RunDir: "\n"},
+			wantErr: "harness validate requires --run",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := Validate(tc.opts); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("Validate() error = %v, want %q", err, tc.wantErr)
+			}
+		})
 	}
 }
 

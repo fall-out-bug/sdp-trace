@@ -324,6 +324,21 @@ isolation rule installation, loaded session run validation, and raw
 normalization internals beyond dispatch from session collection so those
 behavior-heavy areas keep separate review trails.
 
+Slice 37 continues `internal/harnessobs` cleanup with validation command
+entrypoint, validation input requirements, safe validation path resolution,
+run-loading evaluation fallback, source-unavailable validation construction, and
+optional validation artifact writing shards (`harnessobs_281` through
+`harnessobs_290`). It moves the `Validate` orchestration, required option
+checks, shared non-blank helper, profile/run/out path resolution,
+`LoadRun`-backed evaluation, cannot-verify fallback, and optional output write
+into cohesive validation command files. Local MI rejected a single validation
+input file, so required-option/non-blank checks and safe path resolution are
+kept in separate responsibility-named files. It intentionally excludes profile
+loading and session profile validation (`harnessobs_291` onward), raw-event
+config validation, isolation rule validation/installation, loaded session run
+validation, and path-safety primitives so those behavior-heavy areas keep
+separate review trails.
+
 ## Verification
 
 ```text
