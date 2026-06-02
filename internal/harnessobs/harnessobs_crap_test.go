@@ -239,7 +239,7 @@ func TestCollectFinishedSessionReturnsCollectedRunWithWaitError(t *testing.T) {
 	}
 }
 
-func TestRawNormalizationAndSignalUtilityBranches(t *testing.T) {
+func TestRawNormalizationBranches(t *testing.T) {
 	dir := t.TempDir()
 	rawPath := filepath.Join(dir, "raw.jsonl")
 	outPath := filepath.Join(dir, "nested", "events.jsonl")
@@ -263,7 +263,9 @@ func TestRawNormalizationAndSignalUtilityBranches(t *testing.T) {
 	if err := normalizeRawEvents(OpenCodeJSONLRawFormat, rawPath, rawPath, nil, time.Time{}); err == nil || !strings.Contains(err.Error(), "must be different files") {
 		t.Fatalf("normalizeRawEvents() same path error = %v", err)
 	}
+}
 
+func TestRawSignalUtilityBranches(t *testing.T) {
 	signals := rawSignalsAt("items", []any{map[string]any{"model": "qwen"}, "literal"})
 	if !containsString(signals, "model") || !containsString(signals, "qwen") {
 		t.Fatalf("rawSignalsAt() = %+v, want nested map signals", signals)

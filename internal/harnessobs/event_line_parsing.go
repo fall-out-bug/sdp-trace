@@ -3,6 +3,7 @@ package harnessobs
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
 // Event line parsing applies source hashing and event-count limits before
@@ -27,4 +28,10 @@ func parseEvent(profile Profile, line []byte, lineNo int) (Event, error) {
 		return Event{}, err
 	}
 	return event, validateParsedEvent(profile, event, line, lineNo)
+}
+
+// blankJSONLLine is shared by normal event replay and raw normalization so
+// both source types treat whitespace-only records as non-events.
+func blankJSONLLine(line []byte) bool {
+	return len(strings.TrimSpace(string(line))) == 0
 }

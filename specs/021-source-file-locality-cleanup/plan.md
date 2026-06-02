@@ -433,6 +433,20 @@ directory, existing-file, and output-file policy behavior. It intentionally
 excludes raw-event normalization execution (`harnessobs_348` onward) so source
 path safety and event normalization keep separate review trails.
 
+Slice 46 continues `internal/harnessobs` cleanup with raw-event normalization
+execution (`harnessobs_348` through `harnessobs_360`). It moves raw
+normalization orchestration, input validation, OpenCode JSONL scanning, raw
+line decoding, unsafe raw-event rejection, normalized source digesting, and
+normalized event writing into cohesive raw-normalization files split by
+responsibility to satisfy MI without baseline changes. It moves shared blank
+JSONL line handling into the neutral event-line parsing file because the helper
+is used by both normal event parsing and raw normalization. It preserves
+supported-format gating, raw/output same-file rejection,
+zero-time fallback, scanner limits, malformed JSONL errors, unsafe-input
+errors, source digest calculation, output parent creation, and JSONL write
+format. It intentionally excludes generic unsafe raw-value discovery and
+OpenCode event construction helpers already housed in non-numbered files.
+
 ## Verification
 
 ```text

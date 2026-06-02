@@ -1161,3 +1161,34 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   45 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-45-evidence.md`.
+
+## Active Slice 46 Tasks
+
+- [x] T021-3110 Confirm Slice 46 is bounded to numbered
+  `internal/harnessobs` raw-event normalization execution shards
+  `harnessobs_348` through `harnessobs_360`.
+- [x] T021-3111 Confirm Slice 46 is behavior-preserving: no changes to
+  supported raw format gating, raw/output same-file rejection, zero-time
+  fallback, scanner limits, malformed JSONL errors, unsafe-input rejection,
+  normalized source digest calculation, output parent creation, JSONL write
+  format, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-3112 Record Slice 46 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-46-plan-review.md`.
+- [x] T021-3120 Move raw-event normalization execution into cohesive
+  raw-normalization files.
+- [x] T021-3130 Run `gofmt` on changed Go files.
+- [x] T021-3140 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-3141 Run focused raw-normalization regression evidence covering
+  supported/unsupported format gating, raw/output same-file rejection,
+  zero-time fallback, scanner limits, blank JSONL lines, malformed JSONL,
+  unsafe raw event rejection, normalized source digest calculation, output
+  parent creation, JSONL write format, and session collection normalization.
+- [x] T021-3150 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3160 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3170 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  46 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-46-evidence.md`.
