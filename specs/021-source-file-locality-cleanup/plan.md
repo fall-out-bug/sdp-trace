@@ -705,6 +705,17 @@ onward), and packet fixture type/loading (`packet_093` onward) so source
 selection, event projection, hydration, and fixture IO keep separate review
 trails.
 
+Slice 62 continues `cmd/sdp-trace` cleanup with `packet build-pr` GitHub
+Actions hydration dispatch (`packet_063` through `packet_064`). It moves
+source-gated hydration and artifact backfill dispatch into
+`packet_build_pr_actions_hydration.go`. It preserves fixture-mode no-network
+behavior, `github-actions` source gating for live hydration, explicit artifact
+JSON precedence over live discovery, live artifact discovery error propagation,
+package boundary, dependency direction, and MI baselines. It intentionally
+excludes route manifest loading/application (`packet_065` through
+`packet_066`) and live artifact discovery/context/API helpers (`packet_067`
+onward) so route mutation and live API access keep separate review trails.
+
 ## Verification
 
 ```text

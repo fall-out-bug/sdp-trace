@@ -1784,3 +1784,42 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 62 Tasks
+
+- [x] T021-4230 Confirm Slice 62 is bounded to numbered `cmd/sdp-trace` packet
+  build-pr GitHub Actions hydration dispatch shards `packet_063` through
+  `packet_064`.
+- [x] T021-4231 Confirm Slice 62 is behavior-preserving: no changes to
+  fixture-mode no-network behavior, source gating, explicit artifact JSON
+  precedence over live discovery, live discovery call conditions, error
+  propagation, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-4232 Record Slice 62 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-62-plan-review.md`.
+- [x] T021-4240 Move packet build-pr GitHub Actions hydration dispatch helpers
+  into `packet_build_pr_actions_hydration.go`. Split further only if MI fails
+  and record the failed command plus revised responsibility boundary in
+  evidence.
+- [x] T021-4250 Run `gofmt` on changed Go files.
+- [x] T021-4260 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4261 Run focused packet build-pr GitHub Actions hydration regression
+  evidence covering exact test existence for
+  `TestHydrateGitHubActionsEvidenceSkipsFixtureSource`,
+  `TestHydrateGitHubActionsArtifactsKeepsExplicitArtifacts`, and
+  `TestHydrateGitHubActionsArtifactsBackfillsDiscoveredArtifacts`, and
+  `TestHydrateGitHubActionsEvidencePropagatesLiveArtifactErrors`; fixture-mode
+  no-network behavior; explicit artifact JSON precedence; successful live
+  artifact backfill; live artifact discovery error propagation; and no baseline
+  changes.
+- [x] T021-4270 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4280 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4290 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  62 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-62-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

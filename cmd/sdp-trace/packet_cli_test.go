@@ -809,6 +809,89 @@ func TestPacketBuildPRRejectsUnsafeGitHubAPIURL(t *testing.T) {
 	}
 }
 
+func TestHydrateGitHubActionsEvidenceSkipsFixtureSource(t *testing.T) {
+	input := packet.GitHubPREvidenceInput{}
+	err := hydrateGitHubActionsEvidence("github-fixture", "://bad", &input, func(name string) string {
+		t.Fatalf("fixture source should not read env var %s", name)
+		return ""
+	})
+	if err != nil {
+		t.Fatalf("hydrateGitHubActionsEvidence() error = %v", err)
+	}
+	if len(input.Artifacts) != 0 {
+		t.Fatalf("fixture source artifacts = %+v, want none", input.Artifacts)
+	}
+}
+
+func TestHydrateGitHubActionsArtifactsKeepsExplicitArtifacts(t *testing.T) {
+	input := packet.GitHubPREvidenceInput{
+		Artifacts: []packet.GitHubArtifact{{
+			Name:         "explicit-evidence",
+			Resolver:     "file://artifacts/evidence.zip",
+			RetainedForm: "archive",
+		}},
+	}
+	err := hydrateGitHubActionArtifacts("://bad", &input, func(name string) string {
+		t.Fatalf("explicit artifacts should not read env var %s", name)
+		return ""
+	})
+	if err != nil {
+		t.Fatalf("hydrateGitHubActionArtifacts() error = %v", err)
+	}
+	if got := input.Artifacts[0].Name; got != "explicit-evidence" {
+		t.Fatalf("artifact name = %q, want explicit-evidence", got)
+	}
+}
+
+func TestHydrateGitHubActionsArtifactsBackfillsDiscoveredArtifacts(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"artifacts":[{"id":2002,"name":"evidence-bundles","expired":false,"expires_at":"2026-08-10T00:00:00Z","archive_download_url":"https://api.github.com/artifacts/2002/zip"}]}`))
+	}))
+	defer server.Close()
+
+	input := packet.GitHubPREvidenceInput{}
+	err := hydrateGitHubActionArtifacts(server.URL, &input, githubActionsArtifactTestEnv)
+	if err != nil {
+		t.Fatalf("hydrateGitHubActionArtifacts() error = %v", err)
+	}
+	if len(input.Artifacts) != 1 {
+		t.Fatalf("artifact count = %d, want 1", len(input.Artifacts))
+	}
+	if got := input.Artifacts[0].Name; got != "evidence-bundles" {
+		t.Fatalf("artifact name = %q, want evidence-bundles", got)
+	}
+	if input.Artifacts[0].Resolver == "" {
+		t.Fatalf("artifact resolver is empty: %+v", input.Artifacts[0])
+	}
+}
+
+func TestHydrateGitHubActionsEvidencePropagatesLiveArtifactErrors(t *testing.T) {
+	input := packet.GitHubPREvidenceInput{}
+	err := hydrateGitHubActionsEvidence("github-actions", "://bad", &input, githubActionsArtifactTestEnv)
+	if err == nil {
+		t.Fatal("hydrateGitHubActionsEvidence() error = nil, want URL validation error")
+	}
+	if !strings.Contains(err.Error(), "unsafe GitHub API URL") {
+		t.Fatalf("error = %q, want unsafe GitHub API URL", err.Error())
+	}
+}
+
+func githubActionsArtifactTestEnv(name string) string {
+	switch name {
+	case "GITHUB_REPOSITORY":
+		return "example/repo"
+	case "GITHUB_RUN_ID":
+		return "1001"
+	case "GITHUB_TOKEN":
+		return "test-token"
+	case "GITHUB_SERVER_URL":
+		return "https://github.com"
+	default:
+		return ""
+	}
+}
+
 func TestGitHubAPIURLPolicy(t *testing.T) {
 	tests := []struct {
 		name      string
