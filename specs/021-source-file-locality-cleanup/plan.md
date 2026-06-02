@@ -282,6 +282,14 @@ resolution, source normalization, observed-run writing, process execution, and
 raw-event unsafe rule semantics so source collection and rule-specific behavior
 keep separate review trails.
 
+Slice 34 continues `internal/harnessobs` cleanup with raw unsafe traversal rule
+semantics (`harnessobs_223` through `harnessobs_244`). It moves map/slice/string
+unsafe traversal, raw-event skip rules, path/token/url checks, digest-field and
+raw path-like exemptions into cohesive safety-rule files. It intentionally
+excludes validation enum helpers (`harnessobs_245` onward), session collect
+option validation, event source resolution, and raw-event normalization flow so
+schema validation and collection orchestration keep separate review trails.
+
 ## Verification
 
 ```text

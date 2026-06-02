@@ -780,3 +780,34 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   33 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-33-evidence.md`.
+
+## Active Slice 34 Tasks
+
+- [x] T021-2270 Confirm Slice 34 is bounded to numbered
+  `internal/harnessobs` raw unsafe traversal rule shards `harnessobs_223`
+  through `harnessobs_244`.
+- [x] T021-2271 Confirm Slice 34 is behavior-preserving: no unsafe field path
+  rendering, raw-event skip semantics, forbidden/sensitive field reason codes,
+  string path/token/url classification, digest-field exemptions, raw path-like
+  exemptions, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-2272 Record Slice 34 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-34-plan-review.md`.
+- [x] T021-2280 Move selected map/slice/string traversal and safety-rule
+  declarations into cohesive responsibility-named files.
+- [x] T021-2290 Run `gofmt` on changed Go files.
+- [x] T021-2300 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2301 Run focused unsafe-rule regression evidence covering generic
+  unsafe traversal, raw-event unsafe reason codes, map child path rendering,
+  skippable unretained raw prompt/body fields, path/private-path rejection,
+  authenticated URL detection, token/base64 detection and exemptions,
+  digest-field detection, and raw path-like field exemptions, or mark any
+  unverified behavior `not_assessed` with reason.
+- [x] T021-2310 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2320 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2330 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  34 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-34-evidence.md`.
