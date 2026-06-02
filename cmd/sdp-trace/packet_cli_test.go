@@ -6,11 +6,86 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/fall_out_bug/sdp-trace/internal/packet"
 )
+
+func TestPacketHandlersExposeExpectedSubcommands(t *testing.T) {
+	want := map[string]subcommandHandler{
+		"build-pr":     runPacketBuildPR,
+		"build-github": runPacketBuildGitHub,
+		"validate":     runPacketValidate,
+		"check-demo":   runPacketCheckDemo,
+		"render":       runPacketRender,
+	}
+	if len(packetHandlers) != len(want) {
+		t.Fatalf("packetHandlers length = %d, want %d", len(packetHandlers), len(want))
+	}
+	for name, wantHandler := range want {
+		gotHandler, ok := packetHandlers[name]
+		if !ok {
+			t.Fatalf("packetHandlers missing %s", name)
+		}
+		if functionName(gotHandler) != functionName(wantHandler) {
+			t.Fatalf("packetHandlers[%s] = %s, want %s", name, functionName(gotHandler), functionName(wantHandler))
+		}
+	}
+}
+
+func TestPacketRequiredFlagsKeepNamesAndDiagnostics(t *testing.T) {
+	cases := []struct {
+		name string
+		got  []requiredCLIFlag
+		want []requiredCLIFlag
+	}{
+		{
+			name: "build-pr",
+			got:  packetBuildPRRequiredFlags,
+			want: []requiredCLIFlag{{"out", "packet build-pr requires --out"}},
+		},
+		{
+			name: "build-github",
+			got:  packetBuildGitHubRequiredFlags,
+			want: []requiredCLIFlag{
+				{"github-input", "packet build-github requires --github-input"},
+				{"out", "packet build-github requires --out"},
+			},
+		},
+		{
+			name: "validate",
+			got:  packetValidateRequiredFlags,
+			want: []requiredCLIFlag{{"bundle", "packet validate requires --bundle"}},
+		},
+		{
+			name: "check-demo",
+			got:  packetCheckDemoRequiredFlags,
+			want: []requiredCLIFlag{{"bundle", "packet check-demo requires --bundle"}},
+		},
+		{
+			name: "render",
+			got:  packetRenderRequiredFlags,
+			want: []requiredCLIFlag{
+				{"bundle", "packet render requires --bundle"},
+				{"out", "packet render requires --out"},
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if !reflect.DeepEqual(tc.got, tc.want) {
+				t.Fatalf("required flags = %#v, want %#v", tc.got, tc.want)
+			}
+		})
+	}
+}
+
+func functionName(fn subcommandHandler) string {
+	return runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()
+}
 
 func TestPacketValidateAndRenderCLI(t *testing.T) {
 	root := t.TempDir()

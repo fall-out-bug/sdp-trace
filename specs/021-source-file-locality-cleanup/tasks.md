@@ -1582,3 +1582,35 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 57 Tasks
+
+- [x] T021-3880 Confirm Slice 57 is bounded to numbered `cmd/sdp-trace` packet
+  command surface shards `packet_031` through `packet_032`.
+- [x] T021-3881 Confirm Slice 57 is behavior-preserving: no changes to packet
+  subcommand names, handler bindings, required flag names, required flag
+  diagnostic messages, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-3882 Record Slice 57 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-57-plan-review.md`.
+- [x] T021-3890 Move packet command surface helpers into
+  `packet_command_surface.go`. Split further only if MI fails and record the
+  failed command plus revised responsibility boundary in evidence.
+- [x] T021-3900 Run `gofmt` on changed Go files.
+- [x] T021-3910 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3911 Run focused packet command surface regression evidence covering
+  exact test existence for `TestPacketHandlersExposeExpectedSubcommands` and
+  `TestPacketRequiredFlagsKeepNamesAndDiagnostics`; exact subcommand set; all
+  five handler bindings by function identity; help/known packet command smoke
+  coverage; required flag order and diagnostics; and no baseline changes.
+- [x] T021-3920 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3930 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3940 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  57 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-57-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

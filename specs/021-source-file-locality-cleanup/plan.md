@@ -618,6 +618,16 @@ intentionally excludes packet/PR review shards (`packet_031` onward) so gate
 preview contract display helpers and packet workflows keep separate review
 trails.
 
+Slice 57 continues `cmd/sdp-trace` cleanup with packet command surface helpers
+(`packet_031` through `packet_032`). It moves the packet subcommand handler
+registry and packet required-flag definitions into `packet_command_surface.go`.
+It preserves the exact packet subcommands (`build-pr`, `build-github`,
+`validate`, `check-demo`, and `render`), each handler binding, required flag
+names and diagnostic messages, package boundary, dependency direction, and MI
+baselines. It intentionally excludes packet command execution and artifact
+building shards (`packet_040` onward) so command-surface metadata and packet
+workflow implementation keep separate review trails.
+
 ## Verification
 
 ```text
