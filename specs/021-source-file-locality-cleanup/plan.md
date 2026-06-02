@@ -351,6 +351,17 @@ validation/installation, loaded session run validation, session run
 construction, source commit discovery, and raw-event normalization execution so
 those behavior-heavy areas keep separate review trails.
 
+Slice 39 continues `internal/harnessobs` cleanup with session stream capture,
+session setup action validation, and isolation rule validation shards
+(`harnessobs_300` through `harnessobs_309`). It moves stream capture defaulting
+and unsupported-mode errors, setup action count/id/kind validation, isolation
+rule list/id/pattern/target/kind validation, and unsafe isolation pattern checks
+into cohesive session profile rule validation files. It intentionally excludes
+isolation rule target resolution and installation (`harnessobs_310` onward),
+line/JSON rule materialization, loaded session run validation, session run
+construction, source commit discovery, and raw-event normalization execution so
+filesystem mutation and run-loading behavior keep separate review trails.
+
 ## Verification
 
 ```text

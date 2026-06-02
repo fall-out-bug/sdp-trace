@@ -184,8 +184,18 @@ func TestSmallUtilityEdgeBranches(t *testing.T) {
 }
 
 func TestSetupActionAndDegradationUtilityBranches(t *testing.T) {
-	if err := validateSessionSetupAction(SessionSetupAction{ID: "setup-1", Kind: "hook"}); err != nil {
-		t.Fatalf("validateSessionSetupAction(valid) error = %v", err)
+	for _, kind := range []string{"init", "profile", "wrapper", "hook", "context_isolation"} {
+		if err := validateSessionSetupAction(SessionSetupAction{ID: "setup-1", Kind: kind}); err != nil {
+			t.Fatalf("validateSessionSetupAction(%s) error = %v", kind, err)
+		}
+	}
+	if err := validateSessionSetupActions([]SessionSetupAction{
+		{ID: "setup-1", Kind: "init"},
+		{ID: "setup-2", Kind: "profile"},
+		{ID: "setup-3", Kind: "wrapper"},
+		{ID: "setup-4", Kind: "hook"},
+	}); err == nil || !strings.Contains(err.Error(), "too many setup actions") {
+		t.Fatalf("validateSessionSetupActions(too many) error = %v", err)
 	}
 	if err := validateSessionSetupAction(SessionSetupAction{ID: "../bad", Kind: "hook"}); err == nil || !strings.Contains(err.Error(), "unsafe setup action id") {
 		t.Fatalf("validateSessionSetupAction(bad id) error = %v", err)
@@ -292,6 +302,14 @@ func TestIsolationRuleValidationBranches(t *testing.T) {
 	}
 	if err := validateSessionIsolationRule(valid); err != nil {
 		t.Fatalf("validateSessionIsolationRule(valid) error = %v", err)
+	}
+	if err := validateSessionIsolationRules([]SessionIsolationRule{valid, {
+		ID:         "bad-rule",
+		Kind:       "json_read_deny",
+		TargetPath: "settings.json",
+		Pattern:    " \t",
+	}}); err == nil || !strings.Contains(err.Error(), "unsafe isolation rule pattern") {
+		t.Fatalf("validateSessionIsolationRules() error = %v, want unsafe isolation rule pattern", err)
 	}
 
 	for name, tc := range map[string]struct {

@@ -942,3 +942,35 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   38 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-38-evidence.md`.
+
+## Active Slice 39 Tasks
+
+- [x] T021-2620 Confirm Slice 39 is bounded to numbered
+  `internal/harnessobs` stream capture, setup action validation, and isolation
+  rule validation shards `harnessobs_300` through `harnessobs_309`.
+- [x] T021-2621 Confirm Slice 39 is behavior-preserving: no stream capture
+  defaulting or unsupported-mode errors, setup action max/id/kind validation,
+  isolation rule list iteration, isolation id/pattern/target/kind validation,
+  unsafe pattern semantics, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-2622 Record Slice 39 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-39-plan-review.md`.
+- [x] T021-2630 Move selected stream capture, setup action, and isolation rule
+  validation declarations into cohesive responsibility-named files.
+- [x] T021-2640 Run `gofmt` on changed Go files.
+- [x] T021-2650 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2651 Run focused session rule validation regression evidence
+  covering default stream capture, unsupported stream capture modes,
+  too many setup actions, unsafe setup action IDs, unsupported setup action
+  kinds, valid setup action kinds, isolation rule list iteration, unsafe
+  isolation IDs, unsafe/blank/newline isolation patterns, unsafe target paths,
+  unsupported isolation kinds, and valid isolation rules, or mark any
+  unverified behavior `not_assessed` with reason.
+- [x] T021-2660 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2670 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2680 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  39 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-39-evidence.md`.
