@@ -688,3 +688,33 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   30 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-30-evidence.md`.
+
+## Active Slice 31 Tasks
+
+- [x] T021-2060 Confirm Slice 31 is bounded to numbered
+  `internal/harnessobs` session setup path, run construction, command metadata,
+  time fallback, and session JSON writing shards `harnessobs_209` through
+  `harnessobs_216`.
+- [x] T021-2061 Confirm Slice 31 is behavior-preserving: no required option
+  error text, path-safety behavior, output directory creation, isolation rule
+  installation, command digest/model state, session time fallback, JSON output,
+  package boundary, dependency direction, or baseline change is planned.
+- [x] T021-2062 Record Slice 31 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-31-plan-review.md`.
+- [x] T021-2070 Move selected session setup declarations into
+  responsibility-named files.
+- [x] T021-2080 Run `gofmt` on changed Go files.
+- [x] T021-2090 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2091 Run focused session setup regression evidence covering
+  required option errors, unsafe path rejection, invalid profile rejection,
+  command digest/model state, blank command defaults, session JSON writing, and
+  isolation rule installation, or mark any unverified behavior `not_assessed`
+  with reason.
+- [x] T021-2100 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2110 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2120 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  31 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-31-evidence.md`.

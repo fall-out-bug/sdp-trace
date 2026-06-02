@@ -253,6 +253,17 @@ intentionally excludes session setup (`harnessobs_209` onward) and the
 map/slice/string-specific unsafe rule shards (`harnessobs_223` onward) so
 workflow execution and rule semantics keep separate review trails.
 
+Slice 31 continues `internal/harnessobs` cleanup with session setup path,
+run construction, command metadata, time fallback, and session JSON writing
+shards (`harnessobs_209` through `harnessobs_216`). It moves setup path
+validation, setup run preparation, command digest/model assignment, session
+time fallback, and setup `session.json` writing into responsibility-named files
+while preserving required option errors, path safety, output creation, isolation
+rule installation, command digest/model states, and JSON output behavior. It
+intentionally excludes session collection (`harnessobs_217` onward) and
+raw-event unsafe rule semantics (`harnessobs_223` onward) so collection and
+rule-specific behavior keep separate review trails.
+
 ## Verification
 
 ```text
