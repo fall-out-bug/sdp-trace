@@ -628,6 +628,33 @@ baselines. It intentionally excludes packet command execution and artifact
 building shards (`packet_040` onward) so command-surface metadata and packet
 workflow implementation keep separate review trails.
 
+Slice 58 continues `cmd/sdp-trace` cleanup with the `packet build-pr` command
+flow and PR packet artifact publication helpers (`packet_040` through
+`packet_050`). It moves packet command dispatch, `build-pr` option parsing,
+PR packet result construction, markdown rendering, output-directory creation,
+artifact file list construction, and sequential artifact writes into
+`packet_command_dispatch.go`, `packet_build_pr_run.go`,
+`packet_build_pr_options.go`, `packet_build_pr_result.go`,
+`packet_build_pr_artifact_render.go`, `packet_build_pr_artifact_write.go`, and
+`packet_build_pr_artifact_files.go`; the first single-file attempt at
+`packet_build_pr_command.go` failed file-level MI at 56.6, and the second
+three-file split still failed at 67.7/64.1 for command/artifact files, so the
+final implementation keeps root dispatch, build-pr run orchestration, option
+parsing, result construction, artifact rendering, artifact writing, and
+artifact file-list construction separate. It preserves the packet
+missing-subcommand diagnostic, `packet build-pr` flag defaults and required flag
+validation, JSON `cannot_verify` output on input reconstruction and render
+failure, validation plus live-gate cannot_verify result state and error
+aggregation, output paths (`bundle.json`, `change-evidence-packet.md`, and
+`build-pr-result.json`), output-directory creation with mode subject to process
+umask, artifact write
+labels and ordering, first-write-failure short-circuiting, package boundary,
+dependency direction, and MI baselines. It
+intentionally excludes PR input reconstruction, route/error classification,
+GitHub Actions hydration, GitHub API access, fixture loading, and packet exits
+(`packet_051` onward) so build-pr orchestration and evidence-source hydration
+keep separate review trails.
+
 ## Verification
 
 ```text

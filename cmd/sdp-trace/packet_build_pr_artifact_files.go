@@ -4,6 +4,11 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/packet"
 )
 
+type packetPRArtifactFile struct {
+	label string
+	write func() error
+}
+
 func packetPRArtifactFiles(bundle packet.Bundle, result packet.BuildPRResult, markdown string) []packetPRArtifactFile {
 	// The result carries the paths that this file list materializes.
 	return []packetPRArtifactFile{

@@ -18,3 +18,23 @@ func writePacketPRFiles(outDir string, bundle packet.Bundle, result packet.Build
 	// cite a single artifact root.
 	return writePacketPRArtifactFiles(packetPRArtifactFiles(bundle, result, markdown), stderr)
 }
+
+func writePacketPRArtifactFiles(files []packetPRArtifactFile, stderr io.Writer) bool {
+	for _, file := range files {
+		// Stop at the first write failure to avoid publishing a partial packet set
+		// as if it were complete.
+		if !writePacketPRFile(file, stderr) {
+			return false
+		}
+	}
+	return true
+}
+
+func writePacketPRFile(file packetPRArtifactFile, stderr io.Writer) bool {
+	if err := file.write(); err != nil {
+		// Labels name the artifact role without exposing full write internals.
+		fmt.Fprintf(stderr, "%s: %v\n", file.label, err)
+		return false
+	}
+	return true
+}

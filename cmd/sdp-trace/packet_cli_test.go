@@ -134,6 +134,165 @@ func TestPacketCommandAppearsInTopLevelHelp(t *testing.T) {
 	}
 }
 
+func TestPacketDispatchRequiresKnownPacketSubcommand(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"packet"}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("packet exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(errOut.String(), "packet requires build-pr, build-github, validate, check-demo, or render") {
+		t.Fatalf("packet usage diagnostic changed: %s", errOut.String())
+	}
+}
+
+func TestParsePacketBuildPROptionsKeepsFlagDefaultsAndRequiredOut(t *testing.T) {
+	var errOut bytes.Buffer
+	opts, code, ok := parsePacketBuildPROptions([]string{"--out", "packet-out"}, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse build-pr opts ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if opts.stringValue("source") != "github-actions" ||
+		opts.stringValue("github-event") != "" ||
+		opts.stringValue("checks-json") != "" ||
+		opts.stringValue("artifacts-json") != "" ||
+		opts.stringValue("route-manifest") != "" ||
+		opts.stringValue("github-api-url") != "" ||
+		opts.stringValue("out") != "packet-out" {
+		t.Fatalf("build-pr defaults changed: source=%q event=%q checks=%q artifacts=%q route=%q api=%q out=%q",
+			opts.stringValue("source"),
+			opts.stringValue("github-event"),
+			opts.stringValue("checks-json"),
+			opts.stringValue("artifacts-json"),
+			opts.stringValue("route-manifest"),
+			opts.stringValue("github-api-url"),
+			opts.stringValue("out"))
+	}
+
+	errOut.Reset()
+	opts, code, ok = parsePacketBuildPROptions(nil, &errOut)
+	if ok || opts != nil || code != exitUsage {
+		t.Fatalf("missing --out parse ok=%v code=%d opts=%v err=%s", ok, code, opts, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "packet build-pr requires --out") {
+		t.Fatalf("missing --out diagnostic changed: %s", errOut.String())
+	}
+}
+
+func TestBuildPacketPRResultKeepsPathsAndAggregatesGateErrors(t *testing.T) {
+	result, _ := buildPacketPRResult(packet.GitHubPREvidenceInput{}, "packet-out")
+	if result.State != packet.StateCannotVerify {
+		t.Fatalf("build-pr result state = %s, want cannot_verify", result.State)
+	}
+	if result.BundlePath != filepath.Join("packet-out", "bundle.json") ||
+		result.PacketPath != filepath.Join("packet-out", "change-evidence-packet.md") ||
+		result.ResultPath != filepath.Join("packet-out", "build-pr-result.json") {
+		t.Fatalf("build-pr paths changed: %+v", result)
+	}
+	errors := strings.Join(result.Errors, "\n")
+	if !strings.Contains(errors, "PC-AGENT-ROUTE cannot verify live route proof") ||
+		!strings.Contains(errors, "PC-VERIFICATION cannot verify live CI evidence") {
+		t.Fatalf("build-pr result missing live-gate aggregation: %+v", result.Errors)
+	}
+}
+
+func TestRunPacketBuildPRWritesCannotVerifyJSONForInputFailure(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runPacketBuildPR([]string{"--source", "github-fixture", "--out", t.TempDir()}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("build-pr exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"state": "cannot_verify"`) ||
+		!strings.Contains(out.String(), "missing GitHub event JSON") {
+		t.Fatalf("build-pr input failure did not emit cannot_verify JSON: %s", out.String())
+	}
+}
+
+func TestRenderPacketPRMarkdownDowngradesResultOnFailure(t *testing.T) {
+	result := packet.BuildPRResult{State: packet.StatePass}
+	markdown, ok := renderPacketPRMarkdown(packet.Bundle{}, &result)
+	if ok || markdown != "" {
+		t.Fatalf("render invalid bundle ok=%v markdown=%q", ok, markdown)
+	}
+	if result.State != packet.StateCannotVerify || len(result.Errors) == 0 {
+		t.Fatalf("render failure did not downgrade result: %+v", result)
+	}
+}
+
+func TestWritePacketPRArtifactsWritesCannotVerifyJSONOnRenderFailure(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	result := packet.BuildPRResult{State: packet.StatePass}
+	exit := writePacketPRArtifacts(t.TempDir(), packet.Bundle{}, result, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("write artifacts exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), `"state": "cannot_verify"`) {
+		t.Fatalf("render failure did not emit cannot_verify JSON: %s", out.String())
+	}
+}
+
+func TestWritePacketPRFilesCreatesOutputDirectoryAndArtifacts(t *testing.T) {
+	outDir := filepath.Join(t.TempDir(), "packet-out")
+	result := packet.BuildPRResult{
+		BundlePath: filepath.Join(outDir, "bundle.json"),
+		PacketPath: filepath.Join(outDir, "change-evidence-packet.md"),
+		ResultPath: filepath.Join(outDir, "build-pr-result.json"),
+	}
+	var errOut bytes.Buffer
+	if !writePacketPRFiles(outDir, validPacketBundleForCLI(), result, "packet markdown", &errOut) {
+		t.Fatalf("write packet files failed: %s", errOut.String())
+	}
+	info, err := os.Stat(outDir)
+	if err != nil {
+		t.Fatalf("stat output dir: %v", err)
+	}
+	if got := info.Mode().Perm(); got&0o700 != 0o700 {
+		t.Fatalf("output dir mode = %#o, want owner rwx bits preserved", got)
+	}
+	files := packetPRArtifactFiles(validPacketBundleForCLI(), result, "packet markdown")
+	wantLabels := []string{"write packet bundle", "write packet markdown", "write packet result"}
+	for i, want := range wantLabels {
+		if files[i].label != want {
+			t.Fatalf("artifact label[%d] = %q, want %q", i, files[i].label, want)
+		}
+	}
+	for _, name := range []string{"bundle.json", "change-evidence-packet.md", "build-pr-result.json"} {
+		if _, err := os.Stat(filepath.Join(outDir, name)); err != nil {
+			t.Fatalf("expected artifact %s: %v", name, err)
+		}
+	}
+}
+
+func TestWritePacketPRArtifactFilesStopsAfterFirstFailure(t *testing.T) {
+	calls := []string{}
+	files := []packetPRArtifactFile{
+		{label: "first", write: func() error {
+			calls = append(calls, "first")
+			return nil
+		}},
+		{label: "second", write: func() error {
+			calls = append(calls, "second")
+			return os.ErrPermission
+		}},
+		{label: "third", write: func() error {
+			calls = append(calls, "third")
+			return nil
+		}},
+	}
+	var errOut bytes.Buffer
+	if writePacketPRArtifactFiles(files, &errOut) {
+		t.Fatal("write artifact files succeeded after a failing artifact")
+	}
+	if !reflect.DeepEqual(calls, []string{"first", "second"}) {
+		t.Fatalf("artifact write calls = %#v, want first two only", calls)
+	}
+	if !strings.Contains(errOut.String(), "second:") {
+		t.Fatalf("stderr missing failing artifact label: %s", errOut.String())
+	}
+}
+
 func TestPacketBuildGitHubCLI(t *testing.T) {
 	root := repoRootForTest(t)
 	inputPath := filepath.Join(root, "examples", "change-evidence-packet", "github-input.json")

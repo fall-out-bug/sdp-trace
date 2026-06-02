@@ -1614,3 +1614,57 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 58 Tasks
+
+- [x] T021-3950 Confirm Slice 58 is bounded to numbered `cmd/sdp-trace` packet
+  build-pr flow and artifact publication shards `packet_040` through
+  `packet_050`.
+- [x] T021-3951 Confirm Slice 58 is behavior-preserving: no changes to packet
+  dispatch missing-subcommand diagnostic, build-pr flag defaults,
+  required flag validation, JSON `cannot_verify` output semantics, output file
+  names, validation and live-gate error aggregation, artifact write labels,
+  artifact write order, first-write-failure short-circuiting, output-directory
+  creation with mode subject to process umask, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-3952 Record Slice 58 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-58-plan-review.md`.
+- [x] T021-3960 Move packet build-pr command helpers into
+  `packet_command_dispatch.go`, `packet_build_pr_run.go`,
+  `packet_build_pr_options.go`, `packet_build_pr_result.go`,
+  `packet_build_pr_artifact_render.go`, `packet_build_pr_artifact_write.go`,
+  and `packet_build_pr_artifact_files.go` after the single-file
+  `packet_build_pr_command.go` attempt failed file-level MI at 56.6 and the
+  three-file split still failed at 67.7/64.1. Record the failed commands plus
+  revised responsibility boundary in evidence.
+- [x] T021-3970 Run `gofmt` on changed Go files.
+- [x] T021-3980 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3981 Run focused packet build-pr flow regression evidence covering
+  exact test existence for
+  `TestPacketDispatchRequiresKnownPacketSubcommand`,
+  `TestParsePacketBuildPROptionsKeepsFlagDefaultsAndRequiredOut`,
+  `TestBuildPacketPRResultKeepsPathsAndAggregatesGateErrors`,
+  `TestRunPacketBuildPRWritesCannotVerifyJSONForInputFailure`,
+  `TestRenderPacketPRMarkdownDowngradesResultOnFailure`,
+  `TestWritePacketPRArtifactsWritesCannotVerifyJSONOnRenderFailure`,
+  `TestWritePacketPRFilesCreatesOutputDirectoryAndArtifacts`,
+  `TestWritePacketPRArtifactFilesStopsAfterFirstFailure`, and existing
+  `TestPacketBuildPRFixtureCLIWritesArtifacts`; packet dispatch
+  missing-subcommand behavior; build-pr flag default parsing; required
+  flag validation; output path names; validation/live-gate error aggregation;
+  JSON `cannot_verify` output paths for input reconstruction and rendering
+  failures; cannot_verify result state for validation/live-gate failures;
+  output-directory creation with mode subject to process umask; artifact file
+  labels and ordering; artifact writer first-failure short-circuiting; CLI
+  build-pr smoke coverage; and no baseline changes.
+- [x] T021-3990 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4000 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4010 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  58 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-58-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
