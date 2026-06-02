@@ -204,6 +204,38 @@ func TestSetupActionAndDegradationUtilityBranches(t *testing.T) {
 	}
 }
 
+func TestCommandModelSafetyAndSourceDigest(t *testing.T) {
+	dir := t.TempDir()
+	sourcePath := filepath.Join(dir, "source.txt")
+	if err := os.WriteFile(sourcePath, []byte("abc"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := safeCommandModel(" qwen3-coder "); got != "qwen3-coder" {
+		t.Fatalf("safeCommandModel(trim) = %q, want qwen3-coder", got)
+	}
+	for _, model := range []string{
+		"https://example.invalid/model",
+		"qwen coder",
+		`qwen"coder`,
+		`qwen\coder`,
+		"../qwen",
+		"/tmp/qwen",
+		strings.Repeat("a", 129),
+	} {
+		if got := safeCommandModel(model); got != "" {
+			t.Fatalf("safeCommandModel(%q) = %q, want empty", model, got)
+		}
+	}
+
+	if got := digestFile(filepath.Join(dir, "missing.txt")); got != "" {
+		t.Fatalf("digestFile(missing) = %q, want empty", got)
+	}
+	if got := digestFile(sourcePath); got != "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" {
+		t.Fatalf("digestFile(abc) = %q, want SHA-256 of abc", got)
+	}
+}
+
 func TestNormalizedWriteAndShellAndSourceCommitBranches(t *testing.T) {
 	dir := t.TempDir()
 	blockingFile := filepath.Join(dir, "file")

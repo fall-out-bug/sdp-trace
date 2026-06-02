@@ -630,3 +630,33 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   28 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-28-evidence.md`.
+
+## Active Slice 29 Tasks
+
+- [x] T021-1920 Confirm Slice 29 is bounded to numbered
+  `internal/harnessobs` command model safety and source-bound digest helper
+  shards `harnessobs_198` through `harnessobs_203`.
+- [x] T021-1921 Confirm Slice 29 is behavior-preserving: no command model
+  trimming/rejection behavior, digest algorithm, read-error fallback,
+  source-commit lookup, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-1922 Record Slice 29 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-29-plan-review.md`.
+- [x] T021-1930 Move selected command model safety and source digest
+  declarations into responsibility-named files.
+- [x] T021-1940 Run `gofmt` on changed Go files.
+- [x] T021-1950 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1951 Run focused command model safety and source digest regression
+  evidence covering whitespace trimming, unsafe URL/quote/escape/whitespace
+  rejection, traversal/absolute path rejection, overlong model rejection,
+  digest read failure, digest SHA-256 output, non-git source commit fallback,
+  and git source commit hash shape, or mark any unverified behavior
+  `not_assessed` with reason.
+- [x] T021-1960 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1970 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1980 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  29 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-29-evidence.md`.

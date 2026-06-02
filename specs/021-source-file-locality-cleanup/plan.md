@@ -232,6 +232,17 @@ source commit, session setup, raw event safety, and validation helpers
 (`harnessobs_198` onward) so safety checks and session behavior keep separate
 review trails.
 
+Slice 29 continues `internal/harnessobs` cleanup with command model safety and
+source-bound digest primitives (`harnessobs_198` through `harnessobs_203`). It
+moves command model safety normalization/rejection, file digest calculation,
+and current source commit discovery into responsibility-named files. It
+may reuse the existing package-local SHA-256 helper and keep source commit hash
+validation package-local if focused regression evidence confirms unchanged
+behavior.
+It intentionally excludes unsafe raw-event traversal (`harnessobs_204` onward),
+session setup, collection, and validation helpers so raw event safety and
+session behavior keep separate review trails.
+
 ## Verification
 
 ```text
