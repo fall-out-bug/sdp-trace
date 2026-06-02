@@ -2275,6 +2275,19 @@ func TestGateExplainUnsupportedArtifactCannotVerify(t *testing.T) {
 	}
 }
 
+func TestGateExplainMalformedArtifactCannotVerify(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "malformed-gate.json")
+	if err := os.WriteFile(gatePath, []byte(`{"schema_version":`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("malformed explain exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
 func TestGateExplainDoesNotPrintRawSecretLikeCommand(t *testing.T) {
 	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
 	if err := os.WriteFile(gatePath, []byte(`{
@@ -2303,6 +2316,96 @@ func TestGateExplainDoesNotPrintRawSecretLikeCommand(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "verification_run") || !strings.Contains(out.String(), "missing_telemetry") {
 		t.Fatalf("explain omitted required run state: %s", out.String())
+	}
+}
+
+func TestGateExplainRendersLegacyAndCollectionFields(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	if err := os.WriteFile(gatePath, []byte(`{
+	  "schema_version": "block14-gate-result-v1",
+	  "local_gate": "fail",
+	  "ci_witness_gate": "cannot_verify",
+	  "audit_grade_gate": "cannot_verify",
+	  "gate_mode": "observation",
+	  "trust_cap": "local_observed",
+	  "required_runs": [{"id": "verification_run", "wrapper_name": "verification-run", "profile": "observation", "state": "missing_telemetry", "reasons": ["missing"]}],
+	  "witness_bindings": [{"id": "ci_witness", "state": "cannot_verify", "reason": "missing"}],
+	  "missing_audit_evidence": ["review"],
+	  "override_requests": [{"override_id": "override-1", "state": "cannot_verify"}],
+	  "reasons": ["missing required run"],
+	  "next_actions": ["Run required wrapper verification-run."],
+	  "runs": [{"name": "run-a", "command": "deploy --token SECRET_TOKEN_COLLECTIONS"}]
+	}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate explain exit %d err=%s", exit, errOut.String())
+	}
+	output := out.String()
+	for _, want := range []string{
+		"Protected profile fields: absent",
+		"Required run verification_run: missing_telemetry",
+		"Witness binding ci_witness: cannot_verify",
+		"Missing audit evidence: review",
+		"Override override-1: cannot_verify",
+		"Reason: missing required run",
+		"Next action: Run required wrapper verification-run.",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("gate explain missing %q in %s", want, output)
+		}
+	}
+	if strings.Contains(output, "SECRET_TOKEN_COLLECTIONS") {
+		t.Fatalf("gate explain leaked raw command: %s", output)
+	}
+}
+
+func TestGateExplainRestatesPersistedVerdictsWithoutReevaluation(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	if err := os.WriteFile(gatePath, []byte(`{
+	  "schema_version": "block16-gate-result-v1",
+	  "selected_profile": "protected",
+	  "local_gate": "fail",
+	  "ci_witness_gate": "pass",
+	  "audit_grade_gate": "cannot_verify",
+	  "protected_gate": "pass",
+	  "gate_mode": "protected",
+	  "trust_cap": "ci_witnessed",
+	  "required_runs": [],
+	  "required_evidence": [],
+	  "observed_evidence": [],
+	  "witness_bindings": [],
+	  "override_requests": [],
+	  "gate_conditions": [],
+	  "reasons": [],
+	  "next_actions": [],
+	  "missing_audit_evidence": [],
+	  "runs": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate explain exit %d err=%s", exit, errOut.String())
+	}
+	output := out.String()
+	for _, want := range []string{
+		"Local gate: fail",
+		"CI witness gate: pass",
+		"Audit-grade gate: cannot_verify",
+		"Protected gate: pass",
+		"Trust cap: ci_witnessed",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("gate explain did not restate persisted verdict %q in %s", want, output)
+		}
 	}
 }
 

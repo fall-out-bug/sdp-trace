@@ -477,6 +477,25 @@ override request handling (`gate_352` onward), and shared JSON/text helpers
 (`gate_360` onward) so setup/evaluation orchestration, trust matching, explain
 rendering, preview, override, and generic IO keep separate review trails.
 
+Slice 49 continues `cmd/sdp-trace` cleanup with gate explain CLI and rendering
+(`gate_312` through `gate_324`). It moves read-only explain argument parsing,
+gate-result artifact loading/schema validation, summary/protected detail
+rendering, collection rendering, reasons, and next actions into
+`gate_explain_cli.go`, `gate_explain_renderer.go`, and
+`gate_explain_collections.go`, and shared reason/next-action rendering into
+the neutral `explain_common_collections.go` because those helpers are also used
+by assessment explain renderers. It preserves usage errors, missing/malformed
+gate-result artifact `cannot_verify`, unsupported schema `cannot_verify`,
+read-only behavior, legacy protected-field absence output, protected
+checkpoint/condition detail lines, required-run/witness/override/
+missing-evidence/reason/next-action rendering, secret non-disclosure by not
+printing raw run commands, package boundary, dependency direction, and MI
+baselines. It intentionally excludes gate preview (`gate_325` onward),
+protected run-dir/trust matching (`gate_333` onward), override request handling
+(`gate_352` onward), and shared JSON/text helpers (`gate_360` onward) so
+explanation, preview, protected trust matching, override, and generic IO keep
+separate review trails.
+
 ## Verification
 
 ```text

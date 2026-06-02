@@ -1,8 +1,6 @@
 package main
 
-import (
-	"io"
-)
+import "io"
 
 func runGateExplain(args []string, stdout, stderr io.Writer) int {
 	path, code, ok := parseGateExplainArgs(args, stderr)

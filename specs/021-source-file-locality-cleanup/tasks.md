@@ -1264,3 +1264,44 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 49 Tasks
+
+- [x] T021-3320 Confirm Slice 49 is bounded to numbered `cmd/sdp-trace`
+  gate-explain shards `gate_312` through `gate_324`.
+- [x] T021-3321 Confirm Slice 49 is behavior-preserving: no changes to explain
+  usage errors, gate-result artifact loading, supported schema validation,
+  missing/malformed gate-result artifact `cannot_verify`, unsupported schema
+  `cannot_verify`, read-only behavior, legacy protected-field absence output,
+  protected checkpoint/condition detail lines,
+  required-run/witness/override/missing-evidence/reason/next-action rendering,
+  secret non-disclosure by not printing raw run commands, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-3322 Record Slice 49 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-49-plan-review.md`.
+- [x] T021-3330 Move gate explain CLI and rendering into
+  `gate_explain_cli.go`, `gate_explain_renderer.go`,
+  `gate_explain_collections.go`, and neutral shared
+  `explain_common_collections.go` for reason/next-action helpers used by both
+  gate and assessment explain. Split further only if MI fails and record the
+  failed command plus the revised responsibility boundary in evidence.
+- [x] T021-3340 Run `gofmt` on changed Go files.
+- [x] T021-3350 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3351 Run focused gate-explain regression evidence covering parse
+  usage, missing/malformed artifact load `cannot_verify`, unsupported schema
+  `cannot_verify`, legacy protected-field absence, protected
+  checkpoint/condition details, collection rendering, reasons, next actions,
+  read-only persisted verdict preservation without recomputation or upgrade,
+  and secret non-disclosure. Include exact per-test `go test -list
+  '^TestName$'` evidence proving all planned focused test names are present.
+- [x] T021-3360 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3370 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3380 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  49 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-49-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
