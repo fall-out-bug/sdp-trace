@@ -655,6 +655,19 @@ GitHub Actions hydration, GitHub API access, fixture loading, and packet exits
 (`packet_051` onward) so build-pr orchestration and evidence-source hydration
 keep separate review trails.
 
+Slice 59 continues `cmd/sdp-trace` cleanup with `packet build-pr` live gate
+error aggregation (`packet_051` through `packet_053`). It moves packet row
+indexing, route-readiness error construction, and verification-readiness error
+construction into `packet_build_pr_gate_errors.go`. It preserves row lookup by
+packet row ID, route rows passing when `PC-AGENT-ROUTE` is `pass` or
+`partial`, verification passing only when `PC-VERIFICATION` is `pass`, route
+error ordering before verification error ordering, diagnostic strings including
+row reasons, package boundary, dependency direction, and MI baselines. It
+intentionally excludes PR input reconstruction/source loading (`packet_054`
+through `packet_059`), event conversion (`packet_060` onward), and GitHub
+Actions hydration/API helpers so live gate readiness and evidence-source
+loading keep separate review trails.
+
 ## Verification
 
 ```text

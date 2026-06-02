@@ -196,6 +196,46 @@ func TestBuildPacketPRResultKeepsPathsAndAggregatesGateErrors(t *testing.T) {
 	}
 }
 
+func TestPacketBuildPRGateErrorsPreserveRouteAndVerificationOrder(t *testing.T) {
+	bundle := validPacketBundleForCLI()
+	setPacketCLIRowState(&bundle, "PC-AGENT-ROUTE", packet.StateCannotVerify, nil, "route missing")
+	setPacketCLIRowState(&bundle, "PC-VERIFICATION", packet.StateCannotVerify, nil, "ci missing")
+	errors := packetBuildPRGateErrors(bundle)
+	want := []string{
+		"PC-AGENT-ROUTE cannot verify live route proof: route missing",
+		"PC-VERIFICATION cannot verify live CI evidence: ci missing",
+	}
+	if !reflect.DeepEqual(errors, want) {
+		t.Fatalf("gate errors = %#v, want %#v", errors, want)
+	}
+}
+
+func TestPacketBuildPRRouteErrorsAcceptPassAndPartial(t *testing.T) {
+	for _, state := range []string{packet.StatePass, packet.StatePartial} {
+		rows := map[string]packet.Row{"PC-AGENT-ROUTE": {State: state, Reason: "kept"}}
+		if got := packetBuildPRRouteErrors(rows); got != nil {
+			t.Fatalf("route errors for %s = %#v, want nil", state, got)
+		}
+	}
+	rows := map[string]packet.Row{"PC-AGENT-ROUTE": {State: packet.StateCannotVerify, Reason: "route missing"}}
+	want := []string{"PC-AGENT-ROUTE cannot verify live route proof: route missing"}
+	if got := packetBuildPRRouteErrors(rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("route errors = %#v, want %#v", got, want)
+	}
+}
+
+func TestPacketBuildPRVerificationErrorsRequirePass(t *testing.T) {
+	rows := map[string]packet.Row{"PC-VERIFICATION": {State: packet.StatePass, Reason: "kept"}}
+	if got := packetBuildPRVerificationErrors(rows); got != nil {
+		t.Fatalf("verification errors for pass = %#v, want nil", got)
+	}
+	rows = map[string]packet.Row{"PC-VERIFICATION": {State: packet.StatePartial, Reason: "ci partial"}}
+	want := []string{"PC-VERIFICATION cannot verify live CI evidence: ci partial"}
+	if got := packetBuildPRVerificationErrors(rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("verification errors = %#v, want %#v", got, want)
+	}
+}
+
 func TestRunPacketBuildPRWritesCannotVerifyJSONForInputFailure(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

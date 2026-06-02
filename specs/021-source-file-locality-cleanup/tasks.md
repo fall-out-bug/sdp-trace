@@ -1668,3 +1668,39 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 59 Tasks
+
+- [x] T021-4020 Confirm Slice 59 is bounded to numbered `cmd/sdp-trace` packet
+  build-pr live gate error shards `packet_051` through `packet_053`.
+- [x] T021-4021 Confirm Slice 59 is behavior-preserving: no changes to row ID
+  lookup, `PC-AGENT-ROUTE` pass/partial acceptance, `PC-VERIFICATION` pass-only
+  acceptance, route-before-verification error ordering, diagnostic strings and
+  row reason inclusion, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-4022 Record Slice 59 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-59-plan-review.md`.
+- [x] T021-4030 Move packet build-pr live gate helpers into
+  `packet_build_pr_gate_errors.go`. Split further only if MI fails and record
+  the failed command plus revised responsibility boundary in evidence.
+- [x] T021-4040 Run `gofmt` on changed Go files.
+- [x] T021-4050 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4051 Run focused packet build-pr live gate regression evidence
+  covering exact test existence for
+  `TestPacketBuildPRGateErrorsPreserveRouteAndVerificationOrder`,
+  `TestPacketBuildPRRouteErrorsAcceptPassAndPartial`, and
+  `TestPacketBuildPRVerificationErrorsRequirePass`; row ID lookup; route
+  pass/partial acceptance; route failure diagnostic with row reason;
+  verification pass-only acceptance; verification failure diagnostic with row
+  reason; route-before-verification ordering; and no baseline changes.
+- [x] T021-4060 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4070 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4080 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  59 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-59-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
