@@ -404,6 +404,16 @@ profile-relative source/output file safety (`harnessobs_345` through
 onward) so construction defaults, source provenance, path safety, and raw
 normalization keep separate review trails.
 
+Slice 43 continues `internal/harnessobs` cleanup with source commit state
+mapping (`harnessobs_343`). It moves `currentSourceCommitState` into the
+existing `source_commit.go` file next to `sourceCommit`, preserving the
+fail-closed mapping from an empty/invalid commit to `cannot_verify` and a valid
+commit to `pass`. It intentionally excludes event source reading
+(`harnessobs_344`), profile-relative source/output file safety
+(`harnessobs_345` through `harnessobs_347`), and raw-event normalization
+execution (`harnessobs_348` onward) so source provenance state, event reading,
+path safety, and normalization keep separate review trails.
+
 ## Verification
 
 ```text

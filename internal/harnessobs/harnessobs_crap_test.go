@@ -366,9 +366,20 @@ func TestNormalizedWriteAndShellAndSourceCommitBranches(t *testing.T) {
 	if got := sourceCommit(); got != "" {
 		t.Fatalf("sourceCommit(non-git) = %q, want empty", got)
 	}
+	if commit, state := currentSourceCommitState(); commit != "" || state != StateCannotVerify {
+		t.Fatalf("currentSourceCommitState(non-git) = %q/%s, want empty/cannot_verify", commit, state)
+	}
 	oldwd()
-	if got := sourceCommit(); got != "" && len(got) != 40 {
+	got := sourceCommit()
+	if got != "" && len(got) != 40 {
 		t.Fatalf("sourceCommit(repo) = %q, want empty or full hash", got)
+	}
+	commit, state := currentSourceCommitState()
+	if commit == "" && state != StateCannotVerify {
+		t.Fatalf("currentSourceCommitState(empty repo) = %q/%s, want empty/cannot_verify", commit, state)
+	}
+	if commit != "" && state != StatePass {
+		t.Fatalf("currentSourceCommitState(repo) = %q/%s, want commit/pass", commit, state)
 	}
 }
 

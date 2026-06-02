@@ -1073,3 +1073,30 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   42 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-42-evidence.md`.
+
+## Active Slice 43 Tasks
+
+- [x] T021-2900 Confirm Slice 43 is bounded to numbered
+  `internal/harnessobs` source commit state mapping shard `harnessobs_343`.
+- [x] T021-2901 Confirm Slice 43 is behavior-preserving: no changes to git
+  command execution, source commit hash validation, empty commit handling,
+  pass/cannot_verify state mapping, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-2902 Record Slice 43 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-43-plan-review.md`.
+- [x] T021-2910 Move source commit state mapping into the cohesive existing
+  source commit file.
+- [x] T021-2920 Run `gofmt` on changed Go files.
+- [x] T021-2930 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2931 Run focused source commit state regression evidence covering
+  non-git empty commit mapping to `cannot_verify`, valid commit pass mapping
+  when available, and source commit hash validation, or mark any unverified
+  behavior `not_assessed` with reason.
+- [x] T021-2940 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2950 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2960 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  43 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-43-evidence.md`.

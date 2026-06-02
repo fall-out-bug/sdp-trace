@@ -19,3 +19,13 @@ func sourceCommit() string {
 	}
 	return ""
 }
+
+// currentSourceCommitState converts local checkout discovery into explicit
+// evidence state without treating missing git context as success.
+func currentSourceCommitState() (string, string) {
+	commit := sourceCommit()
+	if commit == "" {
+		return "", StateCannotVerify
+	}
+	return commit, StatePass
+}
