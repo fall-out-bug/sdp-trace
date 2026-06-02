@@ -1009,3 +1009,34 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   40 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-40-evidence.md`.
+
+## Active Slice 41 Tasks
+
+- [x] T021-2760 Confirm Slice 41 is bounded to numbered
+  `internal/harnessobs` loaded session run loading/validation and shared
+  existing JSON reader shards `harnessobs_335` through `harnessobs_339`.
+- [x] T021-2761 Confirm Slice 41 is behavior-preserving: no changes to safe
+  existing file validation, permissive JSON unmarshal semantics, strict JSON
+  unknown-field rejection, strict trailing-data rejection, session run schema
+  validation, profile ID safety, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-2762 Record Slice 41 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-41-plan-review.md`.
+- [x] T021-2770 Move selected loaded session run and existing JSON reader
+  declarations into cohesive responsibility-named files.
+- [x] T021-2780 Run `gofmt` on changed Go files.
+- [x] T021-2790 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2791 Run focused session loading and JSON reader regression
+  evidence covering successful loaded session run parsing, unsupported session
+  schema versions, unsafe loaded session profile IDs, unsafe/missing existing
+  files, permissive JSON unmarshal behavior, strict JSON unknown-field
+  rejection, strict JSON trailing-data rejection, and strict malformed JSON
+  rejection, or mark any unverified behavior `not_assessed` with reason.
+- [x] T021-2800 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2810 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2820 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  41 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-41-evidence.md`.

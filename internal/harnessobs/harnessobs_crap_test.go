@@ -46,6 +46,70 @@ func TestSessionCollectionRejectsMismatchedProfileAndMissingOptions(t *testing.T
 	}
 }
 
+func TestLoadSessionRunAndJSONLoadingBranches(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	run := SessionRun{
+		SchemaVersion: SessionRunSchemaVersion,
+		ProfileID:     "session-profile",
+		CreatedAt:     "2026-05-10T12:00:00Z",
+	}
+	writeJSONFixture(t, "session.json", run)
+
+	loaded, err := LoadSessionRun("session.json")
+	if err != nil {
+		t.Fatalf("LoadSessionRun() error = %v", err)
+	}
+	if loaded.ProfileID != "session-profile" {
+		t.Fatalf("ProfileID = %q, want session-profile", loaded.ProfileID)
+	}
+
+	writeJSONFixture(t, "session.json", SessionRun{
+		SchemaVersion: "bad",
+		ProfileID:     "session-profile",
+	})
+	if _, err := LoadSessionRun("session.json"); err == nil || !strings.Contains(err.Error(), "unsupported session schema_version") {
+		t.Fatalf("LoadSessionRun(schema) error = %v, want unsupported session schema_version", err)
+	}
+
+	writeJSONFixture(t, "session.json", SessionRun{
+		SchemaVersion: SessionRunSchemaVersion,
+		ProfileID:     "../bad",
+	})
+	if _, err := LoadSessionRun("session.json"); err == nil || !strings.Contains(err.Error(), "unsafe session profile_id") {
+		t.Fatalf("LoadSessionRun(profile_id) error = %v, want unsafe session profile_id", err)
+	}
+
+	if _, err := LoadSessionRun("../session.json"); err == nil || !strings.Contains(err.Error(), "path must be relative local file without traversal") {
+		t.Fatalf("LoadSessionRun(unsafe path) error = %v, want traversal rejection", err)
+	}
+	if _, err := LoadSessionRun("missing.json"); err == nil {
+		t.Fatalf("LoadSessionRun(missing) error = nil")
+	}
+
+	if err := os.WriteFile("permissive.json", []byte(`{"profile_id":"session-profile","unexpected":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var permissive struct {
+		ProfileID string `json:"profile_id"`
+	}
+	if err := readExistingJSON("permissive.json", &permissive); err != nil {
+		t.Fatalf("readExistingJSON(permissive) error = %v", err)
+	}
+	if permissive.ProfileID != "session-profile" {
+		t.Fatalf("ProfileID = %q, want session-profile", permissive.ProfileID)
+	}
+
+	if err := os.WriteFile("bad.json", []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := readExistingJSONStrict("bad.json", &permissive); err == nil {
+		t.Fatalf("readExistingJSONStrict(malformed) error = nil")
+	}
+}
+
 func TestRunSessionCollectsCommandGeneratedEvents(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)

@@ -381,6 +381,19 @@ event source reading, profile-relative source/output file safety, and raw-event
 normalization execution so run-loading, shared JSON IO, and event
 materialization behavior keep separate review trails.
 
+Slice 41 continues `internal/harnessobs` cleanup with loaded session run
+loading/validation and shared existing-JSON reader helpers (`harnessobs_335`
+through `harnessobs_339`). It moves `LoadSessionRun`,
+`validateLoadedSessionRun`, permissive existing JSON loading, strict existing
+JSON loading, and strict decoder trailing-data rejection into cohesive session
+loading and JSON loading files. It intentionally excludes session run
+construction (`harnessobs_340` through `harnessobs_342`), source commit
+discovery (`harnessobs_343`), event source reading (`harnessobs_344`),
+profile-relative source/output file safety (`harnessobs_345` through
+`harnessobs_347`), and raw-event normalization execution (`harnessobs_348`
+onward) so construction, source discovery, path safety, and raw normalization
+keep separate review trails.
+
 ## Verification
 
 ```text
