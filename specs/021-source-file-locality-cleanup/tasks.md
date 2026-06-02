@@ -1424,3 +1424,38 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 53 Tasks
+
+- [x] T021-3600 Confirm Slice 53 is bounded to numbered `cmd/sdp-trace`
+  protected preview input status/action shards `gate_349` through `gate_351`.
+- [x] T021-3601 Confirm Slice 53 is behavior-preserving: no changes to blank
+  input `absent`, missing/permission-denied `present_unreadable`, malformed
+  JSON `present_malformed`, readable JSON `present_readable`, stable
+  checkpoint/checkpoint_policy/witness next-action ordering, protected preview
+  `cannot_verify` setup exit for unreadable/malformed inputs, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-3602 Record Slice 53 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-53-plan-review.md`.
+- [x] T021-3610 Move protected preview input status/action helpers into
+  `protected_preview_inputs.go`. Split further only if MI fails and record the
+  failed command plus revised responsibility boundary in evidence.
+- [x] T021-3620 Run `gofmt` on changed Go files.
+- [x] T021-3630 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3631 Run focused protected-preview input regression evidence
+  covering exact test existence, status mapping branches, stable action order,
+  explicit permission-denied to `present_unreadable` mapping, protected preview
+  absent input rendering without writes, unreadable/malformed input
+  `cannot_verify` exits, readable input pass-through, and no protected verdict
+  field emission.
+- [x] T021-3640 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3650 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3660 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  53 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-53-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

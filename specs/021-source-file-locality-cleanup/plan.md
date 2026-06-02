@@ -556,6 +556,20 @@ preview mode/required-ID helper shards (`gate_365` onward) so witness
 expectation construction, preview status rendering, override, and generic IO
 keep separate review trails.
 
+Slice 53 continues `cmd/sdp-trace` cleanup with protected preview input status
+and remediation actions (`gate_349` through `gate_351`). It moves protected
+input status classification, input error status mapping, and stable preview
+next-action generation into `protected_preview_inputs.go`. It preserves blank
+input as `absent`, missing/permission-denied input as `present_unreadable`,
+malformed JSON as `present_malformed`, readable JSON as `present_readable`,
+stable action ordering for `checkpoint`, `checkpoint_policy`, and `witness`,
+protected preview `cannot_verify` setup exit for unreadable/malformed inputs,
+package boundary, dependency direction, and MI baselines. It intentionally
+excludes override request handling (`gate_352` onward), shared JSON/text
+helpers (`gate_360` onward), and preview mode/required-ID helper shards
+(`gate_365` onward) so preview input readiness, override, and generic IO keep
+separate review trails.
+
 ## Verification
 
 ```text

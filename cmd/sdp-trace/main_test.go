@@ -438,6 +438,29 @@ func TestProtectedInputStatusBranches(t *testing.T) {
 	}
 }
 
+func TestProtectedInputErrorStatusMapsPermissionDeniedToUnreadable(t *testing.T) {
+	if got := protectedInputErrorStatus(os.ErrPermission); got != "present_unreadable" {
+		t.Fatalf("permission denied status = %s, want present_unreadable", got)
+	}
+}
+
+func TestProtectedPreviewActionsKeepStableOrder(t *testing.T) {
+	inputs := map[string]string{
+		"witness":           "present_malformed",
+		"checkpoint_policy": "present_unreadable",
+		"checkpoint":        "absent",
+	}
+	got := protectedPreviewActions(inputs)
+	want := []string{
+		"Supply checkpoint input before running protected gate.",
+		"Replace checkpoint_policy input with readable JSON.",
+		"Replace witness input with readable JSON.",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("actions = %#v, want %#v", got, want)
+	}
+}
+
 func TestCLICommandDispatchAndQueryErrorBranches(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

@@ -1,8 +1,32 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"strings"
 )
+
+func protectedInputStatus(path string) string {
+	if strings.TrimSpace(path) == "" {
+		// Missing protected inputs are reported as setup gaps, not as verdicts.
+		return "absent"
+	}
+	var value any
+	if err := readJSONFile(path, &value); err != nil {
+		return protectedInputErrorStatus(err)
+	}
+	return "present_readable"
+}
+
+func protectedInputErrorStatus(err error) string {
+	if os.IsNotExist(err) || errors.Is(err, os.ErrPermission) {
+		// Protected preview distinguishes unavailable inputs from malformed JSON
+		// so users know whether to fix access or content.
+		return "present_unreadable"
+	}
+	return "present_malformed"
+}
 
 func protectedPreviewActions(inputs map[string]string) []string {
 	names := []string{"checkpoint", "checkpoint_policy", "witness"}
