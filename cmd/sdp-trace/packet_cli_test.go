@@ -377,6 +377,54 @@ func TestBuildPRInputFromOptionsAppliesOptionalEvidenceAndRoute(t *testing.T) {
 	}
 }
 
+func TestGitHubPRInputFromEventUsesActionsEnvRunID(t *testing.T) {
+	event := prFixtureEventForTest(t)
+	input := githubPRInputFromEvent(event, "github-actions", func(name string) string {
+		if name != "GITHUB_RUN_ID" {
+			t.Fatalf("unexpected getenv key %s", name)
+		}
+		return "actions-run-99"
+	})
+	if input.SchemaVersion != "github-pr-evidence-input.v0" ||
+		!input.RequirePromptBoundary ||
+		input.WorkflowRunID != "actions-run-99" {
+		t.Fatalf("actions input metadata changed: %+v", input)
+	}
+}
+
+func TestGitHubPRInputFromEventUsesFixtureRunID(t *testing.T) {
+	event := prFixtureEventForTest(t)
+	input := githubPRInputFromEvent(event, "github-fixture", func(string) string {
+		return "actions-run-99"
+	})
+	if input.WorkflowRunID != "1001" || !input.RequirePromptBoundary {
+		t.Fatalf("fixture input metadata changed: %+v", input)
+	}
+}
+
+func TestGitHubPRFromEventMapsPRFields(t *testing.T) {
+	pr := githubPRFromEvent(prFixtureEventForTest(t))
+	if pr.Number != 38 ||
+		pr.URL != "https://github.com/example/repo/pull/38" ||
+		pr.Title != "Demo feature" ||
+		pr.BodyRef != "https://github.com/example/repo/pull/38" ||
+		pr.Author != "developer" ||
+		pr.BaseRef != "main" ||
+		pr.HeadRef != "feature" ||
+		pr.HeadSHA != "head-sha" {
+		t.Fatalf("PR mapping changed: %+v", pr)
+	}
+}
+
+func TestGitHubCommitRangeFromEventMapsSHAsAndDiffURL(t *testing.T) {
+	commitRange := githubCommitRangeFromEvent(prFixtureEventForTest(t))
+	if commitRange.Base != "base-sha" ||
+		commitRange.Head != "head-sha" ||
+		commitRange.ChangedFilesRef != "https://github.com/example/repo/pull/38/files" {
+		t.Fatalf("commit range mapping changed: %+v", commitRange)
+	}
+}
+
 func TestRunPacketBuildPRWritesCannotVerifyJSONForInputFailure(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -1219,6 +1267,15 @@ func packetBuildPROptionsForTest(source, eventPath string) *flagSet {
 	opts.setString("github-api-url", "")
 	opts.setString("out", "")
 	return opts
+}
+
+func prFixtureEventForTest(t *testing.T) prFixtureEvent {
+	t.Helper()
+	event, err := loadPRFixtureEvent(writePRFixtureEventForTest(t, t.TempDir()))
+	if err != nil {
+		t.Fatalf("load fixture event: %v", err)
+	}
+	return event
 }
 
 func writePRFixtureEventForTest(t *testing.T, root string) string {

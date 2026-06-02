@@ -690,6 +690,21 @@ and MI baselines. It intentionally excludes event-to-input conversion
 optional JSON reading (`packet_095`) so input loading, event conversion,
 hydration, route mutation, and shared IO keep separate review trails.
 
+Slice 61 continues `cmd/sdp-trace` cleanup with `packet build-pr`
+event-to-input mapping (`packet_060` through `packet_062`). It moves GitHub PR
+evidence input construction from a loaded PR event, PR field projection, and
+commit-range projection into `packet_build_pr_event_mapping.go`. It preserves
+schema version `github-pr-evidence-input.v0`, prompt-boundary requirement
+defaulting to true, GitHub Actions workflow run ID from `GITHUB_RUN_ID`,
+fixture workflow run ID from the event payload, PR number/URL/title/body
+ref/author/base ref/head ref/head SHA mapping, commit base/head SHA mapping,
+changed-files ref from the event diff URL, package boundary, dependency
+direction, and MI baselines. It intentionally excludes input source loading
+(`packet_054` through `packet_059`), GitHub Actions hydration (`packet_063`
+onward), and packet fixture type/loading (`packet_093` onward) so source
+selection, event projection, hydration, and fixture IO keep separate review
+trails.
+
 ## Verification
 
 ```text

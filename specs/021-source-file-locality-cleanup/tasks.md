@@ -1747,3 +1747,40 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 61 Tasks
+
+- [x] T021-4160 Confirm Slice 61 is bounded to numbered `cmd/sdp-trace` packet
+  build-pr event-to-input mapping shards `packet_060` through `packet_062`.
+- [x] T021-4161 Confirm Slice 61 is behavior-preserving: no changes to input
+  schema version, prompt-boundary requirement default, GitHub Actions workflow
+  run ID source, fixture workflow run ID source, PR field mapping, commit-range
+  mapping, changed-files diff URL mapping, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-4162 Record Slice 61 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-61-plan-review.md`.
+- [x] T021-4170 Move packet build-pr event mapping helpers into
+  `packet_build_pr_event_mapping.go`. Split further only if MI fails and
+  record the failed command plus revised responsibility boundary in evidence.
+- [x] T021-4180 Run `gofmt` on changed Go files.
+- [x] T021-4190 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4191 Run focused packet build-pr event mapping regression evidence
+  covering exact test existence for
+  `TestGitHubPRInputFromEventUsesActionsEnvRunID`,
+  `TestGitHubPRInputFromEventUsesFixtureRunID`, `TestGitHubPRFromEventMapsPRFields`,
+  and `TestGitHubCommitRangeFromEventMapsSHAsAndDiffURL`; schema version;
+  prompt-boundary default; actions vs fixture workflow run ID source; PR
+  number/URL/title/body ref/author/base ref/head ref/head SHA mapping; commit
+  base/head SHA mapping; changed-files diff URL mapping; and no baseline
+  changes.
+- [x] T021-4200 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4210 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4220 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  61 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-61-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
