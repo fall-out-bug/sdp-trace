@@ -1805,6 +1805,68 @@ func TestLoadProtectedWitnessExpectationRejectsMissingRuns(t *testing.T) {
 	}
 }
 
+func TestProtectedGateCoreFailurePaths(t *testing.T) {
+	dir := t.TempDir()
+	var errOut bytes.Buffer
+
+	opts := &flagSet{name: "protected test"}
+	opts.setString("checkpoint", "")
+	opts.setString("checkpoint-policy", filepath.Join(dir, "policy.json"))
+	opts.setString("witness", filepath.Join(dir, "witness.json"))
+	if _, code, ok := readProtectedGateInputs(opts, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing checkpoint input code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "protected gate requires --checkpoint") {
+		t.Fatalf("missing checkpoint input stderr = %q", errOut.String())
+	}
+
+	checkpointPath := filepath.Join(dir, "checkpoint.json")
+	if err := os.WriteFile(checkpointPath, []byte("{not-json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	opts.setString("checkpoint", checkpointPath)
+	errOut.Reset()
+	if _, code, ok := readProtectedGateInputs(opts, &errOut); ok || code != exitUsage {
+		t.Fatalf("malformed checkpoint input code=%d ok=%v", code, ok)
+	}
+
+	var out bytes.Buffer
+	result := demo.GateResult{ProtectedGate: demo.GatePass}
+	if code := writeProtectedGateResult(dir, result, &out, &errOut); code != 1 {
+		t.Fatalf("directory result write code=%d", code)
+	}
+}
+
+func TestProtectedGateCoreWriteAndEvaluationBranches(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "protected-gate.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	result := demo.GateResult{ProtectedGate: demo.GatePass}
+	if code := writeProtectedGateResult(outPath, result, &out, &errOut); code != 0 {
+		t.Fatalf("protected result write code=%d err=%s", code, errOut.String())
+	}
+	if !strings.Contains(out.String(), `"protected_gate": "pass"`) {
+		t.Fatalf("protected result stdout = %s", out.String())
+	}
+
+	input := protectedGateEvaluationInput(
+		checkpoint.VerificationResult{Result: checkpoint.StatePass},
+		demo.WitnessSummary{},
+		demo.WitnessExpectation{},
+	)
+	if !input.PolicyProvided {
+		t.Fatalf("protected evaluation input did not mark policy provided")
+	}
+	if input.Now.Location() != time.UTC {
+		t.Fatalf("protected evaluation time location = %v", input.Now.Location())
+	}
+	if input.Witness == nil {
+		t.Fatalf("protected evaluation input omitted witness")
+	}
+}
+
 func TestDefaultGateDoesNotEmitProtectedFields(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()

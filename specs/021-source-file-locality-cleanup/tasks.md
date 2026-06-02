@@ -1227,3 +1227,40 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 48 Tasks
+
+- [x] T021-3250 Confirm Slice 48 is bounded to numbered `cmd/sdp-trace`
+  protected-gate core shards `gate_302` through `gate_311`.
+- [x] T021-3251 Confirm Slice 48 is behavior-preserving: no changes to
+  protected gate setup failure handling, required checkpoint/policy/witness
+  input semantics, JSON decode error handling, contract/row/run-dir/witness
+  expectation error codes, protected checkpoint replay handoff,
+  `PolicyProvided: true`, UTC evaluation time, result JSON writing/rendering,
+  gate exit-code behavior, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-3252 Record Slice 48 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-48-plan-review.md`.
+- [x] T021-3260 Move protected-gate core execution and input loading into
+  `protected_gate_core.go`, `protected_gate_inputs.go`, and
+  `protected_gate_loaders.go`. Split further only if MI fails and record the
+  failed command plus the revised responsibility boundary in evidence.
+- [x] T021-3270 Run `gofmt` on changed Go files.
+- [x] T021-3280 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3281 Run focused protected-gate core regression evidence covering
+  missing/malformed required trust inputs, contract/row/run-dir/witness
+  expectation failures, protected checkpoint replay handoff, protected gate
+  evaluation inputs, explicit `PolicyProvided: true`, UTC evaluation time,
+  result writing failure, result rendering, and exit-code behavior. Include
+  test-existence evidence proving all planned focused test names are present.
+- [x] T021-3290 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3300 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3310 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  48 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-48-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

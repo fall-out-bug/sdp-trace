@@ -460,6 +460,23 @@ logic (`gate_302` onward) and shared JSON/text file helpers (`gate_360`
 onward) so checkpoint CLI behavior, protected-gate trust rules, and generic IO
 helpers keep separate review trails.
 
+Slice 48 continues `cmd/sdp-trace` cleanup with protected-gate core execution
+and input loading (`gate_302` through `gate_311`). It moves protected gate
+run/resolve/evaluate orchestration, protected checkpoint replay handoff, result
+writing, required checkpoint/policy/witness input loading, protected row
+loading, and witness expectation loading into `protected_gate_core.go`,
+`protected_gate_inputs.go`, and `protected_gate_loaders.go`. It preserves
+fail-closed setup errors for missing/malformed external trust inputs,
+contract/row/run-dir/witness expectation error codes,
+`PolicyProvided: true`, UTC evaluation time, result JSON writing/rendering,
+gate exit-code behavior, package boundary, dependency direction, and MI
+baselines. It intentionally excludes protected checkpoint trust matching
+(`gate_334` through `gate_344`), demo witness construction (`gate_345` onward),
+gate explain (`gate_312` through `gate_324`), preview (`gate_325` onward),
+override request handling (`gate_352` onward), and shared JSON/text helpers
+(`gate_360` onward) so setup/evaluation orchestration, trust matching, explain
+rendering, preview, override, and generic IO keep separate review trails.
+
 ## Verification
 
 ```text
