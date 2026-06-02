@@ -1040,3 +1040,36 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   41 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-41-evidence.md`.
+
+## Active Slice 42 Tasks
+
+- [x] T021-2830 Confirm Slice 42 is bounded to numbered
+  `internal/harnessobs` session run construction shards `harnessobs_340`
+  through `harnessobs_342`.
+- [x] T021-2831 Confirm Slice 42 is behavior-preserving: no changes to session
+  run schema/profile/path/raw-event field copying, sorted setup action IDs,
+  command/process/collection default states, source commit state pass-through,
+  collection reason, timestamp formatting, package boundary, dependency
+  direction, or baseline change is planned. Source commit discovery/proof is
+  `not_assessed` in this slice because `harnessobs_343` remains excluded.
+- [x] T021-2832 Record Slice 42 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-42-plan-review.md`.
+- [x] T021-2840 Move selected session run construction declarations into a
+  cohesive responsibility-named file.
+- [x] T021-2850 Run `gofmt` on changed Go files.
+- [x] T021-2860 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2861 Run focused session run construction regression evidence
+  covering setup action ID sorting, schema/profile/path/raw-event field
+  copying, cannot-verify defaults for command/process/collection, source commit
+  state pass-through from the excluded source helper, collection reason,
+  timestamp formatting, and full setup-session saved run behavior. Source
+  commit discovery/proof remains `not_assessed` for this slice, or mark any
+  other unverified behavior `not_assessed` with reason.
+- [x] T021-2870 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2880 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2890 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  42 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-42-evidence.md`.

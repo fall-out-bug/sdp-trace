@@ -110,6 +110,45 @@ func TestLoadSessionRunAndJSONLoadingBranches(t *testing.T) {
 	}
 }
 
+func TestNewSessionRunRecordConstructionBranches(t *testing.T) {
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	profile := SessionProfile{
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		RawEventSourcePath: "raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+		SetupActions: []SessionSetupAction{
+			{ID: "z-action"},
+			{ID: "a-action"},
+		},
+	}
+
+	run := newSessionRunRecord(profile, now, sessionSetupActionIDs(profile), "abc123", StatePass)
+	if run.SchemaVersion != SessionRunSchemaVersion ||
+		run.ProfileID != profile.ProfileID ||
+		run.HarnessProfilePath != profile.HarnessProfilePath ||
+		run.EventSourcePath != profile.EventSourcePath ||
+		run.RawEventSourcePath != profile.RawEventSourcePath ||
+		run.RawEventFormat != profile.RawEventFormat {
+		t.Fatalf("run copied fields = %+v, profile = %+v", run, profile)
+	}
+	if got := strings.Join(run.SetupActionIDs, ","); got != "a-action,z-action" {
+		t.Fatalf("SetupActionIDs = %q, want sorted a-action,z-action", got)
+	}
+	if run.CommandDigestState != StateCannotVerify ||
+		run.ProcessIDState != StateCannotVerify ||
+		run.CollectionState != StateCannotVerify {
+		t.Fatalf("default states = command:%s process:%s collection:%s", run.CommandDigestState, run.ProcessIDState, run.CollectionState)
+	}
+	if run.SourceCommit != "abc123" || run.SourceCommitState != StatePass {
+		t.Fatalf("source pass-through = %s/%s, want abc123/pass", run.SourceCommit, run.SourceCommitState)
+	}
+	if run.CollectionReason != "not_collected" || run.CreatedAt != now.Format(time.RFC3339) {
+		t.Fatalf("collection/time = %s/%s", run.CollectionReason, run.CreatedAt)
+	}
+}
+
 func TestRunSessionCollectsCommandGeneratedEvents(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)

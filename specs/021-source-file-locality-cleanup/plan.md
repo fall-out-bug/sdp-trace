@@ -394,6 +394,16 @@ profile-relative source/output file safety (`harnessobs_345` through
 onward) so construction, source discovery, path safety, and raw normalization
 keep separate review trails.
 
+Slice 42 continues `internal/harnessobs` cleanup with session run construction
+shards (`harnessobs_340` through `harnessobs_342`). It moves `newSessionRun`,
+`newSessionRunRecord`, and setup action ID collection/sorting into one cohesive
+session run construction file. It intentionally excludes source commit
+discovery (`harnessobs_343`), event source reading (`harnessobs_344`),
+profile-relative source/output file safety (`harnessobs_345` through
+`harnessobs_347`), and raw-event normalization execution (`harnessobs_348`
+onward) so construction defaults, source provenance, path safety, and raw
+normalization keep separate review trails.
+
 ## Verification
 
 ```text
