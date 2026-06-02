@@ -1,5 +1,21 @@
 package harnessobs
 
+func findUnsafe(value any) (string, string) {
+	return findUnsafeAt("", value)
+}
+
+func findUnsafeRawEvent(value any) (string, string) {
+	return findUnsafeRawEventAt("", value)
+}
+
+func findUnsafeRawEventAt(path string, value any) (string, string) {
+	return findUnsafeValueAt(path, value, true)
+}
+
+func findUnsafeAt(path string, value any) (string, string) {
+	return findUnsafeValueAt(path, value, false)
+}
+
 func findUnsafeValueAt(path string, value any, rawEvent bool) (string, string) {
 	// findUnsafeValueAt keeps harness observation evidence explicit and replay-bound.
 	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.

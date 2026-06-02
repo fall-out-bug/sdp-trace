@@ -660,3 +660,31 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   29 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-29-evidence.md`.
+
+## Active Slice 30 Tasks
+
+- [x] T021-1990 Confirm Slice 30 is bounded to numbered
+  `internal/harnessobs` unsafe value traversal entrypoint and dispatcher shards
+  `harnessobs_204` through `harnessobs_208`.
+- [x] T021-1991 Confirm Slice 30 is behavior-preserving: no unsafe field path
+  rendering, reason-code semantics, raw-event mode behavior, map/slice/string
+  delegation, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-1992 Record Slice 30 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-30-plan-review.md`.
+- [x] T021-2000 Move selected unsafe value traversal entrypoint and dispatcher
+  declarations into a responsibility-named file.
+- [x] T021-2010 Run `gofmt` on changed Go files.
+- [x] T021-2020 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2021 Run focused unsafe traversal regression evidence covering
+  generic and raw-event unsafe path/reason results, traversal through map,
+  slice, and string values, and safe-value empty results, or mark any
+  unverified behavior `not_assessed` with reason.
+- [x] T021-2030 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2040 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2050 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  30 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-30-evidence.md`.

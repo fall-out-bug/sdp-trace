@@ -243,6 +243,16 @@ It intentionally excludes unsafe raw-event traversal (`harnessobs_204` onward),
 session setup, collection, and validation helpers so raw event safety and
 session behavior keep separate review trails.
 
+Slice 30 continues `internal/harnessobs` cleanup with unsafe value traversal
+entrypoints and the shared value dispatcher (`harnessobs_204` through
+`harnessobs_208`). It moves generic unsafe traversal entrypoints, raw-event
+unsafe traversal entrypoints, mode-specific wrappers, and the type dispatcher
+into a responsibility-named file while preserving path rendering, reason-code
+delegation, raw-event mode, and map/slice/string delegation behavior. It
+intentionally excludes session setup (`harnessobs_209` onward) and the
+map/slice/string-specific unsafe rule shards (`harnessobs_223` onward) so
+workflow execution and rule semantics keep separate review trails.
+
 ## Verification
 
 ```text
