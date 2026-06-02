@@ -3792,3 +3792,82 @@ func TestCLITailHelpersCoverErrorBranches(t *testing.T) {
 		t.Fatalf("writeImportedTranscript error code=%d", code)
 	}
 }
+
+func TestPreviewGateModeSelection(t *testing.T) {
+	cases := []struct {
+		name     string
+		contract trace.Contract
+		want     string
+	}{
+		{
+			name:     "default observation",
+			contract: trace.Contract{},
+			want:     demo.GateModeObservation,
+		},
+		{
+			name: "unknown and empty profiles ignored",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: ""},
+				{Profile: "unknown"},
+			}},
+			want: demo.GateModeObservation,
+		},
+		{
+			name: "advisory ci fallback",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: "unknown"},
+				{Profile: demo.GateModeAdvisoryCI},
+			}},
+			want: demo.GateModeAdvisoryCI,
+		},
+		{
+			name: "protected future after advisory dominates",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: demo.GateModeAdvisoryCI},
+				{Profile: demo.GateModeProtectedFuture},
+			}},
+			want: demo.GateModeProtectedFuture,
+		},
+		{
+			name: "protected future before advisory dominates",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: demo.GateModeProtectedFuture},
+				{Profile: demo.GateModeAdvisoryCI},
+			}},
+			want: demo.GateModeProtectedFuture,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := previewGateMode(tc.contract); got != tc.want {
+				t.Fatalf("previewGateMode() = %s, want %s", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestRequiredRunIDsOmitEmptyAndKeepOrder(t *testing.T) {
+	got := requiredRunIDs(trace.Contract{RequiredRuns: []trace.RequiredRun{
+		{ID: "run-a"},
+		{ID: ""},
+		{ID: "run-b"},
+		{ID: "run-a"},
+	}})
+	want := []string{"run-a", "run-b", "run-a"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("requiredRunIDs() = %#v, want %#v", got, want)
+	}
+}
+
+func TestRequiredEvidenceIDsForCLIOmitEmptyAndKeepOrder(t *testing.T) {
+	got := requiredEvidenceIDsForCLI(trace.Contract{RequiredEvidence: []trace.EvidenceRequirement{
+		{ID: "evidence-a"},
+		{ID: ""},
+		{ID: "evidence-b"},
+		{ID: "evidence-a"},
+	}})
+	want := []string{"evidence-a", "evidence-b", "evidence-a"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("requiredEvidenceIDsForCLI() = %#v, want %#v", got, want)
+	}
+}

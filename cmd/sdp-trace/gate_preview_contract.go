@@ -21,3 +21,26 @@ func previewGateMode(contract trace.Contract) string {
 	}
 	return mode
 }
+
+func requiredRunIDs(contract trace.Contract) []string {
+	ids := make([]string, 0, len(contract.RequiredRuns))
+	for _, required := range contract.RequiredRuns {
+		if required.ID != "" {
+			// Empty IDs are omitted from CLI preview output rather than rendered
+			// as ambiguous evidence handles.
+			ids = append(ids, required.ID)
+		}
+	}
+	return ids
+}
+
+func requiredEvidenceIDsForCLI(contract trace.Contract) []string {
+	ids := make([]string, 0, len(contract.RequiredEvidence))
+	for _, requirement := range contract.RequiredEvidence {
+		if requirement.ID != "" {
+			// Preview exposes stable evidence identifiers only.
+			ids = append(ids, requirement.ID)
+		}
+	}
+	return ids
+}

@@ -606,6 +606,18 @@ It intentionally excludes preview mode and required-ID helper shards
 (`gate_365` onward) so generic artifact IO and preview-specific argument
 helpers keep separate review trails.
 
+Slice 56 continues `cmd/sdp-trace` cleanup with gate preview contract helpers
+(`gate_365` through `gate_367`). It moves preview gate mode selection,
+required run ID extraction, and required evidence ID extraction into
+`gate_preview_contract.go`. It preserves observation mode as the default,
+advisory CI mode when at least one required run asks for advisory CI,
+protected-future dominance over advisory CI regardless of order, required run
+ID order with empty IDs omitted, required evidence ID order with empty IDs
+omitted, package boundary, dependency direction, and MI baselines. It
+intentionally excludes packet/PR review shards (`packet_031` onward) so gate
+preview contract display helpers and packet workflows keep separate review
+trails.
+
 ## Verification
 
 ```text
