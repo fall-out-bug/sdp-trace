@@ -223,6 +223,15 @@ responsibility-named files. It intentionally excludes command model extraction
 and shell field parsing (`harnessobs_181` onward) so command parsing behavior
 keeps a separate review trail.
 
+Slice 28 continues `internal/harnessobs` cleanup with command model extraction
+and controlled shell field parsing (`harnessobs_181` through
+`harnessobs_197`). It moves command model extraction from argv and `sh`/`bash
+-c`, model flag parsing, and shell field scanner stages into
+responsibility-named files. It intentionally excludes command model safety,
+source commit, session setup, raw event safety, and validation helpers
+(`harnessobs_198` onward) so safety checks and session behavior keep separate
+review trails.
+
 ## Verification
 
 ```text

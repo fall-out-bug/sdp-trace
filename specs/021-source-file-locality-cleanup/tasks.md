@@ -601,3 +601,32 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   27 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-27-evidence.md`.
+
+## Active Slice 28 Tasks
+
+- [x] T021-1850 Confirm Slice 28 is bounded to numbered
+  `internal/harnessobs` command model extraction and controlled shell field
+  parser shards `harnessobs_181` through `harnessobs_197`.
+- [x] T021-1851 Confirm Slice 28 is behavior-preserving: no command model
+  extraction precedence, shell wrapper detection, flag parsing, quote/escape
+  handling, field separator handling, command model safety, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-1852 Record Slice 28 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-28-plan-review.md`.
+- [x] T021-1860 Move selected command model extraction and shell field parser
+  declarations into responsibility-named files.
+- [x] T021-1870 Run `gofmt` on changed Go files.
+- [x] T021-1880 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-1881 Run focused command model and shell field parser regression
+  evidence covering argv flags, `sh`/`bash -c` extraction, shell-preferred argv,
+  quoted prompt ignoring, unsafe model rejection, quoting, escaping, line
+  continuation, and trailing escape behavior, or mark any unverified behavior
+  `not_assessed` with reason.
+- [x] T021-1890 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-1900 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-1910 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  28 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-28-evidence.md`.
