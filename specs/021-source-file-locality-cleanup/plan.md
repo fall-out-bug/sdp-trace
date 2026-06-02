@@ -300,6 +300,29 @@ excludes session collect option validation (`harnessobs_256` onward), profile
 loading, event source resolution, runtime collection, and validation command
 execution so option validation and orchestration keep separate review trails.
 
+Slice 36 continues `internal/harnessobs` cleanup with session collection
+validation, harness profile/source resolution, observed-run materialization, and
+runtime session command execution shards (`harnessobs_256` through
+`harnessobs_280`). It moves collect option requirements, harness profile
+loading, raw-event source normalization, source-unavailable fallbacks, observed
+run/event writing, collected-session finalization, `RunSession` setup/command
+execution, process metadata, and finished-session collection into cohesive
+session collection/runtime files. The first four-file grouping was rejected
+after local MI checks because it produced dense low-MI files; the accepted split
+uses responsibility-named files for collect options, source resolution, raw
+normalization, source-unavailable fallback, observed collection/finalization,
+observed output serialization, runtime setup, runtime finish, process execution,
+and process metadata. Maintainability review rejected a follow-up split that
+left observed source collection and finalization as tiny non-numbered helper
+files; a one-file observed collection merge then failed the local MI gate. The
+accepted split keeps source collection, observed event/run serialization, and
+finalization in `session_collect_observed.go`, avoiding both one-helper drift
+and an MI regression. It intentionally excludes validation command execution
+(`harnessobs_281` onward), validation evaluation, session profile validation,
+isolation rule installation, loaded session run validation, and raw
+normalization internals beyond dispatch from session collection so those
+behavior-heavy areas keep separate review trails.
+
 ## Verification
 
 ```text

@@ -1,13 +1,13 @@
 package harnessobs
 
 import (
+	"path/filepath"
 	"time"
 )
 
+// collectFinishedSession writes the command end time, collects generated
+// evidence, and then re-raises the command wait error if collection succeeded.
 func collectFinishedSession(opts SessionOptions, session SessionRun, waitErr error, end time.Time) (SessionRun, Run, error) {
-	// collectFinishedSession keeps harness observation evidence explicit and replay-bound.
-	// Source profiles, raw events, path safety, digests, validation, and command models stay separate.
-	// This helper renders or aggregates harness evidence; it does not create external proof.
 	if err := writeFinishedSession(opts.OutDir, &session, end); err != nil {
 		return SessionRun{}, Run{}, err
 	}
@@ -20,4 +20,11 @@ func collectFinishedSession(opts SessionOptions, session SessionRun, waitErr err
 		return collected, observed, waitErr
 	}
 	return collected, observed, nil
+}
+
+// writeFinishedSession stores the command completion time before collection
+// reads the session record back from disk.
+func writeFinishedSession(outDir string, session *SessionRun, end time.Time) error {
+	session.EndTime = end.Format(time.RFC3339)
+	return writeJSON(filepath.Join(outDir, "session.json"), *session)
 }
