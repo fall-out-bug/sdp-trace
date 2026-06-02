@@ -1805,6 +1805,67 @@ func TestLoadProtectedWitnessExpectationRejectsMissingRuns(t *testing.T) {
 	}
 }
 
+func TestDemoWitnessExpectationUsesFirstRunAndRetainedDigests(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	firstRun := filepath.Join(root, "001-agent-session")
+	secondRun := filepath.Join(root, "002-verification-run")
+	runAndWrapNamed(t, firstRun, "agent-session", echo, "agent")
+	runAndWrapNamed(t, secondRun, "verification-run", echo, "test")
+
+	expected, err := demoWitnessExpectation(root)
+	if err != nil {
+		t.Fatalf("demo witness expectation: %v", err)
+	}
+	if expected.RunID == "" {
+		t.Fatalf("expected first run id to be populated")
+	}
+	firstArtifact, err := trace.OpenRunArtifact(firstRun)
+	if err != nil {
+		t.Fatalf("open first run artifact: %v", err)
+	}
+	if expected.RunID != firstArtifact.Manifest.RunID {
+		t.Fatalf("expected run id %q, want first run id %q", expected.RunID, firstArtifact.Manifest.RunID)
+	}
+	if len(expected.RunArtifacts) != 2 {
+		t.Fatalf("artifact count = %d, want 2: %#v", len(expected.RunArtifacts), expected.RunArtifacts)
+	}
+	want := map[string]string{
+		"001-agent-session/run.json":    sha256FileForTest(t, filepath.Join(firstRun, "run.json")),
+		"002-verification-run/run.json": sha256FileForTest(t, filepath.Join(secondRun, "run.json")),
+	}
+	for _, artifact := range expected.RunArtifacts {
+		if got := want[artifact.Path]; got != artifact.SHA256 {
+			t.Fatalf("artifact %s digest %s, want %s in %#v", artifact.Path, artifact.SHA256, got, expected.RunArtifacts)
+		}
+		delete(want, artifact.Path)
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing expected artifact paths: %#v", want)
+	}
+}
+
+func TestDemoWitnessExpectationPropagatesRunArtifactReadErrors(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runDir := filepath.Join(root, "001-agent-session")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+	if err := os.WriteFile(filepath.Join(runDir, "run.json"), []byte(`{not-json`), 0o644); err != nil {
+		t.Fatalf("corrupt retained run artifact: %v", err)
+	}
+
+	if _, err := demoWitnessExpectation(root); err == nil {
+		t.Fatalf("malformed retained run artifact did not fail")
+	}
+	var errOut bytes.Buffer
+	if _, _, ok := loadProtectedWitnessExpectation(root, &errOut); ok {
+		t.Fatalf("protected witness expectation loader reported ok for malformed retained run artifact")
+	}
+	if !strings.Contains(errOut.String(), "invalid character") {
+		t.Fatalf("loader error did not propagate retained run artifact decode failure: %s", errOut.String())
+	}
+}
+
 func TestProtectedGateCoreFailurePaths(t *testing.T) {
 	dir := t.TempDir()
 	var errOut bytes.Buffer

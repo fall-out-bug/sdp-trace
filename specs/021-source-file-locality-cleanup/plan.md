@@ -539,6 +539,23 @@ preview mode/required-ID helper shards (`gate_365` onward) so protected trust
 matching, demo witness construction, preview status rendering, override, and
 generic IO keep separate review trails.
 
+Slice 52 continues `cmd/sdp-trace` cleanup with demo witness expectation and
+artifact digest construction (`gate_345` through `gate_348`). It moves
+protected-gate witness expectation loading, run artifact list construction,
+retained `run.json` digest calculation, and per-run artifact metadata into
+`protected_witness_expectation.go` and `protected_witness_digest.go`. It
+preserves deriving expectations from observed run directories rather than the
+supplied witness summary, using the first discovered run ID as the expected
+run ID, retaining one `<run-dir-base>/run.json` artifact path per discovered
+run, calculating SHA-256 from retained file bytes, propagating discovery/open
+errors as `cannot_verify` through the existing loader, package boundary,
+dependency direction, and MI baselines. It intentionally excludes protected
+preview status/action helpers (`gate_349` through `gate_351`), override request
+handling (`gate_352` onward), shared JSON/text helpers (`gate_360` onward), and
+preview mode/required-ID helper shards (`gate_365` onward) so witness
+expectation construction, preview status rendering, override, and generic IO
+keep separate review trails.
+
 ## Verification
 
 ```text

@@ -1388,3 +1388,39 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 52 Tasks
+
+- [x] T021-3530 Confirm Slice 52 is bounded to numbered `cmd/sdp-trace`
+  demo witness expectation and artifact digest shards `gate_345` through
+  `gate_348`.
+- [x] T021-3531 Confirm Slice 52 is behavior-preserving: no changes to
+  deriving witness expectations from observed run directories, first-run ID
+  anchoring, `<run-dir-base>/run.json` artifact path shape, retained-byte
+  SHA-256 digest calculation, discovery/open error propagation through
+  protected witness expectation loading, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-3532 Record Slice 52 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-52-plan-review.md`.
+- [x] T021-3540 Move demo witness expectation construction into
+  `protected_witness_expectation.go` and `protected_witness_digest.go`. Split
+  further only if MI fails and record the failed command plus revised
+  responsibility boundary in evidence.
+- [x] T021-3550 Run `gofmt` on changed Go files.
+- [x] T021-3560 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3561 Run focused witness-expectation regression evidence covering
+  exact test existence, missing-run rejection, first-run ID anchoring,
+  per-run `<run-dir-base>/run.json` paths, retained-byte SHA-256 digests,
+  retained `run.json` open/read error propagation, standard witness mismatch
+  failure, protected gate CI-signed/bound witness pass, and no baseline changes.
+- [x] T021-3570 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3580 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3590 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  52 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-52-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
