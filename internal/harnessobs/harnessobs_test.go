@@ -654,6 +654,34 @@ func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
 		t.Fatalf("StreamCapture = %s, want disabled", loaded.StreamCapture)
 	}
 
+	profile.SchemaVersion = "bad"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsupported session profile schema_version") {
+		t.Fatalf("LoadSessionProfile() schema error = %v", err)
+	}
+	profile.SchemaVersion = SessionProfileSchemaVersion
+
+	profile.ProfileID = "../bad"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsafe session profile_id") {
+		t.Fatalf("LoadSessionProfile() profile id error = %v", err)
+	}
+	profile.ProfileID = "session-profile"
+
+	profile.HarnessProfilePath = " \t"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "session profile requires harness_profile_path") {
+		t.Fatalf("LoadSessionProfile() harness path error = %v", err)
+	}
+	profile.HarnessProfilePath = "profile.json"
+
+	profile.EventSourcePath = "\n"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "session profile requires event_source_path") {
+		t.Fatalf("LoadSessionProfile() event source error = %v", err)
+	}
+	profile.EventSourcePath = "events.jsonl"
+
 	if err := os.WriteFile(path, []byte(`{"schema_version":"harness-session-profile-v1","profile_id":"session-profile","harness_profile_path":"profile.json","event_source_path":"events.jsonl","unexpected":true}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -674,6 +702,27 @@ func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
 	writeJSONFixture(t, path, profile)
 	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "raw_event_source_path required") {
 		t.Fatalf("LoadSessionProfile() raw config error = %v", err)
+	}
+
+	profile.RawEventFormat = ""
+	profile.RawEventSourcePath = "raw.jsonl"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "raw_event_format required") {
+		t.Fatalf("LoadSessionProfile() raw source-only error = %v", err)
+	}
+
+	profile.RawEventFormat = "unknown"
+	profile.RawEventSourcePath = "raw.jsonl"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsupported raw_event_format") {
+		t.Fatalf("LoadSessionProfile() unsupported raw format error = %v", err)
+	}
+
+	profile.RawEventFormat = OpenCodeJSONLRawFormat
+	profile.RawEventSourcePath = "raw.jsonl"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err != nil {
+		t.Fatalf("LoadSessionProfile() valid raw config error = %v", err)
 	}
 }
 

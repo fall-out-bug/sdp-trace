@@ -2,6 +2,25 @@ package harnessobs
 
 import "testing"
 
+func TestLoadProfileValidatesProfile(t *testing.T) {
+	dir := t.TempDir()
+	path := "profile.json"
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	writeJSONFixture(t, path, validProfileFixture())
+	if _, err := LoadProfile(path); err != nil {
+		t.Fatalf("LoadProfile() error = %v", err)
+	}
+
+	profile := validProfileFixture()
+	profile.ProfileID = "../bad"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadProfile(path); err == nil || err.Error() != "unsafe profile_id" {
+		t.Fatalf("LoadProfile() validation error = %v, want unsafe profile_id", err)
+	}
+}
+
 func TestValidateProfile(t *testing.T) {
 	tests := []struct {
 		name    string

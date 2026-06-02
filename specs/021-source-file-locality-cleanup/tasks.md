@@ -908,3 +908,37 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   37 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-37-evidence.md`.
+
+## Active Slice 38 Tasks
+
+- [x] T021-2550 Confirm Slice 38 is bounded to numbered
+  `internal/harnessobs` profile loading, session profile identity/path
+  validation, required session path, and raw-event config shards
+  `harnessobs_291` through `harnessobs_299`.
+- [x] T021-2551 Confirm Slice 38 is behavior-preserving: no strict JSON load
+  behavior, profile validation handoff, session profile schema/id errors,
+  stream capture normalization handoff, setup action/isolation validation
+  handoff, required session path whitespace handling, raw-event format/source
+  pairing errors, raw-event format support, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-2552 Record Slice 38 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-38-plan-review.md`.
+- [x] T021-2560 Move selected profile loading and session/raw-event config
+  validation declarations into cohesive responsibility-named files.
+- [x] T021-2570 Run `gofmt` on changed Go files.
+- [x] T021-2580 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2581 Run focused profile/session validation regression evidence
+  covering profile load validation handoff, strict session profile JSON
+  rejection, session profile schema/id rejection, default stream capture
+  normalization, setup action validation handoff, required session path
+  whitespace rejection, raw-event source/format pair errors, unsupported
+  raw-event format rejection, and valid raw-event config acceptance, or mark any
+  unverified behavior `not_assessed` with reason.
+- [x] T021-2590 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2600 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2610 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  38 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-38-evidence.md`.

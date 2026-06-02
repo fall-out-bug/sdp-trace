@@ -339,6 +339,18 @@ config validation, isolation rule validation/installation, loaded session run
 validation, and path-safety primitives so those behavior-heavy areas keep
 separate review trails.
 
+Slice 38 continues `internal/harnessobs` cleanup with harness/session profile
+loading, session profile identity/path validation, and raw-event config pair
+validation shards (`harnessobs_291` through `harnessobs_299`). It moves
+`LoadProfile`, `LoadSessionProfile`, session profile orchestration, identity
+checks, required session path checks, raw event format/source pairing, and raw
+event format support checks into cohesive profile loading and profile
+validation files. It intentionally excludes stream capture normalization
+(`harnessobs_300` onward), session setup action validation, isolation rule
+validation/installation, loaded session run validation, session run
+construction, source commit discovery, and raw-event normalization execution so
+those behavior-heavy areas keep separate review trails.
+
 ## Verification
 
 ```text
