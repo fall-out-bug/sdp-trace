@@ -110,6 +110,33 @@ func TestLoadSessionRunAndJSONLoadingBranches(t *testing.T) {
 	}
 }
 
+func TestReadEventsFromPathBranches(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeEvents(t, dir, []map[string]any{eventMap("e1", "harness")})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	events, sourceDigest, err := readEventsFromPath("profile.json", "events.jsonl")
+	if err != nil {
+		t.Fatalf("readEventsFromPath() error = %v", err)
+	}
+	if len(events) != 1 || events[0].EventID != "e1" {
+		t.Fatalf("events = %+v, want one e1 event", events)
+	}
+	if sourceDigest == "" {
+		t.Fatalf("sourceDigest is empty")
+	}
+
+	if _, _, err := readEventsFromPath("missing-profile.json", "events.jsonl"); err == nil {
+		t.Fatalf("readEventsFromPath(missing profile) error = nil")
+	}
+	if _, _, err := readEventsFromPath("profile.json", "missing-events.jsonl"); err == nil {
+		t.Fatalf("readEventsFromPath(missing source) error = nil")
+	}
+}
+
 func TestNewSessionRunRecordConstructionBranches(t *testing.T) {
 	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
 	profile := SessionProfile{

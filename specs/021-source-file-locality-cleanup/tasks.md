@@ -1100,3 +1100,31 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   43 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-43-evidence.md`.
+
+## Active Slice 44 Tasks
+
+- [x] T021-2970 Confirm Slice 44 is bounded to numbered
+  `internal/harnessobs` event source reading handoff shard `harnessobs_344`.
+- [x] T021-2971 Confirm Slice 44 is behavior-preserving: no changes to profile
+  loading, event scanning, source digest return, error propagation, package
+  boundary, dependency direction, path-safety behavior, raw normalization, or
+  baseline change is planned.
+- [x] T021-2972 Record Slice 44 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-44-plan-review.md`.
+- [x] T021-2980 Move event source reading handoff into the cohesive event scan
+  input file.
+- [x] T021-2990 Run `gofmt` on changed Go files.
+- [x] T021-3000 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-3001 Run focused event source reading regression evidence covering
+  successful profile load plus event scan, profile load failure propagation,
+  source read failure propagation, source digest return, and collect-session
+  missing-source cannot_verify behavior, or mark any unverified behavior
+  `not_assessed` with reason.
+- [x] T021-3010 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3020 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3030 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  44 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-44-evidence.md`.

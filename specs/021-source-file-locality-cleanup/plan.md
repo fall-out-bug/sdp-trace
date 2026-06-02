@@ -414,6 +414,15 @@ commit to `pass`. It intentionally excludes event source reading
 execution (`harnessobs_348` onward) so source provenance state, event reading,
 path safety, and normalization keep separate review trails.
 
+Slice 44 continues `internal/harnessobs` cleanup with event source reading
+handoff (`harnessobs_344`). It moves `readEventsFromPath` into the existing
+`event_scan_input.go` file next to `readEvents`, preserving profile loading,
+event scan delegation, source digest return, and error propagation. It
+intentionally excludes profile-relative source/output path safety
+(`harnessobs_345` through `harnessobs_347`) and raw-event normalization
+execution (`harnessobs_348` onward) so event reading handoff, path safety, and
+normalization keep separate review trails.
+
 ## Verification
 
 ```text
