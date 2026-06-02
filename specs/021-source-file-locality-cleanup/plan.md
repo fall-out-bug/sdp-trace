@@ -447,6 +447,19 @@ errors, source digest calculation, output parent creation, and JSONL write
 format. It intentionally excludes generic unsafe raw-value discovery and
 OpenCode event construction helpers already housed in non-numbered files.
 
+Slice 47 starts `cmd/sdp-trace` cleanup with checkpoint CLI command handling
+(`gate_271` through `gate_289`). It moves checkpoint subcommand routing,
+create flag parsing, checkpoint creation/write handoff, verify flag parsing,
+checkpoint/policy input loading, and verify exit-code mapping into cohesive
+checkpoint CLI files split by command responsibility. It preserves create and
+verify flag names/defaults, usage errors, stderr/stdout behavior, JSON artifact
+read/write behavior, optional policy semantics, checkpoint verification result
+rendering, exit-code mapping, package boundary, dependency direction, and MI
+baselines. It intentionally excludes protected-gate checkpoint policy/witness
+logic (`gate_302` onward) and shared JSON/text file helpers (`gate_360`
+onward) so checkpoint CLI behavior, protected-gate trust rules, and generic IO
+helpers keep separate review trails.
+
 ## Verification
 
 ```text

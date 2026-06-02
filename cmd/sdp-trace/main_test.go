@@ -772,6 +772,132 @@ func TestCheckpointVerifyHelpersCoverPolicyAndExitBranches(t *testing.T) {
 	}
 }
 
+func TestRunCheckpointRejectsMissingOrUnknownSubcommand(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	if code := runCheckpoint(context.Background(), []string{}, &out, &errOut); code != exitUsage {
+		t.Fatalf("missing checkpoint command exit = %d", code)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint requires create or verify") {
+		t.Fatalf("missing checkpoint command stderr = %q", errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	if code := runCheckpoint(context.Background(), []string{"delete"}, &out, &errOut); code != exitUsage {
+		t.Fatalf("unknown checkpoint command exit = %d", code)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint requires create or verify") {
+		t.Fatalf("unknown checkpoint command stderr = %q", errOut.String())
+	}
+}
+
+func TestCheckpointCreateFlagValidation(t *testing.T) {
+	var errOut bytes.Buffer
+
+	if _, code, ok := parseCheckpointCreateArgs([]string{}, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing create flags code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint create requires --run") {
+		t.Fatalf("missing create flags stderr = %q", errOut.String())
+	}
+
+	errOut.Reset()
+	if _, code, ok := parseCheckpointCreateArgs([]string{
+		"--run", "run",
+		"--out", "checkpoint.json",
+		"--private-key", "key.json",
+		"--signer-id", "signer",
+		"extra",
+	}, &errOut); ok || code != exitUsage {
+		t.Fatalf("extra create arg code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint create accepts only flags") {
+		t.Fatalf("extra create arg stderr = %q", errOut.String())
+	}
+}
+
+func TestCheckpointCreateFailurePaths(t *testing.T) {
+	dir := t.TempDir()
+	var errOut bytes.Buffer
+
+	opts := newCheckpointCreateFlagSet()
+	if err := opts.parse([]string{
+		"--run", dir,
+		"--out", filepath.Join(dir, "checkpoint.json"),
+		"--private-key", filepath.Join(dir, "missing-key.json"),
+		"--signer-id", "local-dev",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, code, ok := createCheckpointFromOptions(opts, &errOut); ok || code != 1 {
+		t.Fatalf("missing key code=%d ok=%v", code, ok)
+	}
+
+	key, err := checkpoint.GenerateKeyPair("local-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(dir, "key.json")
+	writeJSONFileForTest(t, keyPath, key)
+	opts = newCheckpointCreateFlagSet()
+	if err := opts.parse([]string{
+		"--run", dir,
+		"--out", dir,
+		"--private-key", keyPath,
+		"--signer-id", "local-dev",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	errOut.Reset()
+	if _, code, ok := createCheckpointFromOptions(opts, &errOut); ok || code != 1 {
+		t.Fatalf("directory output code=%d ok=%v", code, ok)
+	}
+}
+
+func TestCheckpointVerifyRejectsPositionalArgs(t *testing.T) {
+	var errOut bytes.Buffer
+
+	if _, code, ok := parseCheckpointVerifyArgs([]string{"--run", "r", "--checkpoint", "c", "extra"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("checkpoint verify rest code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint verify accepts only flags") {
+		t.Fatalf("checkpoint verify rest stderr = %q", errOut.String())
+	}
+}
+
+func TestCheckpointVerifyInputLoadFailures(t *testing.T) {
+	dir := t.TempDir()
+	var errOut bytes.Buffer
+
+	if _, code, ok := parseCheckpointVerifyArgs([]string{"--checkpoint", "c"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing verify run code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint verify requires --run") {
+		t.Fatalf("missing verify run stderr = %q", errOut.String())
+	}
+
+	checkpointPath := filepath.Join(dir, "checkpoint.json")
+	policyPath := filepath.Join(dir, "policy.json")
+	opts := newCheckpointVerifyFlagSet()
+	if err := opts.parse([]string{"--run", dir, "--checkpoint", checkpointPath, "--policy", policyPath}); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, code, ok := loadCheckpointVerifyInputs(opts, &errOut); ok || code != 1 {
+		t.Fatalf("missing checkpoint load code=%d ok=%v", code, ok)
+	}
+
+	writeJSONFileForTest(t, checkpointPath, checkpoint.SignedCheckpoint{})
+	if err := os.WriteFile(policyPath, []byte("{not-json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	errOut.Reset()
+	if _, _, code, ok := loadCheckpointVerifyInputs(opts, &errOut); ok || code != 1 {
+		t.Fatalf("malformed policy load code=%d ok=%v", code, ok)
+	}
+}
+
 func TestInstallRepoObserverHelpersCoverErrorAndParseBranches(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

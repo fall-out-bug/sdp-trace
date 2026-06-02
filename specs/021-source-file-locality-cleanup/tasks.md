@@ -1192,3 +1192,38 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   46 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-46-evidence.md`.
+
+## Active Slice 47 Tasks
+
+- [x] T021-3180 Confirm Slice 47 is bounded to numbered `cmd/sdp-trace`
+  checkpoint CLI shards `gate_271` through `gate_289`.
+- [x] T021-3181 Confirm Slice 47 is behavior-preserving: no changes to
+  checkpoint create/verify subcommand routing, flag names/defaults, required
+  flag errors, positional argument rejection, private-key and checkpoint JSON
+  loading, optional policy semantics, output JSON rendering, checkpoint create
+  stdout format, verify exit-code mapping, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-3182 Record Slice 47 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-47-plan-review.md`.
+- [x] T021-3190 Move checkpoint CLI command handling into cohesive checkpoint
+  CLI files: `checkpoint_command.go`, `checkpoint_create_cli.go`, and
+  `checkpoint_verify_cli.go`. Split further only if MI fails and record the
+  failed command plus the revised responsibility boundary in evidence.
+- [x] T021-3200 Run `gofmt` on changed Go files.
+- [x] T021-3210 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3211 Run focused checkpoint CLI regression evidence covering
+  missing/unknown checkpoint subcommands, create flag validation, checkpoint
+  creation/write success and failures, verify positional rejection, verify
+  required-input validation, checkpoint/policy load handling, optional policy
+  absence, result rendering, and verify exit-code mapping.
+- [x] T021-3220 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3230 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3240 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  47 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-47-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

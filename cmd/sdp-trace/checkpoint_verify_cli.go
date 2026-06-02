@@ -25,3 +25,14 @@ func runCheckpointVerify(args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "%s\n", payload)
 	return checkpointVerifyExitCode(result.Result)
 }
+
+func checkpointVerifyExitCode(state string) int {
+	if state == checkpoint.StatePass {
+		// Only an explicit checkpoint pass maps to shell success.
+		return 0
+	}
+	if state == checkpoint.StateCannotVerify {
+		return exitCannotVerify
+	}
+	return 1
+}
