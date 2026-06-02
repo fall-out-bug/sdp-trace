@@ -1194,6 +1194,127 @@ func readJSONFileForTest(t *testing.T, path string, value any) {
 	}
 }
 
+func TestReadJSONFilePropagatesReadAndDecodeErrors(t *testing.T) {
+	var decoded map[string]string
+	if err := readJSONFile(filepath.Join(t.TempDir(), "missing.json"), &decoded); err == nil {
+		t.Fatalf("missing file read returned nil error")
+	}
+
+	path := filepath.Join(t.TempDir(), "bad.json")
+	if err := os.WriteFile(path, []byte("{"), 0o644); err != nil {
+		t.Fatalf("write bad json: %v", err)
+	}
+	if err := readJSONFile(path, &decoded); err == nil {
+		t.Fatalf("invalid JSON returned nil error")
+	}
+}
+
+func TestWriteJSONFileCreatesPrettyJSONWithNewline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "artifact.json")
+	if err := writeJSONFile(path, map[string]string{"b": "two", "a": "one"}); err != nil {
+		t.Fatalf("write JSON: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read JSON: %v", err)
+	}
+	want := "{\n  \"a\": \"one\",\n  \"b\": \"two\"\n}\n"
+	if string(data) != want {
+		t.Fatalf("JSON content = %q, want %q", string(data), want)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat JSON: %v", err)
+	}
+	if got := info.Mode().Perm(); got&0o111 != 0 {
+		t.Fatalf("JSON mode = %o, want no executable bits", got)
+	}
+}
+
+func TestWriteTextFileAtomicPublishesCompleteTextAndCleansTemp(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "report.md")
+	if err := writeTextFileAtomic(path, "old\n"); err != nil {
+		t.Fatalf("write old text: %v", err)
+	}
+	if err := writeTextFileAtomic(path, "new\n"); err != nil {
+		t.Fatalf("write new text: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read text: %v", err)
+	}
+	if string(data) != "new\n" {
+		t.Fatalf("text content = %q", string(data))
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat text: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o644 {
+		t.Fatalf("text mode = %o, want 644", got)
+	}
+	assertNoAtomicTextTemps(t, filepath.Dir(path), filepath.Base(path))
+}
+
+func TestFinishAtomicTextWriteNormalizesModeBeforeRename(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.md")
+	tmp, err := os.CreateTemp(dir, ".report.md.*.tmp")
+	if err != nil {
+		t.Fatalf("create temp: %v", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+
+	if err := finishAtomicTextWrite(tmp, tmpName, path, "report\n"); err != nil {
+		t.Fatalf("finish atomic write: %v", err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat final text: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o644 {
+		t.Fatalf("final text mode = %o, want 644", got)
+	}
+}
+
+func TestWriteAndCloseTempTextReturnsWriteErrorOnClosedFile(t *testing.T) {
+	tmp, err := os.CreateTemp(t.TempDir(), "closed.*.tmp")
+	if err != nil {
+		t.Fatalf("create temp: %v", err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatalf("close temp: %v", err)
+	}
+	if err := writeAndCloseTempText(tmp, "text\n"); err == nil {
+		t.Fatalf("closed temp write returned nil error")
+	}
+}
+
+func TestWriteTextFileAtomicRemovesTempOnRenameFailure(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.md")
+	if err := os.Mkdir(path, 0o755); err != nil {
+		t.Fatalf("create destination directory: %v", err)
+	}
+
+	if err := writeTextFileAtomic(path, "report\n"); err == nil {
+		t.Fatalf("rename to directory returned nil error")
+	}
+	assertNoAtomicTextTemps(t, dir, filepath.Base(path))
+}
+
+func assertNoAtomicTextTemps(t *testing.T, dir, base string) {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(dir, "."+base+".*.tmp"))
+	if err != nil {
+		t.Fatalf("glob temp files: %v", err)
+	}
+	if len(matches) != 0 {
+		t.Fatalf("atomic temp files left behind: %v", matches)
+	}
+}
+
 func TestWrapPropagatesNonZeroExitCode(t *testing.T) {
 	falseCmd := mustFindCommand(t, "false")
 	runDir := filepath.Join(t.TempDir(), "run")

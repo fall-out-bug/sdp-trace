@@ -1501,3 +1501,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 55 Tasks
+
+- [x] T021-3740 Confirm Slice 55 is bounded to numbered `cmd/sdp-trace` shared
+  artifact IO shards `gate_360` through `gate_364`.
+- [x] T021-3741 Confirm Slice 55 is behavior-preserving: no changes to JSON
+  read/unmarshal error propagation, JSON parent-directory creation,
+  two-space pretty JSON plus trailing newline, JSON `os.WriteFile` requested
+  `0o644` mode subject to process umask, text
+  parent-directory creation, sibling temp-file naming, temp cleanup,
+  close-on-write-error behavior, chmod-before-rename, atomic rename
+  publication, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-3742 Record Slice 55 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-55-plan-review.md`.
+- [x] T021-3750 Move shared artifact IO helpers into `artifact_json_io.go` and
+  `artifact_text_io.go` after the initial `artifact_io.go` consolidation fails
+  file-level MI; record the failed command plus revised responsibility boundary
+  in evidence.
+- [x] T021-3760 Run `gofmt` on changed Go files.
+- [x] T021-3770 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3771 Run focused artifact IO regression evidence covering exact
+  test existence for `TestReadJSONFilePropagatesReadAndDecodeErrors`,
+  `TestWriteJSONFileCreatesPrettyJSONWithNewline`, and
+  `TestWriteTextFileAtomicPublishesCompleteTextAndCleansTemp`,
+  `TestFinishAtomicTextWriteNormalizesModeBeforeRename`, and
+  `TestWriteAndCloseTempTextReturnsWriteErrorOnClosedFile`, and
+  `TestWriteTextFileAtomicRemovesTempOnRenameFailure`; read error propagation;
+  decode error propagation; pretty JSON newline; parent directory creation;
+  JSON file is readable through the just-created path and has no executable
+  bits; sibling temp-file cleanup after successful rename; temp cleanup on
+  rename failure after a temp file exists; atomic text overwrite publication;
+  chmod-before-rename behavior; write-failure error propagation through a
+  closed temp file; and no baseline changes.
+- [x] T021-3780 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3790 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3800 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  55 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-55-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

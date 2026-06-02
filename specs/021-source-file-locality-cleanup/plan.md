@@ -590,6 +590,22 @@ and MI baselines. It intentionally excludes shared JSON/text helpers
 onward) so override write semantics, generic IO, and shared preview helpers
 keep separate review trails.
 
+Slice 55 continues `cmd/sdp-trace` cleanup with shared artifact IO helpers
+(`gate_360` through `gate_364`). It moves shared JSON reads, pretty JSON writes,
+atomic text writes, temp-file close handling, chmod-before-rename, and rename
+publication first into `artifact_io.go`; file-level MI failed, so the
+implementation split the same responsibility into `artifact_json_io.go` and
+`artifact_text_io.go` without changing behavior or MI baselines. It preserves
+read error and unmarshal error propagation, JSON parent-directory creation,
+two-space JSON indentation with a trailing newline, JSON `os.WriteFile`
+requested `0o644` mode subject to process umask, text parent-directory creation,
+sibling temp-file creation, temp cleanup after successful rename or failure,
+close-on-write-error behavior, `0o644` text file mode before rename, atomic
+rename publication, package boundary, dependency direction, and MI baselines.
+It intentionally excludes preview mode and required-ID helper shards
+(`gate_365` onward) so generic artifact IO and preview-specific argument
+helpers keep separate review trails.
+
 ## Verification
 
 ```text
