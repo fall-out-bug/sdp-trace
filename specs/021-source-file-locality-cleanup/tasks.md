@@ -718,3 +718,35 @@ Status: in_progress
   affected lanes until each reviewer returns exactly `LGTM`, and record Slice
   31 evidence in
   `specs/021-source-file-locality-cleanup/reviews/slice-31-evidence.md`.
+
+## Active Slice 32 Tasks
+
+- [x] T021-2130 Confirm Slice 32 is bounded to corrective consolidation of
+  `internal/harnessobs` artifact JSON, event reference, and digest helper
+  microfiles introduced around Slice 27.
+- [x] T021-2131 Confirm Slice 32 is behavior-preserving: no JSON formatting,
+  event ref rendering/safety, digest algorithm, source digest canonicalization,
+  validation digest, command digest, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-2132 Record Slice 32 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-32-plan-review.md`.
+- [x] T021-2140 Consolidate artifact JSON, event reference, and digest helper
+  microfiles into four cohesive responsibility-named groups without
+  reintroducing numbered files; keep retained event validation split from event
+  ref rendering/path safety because the combined file failed file-level MI.
+- [x] T021-2150 Run `gofmt` on changed Go files.
+- [x] T021-2160 Run focused Go verification for `internal/harnessobs`.
+- [x] T021-2161 Run focused serialization/reference/digest regression evidence
+  covering JSON output writing, unsafe event ref rejection, event ref rendering,
+  raw-line source digest canonicalization, digest mismatch rejection,
+  validation output writing, command digest/model state, and source digest
+  fallback behavior, or mark any unverified behavior `not_assessed` with
+  reason.
+- [x] T021-2170 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-2180 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-2190 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  32 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-32-evidence.md`.

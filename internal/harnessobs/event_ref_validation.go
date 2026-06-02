@@ -2,6 +2,11 @@ package harnessobs
 
 import "errors"
 
+type eventRefCheck struct {
+	ok  bool
+	err string
+}
+
 // Event reference validation keeps all external references on the same safe
 // identifier policy before the event can contribute evidence.
 func validateEventRefs(event Event) error {
@@ -13,6 +18,8 @@ func validateEventRefs(event Event) error {
 	return nil
 }
 
+// eventRefChecks keeps the validation messages stable for event validation
+// callers while sharing one policy list with validateEventRefs.
 func eventRefChecks(event Event) []eventRefCheck {
 	return []eventRefCheck{
 		{safeRef(event.SourceRef), "unsafe source_ref"},

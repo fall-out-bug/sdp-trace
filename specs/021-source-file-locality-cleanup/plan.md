@@ -264,6 +264,14 @@ intentionally excludes session collection (`harnessobs_217` onward) and
 raw-event unsafe rule semantics (`harnessobs_223` onward) so collection and
 rule-specific behavior keep separate review trails.
 
+Slice 32 is a corrective cleanup for Slice 27 microfile drift. It consolidates
+artifact JSON writing, event reference rendering/safety, and digest helpers back
+into cohesive responsibility groups after review found that the final Slice 27
+implementation reintroduced one-helper microfiles despite the reviewed plan.
+The correction preserves behavior and MI/CRAP gates while treating MI pressure
+as a reason for meaningful comments or tighter grouping, not as a blanket
+justification for shard churn.
+
 ## Verification
 
 ```text
