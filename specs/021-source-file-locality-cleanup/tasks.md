@@ -1305,3 +1305,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 50 Tasks
+
+- [x] T021-3390 Confirm Slice 50 is bounded to numbered `cmd/sdp-trace`
+  gate-preview and protected-target shards `gate_325` through `gate_333`.
+- [x] T021-3391 Confirm Slice 50 is behavior-preserving: no changes to preview
+  read-only behavior, target arity usage errors, contract load failure
+  behavior, standard preview report fields, witness mismatch reporting without
+  issuing any gate verdict fields, protected preview input status mapping,
+  protected preview `cannot_verify` setup exit for unreadable/malformed inputs,
+  secret non-disclosure by not printing raw run commands, protected single-run
+  selection semantics, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-3392 Record Slice 50 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-50-plan-review.md`.
+- [x] T021-3400 Move gate preview and protected target selection into
+  `gate_preview_cli.go`, `gate_preview_args.go`,
+  `gate_preview_standard.go`, `gate_preview_reports.go`,
+  `gate_preview_protected.go`, and neutral `protected_gate_run_dir.go`.
+  Keep protected preview status/action helpers `gate_349` through `gate_351`
+  as out-of-scope dependencies for this slice.
+  Record the initial MI failure for the coarser CLI file plus the revised
+  responsibility boundary in evidence.
+- [x] T021-3410 Run `gofmt` on changed Go files.
+- [x] T021-3420 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3421 Run focused gate-preview regression evidence covering exact
+  test existence, parse usage, contract load failures, standard preview
+  report shape fields (`required_runs`, `required_evidence`,
+  `witness_inspectable`, `witness_mismatches`, `claim`), standard preview
+  read-only behavior, explicit absence of gate verdict fields in standard and
+  witness-mismatch preview output, witness mismatch reporting, protected
+  preview absent/unreadable/malformed input statuses and exit codes through
+  existing `gate_349` through `gate_351` helpers, protected single-run
+  selection, and secret non-disclosure.
+- [x] T021-3430 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3440 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3450 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  50 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-50-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

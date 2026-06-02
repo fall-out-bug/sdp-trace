@@ -2424,9 +2424,7 @@ func TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues(t *testing.T) {
 	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK14") {
 		t.Fatalf("preview leaked secret-like value: %s", out.String())
 	}
-	if strings.Contains(out.String(), `"local_gate": "pass"`) {
-		t.Fatalf("preview claimed pass: %s", out.String())
-	}
+	assertNoGateVerdictFields(t, out.Bytes())
 	if _, err := os.Stat(filepath.Join(root, "gate-result.json")); !os.IsNotExist(err) {
 		t.Fatalf("preview wrote gate artifact")
 	}
@@ -2438,12 +2436,135 @@ func TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues(t *testing.T) {
 	}
 }
 
+func TestGatePreviewStandardReportShape(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	contractPath := writeGateContract(t, t.TempDir())
+	witnessPath := writeMismatchedWitnessSummary(t, t.TempDir())
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	var report map[string]any
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("preview json: %v\n%s", err, out.String())
+	}
+	for _, field := range []string{"required_runs", "required_evidence", "witness_inspectable", "witness_mismatches", "claim"} {
+		if _, ok := report[field]; !ok {
+			t.Fatalf("preview report missing %s: %s", field, out.String())
+		}
+	}
+	assertNoGateVerdictFields(t, out.Bytes())
+}
+
 func TestGatePreviewReportsWitnessArtifactMismatch(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()
 	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
 	contractPath := writeGateContract(t, t.TempDir())
-	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	witnessPath := writeMismatchedWitnessSummary(t, t.TempDir())
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "ci witness artifact digest mismatch") {
+		t.Fatalf("preview did not report witness mismatch: %s", out.String())
+	}
+	assertNoGateVerdictFields(t, out.Bytes())
+}
+
+func TestGatePreviewParseAndContractFailurePaths(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		args []string
+		want int
+		err  string
+	}{
+		{
+			name: "missing target",
+			args: []string{"gate", "preview"},
+			want: exitUsage,
+			err:  "gate preview requires <runs-root-or-run-dir>",
+		},
+		{
+			name: "too many targets",
+			args: []string{"gate", "preview", "one", "two"},
+			want: exitUsage,
+			err:  "gate preview requires <runs-root-or-run-dir>",
+		},
+		{
+			name: "missing contract",
+			args: []string{"gate", "preview", "--contract", filepath.Join(t.TempDir(), "missing.json"), t.TempDir()},
+			want: 1,
+			err:  "no such file",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(tt.args, &out, &errOut)
+			if exit != tt.want {
+				t.Fatalf("gate preview exit %d want %d err=%s out=%s", exit, tt.want, errOut.String(), out.String())
+			}
+			if !strings.Contains(errOut.String(), tt.err) {
+				t.Fatalf("gate preview stderr missing %q: %s", tt.err, errOut.String())
+			}
+			if out.Len() != 0 {
+				t.Fatalf("gate preview wrote stdout on failure: %s", out.String())
+			}
+		})
+	}
+}
+
+func TestProtectedGatePreviewInputFailurePaths(t *testing.T) {
+	dir := t.TempDir()
+	readable := filepath.Join(dir, "readable.json")
+	malformed := filepath.Join(dir, "malformed.json")
+	if err := os.WriteFile(readable, []byte(`{"ok":true}`), 0o644); err != nil {
+		t.Fatalf("write readable fixture: %v", err)
+	}
+	if err := os.WriteFile(malformed, []byte(`{not-json`), 0o644); err != nil {
+		t.Fatalf("write malformed fixture: %v", err)
+	}
+	for _, tt := range []struct {
+		name string
+		flag string
+		path string
+		want string
+		exit int
+	}{
+		{"checkpoint missing", "--checkpoint", filepath.Join(dir, "missing.json"), "present_unreadable", exitCannotVerify},
+		{"policy malformed", "--checkpoint-policy", malformed, "present_malformed", exitCannotVerify},
+		{"witness readable", "--witness", readable, "present_readable", 0},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run([]string{"gate", "preview", "--profile", "protected", tt.flag, tt.path, dir}, &out, &errOut)
+			if exit != tt.exit {
+				t.Fatalf("protected preview exit %d want %d err=%s out=%s", exit, tt.exit, errOut.String(), out.String())
+			}
+			field := strings.ReplaceAll(strings.TrimPrefix(tt.flag, "--"), "-", "_")
+			if !strings.Contains(out.String(), `"`+field+`": "`+tt.want+`"`) {
+				t.Fatalf("protected preview missing %s status %s: %s", tt.flag, tt.want, out.String())
+			}
+			if strings.Contains(out.String(), `"protected_gate"`) {
+				t.Fatalf("protected preview emitted gate verdict field: %s", out.String())
+			}
+		})
+	}
+}
+
+func writeMismatchedWitnessSummary(t *testing.T, dir string) string {
+	t.Helper()
+	witnessPath := filepath.Join(dir, "ci-witness.json")
 	if err := os.WriteFile(witnessPath, []byte(`{
 	  "kind": "github-actions",
 	  "status": "pass",
@@ -2456,15 +2577,15 @@ func TestGatePreviewReportsWitnessArtifactMismatch(t *testing.T) {
 	}`), 0o644); err != nil {
 		t.Fatalf("write witness: %v", err)
 	}
+	return witnessPath
+}
 
-	var out bytes.Buffer
-	var errOut bytes.Buffer
-	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
-	}
-	if !strings.Contains(out.String(), "ci witness artifact digest mismatch") {
-		t.Fatalf("preview did not report witness mismatch: %s", out.String())
+func assertNoGateVerdictFields(t *testing.T, raw []byte) {
+	t.Helper()
+	for _, field := range []string{"local_gate", "ci_witness_gate", "audit_grade_gate", "protected_gate"} {
+		if strings.Contains(string(raw), `"`+field+`"`) {
+			t.Fatalf("preview emitted gate verdict field %s: %s", field, string(raw))
+		}
 	}
 }
 

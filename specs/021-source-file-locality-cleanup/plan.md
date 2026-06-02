@@ -496,6 +496,30 @@ protected run-dir/trust matching (`gate_333` onward), override request handling
 explanation, preview, protected trust matching, override, and generic IO keep
 separate review trails.
 
+Slice 50 continues `cmd/sdp-trace` cleanup with gate preview and protected
+target selection (`gate_325` through `gate_333`). It moves standard preview
+report types, preview argument parsing, standard preview execution/report
+building, protected preview execution/report construction, and the shared
+protected run-dir selector into `gate_preview_cli.go`,
+`gate_preview_args.go`, `gate_preview_standard.go`, `gate_preview_reports.go`,
+`gate_preview_protected.go`, and neutral `protected_gate_run_dir.go`. It
+preserves preview read-only behavior, target
+arity usage errors, contract load failure behavior, standard preview report
+fields (`required_runs`, `required_evidence`, `witness_inspectable`,
+`witness_mismatches`, and `claim`), witness mismatch reporting without issuing
+any gate verdict fields, protected preview absent/unreadable/malformed input
+statuses and `cannot_verify` setup exit, secret non-disclosure by not printing
+raw run commands, protected single-run selection semantics, package boundary,
+dependency direction, and MI baselines. It intentionally excludes protected
+checkpoint trust matching (`gate_334` through `gate_344`), demo witness
+construction (`gate_345` onward), protected preview status/action helpers
+(`gate_349` through `gate_351`, dependency only), override request handling
+(`gate_352` onward), shared JSON/text helpers (`gate_360` onward), and preview
+mode/required-ID helper shards (`gate_365` onward) so preview reporting,
+protected trust matching, witness construction, protected input-status
+rendering, override, generic IO, and shared preview helpers keep separate
+review trails.
+
 ## Verification
 
 ```text

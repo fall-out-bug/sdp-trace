@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+var gatePreviewStringFlags = []string{"contract", "witness", "profile", "checkpoint", "checkpoint-policy"}
+
 func parseGatePreviewArgs(args []string, stderr io.Writer) (*flagSet, []string, int, bool) {
 	// Preview accepts both standard and protected flags because it reports setup
 	// readiness without committing to a verdict mode.
