@@ -520,6 +520,25 @@ protected trust matching, witness construction, protected input-status
 rendering, override, generic IO, and shared preview helpers keep separate
 review trails.
 
+Slice 51 continues `cmd/sdp-trace` cleanup with protected checkpoint trust
+matching (`gate_334` through `gate_344`). It moves protected checkpoint upgrade
+selection, signer policy matching, witness protected-trust/source matching,
+artifact digest matching, and optional source-field comparison into
+`protected_checkpoint_trust.go`, `protected_checkpoint_signer.go`,
+`protected_witness_match.go`, and `protected_witness_artifacts.go`. It
+preserves the rule that explicit checkpoint failures cannot be upgraded,
+protected trust requires CI-isolated signer authority, signer policy must bind
+signer id, authority, and public key, witness status/source must match before
+artifact matching, empty expected source fields remain wildcards, artifact
+counts must match exactly, and no protected gate/evidence schema behavior or MI
+baseline is changed. It intentionally excludes demo witness expectation and
+artifact construction (`gate_345` through `gate_348`), protected preview
+status/action helpers (`gate_349` through `gate_351`), override request
+handling (`gate_352` onward), shared JSON/text helpers (`gate_360` onward), and
+preview mode/required-ID helper shards (`gate_365` onward) so protected trust
+matching, demo witness construction, preview status rendering, override, and
+generic IO keep separate review trails.
+
 ## Verification
 
 ```text

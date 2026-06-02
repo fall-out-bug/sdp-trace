@@ -1350,3 +1350,41 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 51 Tasks
+
+- [x] T021-3460 Confirm Slice 51 is bounded to numbered `cmd/sdp-trace`
+  protected checkpoint trust matching shards `gate_334` through `gate_344`.
+- [x] T021-3461 Confirm Slice 51 is behavior-preserving: no changes to
+  checkpoint upgrade eligibility, CI-isolated signer authority requirement,
+  signer id/authority/public-key policy binding, witness protected-trust
+  status, witness source wildcard behavior, artifact exact-count/exact-digest
+  matching, protected gate output contracts, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-3462 Record Slice 51 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-51-plan-review.md`.
+- [x] T021-3470 Move protected checkpoint trust matching into
+  `protected_checkpoint_trust.go`, `protected_checkpoint_signer.go`,
+  `protected_witness_match.go`, and `protected_witness_artifacts.go`. Split
+  further only if MI fails and record the failed command plus revised
+  responsibility boundary in evidence.
+- [x] T021-3480 Run `gofmt` on changed Go files.
+- [x] T021-3490 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-3491 Run focused protected-trust regression evidence covering exact
+  test existence, protected gate pass with CI-signed checkpoint/bound witness,
+  local-signed checkpoint rejection, explicit checkpoint-fail non-upgrade,
+  signer id/authority/public-key mismatch rejection, committed fixture
+  protected rows, direct witness protected input matching, optional source
+  wildcard behavior, exact artifact count/path/digest matching, and protected
+  trust helper hotspot coverage.
+- [x] T021-3500 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-3510 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-3520 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  51 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-51-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

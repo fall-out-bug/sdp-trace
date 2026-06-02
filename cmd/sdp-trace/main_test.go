@@ -2724,6 +2724,12 @@ func TestWitnessMatchesProtectedInput(t *testing.T) {
 		{name: "run", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
 			summary.CIIdentity.RunID = "run-2"
 		}},
+		{name: "empty expected source fields are wildcards", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			expectation.Repository = ""
+			expectation.Ref = ""
+			expectation.CommitSHA = ""
+			expectation.RunID = ""
+		}, want: true},
 		{name: "missing expected artifact", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
 			expectation.RunArtifacts = append(expectation.RunArtifacts, demo.WitnessArtifactDigest{Path: "002/run.json", SHA256: "sha256-b"})
 		}},
@@ -2749,6 +2755,79 @@ func TestWitnessMatchesProtectedInput(t *testing.T) {
 			}
 			if got := witnessMatchesProtectedInput(summary, expectation); got != tc.want {
 				t.Fatalf("match = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestProtectedCheckpointTrustRejectsFailedCheckpointAndSignerMismatches(t *testing.T) {
+	result := checkpoint.VerificationResult{
+		Result:     checkpoint.StateCannotVerify,
+		TrustScope: checkpoint.TrustScopeLocalSigned,
+	}
+	signed := checkpoint.SignedCheckpoint{
+		Signature: checkpoint.Signature{PublicKey: "key-1"},
+		Signer: checkpoint.SignerIdentity{
+			SignerID:  "ci-signer",
+			Authority: checkpoint.AuthorityCIIsolatedJob,
+		},
+	}
+	policy := checkpoint.TrustedCheckpointPolicy{
+		AllowedSigners: []checkpoint.TrustedSigner{{
+			SignerID:  "ci-signer",
+			Authority: checkpoint.AuthorityCIIsolatedJob,
+			PublicKey: "key-1",
+		}},
+	}
+	witnessSummary := demo.WitnessSummary{
+		Kind:       "github-actions",
+		Status:     demo.GatePass,
+		TrustScope: "ci_witnessed",
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+	expected := demo.WitnessExpectation{
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+
+	upgraded := protectedCheckpointVerification(result, signed, policy, witnessSummary, expected)
+	if upgraded.Result != checkpoint.StatePass || upgraded.TrustScope != checkpoint.TrustScopeCISigned || upgraded.SignerAuthorityState != checkpoint.StatePass {
+		t.Fatalf("expected protected checkpoint trust upgrade, got %+v", upgraded)
+	}
+
+	failed := result
+	failed.Result = checkpoint.StateFail
+	notUpgraded := protectedCheckpointVerification(failed, signed, policy, witnessSummary, expected)
+	if notUpgraded.Result != checkpoint.StateFail || notUpgraded.TrustScope == checkpoint.TrustScopeCISigned {
+		t.Fatalf("failed checkpoint was upgraded: %+v", notUpgraded)
+	}
+
+	for _, tt := range []struct {
+		name   string
+		mutate func(*checkpoint.TrustedSigner)
+	}{
+		{name: "signer id", mutate: func(signer *checkpoint.TrustedSigner) {
+			signer.SignerID = "other-signer"
+		}},
+		{name: "authority", mutate: func(signer *checkpoint.TrustedSigner) {
+			signer.Authority = checkpoint.AuthorityLocalDevelopment
+		}},
+		{name: "public key", mutate: func(signer *checkpoint.TrustedSigner) {
+			signer.PublicKey = "other-key"
+		}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			mismatchedPolicy := policy
+			mismatchedPolicy.AllowedSigners = append([]checkpoint.TrustedSigner(nil), policy.AllowedSigners...)
+			tt.mutate(&mismatchedPolicy.AllowedSigners[0])
+			got := protectedCheckpointVerification(result, signed, mismatchedPolicy, witnessSummary, expected)
+			if got.Result == checkpoint.StatePass || got.TrustScope == checkpoint.TrustScopeCISigned || got.SignerAuthorityState == checkpoint.StatePass {
+				t.Fatalf("signer mismatch upgraded protected trust: %+v", got)
 			}
 		})
 	}
