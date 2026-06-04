@@ -3112,3 +3112,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 90 Tasks
+
+- [x] T021-6190 Confirm Slice 90 is bounded to numbered `internal/prreview`
+  ledger synthesis shards `prreview_043` through `prreview_048`.
+- [x] T021-6191 Confirm Slice 90 is behavior-preserving: no changes to
+  reviewer-run/result separation, packet digest propagation, ledger schema
+  version, finding sorting by ID, existing-ledger disposition carry-forward,
+  duplicate-ID last-existing-wins lookup behavior, generated fallback finding
+  IDs, severity normalization, summary sanitization, evidence-ref preservation,
+  empty-ledger behavior, package boundary, dependency direction, or baseline
+  changes are planned.
+- [x] T021-6192 Record Slice 90 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-90-plan-review.md`.
+- [x] T021-6200 Move ledger synthesis helpers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `prreview_043`
+  through `prreview_048` files are gone and staged boundary evidence that
+  excluded validation, summary/rendering, IO, sanitizer/default-disposition,
+  and role-execution numbered files are not moved or edited in Slice 90.
+- [x] T021-6210 Run `gofmt` on changed Go files.
+- [x] T021-6220 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6221 Run focused ledger-synthesis regression evidence covering exact
+  named tests `TestValidationAndLedgerLifecyclePreserveTrustSemantics`,
+  `TestLedgerDispositionCarryForward`, and
+  `TestPrreviewLedgerSynthesisPreservesOrderingCarryForwardAndSanitization`.
+  Run them with a `go test -list` exact-count guard before the focused `go test
+  -run` command so zero matches fail. These tests must cover packet digest and
+  schema propagation, finding flattening from reviewer results, stable sorting
+  by ID, fallback finding IDs, prior disposition carry-forward, default
+  disposition selection, duplicate-ID existing ledger lookup behavior, severity
+  normalization, summary sanitization, evidence-ref preservation, and empty
+  ledger behavior.
+- [x] T021-6230 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6240 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6250 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  90 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-90-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -500,6 +500,65 @@ func TestValidateReviewStatesAndAuthorityBoundary(t *testing.T) {
 	}
 }
 
+func TestValidationAndLedgerLifecyclePreserveTrustSemantics(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("4")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StateNotAssessed}
+	profile := ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "ledger-lifecycle", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"}}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{
+		ReviewRunID:    "run-code",
+		PacketDigest:   packetDigest,
+		Plane:          PlaneCodeCorrectness,
+		RoleID:         "code",
+		Runner:         RunnerManualExternal,
+		RequestedModel: "not_assessed",
+		ObservedModel:  "not_assessed",
+		ModelFamily:    "not_assessed",
+		ModelVersion:   "not_assessed",
+		Status:         StatusFindingsReported,
+		RawOutputRef:   retainedRawRef("run-code"),
+		Findings:       []Finding{{ID: "F-lifecycle", Severity: SeverityMajor, Citation: Citation{ContextRefID: "diff", DiffHunkID: "hunk-1"}, Summary: "lifecycle issue", EvidenceRefs: []string{"review-output"}}},
+	}}}
+
+	ledger := SynthesizeLedger(packet, runs, nil)
+	if ledger.SchemaVersion != SchemaVersionLedger || ledger.PacketDigest != packetDigest || len(ledger.Findings) != 1 {
+		t.Fatalf("ledger lifecycle shape drifted: %+v", ledger)
+	}
+	if ledger.Findings[0].ReviewRunID != "run-code" || ledger.Findings[0].EvidenceRefs[0] != "review-output" {
+		t.Fatalf("ledger should preserve reviewer evidence binding: %+v", ledger.Findings[0])
+	}
+	validation := Validate(packet, profile, runs, ledger)
+	if validation.ReviewCoverageState != CoverageUnresolved || validation.MergeDecision != DecisionNotAuthorized || validation.AuthorityScope != AuthorityReviewRecordOnly {
+		t.Fatalf("validation trust boundary drifted: %+v", validation)
+	}
+}
+
+func TestLedgerDispositionCarryForward(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("5")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketDigest: packetDigest}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{{
+		ReviewRunID: "run-code",
+		Plane:       PlaneCodeCorrectness,
+		RoleID:      "code",
+		Findings: []Finding{
+			{ID: "F-carried", Severity: SeverityCritical, Summary: "kept"},
+			{ID: "F-default", Severity: SeverityMajor, Summary: "new blocker"},
+		},
+	}}}
+	existing := &Ledger{Findings: []LedgerFinding{{ID: "F-carried", Disposition: DispositionAcceptedFixed}}}
+
+	ledger := SynthesizeLedger(packet, runs, existing)
+	byID := map[string]LedgerFinding{}
+	for _, finding := range ledger.Findings {
+		byID[finding.ID] = finding
+	}
+	if byID["F-carried"].Disposition != DispositionAcceptedFixed {
+		t.Fatalf("prior disposition was not carried forward: %+v", byID["F-carried"])
+	}
+	if byID["F-default"].Disposition != DispositionUnresolvedReviewBlocker {
+		t.Fatalf("new major finding should default to unresolved blocker: %+v", byID["F-default"])
+	}
+}
+
 func TestSynthesizeAndValidateCoverageSatisfied(t *testing.T) {
 	packetDigest := "sha256:" + sixtyFour("3")
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StatePass}
@@ -687,6 +746,83 @@ func TestValidationAndSummaryRedactUnsafeMarkerClasses(t *testing.T) {
 	}
 	if !strings.Contains(combined, "[redacted unsafe reviewer text]") {
 		t.Fatalf("redaction marker missing: %s", combined)
+	}
+}
+
+func TestPrreviewLedgerSynthesisPreservesOrderingCarryForwardAndSanitization(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("9")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketDigest: packetDigest}
+	existing := &Ledger{Findings: []LedgerFinding{
+		{ID: "F-1", Disposition: DispositionUnresolvedReviewBlocker},
+		{ID: "F-1", Disposition: DispositionAcceptedNarrower},
+	}}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{
+		{
+			ReviewRunID: "run-z",
+			Plane:       PlaneSecurity,
+			RoleID:      "security",
+			Findings: []Finding{{
+				ID:           "F-2",
+				Severity:     "unknown",
+				Summary:      "SYNTHETIC_TOKEN_SECRET_LEDGER",
+				Citation:     Citation{ContextRefID: "diff", DiffHunkID: "hunk-2"},
+				EvidenceRefs: []string{"evidence-2"},
+			}},
+		},
+		{
+			ReviewRunID: "run-a",
+			Plane:       PlaneCodeCorrectness,
+			RoleID:      "code",
+			Findings: []Finding{
+				{
+					ID:           "F-1",
+					Severity:     SeverityCritical,
+					Summary:      "blocking issue",
+					Citation:     Citation{ContextRefID: "diff", DiffHunkID: "hunk-1"},
+					EvidenceRefs: []string{"evidence-1"},
+				},
+				{
+					Severity: SeverityMajor,
+					Summary:  "fallback id issue",
+				},
+			},
+		},
+	}}
+
+	ledger := SynthesizeLedger(packet, runs, existing)
+	if ledger.SchemaVersion != SchemaVersionLedger || ledger.PacketDigest != packetDigest {
+		t.Fatalf("ledger identity drifted: %+v", ledger)
+	}
+	if len(ledger.Findings) != 3 {
+		t.Fatalf("ledger finding count = %d want 3: %+v", len(ledger.Findings), ledger.Findings)
+	}
+	gotIDs := []string{ledger.Findings[0].ID, ledger.Findings[1].ID, ledger.Findings[2].ID}
+	wantIDs := []string{"F-1", "F-2", "run-a-finding"}
+	if strings.Join(gotIDs, ",") != strings.Join(wantIDs, ",") {
+		t.Fatalf("ledger findings not sorted by ID: got %v want %v", gotIDs, wantIDs)
+	}
+	byID := map[string]LedgerFinding{}
+	for _, finding := range ledger.Findings {
+		byID[finding.ID] = finding
+	}
+	if byID["F-1"].Disposition != DispositionAcceptedNarrower {
+		t.Fatalf("existing duplicate last disposition should carry forward: %+v", byID["F-1"])
+	}
+	if byID["F-2"].Severity != SeverityInformational || byID["F-2"].Summary != redactedUnsafeReviewerText || byID["F-2"].Disposition != DispositionDeferredNotAssessed {
+		t.Fatalf("severity/sanitization/default disposition drifted: %+v", byID["F-2"])
+	}
+	if byID["F-2"].ReviewRunID != "run-z" || byID["F-2"].Plane != PlaneSecurity || byID["F-2"].RoleID != "security" {
+		t.Fatalf("reviewer result metadata not preserved: %+v", byID["F-2"])
+	}
+	if len(byID["F-2"].EvidenceRefs) != 1 || byID["F-2"].EvidenceRefs[0] != "evidence-2" {
+		t.Fatalf("evidence refs not preserved: %+v", byID["F-2"])
+	}
+	if byID["run-a-finding"].Disposition != DispositionUnresolvedReviewBlocker {
+		t.Fatalf("major fallback ID finding should default to unresolved blocker: %+v", byID["run-a-finding"])
+	}
+	empty := SynthesizeLedger(packet, RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest}, nil)
+	if empty.SchemaVersion != SchemaVersionLedger || empty.PacketDigest != packetDigest || len(empty.Findings) != 0 {
+		t.Fatalf("empty ledger behavior drifted: %+v", empty)
 	}
 }
 

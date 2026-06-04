@@ -1179,6 +1179,21 @@ onward), low-level role execution (`prreview_100` onward), prompt generation,
 input-copy utilities, packet option validation, and IO helper implementation so
 those responsibilities keep separate review trails.
 
+Slice 90 continues `internal/prreview` cleanup with ledger synthesis shards
+(`prreview_043` through `prreview_048`). The slice is limited to the public
+`SynthesizeLedger` entrypoint, existing-ledger finding lookup, run-result
+finding flattening, review finding to ledger finding projection, fallback
+finding ID construction, carried disposition preservation, default disposition
+selection through the existing helper, severity normalization, summary
+sanitization, evidence-ref preservation, packet digest propagation, and stable
+finding sorting by ID. It must preserve reviewer-run/result separation,
+existing unresolved/accepted disposition carry-forward, generated fallback IDs,
+empty-ledger behavior, duplicate-ID last-existing-wins lookup behavior, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+validation logic (`prreview_049` onward), summary rendering, file IO, safe text
+helper implementation, default-disposition helper implementation, and lower
+level reviewer execution so those responsibilities keep separate review trails.
+
 ## Verification
 
 ```text
