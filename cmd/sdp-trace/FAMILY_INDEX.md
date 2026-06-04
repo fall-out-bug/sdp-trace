@@ -395,12 +395,6 @@
 - packet_validation_exits.go
 
 ### pr_review
-- pr_review_109_runsynthesize.go
-- pr_review_110_parsesynthesizeargs.go
-- pr_review_111_synthesisinputs.go
-- pr_review_112_readsynthesisinputs.go
-- pr_review_113_readoptionalledger.go
-- pr_review_114_readexistingledger.go
 - pr_review_115_runvalidate.go
 - pr_review_116_parsevalidateargs.go
 - pr_review_117_validationcliexitcode.go
@@ -441,6 +435,8 @@
 - pr_review_run_args.go
 - pr_review_run_command.go
 - pr_review_run_output.go
+- pr_review_synthesis_inputs.go
+- pr_review_synthesize_command.go
 
 ### query
 - query_dispatch.go

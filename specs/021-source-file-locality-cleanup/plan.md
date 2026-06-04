@@ -845,6 +845,21 @@ boundary, dependency direction, and MI baselines. It intentionally excludes
 readers, shared repeated-flag helpers, runner sets, and file helpers so each
 review workflow responsibility keeps a separate review trail.
 
+Slice 71 continues numbered `pr_review` cleanup in `cmd/sdp-trace` with
+`pr-review synthesize` ledger collation shards (`pr_review_109` through
+`pr_review_114`). A two-file boundary was selected after pre-change MI analysis
+measured `pr_review_synthesize_command.go` at file MI `73.5` and
+`pr_review_synthesis_inputs.go` at file MI `72.8`. The slice moves synthesize
+execution and argument parsing into `pr_review_synthesize_command.go`, and
+packet/run/existing-ledger input loading into `pr_review_synthesis_inputs.go`.
+It preserves mandatory output path validation, artifact-read failures mapping
+to `cannot_verify`, optional existing-ledger empty-path behavior, prior ledger
+as input rather than authority, durable ledger writes before stdout mirroring,
+package boundary, dependency direction, and MI baselines. It intentionally
+excludes `pr-review validate`, summarize, check, shared JSON writers, shared
+file helpers, packet/profile readers, and runner helpers so later review
+workflows can keep separate review trails.
+
 ## Verification
 
 ```text

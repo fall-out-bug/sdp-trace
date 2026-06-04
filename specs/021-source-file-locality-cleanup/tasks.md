@@ -2166,3 +2166,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 71 Tasks
+
+- [x] T021-4860 Confirm Slice 71 is bounded to numbered `cmd/sdp-trace`
+  `pr-review synthesize` ledger collation shards `pr_review_109` through
+  `pr_review_114`.
+- [x] T021-4861 Confirm Slice 71 is behavior-preserving: no changes to
+  mandatory output path validation, packet/run-set reads, optional
+  existing-ledger empty-path no-op behavior, existing ledger as synthesis input
+  rather than authority, artifact read failures mapping to `cannot_verify`,
+  durable ledger write before stdout mirroring, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-4862 Record Slice 71 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-71-plan-review.md`.
+- [x] T021-4870 Move `pr-review synthesize` execution and argument parsing into
+  `pr_review_synthesize_command.go`, and packet/run/existing-ledger input
+  loading into `pr_review_synthesis_inputs.go`, after pre-change MI analysis
+  measured the planned files at `73.5` and `72.8`. Record the command and
+  responsibility boundary in evidence, and synchronize
+  `cmd/sdp-trace/FAMILY_INDEX.md` with the renamed files.
+- [x] T021-4880 Run `gofmt` on changed Go files.
+- [x] T021-4890 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4891 Run focused `pr-review synthesize` regression evidence
+  covering exact test existence for
+  `TestParsePRReviewSynthesizeArgsKeepsUsageBoundaries`,
+  `TestReadPRReviewSynthesisInputsKeepsOptionalLedgerBoundary`, and
+  `TestRunPRReviewSynthesizeKeepsLedgerDurability`; mandatory output path
+  validation, positional argument rejection, packet read failure
+  `cannot_verify` behavior, run-set read failure `cannot_verify` behavior,
+  optional existing-ledger empty path, existing ledger read failure propagation,
+  durable ledger write before stdout mirroring, exact test list verification
+  after test implementation that fails when any planned focused test is missing,
+  and no baseline changes.
+- [x] T021-4900 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-4910 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4920 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  71 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-71-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -644,6 +644,138 @@ func TestWritePRReviewRunOutputKeepsPreviewBoundary(t *testing.T) {
 	}
 }
 
+func TestParsePRReviewSynthesizeArgsKeepsUsageBoundaries(t *testing.T) {
+	var errOut bytes.Buffer
+	opts, code, ok := parsePRReviewSynthesizeArgs([]string{"--packet", "packet", "--runs", "runs", "--out", "ledger.json"}, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse synthesize args ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if opts.stringValue("existing-ledger") != "" {
+		t.Fatalf("existing ledger default changed")
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewSynthesizeArgs([]string{"--packet", "packet", "--runs", "runs"}, &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "requires --out") {
+		t.Fatalf("missing out ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewSynthesizeArgs([]string{"--packet", "packet", "--runs", "runs", "--out", "ledger.json", "unexpected"}, &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "accepts only flags") {
+		t.Fatalf("rest arg ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+}
+
+func TestReadPRReviewSynthesisInputsKeepsOptionalLedgerBoundary(t *testing.T) {
+	root := t.TempDir()
+	packetDir, packetDigest := writePRReviewPacketForSynthesisTest(t, root)
+	runsDir := filepath.Join(root, "runs")
+	writePRReviewRunsForSynthesisTest(t, runsDir, packetDigest)
+
+	opts := &flagSet{name: "test synthesize inputs"}
+	opts.setString("packet", packetDir)
+	opts.setString("runs", runsDir)
+	opts.setString("existing-ledger", "")
+	inputs, err := readPRReviewSynthesisInputs(opts)
+	if err != nil {
+		t.Fatalf("read synthesis inputs without existing ledger: %v", err)
+	}
+	if inputs.packet.PacketDigest != packetDigest || inputs.runs.PacketDigest != packetDigest || inputs.existing != nil {
+		t.Fatalf("inputs = %+v", inputs)
+	}
+
+	opts.setString("existing-ledger", filepath.Join(root, "missing-ledger.json"))
+	if _, err := readPRReviewSynthesisInputs(opts); err == nil {
+		t.Fatalf("missing existing ledger should fail")
+	}
+}
+
+func TestRunPRReviewSynthesizeKeepsLedgerDurability(t *testing.T) {
+	root := t.TempDir()
+	packetDir, packetDigest := writePRReviewPacketForSynthesisTest(t, root)
+	runsDir := filepath.Join(root, "runs")
+	writePRReviewRunsForSynthesisTest(t, runsDir, packetDigest)
+	ledgerPath := filepath.Join(root, "ledger.json")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runPRReviewSynthesize([]string{"--packet", packetDir, "--runs", runsDir, "--out", ledgerPath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("synthesize exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	written, err := os.ReadFile(ledgerPath)
+	if err != nil {
+		t.Fatalf("read ledger: %v", err)
+	}
+	if !bytes.Equal(bytes.TrimSpace(out.Bytes()), bytes.TrimSpace(written)) {
+		t.Fatalf("stdout should mirror durable ledger\nstdout=%s\nfile=%s", out.String(), string(written))
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewSynthesize([]string{"--packet", filepath.Join(root, "missing-packet"), "--runs", runsDir, "--out", filepath.Join(root, "packet-fail.json")}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("missing packet exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewSynthesize([]string{"--packet", packetDir, "--runs", filepath.Join(root, "missing-runs"), "--out", filepath.Join(root, "runs-fail.json")}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("missing runs exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func writePRReviewPacketForSynthesisTest(t *testing.T, root string) (string, string) {
+	t.Helper()
+	diffPath := writeFileStringForPRReviewTest(t, root, "synthesis.diff", "diff --git a/a.go b/a.go\n")
+	packetDir := filepath.Join(root, "packet")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"pr-review", "packet",
+		"--out", packetDir,
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", diffPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("packet exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	var packet struct {
+		PacketDigest string `json:"packet_digest"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &packet); err != nil {
+		t.Fatalf("packet stdout: %v\n%s", err, out.String())
+	}
+	return packetDir, packet.PacketDigest
+}
+
+func writePRReviewRunsForSynthesisTest(t *testing.T, runsDir, packetDigest string) {
+	t.Helper()
+	writeJSONForPRReviewTest(t, runsDir, "results.json", map[string]any{
+		"schema_version": "block30-pr-review-runs-v1",
+		"packet_digest":  packetDigest,
+		"results": []map[string]any{{
+			"review_run_id":   "run-code",
+			"packet_digest":   packetDigest,
+			"plane":           "code_correctness",
+			"role_id":         "code",
+			"runner":          "manual_external",
+			"requested_model": "not_assessed",
+			"observed_model":  "not_assessed",
+			"model_family":    "not_assessed",
+			"model_version":   "not_assessed",
+			"status":          "no_findings",
+			"raw_output_ref":  map[string]any{"id": "raw-run-code", "kind": "reviewer_output", "ref": "runs/run-code.txt", "digest_sha256": strings.Repeat("c", 64), "content_type": "text/plain", "redaction_state": "none"},
+			"findings":        []map[string]any{},
+		}},
+	})
+}
+
 func writePRReviewCheckProfile(t *testing.T, root string) string {
 	t.Helper()
 	return writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
