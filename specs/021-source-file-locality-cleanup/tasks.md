@@ -3398,3 +3398,60 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 96 Tasks
+
+- [x] T021-6610 Confirm Slice 96 is bounded to numbered `internal/prreview`
+  role execution and OpenCode baseline/mutation guard shards `prreview_100`
+  through `prreview_124`.
+- [x] T021-6611 Confirm Slice 96 is behavior-preserving: no changes to role
+  order, timeout handling, raw result writing, exact status and reason strings
+  for runner timeout/empty output/parse failure/unavailable/failed, prompt
+  evidence `cannot_verify` states, disallowed runner errors, not-assessed
+  override behavior, OpenCode read-only enforcement, dirty baseline handling,
+  mutation detection, command digest behavior, package boundary, dependency
+  direction, or baseline changes are planned.
+- [x] T021-6612 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-96-plan-review.md`.
+- [x] T021-6620 Move role execution, result completion, runner preparation,
+  command/error execution, OpenCode baseline guard, and working-tree baseline
+  helpers into cohesive responsibility-named files without creating standalone
+  one-function replacement files. Record source-shape evidence that numbered
+  `prreview_100` through `prreview_124` files are gone and staged boundary
+  evidence that excluded parser/raw-result writing `prreview_125` through
+  `prreview_133`, preview, packet copying, prompt rendering/sanitization/
+  citation, validation/summary, and previously consolidated validation files are
+  not moved or edited in Slice 96.
+- [x] T021-6630 Run `gofmt` on changed Go files.
+- [x] T021-6640 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6641 Run focused role execution regression evidence covering exact
+  named tests `TestRunReviewRecordsRunnerFailureStatesAndPromptDigest`,
+  `TestRunReviewPreservesValidationDefaultsAndOutputContracts`,
+  `TestApplyRunnerErrorClassifiesUnavailableAndFailure`,
+  `TestRunReviewNotAssessedReasonDoesNotInvokeRunner`,
+  `TestRunReviewCannotVerifyUnreadablePromptTemplate`,
+  `TestRunReviewPromptIncludesPacketEvidence`, and
+  `TestRunReviewMapsTimeoutToTimedOut`. Run them with a `go test -list`
+  exact-count guard before the focused `go test -run` command so zero matches
+  fail. These tests must cover runner allow-list behavior, prompt digest/ref
+  preservation, empty/malformed/offtask outputs, OpenCode read-only missing,
+  OpenCode mutation detection, raw output retention, not-assessed override,
+  unreadable prompt template handling, prompt evidence injection, timeout
+  mapping, runner error classification, profile role order preservation,
+  dirty-baseline handling as `not_assessed` with `working_tree_dirty`, and a
+  role with no command preserving `StatusNotAssessed` and
+  `runner_command_not_configured` without invoking a runner.
+- [x] T021-6650 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6660 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6670 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 96 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-96-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

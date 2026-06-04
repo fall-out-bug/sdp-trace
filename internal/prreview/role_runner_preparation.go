@@ -5,11 +5,9 @@ import (
 	"strings"
 )
 
+// prepareRoleRunner applies caller policy before any external runner is
+// invoked.
 func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions) (*workingTreeBaseline, bool, error) {
-	// prepareRoleRunner keeps review evidence explicit and replay-bound.
-	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
-	// This helper validates or projects review data; it does not create external proof.
-
 	if markNotAssessedOverride(result, opts.NotAssessedReason) {
 		return nil, false, nil
 	}
@@ -22,10 +20,9 @@ func prepareRoleRunner(result *ReviewerResult, role ReviewRole, opts RunOptions)
 	return prepareCommandRunner(result, role)
 }
 
+// markNotAssessedOverride records an explicit caller-provided reason without
+// invoking a model or runner.
 func markNotAssessedOverride(result *ReviewerResult, reason string) bool {
-	// CI may intentionally publish an evidence row without running a model.
-	// The override is an explicit not_assessed reason, not a reviewer pass.
-	// Normalizing the reason keeps downstream ledgers machine-comparable.
 	if strings.TrimSpace(reason) == "" {
 		return false
 	}
@@ -34,8 +31,8 @@ func markNotAssessedOverride(result *ReviewerResult, reason string) bool {
 	return true
 }
 
+// runnerAllowed keeps executable runners opt-in while manual imports remain
+// local evidence.
 func runnerAllowed(role ReviewRole, allowed map[string]bool) bool {
-	// Manual imports are local evidence and do not need external runner opt-in.
-	// Every executable runner remains disabled unless the caller allow-lists it.
 	return role.Runner == RunnerManualExternal || allowed[role.Runner]
 }

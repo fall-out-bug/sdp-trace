@@ -1274,6 +1274,24 @@ generation, JSON artifact IO, validation/summary logic, sanitizer/citation
 helpers, and packet construction internals so those responsibilities keep
 separate review trails.
 
+Slice 96 continues `internal/prreview` cleanup with role execution and OpenCode
+baseline/mutation guard shards (`prreview_100` through `prreview_124`). The
+slice is limited to role run orchestration, reviewer-result initialization,
+unparsed and parsed result completion, not-assessed override handling, runner
+allow-list checks, prompt-ref attachment, command configuration checks,
+OpenCode read-only/baseline readiness, mutation detection, runner command
+execution, runner error classification, and working-tree baseline hashing. It
+must preserve role order, timeout handling, raw result writing, exact status and
+reason strings for runner timeout/empty output/parse failure/unavailable/failed,
+prompt evidence `cannot_verify` states, disallowed runner errors,
+not-assessed override behavior, OpenCode read-only enforcement, dirty baseline
+handling, mutation detection, command digest behavior, package boundary,
+dependency direction, CRAP < 5, MI > 70, and MI baselines. It intentionally
+excludes reviewer output parsing and raw-result writing (`prreview_125` through
+`prreview_133`), preview and packet input copying (`prreview_134` onward),
+prompt rendering/sanitization/citation helpers, validation/summary logic, and
+previously consolidated packet/profile validation.
+
 ## Verification
 
 ```text

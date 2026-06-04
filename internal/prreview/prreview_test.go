@@ -1302,6 +1302,61 @@ func TestRunReviewPreservesValidationDefaultsAndOutputContracts(t *testing.T) {
 		t.Fatalf("written results shape drifted: %+v", written)
 	}
 
+	orderedProfile := cloneReviewProfile(profile)
+	orderedProfile.RequiredPlanes = []string{PlaneCodeCorrectness, PlaneTraceEvidence}
+	orderedProfile.Roles = []ReviewRole{
+		{RoleID: "first", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "manual"},
+		{RoleID: "second", Plane: PlaneTraceEvidence, Runner: RunnerManualExternal, RequestedModel: "manual"},
+	}
+	orderedRuns, _, err := RunReview(packet, orderedProfile, RunOptions{OutDir: filepath.Join(root, "ordered-runs"), NotAssessedReason: "configured_elsewhere"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(orderedRuns.Results) != 2 || orderedRuns.Results[0].RoleID != "first" || orderedRuns.Results[1].RoleID != "second" {
+		t.Fatalf("profile role order drifted: %+v", orderedRuns.Results)
+	}
+
+	noCommandProfile := cloneReviewProfile(profile)
+	noCommandRuns, _, err := RunReview(packet, noCommandProfile, RunOptions{OutDir: filepath.Join(root, "no-command-runs")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(noCommandRuns.Results) != 1 || noCommandRuns.Results[0].Status != StatusNotAssessed || noCommandRuns.Results[0].Reason != "runner_command_not_configured" {
+		t.Fatalf("no-command role state drifted: %+v", noCommandRuns.Results)
+	}
+
+	dirtyWorkDir := filepath.Join(root, "dirty-work")
+	if err := os.MkdirAll(dirtyWorkDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGitInit(dirtyWorkDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dirtyWorkDir, "dirty.txt"), []byte("dirty\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dirtyProfile := cloneReviewProfile(profile)
+	dirtyProfile.Roles[0] = ReviewRole{
+		RoleID:           "dirty",
+		Plane:            PlaneCodeCorrectness,
+		Runner:           RunnerOpenCode,
+		RequestedModel:   "fake-opencode",
+		ReadOnlyEnforced: true,
+		WorkingTreeMode:  "clean_required",
+		Command:          []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"},
+	}
+	dirtyRuns, _, err := RunReview(packet, dirtyProfile, RunOptions{
+		OutDir:         filepath.Join(root, "dirty-runs"),
+		AllowedRunners: map[string]bool{RunnerOpenCode: true},
+		WorkDir:        dirtyWorkDir,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dirtyRuns.Results) != 1 || dirtyRuns.Results[0].Status != StatusNotAssessed || dirtyRuns.Results[0].Reason != "working_tree_dirty" {
+		t.Fatalf("dirty OpenCode baseline state drifted: %+v", dirtyRuns.Results)
+	}
+
 	errorOutDir := filepath.Join(root, "runner-error")
 	disallowed := cloneReviewProfile(profile)
 	disallowed.Roles[0].Runner = RunnerPI
