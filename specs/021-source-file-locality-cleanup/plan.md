@@ -1044,6 +1044,25 @@ shared artifact usability helper implementations
 (`packet_148` through `packet_192`), and rendering (`packet_193` onward) so those
 responsibilities keep separate review trails.
 
+Slice 82 continues `internal/packet` cleanup with finding/gap/decision-owner
+validation and shared validator error accumulation shards (`packet_122` through
+`packet_137`). The slice is limited to theater finding validation, theater row
+state validation, residual gap validation, residual coverage enforcement,
+decision-owner indexing and required-decision checks, named decision-owner
+field validation, and `bundleValidator.add` error accumulation. It preserves
+validation phase order through the existing `bundleValidator.validate`
+orchestration, theater reason-code diagnostics, trigger evidence-ref validation
+handoff, residual gap unknown-row and missing-reason diagnostics, residual
+coverage exemptions for `PC-RESIDUAL-GAPS` and pass rows, allowed theater row
+states when findings are present, required decision owner ordering, decision
+owner trimming semantics, duplicate decision-owner last-valid-owner-wins
+overwrite behavior, decision owner state/reason diagnostics, accumulated error
+formatting, package boundary, dependency direction, and MI baselines. It
+intentionally excludes shared artifact usability helpers (`packet_145` through
+`packet_147`), GitHub bundle construction helpers (`packet_148` through
+`packet_192`), rendering (`packet_193` onward), and `internal/prreview` numbered
+files so those responsibilities keep separate review trails.
+
 ## Verification
 
 ```text

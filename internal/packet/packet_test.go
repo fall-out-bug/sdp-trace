@@ -786,6 +786,152 @@ func TestValidatePreservesPhaseOrderAndAccumulation(t *testing.T) {
 	})
 }
 
+func TestValidateFindingsGapsDecisionOwnersDiagnosticsInOrder(t *testing.T) {
+	bundle := validBundle()
+	setRowState(&bundle, "PC-THEATER", StatePass, "")
+	bundle.Packet.DecisionOwners = []DecisionOwner{}
+	bundle.Packet.TheaterFindings = []TheaterFinding{{
+		ReasonCode:          "agent_claimed_verification",
+		State:               StatePartial,
+		Finding:             "Agent claimed verification without retained evidence.",
+		TriggerEvidenceRefs: []string{"missing:finding"},
+	}}
+	bundle.Packet.ResidualGaps = append(bundle.Packet.ResidualGaps, ResidualGap{RowID: "PC-UNKNOWN", Reason: ""})
+	refreshPacketDigest(&bundle)
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	assertErrorsInOrder(t, result.Errors, []string{
+		"PC-THEATER cannot be pass when theater findings are present",
+		"missing decision owner \"merge\"",
+		"missing decision owner \"release\"",
+		"missing decision owner \"risk_acceptance\"",
+		"missing decision owner \"security_review\"",
+		"theater finding agent_claimed_verification evidence ref \"missing:finding\" is absent from manifest",
+		"residual gap has unknown row id \"PC-UNKNOWN\"",
+		"residual gap for PC-UNKNOWN requires reason",
+	})
+}
+
+func TestValidateTheaterFindingDiagnostics(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		finding TheaterFinding
+		want    []string
+	}{
+		{
+			name:    "missing reason code",
+			finding: TheaterFinding{TriggerEvidenceRefs: []string{"ci:run"}},
+			want:    []string{"theater finding requires reason_code"},
+		},
+		{
+			name:    "unknown reason code",
+			finding: TheaterFinding{ReasonCode: "imaginary", TriggerEvidenceRefs: []string{"ci:run"}},
+			want:    []string{"theater finding has unknown reason_code \"imaginary\""},
+		},
+		{
+			name:    "trigger ref without resolver",
+			finding: TheaterFinding{ReasonCode: "agent_claimed_verification", TriggerEvidenceRefs: []string{"ci:run"}},
+			want:    []string{"theater finding agent_claimed_verification evidence ref \"ci:run\" has no resolver entry"},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := validBundle()
+			setRowState(&bundle, "PC-THEATER", StatePartial, "finding needs closure")
+			bundle.Packet.TheaterFindings = []TheaterFinding{tt.finding}
+			setManifestEntry(&bundle, "ci:run", func(entry *BundleEntry) {
+				entry.Resolver = ""
+			})
+			refreshPacketDigest(&bundle)
+			result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			for _, want := range tt.want {
+				if !hasError(result.Errors, want) {
+					t.Fatalf("errors = %v, want %q", result.Errors, want)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateTheaterFindingStatesWithFindings(t *testing.T) {
+	for _, state := range []string{StatePartial, StateFail, StateCannotVerify} {
+		t.Run(state, func(t *testing.T) {
+			bundle := validBundle()
+			setRowState(&bundle, "PC-THEATER", state, "finding needs closure")
+			bundle.Packet.TheaterFindings = []TheaterFinding{{ReasonCode: "agent_claimed_verification"}}
+			refreshPacketDigest(&bundle)
+			result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if hasError(result.Errors, "PC-THEATER cannot be pass when theater findings are present") ||
+				hasError(result.Errors, "PC-THEATER with theater findings must be partial, fail, or cannot_verify") {
+				t.Fatalf("state %s should be allowed with findings: %+v", state, result)
+			}
+		})
+	}
+}
+
+func TestValidateResidualGapDiagnosticsAndCoverage(t *testing.T) {
+	bundle := validBundle()
+	bundle.Packet.ResidualGaps = []ResidualGap{
+		{RowID: "PC-RESIDUAL-GAPS", State: StatePartial, Reason: ""},
+		{RowID: "PC-UNKNOWN", State: StatePartial, Reason: ""},
+		{RowID: "PC-REVIEW", State: StatePartial, Reason: "review evidence remains external"},
+	}
+	setRowState(&bundle, "PC-INITIATOR", StatePass, "")
+	setRowState(&bundle, "PC-REVIEW", StatePartial, "review evidence remains external")
+	setRowState(&bundle, "PC-DECISION", StatePartial, "decision owner remains pending")
+	refreshPacketDigest(&bundle)
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	for _, want := range []string{
+		"residual gap for PC-RESIDUAL-GAPS requires reason",
+		"residual gap has unknown row id \"PC-UNKNOWN\"",
+		"residual gap for PC-UNKNOWN requires reason",
+		"PC-DECISION non-pass row requires residual gap explanation",
+	} {
+		if !hasError(result.Errors, want) {
+			t.Fatalf("errors = %v, want %q", result.Errors, want)
+		}
+	}
+	if hasError(result.Errors, "PC-RESIDUAL-GAPS non-pass row requires residual gap explanation") ||
+		hasError(result.Errors, "PC-INITIATOR non-pass row requires residual gap explanation") ||
+		hasError(result.Errors, "PC-REVIEW non-pass row requires residual gap explanation") {
+		t.Fatalf("residual coverage exemptions or matching changed: %+v", result)
+	}
+}
+
+func TestValidateDecisionOwnerDiagnosticsAndDuplicateOverwrite(t *testing.T) {
+	bundle := validBundle()
+	bundle.Packet.DecisionOwners = []DecisionOwner{
+		{Decision: "merge", Owner: "first owner", State: StateNotAssessed, Reason: "first owner lacks approval"},
+		{Decision: "merge", Owner: "last owner", State: StateNotAssessed, Reason: "last owner lacks approval"},
+		{Decision: "release", Owner: "", State: StateNotAssessed},
+		{Decision: "risk_acceptance", Owner: "risk owner", State: "imaginary"},
+		{Decision: "security_review", Owner: "security owner", State: StatePartial},
+		{Decision: " ", Owner: "blank decision owner", State: StateNotAssessed},
+	}
+	refreshPacketDigest(&bundle)
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	for _, want := range []string{
+		"decision release requires owner",
+		"decision release state not_assessed requires reason",
+		"decision risk_acceptance has unknown state \"imaginary\"",
+		"decision security_review state partial requires reason",
+		"decision owner requires decision",
+	} {
+		if !hasError(result.Errors, want) {
+			t.Fatalf("errors = %v, want %q", result.Errors, want)
+		}
+	}
+	if hasError(result.Errors, "missing decision owner \"merge\"") {
+		t.Fatalf("duplicate last valid owner should satisfy merge presence: %+v", result)
+	}
+}
+
+func TestBundleValidatorAddFormatsErrors(t *testing.T) {
+	var validator bundleValidator
+	validator.add("decision %s has unknown state %q", "merge", "imaginary")
+	if got, want := validator.errors, []string{"decision merge has unknown state \"imaginary\""}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("errors = %#v, want %#v", got, want)
+	}
+}
+
 func TestValidateAcceptsResolverEntryForManifestEvidence(t *testing.T) {
 	bundle := validBundle()
 	for i := range bundle.Manifest.Entries {

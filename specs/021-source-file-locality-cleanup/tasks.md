@@ -2707,3 +2707,68 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 82 Tasks
+
+- [x] T021-5630 Confirm Slice 82 is bounded to numbered `internal/packet`
+  finding/gap/decision-owner validation and shared validator error accumulation
+  shards `packet_122` through `packet_137`.
+- [x] T021-5631 Confirm Slice 82 is behavior-preserving: no changes to
+  validation phase order, theater finding reason-code diagnostics, trigger
+  evidence-ref validation handoff, residual gap unknown-row and missing-reason
+  diagnostics, residual coverage exemptions, allowed theater states with
+  findings, required decision owner ordering, decision owner trimming,
+  duplicate decision-owner last-valid-owner-wins overwrite behavior, decision
+  owner state/reason diagnostics, accumulated error formatting, package
+  boundary, dependency direction, or baseline changes are planned.
+- [x] T021-5632 Record Slice 82 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-82-plan-review.md`.
+- [x] T021-5640 Move theater finding validation, theater row state validation,
+  residual gap validation, residual coverage enforcement, decision-owner
+  validation, and validator error accumulation into cohesive locality files.
+  Record source-shape evidence that numbered `packet_122` through `packet_137`
+  files are gone, that replacement locality filenames exist, and that
+  `cmd/sdp-trace/FAMILY_INDEX.md` is not applicable because this is non-command
+  `internal/packet` package locality. Record staged boundary evidence that
+  excluded shared artifact-usability helpers `packet_145` through `packet_147`,
+  GitHub bundle construction `packet_148` through `packet_192`, rendering
+  `packet_193` onward, and `internal/prreview` numbered files are not moved or
+  edited in Slice 82.
+- [x] T021-5650 Run `gofmt` on changed Go files.
+- [x] T021-5660 Run focused Go verification for `internal/packet`.
+- [x] T021-5661 Run focused finding/gap/decision-owner regression evidence
+  covering exact named regression tests:
+  `TestValidateFindingsGapsDecisionOwnersDiagnosticsInOrder`,
+  `TestValidateTheaterFindingDiagnostics`,
+  `TestValidateTheaterFindingStatesWithFindings`,
+  `TestValidateResidualGapDiagnosticsAndCoverage`,
+  `TestValidateDecisionOwnerDiagnosticsAndDuplicateOverwrite`, and
+  `TestBundleValidatorAddFormatsErrors`. These tests must cover validation
+  phase accumulation with finding/gap/decision-owner errors, including exact
+  diagnostic strings and relative `assertErrorsInOrder` ordering for theater
+  state diagnostics, required decision owner diagnostics in `requiredDecisions`
+  order, theater finding evidence-ref diagnostics, and residual gap
+  diagnostics. Also cover theater finding missing and unknown reason-code
+  diagnostics, trigger evidence-ref manifest/resolver diagnostics, residual gap
+  unknown row and missing reason diagnostics, residual coverage exemption for
+  `PC-RESIDUAL-GAPS` and pass rows, missing coverage for non-pass rows,
+  theater row pass rejection and allowed partial/fail/cannot_verify states when
+  findings are present, missing required decision owner diagnostics, blank
+  decision owner decision handling, owner name requirement, duplicate
+  decision-owner last-valid-owner-wins overwrite behavior, decision owner
+  unknown state and missing non-pass reason diagnostics, accumulated error
+  formatting through `bundleValidator.add`, exact source-shape verification
+  after implementation, staged boundary evidence for excluded packet/prreview
+  files, and no baseline changes.
+- [x] T021-5670 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5680 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5690 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  82 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-82-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
