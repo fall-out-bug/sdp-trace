@@ -2351,3 +2351,54 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 75 Tasks
+
+- [x] T021-5140 Confirm Slice 75 is bounded to the remaining numbered
+  `cmd/sdp-trace` shared helper shards `pr_review_137`, `pr_review_139`,
+  `pr_review_142`, and `pr_review_144` through `pr_review_149`, with
+  `writeIndentedPayload` treated as a generic CLI JSON output helper because it
+  is also used by protected gate output.
+- [x] T021-5141 Confirm Slice 75 is behavior-preserving: no changes to stdout
+  JSON rendering for `pr-review` and protected gate callers, write-once
+  output-file refusal, work-dir diagnostics, validation exit mapping,
+  packet/profile load order and partial-input avoidance, repeated raw flag order
+  and fallback semantics, runner allow-list normalization, packet-dir
+  derivation, package boundary, dependency direction, or baseline change is
+  planned.
+- [x] T021-5142 Record Slice 75 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-75-plan-review.md`.
+- [x] T021-5150 Move shared helper shards into cohesive locality files for
+  generic CLI JSON output, filesystem safety, validation exits, packet/profile
+  inputs, repeated flag reconstruction, runner allow-lists, and packet-dir
+  derivation. Record the shared-helper boundary in evidence, and synchronize
+  `cmd/sdp-trace/FAMILY_INDEX.md` with the renamed files.
+- [x] T021-5160 Run `gofmt` on changed Go files.
+- [x] T021-5170 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-5171 Run focused shared-helper regression evidence covering exact
+  test existence for `TestPRReviewSharedOutputAndFileHelpers`,
+  `TestPRReviewSharedPacketProfileAndExitHelpers`,
+  `TestPRReviewSharedRepeatedFlagsRunnerSetAndPacketDir`, and
+  `TestSharedIndentedPayloadPreservesProtectedGateOutput`; stdout JSON
+  rendering with a trailing newline for generic direct use and protected gate
+  output, write-once output-file refusal for blank,
+  existing file, and directory paths, new-file allowance, work-dir missing and
+  file diagnostics, validation exit mapping for `cannot_verify`,
+  `coverage_unresolved`, and satisfied states, packet/profile load error order,
+  repeated raw flag reconstruction for `--key value` and `--key=value`,
+  parsed fallback behavior, runner allow-list comma trimming and empty-entry
+  ignoring, packet-dir derivation for directory, file, and missing path, exact
+  test list verification after test implementation that fails when any planned
+  focused test is missing, and no baseline changes.
+- [x] T021-5180 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5190 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5200 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  75 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-75-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

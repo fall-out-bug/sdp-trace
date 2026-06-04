@@ -916,6 +916,27 @@ helpers, packet/profile shared readers, repeated flag helpers, runner sets,
 packet-dir helpers, and exit-code helpers so shared utilities can keep separate
 review trails.
 
+Slice 75 completes the remaining numbered shared helper cleanup in
+`cmd/sdp-trace` with `pr_review_137`, `pr_review_139`, `pr_review_142`, and
+`pr_review_144` through `pr_review_149`. `writeIndentedPayload` is treated as a
+generic CLI JSON output helper, not as a `pr-review`-only helper, because it is
+also used by protected gate output. A single catch-all helper file is rejected
+because these helpers serve different trust boundaries: terminal JSON rendering,
+write-once and work-dir safety, validation-exit mapping, packet/profile loading,
+repeated flag reconstruction, runner allow-list normalization, and
+packet-directory derivation. The slice renames them into cohesive shared
+locality files while preserving call sites and behavior: JSON payloads remain
+stdout copies only for both `pr-review` and protected gate callers, output files
+remain write-once, work-dir validation keeps `work-dir:` diagnostics,
+validation `cannot_verify` and `coverage_unresolved` still map to
+`exitCannotVerify`, packet/profile loading keeps packet errors first and avoids
+partial input mixing, repeated raw flags preserve order and parsed fallback
+semantics, runner allow-lists ignore empty comma entries without creating
+wildcards, packet-dir derivation accepts either a directory or `packet.json`
+path, package boundary, dependency direction, and MI baselines. It intentionally
+excludes `internal/packet`, release, witness, wrap, query, and numbered gate
+family cleanup so later families keep separate review trails.
+
 ## Verification
 
 ```text

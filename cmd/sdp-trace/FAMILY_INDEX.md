@@ -223,6 +223,7 @@
 
 ### cli
 - cli_flag_requirements.go
+- cli_indented_output.go
 
 ### envelope
 - envelope_summary_args.go
@@ -395,15 +396,6 @@
 - packet_validation_exits.go
 
 ### pr_review
-- pr_review_137_writeindentedpayload.go
-- pr_review_139_filehelpers.go
-- pr_review_142_exitcodes.go
-- pr_review_144_readpacketandprofile.go
-- pr_review_145_readpacketandprofilevalues.go
-- pr_review_146_repeatedflagvalues.go
-- pr_review_147_appendrepeatedflagvalue.go
-- pr_review_148_runnerset.go
-- pr_review_149_packetdir.go
 - pr_review_check_args.go
 - pr_review_check_artifacts.go
 - pr_review_check_command.go
@@ -411,19 +403,25 @@
 - pr_review_check_workflow.go
 - pr_review_cli_test.go
 - pr_review_command.go
+- pr_review_file_safety.go
 - pr_review_packet_args.go
+- pr_review_packet_dir.go
 - pr_review_packet_flags.go
 - pr_review_packet_options.go
+- pr_review_packet_profile_inputs.go
 - pr_review_packet_run.go
+- pr_review_repeated_flags.go
 - pr_review_run_args.go
 - pr_review_run_command.go
 - pr_review_run_output.go
+- pr_review_runner_allowlist.go
 - pr_review_synthesis_inputs.go
 - pr_review_synthesize_command.go
 - pr_review_summary_io.go
 - pr_review_summarize_command.go
 - pr_review_validate_command.go
 - pr_review_validation_inputs.go
+- pr_review_validation_exit.go
 
 ### query
 - query_dispatch.go

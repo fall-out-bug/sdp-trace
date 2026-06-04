@@ -20,6 +20,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
+	"github.com/fall_out_bug/sdp-trace/internal/prreview"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -3700,6 +3701,166 @@ func readTestJSON(t *testing.T, path string, value any) {
 	}
 	if err := json.Unmarshal(payload, value); err != nil {
 		t.Fatalf("unmarshal json %s: %v", path, err)
+	}
+}
+
+func TestPRReviewSharedOutputAndFileHelpers(t *testing.T) {
+	var out bytes.Buffer
+	writeIndentedPayload(&out, map[string]string{"state": "pass"})
+	if !strings.Contains(out.String(), "{\n") ||
+		!strings.Contains(out.String(), `  "state": "pass"`) ||
+		!strings.HasSuffix(out.String(), "\n") {
+		t.Fatalf("indented output changed: %q", out.String())
+	}
+
+	dir := t.TempDir()
+	if err := requireOutputFile("demo command", " "); err == nil || !strings.Contains(err.Error(), "demo command requires --out") {
+		t.Fatalf("blank output error = %v", err)
+	}
+	existing := filepath.Join(dir, "existing.txt")
+	if err := os.WriteFile(existing, []byte("exists\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := requireOutputFile("demo command", existing); err == nil || !strings.Contains(err.Error(), "output file exists") {
+		t.Fatalf("existing output error = %v", err)
+	}
+	if err := refuseExistingFile(dir); err == nil || !strings.Contains(err.Error(), "output path is a directory") {
+		t.Fatalf("directory refusal = %v", err)
+	}
+	if err := refuseExistingFile(filepath.Join(dir, "new-file")); err != nil {
+		t.Fatalf("new file refusal = %v", err)
+	}
+	if err := requireDirectory(filepath.Join(dir, "missing")); err == nil || !strings.Contains(err.Error(), "work-dir:") {
+		t.Fatalf("missing work-dir error = %v", err)
+	}
+	if err := requireDirectory(existing); err == nil || !strings.Contains(err.Error(), "work-dir is not a directory") {
+		t.Fatalf("file work-dir error = %v", err)
+	}
+}
+
+func TestPRReviewSharedPacketProfileAndExitHelpers(t *testing.T) {
+	if code := reviewValidationExitCode(prreview.Validation{ReviewCoverageState: prreview.CoverageCannotVerify}); code != exitCannotVerify {
+		t.Fatalf("cannot_verify validation exit = %d", code)
+	}
+	if code := reviewValidationExitCode(prreview.Validation{ReviewCoverageState: prreview.CoverageUnresolved}); code != exitCannotVerify {
+		t.Fatalf("coverage_unresolved validation exit = %d", code)
+	}
+	if code := reviewValidationExitCode(prreview.Validation{ReviewCoverageState: prreview.CoverageSatisfied}); code != 0 {
+		t.Fatalf("satisfied validation exit = %d", code)
+	}
+
+	dir := t.TempDir()
+	packetDir := filepath.Join(dir, "packet")
+	if err := os.MkdirAll(packetDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	packetPath := filepath.Join(packetDir, "packet.json")
+	profilePath := filepath.Join(dir, "profile.json")
+	packetDigest := "sha256:" + strings.Repeat("1", 64)
+	writeTestJSON(t, packetPath, prreview.Packet{
+		SchemaVersion: prreview.SchemaVersionPacket,
+		PacketID:      "packet-1",
+		PacketDigest:  packetDigest,
+	})
+	writeTestJSON(t, profilePath, prreview.ReviewProfile{
+		SchemaVersion:  prreview.SchemaVersionProfile,
+		ProfileID:      "default",
+		RequiredPlanes: []string{prreview.PlaneCodeCorrectness},
+		Roles: []prreview.ReviewRole{{
+			RoleID:         "code",
+			Plane:          prreview.PlaneCodeCorrectness,
+			Runner:         prreview.RunnerManualExternal,
+			RequestedModel: "not_assessed",
+		}},
+	})
+
+	opts := &flagSet{name: "shared packet profile"}
+	opts.setString("packet", packetDir)
+	opts.setString("profile", profilePath)
+	packet, profile, err := readPRReviewPacketAndProfileValues(opts)
+	if err != nil {
+		t.Fatalf("read packet/profile: %v", err)
+	}
+	if packet.PacketDigest != packetDigest || profile.ProfileID != "default" {
+		t.Fatalf("packet/profile values = %+v %+v", packet, profile)
+	}
+
+	opts.setString("packet", filepath.Join(dir, "missing-packet"))
+	if _, _, err := readPRReviewPacketAndProfileValues(opts); err == nil || !strings.Contains(err.Error(), "missing-packet") {
+		t.Fatalf("missing packet error = %v", err)
+	}
+	opts.setString("packet", packetDir)
+	opts.setString("profile", filepath.Join(dir, "missing-profile.json"))
+	packet, profile, err = readPRReviewPacketAndProfileValues(opts)
+	if err == nil || packet.PacketDigest != "" || profile.ProfileID != "" {
+		t.Fatalf("profile failure mixed partial inputs packet=%+v profile=%+v err=%v", packet, profile, err)
+	}
+}
+
+func TestPRReviewSharedRepeatedFlagsRunnerSetAndPacketDir(t *testing.T) {
+	args := []string{
+		"--runner", "opencode",
+		"--ignored", "value",
+		"--runner=kimi",
+		"--runner", "zai",
+	}
+	values := repeatedFlagValues(args, "runner", "fallback")
+	if strings.Join(values, "|") != "opencode|kimi|zai" {
+		t.Fatalf("repeated values = %#v", values)
+	}
+	if fallback := repeatedFlagValues([]string{"--other", "value"}, "runner", " fallback "); len(fallback) != 1 || fallback[0] != " fallback " {
+		t.Fatalf("fallback values = %#v", fallback)
+	}
+	if empty := repeatedFlagValues(nil, "runner", " "); len(empty) != 0 {
+		t.Fatalf("empty fallback values = %#v", empty)
+	}
+
+	allowed := allowedRunnerSet([]string{"qwen, kimi", "  ", "opencode,,zai"})
+	for _, runner := range []string{"qwen", "kimi", "opencode", "zai"} {
+		if !allowed[runner] {
+			t.Fatalf("runner %s missing from allow-list %+v", runner, allowed)
+		}
+	}
+	if allowed[""] {
+		t.Fatalf("empty runner allowed: %+v", allowed)
+	}
+
+	dir := t.TempDir()
+	packetPath := filepath.Join(dir, "packet.json")
+	if err := os.WriteFile(packetPath, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := packetDir(dir); got != dir {
+		t.Fatalf("packetDir(dir)=%q want %q", got, dir)
+	}
+	if got := packetDir(packetPath); got != dir {
+		t.Fatalf("packetDir(file)=%q want %q", got, dir)
+	}
+	missing := filepath.Join(dir, "missing", "packet.json")
+	if got := packetDir(missing); got != filepath.Dir(missing) {
+		t.Fatalf("packetDir(missing)=%q want %q", got, filepath.Dir(missing))
+	}
+}
+
+func TestSharedIndentedPayloadPreservesProtectedGateOutput(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "protected-gate.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	result := demo.GateResult{ProtectedGate: demo.GatePass}
+	if code := writeProtectedGateResult(outPath, result, &out, &errOut); code != 0 {
+		t.Fatalf("protected result write code=%d err=%s", code, errOut.String())
+	}
+	if !strings.Contains(out.String(), `"protected_gate": "pass"`) || !strings.HasSuffix(out.String(), "\n") {
+		t.Fatalf("protected output changed: %s", out.String())
+	}
+	written, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read protected artifact: %v", err)
+	}
+	if !strings.Contains(string(written), `"protected_gate": "pass"`) {
+		t.Fatalf("protected artifact changed: %s", string(written))
 	}
 }
 
