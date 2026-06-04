@@ -1227,6 +1227,22 @@ baselines. It intentionally excludes coverage-state calculation
 reviewer execution, and packet option validation so those responsibilities
 keep separate review trails.
 
+Slice 93 continues `internal/prreview` cleanup with coverage-state,
+model-identity support, and summary rendering shards (`prreview_069` through
+`prreview_078`). The slice is limited to review coverage-state selection,
+not-assessed and partial/unresolved/satisfied coverage classification, model
+identity fallback checks used by validation, summary rendering orchestration,
+summary header rendering, plane rendering, and finding rendering. It must
+preserve cannot-verify precedence, no-review not-assessed behavior, partial
+coverage behavior, unresolved critical/major coverage behavior, satisfied
+coverage behavior, model mismatch fallback semantics, authority-boundary summary
+language, safe text handling in rendered next actions and findings, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+JSON/file IO (`prreview_079` through `prreview_086`), packet/run/profile option
+validation (`prreview_087` onward), reviewer execution, prompt generation, and
+low-level sanitizer/citation helpers so those responsibilities keep separate
+review trails.
+
 ## Verification
 
 ```text

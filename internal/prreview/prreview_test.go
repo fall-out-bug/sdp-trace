@@ -821,6 +821,84 @@ func TestPrreviewValidationRankingModelAndLedgerFindingContracts(t *testing.T) {
 	}
 }
 
+func TestPrreviewCoverageModelAndSummaryRenderingContracts(t *testing.T) {
+	required := map[string]bool{PlaneCodeCorrectness: true, PlaneSecurity: true}
+	if got := reviewCoverageState(required, 1, false, false); got != CoveragePartial {
+		t.Fatalf("partial coverage = %s want %s", got, CoveragePartial)
+	}
+	if got := reviewCoverageState(required, 2, false, true); got != CoverageUnresolved {
+		t.Fatalf("unresolved coverage = %s want %s", got, CoverageUnresolved)
+	}
+	if got := reviewCoverageState(required, 2, false, false); got != CoverageSatisfied {
+		t.Fatalf("satisfied coverage = %s want %s", got, CoverageSatisfied)
+	}
+	if got := reviewCoverageState(required, 2, true, true); got != CoverageCannotVerify {
+		t.Fatalf("cannot_verify should dominate coverage, got %s", got)
+	}
+	if got := reviewCoverageState(required, 0, false, false); got != CoverageNotAssessed {
+		t.Fatalf("zero usable coverage = %s want %s", got, CoverageNotAssessed)
+	}
+	if got := reviewCoverageState(map[string]bool{}, 0, false, false); got != CoverageNotAssessed {
+		t.Fatalf("empty required coverage = %s want %s", got, CoverageNotAssessed)
+	}
+	if modelMismatchWithoutFallback(
+		ReviewRole{RequestedModel: StateNotAssessed},
+		ReviewerResult{RequestedModel: "model-a", ObservedModel: "model-b"},
+	) {
+		t.Fatal("role not_assessed requested model should not create a mismatch")
+	}
+	if !modelMismatchWithoutFallback(
+		ReviewRole{RequestedModel: "model-a"},
+		ReviewerResult{RequestedModel: "model-a", ObservedModel: "model-b"},
+	) {
+		t.Fatal("unexplained model mismatch should require cannot_verify projection")
+	}
+	if modelMismatchWithoutFallback(
+		ReviewRole{RequestedModel: "model-a"},
+		ReviewerResult{RequestedModel: "model-a", ObservedModel: "model-b", FallbackForModel: "model-a", FallbackReason: "primary_unavailable"},
+	) {
+		t.Fatal("fallback metadata should explain model mismatch")
+	}
+
+	validation := Validation{
+		ReviewCoverageState: CoveragePartial,
+		CIState:             StateNotAssessed,
+		AuthorityScope:      AuthorityReviewRecordOnly,
+		MergeDecision:       DecisionNotAuthorized,
+		ReleaseDecision:     DecisionNotAuthorized,
+		RiskAcceptance:      DecisionNotAuthorized,
+		PlaneResults: []PlaneResult{{
+			Plane:      PlaneSecurity,
+			Status:     StatusCannotVerify,
+			NextAction: "Investigate SYNTHETIC_TOKEN_SECRET_SUMMARY before merge.",
+		}},
+	}
+	ledger := Ledger{Findings: []LedgerFinding{{
+		ID:          "F-summary",
+		Severity:    SeverityMajor,
+		Summary:     "SYNTHETIC_PRIVATE_PATH_SUMMARY",
+		Disposition: DispositionUnresolvedReviewBlocker,
+	}}}
+	summary := Summarize(validation, ledger)
+	if !strings.Contains(summary, "Review coverage: "+CoveragePartial) || !strings.Contains(summary, "Merge decision: "+DecisionNotAuthorized) {
+		t.Fatalf("summary boundary fields missing: %s", summary)
+	}
+	if !strings.Contains(summary, "This is review-record evidence only") {
+		t.Fatalf("summary authority boundary missing: %s", summary)
+	}
+	if strings.Contains(summary, "SYNTHETIC_TOKEN_SECRET_SUMMARY") || strings.Contains(summary, "SYNTHETIC_PRIVATE_PATH_SUMMARY") {
+		t.Fatalf("summary leaked unsafe text: %s", summary)
+	}
+	if !strings.Contains(summary, redactedUnsafeReviewerText) {
+		t.Fatalf("summary missing redaction marker: %s", summary)
+	}
+	for _, forbidden := range []string{"safe to merge", "approved", "ready", "policy passed"} {
+		if strings.Contains(strings.ToLower(summary), forbidden) {
+			t.Fatalf("summary contains forbidden phrase %q: %s", forbidden, summary)
+		}
+	}
+}
+
 func TestReadRunSetRejectsDuplicateRunIDs(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "results.json")

@@ -3254,3 +3254,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 93 Tasks
+
+- [x] T021-6400 Confirm Slice 93 is bounded to numbered `internal/prreview`
+  coverage-state, model-identity support, and summary rendering shards
+  `prreview_069` through `prreview_078`.
+- [x] T021-6401 Confirm Slice 93 is behavior-preserving: no changes to
+  cannot-verify precedence, no-review not-assessed behavior, partial coverage
+  behavior, unresolved critical/major coverage behavior, satisfied coverage
+  behavior, model mismatch fallback semantics, authority-boundary summary
+  language, safe text handling in rendered next actions and findings, package
+  boundary, dependency direction, or baseline changes are planned.
+- [x] T021-6402 Record Slice 93 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-93-plan-review.md`.
+- [x] T021-6410 Move coverage-state, model-identity support, and summary
+  rendering helpers into cohesive responsibility-named files without creating
+  standalone one-function replacement files. Record source-shape evidence that
+  numbered `prreview_069` through `prreview_078` files are gone and staged
+  boundary evidence that excluded IO, option validation, reviewer execution,
+  prompt, sanitizer, and citation numbered files are not moved or edited in
+  Slice 93.
+- [x] T021-6420 Run `gofmt` on changed Go files.
+- [x] T021-6430 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6431 Run focused coverage/model/summary regression evidence covering
+  exact named tests `TestSynthesizeAndValidateCoverageSatisfied`,
+  `TestValidateCannotVerifyUnexplainedModelMismatch`,
+  `TestValidateCoverageStatesForNoReviewersUnresolvedAndStaleDigest`,
+  `TestValidationAndSummaryRedactUnsafeMarkerClasses`, and
+  `TestPrreviewCoverageModelAndSummaryRenderingContracts`. Run them with a
+  `go test -list` exact-count guard before the focused `go test -run` command
+  so zero matches fail. These tests must cover coverage-state precedence,
+  not-assessed/partial/unresolved/satisfied states, model identity mismatch and
+  fallback metadata semantics, authority-boundary summary language, safe next
+  action rendering, safe finding rendering, and no approval overclaiming in
+  summaries.
+- [x] T021-6440 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6450 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6460 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  93 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-93-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
