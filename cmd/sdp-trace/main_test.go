@@ -3402,6 +3402,82 @@ func TestFlagSetParsesBooleanLiteral(t *testing.T) {
 	}
 }
 
+func TestParseGateArgsPreservesContract(t *testing.T) {
+	t.Run("success preserves all gate string flags", func(t *testing.T) {
+		var errOut bytes.Buffer
+		opts, target, outPath, code, ok := parseGateArgs([]string{
+			"--out", "gate.json",
+			"--contract", "contract.json",
+			"--witness", "witness.json",
+			"--profile", "protected",
+			"--checkpoint", "checkpoint.json",
+			"--checkpoint-policy", "policy.json",
+			"run-dir",
+		}, &errOut)
+		if !ok || code != 0 {
+			t.Fatalf("parse ok=%v code=%d err=%s", ok, code, errOut.String())
+		}
+		if target != "run-dir" || outPath != "gate.json" {
+			t.Fatalf("target/out = %q/%q", target, outPath)
+		}
+		for _, test := range []struct {
+			flag string
+			want string
+		}{
+			{"contract", "contract.json"},
+			{"witness", "witness.json"},
+			{"profile", "protected"},
+			{"checkpoint", "checkpoint.json"},
+			{"checkpoint-policy", "policy.json"},
+		} {
+			if got := opts.stringValue(test.flag); got != test.want {
+				t.Fatalf("%s = %q want %q", test.flag, got, test.want)
+			}
+		}
+		if errOut.Len() != 0 {
+			t.Fatalf("unexpected stderr: %s", errOut.String())
+		}
+	})
+
+	for _, test := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "missing target",
+			args: []string{"--out", "gate.json"},
+			want: "gate requires <runs-root-or-run-dir>\n",
+		},
+		{
+			name: "multiple targets",
+			args: []string{"--out", "gate.json", "one", "two"},
+			want: "gate requires <runs-root-or-run-dir>\n",
+		},
+		{
+			name: "missing out",
+			args: []string{"run-dir"},
+			want: "gate requires --out <file>\n",
+		},
+		{
+			name: "unknown flag",
+			args: []string{"--unknown", "value", "run-dir"},
+			want: "unknown flag --unknown\n",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			opts, target, outPath, code, ok := parseGateArgs(test.args, &errOut)
+			if ok || code != exitUsage || opts != nil || target != "" || outPath != "" {
+				t.Fatalf("parse ok=%v code=%d opts=%v target=%q out=%q", ok, code, opts, target, outPath)
+			}
+			if got := errOut.String(); got != test.want {
+				t.Fatalf("stderr = %q want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func runAndWrap(t *testing.T, runDir string, commandPath string, args ...string) {
 	t.Helper()
 	runAndWrapNamed(t, runDir, "fixture", commandPath, args...)

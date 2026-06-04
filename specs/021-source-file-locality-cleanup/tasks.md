@@ -3878,3 +3878,52 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 105 Tasks
+
+- [x] T021-7240 Confirm Slice 105 is bounded to `cmd/sdp-trace` standard gate
+  argument parser helper files: `gate_parse_args.go`, `gate_target_arg.go`,
+  `gate_output_path.go`, and `gate_string_flags.go`.
+- [x] T021-7241 Confirm Slice 105 is behavior-preserving: no changes to
+  `flagSet` parsing, standard gate execution, protected gate execution,
+  preview, explain, gate exit-code logic, public command surface docs, schema
+  files, examples, fixtures, dependencies, package boundary, dependency
+  direction, or MI baselines are planned.
+- [x] T021-7242 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-105-plan-review.md`.
+- [x] T021-7250 Replace the four scoped helper shards
+  `gate_parse_args.go`, `gate_target_arg.go`, `gate_output_path.go`, and
+  `gate_string_flags.go` with one cohesive gate argument parser responsibility
+  file, using `gate_parse_args.go` as the destination name, without creating
+  replacement one-function shards. Record source-shape evidence that all four
+  scoped helper shards are gone or replaced by that one cohesive responsibility
+  file and staged boundary evidence that excluded gate files and public
+  surfaces are untouched.
+- [x] T021-7260 Run `gofmt` on changed Go files.
+- [x] T021-7270 Add or extend focused regression coverage for `parseGateArgs`
+  so it directly asserts successful parsing of the standard/protected gate
+  string flags, exact missing target diagnostic, exact multiple target
+  diagnostic, exact missing `--out` diagnostic, and unknown flag diagnostic.
+- [x] T021-7280 Run focused gate parser verification with a `go test -list`
+  exact-count guard expecting exactly 7 tests:
+  `TestParseGateArgsPreservesContract`,
+  `TestReportAndGateCommands`, `TestGateCommandAcceptsWitness`,
+  `TestProtectedGateRequiresCheckpointPolicyAndWitnessFlags`,
+  `TestProtectedGateMalformedNamedInputIsUsageError`,
+  `TestDefaultGateDoesNotEmitProtectedFields`, and
+  `TestProtectedGatePassesWithCISignedCheckpointAndBoundWitnessCLI`, then run
+  those tests with `go test ./cmd/sdp-trace -run <guard> -count=1 -v`.
+- [x] T021-7290 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7300 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7310 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 105 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-105-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

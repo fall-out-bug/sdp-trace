@@ -1418,6 +1418,19 @@ intentionally excludes command-specific flag registration, CLI subcommand
 behavior, `flagSet` storage/accessor methods in `flagset.go`, public command
 surface docs, schema files, examples, fixtures, and any new dependency.
 
+Slice 105 continues `cmd/sdp-trace` source-file locality cleanup with the
+standard gate argument parser helper shards. The slice is limited to
+consolidating `gate_parse_args.go`, `gate_target_arg.go`,
+`gate_output_path.go`, and `gate_string_flags.go` into a cohesive gate argument
+parser responsibility file without changing the `flagSet` parser, standard
+gate execution, protected gate execution, preview, explain, exit-code logic,
+public command surface docs, schema files, examples, fixtures, or dependencies.
+It must preserve unknown flag diagnostics from `flagSet`, exact target arity
+diagnostics, exact missing `--out` diagnostics, all existing gate string flags
+including protected-profile inputs, option values consumed by standard and
+protected gate paths, package boundary, dependency direction, CRAP < 5, MI >
+70, and MI baselines.
+
 ## Verification
 
 ```text
