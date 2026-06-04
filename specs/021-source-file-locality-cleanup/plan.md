@@ -808,6 +808,27 @@ boundary, dependency direction, and MI baselines. It intentionally excludes
 later numbered packet command shards so the next packet responsibilities can
 keep separate review trails.
 
+Slice 69 starts the numbered `pr_review` cleanup in `cmd/sdp-trace` with
+top-level `pr-review` dispatch and packet subcommand setup shards
+(`pr_review_030`, `pr_review_037` through `pr_review_039`,
+`pr_review_098` through `pr_review_104`, and `pr_review_138`). A combined top-level command/packet
+flag file was rejected because pre-change MI analysis measured file MI `56.6`,
+and a combined packet command/options file was rejected at file MI `68.1`.
+The initial packet command file also failed after adding required-input checks,
+measuring file MI `68.6`. The slice instead moves top-level dispatch into
+`pr_review_command.go`, packet flag metadata into `pr_review_packet_flags.go`,
+packet argument parsing and required-input checks into
+`pr_review_packet_args.go`, packet execution into `pr_review_packet_run.go`,
+and packet option construction into `pr_review_packet_options.go`. It preserves
+subcommand routing, usage and missing-subcommand diagnostics, required packet
+flags and defaults, repeated context/verification flag reconstruction, optional
+metadata mapping, positional-argument rejection, missing packet-anchor usage
+errors, packet build failures mapping to `cannot_verify`, packet stdout
+rendering, provenance anchor mapping, package boundary, dependency direction,
+and MI baselines. It intentionally excludes
+`pr-review run`, synthesize, validate, summarize, check, shared file helpers,
+and runner helpers so later review workflows can keep separate review trails.
+
 ## Verification
 
 ```text

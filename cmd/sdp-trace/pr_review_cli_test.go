@@ -193,6 +193,156 @@ func TestPRReviewCLIRequiresPacketInputsAndReturnsNonZeroForUnresolved(t *testin
 	}
 }
 
+func TestPRReviewHandlersKeepSubcommands(t *testing.T) {
+	want := map[string]subcommandHandler{
+		"packet":     runPRReviewPacket,
+		"run":        runPRReviewRun,
+		"synthesize": runPRReviewSynthesize,
+		"validate":   runPRReviewValidate,
+		"summarize":  runPRReviewSummarize,
+		"check":      runPRReviewCheck,
+	}
+	if len(prReviewHandlers) != len(want) {
+		t.Fatalf("prReviewHandlers length = %d, want %d", len(prReviewHandlers), len(want))
+	}
+	for name, wantHandler := range want {
+		gotHandler, ok := prReviewHandlers[name]
+		if !ok {
+			t.Fatalf("prReviewHandlers missing %s", name)
+		}
+		if functionName(gotHandler) != functionName(wantHandler) {
+			t.Fatalf("prReviewHandlers[%s] = %s, want %s", name, functionName(gotHandler), functionName(wantHandler))
+		}
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	if exit := run([]string{"pr-review"}, &out, &errOut); exit != exitUsage || !strings.Contains(errOut.String(), "pr-review requires") {
+		t.Fatalf("pr-review without subcommand exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestPRReviewPacketFlagsKeepContract(t *testing.T) {
+	wantRequired := []requiredCLIFlag{
+		{"out", "pr-review packet requires --out"},
+		{"repo-id", "pr-review packet requires --repo-id"},
+		{"change-ref", "pr-review packet requires --change-ref"},
+		{"base", "pr-review packet requires --base"},
+		{"head", "pr-review packet requires --head"},
+		{"diff", "pr-review packet requires --diff"},
+	}
+	if len(prReviewPacketRequiredFlags) != len(wantRequired) {
+		t.Fatalf("required flags length = %d, want %d", len(prReviewPacketRequiredFlags), len(wantRequired))
+	}
+	for i := range wantRequired {
+		if prReviewPacketRequiredFlags[i] != wantRequired[i] {
+			t.Fatalf("required flag %d = %#v, want %#v", i, prReviewPacketRequiredFlags[i], wantRequired[i])
+		}
+	}
+
+	defaults := map[string]string{}
+	for _, flag := range prReviewPacketStringFlags {
+		defaults[flag.name] = flag.defaultValue
+	}
+	for _, name := range []string{"out", "repo-id", "change-ref", "base", "head", "diff", "metadata", "context", "verification"} {
+		if got := defaults[name]; got != "" {
+			t.Fatalf("default %s = %q, want empty", name, got)
+		}
+	}
+	if got := defaults["ci-state"]; got != "not_assessed" {
+		t.Fatalf("ci-state default = %q", got)
+	}
+	if got := defaults["created-by"]; got != "sdp-trace-cli" {
+		t.Fatalf("created-by default = %q", got)
+	}
+}
+
+func TestParsePRReviewPacketArgsKeepsUsageBoundaries(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n")
+	validArgs := []string{
+		"--out", filepath.Join(root, "packet"),
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", diffPath,
+	}
+	var errOut bytes.Buffer
+	opts, code, ok := parsePRReviewPacketArgs(validArgs, &errOut)
+	if !ok || code != 0 || opts == nil {
+		t.Fatalf("parse valid ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewPacketArgs(append(validArgs, "unexpected"), &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "accepts only flags") {
+		t.Fatalf("parse rest ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewPacketArgs(validArgs[:len(validArgs)-2], &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "--diff") {
+		t.Fatalf("parse missing diff ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	var out bytes.Buffer
+	errOut.Reset()
+	badDiffArgs := append([]string{}, validArgs...)
+	badDiffArgs[len(badDiffArgs)-1] = filepath.Join(root, "missing.diff")
+	if exit := runPRReviewPacket(badDiffArgs, &out, &errOut); exit != exitCannotVerify {
+		t.Fatalf("runPRReviewPacket bad diff exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestPRReviewPacketOptionsKeepsEvidenceMapping(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n")
+	metadataPath := writeFileStringForPRReviewTest(t, root, "metadata.json", "{}\n")
+	args := []string{
+		"--out", filepath.Join(root, "packet"),
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", diffPath,
+		"--metadata", metadataPath,
+		"--context", "context-one.md",
+		"--context", "context-three.md",
+		"--verification", "verify-one.txt",
+		"--verification", "verify-two.txt",
+		"--verification=verify-three.txt",
+		"--ci-state", "pass",
+		"--created-by", "tester",
+	}
+	var errOut bytes.Buffer
+	opts, code, ok := parsePRReviewPacketArgs(args, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse args ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	options := prReviewPacketOptions(opts, args, opts.stringValue("out"))
+	if options.OutDir != filepath.Join(root, "packet") ||
+		options.RepoID != "demo_repo" ||
+		options.ChangeRef != "pr-123" ||
+		options.BaseCommit != strings.Repeat("a", 40) ||
+		options.HeadCommit != strings.Repeat("b", 40) ||
+		options.DiffPath != diffPath ||
+		options.MetadataPath != metadataPath {
+		t.Fatalf("identity options = %+v", options)
+	}
+	wantContext := []string{"context-one.md", "context-three.md"}
+	if strings.Join(options.ContextPaths, "|") != strings.Join(wantContext, "|") {
+		t.Fatalf("context paths = %#v, want %#v", options.ContextPaths, wantContext)
+	}
+	wantVerification := []string{"verify-one.txt", "verify-two.txt", "verify-three.txt"}
+	if strings.Join(options.VerificationPaths, "|") != strings.Join(wantVerification, "|") {
+		t.Fatalf("verification paths = %#v, want %#v", options.VerificationPaths, wantVerification)
+	}
+	if options.CIState != "pass" || options.CreatedBy != "tester" {
+		t.Fatalf("metadata options = %+v", options)
+	}
+}
+
 func TestPRReviewCheckWritesRunProvenance(t *testing.T) {
 	root := t.TempDir()
 	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")

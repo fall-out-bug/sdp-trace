@@ -395,17 +395,6 @@
 - packet_validation_exits.go
 
 ### pr_review
-- pr_review_030_handlers.go
-- pr_review_037_packetrequiredflags.go
-- pr_review_038_packetstringflags.go
-- pr_review_039_run.go
-- pr_review_098_runpacket.go
-- pr_review_099_parsepacketargs.go
-- pr_review_100_registerpacketflags.go
-- pr_review_101_buildpacket.go
-- pr_review_102_packetoptions.go
-- pr_review_103_fillpacketidentity.go
-- pr_review_104_fillpacketevidence.go
 - pr_review_105_runrun.go
 - pr_review_106_executerun.go
 - pr_review_107_writerunoutput.go
@@ -439,7 +428,6 @@
 - pr_review_135_writejson.go
 - pr_review_136_validationexit.go
 - pr_review_137_writeindentedpayload.go
-- pr_review_138_requirepacketinputs.go
 - pr_review_139_filehelpers.go
 - pr_review_142_exitcodes.go
 - pr_review_144_readpacketandprofile.go
@@ -447,7 +435,13 @@
 - pr_review_146_repeatedflagvalues.go
 - pr_review_147_appendrepeatedflagvalue.go
 - pr_review_148_runnerset.go
+- pr_review_149_packetdir.go
 - pr_review_cli_test.go
+- pr_review_command.go
+- pr_review_packet_args.go
+- pr_review_packet_flags.go
+- pr_review_packet_options.go
+- pr_review_packet_run.go
 
 ### query
 - query_dispatch.go

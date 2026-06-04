@@ -2071,3 +2071,54 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 69 Tasks
+
+- [x] T021-4720 Confirm Slice 69 is bounded to numbered `cmd/sdp-trace`
+  `pr_review` top-level dispatch and packet subcommand setup shards
+  `pr_review_030`, `pr_review_037` through `pr_review_039`, and
+  `pr_review_098` through `pr_review_104`, plus packet required-input helper
+  shard `pr_review_138`.
+- [x] T021-4721 Confirm Slice 69 is behavior-preserving: no changes to
+  subcommand routing, usage and missing-subcommand diagnostics, required packet
+  flags and defaults, repeated context/verification flag reconstruction,
+  optional metadata mapping, positional-argument rejection, missing
+  packet-anchor usage errors, packet build failures mapping to
+  `cannot_verify`, packet stdout rendering, provenance anchor mapping, package
+  boundary, dependency direction, or baseline change is planned.
+- [x] T021-4722 Record Slice 69 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-69-plan-review.md`.
+- [x] T021-4730 Move top-level `pr-review` dispatch, packet flag metadata,
+  packet command parsing/execution, and packet option construction into
+  `pr_review_command.go`, `pr_review_packet_flags.go`,
+  `pr_review_packet_args.go`, `pr_review_packet_run.go`, and
+  `pr_review_packet_options.go` after the combined top-level command/packet
+  flag file failed file-level MI at `56.6`, the combined packet
+  command/options file failed file-level MI at `68.1`, and the initial packet
+  command file with required-input checks failed file-level MI at `68.6`.
+  Record failed commands plus revised responsibility boundaries in evidence.
+- [x] T021-4740 Run `gofmt` on changed Go files.
+- [x] T021-4750 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4751 Run focused `pr-review` command/packet regression evidence
+  covering exact test existence for `TestPRReviewHandlersKeepSubcommands`,
+  `TestPRReviewPacketFlagsKeepContract`,
+  `TestParsePRReviewPacketArgsKeepsUsageBoundaries`, and
+  `TestPRReviewPacketOptionsKeepsEvidenceMapping`; subcommand routing; usage
+  and missing-subcommand diagnostics; required packet flags and defaults;
+  positional-argument rejection; missing packet-anchor usage errors; packet
+  build failure `cannot_verify` behavior; repeated context and verification
+  flag reconstruction; optional metadata mapping; provenance anchor mapping;
+  exact test list verification after test implementation that fails when any
+  planned focused test is missing; and no baseline changes.
+- [x] T021-4760 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-4770 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4780 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  69 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-69-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"strings"
 )
 
 func parsePRReviewPacketArgs(args []string, stderr io.Writer) (*flagSet, int, bool) {
@@ -25,4 +27,22 @@ func parsePRReviewPacketArgs(args []string, stderr io.Writer) (*flagSet, int, bo
 		return nil, exitUsage, false
 	}
 	return opts, 0, true
+}
+
+func registerPRReviewPacketFlags(opts *flagSet) {
+	// Packet metadata is fully flag-driven so generated review packets can be
+	// replayed without hidden process context.
+	for _, flag := range prReviewPacketStringFlags {
+		opts.setString(flag.name, flag.defaultValue)
+	}
+}
+
+func requirePRReviewPacketInputs(opts *flagSet) error {
+	for _, flag := range prReviewPacketRequiredFlags {
+		if strings.TrimSpace(opts.stringValue(flag.name)) == "" {
+			// Required packet fields are provenance anchors, not cosmetic labels.
+			return errors.New(flag.message)
+		}
+	}
+	return nil
 }
