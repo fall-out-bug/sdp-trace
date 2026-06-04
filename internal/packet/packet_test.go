@@ -1292,6 +1292,186 @@ func TestGitHubArtifactEvidenceHelpersPreserveSemantics(t *testing.T) {
 	}
 }
 
+func TestGitHubManifestEntriesPreserveAssemblyOrder(t *testing.T) {
+	input := validGitHubInput()
+	input.WorkflowRunID = "run-123"
+	input.RequirePromptBoundary = true
+	input.PromptBoundary = PromptBoundary{Digest: "sha256:abc", CaptureActor: "recorder", CapturedAt: "2026-05-12T00:00:00Z", CaptureMethod: "external_capture"}
+	input.AgentRouteDigest = "sha256:route"
+	input.AgentRouteEvidenceKind = "harness_route_observation"
+	input.AgentRouteComponents = []string{"opencode", "gsd-redux", "minimax-m2.5"}
+	input.Artifacts[0].Digest = "sha256:test-report"
+	input.Artifacts[0].ExpiresAt = "2026-05-13T00:00:00Z"
+	input.IntegrationActions = []IntegrationAction{{Kind: "deploy", Actor: "bot", Resolver: "https://example.test/deploy"}}
+
+	entries := githubEntries(input)
+	gotRefs := make([]string, 0, len(entries))
+	byRef := map[string]BundleEntry{}
+	for _, entry := range entries {
+		gotRefs = append(gotRefs, entry.Ref)
+		byRef[entry.Ref] = entry
+	}
+	wantRefs := []string{
+		"github:pr",
+		"git:commit-range",
+		"theater:builder",
+		"decision:owners",
+		"gap:generated",
+		"prompt:boundary",
+		"github:pr-body",
+		"agent:route",
+		"github:check",
+		"github:review",
+		"artifact:test-report",
+		"integration:deploy",
+	}
+	if !reflect.DeepEqual(gotRefs, wantRefs) {
+		t.Fatalf("entry refs = %#v, want %#v", gotRefs, wantRefs)
+	}
+
+	assertManifestEntryAuthority(t, byRef["github:pr"], "change_host", "external_ref", "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", "run-123")
+	assertManifestEntryAuthority(t, byRef["github:pr-body"], "change_host", "external_ref", "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", "run-123")
+	assertManifestEntryAuthority(t, byRef["github:check"], "ci", "external_ref", "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", "run-123")
+	assertManifestEntryAuthority(t, byRef["github:review"], "review", "external_ref", "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", "run-123")
+	assertManifestEntryAuthority(t, byRef["artifact:test-report"], "ci", "external_ref", "ci_packet_builder", "ci_generated", "sdp-trace packet build-pr", "github_workflow_run", "run-123")
+
+	artifactEntry := byRef["artifact:test-report"]
+	if artifactEntry.Digest != "sha256:test-report" || artifactEntry.ExpiresAt != "2026-05-13T00:00:00Z" {
+		t.Fatalf("artifact manifest entry = %+v", artifactEntry)
+	}
+}
+
+func TestGitHubConditionalManifestEntriesPreserveSemantics(t *testing.T) {
+	input := validGitHubInput()
+	input.PR.BodyRef = ""
+	input.AgentRouteRefs = nil
+	input.Checks = nil
+	input.Reviews = nil
+	input.Artifacts = nil
+	if got := githubPromptBoundaryEntries(input); got != nil {
+		t.Fatalf("prompt entries = %#v, want nil", got)
+	}
+	if got := githubPRBodyEntries(input); got != nil {
+		t.Fatalf("body entries = %#v, want nil", got)
+	}
+	if got := githubAgentRouteEntries(input); got != nil {
+		t.Fatalf("route entries = %#v, want nil", got)
+	}
+	if got := githubCheckEntries(input); got != nil {
+		t.Fatalf("check entries = %#v, want nil", got)
+	}
+	if got := githubReviewEntries(input); got != nil {
+		t.Fatalf("review entries = %#v, want nil", got)
+	}
+	if got := githubArtifactEntries(input); len(got) != 0 {
+		t.Fatalf("artifact entries = %#v, want empty", got)
+	}
+	if got := githubIntegrationEntries(input); len(got) != 0 {
+		t.Fatalf("integration entries = %#v, want empty", got)
+	}
+
+	input.RequirePromptBoundary = true
+	input.PromptBoundary.Text = "Implement feature"
+	promptEntry := githubPromptBoundaryEntries(input)[0]
+	if promptEntry.Ref != "prompt:boundary" || promptEntry.Resolver != "prompt:text-retained" || promptEntry.RetainedForm != "redacted" {
+		t.Fatalf("prompt entry = %+v", promptEntry)
+	}
+
+	input = validGitHubInput()
+	input.PromptBoundary = PromptBoundary{Digest: "sha256:abc"}
+	promptEntry = githubPromptBoundaryEntries(input)[0]
+	if promptEntry.Ref != "prompt:boundary" || promptEntry.Resolver != "prompt:digest:sha256:abc" || promptEntry.RetainedForm != "digest_only" {
+		t.Fatalf("digest-only prompt entry = %+v", promptEntry)
+	}
+
+	input = validGitHubInput()
+	input.RequirePromptBoundary = true
+	input.PromptBoundary = PromptBoundary{}
+	promptEntry = githubPromptBoundaryEntries(input)[0]
+	if promptEntry.Ref != "prompt:boundary" || promptEntry.Resolver != "prompt:missing" || promptEntry.RetainedForm != "not_retained" {
+		t.Fatalf("missing required prompt entry = %+v", promptEntry)
+	}
+
+	input = validGitHubInput()
+	input.AgentRouteDigest = "sha256:route"
+	input.AgentRouteEvidenceKind = "harness_route_observation"
+	input.AgentRouteComponents = []string{"opencode"}
+	routeEntry := githubAgentRouteEntries(input)[0]
+	if routeEntry.Digest != "sha256:route" || routeEntry.EvidenceKind != "harness_route_observation" || !reflect.DeepEqual(routeEntry.ObservedComponents, []string{"opencode"}) {
+		t.Fatalf("route entry = %+v", routeEntry)
+	}
+
+	input.IntegrationActions = []IntegrationAction{{Kind: "deploy", Actor: "bot", Resolver: "https://example.test/deploy"}}
+	integrationEntry := githubIntegrationEntries(input)[0]
+	if integrationEntry.Ref != "integration:deploy" || integrationEntry.Actor != "integration" || integrationEntry.WriteAuthority != "integration_authored" || integrationEntry.GeneratedBy != "bot" {
+		t.Fatalf("integration entry = %+v", integrationEntry)
+	}
+}
+
+func TestGitHubBundleEntryAuthorityAndRedactionPreserveSemantics(t *testing.T) {
+	entry := bundleEntry("secret:ref", "ci", "Authorization: Bearer TOKEN", "external_ref")
+	if entry.Resolver != "[redacted-secret]" || entry.Digest != digestPlaceholder("secret:ref[redacted-secret]") || entry.ArtifactAccess != "present" {
+		t.Fatalf("redacted bundle entry = %+v", entry)
+	}
+
+	entry = authorityEntry(entry, "actor", "writer", "generator", "source-state", "  source-ref  ")
+	if entry.Actor != "actor" || entry.WriteAuthority != "writer" || entry.GeneratedBy != "generator" || entry.SourceCommitState != "source-state" || entry.SourceRef != "source-ref" {
+		t.Fatalf("authority entry = %+v", entry)
+	}
+
+	artifact := githubArtifactEntries(GitHubPREvidenceInput{
+		WorkflowRunID: "run-1",
+		Artifacts:     []GitHubArtifact{{Name: "report", Resolver: "resolver", RetainedForm: "external_ref", ExpiresAt: "2026-05-13T00:00:00Z", Digest: "sha256:report"}},
+	})[0]
+	if artifact.Ref != "artifact:report" || artifact.ExpiresAt != "2026-05-13T00:00:00Z" || artifact.Digest != "sha256:report" || artifact.SourceRef != "run-1" {
+		t.Fatalf("artifact entry = %+v", artifact)
+	}
+}
+
+func TestGitHubResidualGapsAndDecisionOwnersPreserveDefaults(t *testing.T) {
+	rows := []Row{
+		githubRow("PC-CHANGE", StatePass, "pass", nil, ""),
+		githubRow("PC-REVIEW", StatePartial, "partial", nil, "needs review"),
+		githubRow("PC-AUTHORITY", StateNotAssessed, "not assessed", nil, "authority absent"),
+		githubRow("PC-RESIDUAL-GAPS", StatePartial, "self", nil, "self row"),
+	}
+	gaps := residualGapsForRows(rows)
+	if got, want := len(gaps), 2; got != want {
+		t.Fatalf("gaps len = %d, want %d: %#v", got, want, gaps)
+	}
+	if gaps[0].RowID != "PC-REVIEW" || gaps[0].ClosureEvidence != "provide retained evidence for PC-REVIEW" {
+		t.Fatalf("first gap = %+v", gaps[0])
+	}
+	if gaps[1].RowID != "PC-AUTHORITY" || gaps[1].State != StateNotAssessed {
+		t.Fatalf("second gap = %+v", gaps[1])
+	}
+
+	owners := defaultDecisionOwners()
+	wantDecisions := []string{"merge", "release", "risk_acceptance", "security_review"}
+	for i, decision := range wantDecisions {
+		if owners[i].Decision != decision || owners[i].State != StateNotAssessed || owners[i].Reason == "" {
+			t.Fatalf("owner[%d] = %+v", i, owners[i])
+		}
+	}
+}
+
+func TestGitHubResolverAndDigestHelpersPreserveSemantics(t *testing.T) {
+	checks := []GitHubCheck{{Name: "test", URL: "https://example.test/test"}, {Name: "lint", URL: "https://example.test/lint"}}
+	if got, want := checkResolvers(checks), "test=https://example.test/test, lint=https://example.test/lint"; got != want {
+		t.Fatalf("check resolvers = %q, want %q", got, want)
+	}
+	reviews := []GitHubReview{{Reviewer: "alice", Resolver: "review-a.md"}, {Reviewer: "bob", Resolver: "review-b.md"}}
+	if got, want := reviewResolvers(reviews), "alice=review-a.md, bob=review-b.md"; got != want {
+		t.Fatalf("review resolvers = %q, want %q", got, want)
+	}
+	if got := digestPlaceholder("abc"); !strings.HasPrefix(got, "sha256:") || len(got) != len("sha256:")+64 {
+		t.Fatalf("digest placeholder = %q", got)
+	}
+	if got := redactSecretLike("plain resolver"); got != "plain resolver" {
+		t.Fatalf("plain resolver redacted to %q", got)
+	}
+}
+
 func TestCheckDemoRejectsSelfDeclaredRouteEvidence(t *testing.T) {
 	input := validGitHubInput()
 	input.AgentRouteEvidenceKind = "harness_route_observation"
@@ -1692,6 +1872,13 @@ func rowsByID(rows []Row) map[string]Row {
 		byID[row.ID] = row
 	}
 	return byID
+}
+
+func assertManifestEntryAuthority(t *testing.T, entry BundleEntry, sourceClass, retainedForm, actor, writeAuthority, generatedBy, sourceCommitState, sourceRef string) {
+	t.Helper()
+	if entry.SourceClass != sourceClass || entry.RetainedForm != retainedForm || entry.Actor != actor || entry.WriteAuthority != writeAuthority || entry.GeneratedBy != generatedBy || entry.SourceCommitState != sourceCommitState || entry.SourceRef != sourceRef {
+		t.Fatalf("manifest authority for %q = %+v", entry.Ref, entry)
+	}
 }
 
 func writeJSONForTest(t *testing.T, path string, value any) {

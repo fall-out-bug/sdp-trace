@@ -2875,3 +2875,52 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 85 Tasks
+
+- [x] T021-5840 Confirm Slice 85 is bounded to numbered `internal/packet`
+  GitHub manifest/default/digest helper shards `packet_174` through
+  `packet_192`.
+- [x] T021-5841 Confirm Slice 85 is behavior-preserving: no changes to manifest
+  entry refs, source classes, resolvers, retained forms, authority metadata,
+  source refs, prompt-boundary resolver/retained-form behavior, agent route
+  digest/evidence-kind/component behavior, artifact expiry/digest propagation,
+  integration entry actor/authority behavior, residual gap filtering, default
+  decision owner states/reasons, redaction markers, digest format, package
+  boundary, dependency direction, or baseline changes are planned.
+- [x] T021-5842 Record Slice 85 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-85-plan-review.md`.
+- [x] T021-5850 Move GitHub manifest/default/digest helpers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `packet_174`
+  through `packet_192` files are gone and that `cmd/sdp-trace/FAMILY_INDEX.md`
+  is not applicable because this is non-command `internal/packet` package
+  locality. Record staged boundary evidence that excluded rendering
+  `packet_193` onward and `internal/prreview` numbered files are not moved or
+  edited in Slice 85.
+- [x] T021-5860 Run `gofmt` on changed Go files.
+- [x] T021-5870 Run focused Go verification with `go test ./internal/packet`.
+- [x] T021-5871 Run focused GitHub manifest/default/digest regression evidence
+  covering exact named tests `TestGitHubManifestEntriesPreserveAssemblyOrder`,
+  `TestGitHubConditionalManifestEntriesPreserveSemantics`,
+  `TestGitHubBundleEntryAuthorityAndRedactionPreserveSemantics`,
+  `TestGitHubResidualGapsAndDecisionOwnersPreserveDefaults`, and
+  `TestGitHubResolverAndDigestHelpersPreserveSemantics`. Run them with a
+  `go test -list` exact-count guard before the focused `go test -run` command
+  so zero matches fail. These tests must prove manifest entry order and refs,
+  conditional prompt boundary / PR body / agent route / checks / reviews /
+  artifacts / integration entries, authority metadata and source refs,
+  bundle-entry defaults and resolver redaction, residual gap filtering,
+  decision owner defaults, resolver joining, and digest placeholder format.
+- [x] T021-5880 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5890 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5900 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  85 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-85-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

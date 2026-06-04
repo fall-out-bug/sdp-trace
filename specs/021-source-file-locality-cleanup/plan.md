@@ -1096,6 +1096,26 @@ manifest entry helpers (`packet_174` through `packet_192`), rendering
 (`packet_193` onward), and `internal/prreview` numbered files so those
 responsibilities keep separate review trails.
 
+Slice 85 continues `internal/packet` cleanup with GitHub manifest entry,
+authority metadata, generated packet residual gap / decision-owner defaults,
+resolver aggregation, redaction, and digest placeholder shards (`packet_174`
+through `packet_192`). The slice is limited to manifest entry assembly for
+GitHub PR, commit range, prompt boundary, PR body, agent route, checks, reviews,
+artifacts, and integration actions; authority metadata fields; bundle-entry
+defaults; secret-like resolver redaction; residual gaps generated from non-pass
+rows; default decision owners; check/review resolver joining; and digest
+placeholder hashing. It must preserve entry refs, source classes, resolvers,
+retained forms, authority fields, source refs, prompt-boundary resolver/retained
+form behavior, agent route digest/evidence-kind/component behavior, artifact
+expiry/digest propagation, integration entry actor/authority behavior, residual
+gap filtering, default decision owner states/reasons, redaction markers, digest
+format, package boundary, dependency direction, and MI baselines. It should fold
+the numbered helpers into cohesive GitHub manifest, authority, packet defaults,
+and digest locality files instead of creating standalone one-function
+replacements. It intentionally excludes rendering (`packet_193` onward) and
+`internal/prreview` numbered files so those responsibilities keep separate
+review trails.
+
 ## Verification
 
 ```text
