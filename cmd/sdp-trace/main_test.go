@@ -2859,6 +2859,7 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 		{name: "pass", protectedGate: demo.GatePass, want: 0},
 		{name: "fail", protectedGate: demo.GateFail, want: 1},
 		{name: "cannot_verify", protectedGate: demo.GateCannotVerify, want: exitCannotVerify},
+		{name: "not_assessed", protectedGate: demo.GateNotAssessed, want: exitCannotVerify},
 		{name: "unknown falls through to component fail", protectedGate: "", want: 1},
 		{name: "unknown falls through to component pass", protectedGate: "unexpected", want: 0},
 	}

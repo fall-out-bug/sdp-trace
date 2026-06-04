@@ -3927,3 +3927,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 106 Tasks
+
+- [x] T021-7320 Confirm Slice 106 is bounded to `cmd/sdp-trace` gate exit-code
+  helper files: `gate_exit_code.go`, `gate_exit_states.go`,
+  `gate_has_state.go`, `gate_protected_exit_code.go`,
+  `gate_protected_exit_codes.go`, and `gate_state_exit_code.go`.
+- [x] T021-7321 Confirm Slice 106 is behavior-preserving: no changes to gate
+  evaluation, protected gate input loading, parser behavior, preview, explain,
+  report rendering, public command surface docs, schema files, examples,
+  fixtures, dependencies, package boundary, dependency direction, or MI
+  baselines are planned.
+- [x] T021-7322 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-106-plan-review.md`.
+- [x] T021-7330 Replace the six scoped helper shards with cohesive gate
+  exit-code responsibility files, using `gate_exit_code.go` as the primary
+  destination and allowing a protected exit mapping split only if needed to
+  preserve MI > 70, without creating replacement one-function shards. Record
+  source-shape evidence that the six scoped helper shards are gone or replaced
+  by the cohesive responsibility files and staged boundary evidence that
+  excluded gate files and public surfaces are untouched.
+- [x] T021-7340 Run `gofmt` on changed Go files.
+- [x] T021-7350 Run focused gate exit-code verification with a `go test -list`
+  exact-count guard expecting exactly 4 tests:
+  `TestGateExitCodeChecksRequiredRunStatesDirectly`,
+  `TestGateExitCodeAggregatesNonProtectedStates`,
+  `TestGateExitCodeUsesProtectedGateWhenSelected`, and
+  `TestGateAndFixtureHelpers`, then run those tests with
+  `go test ./cmd/sdp-trace -run <guard> -count=1 -v`. The focused set must
+  explicitly cover protected `pass`, `fail`, `cannot_verify`, `not_assessed`,
+  and unknown-state fallback exit-code behavior.
+- [x] T021-7360 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7370 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7380 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 106 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-106-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

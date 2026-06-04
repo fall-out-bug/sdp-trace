@@ -1431,6 +1431,22 @@ including protected-profile inputs, option values consumed by standard and
 protected gate paths, package boundary, dependency direction, CRAP < 5, MI >
 70, and MI baselines.
 
+Slice 106 continues `cmd/sdp-trace` source-file locality cleanup with gate
+exit-code helper shards. The slice is limited to consolidating
+`gate_exit_code.go`, `gate_exit_states.go`, `gate_has_state.go`,
+`gate_protected_exit_code.go`, `gate_protected_exit_codes.go`, and
+`gate_state_exit_code.go` into cohesive gate exit-code responsibility files
+without changing gate evaluation, protected gate input loading, parser behavior,
+preview, explain, report rendering, public command surface docs, schema files,
+examples, fixtures, or dependencies. Prefer `gate_exit_code.go` as the primary
+destination, but a small split for protected exit mapping is allowed if needed
+to preserve MI > 70 without recreating one-function shards. It must preserve
+protected-profile exit precedence, protected pass/fail/cannot_verify/not_assessed
+mappings, fallback for unknown protected states, non-protected
+local/CI/audit/required-run state aggregation, missing telemetry failure
+behavior, cannot_verify exit behavior, package boundary, dependency direction,
+CRAP < 5, MI > 70, and MI baselines.
+
 ## Verification
 
 ```text
