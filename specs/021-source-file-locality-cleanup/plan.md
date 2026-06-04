@@ -1116,6 +1116,21 @@ replacements. It intentionally excludes rendering (`packet_193` onward) and
 `internal/prreview` numbered files so those responsibilities keep separate
 review trails.
 
+Slice 86 completes the `internal/packet` numbered-file cleanup with packet
+Markdown rendering shards (`packet_193` through `packet_200`). The slice is
+limited to the public Markdown render entrypoint, renderable-packet validation
+projection, top-level packet Markdown assembly, executive summary, packet
+metadata table, metadata field ordering, required-row rendering, and theater
+section rendering. It must preserve validation-before-render behavior, error
+joining, top-level section order, packet disclaimer text, metadata field order,
+Markdown escaping, required-row sorting by `RequiredRows`, gap fallback wording,
+theater clean-row fallback, theater finding rendering, package boundary,
+dependency direction, and MI baselines. It should fold the numbered helpers into
+cohesive packet rendering and section locality files, reusing existing theater
+helper locality, instead of creating standalone one-function replacements. It
+intentionally excludes `internal/prreview` numbered files so PR review packet
+generation and ledger logic keep a separate review trail.
+
 ## Verification
 
 ```text

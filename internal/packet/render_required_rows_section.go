@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-
 	"fmt"
 	"sort"
 	"strings"
@@ -21,11 +20,14 @@ func renderRows(out *bytes.Buffer, rows []Row) {
 		return requiredRowIndex(ordered[i].ID) < requiredRowIndex(ordered[j].ID)
 	})
 	for _, row := range ordered {
-		gap := row.Reason
-		if gap == "" {
-			gap = "none"
-		}
-		fmt.Fprintf(out, "| %s | %s | %s | %s | %s | %s |\n", row.ID, row.State, md(row.Summary), md(strings.Join(row.EvidenceRefs, ", ")), md(gap), md(row.Owner))
+		fmt.Fprintf(out, "| %s | %s | %s | %s | %s | %s |\n", row.ID, row.State, md(row.Summary), md(strings.Join(row.EvidenceRefs, ", ")), md(renderedRowGap(row)), md(row.Owner))
 	}
 	fmt.Fprintln(out)
+}
+
+func renderedRowGap(row Row) string {
+	if row.Reason == "" {
+		return "none"
+	}
+	return row.Reason
 }

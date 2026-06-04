@@ -2924,3 +2924,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 86 Tasks
+
+- [x] T021-5910 Confirm Slice 86 is bounded to numbered `internal/packet`
+  Markdown rendering shards `packet_193` through `packet_200`.
+- [x] T021-5911 Confirm Slice 86 is behavior-preserving: no changes to
+  validation-before-render behavior, error joining, top-level section order,
+  packet disclaimer text, metadata field order, Markdown escaping, required-row
+  sorting by `RequiredRows`, gap fallback wording, theater clean-row fallback,
+  theater finding rendering, package boundary, dependency direction, or baseline
+  changes are planned.
+- [x] T021-5912 Record Slice 86 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-86-plan-review.md`.
+- [x] T021-5920 Move packet Markdown rendering helpers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `packet_193`
+  through `packet_200` files are gone and that `cmd/sdp-trace/FAMILY_INDEX.md`
+  is not applicable because this is non-command `internal/packet` package
+  locality. Record staged boundary evidence that excluded `internal/prreview`
+  numbered files are not moved or edited in Slice 86.
+- [x] T021-5930 Run `gofmt` on changed Go files.
+- [x] T021-5940 Run focused Go verification with `go test ./internal/packet`.
+- [x] T021-5941 Run focused packet rendering regression evidence covering exact
+  named tests `TestValidateAndRenderHappyPath`,
+  `TestRenderCleanTheaterUsesRowState`,
+  `TestPacketRenderingHelpersPreserveTables`,
+  `TestPacketRenderingSectionHelpersPreserveMetadataRowsAndErrors`,
+  `TestRenderMarkdownPreservesTopLevelOrderAndHeaders`, and
+  `TestRenderMarkdownRejectsInvalidBundleBeforeProjection`. Run them with a
+  `go test -list` exact-count guard before the focused `go test -run` command
+  so zero matches fail. These tests must prove validation before projection,
+  joined validation errors, top-level order, header/table preservation, packet
+  metadata field order, required-row ordering by `RequiredRows`, empty gap
+  fallback to `none`, clean-theater fallback state, theater finding rendering,
+  evidence table rendering, and non-proof language.
+- [x] T021-5950 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5960 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5970 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  86 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-86-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

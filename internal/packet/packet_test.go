@@ -433,6 +433,50 @@ func TestPacketRenderingHelpersPreserveTables(t *testing.T) {
 	}
 }
 
+func TestPacketRenderingSectionHelpersPreserveMetadataRowsAndErrors(t *testing.T) {
+	packet := validBundle().Packet
+	fields := packetMetadataFields(packet)
+	gotFieldNames := make([]string, 0, len(fields))
+	for _, field := range fields {
+		gotFieldNames = append(gotFieldNames, field[0])
+	}
+	wantFieldNames := []string{
+		"packet_id",
+		"schema",
+		"generated_from",
+		"generated_at",
+		"authoring_method",
+		"selected_profile",
+		"redaction_policy",
+		"bundle_ref",
+		"packet_state",
+	}
+	if !reflect.DeepEqual(gotFieldNames, wantFieldNames) {
+		t.Fatalf("metadata fields = %#v, want %#v", gotFieldNames, wantFieldNames)
+	}
+
+	var out bytes.Buffer
+	renderRows(&out, []Row{
+		{ID: "PC-REVIEW", State: StatePartial, Summary: "review", Reason: "needs review", Owner: "reviewer"},
+		{ID: "PC-CHANGE", State: StatePass, Summary: "change", Owner: "builder"},
+	})
+	renderedRows := out.String()
+	if strings.Index(renderedRows, "| PC-CHANGE |") > strings.Index(renderedRows, "| PC-REVIEW |") {
+		t.Fatalf("rendered rows are not sorted by RequiredRows:\n%s", renderedRows)
+	}
+	if !strings.Contains(renderedRows, "| PC-CHANGE | pass | change | none | none | builder |") {
+		t.Fatalf("rendered rows missing empty reason fallback:\n%s", renderedRows)
+	}
+
+	bundle := validBundle()
+	bundle.Packet.Rows = nil
+	bundle.Manifest.PacketDigest = PacketDigest(bundle.Packet)
+	_, err := RenderMarkdown(bundle)
+	if err == nil || !strings.Contains(err.Error(), "missing required row \"PC-CHANGE\"") || !strings.Contains(err.Error(), "; missing required row \"PC-REVIEW\"") {
+		t.Fatalf("render error = %v, want joined validation errors", err)
+	}
+}
+
 func TestPacketResidualAndNonProofRendering(t *testing.T) {
 	var out bytes.Buffer
 	renderResidualGaps(&out, nil)
@@ -479,6 +523,22 @@ func TestPacketRenderLookupAndDigestHelpers(t *testing.T) {
 	second := PacketDigest(packet)
 	if !strings.HasPrefix(first, "sha256:") || len(first) != len("sha256:")+64 || first != second {
 		t.Fatalf("packet digest not deterministic sha256: first=%q second=%q", first, second)
+	}
+}
+
+func TestRenderMarkdownRejectsInvalidBundleBeforeProjection(t *testing.T) {
+	bundle := validBundle()
+	bundle.Packet.Rows = nil
+	bundle.Manifest.PacketDigest = PacketDigest(bundle.Packet)
+	rendered, err := RenderMarkdown(bundle)
+	if err == nil {
+		t.Fatalf("RenderMarkdown returned nil error for invalid bundle")
+	}
+	if rendered != "" {
+		t.Fatalf("RenderMarkdown projected invalid bundle:\n%s", rendered)
+	}
+	if !strings.Contains(err.Error(), "missing required row \"PC-CHANGE\"") {
+		t.Fatalf("RenderMarkdown error = %v", err)
 	}
 }
 
