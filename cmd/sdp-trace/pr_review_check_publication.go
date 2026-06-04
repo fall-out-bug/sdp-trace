@@ -20,3 +20,21 @@ func finishPRReviewCheck(outDir string, packet prreview.Packet, profile prreview
 	fmt.Fprint(stdout, prreview.Summarize(validation, ledger))
 	return reviewValidationExit(validation)
 }
+
+func writePRReviewCheckPreview(stdout io.Writer, preview *prreview.RunPreview) bool {
+	if preview == nil {
+		return false
+	}
+	// Preview output is intentionally terminal-only planning data, not persisted
+	// review evidence.
+	writeIndentedPayload(stdout, preview)
+	return true
+}
+
+func reviewValidationExit(validation prreview.Validation) int {
+	if reviewValidationExitCode(validation) != 0 {
+		// Synthesis validation failures are trust gaps, not usage errors.
+		return exitCannotVerify
+	}
+	return 0
+}

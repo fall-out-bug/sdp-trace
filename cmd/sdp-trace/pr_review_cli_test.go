@@ -373,21 +373,46 @@ func TestPRReviewCheckWritesRunProvenance(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(outDir, "runs", "results.json")); err != nil {
 		t.Fatalf("check did not persist run provenance: %v", err)
 	}
+	for _, path := range []string{
+		filepath.Join(outDir, "ledger.json"),
+		filepath.Join(outDir, "validation.json"),
+	} {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("check did not persist derived artifact %s: %v", path, err)
+		}
+	}
+
+	if reviewValidationExit(prreview.Validation{ReviewCoverageState: prreview.CoverageUnresolved}) != exitCannotVerify {
+		t.Fatalf("unresolved validation verdict must map to cannot_verify")
+	}
 }
 
 func TestPRReviewCheckPreviewDoesNotWriteArtifacts(t *testing.T) {
 	root := t.TempDir()
 	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
-	profilePath := writePRReviewCheckProfile(t, root)
+	profilePath := writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
+		"schema_version":  "block30-pr-review-profile-v1",
+		"profile_id":      "runner-preview",
+		"required_planes": []string{"code_correctness"},
+		"roles": []map[string]any{{
+			"role_id":         "code",
+			"plane":           "code_correctness",
+			"runner":          "opencode",
+			"requested_model": "not_assessed",
+		}},
+	})
 	outDir := filepath.Join(root, "review")
 	var out bytes.Buffer
 	var errOut bytes.Buffer
-	exit := run(prReviewCheckArgs(outDir, diffPath, profilePath, "--preview"), &out, &errOut)
+	exit := run(prReviewCheckArgs(outDir, diffPath, profilePath, "--allow-external-runner", "opencode", "--allow-external-runner=pi", "--preview"), &out, &errOut)
 	if exit != 0 {
 		t.Fatalf("check preview exit=%d err=%s out=%s", exit, errOut.String(), out.String())
 	}
 	if !strings.Contains(out.String(), `"schema_version": "block30-pr-review-runs-v1"`) {
 		t.Fatalf("preview output missing run schema: %s", out.String())
+	}
+	if !strings.Contains(out.String(), `"runner": "opencode"`) {
+		t.Fatalf("preview output missing allowed repeated runner: %s", out.String())
 	}
 	for _, path := range []string{
 		filepath.Join(outDir, "runs", "results.json"),
@@ -397,6 +422,13 @@ func TestPRReviewCheckPreviewDoesNotWriteArtifacts(t *testing.T) {
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Fatalf("preview wrote artifact %s: %v", path, err)
 		}
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = run(prReviewCheckArgs(filepath.Join(root, "review-disallowed-runner"), diffPath, profilePath), &out, &errOut)
+	if exit != exitCannotVerify || !strings.Contains(errOut.String(), "runner_not_allowed: opencode") {
+		t.Fatalf("disallowed runner check exit=%d err=%s out=%s", exit, errOut.String(), out.String())
 	}
 }
 
@@ -439,6 +471,20 @@ func TestPRReviewCheckRequiresOutAndPacketInputs(t *testing.T) {
 			exit := run(tc.args, &out, &errOut)
 			if exit != exitUsage || !strings.Contains(errOut.String(), tc.wantErr) {
 				t.Fatalf("check exit=%d err=%s out=%s want %q", exit, errOut.String(), out.String(), tc.wantErr)
+			}
+		})
+	}
+
+	for name, args := range map[string][]string{
+		"missing-diff-file": prReviewCheckArgs(filepath.Join(root, "review-missing-diff-file"), filepath.Join(root, "missing.diff"), profilePath),
+		"missing-profile":   prReviewCheckArgs(filepath.Join(root, "review-missing-profile"), diffPath, filepath.Join(root, "missing-profile.json")),
+	} {
+		t.Run(name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(args, &out, &errOut)
+			if exit != exitCannotVerify {
+				t.Fatalf("check exit=%d err=%s out=%s", exit, errOut.String(), out.String())
 			}
 		})
 	}

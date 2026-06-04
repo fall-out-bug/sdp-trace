@@ -2304,3 +2304,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 74 Tasks
+
+- [x] T021-5070 Confirm Slice 74 is bounded to numbered `cmd/sdp-trace`
+  `pr-review check` one-shot workflow shards `pr_review_126` through
+  `pr_review_136`.
+- [x] T021-5071 Confirm Slice 74 is behavior-preserving: no changes to
+  flag-only parsing, required `--out` and packet anchors, packet/profile/readiness
+  failures mapping to `cannot_verify`, work-dir directory validation, repeated
+  allowed-runner reconstruction from raw args, preview output as non-persisted
+  planning data, run-set persistence before ledger and validation publication,
+  summary text only after durable artifacts, validation verdict exit mapping
+  through `exitCannotVerify`, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-5072 Record Slice 74 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-74-plan-review.md`.
+- [x] T021-5080 Move `pr-review check` command orchestration, flag parsing and
+  required inputs, prepare/execute orchestration, preview/summary publication,
+  and durable artifact writes into cohesive locality files. Record the command
+  and responsibility boundary in evidence, and synchronize
+  `cmd/sdp-trace/FAMILY_INDEX.md` with the renamed files.
+- [x] T021-5090 Run `gofmt` on changed Go files.
+- [x] T021-5100 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-5101 Run focused `pr-review check` regression evidence covering
+  exact test existence for `TestPRReviewCheckWritesRunProvenance`,
+  `TestPRReviewCheckPreviewDoesNotWriteArtifacts`,
+  `TestPRReviewCheckRequiresOutAndPacketInputs`, and
+  `TestPRReviewCheckRejectsMissingOrFileWorkDir`; run-set artifact persistence,
+  ledger/validation artifact publication, preview output not producing
+  artifacts, required output and packet-input usage errors, work-dir failure
+  mapping to `cannot_verify`, packet/profile/readiness failures mapping to
+  `cannot_verify`, repeated allowed-runner reconstruction from raw args,
+  validation verdict exit mapping through `exitCannotVerify`, exact test list
+  verification after test implementation that fails when any planned focused
+  test is missing, and no baseline changes.
+- [x] T021-5110 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5120 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5130 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  74 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-74-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

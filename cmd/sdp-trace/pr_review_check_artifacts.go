@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
 
@@ -25,4 +26,13 @@ func writePRReviewCheckArtifacts(outDir string, packet prreview.Packet, profile 
 		return prreview.Ledger{}, prreview.Validation{}, 1, false
 	}
 	return ledger, validation, 0, true
+}
+
+func writePRReviewJSON(path string, value any, stderr io.Writer) bool {
+	if err := prreview.WriteJSON(path, value); err != nil {
+		// Artifact write failure means the review evidence cannot be cited later.
+		fmt.Fprintln(stderr, err)
+		return false
+	}
+	return true
 }

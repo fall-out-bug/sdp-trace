@@ -395,17 +395,6 @@
 - packet_validation_exits.go
 
 ### pr_review
-- pr_review_126_runcheck.go
-- pr_review_127_parsecheckargs.go
-- pr_review_128_registercheckflags.go
-- pr_review_129_requirecheckinputs.go
-- pr_review_130_preparecheck.go
-- pr_review_131_executecheck.go
-- pr_review_132_finishcheck.go
-- pr_review_133_writecheckpreview.go
-- pr_review_134_writecheckartifacts.go
-- pr_review_135_writejson.go
-- pr_review_136_validationexit.go
 - pr_review_137_writeindentedpayload.go
 - pr_review_139_filehelpers.go
 - pr_review_142_exitcodes.go
@@ -415,6 +404,11 @@
 - pr_review_147_appendrepeatedflagvalue.go
 - pr_review_148_runnerset.go
 - pr_review_149_packetdir.go
+- pr_review_check_args.go
+- pr_review_check_artifacts.go
+- pr_review_check_command.go
+- pr_review_check_publication.go
+- pr_review_check_workflow.go
 - pr_review_cli_test.go
 - pr_review_command.go
 - pr_review_packet_args.go

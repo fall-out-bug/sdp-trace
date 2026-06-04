@@ -895,6 +895,27 @@ generic validation exit helpers, shared file helpers, packet/profile readers,
 repeated flag helpers, and runner helpers so later workflow responsibilities
 keep separate review trails.
 
+Slice 74 continues numbered `pr_review` cleanup in `cmd/sdp-trace` with
+`pr-review check` one-shot review workflow shards (`pr_review_126` through
+`pr_review_136`). A five-file boundary was selected after an initial
+three-file consolidation failed the file MI gate (`pr_review_check_command.go`
+at `69.7` and `pr_review_check_publication.go` at `66.7`). The slice moves
+command orchestration into `pr_review_check_command.go`, flag parsing and
+required inputs into `pr_review_check_args.go`, packet/profile preparation and
+runner execution into `pr_review_check_workflow.go`, preview/summary
+publication and exit mapping into `pr_review_check_publication.go`, and durable
+artifact writes into `pr_review_check_artifacts.go`. It preserves flag-only
+parsing, required `--out` and packet anchors, packet/profile/readiness failures
+mapping to `cannot_verify`, work-dir directory validation, repeated
+allowed-runner reconstruction from raw args, preview output as non-persisted
+planning data, run-set persistence before ledger and validation publication,
+summary text only after durable artifacts, validation verdict exit mapping
+through `exitCannotVerify`, package boundary, dependency direction, and MI
+baselines. It intentionally excludes shared JSON pretty printing, shared file
+helpers, packet/profile shared readers, repeated flag helpers, runner sets,
+packet-dir helpers, and exit-code helpers so shared utilities can keep separate
+review trails.
+
 ## Verification
 
 ```text
