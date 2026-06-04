@@ -2971,3 +2971,44 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 87 Tasks
+
+- [x] T021-5980 Confirm Slice 87 is bounded to numbered `internal/prreview`
+  portable schema/type shards `prreview_001` through `prreview_019`.
+- [x] T021-5981 Confirm Slice 87 is behavior-preserving: no changes to
+  exported names, JSON tags, trust-boundary comments, schema/state/ref/content/
+  redaction/plane/runner/status/severity/disposition/coverage/authority
+  constants, package regex patterns, error values, package boundary, dependency
+  direction, or baseline changes are planned.
+- [x] T021-5982 Record Slice 87 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-87-plan-review.md`.
+- [x] T021-5990 Move portable prreview constants, vars, option structs, packet
+  refs, profile/run/result structs, and ledger/validation structs into cohesive
+  responsibility-named files without creating standalone one-function or
+  one-type replacement files. Record source-shape evidence that numbered
+  `prreview_001` through `prreview_019` files are gone and staged boundary
+  evidence that excluded `prreview_020` onward files are not moved or edited in
+  Slice 87.
+- [x] T021-6000 Run `gofmt` on changed Go files.
+- [x] T021-6010 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6011 Run focused portable schema/type regression evidence covering
+  exact named tests `TestPrreviewSchemaConstantsAndPatternsPreserveContracts`
+  and `TestPrreviewPortableTypesPreserveJSONShape`. Run them with a `go test
+  -list` exact-count guard before the focused `go test -run` command so zero
+  matches fail. These tests must prove schema/state/ref/content/redaction/plane/
+  runner/status/severity/disposition/coverage/authority constants, package regex
+  patterns, error values, exported portable type JSON keys, omitted optional
+  fields, and trust-boundary structs remain stable.
+- [x] T021-6020 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6030 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6040 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  87 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-87-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

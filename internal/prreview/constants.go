@@ -1,5 +1,10 @@
 package prreview
 
+import (
+	"errors"
+	"regexp"
+)
+
 const (
 	SchemaVersionPacket     = "block30-pr-review-packet-v1"
 	SchemaVersionProfile    = "block30-pr-review-profile-v1"
@@ -81,4 +86,12 @@ const (
 
 	AuthorityReviewRecordOnly = "review_record_only"
 	DecisionNotAuthorized     = "not_authorized_by_sdp_trace"
+)
+
+var (
+	errPromptEvidenceCannotVerify = errors.New("prompt_evidence_cannot_verify")
+	errPromptTemplateCannotVerify = errors.New("prompt_template_cannot_verify")
+	repoIDPattern                 = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,62}[a-z0-9]$`)
+	changeRefPattern              = regexp.MustCompile(`^(pr|mr|change)-[A-Za-z0-9._-]{1,64}$`)
+	sha40Pattern                  = regexp.MustCompile(`^[0-9a-f]{40}$`)
 )

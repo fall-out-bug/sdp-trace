@@ -13,6 +13,149 @@ import (
 	"time"
 )
 
+func TestPrreviewSchemaConstantsAndPatternsPreserveContracts(t *testing.T) {
+	for name, tt := range map[string]struct{ got, want string }{
+		"packet schema":                        {SchemaVersionPacket, "block30-pr-review-packet-v1"},
+		"profile schema":                       {SchemaVersionProfile, "block30-pr-review-profile-v1"},
+		"runset schema":                        {SchemaVersionRunSet, "block30-pr-review-runs-v1"},
+		"ledger schema":                        {SchemaVersionLedger, "block30-pr-review-ledger-v1"},
+		"validation schema":                    {SchemaVersionValidation, "block30-pr-review-validation-v1"},
+		"pass state":                           {StatePass, "pass"},
+		"fail state":                           {StateFail, "fail"},
+		"pending state":                        {StatePending, "pending"},
+		"not assessed state":                   {StateNotAssessed, "not_assessed"},
+		"cannot verify state":                  {StateCannotVerify, "cannot_verify"},
+		"diff ref kind":                        {RefKindDiff, "diff"},
+		"metadata ref kind":                    {RefKindMetadata, "metadata"},
+		"spec ref kind":                        {RefKindSpec, "spec"},
+		"plan ref kind":                        {RefKindPlan, "plan"},
+		"task ref kind":                        {RefKindTask, "task"},
+		"doc ref kind":                         {RefKindDoc, "doc"},
+		"schema ref kind":                      {RefKindSchema, "schema"},
+		"source excerpt ref kind":              {RefKindSourceExcerpt, "source_excerpt"},
+		"verification ref kind":                {RefKindVerification, "verification"},
+		"prompt ref kind":                      {RefKindPrompt, "prompt"},
+		"raw output ref kind":                  {RefKindRawOutput, "raw_output"},
+		"sanitized output ref kind":            {RefKindSanitizedOutput, "sanitized_output"},
+		"external ref kind":                    {RefKindExternal, "external"},
+		"unified diff content":                 {ContentUnifiedDiff, "unified_diff"},
+		"markdown content":                     {ContentMarkdown, "markdown"},
+		"json content":                         {ContentJSON, "json"},
+		"text content":                         {ContentText, "text"},
+		"none redaction":                       {RedactionNone, "none"},
+		"redacted redaction":                   {RedactionRedacted, "redacted"},
+		"digest-only redaction":                {RedactionDigestOnly, "digest_only"},
+		"encrypted redaction":                  {RedactionEncrypted, "encrypted_ref"},
+		"external ref redaction":               {RedactionExternalRef, "external_ref"},
+		"withheld redaction":                   {RedactionWithheld, "withheld"},
+		"not assessed redaction":               {RedactionNotAssessed, "not_assessed"},
+		"code plane":                           {PlaneCodeCorrectness, "code_correctness"},
+		"trace plane":                          {PlaneTraceEvidence, "trace_evidence_provenance"},
+		"requirements plane":                   {PlaneRequirements, "requirements_vs_implementation"},
+		"security plane":                       {PlaneSecurity, "security_forgery_overclaim"},
+		"dx plane":                             {PlaneDXReplayability, "dx_replayability"},
+		"privacy plane":                        {PlanePrivacySafety, "privacy_output_safety"},
+		"pi runner":                            {RunnerPI, "pi"},
+		"opencode runner":                      {RunnerOpenCode, "opencode"},
+		"manual runner":                        {RunnerManualExternal, "manual_external"},
+		"findings reported status":             {StatusFindingsReported, "findings_reported"},
+		"no findings status":                   {StatusNoFindings, "no_findings"},
+		"status not assessed":                  {StatusNotAssessed, "not_assessed"},
+		"failed status":                        {StatusFailed, "failed"},
+		"timed out status":                     {StatusTimedOut, "timed_out"},
+		"empty output status":                  {StatusEmptyOutput, "empty_output"},
+		"off task status":                      {StatusOffTask, "off_task"},
+		"parse failed status":                  {StatusParseFailed, "parse_failed"},
+		"status cannot verify":                 {StatusCannotVerify, "cannot_verify"},
+		"critical severity":                    {SeverityCritical, "critical"},
+		"major severity":                       {SeverityMajor, "major"},
+		"minor severity":                       {SeverityMinor, "minor"},
+		"informational severity":               {SeverityInformational, "informational"},
+		"accepted fixed disposition":           {DispositionAcceptedFixed, "accepted_fixed"},
+		"accepted review blocking disposition": {DispositionAcceptedReviewBlocking, "accepted_review_blocking"},
+		"accepted narrower disposition":        {DispositionAcceptedNarrower, "accepted_narrower"},
+		"rejected false positive disposition":  {DispositionRejectedFalsePositive, "rejected_false_positive"},
+		"deferred not assessed disposition":    {DispositionDeferredNotAssessed, "deferred_not_assessed"},
+		"unresolved disposition":               {DispositionUnresolvedReviewBlocker, "unresolved_review_blocker"},
+		"coverage satisfied":                   {CoverageSatisfied, "coverage_satisfied"},
+		"coverage partial":                     {CoveragePartial, "coverage_partial"},
+		"coverage unresolved":                  {CoverageUnresolved, "coverage_unresolved"},
+		"coverage not assessed":                {CoverageNotAssessed, "not_assessed"},
+		"coverage cannot verify":               {CoverageCannotVerify, "cannot_verify"},
+		"authority review record only":         {AuthorityReviewRecordOnly, "review_record_only"},
+		"decision not authorized":              {DecisionNotAuthorized, "not_authorized_by_sdp_trace"},
+	} {
+		if tt.got != tt.want {
+			t.Fatalf("%s = %q, want %q", name, tt.got, tt.want)
+		}
+	}
+	if errPromptEvidenceCannotVerify.Error() != "prompt_evidence_cannot_verify" || errPromptTemplateCannotVerify.Error() != "prompt_template_cannot_verify" {
+		t.Fatalf("prompt errors drifted: %v / %v", errPromptEvidenceCannotVerify, errPromptTemplateCannotVerify)
+	}
+	if repoIDPattern.String() != `^[a-z0-9][a-z0-9._-]{0,62}[a-z0-9]$` || changeRefPattern.String() != `^(pr|mr|change)-[A-Za-z0-9._-]{1,64}$` || sha40Pattern.String() != `^[0-9a-f]{40}$` {
+		t.Fatalf("regex pattern strings drifted: %q / %q / %q", repoIDPattern.String(), changeRefPattern.String(), sha40Pattern.String())
+	}
+	for _, id := range []string{"demo_repo", "demo.repo-1"} {
+		if !repoIDPattern.MatchString(id) {
+			t.Fatalf("repoIDPattern rejected %q", id)
+		}
+	}
+	for _, id := range []string{"Demo", "-demo", strings.Repeat("a", 65)} {
+		if repoIDPattern.MatchString(id) {
+			t.Fatalf("repoIDPattern accepted %q", id)
+		}
+	}
+	if !changeRefPattern.MatchString("pr-123") || !changeRefPattern.MatchString("mr-feature.1") || changeRefPattern.MatchString("issue-123") {
+		t.Fatalf("changeRefPattern contract drifted")
+	}
+	if !sha40Pattern.MatchString(forty("a")) || sha40Pattern.MatchString(forty("g")) || sha40Pattern.MatchString(sixtyFour("a")) {
+		t.Fatalf("sha40Pattern contract drifted")
+	}
+}
+
+func TestPrreviewPortableTypesPreserveJSONShape(t *testing.T) {
+	packetKeys := jsonKeys(t, Packet{
+		SchemaVersion:    SchemaVersionPacket,
+		PacketID:         "packet-1",
+		PacketDigest:     "sha256:" + sixtyFour("1"),
+		RepoID:           "demo_repo",
+		ChangeRef:        "pr-123",
+		BaseCommit:       forty("a"),
+		HeadCommit:       forty("b"),
+		DiffRef:          SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone},
+		ContextRefs:      []SafeRef{},
+		VerificationRefs: []SafeRef{},
+		CIState:          StateNotAssessed,
+		CreatedAt:        "2026-05-09T12:00:00Z",
+		CreatedBy:        "test",
+		RedactionState:   RedactionNone,
+	})
+	assertJSONKeys(t, packetKeys, []string{"schema_version", "packet_id", "packet_digest", "repo_id", "change_ref", "base_commit", "head_commit", "diff_ref", "context_refs", "verification_refs", "ci_state", "created_at", "created_by", "redaction_state"}, []string{"metadata_ref", "unavailable_fields"})
+
+	roleKeys := jsonKeys(t, ReviewRole{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "manual"})
+	assertJSONKeys(t, roleKeys, []string{"role_id", "plane", "runner", "requested_model"}, []string{"command", "timeout_seconds", "prompt_template_ref", "required_output_schema", "raw_output_retention", "read_only_enforced", "working_tree_mode"})
+
+	resultKeys := jsonKeys(t, ReviewerResult{ReviewRunID: "run-1", PacketDigest: "sha256:" + sixtyFour("1"), Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "manual", ObservedModel: "manual", ModelFamily: "manual", ModelVersion: "v1", Status: StatusNoFindings, Findings: []Finding{}})
+	assertJSONKeys(t, resultKeys, []string{"review_run_id", "packet_digest", "plane", "role_id", "runner", "requested_model", "observed_model", "model_family", "model_version", "status", "findings"}, []string{"fallback_for_model", "fallback_reason", "command_digest", "raw_output_ref", "prompt_ref", "context_refs", "started_at", "ended_at", "reason"})
+
+	validationKeys := jsonKeys(t, Validation{SchemaVersion: SchemaVersionValidation, PacketDigest: "sha256:" + sixtyFour("1"), ReviewCoverageState: CoverageNotAssessed, CIState: StateNotAssessed, AuthorityScope: AuthorityReviewRecordOnly, MergeDecision: DecisionNotAuthorized, ReleaseDecision: DecisionNotAuthorized, RiskAcceptance: DecisionNotAuthorized, PlaneResults: []PlaneResult{}, Findings: []LedgerFinding{}, Reasons: []string{}, NextActions: []string{}})
+	assertJSONKeys(t, validationKeys, []string{"schema_version", "packet_digest", "review_coverage_state", "ci_state", "authority_scope", "merge_decision", "release_decision", "risk_acceptance", "plane_results", "findings", "reasons", "next_actions"}, nil)
+
+	planeKeys := jsonKeys(t, PlaneResult{Plane: PlaneCodeCorrectness, Status: StateNotAssessed})
+	assertJSONKeys(t, planeKeys, []string{"plane", "status", "usable"}, []string{"review_run_id", "reason", "next_action"})
+
+	assertJSONKeys(t, jsonKeys(t, SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}), []string{"id", "kind", "ref", "digest_sha256", "content_type", "redaction_state"}, nil)
+	assertJSONKeys(t, jsonKeys(t, UnavailableField{Field: "metadata_ref", State: StateNotAssessed, Reason: "missing"}), []string{"field", "state", "reason"}, nil)
+	assertJSONKeys(t, jsonKeys(t, ReviewProfile{SchemaVersion: SchemaVersionProfile, ProfileID: "default", RequiredPlanes: []string{PlaneCodeCorrectness}, Roles: []ReviewRole{}}), []string{"schema_version", "profile_id", "required_planes", "roles"}, nil)
+	assertJSONKeys(t, jsonKeys(t, RunPreview{SchemaVersion: SchemaVersionRunSet, PacketDigest: "sha256:" + sixtyFour("1"), Roles: []PreviewRole{}}), []string{"schema_version", "packet_digest", "roles"}, nil)
+	assertJSONKeys(t, jsonKeys(t, PreviewRole{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "manual"}), []string{"role_id", "plane", "runner", "requested_model", "timeout_seconds", "command_digest"}, []string{"prompt_template_ref", "prompt_digest"})
+	assertJSONKeys(t, jsonKeys(t, RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: "sha256:" + sixtyFour("1"), Results: []ReviewerResult{}}), []string{"schema_version", "packet_digest", "results"}, nil)
+	assertJSONKeys(t, jsonKeys(t, Finding{ID: "F1", Severity: SeverityMajor, Citation: Citation{ContextRefID: "diff"}, Summary: "summary"}), []string{"id", "severity", "citation", "summary"}, []string{"rationale", "suggested_fix", "question", "evidence_refs"})
+	assertJSONKeys(t, jsonKeys(t, Citation{}), nil, []string{"context_ref_id", "diff_hunk_id", "source_digest", "line_start", "line_end"})
+	assertJSONKeys(t, jsonKeys(t, Ledger{SchemaVersion: SchemaVersionLedger, PacketDigest: "sha256:" + sixtyFour("1"), Findings: []LedgerFinding{}}), []string{"schema_version", "packet_digest", "findings"}, nil)
+	assertJSONKeys(t, jsonKeys(t, LedgerFinding{ID: "F1", ReviewRunID: "run-1", Plane: PlaneCodeCorrectness, RoleID: "code", Severity: SeverityMajor, Summary: "summary", Citation: Citation{ContextRefID: "diff"}, Disposition: DispositionUnresolvedReviewBlocker}), []string{"id", "review_run_id", "plane", "role_id", "severity", "summary", "citation", "disposition"}, []string{"evidence_refs", "disposition_evidence"})
+}
+
 func TestBuildPacketBindsRefsAndRejectsUnsafeIdentity(t *testing.T) {
 	root := t.TempDir()
 	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n@@ -1 +1 @@\n-old\n+new\n")
@@ -1041,5 +1184,36 @@ func retainedRawRef(id string) *SafeRef {
 		DigestSHA256:   sixtyFour("9"),
 		ContentType:    ContentText,
 		RedactionState: RedactionDigestOnly,
+	}
+}
+
+func jsonKeys(t *testing.T, value any) map[string]bool {
+	t.Helper()
+	data, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal json: %v", err)
+	}
+	keys := map[string]bool{}
+	for key := range decoded {
+		keys[key] = true
+	}
+	return keys
+}
+
+func assertJSONKeys(t *testing.T, keys map[string]bool, present, absent []string) {
+	t.Helper()
+	for _, key := range present {
+		if !keys[key] {
+			t.Fatalf("json keys missing %q in %#v", key, keys)
+		}
+	}
+	for _, key := range absent {
+		if keys[key] {
+			t.Fatalf("json keys unexpectedly contain %q in %#v", key, keys)
+		}
 	}
 }

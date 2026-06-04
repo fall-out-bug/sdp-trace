@@ -1131,6 +1131,21 @@ helper locality, instead of creating standalone one-function replacements. It
 intentionally excludes `internal/prreview` numbered files so PR review packet
 generation and ledger logic keep a separate review trail.
 
+Slice 87 starts `internal/prreview` cleanup with portable review schema
+constants, package regex/error vars, option structs, packet/reference structs,
+profile/run/result structs, and ledger/validation result structs
+(`prreview_001` through `prreview_019`). The slice is limited to type and
+constant locality only: schema version strings, state/ref/content/redaction/
+plane/runner/status/severity/disposition/coverage/authority constants,
+package-level validation patterns, packet and run options, safe refs,
+unavailable fields, review profiles/roles, run previews/sets, reviewer
+results, findings/citations, ledgers, validations, and plane results. It must
+preserve exported names, JSON tags, comments that define trust boundaries,
+regex patterns, error values, package boundary, dependency direction, and MI
+baselines. It intentionally excludes packet construction (`prreview_020`
+onward), run execution, validation logic, summary/rendering, file IO, prompt
+generation, and utility helpers so behavior code keeps separate review trails.
+
 ## Verification
 
 ```text
