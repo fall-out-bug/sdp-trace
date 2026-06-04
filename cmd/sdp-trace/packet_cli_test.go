@@ -1056,6 +1056,110 @@ func TestGitHubActionsArtifactsPropagatesFetchErrors(t *testing.T) {
 	}
 }
 
+func TestNewGitHubActionsArtifactContextBuildsValidatedContext(t *testing.T) {
+	ctx, err := newGitHubActionsArtifactContext("http://127.0.0.1:8080/", func(name string) string {
+		switch name {
+		case "GITHUB_REPOSITORY":
+			return "example/repo"
+		case "GITHUB_RUN_ID":
+			return "1001"
+		case "GITHUB_TOKEN":
+			return ""
+		case "GH_TOKEN":
+			return "fallback-token"
+		case "GITHUB_SERVER_URL":
+			return "https://github.com"
+		default:
+			return ""
+		}
+	})
+	if err != nil {
+		t.Fatalf("newGitHubActionsArtifactContext() error = %v", err)
+	}
+	if ctx.repo != "example/repo" || ctx.runID != "1001" || ctx.token != "fallback-token" || ctx.apiURL != "http://127.0.0.1:8080" {
+		t.Fatalf("context = %+v", ctx)
+	}
+}
+
+func TestGitHubAPIURLSelectionKeepsPrecedenceAndTrimming(t *testing.T) {
+	tests := []struct {
+		name   string
+		flag   string
+		envURL string
+		want   string
+	}{
+		{name: "flag wins and trims", flag: "http://127.0.0.1:8080/", envURL: "https://github.example.com/api/v3", want: "http://127.0.0.1:8080"},
+		{name: "env used when flag empty", envURL: "https://github.example.com/api/v3/", want: "https://github.example.com/api/v3"},
+		{name: "default public API", want: "https://api.github.com"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := githubAPIURL(tt.flag, func(name string) string {
+				switch name {
+				case "GITHUB_API_URL":
+					return tt.envURL
+				case "GITHUB_SERVER_URL":
+					if tt.envURL != "" {
+						return "https://github.example.com"
+					}
+					return "https://github.com"
+				default:
+					return ""
+				}
+			})
+			if err != nil {
+				t.Fatalf("githubAPIURL() error = %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("githubAPIURL() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGitHubTokenPrefersGitHubTokenThenFallsBack(t *testing.T) {
+	got := githubToken(func(name string) string {
+		switch name {
+		case "GITHUB_TOKEN":
+			return "primary-token"
+		case "GH_TOKEN":
+			return "fallback-token"
+		default:
+			return ""
+		}
+	})
+	if got != "primary-token" {
+		t.Fatalf("githubToken() = %q, want primary-token", got)
+	}
+
+	got = githubToken(func(name string) string {
+		if name == "GH_TOKEN" {
+			return "fallback-token"
+		}
+		return ""
+	})
+	if got != "fallback-token" {
+		t.Fatalf("githubToken() fallback = %q, want fallback-token", got)
+	}
+}
+
+func TestValidateGitHubActionsArtifactContextKeepsDiagnostics(t *testing.T) {
+	err := validateGitHubActionsArtifactContext(githubActionsArtifactContext{
+		token: "token",
+	})
+	if err == nil || !strings.Contains(err.Error(), "missing GITHUB_REPOSITORY or GITHUB_RUN_ID") {
+		t.Fatalf("identity error = %v", err)
+	}
+
+	err = validateGitHubActionsArtifactContext(githubActionsArtifactContext{
+		repo:  "example/repo",
+		runID: "1001",
+	})
+	if err == nil || !strings.Contains(err.Error(), "missing GITHUB_TOKEN or GH_TOKEN") {
+		t.Fatalf("token error = %v", err)
+	}
+}
+
 func githubActionsArtifactTestEnv(name string) string {
 	switch name {
 	case "GITHUB_REPOSITORY":

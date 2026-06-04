@@ -1894,3 +1894,43 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 65 Tasks
+
+- [x] T021-4440 Confirm Slice 65 is bounded to numbered `cmd/sdp-trace` GitHub
+  Actions artifact context construction and source selection shards
+  `packet_071` through `packet_075`.
+- [x] T021-4441 Confirm Slice 65 is behavior-preserving: no changes to API URL
+  flag-over-env-over-default precedence, URL validation before returned context
+  construction, trailing-slash trimming, `GITHUB_TOKEN` precedence over
+  `GH_TOKEN`, missing repo/run and token diagnostics, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-4442 Record Slice 65 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-65-plan-review.md`.
+- [x] T021-4450 Move GitHub Actions artifact context helpers into
+  `packet_build_pr_actions_context.go` and
+  `packet_build_pr_actions_source.go` after the single-file
+  `packet_build_pr_actions_context.go` attempt failed file-level MI at 67.7.
+  Record the failed command plus revised responsibility boundary in evidence.
+- [x] T021-4460 Run `gofmt` on changed Go files.
+- [x] T021-4470 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4471 Run focused GitHub Actions artifact context regression evidence
+  covering exact test existence for
+  `TestNewGitHubActionsArtifactContextBuildsValidatedContext`,
+  `TestGitHubAPIURLSelectionKeepsPrecedenceAndTrimming`,
+  `TestGitHubTokenPrefersGitHubTokenThenFallsBack`, and
+  `TestValidateGitHubActionsArtifactContextKeepsDiagnostics`; API URL
+  precedence and trimming; token precedence/fallback; missing repo/run
+  diagnostic; missing token diagnostic; exact test list verification that fails
+  when any planned focused test is missing; and no baseline changes.
+- [x] T021-4480 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4490 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4500 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  65 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-65-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

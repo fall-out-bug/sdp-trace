@@ -739,6 +739,22 @@ through `packet_092`), fixture IO (`packet_093` onward), and shared optional
 JSON IO (`packet_095`) so live API policy and response processing keep separate
 review trails.
 
+Slice 65 continues `cmd/sdp-trace` cleanup with GitHub Actions artifact context
+construction and source selection shards (`packet_071` through `packet_075`).
+It moves artifact context construction, context validation, and missing identity
+detection into `packet_build_pr_actions_context.go`, with token selection and
+API URL selection in `packet_build_pr_actions_source.go` after a single-file
+attempt failed MI. It preserves API URL flag-over-env-over-default precedence,
+URL validation before returned context construction, trailing-slash trimming,
+`GITHUB_TOKEN` precedence over `GH_TOKEN`, missing repo/run and token
+diagnostics, package boundary, dependency direction, and MI baselines. It
+intentionally excludes URL parsing, trust-target policy,
+HTTPS/loopback/host validation internals (`packet_076` through `packet_085`),
+HTTP request/fetch/decode/retention helpers (`packet_086` through
+`packet_092`), fixture IO (`packet_093` onward), and shared optional JSON IO
+(`packet_095`) so security policy and response processing keep separate review
+trails.
+
 ## Verification
 
 ```text
