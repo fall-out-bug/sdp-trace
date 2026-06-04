@@ -1435,6 +1435,119 @@ func TestPrreviewArtifactIOReadWriteContracts(t *testing.T) {
 	}
 }
 
+func TestPrreviewOptionSchemaValidationContracts(t *testing.T) {
+	validPacket := PacketOptions{
+		OutDir:     "out",
+		RepoID:     "demo_repo",
+		ChangeRef:  "pr-123",
+		BaseCommit: forty("a"),
+		HeadCommit: forty("b"),
+		DiffPath:   "diff.patch",
+		CIState:    StatePass,
+	}
+	for name, tc := range map[string]struct {
+		mutate  func(*PacketOptions)
+		wantErr string
+	}{
+		"missing-out": {
+			mutate:  func(opts *PacketOptions) { opts.OutDir = " " },
+			wantErr: "pr_review_packet_requires_out",
+		},
+		"unsafe-repo": {
+			mutate:  func(opts *PacketOptions) { opts.RepoID = "/tmp/private/repo" },
+			wantErr: "unsafe_repo_id: repo_id must match " + repoIDPattern.String(),
+		},
+		"unsafe-change": {
+			mutate:  func(opts *PacketOptions) { opts.ChangeRef = "branch/main" },
+			wantErr: "unsafe_change_ref: change_ref must match " + changeRefPattern.String(),
+		},
+		"bad-commit": {
+			mutate:  func(opts *PacketOptions) { opts.BaseCommit = forty("A") },
+			wantErr: "invalid_commit_sha: base and head must be 40 lowercase hex characters",
+		},
+		"missing-diff": {
+			mutate:  func(opts *PacketOptions) { opts.DiffPath = " " },
+			wantErr: "pr_review_packet_requires_diff",
+		},
+		"bad-ci": {
+			mutate:  func(opts *PacketOptions) { opts.CIState = "green" },
+			wantErr: "invalid_ci_state: green",
+		},
+	} {
+		t.Run("packet-"+name, func(t *testing.T) {
+			opts := validPacket
+			tc.mutate(&opts)
+			if err := validatePacketOptions(opts); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("validatePacketOptions() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+	if err := validatePacketOptions(validPacket); err != nil {
+		t.Fatalf("valid packet options rejected: %v", err)
+	}
+
+	if err := validateRunSet(RunSet{Results: []ReviewerResult{{ReviewRunID: " "}}}); err == nil || err.Error() != "review_result_requires_review_run_id" {
+		t.Fatalf("missing run id error = %v", err)
+	}
+	if err := validateRunSet(RunSet{Results: []ReviewerResult{{ReviewRunID: "run-1"}, {ReviewRunID: "run-1"}}}); err == nil || err.Error() != "duplicate_review_run_id: run-1" {
+		t.Fatalf("duplicate run id error = %v", err)
+	}
+
+	validProfile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "profile",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles:          []ReviewRole{{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal}},
+	}
+	profileCases := map[string]struct {
+		mutate  func(*ReviewProfile)
+		wantErr string
+	}{
+		"bad-schema": {
+			mutate:  func(profile *ReviewProfile) { profile.SchemaVersion = "bad" },
+			wantErr: "invalid_profile_schema_version: bad",
+		},
+		"missing-profile-id": {
+			mutate:  func(profile *ReviewProfile) { profile.ProfileID = " " },
+			wantErr: "profile_requires_profile_id",
+		},
+		"missing-required-planes": {
+			mutate:  func(profile *ReviewProfile) { profile.RequiredPlanes = nil },
+			wantErr: "profile_requires_required_planes",
+		},
+		"missing-roles": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles = nil },
+			wantErr: "profile_requires_roles",
+		},
+		"missing-role-field": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles[0].RoleID = "" },
+			wantErr: "profile_role_requires_id_plane_runner",
+		},
+		"invalid-runner": {
+			mutate:  func(profile *ReviewProfile) { profile.Roles[0].Runner = "unknown" },
+			wantErr: "profile_role_invalid_runner: unknown",
+		},
+		"required-plane-without-role": {
+			mutate:  func(profile *ReviewProfile) { profile.RequiredPlanes = []string{PlaneCodeCorrectness, PlaneSecurity} },
+			wantErr: "profile_required_plane_without_role: security_forgery_overclaim",
+		},
+	}
+	for name, tc := range profileCases {
+		t.Run("profile-"+name, func(t *testing.T) {
+			profile := cloneReviewProfile(validProfile)
+			tc.mutate(&profile)
+			if err := validateProfile(profile); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("validateProfile() error = %v, want %q", err, tc.wantErr)
+			}
+		})
+	}
+	withoutSchema := cloneReviewProfile(validProfile)
+	withoutSchema.SchemaVersion = ""
+	if err := validateProfile(withoutSchema); err != nil {
+		t.Fatalf("empty profile schema version should be accepted: %v", err)
+	}
+}
+
 func TestPacketProfileAndSmallHelpers(t *testing.T) {
 	root := t.TempDir()
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1"}

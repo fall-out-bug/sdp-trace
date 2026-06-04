@@ -5,11 +5,9 @@ import (
 	"fmt"
 )
 
+// validatePacketIdentityOptions checks portable source identity before packet
+// construction records it as review context.
 func validatePacketIdentityOptions(opts PacketOptions) error {
-	// validatePacketIdentityOptions keeps review evidence explicit and replay-bound.
-	// Packet inputs, reviewer runs, plane coverage, citations, raw outputs, and dispositions stay separate.
-	// This helper validates or projects review data; it does not create external proof.
-
 	if !repoIDPattern.MatchString(opts.RepoID) {
 		return fmt.Errorf("unsafe_repo_id: repo_id must match %s", repoIDPattern.String())
 	}
@@ -20,4 +18,10 @@ func validatePacketIdentityOptions(opts PacketOptions) error {
 		return errors.New("invalid_commit_sha: base and head must be 40 lowercase hex characters")
 	}
 	return nil
+}
+
+// validPacketCommits requires immutable 40-character lowercase SHA-1 refs for
+// both sides of the reviewed change.
+func validPacketCommits(opts PacketOptions) bool {
+	return sha40Pattern.MatchString(opts.BaseCommit) && sha40Pattern.MatchString(opts.HeadCommit)
 }

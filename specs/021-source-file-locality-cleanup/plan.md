@@ -1258,6 +1258,22 @@ option validation (`prreview_087` onward), reviewer execution, prompt
 generation, sanitizer/citation helpers, and validation/summary logic so those
 responsibilities keep separate review trails.
 
+Slice 95 continues `internal/prreview` cleanup with packet option, run-set, and
+review profile validation shards (`prreview_087` through `prreview_099`). The
+slice is limited to packet output/identity/input validation, repository ID and
+change-ref pattern enforcement, base/head commit SHA validation, optional CI
+state validation, run-set result ID validation and duplicate rejection, profile
+header and required-field validation, role validation, runner validation, and
+required-plane-to-role coverage validation. It must preserve validation before
+packet directory creation, exact error messages, duplicate review-run ID
+rejection, schema-version optionality and mismatch errors, required profile
+field errors, role field and runner errors, required-plane-without-role errors,
+package boundary, dependency direction, and MI baselines. It intentionally
+excludes role execution (`prreview_100` onward), runner command handling, prompt
+generation, JSON artifact IO, validation/summary logic, sanitizer/citation
+helpers, and packet construction internals so those responsibilities keep
+separate review trails.
+
 ## Verification
 
 ```text

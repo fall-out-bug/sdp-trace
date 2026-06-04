@@ -3346,3 +3346,55 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 95 Tasks
+
+- [x] T021-6540 Confirm Slice 95 is bounded to numbered `internal/prreview`
+  packet option, run-set, and review profile validation shards `prreview_087`
+  through `prreview_099`.
+- [x] T021-6541 Confirm Slice 95 is behavior-preserving: no changes to
+  validation before packet directory creation, exact packet/profile/run-set
+  validation error messages, duplicate review-run ID rejection, schema-version
+  optionality and mismatch errors, required profile field errors, role field and
+  runner errors, required-plane-without-role errors, package boundary,
+  dependency direction, or baseline changes are planned.
+- [x] T021-6542 Record Slice 95 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-95-plan-review.md`.
+- [x] T021-6550 Move packet option, run-set, and profile validation helpers
+  into cohesive responsibility-named files without creating standalone
+  one-function replacement files. Record source-shape evidence that numbered
+  `prreview_087` through `prreview_099` files are gone and staged boundary
+  evidence that excluded role execution, runner command handling, prompt, JSON
+  artifact IO, validation/summary, sanitizer, citation, and packet construction
+  numbered files are not moved or edited in Slice 95.
+- [x] T021-6560 Run `gofmt` on changed Go files.
+- [x] T021-6570 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6571 Run focused validation regression evidence covering exact named
+  tests `TestBuildPacketBindsRefsAndRejectsUnsafeIdentity`,
+  `TestValidateProfileRejectsMalformedProfiles`,
+  `TestReadRunSetRejectsDuplicateRunIDs`,
+  `TestRunReviewPreservesValidationDefaultsAndOutputContracts`, and
+  `TestPrreviewOptionSchemaValidationContracts`. Run them with a `go test
+  -list` exact-count guard before the focused `go test -run` command so zero
+  matches fail. These tests must cover packet out/diff requirements, repo ID
+  and change-ref patterns, commit SHA validation, CI state validation, run-set
+  missing and duplicate review IDs, profile schema optionality and mismatch,
+  profile required fields, role required fields, invalid runner rejection,
+  required-plane-to-role mapping, and validation-before-output-directory
+  creation. The focused Slice 95 regression must assert exact error strings for
+  packet out/diff, repo ID, change-ref, commit SHA, CI state, run-set missing
+  and duplicate review IDs, profile schema mismatch and optionality, required
+  profile fields, role field and runner errors, and required-plane-without-role
+  errors.
+- [x] T021-6580 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6590 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6600 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  95 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-95-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
