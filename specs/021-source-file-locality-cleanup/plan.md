@@ -1309,6 +1309,23 @@ rendering/sanitization/citation helpers outside the existing sanitizer call,
 validation/summary logic, role execution, and previously consolidated
 validation helpers.
 
+Slice 98 continues `internal/prreview` cleanup with preview, prompt digest,
+copied input, packet digest, and output directory helpers (`prreview_134`
+through `prreview_148`). The slice is limited to preview role projection,
+prompt safe references and digest-only prompt refs, copied context/verification
+input refs, copied input file writing, canonical packet digest replay, and new
+output directory checks. It must preserve preview-only behavior without writing
+run artifacts, preview role order and command/prompt digests, empty prompt refs,
+prompt read error handling, copied input naming/content-type/digest/ref shape,
+copied input file permissions, packet digest computation with `packet_digest`
+cleared, missing output path and existing output directory errors, package
+boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines. It
+intentionally excludes CI/runner/status/disposition helpers (`prreview_149`
+through `prreview_156`), citation resolution (`prreview_157` onward), unsafe
+text/safe ID helpers, prompt rendering, sanitizer logic, validation/summary,
+role execution, parsed output handling, and previously consolidated validation
+helpers.
+
 ## Verification
 
 ```text

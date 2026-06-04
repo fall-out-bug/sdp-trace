@@ -3508,3 +3508,63 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 98 Tasks
+
+- [x] T021-6750 Confirm Slice 98 is bounded to numbered `internal/prreview`
+  preview, prompt digest, copied input, packet digest, and output directory
+  helper shards `prreview_134` through `prreview_148`.
+- [x] T021-6751 Confirm Slice 98 is behavior-preserving: no changes to
+  preview-only behavior, preview role order, command digest, prompt digest/ref
+  shape, empty prompt refs, prompt read error handling, copied input naming,
+  content type, digest/ref shape, copied input file permissions, canonical
+  packet digest replay, missing output path and existing output directory error
+  strings, package boundary, dependency direction, or baseline changes are
+  planned.
+- [x] T021-6752 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-98-plan-review.md`.
+- [x] T021-6760 Move preview, prompt digest, copied input, packet digest, and
+  output directory helpers into cohesive responsibility-named files without
+  creating standalone one-function replacement files. Record source-shape
+  evidence that numbered `prreview_134` through `prreview_148` files are gone
+  and staged boundary evidence that excluded CI/runner/status/disposition
+  helpers `prreview_149` through `prreview_156`, citation resolution
+  `prreview_157` onward, unsafe text/safe ID helpers, prompt rendering,
+  sanitizer, validation/summary, role execution, parsed output handling, and
+  previously consolidated validation files are not moved or edited in Slice 98.
+- [x] T021-6770 Run `gofmt` on changed Go files.
+- [x] T021-6771 Add focused regression coverage named
+  `TestBuildPacketCopiesInputsAndComputesStableDigests` before running the
+  focused exact-count guard. The test must stat copied context and verification
+  input files for mode `0o644` where mode bits are exposed, read copied bytes,
+  assert exact copied file names, refs, IDs, kinds, content types, digest
+  values, and replay packet digest with `packet_digest` cleared.
+- [x] T021-6780 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6781 Run focused preview/input/digest regression evidence covering
+  exact named tests `TestRunReviewPreviewReturnsPreviewOnly`,
+  `TestRunReviewPreservesValidationDefaultsAndOutputContracts`,
+  `TestRunReviewCannotVerifyUnreadablePromptTemplate`,
+  `TestRunReviewPromptIncludesPacketEvidence`,
+  `TestBuildPacketCopiesInputsAndComputesStableDigests`, and
+  `TestPacketProfileAndSmallHelpers`. Run them with a `go test -list`
+  exact-count guard before the focused `go test -run` command so zero matches
+  fail. These tests must cover preview-only no artifact writes, preview role
+  order and command/prompt digests, empty prompt refs, prompt read error
+  handling, copied context/verification input naming/content-type/digest/ref
+  shape and file mode `0o644` where mode bits are exposed, stable packet digest
+  replay with `packet_digest` cleared, missing output path, existing output
+  directory rejection, and read-dir failure propagation.
+- [x] T021-6790 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6800 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6810 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 98 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-98-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -388,6 +388,72 @@ func TestBuildPacketRecordsUnavailableInputsAndDigestChangesWithDiff(t *testing.
 	}
 }
 
+func TestBuildPacketCopiesInputsAndComputesStableDigests(t *testing.T) {
+	root := t.TempDir()
+	diffData := "diff --git a/a.go b/a.go\n+package main\n"
+	contextData := "# Spec\n"
+	verificationData := "go test ./...\n"
+	diffPath := writeText(t, root, "change.diff", diffData)
+	contextPath := writeText(t, root, "spec.md", contextData)
+	verificationPath := writeText(t, root, "verify.log", verificationData)
+	outDir := filepath.Join(root, "packet")
+
+	packet, err := BuildPacket(PacketOptions{
+		OutDir:            outDir,
+		RepoID:            "demo_repo",
+		ChangeRef:         "pr-123",
+		BaseCommit:        forty("a"),
+		HeadCommit:        forty("b"),
+		DiffPath:          diffPath,
+		ContextPaths:      []string{contextPath},
+		VerificationPaths: []string{verificationPath},
+		CIState:           StateNotAssessed,
+		Now:               time.Date(2026, 5, 9, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCopiedInput(t, outDir, packet.ContextRefs[0], "context-1.md", "context-1", RefKindDoc, ContentMarkdown, contextData)
+	assertCopiedInput(t, outDir, packet.VerificationRefs[0], "verification-1.txt", "verification-1", RefKindVerification, ContentText, verificationData)
+
+	canonical := packet
+	canonical.PacketDigest = "sha256:" + sixtyFour("f")
+	replayed, err := packetDigest(canonical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if "sha256:"+replayed != packet.PacketDigest {
+		t.Fatalf("packet digest should be replayable with packet_digest cleared: got sha256:%s want %s", replayed, packet.PacketDigest)
+	}
+}
+
+func assertCopiedInput(t *testing.T, outDir string, ref SafeRef, name, id, kind, contentType, wantData string) {
+	t.Helper()
+	if ref.ID != id || ref.Kind != kind || ref.Ref != filepath.ToSlash(filepath.Join("inputs", name)) ||
+		ref.ContentType != contentType || ref.RedactionState != RedactionNone {
+		t.Fatalf("copied input ref drifted: %+v", ref)
+	}
+	wantDigest := sha256.Sum256([]byte(wantData))
+	if ref.DigestSHA256 != hex.EncodeToString(wantDigest[:]) {
+		t.Fatalf("copied input digest = %s want %s", ref.DigestSHA256, hex.EncodeToString(wantDigest[:]))
+	}
+	copiedPath := filepath.Join(outDir, "inputs", name)
+	data, err := os.ReadFile(copiedPath)
+	if err != nil {
+		t.Fatalf("read copied input: %v", err)
+	}
+	if string(data) != wantData {
+		t.Fatalf("copied input data = %q want %q", string(data), wantData)
+	}
+	info, err := os.Stat(copiedPath)
+	if err != nil {
+		t.Fatalf("stat copied input: %v", err)
+	}
+	if info.Mode().Perm() != 0o644 {
+		t.Fatalf("copied input mode = %v want 0644", info.Mode().Perm())
+	}
+}
+
 func TestPrreviewPacketBuildHelpersPreserveDefaultsRefsAndUnavailableFields(t *testing.T) {
 	root := t.TempDir()
 	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n+package main\n")
@@ -1229,18 +1295,28 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 
 func TestRunReviewPreviewReturnsPreviewOnly(t *testing.T) {
 	root := t.TempDir()
+	promptPath := writeText(t, root, "prompt.md", "review {{packet_digest}}\n")
 	packet := Packet{PacketDigest: "sha256:" + sixtyFour("v"), SchemaVersion: SchemaVersionPacket}
 	profile := ReviewProfile{
 		SchemaVersion:  SchemaVersionProfile,
 		ProfileID:      "preview",
-		RequiredPlanes: []string{PlaneCodeCorrectness},
+		RequiredPlanes: []string{PlaneCodeCorrectness, PlaneTraceEvidence},
 		Roles: []ReviewRole{
 			{
-				RoleID:         "code",
-				Plane:          PlaneCodeCorrectness,
+				RoleID:            "code",
+				Plane:             PlaneCodeCorrectness,
+				Runner:            RunnerManualExternal,
+				RequestedModel:    "not_assessed",
+				TimeoutSeconds:    120,
+				Command:           []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper"},
+				PromptTemplateRef: promptPath,
+			},
+			{
+				RoleID:         "trace",
+				Plane:          PlaneTraceEvidence,
 				Runner:         RunnerManualExternal,
-				RequestedModel: "not_assessed",
-				TimeoutSeconds: 120,
+				RequestedModel: "",
+				TimeoutSeconds: 240,
 			},
 		},
 	}
@@ -1261,8 +1337,17 @@ func TestRunReviewPreviewReturnsPreviewOnly(t *testing.T) {
 	if preview.PacketDigest != packet.PacketDigest {
 		t.Fatalf("preview packet digest = %q want %q", preview.PacketDigest, packet.PacketDigest)
 	}
-	if len(preview.Roles) != 1 {
-		t.Fatalf("preview roles = %d want 1", len(preview.Roles))
+	if len(preview.Roles) != 2 {
+		t.Fatalf("preview roles = %d want 2", len(preview.Roles))
+	}
+	if preview.Roles[0].RoleID != "code" || preview.Roles[1].RoleID != "trace" {
+		t.Fatalf("preview role order drifted: %+v", preview.Roles)
+	}
+	if preview.Roles[0].CommandDigest == "" || preview.Roles[0].PromptDigest == "" || preview.Roles[0].PromptRef != promptPath {
+		t.Fatalf("preview command/prompt digest drifted: %+v", preview.Roles[0])
+	}
+	if preview.Roles[1].RequestedModel != StateNotAssessed || preview.Roles[1].PromptRef != "" || preview.Roles[1].PromptDigest != "" {
+		t.Fatalf("preview empty prompt/default model drifted: %+v", preview.Roles[1])
 	}
 	if _, err := os.Stat(outDir); !os.IsNotExist(err) {
 		t.Fatalf("preview should not create output directory, got stat err=%v", err)
@@ -1301,6 +1386,11 @@ func TestRunReviewPreservesValidationDefaultsAndOutputContracts(t *testing.T) {
 		t.Fatalf("invalid profile should not create output directory, got %v", err)
 	}
 
+	_, _, err = RunReview(packet, profile, RunOptions{OutDir: " \t\n"})
+	if err == nil || err.Error() != "missing_output_path" {
+		t.Fatalf("expected missing output path contract, got %v", err)
+	}
+
 	existingOutDir := filepath.Join(root, "existing-runs")
 	if err := os.MkdirAll(existingOutDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -1310,8 +1400,8 @@ func TestRunReviewPreservesValidationDefaultsAndOutputContracts(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _, err = RunReview(packet, profile, RunOptions{OutDir: existingOutDir, NotAssessedReason: "configured_elsewhere"})
-	if err == nil {
-		t.Fatal("expected existing output directory rejection")
+	if err == nil || err.Error() != "output_exists: existing-runs" {
+		t.Fatalf("expected existing output directory rejection contract, got %v", err)
 	}
 	if data, readErr := os.ReadFile(sentinel); readErr != nil || string(data) != "keep\n" {
 		t.Fatalf("existing output directory contents should remain untouched, data=%q err=%v", string(data), readErr)
