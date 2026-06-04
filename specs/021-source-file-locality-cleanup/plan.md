@@ -974,6 +974,21 @@ validation execution (`packet_060` onward), and downstream GitHub row/entry
 helpers (`packet_148` onward) so those behavior-heavy responsibilities keep
 separate review trails.
 
+Slice 78 continues `internal/packet` cleanup with packet rendering and digest
+helper shards (`packet_047` through `packet_059`). The slice is limited to
+clean theater rendering, theater finding rendering, row lookup, decision table
+rendering, evidence table rendering, residual-gap rendering, non-proof text,
+required-row ordering lookup, resolver fallback lookup, Markdown cell escaping,
+and packet digest generation. It preserves rendered section headers, table
+column order, markdown escaping for pipes and newlines, `none` rendering for
+blank cells, clean-theater fallback row shape, resolver fallback behavior,
+required row ordering semantics, non-approval fallback text, digest prefix and
+determinism, package boundary, dependency direction, and MI baselines. It
+intentionally excludes top-level markdown orchestration (`packet_193` onward),
+validation execution (`packet_060` onward), and downstream GitHub row/entry
+helpers (`packet_148` onward) so those behavior-heavy responsibilities keep
+separate review trails.
+
 ## Verification
 
 ```text

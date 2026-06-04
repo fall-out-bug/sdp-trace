@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -291,6 +292,129 @@ func TestRenderCleanTheaterUsesRowState(t *testing.T) {
 	if strings.Contains(md, "| none | pass | none | No P0 theater finding triggered.") ||
 		!strings.Contains(md, "| none | not_assessed | none | No P0 theater finding triggered.") {
 		t.Fatalf("rendered theater row overclaimed:\n%s", md)
+	}
+}
+
+func TestPacketRenderingHelpersPreserveTables(t *testing.T) {
+	var out bytes.Buffer
+	renderTheaterFinding(&out, TheaterFinding{
+		ReasonCode:              "prompt_contamination",
+		State:                   StateFail,
+		Severity:                "P0",
+		Finding:                 "a|b\nc",
+		TriggerEvidenceRefs:     []string{"prompt:boundary", "review:note"},
+		RequiredClosureEvidence: "fresh|review",
+	})
+	if got, want := out.String(), "| prompt_contamination | fail | P0 | a\\|b c | prompt:boundary, review:note | fresh\\|review |\n"; got != want {
+		t.Fatalf("theater finding render = %q want %q", got, want)
+	}
+
+	out.Reset()
+	renderDecisions(&out, []DecisionOwner{{Decision: "merge|release", Owner: "owner\nname", State: StateNotAssessed}})
+	if got := out.String(); !strings.Contains(got, "## Decision Ownership\n\n| decision | owner | state | reason |\n| --- | --- | --- | --- |\n") ||
+		!strings.Contains(got, "| merge\\|release | owner name | not_assessed | none |") {
+		t.Fatalf("decision render drifted:\n%s", got)
+	}
+
+	out.Reset()
+	renderEvidence(&out, BundleManifest{
+		BundleID:  "bundle|one",
+		Entries:   []BundleEntry{{Ref: "artifact:one", SourceClass: "ci", RetainedForm: "raw", RedactionStatus: "not_needed"}},
+		Resolvers: []ResolverEntry{{Ref: "artifact:one", Resolver: "resolver|fallback"}},
+	})
+	if got := out.String(); !strings.Contains(got, "Manifest: `bundle\\|one`") ||
+		!strings.Contains(got, "| ref | source class | retained form | redaction status | resolver |") ||
+		!strings.Contains(got, "| artifact:one | ci | raw | not_needed | resolver\\|fallback |") {
+		t.Fatalf("evidence render drifted:\n%s", got)
+	}
+}
+
+func TestPacketResidualAndNonProofRendering(t *testing.T) {
+	var out bytes.Buffer
+	renderResidualGaps(&out, nil)
+	if got, want := out.String(), "## Residual Gaps\n\nNo residual gaps recorded beyond row states.\n\n"; got != want {
+		t.Fatalf("empty residual render = %q want %q", got, want)
+	}
+
+	out.Reset()
+	renderResidualGaps(&out, []ResidualGap{{RowID: "PC-REVIEW", State: StatePartial, Reason: "needs|review", ClosureEvidence: "review\nagain"}})
+	if got := out.String(); !strings.Contains(got, "| row id | state | reason | closure evidence |") ||
+		!strings.Contains(got, "| PC-REVIEW | partial | needs\\|review | review again |") {
+		t.Fatalf("residual render drifted:\n%s", got)
+	}
+
+	out.Reset()
+	renderNonProof(&out, Packet{})
+	if got := out.String(); !strings.Contains(got, "## What This Packet Does Not Prove") ||
+		!strings.Contains(got, "does not approve merge, release, compliance, production trust") {
+		t.Fatalf("non-proof fallback drifted:\n%s", got)
+	}
+}
+
+func TestPacketRenderLookupAndDigestHelpers(t *testing.T) {
+	if got := rowByID(nil, "PC-MISSING"); got.ID != "PC-MISSING" || got.State != StateCannotVerify || got.Summary != "row missing" || got.Reason != "row missing" {
+		t.Fatalf("missing row fallback = %+v", got)
+	}
+	if got := requiredRowIndex("PC-CHANGE"); got != 0 {
+		t.Fatalf("PC-CHANGE index = %d", got)
+	}
+	if got := requiredRowIndex("EXTENSION"); got != len(RequiredRows) {
+		t.Fatalf("extension index = %d want %d", got, len(RequiredRows))
+	}
+	if got := resolverFromList([]ResolverEntry{{Ref: "a", Resolver: "resolver-a"}}, "missing"); got != "" {
+		t.Fatalf("missing resolver = %q", got)
+	}
+	if got := md("a|b\nc"); got != "a\\|b c" {
+		t.Fatalf("md escape = %q", got)
+	}
+	if got := md(" \t "); got != "none" {
+		t.Fatalf("blank md = %q", got)
+	}
+	packet := validBundle().Packet
+	first := PacketDigest(packet)
+	second := PacketDigest(packet)
+	if !strings.HasPrefix(first, "sha256:") || len(first) != len("sha256:")+64 || first != second {
+		t.Fatalf("packet digest not deterministic sha256: first=%q second=%q", first, second)
+	}
+}
+
+func TestRenderMarkdownPreservesTopLevelOrderAndHeaders(t *testing.T) {
+	rendered, err := RenderMarkdown(validBundle())
+	if err != nil {
+		t.Fatalf("RenderMarkdown: %v", err)
+	}
+	wantOrder := []string{
+		"# Change Evidence Packet v0",
+		"## Executive Summary",
+		"## Packet Metadata",
+		"## Required Rows",
+		"## Theater Findings",
+		"## Decision Ownership",
+		"## Evidence Bundle",
+		"## Residual Gaps",
+		"## What This Packet Does Not Prove",
+	}
+	last := -1
+	for _, marker := range wantOrder {
+		pos := strings.Index(rendered, marker)
+		if pos < 0 {
+			t.Fatalf("rendered markdown missing %q:\n%s", marker, rendered)
+		}
+		if pos <= last {
+			t.Fatalf("rendered markdown order drifted at %q:\n%s", marker, rendered)
+		}
+		last = pos
+	}
+	for _, header := range []string{
+		"| row id | state | answer | evidence refs | gap / next evidence | owner |",
+		"| reason code | state | severity | finding | trigger evidence | required closure evidence |",
+		"| row id | state | reason | closure evidence |",
+		"| decision | owner | state | reason |",
+		"| ref | source class | retained form | redaction status | resolver |",
+	} {
+		if !strings.Contains(rendered, header) {
+			t.Fatalf("rendered markdown missing table header %q:\n%s", header, rendered)
+		}
 	}
 }
 

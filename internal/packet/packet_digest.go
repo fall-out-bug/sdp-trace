@@ -2,7 +2,6 @@ package packet
 
 import (
 	"crypto/sha256"
-
 	"encoding/json"
 	"fmt"
 )

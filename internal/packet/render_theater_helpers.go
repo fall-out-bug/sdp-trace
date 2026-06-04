@@ -2,10 +2,14 @@ package packet
 
 import (
 	"bytes"
-
 	"fmt"
 	"strings"
 )
+
+func renderCleanTheater(out *bytes.Buffer, theater Row) {
+
+	fmt.Fprintf(out, "| none | %s | none | %s | PC-THEATER row | %s |\n\n", theater.State, md(theater.Summary), md(theater.Reason))
+}
 
 func renderTheaterFinding(out *bytes.Buffer, finding TheaterFinding) {
 	// renderTheaterFinding keeps packet evidence explicit and replay-bound.

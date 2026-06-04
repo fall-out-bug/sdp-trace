@@ -2494,3 +2494,45 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 78 Tasks
+
+- [x] T021-5350 Confirm Slice 78 is bounded to numbered `internal/packet`
+  packet rendering and digest helper shards `packet_047` through `packet_059`.
+- [x] T021-5351 Confirm Slice 78 is behavior-preserving: no changes to rendered
+  section headers, table column order, markdown escaping for pipes and newlines,
+  `none` rendering for blank cells, clean-theater fallback row shape, resolver
+  fallback behavior, required row ordering semantics, non-approval fallback
+  text, digest prefix/determinism, package boundary, dependency direction, or
+  baseline changes are planned.
+- [x] T021-5352 Record Slice 78 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-78-plan-review.md`.
+- [x] T021-5360 Move packet rendering helpers, row/resolver lookup helpers,
+  markdown escaping helper, required-row ordering helper, and packet digest
+  helper into cohesive locality files. Record source-shape evidence that
+  numbered `packet_047` through `packet_059` files are gone, that replacement
+  locality filenames exist, and that `cmd/sdp-trace/FAMILY_INDEX.md` is not
+  applicable because this is non-command `internal/packet` package locality.
+- [x] T021-5370 Run `gofmt` on changed Go files.
+- [x] T021-5380 Run focused Go verification for `internal/packet`.
+- [x] T021-5381 Run focused packet rendering/digest regression evidence
+  covering exact test existence for clean theater fallback rendering, theater
+  finding table rendering, decision table rendering, evidence resolver fallback
+  rendering, residual gap and no-gap rendering, non-proof fallback text,
+  markdown cell escaping, row lookup missing fallback, required-row ordering
+  lookup, packet digest prefix/determinism, top-level `RenderMarkdown` section
+  order and section/table headers or source-shape evidence that excluded
+  `packet_193` onward orchestration files were untouched, exact source-shape
+  verification after implementation, and no baseline changes.
+- [x] T021-5390 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5400 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5410 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  78 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-78-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
