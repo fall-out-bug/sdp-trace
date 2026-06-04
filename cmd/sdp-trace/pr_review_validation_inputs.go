@@ -4,6 +4,27 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/prreview"
 )
 
+type prReviewValidationInputs struct {
+	packet  prreview.Packet
+	profile prreview.ReviewProfile
+	runs    prreview.RunSet
+	ledger  prreview.Ledger
+}
+
+func readPRReviewValidationInputs(opts *flagSet) (prReviewValidationInputs, error) {
+	packet, err := prreview.ReadPacket(opts.stringValue("packet"))
+	if err != nil {
+		return prReviewValidationInputs{}, err
+	}
+	// Packet read is separated from profile/run/ledger reads to keep the error
+	// boundary precise for callers and tests.
+	profile, runs, ledger, err := readPRReviewValidationArtifacts(opts)
+	if err != nil {
+		return prReviewValidationInputs{}, err
+	}
+	return prReviewValidationInputs{packet: packet, profile: profile, runs: runs, ledger: ledger}, nil
+}
+
 func readPRReviewValidationArtifacts(opts *flagSet) (prreview.ReviewProfile, prreview.RunSet, prreview.Ledger, error) {
 	profile, err := prreview.ReadProfile(opts.stringValue("profile"))
 	if err != nil {

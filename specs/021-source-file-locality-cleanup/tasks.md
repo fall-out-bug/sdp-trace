@@ -2211,3 +2211,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 72 Tasks
+
+- [x] T021-4930 Confirm Slice 72 is bounded to numbered `cmd/sdp-trace`
+  `pr-review validate` artifact-validation shards `pr_review_115` through
+  `pr_review_120`.
+- [x] T021-4931 Confirm Slice 72 is behavior-preserving: no changes to
+  mandatory output path validation, positional-argument rejection,
+  packet/profile/run-set/ledger reads, artifact read failures mapping to
+  `cannot_verify`, package-owned validation verdicts, durable validation write
+  before stdout mirroring, `reviewValidationExitCode` mapping through
+  `exitCannotVerify`, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-4932 Record Slice 72 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-72-plan-review.md`.
+- [x] T021-4940 Move `pr-review validate` execution, argument parsing, output
+  path validation, durable validation write, stdout mirroring, and validation
+  exit mapping into `pr_review_validate_command.go`, and
+  packet/profile/run-set/ledger input loading into
+  `pr_review_validation_inputs.go`, after pre-change MI analysis measured the
+  planned files at `72.0` and `73.2`. Record the command and responsibility
+  boundary in evidence, and synchronize `cmd/sdp-trace/FAMILY_INDEX.md` with
+  the renamed files.
+- [x] T021-4950 Run `gofmt` on changed Go files.
+- [x] T021-4960 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4961 Run focused `pr-review validate` regression evidence covering
+  exact test existence for
+  `TestParsePRReviewValidateArgsKeepsUsageBoundaries`,
+  `TestReadPRReviewValidationInputsKeepsArtifactBoundaries`, and
+  `TestRunPRReviewValidateKeepsDurableVerdictAndExitMapping`; mandatory output
+  path validation, positional argument rejection, packet/profile/run-set/ledger
+  read failure `cannot_verify` behavior, durable validation write before stdout
+  mirroring, non-zero validation verdict mapping through `exitCannotVerify`,
+  exact test list verification after test implementation that fails when any
+  planned focused test is missing, and no baseline changes.
+- [x] T021-4970 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-4980 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4990 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  72 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-72-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

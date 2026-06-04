@@ -860,6 +860,24 @@ excludes `pr-review validate`, summarize, check, shared JSON writers, shared
 file helpers, packet/profile readers, and runner helpers so later review
 workflows can keep separate review trails.
 
+Slice 72 continues numbered `pr_review` cleanup in `cmd/sdp-trace` with
+`pr-review validate` artifact-validation shards (`pr_review_115` through
+`pr_review_120`). A two-file boundary was selected after pre-change MI analysis
+measured `pr_review_validate_command.go` at file MI `72.0` and
+`pr_review_validation_inputs.go` at file MI `73.2`. The slice moves validate
+execution, argument parsing, output path validation, durable validation writes,
+stdout mirroring, and validation-exit mapping into
+`pr_review_validate_command.go`, and packet/profile/run-set/ledger input
+loading into `pr_review_validation_inputs.go`. It preserves mandatory output
+path validation, positional-argument rejection, packet/profile/run-set/ledger
+read failures mapping to `cannot_verify`, validation verdict persistence before
+stdout mirroring, package-owned validation verdicts, `reviewValidationExitCode`
+mapping through `exitCannotVerify`, package boundary, dependency direction, and
+MI baselines. It intentionally excludes `pr-review summarize`, check, shared
+JSON writers, shared file helpers, packet/profile shared readers, repeated flag
+helpers, runner helpers, and generic validation exit helpers so later review
+workflow responsibilities keep separate review trails.
+
 ## Verification
 
 ```text

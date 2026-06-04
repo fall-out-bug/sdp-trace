@@ -776,6 +776,184 @@ func writePRReviewRunsForSynthesisTest(t *testing.T, runsDir, packetDigest strin
 	})
 }
 
+func TestParsePRReviewValidateArgsKeepsUsageBoundaries(t *testing.T) {
+	var errOut bytes.Buffer
+	opts, code, ok := parsePRReviewValidateArgs([]string{"--packet", "packet", "--profile", "profile", "--runs", "runs", "--ledger", "ledger", "--out", "validation.json"}, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse validate args ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if opts.stringValue("packet") != "packet" || opts.stringValue("ledger") != "ledger" {
+		t.Fatalf("validate opts changed: %+v", opts)
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewValidateArgs([]string{"--packet", "packet", "--profile", "profile", "--runs", "runs", "--ledger", "ledger"}, &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "requires --out") {
+		t.Fatalf("missing out ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewValidateArgs([]string{"--packet", "packet", "--profile", "profile", "--runs", "runs", "--ledger", "ledger", "--out", "validation.json", "unexpected"}, &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "accepts only flags") {
+		t.Fatalf("rest arg ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+}
+
+func TestReadPRReviewValidationInputsKeepsArtifactBoundaries(t *testing.T) {
+	root := t.TempDir()
+	artifacts := writePRReviewValidationArtifactsForTest(t, root, true)
+
+	opts := newPRReviewValidationTestOptions(artifacts.packetPath, artifacts.profilePath, artifacts.runsPath, artifacts.ledgerPath)
+	inputs, err := readPRReviewValidationInputs(opts)
+	if err != nil {
+		t.Fatalf("read validation inputs: %v", err)
+	}
+	if inputs.packet.PacketDigest != artifacts.packetDigest ||
+		inputs.profile.ProfileID != "default" ||
+		inputs.runs.PacketDigest != artifacts.packetDigest ||
+		inputs.ledger.PacketDigest != artifacts.packetDigest {
+		t.Fatalf("inputs = %+v", inputs)
+	}
+
+	for _, test := range []struct {
+		name string
+		opts *flagSet
+	}{
+		{name: "packet", opts: newPRReviewValidationTestOptions(filepath.Join(root, "missing-packet"), artifacts.profilePath, artifacts.runsPath, artifacts.ledgerPath)},
+		{name: "profile", opts: newPRReviewValidationTestOptions(artifacts.packetPath, filepath.Join(root, "missing-profile.json"), artifacts.runsPath, artifacts.ledgerPath)},
+		{name: "runs", opts: newPRReviewValidationTestOptions(artifacts.packetPath, artifacts.profilePath, filepath.Join(root, "missing-runs"), artifacts.ledgerPath)},
+		{name: "ledger", opts: newPRReviewValidationTestOptions(artifacts.packetPath, artifacts.profilePath, artifacts.runsPath, filepath.Join(root, "missing-ledger.json"))},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := readPRReviewValidationInputs(test.opts); err == nil {
+				t.Fatalf("missing %s artifact should fail", test.name)
+			}
+		})
+	}
+}
+
+func TestRunPRReviewValidateKeepsDurableVerdictAndExitMapping(t *testing.T) {
+	root := t.TempDir()
+	artifacts := writePRReviewValidationArtifactsForTest(t, root, true)
+	validationPath := filepath.Join(root, "validation.json")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runPRReviewValidate([]string{"--packet", artifacts.packetPath, "--profile", artifacts.profilePath, "--runs", artifacts.runsPath, "--ledger", artifacts.ledgerPath, "--out", validationPath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("validate exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	written, err := os.ReadFile(validationPath)
+	if err != nil {
+		t.Fatalf("read validation: %v", err)
+	}
+	if !bytes.Equal(bytes.TrimSpace(out.Bytes()), bytes.TrimSpace(written)) {
+		t.Fatalf("stdout should mirror durable validation\nstdout=%s\nfile=%s", out.String(), string(written))
+	}
+
+	unresolved := writePRReviewValidationArtifactsForTest(t, filepath.Join(root, "unresolved"), false)
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewValidate([]string{"--packet", unresolved.packetPath, "--profile", unresolved.profilePath, "--runs", unresolved.runsPath, "--ledger", unresolved.ledgerPath, "--out", filepath.Join(root, "unresolved-validation.json")}, &out, &errOut)
+	if exit != exitCannotVerify || !strings.Contains(out.String(), `"review_coverage_state": "coverage_unresolved"`) {
+		t.Fatalf("unresolved validation exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewValidate([]string{"--packet", filepath.Join(root, "missing-packet"), "--profile", artifacts.profilePath, "--runs", artifacts.runsPath, "--ledger", artifacts.ledgerPath, "--out", filepath.Join(root, "missing-validation.json")}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("missing packet validation exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+type prReviewValidationTestArtifacts struct {
+	packetDigest string
+	packetPath   string
+	profilePath  string
+	runsPath     string
+	ledgerPath   string
+}
+
+func writePRReviewValidationArtifactsForTest(t *testing.T, root string, resolved bool) prReviewValidationTestArtifacts {
+	t.Helper()
+	packetDigest := "sha256:" + strings.Repeat("7", 64)
+	packetPath := writeJSONForPRReviewTest(t, root, "packet.json", map[string]any{
+		"schema_version":  "block30-pr-review-packet-v1",
+		"packet_id":       "packet-1",
+		"packet_digest":   packetDigest,
+		"repo_id":         "demo_repo",
+		"change_ref":      "pr-123",
+		"base_commit":     strings.Repeat("a", 40),
+		"head_commit":     strings.Repeat("b", 40),
+		"diff_ref":        map[string]any{"id": "diff", "kind": "diff", "ref": "inputs/diff.patch", "digest_sha256": strings.Repeat("2", 64), "content_type": "text/x-diff", "redaction_state": "none"},
+		"ci_state":        "not_assessed",
+		"created_at":      "2026-05-09T12:00:00Z",
+		"created_by":      "test",
+		"redaction_state": "none",
+	})
+	profilePath := writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
+		"schema_version":  "block30-pr-review-profile-v1",
+		"profile_id":      "default",
+		"required_planes": []string{"code_correctness"},
+		"roles":           []map[string]any{{"role_id": "code", "plane": "code_correctness", "runner": "manual_external", "requested_model": "not_assessed"}},
+	})
+	status := "no_findings"
+	findings := []map[string]any{}
+	disposition := "resolved"
+	if !resolved {
+		status = "findings_reported"
+		findings = []map[string]any{{"id": "F1", "severity": "major", "citation": map[string]any{"context_ref_id": "diff", "diff_hunk_id": "hunk-1"}, "summary": "Missing behavior."}}
+		disposition = "unresolved_review_blocker"
+	}
+	runsPath := writeJSONForPRReviewTest(t, root, "results.json", map[string]any{
+		"schema_version": "block30-pr-review-runs-v1",
+		"packet_digest":  packetDigest,
+		"results": []map[string]any{{
+			"review_run_id":   "run-code",
+			"packet_digest":   packetDigest,
+			"plane":           "code_correctness",
+			"role_id":         "code",
+			"runner":          "manual_external",
+			"requested_model": "not_assessed",
+			"observed_model":  "not_assessed",
+			"model_family":    "not_assessed",
+			"model_version":   "not_assessed",
+			"status":          status,
+			"raw_output_ref":  map[string]any{"id": "raw-run-code", "kind": "reviewer_output", "ref": "runs/run-code.txt", "digest_sha256": strings.Repeat("c", 64), "content_type": "text/plain", "redaction_state": "none"},
+			"findings":        findings,
+		}},
+	})
+	ledgerFindings := []map[string]any{}
+	if !resolved {
+		ledgerFindings = []map[string]any{{
+			"id":            "F1",
+			"review_run_id": "run-code",
+			"plane":         "code_correctness",
+			"role_id":       "code",
+			"severity":      "major",
+			"summary":       "Missing behavior.",
+			"citation":      map[string]any{"context_ref_id": "diff", "diff_hunk_id": "hunk-1"},
+			"disposition":   disposition,
+		}}
+	}
+	ledgerPath := writeJSONForPRReviewTest(t, root, "ledger.json", map[string]any{
+		"schema_version": "block30-pr-review-ledger-v1",
+		"packet_digest":  packetDigest,
+		"findings":       ledgerFindings,
+	})
+	return prReviewValidationTestArtifacts{packetDigest: packetDigest, packetPath: packetPath, profilePath: profilePath, runsPath: runsPath, ledgerPath: ledgerPath}
+}
+
+func newPRReviewValidationTestOptions(packetPath, profilePath, runsPath, ledgerPath string) *flagSet {
+	opts := &flagSet{name: "test validation inputs"}
+	opts.setString("packet", packetPath)
+	opts.setString("profile", profilePath)
+	opts.setString("runs", runsPath)
+	opts.setString("ledger", ledgerPath)
+	return opts
+}
+
 func writePRReviewCheckProfile(t *testing.T, root string) string {
 	t.Helper()
 	return writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
