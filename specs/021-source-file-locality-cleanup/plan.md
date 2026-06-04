@@ -1447,6 +1447,18 @@ local/CI/audit/required-run state aggregation, missing telemetry failure
 behavior, cannot_verify exit behavior, package boundary, dependency direction,
 CRAP < 5, MI > 70, and MI baselines.
 
+Slice 107 continues `cmd/sdp-trace` source-file locality cleanup with gate
+subcommand dispatch helper shards. The slice is limited to consolidating
+`gate_subcommand_handlers.go` and `gate_subcommand_run.go` into the cohesive
+gate command routing responsibility in `gate_run.go` without changing standard
+gate execution, protected gate execution, preview behavior, explain behavior,
+argument parsing, exit-code logic, public command surface docs, schema files,
+examples, fixtures, or dependencies. It must preserve preview/explain
+subcommand dispatch, fallback to standard/protected gate evaluation for
+non-subcommand invocations, unknown-subcommand behavior from the shared optional
+subcommand dispatcher, package boundary, dependency direction, CRAP < 5, MI >
+70, and MI baselines.
+
 ## Verification
 
 ```text

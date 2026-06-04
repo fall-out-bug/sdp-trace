@@ -3479,6 +3479,61 @@ func TestParseGateArgsPreservesContract(t *testing.T) {
 	}
 }
 
+func TestRunGateSubcommandPreservesDispatch(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		args    []string
+		handled bool
+		code    int
+		wantErr string
+	}{
+		{
+			name:    "preview dispatch",
+			args:    []string{"preview"},
+			handled: true,
+			code:    exitUsage,
+			wantErr: "gate preview requires <runs-root-or-run-dir>",
+		},
+		{
+			name:    "explain dispatch",
+			args:    []string{"explain"},
+			handled: true,
+			code:    exitUsage,
+			wantErr: "gate explain requires --gate-result <file>",
+		},
+		{
+			name:    "empty falls back",
+			args:    nil,
+			handled: false,
+			code:    0,
+		},
+		{
+			name:    "unknown falls back",
+			args:    []string{"unknown"},
+			handled: false,
+			code:    0,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			code, handled := runGateSubcommand(test.args, &out, &errOut)
+			if handled != test.handled || code != test.code {
+				t.Fatalf("handled/code = %v/%d want %v/%d", handled, code, test.handled, test.code)
+			}
+			if test.wantErr != "" && !strings.Contains(errOut.String(), test.wantErr) {
+				t.Fatalf("stderr missing %q: %s", test.wantErr, errOut.String())
+			}
+			if test.wantErr == "" && errOut.Len() != 0 {
+				t.Fatalf("unexpected stderr: %s", errOut.String())
+			}
+			if out.Len() != 0 {
+				t.Fatalf("unexpected stdout: %s", out.String())
+			}
+		})
+	}
+}
+
 func runAndWrap(t *testing.T, runDir string, commandPath string, args ...string) {
 	t.Helper()
 	runAndWrapNamed(t, runDir, "fixture", commandPath, args...)

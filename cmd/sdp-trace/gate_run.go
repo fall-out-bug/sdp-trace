@@ -7,6 +7,11 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/demo"
 )
 
+var gateSubcommandHandlers = map[string]subcommandHandler{
+	"explain": runGateExplain,
+	"preview": runGatePreview,
+}
+
 func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	if code, ok := runGateSubcommand(args, stdout, stderr); ok {
 		// Gate subcommands are read-only/explanatory paths and do not evaluate a
@@ -23,4 +28,8 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		return runProtectedGate(target, outPath, opts, stdout, stderr)
 	}
 	return runStandardGate(target, outPath, opts, stdout, stderr)
+}
+
+func runGateSubcommand(args []string, stdout, stderr io.Writer) (int, bool) {
+	return runOptionalSubcommand(args, stdout, stderr, gateSubcommandHandlers)
 }

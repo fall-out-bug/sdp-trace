@@ -3972,3 +3972,51 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 107 Tasks
+
+- [x] T021-7390 Confirm Slice 107 is bounded to `cmd/sdp-trace` gate
+  subcommand dispatch helper files: `gate_subcommand_handlers.go`,
+  `gate_subcommand_run.go`, and the existing routing destination
+  `gate_run.go`.
+- [x] T021-7391 Confirm Slice 107 is behavior-preserving: no changes to
+  standard gate execution, protected gate execution, preview behavior, explain
+  behavior, argument parsing, gate exit-code logic, public command surface
+  docs, schema files, examples, fixtures, dependencies, package boundary,
+  dependency direction, or MI baselines are planned.
+- [x] T021-7392 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-107-plan-review.md`.
+- [x] T021-7400 Consolidate `gate_subcommand_handlers.go` and
+  `gate_subcommand_run.go` into `gate_run.go` without creating replacement
+  one-function shards. Record source-shape evidence that the two helper shards
+  are gone and staged boundary evidence that excluded gate files and public
+  surfaces are untouched.
+- [x] T021-7410 Run `gofmt` on changed Go files.
+- [x] T021-7420 Add or extend focused regression coverage for
+  `runGateSubcommand` so it directly asserts preview dispatch, explain dispatch,
+  non-subcommand fallback, and unknown-subcommand fallback to parent gate flag
+  parsing (`handled=false`, code `0`) from the shared optional subcommand
+  dispatcher.
+- [x] T021-7430 Run focused gate subcommand dispatch verification with a
+  `go test -list` exact-count guard expecting exactly 6 tests:
+  `TestRunGateSubcommandPreservesDispatch`,
+  `TestReportAndGateCommands`,
+  `TestGateExplainParseUsage`,
+  `TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues`,
+  `TestGatePreviewParseAndContractFailurePaths`, and
+  `TestProtectedGatePreviewRendersAbsentInputsWithoutWriting`, then run those
+  tests with `go test ./cmd/sdp-trace -run <guard> -count=1 -v`.
+- [x] T021-7440 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7450 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7460 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 107 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-107-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
