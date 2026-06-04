@@ -1163,6 +1163,22 @@ validation logic, packet option validation (`prreview_087` onward), generic
 input-copy utilities, prompt generation, and lower-level IO helpers so those
 responsibilities keep separate review trails.
 
+Slice 89 continues `internal/prreview` cleanup with review run orchestration
+shards (`prreview_038` through `prreview_042`). The slice is limited to the
+public `RunReview` entrypoint, run option normalization, preview short-circuit
+behavior, run output/raw directory preparation, `results.json` writing, and
+the role-iteration loop that delegates each role to existing lower-level
+reviewer execution. It must preserve profile validation before option
+normalization, default `Now`/`WorkDir` behavior, preview-only behavior without
+directory creation or runner invocation, new-output-directory enforcement,
+raw subdirectory creation mode, result ordering, packet digest propagation,
+`results.json` path/shape, error propagation, package boundary, dependency
+direction, and MI baselines. It intentionally excludes ledger synthesis
+(`prreview_043` through `prreview_048`), validation logic (`prreview_049`
+onward), low-level role execution (`prreview_100` onward), prompt generation,
+input-copy utilities, packet option validation, and IO helper implementation so
+those responsibilities keep separate review trails.
+
 ## Verification
 
 ```text

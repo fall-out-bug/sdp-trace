@@ -3059,3 +3059,56 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 89 Tasks
+
+- [x] T021-6120 Confirm Slice 89 is bounded to numbered `internal/prreview`
+  review run orchestration shards `prreview_038` through `prreview_042`.
+- [x] T021-6121 Confirm Slice 89 is behavior-preserving: no changes to profile
+  validation before option normalization, default `Now`/`WorkDir` behavior,
+  preview-only behavior without directory creation or runner invocation,
+  new-output-directory enforcement, raw subdirectory creation mode, result
+  ordering, packet digest propagation, `results.json` path/shape, error
+  propagation, package boundary, dependency direction, or baseline changes are
+  planned.
+- [x] T021-6122 Record Slice 89 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-89-plan-review.md`.
+- [x] T021-6130 Move review run orchestration helpers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `prreview_038`
+  through `prreview_042` files are gone and staged boundary evidence that
+  excluded ledger/validation/role-execution numbered files are not moved or
+  edited in Slice 89.
+- [x] T021-6140 Run `gofmt` on changed Go files.
+- [x] T021-6150 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6151 Run focused review-run regression evidence covering exact named
+  tests `TestRunReviewArtifactPipelineRedactsUnsafeReviewerText`,
+  `TestRunReviewRecordsRunnerFailureStatesAndPromptDigest`,
+  `TestRunReviewPreviewReturnsPreviewOnly`,
+  `TestRunReviewPreservesValidationDefaultsAndOutputContracts`,
+  `TestRunReviewNotAssessedReasonDoesNotInvokeRunner`,
+  `TestRunReviewCannotVerifyUnreadablePromptTemplate`,
+  `TestRunReviewPromptIncludesPacketEvidence`, and
+  `TestRunReviewMapsTimeoutToTimedOut`. Run them with a `go test -list`
+  exact-count guard before the focused `go test -run` command so zero matches
+  fail. These tests must cover run orchestration, preview short-circuit,
+  role-result ordering, output/raw artifact writing, runner-failure states,
+  prompt digest/evidence propagation, not-assessed bypass behavior, and
+  timeout mapping. They must also prove profile validation happens before
+  output directory creation, default `Now`/`WorkDir` behavior is applied,
+  existing output directories are rejected without overwriting contents,
+  `results.json` is written at the expected path with the expected packet
+  digest/results shape, and role execution errors propagate without silently
+  writing a successful results artifact.
+- [x] T021-6160 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6170 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6180 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  89 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-89-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

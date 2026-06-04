@@ -882,6 +882,91 @@ func TestRunReviewPreviewReturnsPreviewOnly(t *testing.T) {
 	}
 }
 
+func TestRunReviewPreservesValidationDefaultsAndOutputContracts(t *testing.T) {
+	root := t.TempDir()
+	packetDigest := "sha256:" + sixtyFour("5")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketDigest: packetDigest}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "contracts",
+		RequiredPlanes: []string{PlaneCodeCorrectness},
+		Roles: []ReviewRole{{
+			RoleID:         "code",
+			Plane:          PlaneCodeCorrectness,
+			Runner:         RunnerManualExternal,
+			RequestedModel: "manual",
+		}},
+	}
+
+	defaults := normalizeRunOptions(RunOptions{})
+	if defaults.Now.IsZero() || defaults.WorkDir != "." {
+		t.Fatalf("run option defaults drifted: %+v", defaults)
+	}
+
+	invalidOutDir := filepath.Join(root, "invalid-profile-runs")
+	invalidProfile := cloneReviewProfile(profile)
+	invalidProfile.SchemaVersion = "bad"
+	_, _, err := RunReview(packet, invalidProfile, RunOptions{OutDir: invalidOutDir})
+	if err == nil || err.Error() != "invalid_profile_schema_version: bad" {
+		t.Fatalf("expected profile validation error before run preparation, got %v", err)
+	}
+	if _, err := os.Stat(invalidOutDir); !os.IsNotExist(err) {
+		t.Fatalf("invalid profile should not create output directory, got %v", err)
+	}
+
+	existingOutDir := filepath.Join(root, "existing-runs")
+	if err := os.MkdirAll(existingOutDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sentinel := filepath.Join(existingOutDir, "sentinel.txt")
+	if err := os.WriteFile(sentinel, []byte("keep\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = RunReview(packet, profile, RunOptions{OutDir: existingOutDir, NotAssessedReason: "configured_elsewhere"})
+	if err == nil {
+		t.Fatal("expected existing output directory rejection")
+	}
+	if data, readErr := os.ReadFile(sentinel); readErr != nil || string(data) != "keep\n" {
+		t.Fatalf("existing output directory contents should remain untouched, data=%q err=%v", string(data), readErr)
+	}
+
+	outDir := filepath.Join(root, "runs")
+	runs, preview, err := RunReview(packet, profile, RunOptions{OutDir: outDir, NotAssessedReason: "configured_elsewhere"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if preview != nil {
+		t.Fatalf("unexpected preview: %+v", preview)
+	}
+	if runs.SchemaVersion != SchemaVersionRunSet || runs.PacketDigest != packetDigest || len(runs.Results) != 1 {
+		t.Fatalf("run-set shape drifted: %+v", runs)
+	}
+	if runs.Results[0].RoleID != "code" || runs.Results[0].Status != StatusNotAssessed || runs.Results[0].Reason != "configured_elsewhere" {
+		t.Fatalf("run result shape drifted: %+v", runs.Results[0])
+	}
+	if _, err := os.Stat(filepath.Join(outDir, "raw")); err != nil {
+		t.Fatalf("raw directory missing: %v", err)
+	}
+	written, err := ReadRunSet(filepath.Join(outDir, "results.json"))
+	if err != nil {
+		t.Fatalf("results.json should be readable: %v", err)
+	}
+	if written.PacketDigest != packetDigest || len(written.Results) != 1 || written.Results[0].RoleID != "code" {
+		t.Fatalf("written results shape drifted: %+v", written)
+	}
+
+	errorOutDir := filepath.Join(root, "runner-error")
+	disallowed := cloneReviewProfile(profile)
+	disallowed.Roles[0].Runner = RunnerPI
+	_, _, err = RunReview(packet, disallowed, RunOptions{OutDir: errorOutDir})
+	if err == nil || !strings.Contains(err.Error(), "runner_not_allowed: pi") {
+		t.Fatalf("expected role execution error propagation, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(errorOutDir, "results.json")); !os.IsNotExist(err) {
+		t.Fatalf("role execution error should not write successful results.json, got %v", err)
+	}
+}
+
 func TestWriteJSONAndReadRunSetUseDirectoryContracts(t *testing.T) {
 	root := t.TempDir()
 	runSet := RunSet{
