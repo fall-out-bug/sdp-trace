@@ -689,6 +689,70 @@ func TestValidateCoverageStatesForNoReviewersUnresolvedAndStaleDigest(t *testing
 	}
 }
 
+func TestPrreviewValidationOrchestrationPreservesDigestRequiredPlaneAndAuthorityContracts(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("c")
+	staleDigest := "sha256:" + sixtyFour("d")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, CIState: StatePending}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "validation-orchestration",
+		RequiredPlanes: []string{PlaneTraceEvidence, PlaneCodeCorrectness, PlaneSecurity, PlanePrivacySafety, PlaneCodeCorrectness, ""},
+		Roles: []ReviewRole{
+			{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"},
+			{RoleID: "trace", Plane: PlaneTraceEvidence, Runner: RunnerManualExternal, RequestedModel: "not_assessed"},
+			{RoleID: "privacy", Plane: PlanePrivacySafety, Runner: RunnerManualExternal, RequestedModel: "not_assessed"},
+			{RoleID: "security", Plane: PlaneSecurity, Runner: RunnerManualExternal, RequestedModel: "not_assessed"},
+		},
+	}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: staleDigest, Results: []ReviewerResult{
+		{ReviewRunID: "run-code-failed", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusParseFailed},
+		{ReviewRunID: "run-code-good", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-code-good")},
+		{ReviewRunID: "run-privacy-failed", PacketDigest: packetDigest, Plane: PlanePrivacySafety, RoleID: "privacy", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusParseFailed},
+		{ReviewRunID: "run-trace-stale", PacketDigest: staleDigest, Plane: PlaneTraceEvidence, RoleID: "trace", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-trace-stale")},
+	}}
+	ledger := Ledger{SchemaVersion: SchemaVersionLedger, PacketDigest: staleDigest}
+
+	validation := Validate(packet, profile, runs, ledger)
+	if validation.SchemaVersion != SchemaVersionValidation || validation.PacketDigest != packetDigest || validation.CIState != StatePending {
+		t.Fatalf("validation identity/state drifted: %+v", validation)
+	}
+	if validation.AuthorityScope != AuthorityReviewRecordOnly || validation.MergeDecision != DecisionNotAuthorized || validation.ReleaseDecision != DecisionNotAuthorized || validation.RiskAcceptance != DecisionNotAuthorized {
+		t.Fatalf("authority defaults drifted: %+v", validation)
+	}
+	if len(validation.PlaneResults) != 4 || validation.PlaneResults[0].Plane != PlaneCodeCorrectness || validation.PlaneResults[1].Plane != PlanePrivacySafety || validation.PlaneResults[2].Plane != PlaneSecurity || validation.PlaneResults[3].Plane != PlaneTraceEvidence {
+		t.Fatalf("required plane sorting/dedup drifted: %+v", validation.PlaneResults)
+	}
+	if validation.PlaneResults[0].RunID != "run-code-good" || !validation.PlaneResults[0].Usable {
+		t.Fatalf("best usable code result not selected: %+v", validation.PlaneResults[0])
+	}
+	if validation.PlaneResults[1].RunID != "run-privacy-failed" || validation.PlaneResults[1].Status != StatusParseFailed || validation.PlaneResults[1].Usable {
+		t.Fatalf("non-usable privacy result not selected: %+v", validation.PlaneResults[1])
+	}
+	if validation.PlaneResults[2].RunID != "" || validation.PlaneResults[2].Status != StateNotAssessed || validation.PlaneResults[2].Reason != "required_plane_not_assessed" || validation.PlaneResults[2].Usable || validation.PlaneResults[2].NextAction != "Run or import a reviewer result for this plane." {
+		t.Fatalf("missing required plane fallback drifted: %+v", validation.PlaneResults[2])
+	}
+	if validation.PlaneResults[3].RunID != "run-trace-stale" || !validation.PlaneResults[3].Usable {
+		t.Fatalf("trace plane result not selected: %+v", validation.PlaneResults[3])
+	}
+	reasons := strings.Join(validation.Reasons, ",")
+	if !strings.Contains(reasons, "packet_digest_mismatch") || !strings.Contains(reasons, "result_packet_digest_mismatch:run-trace-stale") || !strings.Contains(reasons, PlanePrivacySafety+":"+StatusParseFailed) || !strings.Contains(reasons, PlaneSecurity+":"+StateNotAssessed) {
+		t.Fatalf("digest mismatch reasons missing: %+v", validation.Reasons)
+	}
+	packetDigestReasonCount := 0
+	for _, reason := range validation.Reasons {
+		if reason == "packet_digest_mismatch" {
+			packetDigestReasonCount++
+		}
+	}
+	if packetDigestReasonCount != 1 {
+		t.Fatalf("reasons should be unique: %+v", validation.Reasons)
+	}
+	actions := strings.Join(validation.NextActions, "\n")
+	if !strings.Contains(actions, "Create a new packet and rerun review") || !strings.Contains(actions, "Discard stale reviewer results") || !strings.Contains(actions, "Rerun with JSON-only output matching the required schema.") || !strings.Contains(actions, "Run or import a reviewer result for this plane.") {
+		t.Fatalf("validation next actions missing: %+v", validation.NextActions)
+	}
+}
+
 func TestReadRunSetRejectsDuplicateRunIDs(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "results.json")

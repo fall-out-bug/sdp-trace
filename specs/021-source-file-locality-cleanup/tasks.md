@@ -3157,3 +3157,52 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 91 Tasks
+
+- [x] T021-6260 Confirm Slice 91 is bounded to numbered `internal/prreview`
+  validation orchestration, digest validation, and required-plane selection
+  shards `prreview_049` through `prreview_060`.
+- [x] T021-6261 Confirm Slice 91 is behavior-preserving: no changes to
+  authority-boundary defaults, CI state propagation, unique reason/next-action
+  normalization, packet/run/ledger digest mismatch reasons, required-plane
+  not-assessed fallback, best usable result selection across retries,
+  required-plane sorting by plane name, plane validation note aggregation,
+  usable-count accumulation, package boundary, dependency direction, or
+  baseline changes are planned.
+- [x] T021-6262 Record Slice 91 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-91-plan-review.md`.
+- [x] T021-6270 Move validation orchestration and required-plane selection
+  helpers into cohesive responsibility-named files without creating standalone
+  one-function replacement files. Record source-shape evidence that numbered
+  `prreview_049` through `prreview_060` files are gone and staged boundary
+  evidence that excluded plane-ranking/model-identity, ledger-finding
+  validation, coverage-state, summary/rendering, IO, prompt, and reviewer
+  execution numbered files are not moved or edited in Slice 91.
+- [x] T021-6280 Run `gofmt` on changed Go files.
+- [x] T021-6290 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6291 Run focused validation-orchestration regression evidence
+  covering exact named tests `TestValidateReviewStatesAndAuthorityBoundary`,
+  `TestValidationAndLedgerLifecyclePreserveTrustSemantics`,
+  `TestValidateUsesBestPlaneResultAcrossRetries`,
+  `TestValidateCannotVerifyPerResultPacketDigestMismatch`,
+  `TestValidateCoverageStatesForNoReviewersUnresolvedAndStaleDigest`, and
+  `TestPrreviewValidationOrchestrationPreservesDigestRequiredPlaneAndAuthorityContracts`.
+  Run them with a `go test -list` exact-count guard before the focused `go test
+  -run` command so zero matches fail. These tests must cover validation result
+  authority defaults, CI state propagation, unique reason/next-action
+  normalization, packet/run/ledger digest mismatch reasons, required-plane
+  fallback and sorting, best usable result selection, plane note aggregation,
+  usable-count impact on coverage, and stale per-result digest handling.
+- [x] T021-6300 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6310 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6320 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  91 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-91-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

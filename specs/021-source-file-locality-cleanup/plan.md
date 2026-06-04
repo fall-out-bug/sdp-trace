@@ -1194,6 +1194,23 @@ validation logic (`prreview_049` onward), summary rendering, file IO, safe text
 helper implementation, default-disposition helper implementation, and lower
 level reviewer execution so those responsibilities keep separate review trails.
 
+Slice 91 continues `internal/prreview` cleanup with validation orchestration,
+digest validation, and required-plane selection shards (`prreview_049` through
+`prreview_060`). The slice is limited to the public `Validate` entrypoint,
+role lookup by ID, validation result construction, required-plane set building,
+packet/run/ledger digest mismatch detection, validation reason/next-action
+append behavior, required-plane iteration and sorting, best plane-result
+selection across retries, usable-count accumulation, and plane validation note
+aggregation. It must preserve authority-boundary defaults, CI state propagation,
+unique reason/next-action normalization, stale packet/run/ledger digest
+reasons, required-plane not-assessed fallback, best usable result selection,
+plane result sorting by plane name, package boundary, dependency direction, and
+MI baselines. It intentionally excludes plane result ranking/model identity
+checks (`prreview_061` through `prreview_065`), ledger finding validation
+(`prreview_066` through `prreview_068`), coverage-state calculation
+(`prreview_069` onward), summary rendering, file IO, prompt generation, and
+reviewer execution so those responsibilities keep separate review trails.
+
 ## Verification
 
 ```text
