@@ -989,6 +989,23 @@ validation execution (`packet_060` onward), and downstream GitHub row/entry
 helpers (`packet_148` onward) so those behavior-heavy responsibilities keep
 separate review trails.
 
+Slice 79 continues `internal/packet` cleanup with packet validation entrypoint
+and demo-first gate shards (`packet_060` through `packet_084`). The slice is
+limited to the public validation entrypoint, demo-first validation entrypoint,
+demo-first checker orchestration, row/manifest indexing, tool-generated
+requirement, pass-or-partial row count requirement, retained row evidence
+requirement, retained structured OpenCode/GSD/MiniMax route evidence
+requirement, assessed verification-or-review requirement, cannot-verify closure
+cap, demo-usable manifest entry helpers, route component matching, and
+synthetic digest rejection. It preserves general `Validate` delegation through
+`bundleValidator`, demo gate error accumulation from base validation, required
+demo row and evidence semantics, pass/partial/assessed state semantics,
+closure-path counting, route evidence source/kind/component/digest
+requirements, package boundary, dependency direction, and MI baselines. It
+intentionally excludes general bundle metadata, manifest, row, finding, gap,
+decision-owner, and shared validation helper shards (`packet_085` onward) so
+the larger `bundleValidator` responsibility can keep a separate review trail.
+
 ## Verification
 
 ```text

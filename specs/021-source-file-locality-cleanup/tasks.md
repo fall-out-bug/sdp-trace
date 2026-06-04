@@ -2536,3 +2536,54 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 79 Tasks
+
+- [x] T021-5420 Confirm Slice 79 is bounded to numbered `internal/packet`
+  packet validation entrypoint and demo-first gate shards `packet_060` through
+  `packet_084`.
+- [x] T021-5421 Confirm Slice 79 is behavior-preserving: no changes to general
+  `Validate` delegation through `bundleValidator`, demo gate accumulation of
+  base validation errors, tool-generated authoring requirement, required
+  pass-or-partial row count, required `PC-CHANGE` and `PC-MUTATION` retained
+  usable evidence, retained structured OpenCode/GSD/MiniMax route evidence
+  requirement, verification-or-review assessed semantics, cannot-verify closure
+  cap, route component aliases, synthetic digest rejection, package boundary,
+  dependency direction, or baseline changes are planned.
+- [x] T021-5422 Record Slice 79 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-79-plan-review.md`.
+- [x] T021-5430 Move packet validation entrypoint, demo-first gate entrypoint
+  and orchestration, demo gate row/manifest indexing, demo row evidence checks,
+  route evidence checks, closure checks, and demo evidence usability helpers
+  into cohesive locality files. Record source-shape evidence that numbered
+  `packet_060` through `packet_084` files are gone, that replacement locality
+  filenames exist, and that `cmd/sdp-trace/FAMILY_INDEX.md` is not applicable
+  because this is non-command `internal/packet` package locality.
+- [x] T021-5440 Run `gofmt` on changed Go files.
+- [x] T021-5450 Run focused Go verification for `internal/packet`.
+- [x] T021-5451 Run focused packet validation/demo-gate regression evidence
+  covering exact test existence for general `Validate` failure behavior,
+  `CheckDemoFirstPacket` accumulation of base `Validate` errors plus
+  demo-first errors in the same result,
+  minimum four pass-or-partial rows including below-threshold failure,
+  self-declared route evidence rejection, digest-bound route evidence
+  acceptance, route component normalization, legacy and redux GSD route
+  component aliases, all MiniMax route component aliases (`minimax`,
+  `minimax-m2.5`, and `minimax-m2`), missing/expired row evidence usability
+  failures for `PC-CHANGE` and `PC-MUTATION`,
+  verification-or-review assessed semantics, cannot-verify closure cap and
+  closure evidence exemption, route evidence source/kind/component/digest
+  requirements, exact source-shape verification after implementation, and no
+  baseline changes.
+- [x] T021-5460 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5470 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5480 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  79 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-79-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

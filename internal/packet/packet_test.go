@@ -547,6 +547,172 @@ func TestCheckDemoAcceptsLegacyAndReduxGSDRouteEvidence(t *testing.T) {
 	}
 }
 
+func TestCheckDemoAccumulatesBaseValidationAndDemoErrors(t *testing.T) {
+	bundle := demoGateBundle()
+	bundle.Manifest.BundleID = "other-bundle"
+	bundle.Packet.AuthoringMethod = "hand_authored_before_tooling"
+	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StateFail ||
+		!hasError(result.Errors, "packet.bundle_ref") ||
+		!hasError(result.Errors, "requires tool_generated authoring_method") {
+		t.Fatalf("result did not accumulate base and demo errors: %+v", result)
+	}
+}
+
+func TestCheckDemoRequiresMinimumPassOrPartialRows(t *testing.T) {
+	bundle := demoGateBundle()
+	setRowState(&bundle, "PC-CHANGE", StateNotAssessed, "not assessed in fixture")
+	setRowState(&bundle, "PC-INITIATOR", StateNotAssessed, "not assessed in fixture")
+	setRowState(&bundle, "PC-AGENT-ROUTE", StateNotAssessed, "not assessed in fixture")
+	setRowState(&bundle, "PC-MUTATION", StateNotAssessed, "not assessed in fixture")
+	setRowState(&bundle, "PC-VERIFICATION", StateNotAssessed, "not assessed in fixture")
+	setRowState(&bundle, "PC-DECISION", StateNotAssessed, "not assessed in fixture")
+	setRowState(&bundle, "PC-RESIDUAL-GAPS", StateNotAssessed, "not assessed in fixture")
+	refreshPacketDigest(&bundle)
+	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StateFail || !hasError(result.Errors, "requires at least 4 pass or partial rows") {
+		t.Fatalf("result = %+v", result)
+	}
+}
+
+func TestCheckDemoRowEvidenceMustBeUsable(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		edit func(*Bundle)
+		want string
+	}{
+		{
+			name: "missing PC-CHANGE refs",
+			edit: func(bundle *Bundle) {
+				setRow(bundle, "PC-CHANGE", row("PC-CHANGE", StatePass, "change evidence missing", nil))
+			},
+			want: "requires PC-CHANGE retained evidence refs",
+		},
+		{
+			name: "expired PC-MUTATION ref",
+			edit: func(bundle *Bundle) {
+				for i := range bundle.Manifest.Entries {
+					if bundle.Manifest.Entries[i].Ref == "git:change" {
+						bundle.Manifest.Entries[i].ExpiresAt = "2026-05-10T12:00:00Z"
+					}
+				}
+			},
+			want: "requires PC-MUTATION evidence ref \"git:change\" to be retained and usable",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := demoGateBundle()
+			tt.edit(&bundle)
+			result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StateFail || !hasError(result.Errors, tt.want) {
+				t.Fatalf("result = %+v", result)
+			}
+		})
+	}
+}
+
+func TestCheckDemoRouteEvidenceRequirements(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		edit func(*Bundle)
+	}{
+		{
+			name: "non harness source",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "harness:route", func(entry *BundleEntry) {
+					entry.SourceClass = "review"
+				})
+			},
+		},
+		{
+			name: "wrong evidence kind",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "harness:route", func(entry *BundleEntry) {
+					entry.EvidenceKind = "review_note"
+				})
+			},
+		},
+		{
+			name: "missing opencode component",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "harness:route", func(entry *BundleEntry) {
+					entry.ObservedComponents = []string{"gsd-redux", "minimax-m2.5"}
+				})
+			},
+		},
+		{
+			name: "synthetic digest",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "harness:route", func(entry *BundleEntry) {
+					entry.Digest = digestPlaceholder(entry.Ref + entry.Resolver)
+				})
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := demoGateBundle()
+			tt.edit(&bundle)
+			result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StateFail || !hasError(result.Errors, "retained structured OpenCode/GSD/MiniMax") {
+				t.Fatalf("result = %+v", result)
+			}
+		})
+	}
+}
+
+func TestCheckDemoAcceptsMiniMaxAliasesAndNormalizesComponents(t *testing.T) {
+	for _, minimaxComponent := range []string{"minimax", "minimax-m2.5", "minimax-m2"} {
+		t.Run(minimaxComponent, func(t *testing.T) {
+			bundle := demoGateBundle()
+			setManifestEntry(&bundle, "harness:route", func(entry *BundleEntry) {
+				entry.ObservedComponents = []string{" OpenCode ", "GSD-Redux", minimaxComponent}
+			})
+			result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StatePass {
+				t.Fatalf("result = %+v", result)
+			}
+		})
+	}
+}
+
+func TestCheckDemoRequiresVerificationOrReviewAssessed(t *testing.T) {
+	bundle := demoGateBundle()
+	setRowState(&bundle, "PC-VERIFICATION", StateNotAssessed, "verification not assessed")
+	setRowState(&bundle, "PC-REVIEW", StateNotAssessed, "review not assessed")
+	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StateFail || !hasError(result.Errors, "requires PC-VERIFICATION or PC-REVIEW") {
+		t.Fatalf("result = %+v", result)
+	}
+}
+
+func TestCheckDemoCannotVerifyClosureCap(t *testing.T) {
+	bundle := demoGateBundle()
+	setRowState(&bundle, "PC-AUTHORITY", StateCannotVerify, "authority could not be verified")
+	setRowState(&bundle, "PC-ATTESTATION", StateCannotVerify, "attestation could not be verified")
+	for i := range bundle.Packet.ResidualGaps {
+		if bundle.Packet.ResidualGaps[i].RowID == "PC-AUTHORITY" || bundle.Packet.ResidualGaps[i].RowID == "PC-ATTESTATION" {
+			bundle.Packet.ResidualGaps[i].State = StateCannotVerify
+			bundle.Packet.ResidualGaps[i].ClosureEvidence = ""
+		}
+	}
+	refreshPacketDigest(&bundle)
+	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StateFail || !hasError(result.Errors, "allows at most one cannot_verify row without closure path") {
+		t.Fatalf("result = %+v", result)
+	}
+
+	for i := range bundle.Packet.ResidualGaps {
+		if bundle.Packet.ResidualGaps[i].RowID == "PC-ATTESTATION" {
+			bundle.Packet.ResidualGaps[i].ClosureEvidence = "signed packet and witness evidence"
+		}
+	}
+	refreshPacketDigest(&bundle)
+	result = CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StatePass {
+		t.Fatalf("closure evidence should exempt one cannot_verify row: %+v", result)
+	}
+}
+
 func validBundle() Bundle {
 	rows := []Row{
 		row("PC-CHANGE", StatePass, "PR 38 change is bound to source metadata.", []string{"git:change"}),
@@ -594,6 +760,15 @@ func validBundle() Bundle {
 		},
 	}
 	bundle.Manifest.PacketDigest = PacketDigest(bundle.Packet)
+	return bundle
+}
+
+func demoGateBundle() Bundle {
+	bundle := validBundle()
+	setManifestEntry(&bundle, "harness:route", func(entry *BundleEntry) {
+		entry.EvidenceKind = "harness_route_observation"
+		entry.ObservedComponents = []string{"opencode", "gsd-redux", "minimax-m2.5"}
+	})
 	return bundle
 }
 
@@ -649,6 +824,15 @@ func setRowState(bundle *Bundle, id, state, reason string) {
 		if bundle.Packet.Rows[i].ID == id {
 			bundle.Packet.Rows[i].State = state
 			bundle.Packet.Rows[i].Reason = reason
+			return
+		}
+	}
+}
+
+func setManifestEntry(bundle *Bundle, ref string, edit func(*BundleEntry)) {
+	for i := range bundle.Manifest.Entries {
+		if bundle.Manifest.Entries[i].Ref == ref {
+			edit(&bundle.Manifest.Entries[i])
 			return
 		}
 	}

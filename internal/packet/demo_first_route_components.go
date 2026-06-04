@@ -1,16 +1,12 @@
 package packet
 
-import (
-	"strings"
-)
+import "strings"
 
 func hasOpenCodeGSDMiniMax(observed []string) bool {
-	// hasOpenCodeGSDMiniMax keeps packet evidence explicit and replay-bound.
-	// Manifest refs, row states, prompt boundaries, retained artifacts, and decision owners stay separate.
-	// This helper validates or projects packet data; it does not create external proof.
 	components := map[string]bool{}
 	for _, component := range observed {
-
+		// Component names arrive from harness traces, so matching is intentionally
+		// case-insensitive and whitespace-tolerant without creating wildcards.
 		components[strings.ToLower(strings.TrimSpace(component))] = true
 	}
 	return components["opencode"] && hasGSDComponent(components) && hasMiniMaxComponent(components)
@@ -18,4 +14,8 @@ func hasOpenCodeGSDMiniMax(observed []string) bool {
 
 func hasGSDComponent(components map[string]bool) bool {
 	return components["gsd"] || components["gsd-redux"]
+}
+
+func hasMiniMaxComponent(components map[string]bool) bool {
+	return components["minimax"] || components["minimax-m2.5"] || components["minimax-m2"]
 }
