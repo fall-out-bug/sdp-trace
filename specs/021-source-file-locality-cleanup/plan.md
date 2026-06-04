@@ -1211,6 +1211,22 @@ checks (`prreview_061` through `prreview_065`), ledger finding validation
 (`prreview_069` onward), summary rendering, file IO, prompt generation, and
 reviewer execution so those responsibilities keep separate review trails.
 
+Slice 92 continues `internal/prreview` cleanup with validation ranking,
+model-identity enforcement, and ledger-finding validation shards
+(`prreview_061` through `prreview_068`). The slice is limited to plane-result
+rank selection for usable and non-usable reviewer results, cannot-verify status
+classification, model identity mismatch projection, ledger finding summary
+sanitization, unresolved critical/major blocker detection, and unresolvable
+finding-citation reason accumulation. It must preserve findings-over-clean
+usable result ranking, cannot-verify statuses above not-assessed results,
+model-identity mismatch status/reason/next-action behavior, critical/major
+unresolved blocker semantics, safe summary projection, citation resolvability
+checks against packet refs, package boundary, dependency direction, and MI
+baselines. It intentionally excludes coverage-state calculation
+(`prreview_069` onward), summary rendering, file IO, prompt generation,
+reviewer execution, and packet option validation so those responsibilities
+keep separate review trails.
+
 ## Verification
 
 ```text

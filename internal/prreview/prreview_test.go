@@ -753,6 +753,74 @@ func TestPrreviewValidationOrchestrationPreservesDigestRequiredPlaneAndAuthority
 	}
 }
 
+func TestPrreviewValidationRankingModelAndLedgerFindingContracts(t *testing.T) {
+	packetDigest := "sha256:" + sixtyFour("e")
+	packet := Packet{
+		SchemaVersion: SchemaVersionPacket,
+		PacketID:      "packet-1",
+		PacketDigest:  packetDigest,
+		DiffRef:       SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone},
+		CIState:       StateNotAssessed,
+	}
+	profile := ReviewProfile{
+		SchemaVersion:  SchemaVersionProfile,
+		ProfileID:      "validation-ranking",
+		RequiredPlanes: []string{PlaneCodeCorrectness, PlaneSecurity, PlanePrivacySafety},
+		Roles: []ReviewRole{
+			{RoleID: "code", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "not_assessed"},
+			{RoleID: "security", Plane: PlaneSecurity, Runner: RunnerManualExternal, RequestedModel: "model-a"},
+			{RoleID: "privacy", Plane: PlanePrivacySafety, Runner: RunnerManualExternal, RequestedModel: "not_assessed"},
+		},
+	}
+	runs := RunSet{SchemaVersion: SchemaVersionRunSet, PacketDigest: packetDigest, Results: []ReviewerResult{
+		{ReviewRunID: "run-code-clean", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-code-clean")},
+		{ReviewRunID: "run-code-findings", PacketDigest: packetDigest, Plane: PlaneCodeCorrectness, RoleID: "code", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusFindingsReported, RawOutputRef: retainedRawRef("run-code-findings")},
+		{ReviewRunID: "run-privacy-not-assessed", PacketDigest: packetDigest, Plane: PlanePrivacySafety, RoleID: "privacy", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StateNotAssessed},
+		{ReviewRunID: "run-privacy-timeout", PacketDigest: packetDigest, Plane: PlanePrivacySafety, RoleID: "privacy", Runner: RunnerManualExternal, RequestedModel: "not_assessed", ObservedModel: "not_assessed", ModelFamily: "not_assessed", ModelVersion: "not_assessed", Status: StatusTimedOut},
+		{ReviewRunID: "run-security-mismatch", PacketDigest: packetDigest, Plane: PlaneSecurity, RoleID: "security", Runner: RunnerManualExternal, RequestedModel: "model-a", ObservedModel: "model-b", ModelFamily: "family", ModelVersion: "v1", Status: StatusNoFindings, RawOutputRef: retainedRawRef("run-security-mismatch")},
+	}}
+	ledger := Ledger{SchemaVersion: SchemaVersionLedger, PacketDigest: packetDigest, Findings: []LedgerFinding{
+		{ID: "F-valid", Severity: SeverityMajor, Summary: "SYNTHETIC_TOKEN_SECRET_RANKING", Citation: Citation{ContextRefID: "diff", DiffHunkID: "hunk-1"}, Disposition: DispositionUnresolvedReviewBlocker},
+		{ID: "F-invalid", Severity: SeverityMinor, Summary: "citation missing", Disposition: DispositionDeferredNotAssessed},
+	}}
+
+	validation := Validate(packet, profile, runs, ledger)
+	if validation.ReviewCoverageState != CoverageCannotVerify {
+		t.Fatalf("coverage = %s want cannot_verify validation=%+v", validation.ReviewCoverageState, validation)
+	}
+	byPlane := map[string]PlaneResult{}
+	for _, result := range validation.PlaneResults {
+		byPlane[result.Plane] = result
+	}
+	if byPlane[PlaneCodeCorrectness].RunID != "run-code-findings" || byPlane[PlaneCodeCorrectness].Status != StatusFindingsReported || !byPlane[PlaneCodeCorrectness].Usable {
+		t.Fatalf("usable findings result should outrank clean usable retry: %+v", byPlane[PlaneCodeCorrectness])
+	}
+	if byPlane[PlanePrivacySafety].RunID != "run-privacy-timeout" || byPlane[PlanePrivacySafety].Status != StatusTimedOut || byPlane[PlanePrivacySafety].Usable {
+		t.Fatalf("cannot-verify non-usable result should outrank not_assessed: %+v", byPlane[PlanePrivacySafety])
+	}
+	if byPlane[PlaneSecurity].RunID != "run-security-mismatch" || byPlane[PlaneSecurity].Status != StatusCannotVerify || byPlane[PlaneSecurity].Reason != "model_identity_mismatch" || byPlane[PlaneSecurity].Usable {
+		t.Fatalf("model identity mismatch projection drifted: %+v", byPlane[PlaneSecurity])
+	}
+	if !containsString(validation.NextActions, "Rerun the reviewer or record fallback provenance for the observed model.") {
+		t.Fatalf("model mismatch next action missing: %+v", validation.NextActions)
+	}
+	if !containsString(validation.Reasons, "finding_citation_cannot_verify") {
+		t.Fatalf("unresolvable finding citation reason missing: %+v", validation.Reasons)
+	}
+	if validation.Findings[0].Summary != redactedUnsafeReviewerText {
+		t.Fatalf("unsafe ledger summary was not sanitized: %+v", validation.Findings[0])
+	}
+	if validation.Findings[0].Disposition != DispositionUnresolvedReviewBlocker {
+		t.Fatalf("unresolved blocker disposition drifted: %+v", validation.Findings[0])
+	}
+	for _, severity := range []string{SeverityCritical, SeverityMajor} {
+		finding := LedgerFinding{Severity: severity, Disposition: DispositionUnresolvedReviewBlocker}
+		if !ledgerFindingUnresolved(finding) {
+			t.Fatalf("%s unresolved blocker should affect validation coverage", severity)
+		}
+	}
+}
+
 func TestReadRunSetRejectsDuplicateRunIDs(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "results.json")
@@ -1536,6 +1604,15 @@ func retainedRawRef(id string) *SafeRef {
 		ContentType:    ContentText,
 		RedactionState: RedactionDigestOnly,
 	}
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func jsonKeys(t *testing.T, value any) map[string]bool {

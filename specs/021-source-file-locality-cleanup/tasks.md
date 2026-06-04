@@ -3206,3 +3206,51 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 92 Tasks
+
+- [x] T021-6330 Confirm Slice 92 is bounded to numbered `internal/prreview`
+  validation ranking, model-identity enforcement, and ledger-finding
+  validation shards `prreview_061` through `prreview_068`.
+- [x] T021-6331 Confirm Slice 92 is behavior-preserving: no changes to
+  findings-over-clean usable result ranking, cannot-verify status ordering,
+  not-assessed floor semantics, model identity mismatch status/reason/
+  next-action behavior, critical/major unresolved blocker detection, summary
+  sanitization, finding citation resolvability, package boundary, dependency
+  direction, or baseline changes are planned.
+- [x] T021-6332 Record Slice 92 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-92-plan-review.md`.
+- [x] T021-6340 Move validation ranking, model-identity, and ledger-finding
+  validation helpers into cohesive responsibility-named files without creating
+  standalone one-function replacement files. Record source-shape evidence that
+  numbered `prreview_061` through `prreview_068` files are gone and staged
+  boundary evidence that excluded coverage-state, summary/rendering, IO,
+  prompt, reviewer execution, and packet option validation numbered files are
+  not moved or edited in Slice 92.
+- [x] T021-6350 Run `gofmt` on changed Go files.
+- [x] T021-6360 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6361 Run focused validation-ranking and ledger-finding regression
+  evidence covering exact named tests
+  `TestValidateReviewStatesAndAuthorityBoundary`,
+  `TestValidationAndLedgerLifecyclePreserveTrustSemantics`,
+  `TestValidateUsesBestPlaneResultAcrossRetries`,
+  `TestValidateCoverageStatesForNoReviewersUnresolvedAndStaleDigest`, and
+  `TestPrreviewValidationRankingModelAndLedgerFindingContracts`. Run them with
+  a `go test -list` exact-count guard before the focused `go test -run`
+  command so zero matches fail. These tests must cover usable/non-usable
+  ranking, cannot-verify status classification, model identity mismatch
+  projection, unresolved critical/major finding detection, summary
+  sanitization, citation resolvability, validation reason accumulation, and
+  coverage impact.
+- [x] T021-6370 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6380 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6390 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  92 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-92-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
