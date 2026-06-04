@@ -3012,3 +3012,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 88 Tasks
+
+- [x] T021-6050 Confirm Slice 88 is bounded to numbered `internal/prreview`
+  packet construction and packet input reference shards `prreview_020` through
+  `prreview_037`.
+- [x] T021-6051 Confirm Slice 88 is behavior-preserving: no changes to
+  validation-before-directory-creation behavior, new-output-directory
+  enforcement, packet digest/write behavior, packet ID format, default
+  `CreatedBy` and CI state, copied ref kinds/content types, context kind
+  inference, verification ref kind rewriting, metadata optionality,
+  unavailable-field state/reason strings, package boundary, dependency
+  direction, or baseline changes are planned.
+- [x] T021-6052 Record Slice 88 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-88-plan-review.md`.
+- [x] T021-6060 Move packet construction and packet input reference helpers into
+  cohesive responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `prreview_020`
+  through `prreview_037` files are gone and staged boundary evidence that
+  excluded `prreview_038` onward numbered files are not moved or edited in
+  Slice 88.
+- [x] T021-6070 Run `gofmt` on changed Go files.
+- [x] T021-6080 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6081 Run focused packet-build regression evidence covering exact
+  named tests `TestBuildPacketBindsRefsAndRejectsUnsafeIdentity`,
+  `TestBuildPacketRecordsUnavailableInputsAndDigestChangesWithDiff`, and
+  `TestPrreviewPacketBuildHelpersPreserveDefaultsRefsAndUnavailableFields`.
+  Run them with a `go test -list` exact-count guard before the focused `go test
+  -run` command so zero matches fail. These tests must prove validation before
+  output directory creation, new-output-directory enforcement without
+  overwriting existing contents, packet ID/digest/write behavior, default
+  `CreatedBy` and CI state, copied diff/metadata/context/verification ref kinds
+  and content types, metadata optionality, context kind inference, verification
+  kind rewriting, unavailable-field states/reasons, and digest changes when the
+  diff input changes.
+- [x] T021-6090 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6100 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6110 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  88 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-88-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -1146,6 +1146,23 @@ baselines. It intentionally excludes packet construction (`prreview_020`
 onward), run execution, validation logic, summary/rendering, file IO, prompt
 generation, and utility helpers so behavior code keeps separate review trails.
 
+Slice 88 continues `internal/prreview` cleanup with packet construction and
+packet input reference collection shards (`prreview_020` through
+`prreview_037`). The slice is limited to the public `BuildPacket` entrypoint,
+prepared-directory packet build orchestration, packet finalization/digest write,
+packet identity/provenance/ref attachment, packet defaults, copied diff/
+metadata/context/verification ref assembly, `packetRefs` aggregation, and
+explicit unavailable-field generation for absent optional inputs. It must
+preserve validation-before-directory-creation behavior, new-output-directory
+enforcement, packet digest/write behavior, packet ID format, default `CreatedBy`
+and CI state, copied ref kinds/content types, context kind inference,
+verification ref kind rewriting, metadata optionality, unavailable-field
+state/reason strings, package boundary, dependency direction, and MI baselines.
+It intentionally excludes run execution (`prreview_038` onward), ledger/
+validation logic, packet option validation (`prreview_087` onward), generic
+input-copy utilities, prompt generation, and lower-level IO helpers so those
+responsibilities keep separate review trails.
+
 ## Verification
 
 ```text

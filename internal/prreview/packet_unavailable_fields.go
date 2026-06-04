@@ -1,8 +1,6 @@
 package prreview
 
-import (
-	"strings"
-)
+import "strings"
 
 func unavailablePacketFields(opts PacketOptions) []UnavailableField {
 	// unavailablePacketFields keeps review evidence explicit and replay-bound.

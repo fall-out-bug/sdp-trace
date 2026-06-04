@@ -2,7 +2,6 @@ package prreview
 
 import (
 	"strings"
-
 	"time"
 )
 
@@ -16,14 +15,20 @@ func packetDefaults(opts PacketOptions) (time.Time, string, string) {
 
 		now = time.Now().UTC()
 	}
-	createdBy := strings.TrimSpace(opts.CreatedBy)
-	if createdBy == "" {
-		createdBy = "sdp-trace"
-	}
-	ciState := opts.CIState
-	if ciState == "" {
+	return now, defaultPacketCreator(opts.CreatedBy), defaultPacketCIState(opts.CIState)
+}
 
-		ciState = StateNotAssessed
+func defaultPacketCreator(createdBy string) string {
+	createdBy = strings.TrimSpace(createdBy)
+	if createdBy == "" {
+		return "sdp-trace"
 	}
-	return now, createdBy, ciState
+	return createdBy
+}
+
+func defaultPacketCIState(ciState string) string {
+	if ciState == "" {
+		return StateNotAssessed
+	}
+	return ciState
 }

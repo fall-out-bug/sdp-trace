@@ -194,8 +194,9 @@ func TestBuildPacketBindsRefsAndRejectsUnsafeIdentity(t *testing.T) {
 		t.Fatalf("packet not written: %v", err)
 	}
 
+	unsafeOutDir := filepath.Join(root, "unsafe")
 	_, err = BuildPacket(PacketOptions{
-		OutDir:     filepath.Join(root, "unsafe"),
+		OutDir:     unsafeOutDir,
 		RepoID:     "/tmp/private/repo",
 		ChangeRef:  "pr-123",
 		BaseCommit: forty("a"),
@@ -204,6 +205,9 @@ func TestBuildPacketBindsRefsAndRejectsUnsafeIdentity(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "unsafe_repo_id") {
 		t.Fatalf("expected unsafe repo id rejection, got %v", err)
+	}
+	if _, err := os.Stat(unsafeOutDir); !os.IsNotExist(err) {
+		t.Fatalf("unsafe output directory should not be created before identity validation, got %v", err)
 	}
 }
 
@@ -378,6 +382,68 @@ func TestBuildPacketRecordsUnavailableInputsAndDigestChangesWithDiff(t *testing.
 	}
 	if "sha256:"+replayed != second.PacketDigest {
 		t.Fatalf("packet digest should be replayable with packet_digest cleared: got sha256:%s want %s", replayed, second.PacketDigest)
+	}
+}
+
+func TestPrreviewPacketBuildHelpersPreserveDefaultsRefsAndUnavailableFields(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeText(t, root, "change.diff", "diff --git a/a.go b/a.go\n+package main\n")
+	metadataPath := writeText(t, root, "metadata.json", `{"pr":123}`)
+	specPath := writeText(t, root, "spec.md", "# Spec\n")
+	planPath := writeText(t, root, "plan.txt", "plain plan\n")
+	verifyPath := writeText(t, root, "verify.log", "go test ./...\n")
+	outDir := filepath.Join(root, "packet")
+
+	packet, err := BuildPacket(PacketOptions{
+		OutDir:            outDir,
+		RepoID:            "demo_repo",
+		ChangeRef:         "pr-123",
+		BaseCommit:        forty("a"),
+		HeadCommit:        forty("b"),
+		DiffPath:          diffPath,
+		MetadataPath:      metadataPath,
+		ContextPaths:      []string{specPath, planPath},
+		VerificationPaths: []string{verifyPath},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if packet.PacketID != "demo_repo-pr-123-"+forty("b")[:12] || packet.CreatedBy != "sdp-trace" || packet.CIState != StateNotAssessed {
+		t.Fatalf("packet defaults drifted: %+v", packet)
+	}
+	if packet.DiffRef.Kind != RefKindDiff || packet.DiffRef.ContentType != ContentUnifiedDiff {
+		t.Fatalf("diff ref drifted: %+v", packet.DiffRef)
+	}
+	if packet.MetadataRef == nil || packet.MetadataRef.Kind != RefKindMetadata || packet.MetadataRef.ContentType != ContentJSON {
+		t.Fatalf("metadata ref drifted: %+v", packet.MetadataRef)
+	}
+	if len(packet.ContextRefs) != 2 || packet.ContextRefs[0].Kind != RefKindDoc || packet.ContextRefs[1].Kind != RefKindSourceExcerpt {
+		t.Fatalf("context refs drifted: %+v", packet.ContextRefs)
+	}
+	if len(packet.VerificationRefs) != 1 || packet.VerificationRefs[0].Kind != RefKindVerification {
+		t.Fatalf("verification refs drifted: %+v", packet.VerificationRefs)
+	}
+	if len(packet.UnavailableFields) != 0 {
+		t.Fatalf("available optional inputs should not be unavailable: %+v", packet.UnavailableFields)
+	}
+
+	sentinel := filepath.Join(outDir, "sentinel.txt")
+	if err := os.WriteFile(sentinel, []byte("keep\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = BuildPacket(PacketOptions{
+		OutDir:     outDir,
+		RepoID:     "demo_repo",
+		ChangeRef:  "pr-123",
+		BaseCommit: forty("a"),
+		HeadCommit: forty("b"),
+		DiffPath:   diffPath,
+	})
+	if err == nil {
+		t.Fatalf("BuildPacket accepted existing output directory")
+	}
+	if got, readErr := os.ReadFile(sentinel); readErr != nil || string(got) != "keep\n" {
+		t.Fatalf("existing output content overwritten: data=%q err=%v", got, readErr)
 	}
 }
 
