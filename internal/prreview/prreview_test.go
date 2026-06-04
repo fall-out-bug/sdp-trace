@@ -664,6 +664,77 @@ func TestValidateCannotVerifyUsableStatusWithoutRetainedOutput(t *testing.T) {
 	}
 }
 
+func TestPrreviewStatusDispositionHelpersPreserveContracts(t *testing.T) {
+	for _, state := range []string{StatePass, StateFail, StatePending, StateNotAssessed, StateCannotVerify} {
+		if !validCIState(state) {
+			t.Fatalf("validCIState(%q) = false", state)
+		}
+	}
+	for _, state := range []string{"", "green", StatusNoFindings, StatusFailed} {
+		if validCIState(state) {
+			t.Fatalf("validCIState(%q) = true", state)
+		}
+	}
+	for _, runner := range []string{RunnerPI, RunnerOpenCode, RunnerManualExternal} {
+		if !validRunner(runner) {
+			t.Fatalf("validRunner(%q) = false", runner)
+		}
+	}
+	for _, runner := range []string{"", "codex", "manual"} {
+		if validRunner(runner) {
+			t.Fatalf("validRunner(%q) = true", runner)
+		}
+	}
+
+	for _, status := range []string{StatusFindingsReported, StatusNoFindings} {
+		if !reviewerStatusUsable(status) {
+			t.Fatalf("reviewerStatusUsable(%q) = false", status)
+		}
+		withoutRaw := planeResult(ReviewerResult{ReviewRunID: "run-" + status, Plane: PlaneCodeCorrectness, Status: status})
+		if withoutRaw.Status != StatusCannotVerify || withoutRaw.Reason != "reviewer_output_not_retained" || withoutRaw.Usable {
+			t.Fatalf("usable status without raw output should degrade: %+v", withoutRaw)
+		}
+		withRaw := planeResult(ReviewerResult{ReviewRunID: "run-" + status, Plane: PlaneCodeCorrectness, Status: status, RawOutputRef: retainedRawRef("run-" + status)})
+		if withRaw.Status != status || !withRaw.Usable || withRaw.Reason != "" || withRaw.NextAction != "" {
+			t.Fatalf("usable retained result drifted: %+v", withRaw)
+		}
+	}
+	for _, status := range []string{StatusNotAssessed, StatusTimedOut, StatusEmptyOutput, StatusOffTask, StatusParseFailed, StatusCannotVerify} {
+		if reviewerStatusUsable(status) {
+			t.Fatalf("reviewerStatusUsable(%q) = true", status)
+		}
+	}
+
+	for status, want := range map[string][2]string{
+		StatusNotAssessed: {"reviewer_not_assessed", "Run a configured reviewer or import a usable result for this plane."},
+		StatusTimedOut:    {"reviewer_timed_out", "Increase timeout or replace the reviewer for this plane."},
+		StatusEmptyOutput: {"reviewer_empty_output", "Retry with a shorter bounded prompt or replace the reviewer."},
+		StatusOffTask:     {"reviewer_off_task", "Rerun with the frozen packet and required output schema."},
+		StatusParseFailed: {"reviewer_parse_failed", "Rerun with JSON-only output matching the required schema."},
+		StatusNoFindings:  {"reviewer_output_not_retained", "Attach digest-bound reviewer output before counting this plane."},
+		"unknown":         {"reviewer_cannot_verify", "Replace or rerun the reviewer."},
+	} {
+		reason, action := reviewerStatusAction(status)
+		if reason != want[0] || action != want[1] {
+			t.Fatalf("reviewerStatusAction(%q) = %q/%q want %q/%q", status, reason, action, want[0], want[1])
+		}
+	}
+
+	for _, severity := range []string{SeverityCritical, SeverityMajor} {
+		if defaultDisposition(severity) != DispositionUnresolvedReviewBlocker {
+			t.Fatalf("%s should default to unresolved blocker", severity)
+		}
+	}
+	for _, severity := range []string{SeverityMinor, SeverityInformational, "unknown", ""} {
+		if defaultDisposition(severity) != DispositionDeferredNotAssessed {
+			t.Fatalf("%s should default to deferred_not_assessed", severity)
+		}
+	}
+	if safeSeverity("unknown") != SeverityInformational {
+		t.Fatalf("unknown severity should fall back to informational")
+	}
+}
+
 func TestValidateUsesBestPlaneResultAcrossRetries(t *testing.T) {
 	packetDigest := "sha256:" + sixtyFour("8")
 	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-1", PacketDigest: packetDigest, RepoID: "demo_repo", ChangeRef: "pr-123", BaseCommit: forty("a"), HeadCommit: forty("b"), DiffRef: SafeRef{ID: "diff", Kind: RefKindDiff, Ref: "inputs/diff.patch", DigestSHA256: sixtyFour("2"), ContentType: ContentUnifiedDiff, RedactionState: RedactionNone}, CIState: StatePass}

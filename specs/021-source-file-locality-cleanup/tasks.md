@@ -3568,3 +3568,60 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 99 Tasks
+
+- [x] T021-6820 Confirm Slice 99 is bounded to numbered `internal/prreview`
+  CI/runner validation, plane result, reviewer status/action, disposition, and
+  severity helper shards `prreview_149` through `prreview_156`.
+- [x] T021-6821 Confirm Slice 99 is behavior-preserving: no changes to accepted
+  CI states, accepted runner IDs, usable reviewer status semantics, retained raw
+  output requirements, plane-result degradation to `cannot_verify`, exact
+  reviewer reason/next-action strings, default disposition mapping,
+  unknown-severity fallback, package boundary, dependency direction, or baseline
+  changes are planned.
+- [x] T021-6822 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-99-plan-review.md`.
+- [x] T021-6830 Move CI/runner validation, plane result, reviewer
+  status/action, disposition, and severity helpers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `prreview_149`
+  through `prreview_156` files are gone and staged boundary evidence that
+  excluded citation resolution `prreview_157` onward, unsafe text/safe ID and
+  content-type helpers `prreview_169` onward, prompt rendering, sanitizer,
+  validation/summary orchestration, role execution, parsed output handling, and
+  Slice 98 packet/preview/input helpers are not moved or edited in Slice 99.
+- [x] T021-6840 Run `gofmt` on changed Go files.
+- [x] T021-6841 Add focused helper regression coverage named
+  `TestPrreviewStatusDispositionHelpersPreserveContracts` before running the
+  focused exact-count guard. The test must assert accepted/rejected CI states,
+  accepted/rejected runners, usable statuses, retained raw output requirements,
+  plane-result degradation to `cannot_verify`, exact reviewer reason/next-action
+  strings, default disposition mapping, and unknown severity fallback.
+- [x] T021-6850 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6851 Run focused validation/status/disposition regression evidence
+  with an exact-count guard for named tests covering:
+  `TestValidateReviewStatesAndAuthorityBoundary`,
+  `TestValidateCannotVerifyUsableStatusWithoutRetainedOutput`,
+  `TestPrreviewValidationOrchestrationPreservesDigestRequiredPlaneAndAuthorityContracts`,
+  `TestPrreviewValidationRankingModelAndLedgerFindingContracts`,
+  `TestLedgerDispositionCarryForward`,
+  `TestPrreviewLedgerSynthesisPreservesOrderingCarryForwardAndSanitization`,
+  and `TestPrreviewStatusDispositionHelpersPreserveContracts`. These tests must
+  cover accepted/rejected CI states, accepted/rejected runners, usable statuses
+  with and without retained raw output, exact reviewer reason/next-action
+  strings, default disposition mapping, and unknown severity fallback.
+- [x] T021-6860 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6870 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6880 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 99 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-99-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

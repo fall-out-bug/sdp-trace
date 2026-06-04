@@ -1326,6 +1326,23 @@ text/safe ID helpers, prompt rendering, sanitizer logic, validation/summary,
 role execution, parsed output handling, and previously consolidated validation
 helpers.
 
+Slice 99 continues `internal/prreview` cleanup with CI/runner validation and
+reviewer status/disposition helpers (`prreview_149` through `prreview_156`).
+The slice is limited to CI state validation, runner validation, plane result
+projection, reviewer status usability, reviewer reason/action mapping, default
+finding disposition, and severity fallback. It must preserve accepted CI states,
+accepted runner IDs, retained raw-output requirements for usable review
+coverage, plane-result degradation to `cannot_verify` when a usable reviewer
+status lacks raw output, exact reviewer reason and next-action strings, critical
+and major default blocker dispositions, minor/informational/unknown default
+deferred dispositions, unknown severity fallback to `informational`, package
+boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines. It
+intentionally excludes citation resolution (`prreview_157` onward), unsafe text
+and safe ID/content-type helpers (`prreview_169` onward), prompt rendering,
+sanitizer logic, validation/summary orchestration, role execution, parsed output
+handling, packet/preview/input helpers from Slice 98, and any public schema or
+CLI contract changes.
+
 ## Verification
 
 ```text
