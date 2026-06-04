@@ -3301,3 +3301,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 94 Tasks
+
+- [x] T021-6470 Confirm Slice 94 is bounded to numbered `internal/prreview`
+  JSON artifact IO and typed artifact reader shards `prreview_079` through
+  `prreview_086`.
+- [x] T021-6471 Confirm Slice 94 is behavior-preserving: no changes to JSON
+  indentation/trailing newline behavior, parent-directory creation mode, file
+  write mode, blank `WriteJSON` path semantics, packet/run-set directory
+  default paths, profile validation, run-set validation, decode/read error
+  propagation, package boundary, dependency direction, or baseline changes are
+  planned.
+- [x] T021-6472 Record Slice 94 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-94-plan-review.md`.
+- [x] T021-6480 Move JSON artifact IO and typed artifact readers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `prreview_079`
+  through `prreview_086` files are gone and staged boundary evidence that
+  excluded option validation, reviewer execution, prompt, sanitizer, citation,
+  validation, and summary numbered files are not moved or edited in Slice 94.
+- [x] T021-6490 Run `gofmt` on changed Go files.
+- [x] T021-6500 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6501 Run focused IO regression evidence covering exact named tests
+  `TestWriteJSONAndReadRunSetUseDirectoryContracts`,
+  `TestPacketProfileAndSmallHelpers`, `TestReadRunSetRejectsDuplicateRunIDs`,
+  and `TestPrreviewArtifactIOReadWriteContracts`. Run them with a `go test
+  -list` exact-count guard before the focused `go test -run` command so zero
+  matches fail. These tests must cover blank write path no-op, parent directory
+  creation with `0o755` mode where mode bits are exposed, JSON file writes
+  with `0o644` mode where mode bits are exposed, indented JSON with trailing
+  newline, packet and run-set directory default paths, typed ledger and
+  validation readers, invalid JSON propagation, missing file propagation,
+  profile validation, and duplicate run-set rejection.
+- [x] T021-6510 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6520 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6530 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  94 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-94-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

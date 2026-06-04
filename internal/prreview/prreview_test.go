@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -1353,6 +1354,84 @@ func TestWriteJSONAndReadRunSetUseDirectoryContracts(t *testing.T) {
 	}
 	if _, err := ReadRunSet(filepath.Join(outDir, "results.json")); err == nil {
 		t.Fatalf("expected run-set validation error")
+	}
+}
+
+func TestPrreviewArtifactIOReadWriteContracts(t *testing.T) {
+	root := t.TempDir()
+	outDir := filepath.Join(root, "nested", "artifacts")
+	packet := Packet{SchemaVersion: SchemaVersionPacket, PacketID: "packet-io", PacketDigest: "sha256:" + sixtyFour("1")}
+	packetPath := filepath.Join(outDir, "packet.json")
+	oldUmask := syscall.Umask(0)
+	if err := WriteJSON(packetPath, packet); err != nil {
+		syscall.Umask(oldUmask)
+		t.Fatalf("WriteJSON(packet) error = %v", err)
+	}
+	syscall.Umask(oldUmask)
+	dirInfo, err := os.Stat(outDir)
+	if err != nil {
+		t.Fatalf("stat output dir: %v", err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o755 {
+		t.Fatalf("output dir mode = %#o want 0755", got)
+	}
+	fileInfo, err := os.Stat(packetPath)
+	if err != nil {
+		t.Fatalf("stat packet: %v", err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o644 {
+		t.Fatalf("packet file mode = %#o want 0644", got)
+	}
+	data, err := os.ReadFile(packetPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(string(data), "\n") || !strings.Contains(string(data), "\n  \"packet_id\": \"packet-io\"") {
+		t.Fatalf("written JSON should be indented and newline terminated:\n%s", string(data))
+	}
+	readPacket, err := ReadPacket(outDir)
+	if err != nil {
+		t.Fatalf("ReadPacket(dir) error = %v", err)
+	}
+	if readPacket.PacketID != "packet-io" {
+		t.Fatalf("packet read drifted: %+v", readPacket)
+	}
+
+	ledger := Ledger{SchemaVersion: SchemaVersionLedger, PacketDigest: packet.PacketDigest}
+	ledgerPath := filepath.Join(outDir, "ledger.json")
+	if err := WriteJSON(ledgerPath, ledger); err != nil {
+		t.Fatalf("write ledger: %v", err)
+	}
+	readLedger, err := ReadLedger(ledgerPath)
+	if err != nil {
+		t.Fatalf("ReadLedger() error = %v", err)
+	}
+	if readLedger.SchemaVersion != SchemaVersionLedger || readLedger.PacketDigest != packet.PacketDigest {
+		t.Fatalf("ledger read drifted: %+v", readLedger)
+	}
+
+	validation := Validation{SchemaVersion: SchemaVersionValidation, PacketDigest: packet.PacketDigest, ReviewCoverageState: CoverageNotAssessed}
+	validationPath := filepath.Join(outDir, "validation.json")
+	if err := WriteJSON(validationPath, validation); err != nil {
+		t.Fatalf("write validation: %v", err)
+	}
+	readValidation, err := ReadValidation(validationPath)
+	if err != nil {
+		t.Fatalf("ReadValidation() error = %v", err)
+	}
+	if readValidation.SchemaVersion != SchemaVersionValidation || readValidation.ReviewCoverageState != CoverageNotAssessed {
+		t.Fatalf("validation read drifted: %+v", readValidation)
+	}
+
+	badPath := filepath.Join(outDir, "bad.json")
+	if err := os.WriteFile(badPath, []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ReadLedger(badPath); err == nil {
+		t.Fatal("ReadLedger should return invalid JSON error")
+	}
+	if _, err := ReadValidation(filepath.Join(outDir, "missing.json")); err == nil {
+		t.Fatal("ReadValidation should return missing file error")
 	}
 }
 

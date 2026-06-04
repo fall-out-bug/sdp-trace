@@ -1243,6 +1243,21 @@ validation (`prreview_087` onward), reviewer execution, prompt generation, and
 low-level sanitizer/citation helpers so those responsibilities keep separate
 review trails.
 
+Slice 94 continues `internal/prreview` cleanup with JSON artifact IO and typed
+artifact readers (`prreview_079` through `prreview_086`). The slice is limited
+to JSON writing with parent-directory creation, blank output path no-op
+behavior, typed reads for packet/profile/run-set/ledger/validation artifacts,
+directory-to-default-file resolution for packet and run-set readers, shared JSON
+decode behavior, profile and run-set validation after decode, and read error
+propagation. It must preserve JSON indentation/trailing newline behavior,
+`0o755` parent-directory creation, `0o644` file mode, blank `WriteJSON` path
+semantics, `ReadPacket(dir)/packet.json`, `ReadRunSet(dir)/results.json`,
+duplicate run ID rejection, profile validation, package boundary, dependency
+direction, and MI baselines. It intentionally excludes packet/profile/run-set
+option validation (`prreview_087` onward), reviewer execution, prompt
+generation, sanitizer/citation helpers, and validation/summary logic so those
+responsibilities keep separate review trails.
+
 ## Verification
 
 ```text
