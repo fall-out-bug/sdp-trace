@@ -1081,6 +1081,21 @@ dependency direction, and MI baselines. It intentionally excludes GitHub bundle 
 `internal/prreview` numbered files so those responsibilities keep separate
 review trails.
 
+Slice 84 continues `internal/packet` cleanup with GitHub source-change and row
+construction shards (`packet_148` through `packet_173`). The slice is limited
+to projecting GitHub PR input into source-change metadata, packet rows,
+prompt-boundary route rows, verification rows, retained-artifact row evidence,
+review rows, and the shared GitHub row constructor. It must preserve row IDs,
+states, summaries, evidence refs, reasons, owner assignment, prompt-boundary
+classification behavior, workflow-run wording, artifact-ref de-duplication,
+retained artifact filtering, review pass/partial/not-assessed behavior, package
+boundary, dependency direction, and MI baselines. It should fold the numbered
+helpers into cohesive GitHub row/source locality files instead of creating
+standalone one-function replacements. It intentionally excludes GitHub bundle
+manifest entry helpers (`packet_174` through `packet_192`), rendering
+(`packet_193` onward), and `internal/prreview` numbered files so those
+responsibilities keep separate review trails.
+
 ## Verification
 
 ```text

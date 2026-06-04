@@ -1136,6 +1136,162 @@ func TestBuildGitHubVerificationPassCitesArtifactRefs(t *testing.T) {
 	}
 }
 
+func TestGitHubSourceChangeProjection(t *testing.T) {
+	input := validGitHubInput()
+	got := githubSourceChange(input)
+	want := SourceChange{
+		Repository:  input.PR.URL,
+		ChangeID:    "PR-5",
+		URL:         input.PR.URL,
+		BaseRef:     "main",
+		HeadRef:     "feature/stats",
+		CommitRange: "0000000000000000000000000000000000000000..1111111111111111111111111111111111111111",
+		HeadSHA:     "1111111111111111111111111111111111111111",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("source change = %#v, want %#v", got, want)
+	}
+}
+
+func TestGitHubChangeAndMutationRowsPreserveCommitRangeSemantics(t *testing.T) {
+	input := validGitHubInput()
+	for _, row := range []Row{githubChangeRow(input), githubMutationRow(input)} {
+		if row.State != StatePass || row.Reason != "" {
+			t.Fatalf("pass row = %+v", row)
+		}
+	}
+
+	input.CommitRange.Base = " "
+	change := githubChangeRow(input)
+	mutation := githubMutationRow(input)
+	if change.State != StateCannotVerify || change.Reason != "missing commit range base or head" || !containsString(change.EvidenceRefs, "github:pr") {
+		t.Fatalf("change row = %+v", change)
+	}
+	if mutation.State != StateCannotVerify || mutation.Reason != "missing commit range base or head" || len(mutation.EvidenceRefs) != 0 {
+		t.Fatalf("mutation row = %+v", mutation)
+	}
+}
+
+func TestGitHubInitiatorAndReviewRowsPreserveEvidenceSemantics(t *testing.T) {
+	input := validGitHubInput()
+	initiator := githubInitiatorRow(input)
+	if initiator.State != StatePartial || !containsString(initiator.EvidenceRefs, "github:pr-body") {
+		t.Fatalf("initiator row = %+v", initiator)
+	}
+	input.PR.BodyRef = ""
+	if row := githubInitiatorRow(input); row.State != StateNotAssessed || row.Reason != "missing PR body, issue, or retained task artifact" {
+		t.Fatalf("initiator without body = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.Reviews = nil
+	if row := githubReviewRow(input); row.State != StateNotAssessed || row.Reason != "missing GitHub review or retained external review" {
+		t.Fatalf("review without evidence = %+v", row)
+	}
+	input.Reviews = []GitHubReview{{State: StatePartial}}
+	if row := githubReviewRow(input); row.State != StatePartial || row.Reason != "review evidence did not fully pass" {
+		t.Fatalf("partial review = %+v", row)
+	}
+	input.Reviews = []GitHubReview{{State: StatePass}, {State: StatePass}}
+	if row := githubReviewRow(input); row.State != StatePass || row.Reason != "" || !containsString(row.EvidenceRefs, "github:review") {
+		t.Fatalf("pass review = %+v", row)
+	}
+}
+
+func TestGitHubAgentRouteRowsPreservePromptBoundarySemantics(t *testing.T) {
+	input := validGitHubInput()
+	input.RequirePromptBoundary = true
+	input.PromptBoundary.Text = "Implement the change and update evidence."
+	if row := githubAgentRouteRow(input); row.State != StateFail || row.ID != "PC-AGENT-ROUTE" || !containsString(row.EvidenceRefs, "prompt:boundary") {
+		t.Fatalf("route fail row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.RequirePromptBoundary = true
+	input.PromptBoundary = PromptBoundary{}
+	if row := githubAgentRouteRow(input); row.State != StateCannotVerify || row.Reason == "" {
+		t.Fatalf("route cannot verify row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.RequirePromptBoundary = true
+	input.PromptBoundary = PromptBoundary{
+		Digest:        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		CaptureActor:  "recorder",
+		CapturedAt:    "2026-05-12T00:00:00Z",
+		CaptureMethod: "external_capture",
+	}
+	row := githubAgentRouteRow(input)
+	if row.State != StatePartial || !containsString(row.EvidenceRefs, "agent:route") || !containsString(row.EvidenceRefs, "prompt:boundary") {
+		t.Fatalf("digest route row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.AgentRouteRefs = nil
+	if row := githubAgentRouteRow(input); row.State != StateNotAssessed || row.Reason != "missing OpenCode/GSD observation ref" {
+		t.Fatalf("missing route row = %+v", row)
+	}
+}
+
+func TestGitHubVerificationRowsPreserveEvidenceSemantics(t *testing.T) {
+	input := validGitHubInput()
+	input.Checks = nil
+	if row := githubVerificationRow(input); row.State != StateCannotVerify || row.Reason != "missing GitHub check or workflow run evidence" {
+		t.Fatalf("no checks row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.RequirePromptBoundary = true
+	input.PromptBoundary.Text = "Implement the change and run tests."
+	if row := githubVerificationRow(input); row.State != StateCannotVerify || row.Reason != "missing workflow run id for CI-owned packet generation" {
+		t.Fatalf("missing workflow run row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.Checks[0].ArtifactRefs = nil
+	if row := githubVerificationRow(input); row.State != StatePartial || row.Reason != "GitHub CI green is not verification pass without retained artifact evidence" {
+		t.Fatalf("missing artifact binding row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.Checks[0].Conclusion = "failure"
+	if row := githubVerificationRow(input); row.State != StatePartial || row.Reason != "not all retained checks concluded success" {
+		t.Fatalf("non-success row = %+v", row)
+	}
+
+	input = validGitHubInput()
+	input.WorkflowRunID = "12345"
+	row := githubVerificationRow(input)
+	if row.State != StatePass || !strings.Contains(row.Summary, "workflow run 12345") || !containsString(row.EvidenceRefs, "artifact:test-report") {
+		t.Fatalf("pass row = %+v", row)
+	}
+}
+
+func TestGitHubArtifactEvidenceHelpersPreserveSemantics(t *testing.T) {
+	input := validGitHubInput()
+	input.Checks = append(input.Checks, GitHubCheck{ArtifactRefs: []string{"test-report", "coverage"}})
+	input.Artifacts = append(input.Artifacts,
+		GitHubArtifact{Name: "coverage", RetainedForm: "raw"},
+		GitHubArtifact{Name: "not-retained", RetainedForm: "not_retained"},
+		GitHubArtifact{Name: " ", RetainedForm: "raw"},
+	)
+	refs := artifactEvidenceRefs(input)
+	if !reflect.DeepEqual(refs, []string{"artifact:test-report", "artifact:coverage"}) {
+		t.Fatalf("artifact refs = %#v", refs)
+	}
+	names := retainedArtifactNames(input.Artifacts)
+	if !names["test-report"] || !names["coverage"] || names["not-retained"] || names[" "] {
+		t.Fatalf("retained names = %#v", names)
+	}
+	if !checksHaveRetainedArtifactRefs(input) {
+		t.Fatalf("checks should have retained artifact refs")
+	}
+	input.Checks = append(input.Checks, GitHubCheck{ArtifactRefs: []string{"not-retained"}})
+	if checksHaveRetainedArtifactRefs(input) {
+		t.Fatalf("non-retained artifact ref should fail")
+	}
+}
+
 func TestCheckDemoRejectsSelfDeclaredRouteEvidence(t *testing.T) {
 	input := validGitHubInput()
 	input.AgentRouteEvidenceKind = "harness_route_observation"

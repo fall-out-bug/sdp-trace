@@ -2825,3 +2825,53 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 84 Tasks
+
+- [x] T021-5770 Confirm Slice 84 is bounded to numbered `internal/packet`
+  GitHub source-change and row-construction shards `packet_148` through
+  `packet_173`.
+- [x] T021-5771 Confirm Slice 84 is behavior-preserving: no changes to
+  source-change fields, row IDs, states, summaries, evidence refs, reasons,
+  owner assignment, prompt-boundary route/verification classification behavior,
+  workflow-run wording, artifact-ref de-duplication, retained artifact
+  filtering, review pass/partial/not-assessed behavior, package boundary,
+  dependency direction, or baseline changes are planned.
+- [x] T021-5772 Record Slice 84 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-84-plan-review.md`.
+- [x] T021-5780 Move GitHub source-change and row-construction helpers into
+  cohesive responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `packet_148`
+  through `packet_173` files are gone and that `cmd/sdp-trace/FAMILY_INDEX.md`
+  is not applicable because this is non-command `internal/packet` package
+  locality. Record staged boundary evidence that excluded GitHub manifest entry
+  helpers `packet_174` through `packet_192`, rendering `packet_193` onward, and
+  `internal/prreview` numbered files are not moved or edited in Slice 84.
+- [x] T021-5790 Run `gofmt` on changed Go files.
+- [x] T021-5800 Run focused Go verification with `go test ./internal/packet`.
+- [x] T021-5801 Run focused GitHub row/source regression evidence covering
+  exact named tests `TestGitHubSourceChangeProjection`,
+  `TestGitHubChangeAndMutationRowsPreserveCommitRangeSemantics`,
+  `TestGitHubInitiatorAndReviewRowsPreserveEvidenceSemantics`,
+  `TestGitHubAgentRouteRowsPreservePromptBoundarySemantics`,
+  `TestGitHubVerificationRowsPreserveEvidenceSemantics`, and
+  `TestGitHubArtifactEvidenceHelpersPreserveSemantics`. Run them with a
+  `go test -list` exact-count guard before the focused `go test -run` command
+  so zero matches fail. These tests must prove source-change projection,
+  change/mutation missing commit-range behavior, initiator row behavior,
+  prompt-boundary route fail/cannot-verify/partial behavior, verification
+  no-checks/missing-workflow/artifact-binding/non-success/pass behavior,
+  artifact-ref de-duplication, retained artifact filtering, and review
+  not-assessed/partial/pass behavior.
+- [x] T021-5810 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5820 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5830 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  84 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-84-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
