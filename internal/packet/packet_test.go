@@ -280,6 +280,110 @@ func TestValidateRejectsTheaterPassWithFindings(t *testing.T) {
 	}
 }
 
+func TestValidateRowDiagnostics(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		edit func(*Bundle)
+		want []string
+	}{
+		{
+			name: "missing required row",
+			edit: func(bundle *Bundle) {
+				removeRow(bundle, "PC-REVIEW")
+			},
+			want: []string{"missing required row \"PC-REVIEW\""},
+		},
+		{
+			name: "unknown row id",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.Rows = append(bundle.Packet.Rows, Row{ID: "PC-UNKNOWN", State: StatePass, Summary: "unknown", EvidenceRefs: []string{"ci:run"}, Owner: "maintainer"})
+			},
+			want: []string{"unknown row id \"PC-UNKNOWN\""},
+		},
+		{
+			name: "duplicate row id",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.Rows = append(bundle.Packet.Rows, row("PC-REVIEW", StatePartial, "duplicate review", []string{"review:packet"}))
+			},
+			want: []string{"duplicate row id \"PC-REVIEW\""},
+		},
+		{
+			name: "row fields and reason",
+			edit: func(bundle *Bundle) {
+				setRow(bundle, "PC-REVIEW", Row{ID: "PC-REVIEW", State: "mystery", Summary: "", EvidenceRefs: []string{"review:packet"}, Owner: ""})
+			},
+			want: []string{
+				"PC-REVIEW has unknown state \"mystery\"",
+				"PC-REVIEW requires summary",
+				"PC-REVIEW requires owner",
+			},
+		},
+		{
+			name: "missing non-pass reason",
+			edit: func(bundle *Bundle) {
+				setRow(bundle, "PC-REVIEW", Row{ID: "PC-REVIEW", State: StatePartial, Summary: "partial review", EvidenceRefs: []string{"review:packet"}, Owner: "maintainer"})
+			},
+			want: []string{"PC-REVIEW state partial requires reason"},
+		},
+		{
+			name: "pass row evidence refs",
+			edit: func(bundle *Bundle) {
+				setRow(bundle, "PC-VERIFICATION", Row{ID: "PC-VERIFICATION", State: StatePass, Summary: "tests passed", Owner: "maintainer"})
+			},
+			want: []string{"PC-VERIFICATION pass requires retained evidence refs"},
+		},
+		{
+			name: "absent evidence ref",
+			edit: func(bundle *Bundle) {
+				setRow(bundle, "PC-VERIFICATION", Row{ID: "PC-VERIFICATION", State: StatePass, Summary: "tests passed", EvidenceRefs: []string{"ci:missing"}, Owner: "maintainer"})
+			},
+			want: []string{"PC-VERIFICATION evidence ref \"ci:missing\" is absent from manifest"},
+		},
+		{
+			name: "no resolver",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.Resolver = ""
+				})
+			},
+			want: []string{"PC-VERIFICATION evidence ref \"ci:run\" has no resolver entry"},
+		},
+		{
+			name: "expired pass evidence",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.ExpiresAt = "2026-05-10T12:00:00Z"
+				})
+			},
+			want: []string{"PC-VERIFICATION pass cites expired artifact ref \"ci:run\""},
+		},
+		{
+			name: "unverifiable pass evidence",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.RetainedForm = "not_retained"
+				})
+			},
+			want: []string{"PC-VERIFICATION pass cites unverifiable artifact ref \"ci:run\""},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := validBundle()
+			tt.edit(&bundle)
+			refreshPacketDigest(&bundle)
+			result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StateFail {
+				t.Fatalf("state = %s errors=%v, want fail", result.State, result.Errors)
+			}
+			for _, want := range tt.want {
+				if !hasError(result.Errors, want) {
+					t.Fatalf("errors = %v, want %q", result.Errors, want)
+				}
+			}
+		})
+	}
+}
+
 func TestRenderCleanTheaterUsesRowState(t *testing.T) {
 	bundle := validBundle()
 	setRowState(&bundle, "PC-THEATER", StateNotAssessed, "theater assessment not run")
@@ -447,11 +551,74 @@ func TestValidateContradictionRequiresPartialAndGap(t *testing.T) {
 	}
 }
 
+func TestValidateContradictionTargetSelection(t *testing.T) {
+	bundle := validBundle()
+	bundle.Manifest.Entries = append(bundle.Manifest.Entries, BundleEntry{
+		Ref:              "review:contradiction",
+		SourceClass:      "review",
+		RetainedForm:     "raw",
+		RedactionStatus:  "not_needed",
+		Resolver:         "examples/change-evidence-packet/contradiction.md",
+		ContradictsRef:   "git:change",
+		ContradictsRowID: "PC-VERIFICATION",
+	})
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if !hasError(result.Errors, "PC-VERIFICATION has contradictory evidence") ||
+		hasError(result.Errors, "PC-CHANGE has contradictory evidence") {
+		t.Fatalf("explicit row target did not override ref fallback: %+v", result)
+	}
+}
+
 func TestRowIDForRefUsesRequiredRowOrder(t *testing.T) {
 	bundle := validBundle()
 	rows := rowsByID(bundle.Packet.Rows)
 	if got := rowIDForRef(rows, "git:change"); got != "PC-CHANGE" {
 		t.Fatalf("rowIDForRef(shared ref) = %q, want PC-CHANGE", got)
+	}
+}
+
+func TestRowIDForRefUsesExtensionFallbackOrderAndExactRefs(t *testing.T) {
+	rows := map[string]Row{
+		"PC-VERIFICATION": {ID: "PC-VERIFICATION", EvidenceRefs: []string{"custom:ref"}},
+		"ZZ-EXT":          {ID: "ZZ-EXT", EvidenceRefs: []string{"custom:ref", "custom:prefix-extra"}},
+		"AA-EXT":          {ID: "AA-EXT", EvidenceRefs: []string{"custom:ref"}},
+	}
+	if got := rowIDForRef(rows, "custom:ref"); got != "PC-VERIFICATION" {
+		t.Fatalf("required row precedence = %q, want PC-VERIFICATION", got)
+	}
+
+	delete(rows, "PC-VERIFICATION")
+	if got := rowIDForRef(rows, "custom:ref"); got != "AA-EXT" {
+		t.Fatalf("extension fallback row = %q, want AA-EXT", got)
+	}
+	if got := rowIDForRef(rows, "custom:prefix"); got != "" {
+		t.Fatalf("rowIDForRef used prefix match = %q", got)
+	}
+}
+
+func TestGapForRowRequiresReasonForResidualCoverage(t *testing.T) {
+	bundle := validBundle()
+	setRowState(&bundle, "PC-REVIEW", StatePartial, "review evidence is pending")
+	for i := range bundle.Packet.ResidualGaps {
+		if bundle.Packet.ResidualGaps[i].RowID == "PC-REVIEW" {
+			bundle.Packet.ResidualGaps[i].Reason = ""
+		}
+	}
+	refreshPacketDigest(&bundle)
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if result.State != StateFail || !hasError(result.Errors, "PC-REVIEW non-pass row requires residual gap explanation") {
+		t.Fatalf("blank residual reason should not close coverage: %+v", result)
+	}
+
+	for i := range bundle.Packet.ResidualGaps {
+		if bundle.Packet.ResidualGaps[i].RowID == "PC-REVIEW" {
+			bundle.Packet.ResidualGaps[i].Reason = "review evidence is retained externally"
+		}
+	}
+	refreshPacketDigest(&bundle)
+	result = Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	if hasError(result.Errors, "PC-REVIEW non-pass row requires residual gap explanation") {
+		t.Fatalf("non-empty residual reason should close coverage: %+v", result)
 	}
 }
 
@@ -1023,6 +1190,15 @@ func setRow(bundle *Bundle, id string, row Row) {
 	for i := range bundle.Packet.Rows {
 		if bundle.Packet.Rows[i].ID == id {
 			bundle.Packet.Rows[i] = row
+			return
+		}
+	}
+}
+
+func removeRow(bundle *Bundle, id string) {
+	for i := range bundle.Packet.Rows {
+		if bundle.Packet.Rows[i].ID == id {
+			bundle.Packet.Rows = append(bundle.Packet.Rows[:i], bundle.Packet.Rows[i+1:]...)
 			return
 		}
 	}

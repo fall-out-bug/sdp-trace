@@ -2644,3 +2644,66 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 81 Tasks
+
+- [x] T021-5560 Confirm Slice 81 is bounded to numbered `internal/packet`
+  row validation, contradiction attribution, and row/ref/gap lookup shards
+  `packet_102` through `packet_121` and `packet_138` through `packet_144`.
+- [x] T021-5561 Confirm Slice 81 is behavior-preserving: no changes to row
+  validation order, required row presence checks, unknown and duplicate row ID
+  diagnostics, row required field diagnostics, missing reason behavior for
+  non-pass states, pass-row retained evidence requirements, evidence-ref
+  absence and resolver diagnostics, pass-row expired/unverifiable artifact
+  diagnostics, contradiction target selection, required-row precedence and
+  extension-row fallback ordering for evidence-ref attribution, exact row-ref
+  matching, contradiction partial-state and residual-gap requirements,
+  gap reason semantics, package boundary, dependency direction, or baseline
+  changes are planned.
+- [x] T021-5562 Record Slice 81 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-81-plan-review.md`.
+- [x] T021-5570 Move row validation orchestration, row indexing and ID checks,
+  row field/reason/evidence validation, evidence-ref validation handoff,
+  pass-evidence usability handoff, contradiction validation, row/ref lookup,
+  and gap lookup helpers into cohesive locality files. Record source-shape
+  evidence that numbered `packet_102` through `packet_121` and `packet_138`
+  through `packet_144` files are gone, that replacement locality filenames
+  exist, and that `cmd/sdp-trace/FAMILY_INDEX.md` is not applicable because
+  this is non-command `internal/packet` package locality. Record staged
+  boundary evidence that excluded finding/gap/decision-owner validation
+  `packet_122` through `packet_136`, shared validator error accumulation
+  `packet_137`, shared artifact-usability helpers
+  `packet_145` through `packet_147`, GitHub bundle construction `packet_148`
+  through `packet_192`, and rendering `packet_193` onward are not moved or edited in
+  Slice 81.
+- [x] T021-5580 Run `gofmt` on changed Go files.
+- [x] T021-5590 Run focused Go verification for `internal/packet`.
+- [x] T021-5591 Run focused row validation/contradiction regression evidence
+  covering exact test existence for validation order and accumulated row
+  diagnostics, missing required rows, unknown row IDs, duplicate row IDs, row
+  state/summary/owner/reason diagnostics, pass rows requiring retained evidence
+  refs, evidence ref absent-from-manifest and no-resolver diagnostics, pass-row
+  expired and unverifiable artifact diagnostics, contradiction target selection
+  by explicit row ID including explicit `ContradictsRowID` overriding a
+  different evidence-ref fallback target, required-row ordering among shared
+  refs where the first `RequiredRows` match wins, required-row precedence over
+  extension rows for shared refs, deterministic extension-row fallback
+  ordering, exact row-ref matching without prefix/alias inference,
+  contradiction partial-state requirement, contradiction residual-gap
+  requirement, `gapForRow` requiring a non-empty reason, excluded
+  `validateResidualCoverage` behavior still observing `gapForRow` semantics
+  for blank and non-empty residual-gap reasons, exact source-shape verification
+  after implementation, staged boundary evidence for excluded packet files, and
+  no baseline changes.
+- [x] T021-5600 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5610 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5620 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  81 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-81-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

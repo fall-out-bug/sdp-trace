@@ -1023,6 +1023,27 @@ finding/gap/decision owner validation (`packet_122` onward), and shared
 evidence-ref artifact usability helpers (`packet_145` onward) so those
 behavior-heavy responsibilities keep separate review trails.
 
+Slice 81 continues `internal/packet` cleanup with row validation,
+contradiction attribution, and row/ref/gap lookup shards (`packet_102` through
+`packet_121` and `packet_138` through `packet_144`). The slice is limited to
+row indexing, required row presence checks, row ID validation, row required
+field validation, row reason/state/summary/owner validation, row evidence-ref
+validation handoff, pass-row evidence usability handoff, contradiction target
+selection, contradiction state/gap checks, required-row precedence for evidence
+ref attribution, extension-row fallback ordering, exact row-ref matching, and
+residual gap lookup by reason. It preserves row validation order, duplicate and
+unknown row diagnostics, missing required row diagnostics, pass row evidence
+requirements, resolver-backed evidence-ref diagnostics, pass-row expired and
+unverifiable artifact diagnostics, contradiction row precedence and fallback
+semantics, contradiction partial-state and residual-gap requirements, gap
+reason semantics, package boundary, dependency direction, and MI baselines. It
+intentionally excludes finding/gap/decision-owner validation (`packet_122`
+through `packet_136`), shared validator error accumulation (`packet_137`),
+shared artifact usability helper implementations
+(`packet_145` through `packet_147`), GitHub bundle construction helpers
+(`packet_148` through `packet_192`), and rendering (`packet_193` onward) so those
+responsibilities keep separate review trails.
+
 ## Verification
 
 ```text
