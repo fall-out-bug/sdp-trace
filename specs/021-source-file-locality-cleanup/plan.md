@@ -878,6 +878,23 @@ JSON writers, shared file helpers, packet/profile shared readers, repeated flag
 helpers, runner helpers, and generic validation exit helpers so later review
 workflow responsibilities keep separate review trails.
 
+Slice 73 continues numbered `pr_review` cleanup in `cmd/sdp-trace` with
+`pr-review summarize` human-readable summary shards (`pr_review_121` through
+`pr_review_125`). A two-file boundary was selected after pre-change MI analysis
+measured `pr_review_summarize_command.go` at file MI `73.5` and
+`pr_review_summary_io.go` at file MI `76.6`. The slice moves summarize
+execution and argument parsing into `pr_review_summarize_command.go`, and
+validation/ledger input loading plus optional summary-file writing into
+`pr_review_summary_io.go`. It preserves summary text as UX-only output rather
+than proof or approval, validation/ledger read failures mapping to
+`cannot_verify`, positional-argument rejection, optional output path behavior,
+write-once refusal for existing summary files, stdout mirroring even when a
+durable summary file is requested, package boundary, dependency direction, and
+MI baselines. It intentionally excludes `pr-review check`, shared JSON writers,
+generic validation exit helpers, shared file helpers, packet/profile readers,
+repeated flag helpers, and runner helpers so later workflow responsibilities
+keep separate review trails.
+
 ## Verification
 
 ```text

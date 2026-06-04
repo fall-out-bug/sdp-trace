@@ -2258,3 +2258,49 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 73 Tasks
+
+- [x] T021-5000 Confirm Slice 73 is bounded to numbered `cmd/sdp-trace`
+  `pr-review summarize` human-readable summary shards `pr_review_121` through
+  `pr_review_125`.
+- [x] T021-5001 Confirm Slice 73 is behavior-preserving: no changes to summary
+  text being UX-only output rather than proof or approval, validation/ledger
+  reads, artifact read failures mapping to `cannot_verify`,
+  positional-argument rejection, optional output path behavior, write-once
+  refusal for existing summary files, stdout mirroring when a durable summary
+  file is requested, package boundary, dependency direction, or baseline change
+  is planned.
+- [x] T021-5002 Record Slice 73 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-73-plan-review.md`.
+- [x] T021-5010 Move `pr-review summarize` execution and argument parsing into
+  `pr_review_summarize_command.go`, and validation/ledger input loading plus
+  optional summary-file writing into `pr_review_summary_io.go`, after
+  pre-change MI analysis measured the planned files at `73.5` and `76.6`.
+  Record the command and responsibility boundary in evidence, and synchronize
+  `cmd/sdp-trace/FAMILY_INDEX.md` with the renamed files.
+- [x] T021-5020 Run `gofmt` on changed Go files.
+- [x] T021-5030 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-5031 Run focused `pr-review summarize` regression evidence covering
+  exact test existence for
+  `TestParsePRReviewSummarizeArgsKeepsUsageBoundaries`,
+  `TestReadPRReviewSummaryInputsKeepsArtifactBoundaries`, and
+  `TestRunPRReviewSummarizeKeepsUXOnlyOutputBoundary`; positional argument
+  rejection, validation/ledger read failure `cannot_verify` behavior, optional
+  output path no-op behavior, existing summary-file refusal as usage failure,
+  stdout mirroring when a durable summary file is requested, summary text not
+  implying merge approval, exact test list verification after test
+  implementation that fails when any planned focused test is missing, and no
+  baseline changes.
+- [x] T021-5040 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5050 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5060 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  73 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-73-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

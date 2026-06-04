@@ -395,11 +395,6 @@
 - packet_validation_exits.go
 
 ### pr_review
-- pr_review_121_runsummarize.go
-- pr_review_122_readsummaryinputs.go
-- pr_review_123_writeoptionalsummary.go
-- pr_review_124_writesummaryfile.go
-- pr_review_125_parsesummarizeargs.go
 - pr_review_126_runcheck.go
 - pr_review_127_parsecheckargs.go
 - pr_review_128_registercheckflags.go
@@ -431,6 +426,8 @@
 - pr_review_run_output.go
 - pr_review_synthesis_inputs.go
 - pr_review_synthesize_command.go
+- pr_review_summary_io.go
+- pr_review_summarize_command.go
 - pr_review_validate_command.go
 - pr_review_validation_inputs.go
 

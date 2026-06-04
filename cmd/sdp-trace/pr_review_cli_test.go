@@ -954,6 +954,109 @@ func newPRReviewValidationTestOptions(packetPath, profilePath, runsPath, ledgerP
 	return opts
 }
 
+func TestParsePRReviewSummarizeArgsKeepsUsageBoundaries(t *testing.T) {
+	var errOut bytes.Buffer
+	opts, code, ok := parsePRReviewSummarizeArgs([]string{"--validation", "validation.json", "--ledger", "ledger.json"}, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse summarize args ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if opts.stringValue("out") != "" {
+		t.Fatalf("summary out default changed")
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewSummarizeArgs([]string{"--validation", "validation.json", "--ledger", "ledger.json", "unexpected"}, &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "accepts only flags") {
+		t.Fatalf("rest arg ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+}
+
+func TestReadPRReviewSummaryInputsKeepsArtifactBoundaries(t *testing.T) {
+	root := t.TempDir()
+	artifacts := writePRReviewValidationArtifactsForTest(t, root, true)
+	validationPath := writePRReviewValidationForSummaryTest(t, root, artifacts)
+
+	opts := newPRReviewSummaryTestOptions(validationPath, artifacts.ledgerPath)
+	validation, ledger, err := readPRReviewSummaryInputs(opts)
+	if err != nil {
+		t.Fatalf("read summary inputs: %v", err)
+	}
+	if validation.PacketDigest != artifacts.packetDigest || ledger.PacketDigest != artifacts.packetDigest {
+		t.Fatalf("summary inputs validation=%+v ledger=%+v", validation, ledger)
+	}
+
+	if _, _, err := readPRReviewSummaryInputs(newPRReviewSummaryTestOptions(filepath.Join(root, "missing-validation.json"), artifacts.ledgerPath)); err == nil {
+		t.Fatalf("missing validation should fail")
+	}
+	if _, _, err := readPRReviewSummaryInputs(newPRReviewSummaryTestOptions(validationPath, filepath.Join(root, "missing-ledger.json"))); err == nil {
+		t.Fatalf("missing ledger should fail")
+	}
+}
+
+func TestRunPRReviewSummarizeKeepsUXOnlyOutputBoundary(t *testing.T) {
+	root := t.TempDir()
+	artifacts := writePRReviewValidationArtifactsForTest(t, root, true)
+	validationPath := writePRReviewValidationForSummaryTest(t, root, artifacts)
+	summaryPath := filepath.Join(root, "summary.txt")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runPRReviewSummarize([]string{"--validation", validationPath, "--ledger", artifacts.ledgerPath, "--out", summaryPath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("summarize exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	written, err := os.ReadFile(summaryPath)
+	if err != nil {
+		t.Fatalf("read summary: %v", err)
+	}
+	if out.String() != string(written) {
+		t.Fatalf("stdout should mirror durable summary\nstdout=%s\nfile=%s", out.String(), string(written))
+	}
+	if !strings.Contains(out.String(), "not_authorized_by_sdp_trace") || strings.Contains(strings.ToLower(out.String()), "safe to merge") {
+		t.Fatalf("summary approval boundary changed: %s", out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewSummarize([]string{"--validation", validationPath, "--ledger", artifacts.ledgerPath}, &out, &errOut)
+	if exit != 0 || out.String() == "" {
+		t.Fatalf("stdout-only summarize exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewSummarize([]string{"--validation", validationPath, "--ledger", artifacts.ledgerPath, "--out", summaryPath}, &out, &errOut)
+	if exit != exitUsage {
+		t.Fatalf("existing summary exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewSummarize([]string{"--validation", filepath.Join(root, "missing-validation.json"), "--ledger", artifacts.ledgerPath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("missing validation summary exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func writePRReviewValidationForSummaryTest(t *testing.T, root string, artifacts prReviewValidationTestArtifacts) string {
+	t.Helper()
+	validationPath := filepath.Join(root, "summary-validation.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runPRReviewValidate([]string{"--packet", artifacts.packetPath, "--profile", artifacts.profilePath, "--runs", artifacts.runsPath, "--ledger", artifacts.ledgerPath, "--out", validationPath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("validate for summary exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	return validationPath
+}
+
+func newPRReviewSummaryTestOptions(validationPath, ledgerPath string) *flagSet {
+	opts := &flagSet{name: "test summary inputs"}
+	opts.setString("validation", validationPath)
+	opts.setString("ledger", ledgerPath)
+	return opts
+}
+
 func writePRReviewCheckProfile(t *testing.T, root string) string {
 	t.Helper()
 	return writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
