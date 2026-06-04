@@ -464,6 +464,161 @@ func TestValidateRejectsProjectionMarkedCanonicalOverArtifact(t *testing.T) {
 	}
 }
 
+func TestValidateMetadataAndManifestDiagnostics(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		edit func(*Bundle)
+		want string
+	}{
+		{
+			name: "packet schema",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.PacketVersion = "other-packet-schema"
+				refreshPacketDigest(bundle)
+			},
+			want: "packet.packet_version must be",
+		},
+		{
+			name: "manifest schema",
+			edit: func(bundle *Bundle) {
+				bundle.Manifest.SchemaVersion = "other-manifest-schema"
+			},
+			want: "manifest.schema_version must be",
+		},
+		{
+			name: "packet id",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.PacketID = ""
+				refreshPacketDigest(bundle)
+			},
+			want: "packet.packet_id is required",
+		},
+		{
+			name: "bundle ref",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.BundleRef = ""
+				refreshPacketDigest(bundle)
+			},
+			want: "packet.bundle_ref is required",
+		},
+		{
+			name: "manifest bundle id",
+			edit: func(bundle *Bundle) {
+				bundle.Manifest.BundleID = ""
+			},
+			want: "manifest.bundle_id is required",
+		},
+		{
+			name: "missing packet digest",
+			edit: func(bundle *Bundle) {
+				bundle.Manifest.PacketDigest = ""
+			},
+			want: "manifest.packet_digest is required",
+		},
+		{
+			name: "mismatched packet digest",
+			edit: func(bundle *Bundle) {
+				bundle.Manifest.PacketDigest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			},
+			want: "manifest.packet_digest does not match packet content",
+		},
+		{
+			name: "missing non approval",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.NonApproval = ""
+				refreshPacketDigest(bundle)
+			},
+			want: "packet.non_approval is required",
+		},
+		{
+			name: "packet state",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.PacketState = "approved"
+				refreshPacketDigest(bundle)
+			},
+			want: "packet.packet_state has unknown value",
+		},
+		{
+			name: "authoring method",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.AuthoringMethod = "self_attested"
+				refreshPacketDigest(bundle)
+			},
+			want: "packet.authoring_method has unknown value",
+		},
+		{
+			name: "non canonical artifact",
+			edit: func(bundle *Bundle) {
+				bundle.Packet.Projection = Projection{Kind: "github_pr_comment", Canonical: false}
+				refreshPacketDigest(bundle)
+			},
+			want: "non-canonical packet projection requires artifact_ref",
+		},
+		{
+			name: "empty manifest ref",
+			edit: func(bundle *Bundle) {
+				bundle.Manifest.Entries = append(bundle.Manifest.Entries, entry("", "ci"))
+			},
+			want: "manifest entry has empty ref",
+		},
+		{
+			name: "retained form",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.RetainedForm = "imaginary"
+				})
+			},
+			want: "unknown retained_form",
+		},
+		{
+			name: "redaction status",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.RedactionStatus = "imaginary"
+				})
+			},
+			want: "unknown redaction_status",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := validBundle()
+			tt.edit(&bundle)
+			result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StateFail || !hasError(result.Errors, tt.want) {
+				t.Fatalf("result = %+v, want error containing %q", result, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidatePreservesPhaseOrderAndAccumulation(t *testing.T) {
+	bundle := validBundle()
+	bundle.Packet.PacketVersion = "other-packet-schema"
+	bundle.Manifest.Entries = append(bundle.Manifest.Entries, entry("", "ci"))
+	setRow(&bundle, "PC-VERIFICATION", Row{
+		ID:           "PC-VERIFICATION",
+		State:        StatePass,
+		Summary:      "Agent said tests passed.",
+		EvidenceRefs: []string{"missing:ci"},
+		Owner:        "maintainer",
+	})
+	bundle.Packet.TheaterFindings = []TheaterFinding{{
+		ReasonCode:          "agent_claimed_verification",
+		State:               StatePartial,
+		Finding:             "Agent claimed verification without retained evidence.",
+		TriggerEvidenceRefs: []string{"missing:finding"},
+	}}
+	refreshPacketDigest(&bundle)
+	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+	assertErrorsInOrder(t, result.Errors, []string{
+		"packet.packet_version must be",
+		"manifest entry has empty ref",
+		"PC-VERIFICATION evidence ref \"missing:ci\" is absent from manifest",
+		"PC-THEATER cannot be pass when theater findings are present",
+		"theater finding agent_claimed_verification evidence ref \"missing:finding\" is absent from manifest",
+	})
+}
+
 func TestValidateAcceptsResolverEntryForManifestEvidence(t *testing.T) {
 	bundle := validBundle()
 	for i := range bundle.Manifest.Entries {
@@ -478,6 +633,60 @@ func TestValidateAcceptsResolverEntryForManifestEvidence(t *testing.T) {
 	result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
 	if result.State != StatePass {
 		t.Fatalf("resolver entry did not satisfy evidence resolver: %+v", result)
+	}
+}
+
+func TestValidateManifestResolverIndexingFeedsRowEvidenceRefs(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		edit      func(*Bundle)
+		wantState string
+		wantError string
+	}{
+		{
+			name: "manifest resolver fallback",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.Resolver = "manifest-resolver"
+				})
+				bundle.Manifest.Resolvers = nil
+			},
+			wantState: StatePass,
+		},
+		{
+			name: "resolver entry override",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.Resolver = "manifest-resolver"
+				})
+				bundle.Manifest.Resolvers = []ResolverEntry{{Ref: "ci:run", Resolver: " "}}
+			},
+			wantState: StateFail,
+			wantError: "PC-VERIFICATION evidence ref \"ci:run\" has no resolver entry",
+		},
+		{
+			name: "empty resolver ref ignored",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "ci:run", func(entry *BundleEntry) {
+					entry.Resolver = ""
+				})
+				bundle.Manifest.Resolvers = []ResolverEntry{{Ref: "", Resolver: "ignored"}}
+			},
+			wantState: StateFail,
+			wantError: "PC-VERIFICATION evidence ref \"ci:run\" has no resolver entry",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := validBundle()
+			tt.edit(&bundle)
+			result := Validate(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != tt.wantState {
+				t.Fatalf("state = %s errors=%v, want %s", result.State, result.Errors, tt.wantState)
+			}
+			if tt.wantError != "" && !hasError(result.Errors, tt.wantError) {
+				t.Fatalf("errors = %v, want %q", result.Errors, tt.wantError)
+			}
+		})
 	}
 }
 
@@ -845,6 +1054,19 @@ func hasError(errors []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func assertErrorsInOrder(t *testing.T, errors []string, wants []string) {
+	t.Helper()
+	next := 0
+	for _, err := range errors {
+		if next < len(wants) && strings.Contains(err, wants[next]) {
+			next++
+		}
+	}
+	if next != len(wants) {
+		t.Fatalf("errors = %v, want ordered subsequence %v", errors, wants)
+	}
 }
 
 func containsString(values []string, want string) bool {

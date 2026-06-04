@@ -2587,3 +2587,60 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 80 Tasks
+
+- [x] T021-5490 Confirm Slice 80 is bounded to numbered `internal/packet`
+  general packet validator orchestration, metadata validation, and
+  manifest/resolver indexing shards `packet_085` through `packet_101`.
+- [x] T021-5491 Confirm Slice 80 is behavior-preserving: no changes to
+  `bundleValidator` validation phase order, error accumulation, schema-version
+  diagnostics, packet/bundle identity and non-empty checks, packet digest
+  required/mismatch behavior, `packet.non_approval` required-field behavior,
+  packet state and authoring method catalog checks,
+  canonical/non-canonical projection semantics, manifest entry empty-ref
+  rejection, manifest retained-form and redaction-status enum diagnostics,
+  manifest resolver fallback and resolver-entry override semantics, empty
+  resolver-ref ignoring, package boundary, dependency direction, or baseline
+  changes are planned.
+- [x] T021-5492 Record Slice 80 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-80-plan-review.md`.
+- [x] T021-5500 Move validator orchestration, metadata validation helpers,
+  projection checks, manifest indexing, resolver indexing, and manifest entry
+  enum validation into cohesive locality files. Record source-shape evidence
+  that numbered `packet_085` through `packet_101` files are gone, that
+  replacement locality filenames exist, and that `cmd/sdp-trace/FAMILY_INDEX.md`
+  is not applicable because this is non-command `internal/packet` package
+  locality. Record boundary evidence that excluded row validation files
+  `packet_102` through `packet_121`, finding/gap/decision-owner and shared row
+  lookup helpers `packet_122` through `packet_144`, and shared
+  artifact-usability helpers `packet_145` onward are not moved or edited in
+  Slice 80.
+- [x] T021-5510 Run `gofmt` on changed Go files.
+- [x] T021-5520 Run focused Go verification for `internal/packet`.
+- [x] T021-5521 Run focused packet metadata/manifest regression evidence
+  covering exact test existence for validation phase order and accumulated
+  multi-error output across metadata, manifest, row, and finding/gap failures,
+  schema-version diagnostics, missing packet and bundle identity fields,
+  packet/bundle mismatch, missing and mismatched packet digest, missing
+  `packet.non_approval`, packet state and authoring method catalog diagnostics,
+  canonical projection kind rejection, non-canonical missing `artifact_ref`
+  rejection, manifest entry empty-ref rejection, retained-form and
+  redaction-status enum diagnostics, manifest entry resolver fallback,
+  resolver-entry override, empty resolver-ref ignoring, exact source-shape
+  verification after implementation, focused regression evidence that row
+  evidence-ref validation still observes manifest resolver fallback,
+  resolver-entry override, and empty resolver-ref ignoring, and no baseline
+  changes.
+- [x] T021-5530 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5540 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5550 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  80 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-80-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

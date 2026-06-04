@@ -1006,6 +1006,23 @@ intentionally excludes general bundle metadata, manifest, row, finding, gap,
 decision-owner, and shared validation helper shards (`packet_085` onward) so
 the larger `bundleValidator` responsibility can keep a separate review trail.
 
+Slice 80 continues `internal/packet` cleanup with general packet validator
+orchestration, metadata validation, and manifest/resolver indexing shards
+(`packet_085` through `packet_101`). The slice is limited to `bundleValidator`
+orchestration, schema metadata validation, packet/bundle identity checks,
+required string checks, packet digest validation, packet state and authoring
+method catalog checks, projection metadata checks, manifest entry indexing,
+resolver entry indexing, and manifest retained-form/redaction-status enum
+validation. It preserves validation phase order, error accumulation, packet
+digest mismatch behavior, canonical/non-canonical projection semantics,
+manifest entry empty-ref rejection, manifest resolver fallback and override
+semantics, empty resolver-ref ignoring, manifest enum diagnostics, package
+boundary, dependency direction, and MI baselines. It intentionally excludes row
+validation and contradiction attribution (`packet_102` through `packet_121`),
+finding/gap/decision owner validation (`packet_122` onward), and shared
+evidence-ref artifact usability helpers (`packet_145` onward) so those
+behavior-heavy responsibilities keep separate review trails.
+
 ## Verification
 
 ```text
