@@ -1405,6 +1405,96 @@ func TestRetainedGitHubArtifactsKeepsResolverPolicy(t *testing.T) {
 	}
 }
 
+func TestLoadPRFixtureEventRequiresIdentity(t *testing.T) {
+	root := t.TempDir()
+	validPath := writePRFixtureEventForTest(t, root)
+	event, err := loadPRFixtureEvent(validPath)
+	if err != nil {
+		t.Fatalf("loadPRFixtureEvent(valid) error = %v", err)
+	}
+	if event.PullRequest.Number != 38 || event.PullRequest.HTMLURL == "" {
+		t.Fatalf("event identity = number %d url %q", event.PullRequest.Number, event.PullRequest.HTMLURL)
+	}
+
+	for _, tc := range []struct {
+		name  string
+		event map[string]any
+	}{
+		{
+			name: "missing number",
+			event: map[string]any{
+				"pull_request": map[string]any{"html_url": "https://github.com/example/repo/pull/38"},
+			},
+		},
+		{
+			name: "missing url",
+			event: map[string]any{
+				"pull_request": map[string]any{"number": 38},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(root, strings.ReplaceAll(tc.name, " ", "-")+".json")
+			writeTestJSON(t, path, tc.event)
+			_, err := loadPRFixtureEvent(path)
+			if err == nil || !strings.Contains(err.Error(), "missing pull_request metadata") {
+				t.Fatalf("loadPRFixtureEvent() error = %v", err)
+			}
+		})
+	}
+}
+
+func TestReadOptionalJSONKeepsOptionalAndErrorBehavior(t *testing.T) {
+	var target struct {
+		Name string `json:"name"`
+	}
+	if err := readOptionalJSON("  ", &target); err != nil {
+		t.Fatalf("readOptionalJSON(empty) error = %v", err)
+	}
+	if target.Name != "" {
+		t.Fatalf("empty optional path mutated target = %+v", target)
+	}
+
+	root := t.TempDir()
+	validPath := filepath.Join(root, "valid.json")
+	writeTestJSON(t, validPath, map[string]any{"name": "packet"})
+	if err := readOptionalJSON(validPath, &target); err != nil {
+		t.Fatalf("readOptionalJSON(valid) error = %v", err)
+	}
+	if target.Name != "packet" {
+		t.Fatalf("target name = %q", target.Name)
+	}
+
+	if err := readOptionalJSON(filepath.Join(root, "missing.json"), &target); err == nil {
+		t.Fatalf("readOptionalJSON(missing) error = nil")
+	}
+
+	invalidPath := filepath.Join(root, "invalid.json")
+	if err := os.WriteFile(invalidPath, []byte("{"), 0o600); err != nil {
+		t.Fatalf("write invalid json: %v", err)
+	}
+	if err := readOptionalJSON(invalidPath, &target); err == nil {
+		t.Fatalf("readOptionalJSON(invalid) error = nil")
+	}
+}
+
+func TestPacketExitMappingsKeepTrustSemantics(t *testing.T) {
+	pass := packet.Validation{State: packet.StatePass}
+	fail := packet.Validation{State: packet.StateFail}
+	if got := packetValidationExit(pass); got != 0 {
+		t.Fatalf("packetValidationExit(pass) = %d", got)
+	}
+	if got := packetValidationExit(fail); got != exitCannotVerify {
+		t.Fatalf("packetValidationExit(fail) = %d, want %d", got, exitCannotVerify)
+	}
+	if got := packetDemoGateExit(pass); got != 0 {
+		t.Fatalf("packetDemoGateExit(pass) = %d", got)
+	}
+	if got := packetDemoGateExit(fail); got != exitFail {
+		t.Fatalf("packetDemoGateExit(fail) = %d, want %d", got, exitFail)
+	}
+}
+
 func TestPacketBuildPRDoesNotAcceptCheckedInPacketAuthority(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

@@ -2029,3 +2029,45 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 68 Tasks
+
+- [x] T021-4650 Confirm Slice 68 is bounded to remaining numbered
+  `cmd/sdp-trace` packet fixture and validation exit helper shards
+  `packet_093` through `packet_096`.
+- [x] T021-4651 Confirm Slice 68 is behavior-preserving: no changes to
+  required PR fixture identity validation, optional empty-path no-op behavior,
+  JSON read/unmarshal error propagation, `pass` to zero exit mapping, packet
+  validation failure to `cannot_verify`, demo gate failure to `fail`, package
+  boundary, dependency direction, or baseline change is planned.
+- [x] T021-4652 Record Slice 68 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-68-plan-review.md`.
+- [x] T021-4660 Move PR fixture event shape/loading, shared optional JSON
+  loading, and packet exit helpers into `packet_build_pr_fixture_event.go`,
+  `packet_build_pr_optional_json.go`, and `packet_validation_exits.go` after the
+  single-file `packet_build_pr_fixture_io.go` attempt failed file-level MI at
+  66.3. Record the failed command plus revised responsibility boundary in
+  evidence.
+- [x] T021-4670 Run `gofmt` on changed Go files.
+- [x] T021-4680 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4681 Run focused packet fixture and validation-exit regression evidence
+  covering exact test existence for `TestLoadPRFixtureEventRequiresIdentity`,
+  `TestReadOptionalJSONKeepsOptionalAndErrorBehavior`, and
+  `TestPacketExitMappingsKeepTrustSemantics`; required PR number and URL
+  validation; optional empty path no-op; JSON read and unmarshal error
+  propagation; `pass` to zero exit mapping; packet validation failure to
+  `cannot_verify`; demo gate failure to `fail`; exact test list verification
+  after test implementation that fails when any planned focused test is
+  missing; and no baseline changes.
+- [x] T021-4690 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-4700 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4710 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  68 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-68-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -794,14 +794,30 @@ fixture event loading (`packet_093` through `packet_094`), shared optional JSON
 IO (`packet_095`), and CLI exit helpers (`packet_096`) so live response
 processing and fixture/shared IO keep separate review trails.
 
+Slice 68 continues `cmd/sdp-trace` cleanup with the remaining numbered packet
+fixture and validation exit helper shards (`packet_093` through `packet_096`).
+A single combined fixture IO file was rejected because pre-change MI analysis
+measured file MI `66.3`. The slice instead moves PR fixture event shape and
+validation into `packet_build_pr_fixture_event.go`, shared optional JSON
+loading into `packet_build_pr_optional_json.go`, and packet validate/check-demo
+exit mapping into `packet_validation_exits.go`. It preserves required PR
+fixture identity validation, optional empty-path no-op behavior, JSON
+read/unmarshal error propagation, `pass` to zero exit mapping, packet
+validation failure to `cannot_verify`, demo gate failure to `fail`, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+later numbered packet command shards so the next packet responsibilities can
+keep separate review trails.
+
 ## Verification
 
 ```text
 gofmt -w <changed-go-files>
 go test ./...
 go vet ./...
+golangci-lint run # when available
 go run ./tools/doccheck
 go run ./tools/hygienecheck
+jq empty schema/*.json
 git diff --check
 ```
 
