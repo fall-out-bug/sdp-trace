@@ -16,24 +16,24 @@ func TestSpec019MonitoringGateProofPack(t *testing.T) {
 	dir := t.TempDir()
 	runDir := filepath.Join(dir, "run")
 
-	wrapArgs := append([]string{"wrap", "--name", "spec019-proof", "--output-dir", runDir, "--"}, proofCommandForSpec019()...)
-	exit, stdout, stderr := runCLIForSpec019(wrapArgs...)
+	wrapArgs := append([]string{"wrap", "--name", "spec019-proof", "--output-dir", runDir, "--"}, proofCommandForMonitoringGateProofPack()...)
+	exit, stdout, stderr := runCLIForMonitoringGateProofPack(wrapArgs...)
 	if exit != 0 {
 		t.Fatalf("wrap exit=%d stdout=%s stderr=%s", exit, stdout, stderr)
 	}
 
-	exit, stdout, stderr = runCLIForSpec019("verify", runDir)
+	exit, stdout, stderr = runCLIForMonitoringGateProofPack("verify", runDir)
 	if exit != 0 || !strings.Contains(stdout, `"result": "observed"`) {
 		t.Fatalf("verify exit=%d stdout=%s stderr=%s", exit, stdout, stderr)
 	}
 
-	exit, stdout, stderr = runCLIForSpec019("query", "--query", "missing-evidence", runDir)
+	exit, stdout, stderr = runCLIForMonitoringGateProofPack("query", "--query", "missing-evidence", runDir)
 	if exit != 0 || !strings.Contains(stdout, `"rows": []`) {
 		t.Fatalf("query exit=%d stdout=%s stderr=%s", exit, stdout, stderr)
 	}
 
 	reportDir := filepath.Join(dir, "report")
-	exit, stdout, stderr = runCLIForSpec019("report", "--out", reportDir, runDir)
+	exit, stdout, stderr = runCLIForMonitoringGateProofPack("report", "--out", reportDir, runDir)
 	if exit != 0 || !strings.Contains(stdout, `"run_count": 1`) {
 		t.Fatalf("report exit=%d stdout=%s stderr=%s", exit, stdout, stderr)
 	}
@@ -44,27 +44,27 @@ func TestSpec019MonitoringGateProofPack(t *testing.T) {
 	}
 
 	gatePath := filepath.Join(dir, "gate-result.json")
-	exit, stdout, stderr = runCLIForSpec019("gate", "--out", gatePath, runDir)
+	exit, stdout, stderr = runCLIForMonitoringGateProofPack("gate", "--out", gatePath, runDir)
 	if exit != exitCannotVerify {
 		t.Fatalf("gate exit=%d, want cannot_verify; stdout=%s stderr=%s", exit, stdout, stderr)
 	}
-	gate := readSpec019JSON(t, gatePath)
-	assertSpec019Field(t, gate, "local_gate", "pass")
-	assertSpec019Field(t, gate, "ci_witness_gate", "cannot_verify")
-	assertSpec019Field(t, gate, "audit_grade_gate", "cannot_verify")
-	assertSpec019Field(t, gate, "gate_mode", "observation")
+	gate := readMonitoringGateProofPackJSON(t, gatePath)
+	assertMonitoringGateProofPackField(t, gate, "local_gate", "pass")
+	assertMonitoringGateProofPackField(t, gate, "ci_witness_gate", "cannot_verify")
+	assertMonitoringGateProofPackField(t, gate, "audit_grade_gate", "cannot_verify")
+	assertMonitoringGateProofPackField(t, gate, "gate_mode", "observation")
 }
 
 func TestSpec019HarnessProofPack(t *testing.T) {
 	dir := t.TempDir()
-	fixtureDir := spec019ProofFixtureDir(t)
-	copySpec019Fixture(t, fixtureDir, dir, "harness-profile.json")
-	copySpec019Fixture(t, fixtureDir, dir, "harness-events-missing-model.jsonl")
-	copySpec019Fixture(t, fixtureDir, dir, "harness-events-unsafe-raw-prompt.jsonl")
-	restore := chdirSpec019(t, dir)
+	fixtureDir := monitoringGateProofPackFixtureDir(t)
+	copyMonitoringGateProofPackFixture(t, fixtureDir, dir, "harness-profile.json")
+	copyMonitoringGateProofPackFixture(t, fixtureDir, dir, "harness-events-missing-model.jsonl")
+	copyMonitoringGateProofPackFixture(t, fixtureDir, dir, "harness-events-unsafe-raw-prompt.jsonl")
+	restore := chdirMonitoringGateProofPack(t, dir)
 	defer restore()
 
-	exit, stdout, stderr := runCLIForSpec019(
+	exit, stdout, stderr := runCLIForMonitoringGateProofPack(
 		"harness", "observe",
 		"--profile", "harness-profile.json",
 		"--source", "harness-events-missing-model.jsonl",
@@ -74,7 +74,7 @@ func TestSpec019HarnessProofPack(t *testing.T) {
 		t.Fatalf("harness observe exit=%d stdout=%s stderr=%s", exit, stdout, stderr)
 	}
 
-	exit, stdout, stderr = runCLIForSpec019(
+	exit, stdout, stderr = runCLIForMonitoringGateProofPack(
 		"harness", "validate",
 		"--profile", "harness-profile.json",
 		"--run", "harness-run",
@@ -83,11 +83,11 @@ func TestSpec019HarnessProofPack(t *testing.T) {
 	if exit != exitCannotVerify {
 		t.Fatalf("harness validate exit=%d, want cannot_verify; stdout=%s stderr=%s", exit, stdout, stderr)
 	}
-	validation := readSpec019JSON(t, "harness-validation.json")
-	assertSpec019Field(t, validation, "validation_state", "not_assessed")
-	assertSpec019Field(t, validation, "reason_code", "required_event_family_absent")
+	validation := readMonitoringGateProofPackJSON(t, "harness-validation.json")
+	assertMonitoringGateProofPackField(t, validation, "validation_state", "not_assessed")
+	assertMonitoringGateProofPackField(t, validation, "reason_code", "required_event_family_absent")
 
-	exit, _, stderr = runCLIForSpec019(
+	exit, _, stderr = runCLIForMonitoringGateProofPack(
 		"harness", "observe",
 		"--profile", "harness-profile.json",
 		"--source", "harness-events-unsafe-raw-prompt.jsonl",
@@ -103,7 +103,7 @@ func TestSpec019HarnessProofPack(t *testing.T) {
 
 func TestSpec019TelemetryProofPack(t *testing.T) {
 	fixture := filepath.Join("..", "..", "examples", "block21-cross-repo-posture", "valid-movement", "cross-repo-posture-export.json")
-	exit, stdout, stderr := runCLIForSpec019(
+	exit, stdout, stderr := runCLIForMonitoringGateProofPack(
 		"export", "telemetry",
 		"--profile", "prometheus-text-v1",
 		"--cross-repo-posture", fixture,
@@ -130,7 +130,7 @@ func TestSpec019TelemetryProofPack(t *testing.T) {
 }
 
 func TestSpec019HarnessFixtureDigest(t *testing.T) {
-	fixturePath := filepath.Join(spec019ProofFixtureDir(t), "harness-events-missing-model.jsonl")
+	fixturePath := filepath.Join(monitoringGateProofPackFixtureDir(t), "harness-events-missing-model.jsonl")
 	line, err := os.ReadFile(fixturePath)
 	if err != nil {
 		t.Fatal(err)
@@ -151,21 +151,21 @@ func TestSpec019HarnessFixtureDigest(t *testing.T) {
 	}
 }
 
-func runCLIForSpec019(args ...string) (int, string, string) {
+func runCLIForMonitoringGateProofPack(args ...string) (int, string, string) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	exit := run(args, &stdout, &stderr)
 	return exit, stdout.String(), stderr.String()
 }
 
-func proofCommandForSpec019() []string {
+func proofCommandForMonitoringGateProofPack() []string {
 	if runtime.GOOS == "windows" {
 		return []string{"cmd", "/c", "echo", "ok"}
 	}
 	return []string{"/bin/echo", "ok"}
 }
 
-func spec019ProofFixtureDir(t *testing.T) string {
+func monitoringGateProofPackFixtureDir(t *testing.T) string {
 	t.Helper()
 	dir := filepath.Join("..", "..", "examples", "spec019-monitoring-gate-proof")
 	if _, err := os.Stat(dir); err != nil {
@@ -174,7 +174,7 @@ func spec019ProofFixtureDir(t *testing.T) string {
 	return dir
 }
 
-func readSpec019JSON(t *testing.T, path string) map[string]any {
+func readMonitoringGateProofPackJSON(t *testing.T, path string) map[string]any {
 	t.Helper()
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -187,14 +187,14 @@ func readSpec019JSON(t *testing.T, path string) map[string]any {
 	return value
 }
 
-func assertSpec019Field(t *testing.T, value map[string]any, key, want string) {
+func assertMonitoringGateProofPackField(t *testing.T, value map[string]any, key, want string) {
 	t.Helper()
 	if got, _ := value[key].(string); got != want {
 		t.Fatalf("%s = %q, want %q in %#v", key, got, want, value)
 	}
 }
 
-func copySpec019Fixture(t *testing.T, fromDir, toDir, name string) {
+func copyMonitoringGateProofPackFixture(t *testing.T, fromDir, toDir, name string) {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join(fromDir, name))
 	if err != nil {
@@ -205,7 +205,7 @@ func copySpec019Fixture(t *testing.T, fromDir, toDir, name string) {
 	}
 }
 
-func chdirSpec019(t *testing.T, dir string) func() {
+func chdirMonitoringGateProofPack(t *testing.T, dir string) func() {
 	t.Helper()
 	oldwd, err := os.Getwd()
 	if err != nil {

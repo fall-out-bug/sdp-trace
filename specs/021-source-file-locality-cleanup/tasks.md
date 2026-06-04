@@ -3783,3 +3783,42 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 103 Tasks
+
+- [x] T021-7100 Confirm Slice 103 is bounded to the remaining repo-wide
+  numbered Go filename `cmd/sdp-trace/spec019_proof_pack_cli_test.go`.
+- [x] T021-7101 Confirm Slice 103 is behavior-preserving: no changes to proof
+  pack CLI replay behavior, fixture paths/content, digest assertion semantics,
+  test names, package boundary, dependency direction, or MI baselines are
+  planned.
+- [x] T021-7102 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-103-plan-review.md`.
+- [x] T021-7110 Rename the test file and same-file helper names from
+  spec-number language to domain responsibility language without touching
+  product code, schema files, examples, fixtures, CLI behavior, or spec 019
+  docs. Record repo-wide source-shape evidence that no numbered Go filenames
+  remain. Record staged boundary evidence that product code, schema files,
+  examples, fixtures, CLI behavior files, spec 019 docs, public contract files,
+  and dependency manifests were not moved or edited beyond the renamed test
+  file.
+- [x] T021-7120 Run `gofmt` on changed Go files.
+- [x] T021-7130 Run focused Go verification with a `go test -list`
+  exact-count guard for `TestSpec019MonitoringGateProofPack`,
+  `TestSpec019HarnessProofPack`, `TestSpec019TelemetryProofPack`, and
+  `TestSpec019HarnessFixtureDigest`, then run
+  `go test ./cmd/sdp-trace -run 'TestSpec019MonitoringGateProofPack|TestSpec019HarnessProofPack|TestSpec019TelemetryProofPack|TestSpec019HarnessFixtureDigest' -count=1 -v`.
+- [x] T021-7140 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7150 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7160 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 103 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-103-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

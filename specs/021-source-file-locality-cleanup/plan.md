@@ -1395,6 +1395,15 @@ parsed output decoding, validation/summary orchestration, citation resolution,
 packet construction, schema/CLI/public contract changes, and any new
 dependency.
 
+Slice 103 closes the remaining repo-wide numbered Go filename found outside
+`internal/prreview`: `cmd/sdp-trace/spec019_proof_pack_cli_test.go`. The slice
+is limited to renaming the test file and same-file helper names from spec-number
+language to the domain responsibility `monitoring_gate_proof_pack`, while
+preserving proof-pack CLI replay behavior, fixture paths, digest assertions,
+test names, package boundary, dependency direction, CRAP < 5, MI > 70, and MI
+baselines. It intentionally excludes product code, schema files, examples,
+fixtures, CLI behavior, spec 019 docs, and any new dependency.
+
 ## Verification
 
 ```text
