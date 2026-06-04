@@ -1,6 +1,8 @@
 package prreview
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1128,9 +1130,12 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 		Roles: []ReviewRole{
 			{RoleID: "empty", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "fake-empty", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "empty"}, PromptTemplateRef: promptPath},
 			{RoleID: "malformed", Plane: PlaneTraceEvidence, Runner: RunnerManualExternal, RequestedModel: "fake-malformed", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "malformed"}},
+			{RoleID: "unknown-field", Plane: PlaneTraceEvidence, Runner: RunnerManualExternal, RequestedModel: "fake-unknown", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "unknown-field"}},
 			{RoleID: "offtask", Plane: PlaneRequirements, Runner: RunnerManualExternal, RequestedModel: "fake-offtask", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "offtask"}},
+			{RoleID: "minimal", Plane: PlaneCodeCorrectness, Runner: RunnerManualExternal, RequestedModel: "fake-minimal", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "minimal-success"}, PromptTemplateRef: promptPath},
 			{RoleID: "readonly", Plane: PlanePrivacySafety, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: false, Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "success"}},
 			{RoleID: "pi-success", Plane: PlaneSecurity, Runner: RunnerPI, RequestedModel: "fake-pi", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "pi-success"}, PromptTemplateRef: promptPath, RawOutputRetention: RedactionDigestOnly},
+			{RoleID: "findings-default", Plane: PlaneSecurity, Runner: RunnerManualExternal, RequestedModel: "fake-findings", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "findings-no-status"}},
 			{RoleID: "opencode-mutation", Plane: PlaneDXReplayability, Runner: RunnerOpenCode, RequestedModel: "fake-opencode", ReadOnlyEnforced: true, WorkingTreeMode: "clean_required", Command: []string{helper, "-test.run=TestPRReviewFakeRunnerHelper", "--", "opencode-mutation"}},
 		},
 	}
@@ -1157,9 +1162,12 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	expected := map[string]string{
 		"empty":             StatusEmptyOutput,
 		"malformed":         StatusParseFailed,
+		"unknown-field":     StatusParseFailed,
 		"offtask":           StatusOffTask,
+		"minimal":           StatusNoFindings,
 		"readonly":          StatusNotAssessed,
 		"pi-success":        StatusNoFindings,
+		"findings-default":  StatusFindingsReported,
 		"opencode-mutation": StatusCannotVerify,
 	}
 	for roleID, status := range expected {
@@ -1173,6 +1181,22 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	if statuses["empty"].RawOutputRef == nil || statuses["malformed"].RawOutputRef == nil || statuses["offtask"].RawOutputRef == nil {
 		t.Fatalf("raw output digest refs missing: %+v", statuses)
 	}
+	malformedRawPath := filepath.Join(root, "runs", "raw", "run-malformed.out")
+	malformedRaw, err := os.ReadFile(malformedRawPath)
+	if err != nil {
+		t.Fatalf("retained raw output should be readable: %v", err)
+	}
+	malformedSum := sha256.Sum256(malformedRaw)
+	if statuses["malformed"].RawOutputRef.Ref != "raw/run-malformed.out" || statuses["malformed"].RawOutputRef.DigestSHA256 != hex.EncodeToString(malformedSum[:]) {
+		t.Fatalf("retained raw output ref drifted: %+v", statuses["malformed"].RawOutputRef)
+	}
+	info, err := os.Stat(malformedRawPath)
+	if err != nil {
+		t.Fatalf("retained raw output stat failed: %v", err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("retained raw output mode = %v, want 0600", info.Mode().Perm())
+	}
 	if statuses["pi-success"].RawOutputRef == nil || !strings.HasPrefix(statuses["pi-success"].RawOutputRef.Ref, "digest-only:") {
 		t.Fatalf("pi digest-only raw output ref missing: %+v", statuses["pi-success"])
 	}
@@ -1184,6 +1208,22 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	}
 	if statuses["opencode-mutation"].Reason != "mutation_detected" {
 		t.Fatalf("opencode mutation reason missing: %+v", statuses["opencode-mutation"])
+	}
+	if statuses["unknown-field"].Reason != "runner_output_parse_failed" {
+		t.Fatalf("unknown reviewer output field should parse-fail: %+v", statuses["unknown-field"])
+	}
+	minimal := statuses["minimal"]
+	if minimal.ReviewRunID != "run-minimal" || minimal.Runner != RunnerManualExternal || minimal.RequestedModel != "fake-minimal" || minimal.ObservedModel != StateNotAssessed || minimal.ModelFamily != StateNotAssessed || minimal.ModelVersion != StateNotAssessed || minimal.Status != StatusNoFindings {
+		t.Fatalf("parsed default propagation drifted: %+v", minimal)
+	}
+	if minimal.StartedAt == "" || minimal.EndedAt == "" || minimal.CommandDigest == "" {
+		t.Fatalf("parsed execution metadata missing: %+v", minimal)
+	}
+	if minimal.PromptRef == nil || minimal.PromptRef.RedactionState != RedactionDigestOnly {
+		t.Fatalf("parsed prompt ref was not retained: %+v", minimal)
+	}
+	if len(statuses["findings-default"].Findings) != 1 || statuses["findings-default"].Status != StatusFindingsReported {
+		t.Fatalf("parsed findings status default drifted: %+v", statuses["findings-default"])
 	}
 }
 
@@ -1856,8 +1896,17 @@ func TestPRReviewFakeRunnerHelper(t *testing.T) {
 	case "malformed":
 		fmt.Print("{")
 		os.Exit(0)
+	case "unknown-field":
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"trace_evidence","role_id":"unknown-field","runner":"manual_external","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"fake","status":"no_findings","findings":[],"extra_field":"reject-me"}`)
+		os.Exit(0)
 	case "offtask":
 		fmt.Print(`{"packet_digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000","plane":"requirements_vs_implementation","role_id":"offtask","runner":"manual_external","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"fake","status":"no_findings","findings":[]}`)
+		os.Exit(0)
+	case "minimal-success":
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"code_correctness","role_id":"minimal","findings":[]}`)
+		os.Exit(0)
+	case "findings-no-status":
+		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"security_forgery_overclaim","role_id":"findings-default","findings":[{"id":"F1","severity":"major","citation":{"context_ref_id":"diff","diff_hunk_id":"hunk-1"},"summary":"finding"}]}`)
 		os.Exit(0)
 	case "success":
 		fmt.Print(`{"packet_digest":"sha256:` + sixtyFour("4") + `","plane":"privacy_output_safety","role_id":"readonly","runner":"opencode","requested_model":"fake","observed_model":"fake","model_family":"fake","model_version":"fake","status":"no_findings","findings":[]}`)

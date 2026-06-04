@@ -3455,3 +3455,56 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 97 Tasks
+
+- [x] T021-6680 Confirm Slice 97 is bounded to numbered `internal/prreview`
+  parsed reviewer output and raw result retention shards `prreview_125` through
+  `prreview_133`.
+- [x] T021-6681 Confirm Slice 97 is behavior-preserving: no changes to strict
+  JSON decoding, packet/plane/role mismatch handling, off-task status/reason,
+  parsed run ID/runner/model/status defaults, sanitizer invocation, execution
+  metadata attachment, command digest and prompt ref propagation, raw-output
+  digest shape, digest-only retention, retained raw output path/permissions,
+  package boundary, dependency direction, or baseline changes are planned.
+- [x] T021-6682 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-97-plan-review.md`.
+- [x] T021-6690 Move parsed reviewer output normalization and raw result
+  retention helpers into cohesive responsibility-named files without creating
+  standalone one-function replacement files. Record source-shape evidence that
+  numbered `prreview_125` through `prreview_133` files are gone and staged
+  boundary evidence that excluded preview/copying `prreview_134` onward, prompt
+  rendering/sanitization/citation, validation/summary, role execution, and
+  previously consolidated validation files are not moved or edited in Slice 97.
+- [x] T021-6700 Run `gofmt` on changed Go files.
+- [x] T021-6710 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6711 Run focused parsed-output/raw-retention regression evidence
+  covering exact named tests
+  `TestRunReviewArtifactPipelineRedactsUnsafeReviewerText`,
+  `TestRunReviewRecordsRunnerFailureStatesAndPromptDigest`,
+  `TestRunReviewPreservesValidationDefaultsAndOutputContracts`, and
+  `TestPacketProfileAndSmallHelpers`. Run them with a `go test -list`
+  exact-count guard before the focused `go test -run` command so zero matches
+  fail. These tests must cover strict reviewer JSON decoding, including
+  rejection of reviewer output with an unknown JSON field, wrong
+  packet/plane/role off-task handling, exact parsed defaults for missing
+  `review_run_id`, `runner`, requested/observed model fields, model
+  family/version, and status defaulting from findings/no-findings, sanitizer
+  invocation, execution metadata attachment, command digest and prompt ref
+  propagation, raw-output digest-only retention without persisted bytes,
+  retained raw output path/digest/file mode `0o600` where mode bits are exposed,
+  and default reviewer status with/without findings.
+- [x] T021-6720 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6730 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6740 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 97 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-97-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -1292,6 +1292,23 @@ excludes reviewer output parsing and raw-result writing (`prreview_125` through
 prompt rendering/sanitization/citation helpers, validation/summary logic, and
 previously consolidated packet/profile validation.
 
+Slice 97 continues `internal/prreview` cleanup with parsed reviewer output and
+raw result retention shards (`prreview_125` through `prreview_133`). The slice
+is limited to strict JSON decoding, packet/plane/role mismatch detection,
+parsed reviewer output normalization, requested/observed model defaults,
+execution metadata attachment, default reviewer status selection, and raw
+output digest-only or retained-file references. It must preserve
+DisallowUnknownFields behavior, off-task status/reason for wrong
+packet/plane/role, parsed defaults for run ID/runner/models/status,
+sanitization before storage, command digest and prompt ref attachment,
+raw-output digest shape, digest-only retention without writing raw bytes,
+retained raw output permissions/path/digest, package boundary, dependency
+direction, CRAP < 5, MI > 70, and MI baselines. It intentionally excludes
+preview and packet input copying (`prreview_134` onward), prompt
+rendering/sanitization/citation helpers outside the existing sanitizer call,
+validation/summary logic, role execution, and previously consolidated
+validation helpers.
+
 ## Verification
 
 ```text
