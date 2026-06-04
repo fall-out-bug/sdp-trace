@@ -755,6 +755,24 @@ HTTP request/fetch/decode/retention helpers (`packet_086` through
 (`packet_095`) so security policy and response processing keep separate review
 trails.
 
+Slice 66 continues `cmd/sdp-trace` cleanup with GitHub Actions API URL
+validation and trust-target policy shards (`packet_076` through `packet_085`).
+It moves API URL validation flow into `packet_build_pr_actions_url_policy.go`,
+API URL parsing, HTTPS enforcement, local HTTP detection, and loopback host
+detection into `packet_build_pr_actions_url_parse.go`, and public/Enterprise
+host binding plus configured server host extraction into
+`packet_build_pr_actions_url_host.go` after a single-file attempt failed MI. It
+preserves syntax diagnostics, credential-leak prevention, credential rejection
+winning over HTTPS errors for mixed-invalid URLs, loopback-only HTTP test
+allowance, public GitHub `github.com` to `api.github.com` mapping,
+Enterprise exact-host binding, malformed server URL fallback behavior, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+context/source selection (`packet_build_pr_actions_context.go` and
+`packet_build_pr_actions_source.go`), HTTP request/fetch/decode/retention
+helpers (`packet_086` through `packet_092`), fixture IO (`packet_093` onward),
+and shared optional JSON IO (`packet_095`) so URL policy and response
+processing keep separate review trails.
+
 ## Verification
 
 ```text

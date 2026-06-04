@@ -1934,3 +1934,47 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 66 Tasks
+
+- [x] T021-4510 Confirm Slice 66 is bounded to numbered `cmd/sdp-trace` GitHub
+  Actions API URL validation and trust-target policy shards `packet_076`
+  through `packet_085`.
+- [x] T021-4511 Confirm Slice 66 is behavior-preserving: no changes to syntax
+  diagnostics, embedded-credential rejection before trust-target validation,
+  credential rejection winning over HTTPS errors for mixed-invalid URLs,
+  loopback-only HTTP allowance, public GitHub host mapping, Enterprise exact
+  host binding, malformed server URL fallback behavior, package boundary,
+  dependency direction, or baseline change is planned.
+- [x] T021-4512 Record Slice 66 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-66-plan-review.md`.
+- [x] T021-4520 Move GitHub Actions API URL policy helpers into
+  `packet_build_pr_actions_url_policy.go`,
+  `packet_build_pr_actions_url_parse.go`, and
+  `packet_build_pr_actions_url_host.go` after the single-file
+  `packet_build_pr_actions_url_policy.go` attempt failed file-level MI at 61.6.
+  Record the failed command plus revised responsibility boundary in evidence.
+- [x] T021-4530 Run `gofmt` on changed Go files.
+- [x] T021-4540 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4541 Run focused GitHub Actions API URL policy regression evidence
+  covering exact test existence for `TestGitHubAPIURLPolicy`,
+  `TestGitHubAPIURLPolicyHelpersKeepTrustBoundaries`,
+  `TestParseGitHubAPIURLKeepsSyntaxDiagnostics`, and
+  `TestGitHubServerHostKeepsFallbackBehavior`; syntax diagnostics; embedded
+  credential rejection before trust-target validation; credential rejection
+  winning over HTTPS errors for mixed-invalid URLs; HTTPS requirement;
+  loopback-only HTTP allowance; public GitHub API host mapping; Enterprise
+  exact-host binding; malformed server URL fallback behavior; exact test list
+  verification after test implementation that fails when any planned focused
+  test is missing; and no baseline changes.
+- [x] T021-4550 Run repository verification: `go test ./...`, `go vet ./...`,
+  `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq empty
+  schema/*.json`, and `git diff --check`.
+- [x] T021-4560 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4570 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  66 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-66-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

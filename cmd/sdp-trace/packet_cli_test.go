@@ -1207,6 +1207,78 @@ func TestGitHubAPIURLPolicy(t *testing.T) {
 	}
 }
 
+func TestGitHubAPIURLPolicyHelpersKeepTrustBoundaries(t *testing.T) {
+	parsed, err := parseGitHubAPIURL("http://user:secret@example.invalid/api")
+	if err != nil {
+		t.Fatalf("parseGitHubAPIURL() error = %v", err)
+	}
+	err = validateParsedGitHubAPIURL(parsed, "http://user:secret@example.invalid/api", "https://github.com")
+	if err == nil || !strings.Contains(err.Error(), "embedded credentials are not allowed") {
+		t.Fatalf("mixed-invalid URL error = %v, want embedded credentials", err)
+	}
+
+	parsed, err = parseGitHubAPIURL("http://127.0.0.1:8080/api")
+	if err != nil {
+		t.Fatalf("parse loopback API URL: %v", err)
+	}
+	if !localHTTPGitHubAPI(parsed) || !loopbackHost("localhost") || !loopbackHost("127.0.0.1") || !loopbackHost("::1") {
+		t.Fatalf("loopback helpers rejected local API target")
+	}
+	if err := validateGitHubAPIURLTrustTarget(parsed, "http://127.0.0.1:8080/api", "https://github.com"); err != nil {
+		t.Fatalf("validate loopback API URL: %v", err)
+	}
+
+	parsed, err = parseGitHubAPIURL("http://evil.example/api")
+	if err != nil {
+		t.Fatalf("parse nonlocal API URL: %v", err)
+	}
+	if localHTTPGitHubAPI(parsed) {
+		t.Fatalf("nonlocal HTTP API reported as local")
+	}
+	if err := requireHTTPSGitHubAPI(parsed, "http://evil.example/api"); err == nil || !strings.Contains(err.Error(), "HTTPS is required") {
+		t.Fatalf("requireHTTPSGitHubAPI() error = %v", err)
+	}
+}
+
+func TestParseGitHubAPIURLKeepsSyntaxDiagnostics(t *testing.T) {
+	for _, apiURL := range []string{"", "://bad", "https://"} {
+		t.Run(apiURL, func(t *testing.T) {
+			_, err := parseGitHubAPIURL(apiURL)
+			if err == nil || !strings.Contains(err.Error(), "unsafe GitHub API URL") {
+				t.Fatalf("parseGitHubAPIURL(%q) error = %v", apiURL, err)
+			}
+		})
+	}
+}
+
+func TestGitHubServerHostKeepsFallbackBehavior(t *testing.T) {
+	if got := githubServerHost(""); got != "" {
+		t.Fatalf("empty server host = %q, want empty", got)
+	}
+	if got := githubServerHost("://bad"); got != "" {
+		t.Fatalf("malformed server host = %q, want empty", got)
+	}
+	if got := githubServerHost("https://GitHub.Example.com/org"); got != "github.example.com" {
+		t.Fatalf("server host = %q, want github.example.com", got)
+	}
+
+	if !publicGitHubServerHost("") || !publicGitHubServerHost("github.com") {
+		t.Fatalf("publicGitHubServerHost rejected public GitHub host")
+	}
+	if !githubAPIHostAllowed("api.github.com", "https://github.com") {
+		t.Fatalf("public GitHub API host not allowed")
+	}
+	if githubAPIHostAllowed("github.com", "https://github.com") {
+		t.Fatalf("public GitHub server host should not replace api.github.com")
+	}
+	if !githubAPIHostAllowed("github.example.com", "https://github.example.com") {
+		t.Fatalf("enterprise exact host not allowed")
+	}
+	if githubAPIHostAllowed("api.github.com", "https://github.example.com") {
+		t.Fatalf("public API host allowed for enterprise server")
+	}
+}
+
 func TestGitHubActionsArtifactsRequestOnlySendsTokenOverHTTPS(t *testing.T) {
 	tests := []struct {
 		name     string
