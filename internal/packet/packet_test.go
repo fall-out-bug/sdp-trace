@@ -924,6 +924,107 @@ func TestValidateDecisionOwnerDiagnosticsAndDuplicateOverwrite(t *testing.T) {
 	}
 }
 
+func TestEntryExpiredSemantics(t *testing.T) {
+	now := time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC)
+	for _, tt := range []struct {
+		name      string
+		expiresAt string
+		want      bool
+	}{
+		{name: "blank", want: false},
+		{name: "whitespace", expiresAt: "   ", want: false},
+		{name: "malformed", expiresAt: "not-a-time", want: true},
+		{name: "before now", expiresAt: "2026-05-11T11:59:59Z", want: true},
+		{name: "equal now", expiresAt: "2026-05-11T12:00:00Z", want: true},
+		{name: "after now", expiresAt: "2026-05-11T12:00:01Z", want: false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := entryExpired(BundleEntry{ExpiresAt: tt.expiresAt}, now); got != tt.want {
+				t.Fatalf("entryExpired(%q) = %v, want %v", tt.expiresAt, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPassRefUnverifiableSemantics(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		entry BundleEntry
+		want  bool
+	}{
+		{name: "redaction cannot verify", entry: BundleEntry{RedactionStatus: StateCannotVerify}, want: true},
+		{name: "not retained", entry: BundleEntry{RetainedForm: "not_retained"}, want: true},
+		{name: "access expired", entry: BundleEntry{ArtifactAccess: "expired"}, want: true},
+		{name: "access inaccessible", entry: BundleEntry{ArtifactAccess: "inaccessible"}, want: true},
+		{name: "access malformed", entry: BundleEntry{ArtifactAccess: "malformed"}, want: true},
+		{name: "access not assessed", entry: BundleEntry{ArtifactAccess: "not_assessed"}, want: true},
+		{name: "access cannot verify", entry: BundleEntry{ArtifactAccess: StateCannotVerify}, want: true},
+		{name: "empty access", entry: BundleEntry{}, want: false},
+		{name: "present access", entry: BundleEntry{ArtifactAccess: "present"}, want: false},
+		{name: "unknown access", entry: BundleEntry{ArtifactAccess: "custom"}, want: false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := passRefUnverifiable(tt.entry); got != tt.want {
+				t.Fatalf("passRefUnverifiable(%+v) = %v, want %v", tt.entry, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDemoFirstEvidenceUsabilityStillUsesArtifactHelpers(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		edit func(*Bundle)
+		want string
+	}{
+		{
+			name: "row evidence expired",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "git:change", func(entry *BundleEntry) {
+					entry.ExpiresAt = "2026-05-10T12:00:00Z"
+				})
+			},
+			want: "requires PC-MUTATION evidence ref \"git:change\" to be retained and usable",
+		},
+		{
+			name: "row evidence unverifiable",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "git:change", func(entry *BundleEntry) {
+					entry.ArtifactAccess = "inaccessible"
+				})
+			},
+			want: "requires PC-MUTATION evidence ref \"git:change\" to be retained and usable",
+		},
+		{
+			name: "route evidence expired",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "harness:route", func(entry *BundleEntry) {
+					entry.ExpiresAt = "2026-05-10T12:00:00Z"
+				})
+			},
+			want: "retained structured OpenCode/GSD/MiniMax",
+		},
+		{
+			name: "route evidence unverifiable",
+			edit: func(bundle *Bundle) {
+				setManifestEntry(bundle, "harness:route", func(entry *BundleEntry) {
+					entry.ArtifactAccess = StateCannotVerify
+				})
+			},
+			want: "retained structured OpenCode/GSD/MiniMax",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bundle := demoGateBundle()
+			tt.edit(&bundle)
+			result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
+			if result.State != StateFail || !hasError(result.Errors, tt.want) {
+				t.Fatalf("result = %+v, want %q", result, tt.want)
+			}
+		})
+	}
+}
+
 func TestBundleValidatorAddFormatsErrors(t *testing.T) {
 	var validator bundleValidator
 	validator.add("decision %s has unknown state %q", "merge", "imaginary")

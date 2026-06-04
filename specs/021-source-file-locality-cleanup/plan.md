@@ -1063,6 +1063,24 @@ intentionally excludes shared artifact usability helpers (`packet_145` through
 `packet_192`), rendering (`packet_193` onward), and `internal/prreview` numbered
 files so those responsibilities keep separate review trails.
 
+Slice 83 continues `internal/packet` cleanup with shared artifact usability
+helper shards (`packet_145` through `packet_147`). The slice is limited to
+entry expiry checks, pass-evidence unverifiable checks, and artifact access
+unverifiable classification. It folds those helpers into a cohesive artifact
+evidence usability locality instead of creating standalone one-function
+replacement files, because these helpers are shared by pass-row evidence
+validation and the demo-first evidence gate. It preserves blank and whitespace-only
+`expires_at` non-expiry behavior, malformed timestamp expiry behavior, RFC3339
+expiry comparison semantics, `redaction_status=cannot_verify` and
+`retained_form=not_retained` unverifiable behavior, artifact access
+classification for `expired`, `inaccessible`, `malformed`, `not_assessed`, and
+`cannot_verify`, default artifact access pass-through behavior, demo-first row
+evidence and retained route evidence usability semantics, package boundary,
+dependency direction, and MI baselines. It intentionally excludes GitHub bundle construction helpers
+(`packet_148` through `packet_192`), rendering (`packet_193` onward), and
+`internal/prreview` numbered files so those responsibilities keep separate
+review trails.
+
 ## Verification
 
 ```text

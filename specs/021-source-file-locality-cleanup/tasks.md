@@ -2772,3 +2772,56 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 83 Tasks
+
+- [x] T021-5700 Confirm Slice 83 is bounded to numbered `internal/packet`
+  shared artifact usability helper shards `packet_145` through `packet_147`.
+- [x] T021-5701 Confirm Slice 83 is behavior-preserving: no changes to blank
+  and whitespace-only `expires_at` non-expiry behavior, malformed timestamp
+  expiry behavior, RFC3339 expiry comparison semantics,
+  `redaction_status=cannot_verify` and `retained_form=not_retained`
+  unverifiable behavior, artifact access classification for `expired`,
+  `inaccessible`, `malformed`, `not_assessed`, and `cannot_verify`, default
+  artifact access pass-through behavior, demo-first row evidence and retained
+  route evidence usability semantics, package boundary, dependency direction,
+  or baseline changes are planned.
+- [x] T021-5702 Record Slice 83 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-83-plan-review.md`.
+- [x] T021-5710 Move artifact usability helpers into a cohesive artifact
+  evidence usability locality without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `packet_145`
+  through `packet_147` files are gone, that `artifact_evidence_usability.go`
+  contains the shared usability helpers, and that `cmd/sdp-trace/FAMILY_INDEX.md`
+  is not applicable because this is non-command `internal/packet` package
+  locality. Record staged
+  boundary evidence that excluded GitHub bundle construction `packet_148`
+  through `packet_192`, rendering `packet_193` onward, and `internal/prreview`
+  numbered files are not moved or edited in Slice 83.
+- [x] T021-5720 Run `gofmt` on changed Go files.
+- [x] T021-5730 Run focused Go verification for `internal/packet`.
+- [x] T021-5731 Run focused artifact-usability regression evidence covering
+  exact named tests `TestEntryExpiredSemantics`,
+  `TestPassRefUnverifiableSemantics`, and
+  `TestDemoFirstEvidenceUsabilityStillUsesArtifactHelpers`. Run them with a
+  focused command that fails on zero matches. These tests must cover blank and
+  whitespace-only `ExpiresAt` as not expired, malformed `ExpiresAt` as expired,
+  equal-to-now and before-now as expired, after-now as not expired,
+  `RedactionStatus=StateCannotVerify`, `RetainedForm=not_retained`, artifact
+  access values `expired`, `inaccessible`, `malformed`, `not_assessed`, and
+  `StateCannotVerify` as unverifiable, empty/present/unknown artifact access as
+  not unverifiable, and demo-first row evidence plus retained route evidence
+  rejecting both expired and unverifiable refs through `demoUsableEntry` and
+  the shared `entryExpired`/`passRefUnverifiable` helpers.
+- [x] T021-5740 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5750 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5760 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  83 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-83-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
