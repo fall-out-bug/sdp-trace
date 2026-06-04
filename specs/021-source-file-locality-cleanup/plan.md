@@ -1404,6 +1404,20 @@ test names, package boundary, dependency direction, CRAP < 5, MI > 70, and MI
 baselines. It intentionally excludes product code, schema files, examples,
 fixtures, CLI behavior, spec 019 docs, and any new dependency.
 
+Slice 104 continues code-file locality cleanup beyond numeric filenames with
+`cmd/sdp-trace` flag parser shards. The slice is limited to consolidating
+single-purpose `flagset_*` parser helper files into cohesive parser
+responsibility files. The preferred destination is `flagset_parse.go`, but a
+small parser split is allowed when required to preserve MI > 70 without
+recreating one-function shards. It must preserve `--` rest handling,
+positional argument preservation, unknown-flag diagnostics, `--flag=value`
+string and boolean behavior, bare boolean default-true behavior, boolean
+literal consumption, missing string value diagnostics, package boundary,
+dependency direction, CRAP < 5, MI > 70, and MI baselines. It
+intentionally excludes command-specific flag registration, CLI subcommand
+behavior, `flagSet` storage/accessor methods in `flagset.go`, public command
+surface docs, schema files, examples, fixtures, and any new dependency.
+
 ## Verification
 
 ```text

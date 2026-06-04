@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+func isBoolValueAt(args []string, idx int) bool {
+	return idx < len(args) && isBoolLiteral(args[idx])
+}
+
 func (f *flagSet) consumeBoolValue(flag, flagValue string) error {
 	switch strings.ToLower(flagValue) {
 	case "false", "0":

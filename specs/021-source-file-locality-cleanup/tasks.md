@@ -3822,3 +3822,59 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 104 Tasks
+
+- [x] T021-7170 Confirm Slice 104 is bounded to `cmd/sdp-trace` `flagset_*`
+  parser helper files and the existing `flagset_parse.go` responsibility
+  boundary.
+- [x] T021-7171 Confirm Slice 104 is behavior-preserving: no changes to `--`
+  rest handling, positional argument preservation, unknown flag errors,
+  `--flag=value`, bare boolean defaults, boolean literal consumption, missing
+  string value errors, command-specific flag registration, package boundary,
+  dependency direction, or MI baselines are planned.
+- [x] T021-7172 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-104-plan-review.md`.
+- [x] T021-7180 Consolidate `flagset_bool_value_at.go`,
+  `flagset_consume.go`, `flagset_consume_arg.go`,
+  `flagset_consume_bool.go`, `flagset_consume_flag.go`,
+  `flagset_consume_no_equals.go`, `flagset_consume_string.go`, and
+  `flagset_split.go` into cohesive parser responsibility files without
+  changing command-specific flag registration, CLI subcommand behavior,
+  `flagset.go` storage/accessor methods, public docs outside SpecKit
+  artifacts, schema files, examples, fixtures, or dependencies. A small split
+  across `flagset_parse.go`, dispatch, value, and boolean parser files is
+  allowed only to preserve MI > 70 without recreating one-function shards.
+  Record source-shape evidence that those one-function parser helper files are
+  gone and staged boundary evidence that excluded areas are untouched.
+- [x] T021-7190 Run `gofmt` on changed Go files.
+- [x] T021-7191 Extend focused flagset regression coverage so
+  `TestFlagSetParsesQuotedStringValue` asserts successful `--string=value`
+  parsing and `TestFlagSetParsesBooleanValues` asserts boolean literal
+  consumption from the next argv element.
+- [x] T021-7200 Run focused flag parser verification with a `go test -list`
+  exact-count guard for existing tests `TestFlagSetParsesQuotedStringValue`,
+  `TestFlagSetRejectsMissingStringValueAtEnd`,
+  `TestFlagSetRejectsUnknownFlagWithEquals`,
+  `TestFlagSetParsesBooleanValues`,
+  `TestFlagSetRepeatsFlagsOverwriteAndKeepOrder`, and
+  `TestFlagSetCapturesEverythingAfterSeparator`, then run those tests with
+  `go test ./cmd/sdp-trace -run <guard> -count=1 -v`. These tests must cover
+  string value parsing including `--string=value`, missing string value
+  diagnostics, unknown flag errors, boolean parsing forms including next-argv
+  literal consumption, repeated flag overwrite/order behavior, and `--`
+  separator rest capture.
+- [x] T021-7210 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7220 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7230 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 104 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-104-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
