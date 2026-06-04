@@ -4,10 +4,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+func Copy(r io.Reader, w io.Writer) error {
+	_, err := io.Copy(w, r)
+	return err
+}
 
 func readPacketRef(packetDir string, ref SafeRef) ([]byte, error) {
 	// Read and digest verification are intentionally adjacent.

@@ -2111,6 +2111,121 @@ func TestSafeEvidenceRefPreservesRefsAndRedactsUnsafeText(t *testing.T) {
 	}
 }
 
+func TestPrreviewPromptSanitizerAndCopyHelpersPreserveContracts(t *testing.T) {
+	var copied strings.Builder
+	if err := Copy(strings.NewReader("review bytes"), &copied); err != nil {
+		t.Fatalf("Copy returned error: %v", err)
+	}
+	if copied.String() != "review bytes" {
+		t.Fatalf("Copy wrote %q", copied.String())
+	}
+
+	packet := Packet{
+		PacketDigest: "sha256:" + sixtyFour("p"),
+		RepoID:       "repo",
+		ChangeRef:    "change",
+		BaseCommit:   forty("a"),
+		HeadCommit:   forty("b"),
+		CIState:      StatePass,
+	}
+	role := ReviewRole{RoleID: "code", Plane: PlaneCodeCorrectness}
+	rendered, err := renderPromptTemplate(packet, role)
+	if err != nil || rendered != "" {
+		t.Fatalf("empty prompt template rendered=%q err=%v", rendered, err)
+	}
+	role.PromptTemplateRef = filepath.Join(t.TempDir(), "missing.md")
+	if _, err := renderPromptTemplate(packet, role); !errors.Is(err, errPromptTemplateCannotVerify) {
+		t.Fatalf("missing prompt template err=%v", err)
+	}
+
+	rendered = applyPromptReplacements("{{packet_digest}} {{repo_id}} {{role_id}} {{unknown}}", packet, ReviewRole{RoleID: "code"})
+	if rendered != packet.PacketDigest+" repo code {{unknown}}" {
+		t.Fatalf("prompt replacements drifted: %q", rendered)
+	}
+	if got := replacePromptToken("x {{role_id}} x", promptReplacement{key: "role_id", value: "security"}); got != "x security x" {
+		t.Fatalf("replacePromptToken = %q", got)
+	}
+
+	var packetJSON strings.Builder
+	if err := appendPromptPacketJSON(&packetJSON, packet); err != nil {
+		t.Fatalf("appendPromptPacketJSON: %v", err)
+	}
+	if !strings.Contains(packetJSON.String(), "Review packet JSON:") || !strings.Contains(packetJSON.String(), "```json") || !strings.Contains(packetJSON.String(), packet.PacketDigest) {
+		t.Fatalf("packet JSON prompt block drifted:\n%s", packetJSON.String())
+	}
+
+	packetDir := t.TempDir()
+	writePacketRef := func(name, data string) SafeRef {
+		t.Helper()
+		path := filepath.Join(packetDir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		sum := sha256.Sum256([]byte(data))
+		return SafeRef{ID: safeID(name), Ref: name, DigestSHA256: hex.EncodeToString(sum[:]), ContentType: contentType(name)}
+	}
+	diffRef := writePacketRef("inputs/diff.patch", "diff --git a/a.go b/a.go\n+package main\n")
+	diffRef.ID = "diff"
+	diffRef.ContentType = ContentUnifiedDiff
+	metadataRef := writePacketRef("metadata.json", `{"pr":123}`)
+	contextRef := writePacketRef("context.md", "# Context\n")
+	verificationRef := writePacketRef("verify.txt", "verify: pass\n")
+	packet.DiffRef = diffRef
+	packet.MetadataRef = &metadataRef
+	packet.ContextRefs = []SafeRef{contextRef}
+	packet.VerificationRefs = []SafeRef{verificationRef}
+
+	var evidence strings.Builder
+	if err := appendPromptEvidenceRefs(&evidence, packetDir, promptEvidenceRefs(packet)); err != nil {
+		t.Fatalf("appendPromptEvidenceRefs: %v", err)
+	}
+	evidenceText := evidence.String()
+	ordered := []string{"diff ref diff", "metadata ref metadata.json", "context ref context.md", "verification ref verify.txt"}
+	last := -1
+	for _, marker := range ordered {
+		idx := strings.Index(evidenceText, marker)
+		if idx <= last {
+			t.Fatalf("prompt evidence order drifted for %q in:\n%s", marker, evidenceText)
+		}
+		last = idx
+	}
+	for _, fence := range []string{"```diff", "```json", "```text"} {
+		if !strings.Contains(evidenceText, fence) {
+			t.Fatalf("missing fence %q in:\n%s", fence, evidenceText)
+		}
+	}
+
+	if _, err := readPacketRef(packetDir, SafeRef{ID: "unsafe", Ref: "../secret.txt", DigestSHA256: sixtyFour("0")}); !errors.Is(err, errPromptEvidenceCannotVerify) {
+		t.Fatalf("unsafe packet ref err=%v", err)
+	}
+	if _, err := readPacketRef(packetDir, SafeRef{ID: "bad-digest", Ref: diffRef.Ref, DigestSHA256: sixtyFour("0")}); !errors.Is(err, errPromptEvidenceCannotVerify) {
+		t.Fatalf("digest mismatch err=%v", err)
+	}
+
+	result := sanitizeReviewerResult(ReviewerResult{
+		Reason: "Bearer SYNTHETIC_SECRET",
+		Findings: []Finding{{
+			Summary:      "ok",
+			Rationale:    "/Users/private/path",
+			SuggestedFix: "token=secret",
+			Question:     "https://access_token=secret@example.invalid/review",
+			EvidenceRefs: []string{"diff", "https://access_token=secret@example.invalid/review"},
+		}},
+	})
+	if result.Reason != redactedUnsafeReviewerText || result.Findings[0].Rationale != redactedUnsafeReviewerText || result.Findings[0].SuggestedFix != redactedUnsafeReviewerText || result.Findings[0].Question != redactedUnsafeReviewerText {
+		t.Fatalf("unsafe reviewer text was not redacted: %+v", result)
+	}
+	if result.Findings[0].Summary != "ok" || result.Findings[0].EvidenceRefs[0] != "diff" || result.Findings[0].EvidenceRefs[1] != redactedUnsafeReviewerText {
+		t.Fatalf("safe/unsafe reviewer fields drifted: %+v", result.Findings[0])
+	}
+	if redactedUnsafeReviewerText != "[redacted unsafe reviewer text]" {
+		t.Fatalf("redaction spelling drifted: %q", redactedUnsafeReviewerText)
+	}
+}
+
 func TestPRReviewFakeRunnerHelper(t *testing.T) {
 	if os.Getenv("GO_WANT_PR_REVIEW_HELPER_PROCESS") != "1" {
 		return

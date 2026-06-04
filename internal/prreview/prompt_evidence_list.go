@@ -1,18 +1,5 @@
 package prreview
 
-import "strings"
-
-func appendPromptEvidenceRefs(b *strings.Builder, packetDir string, refs []promptEvidenceRef) error {
-	// Ref order follows packet semantics: diff first, then metadata, context,
-	// and verification. A single unreadable ref invalidates the prompt.
-	for _, ref := range refs {
-		if err := appendPromptSafeRef(b, packetDir, ref.label, ref.ref); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 type promptEvidenceRef struct {
 	label string
 	ref   SafeRef

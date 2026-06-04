@@ -1,5 +1,7 @@
 package prreview
 
+const redactedUnsafeReviewerText = "[redacted unsafe reviewer text]"
+
 func sanitizeReviewerResult(result ReviewerResult) ReviewerResult {
 	// Reviewer output is untrusted even when structurally valid JSON.
 	// Every user-visible text channel is redacted before runs, ledgers, and

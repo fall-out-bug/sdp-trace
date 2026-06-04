@@ -1,5 +1,7 @@
 package prreview
 
+import "strings"
+
 func applyPromptReplacements(rendered string, packet Packet, role ReviewRole) string {
 	// Replacement keys are intentionally narrow and packet-derived.
 	// Arbitrary template evaluation would make prompt provenance harder to
@@ -23,4 +25,8 @@ func applyPromptReplacements(rendered string, packet Packet, role ReviewRole) st
 type promptReplacement struct {
 	key   string
 	value string
+}
+
+func replacePromptToken(rendered string, replacement promptReplacement) string {
+	return strings.ReplaceAll(rendered, "{{"+replacement.key+"}}", replacement.value)
 }

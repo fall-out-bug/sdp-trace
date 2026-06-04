@@ -3729,3 +3729,57 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 102 Tasks
+
+- [x] T021-7030 Confirm Slice 102 is bounded to remaining numbered
+  `internal/prreview` helpers `prreview_183` through `prreview_192`.
+- [x] T021-7031 Confirm Slice 102 is behavior-preserving: no changes to public
+  `Copy`, prompt template rendering, prompt evidence rendering, packet ref
+  path/digest checks, prompt token replacement, reviewer result sanitization,
+  redaction string spelling, package boundary, dependency direction, or MI
+  baselines are planned.
+- [x] T021-7032 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-102-plan-review.md`.
+- [x] T021-7040 Move generic copy, prompt rendering/evidence/ref-read,
+  prompt replacement, reviewer result sanitization, and redaction constant
+  helpers into cohesive responsibility-named files without creating standalone
+  one-function replacement files. Record source-shape evidence that numbered
+  `prreview_183` through `prreview_192` files are gone and that previously
+  consolidated `prreview_001` through `prreview_182` source files are not
+  moved or edited in Slice 102. Record staged boundary evidence that schema
+  files, CLI files, dependency manifests, role execution, parsed output,
+  validation/summary, citation, and packet construction files are not touched.
+- [x] T021-7050 Run `gofmt` on changed Go files.
+- [x] T021-7051 Add focused prompt/sanitizer regression coverage named
+  `TestPrreviewPromptSanitizerAndCopyHelpersPreserveContracts`. The test must
+  assert public `Copy` behavior, template absence and read-failure behavior,
+  prompt packet JSON rendering, prompt evidence ordering and fences, unsafe
+  packet ref path rejection, digest mismatch `cannot_verify`, narrow prompt
+  token replacement, reviewer result text/evidence-ref sanitization, and
+  `redactedUnsafeReviewerText` spelling.
+- [x] T021-7060 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-7061 Run focused prompt/sanitizer regression evidence with an
+  exact-count guard for named tests
+  `TestRunReviewRecordsRunnerFailureStatesAndPromptDigest`,
+  `TestRunReviewCannotVerifyUnreadablePromptTemplate`,
+  `TestRunReviewPromptIncludesPacketEvidence`,
+  `TestValidationAndSummaryRedactUnsafeMarkerClasses`, and
+  `TestPrreviewPromptSanitizerAndCopyHelpersPreserveContracts`. These tests
+  must cover run-review prompt digest/evidence behavior, unreadable prompt
+  template failure, prompt helper contracts, reviewer unsafe text sanitization,
+  redaction spelling, and public `Copy` behavior.
+- [x] T021-7070 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7080 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7090 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 102 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-102-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

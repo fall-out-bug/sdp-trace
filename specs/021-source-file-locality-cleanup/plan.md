@@ -1377,6 +1377,24 @@ resolution from Slice 100, validation/summary orchestration, role execution,
 parsed output handling, packet/preview/status helpers, and any public schema or
 CLI contract changes.
 
+Slice 102 completes the current `internal/prreview` numbered-file cleanup with
+generic copy, prompt rendering, prompt evidence, packet ref read, reviewer
+result sanitization, prompt token replacement, and reviewer redaction constant
+helpers (`prreview_183` through `prreview_192`). The slice is limited to moving
+the existing helpers into cohesive responsibility-named files without
+standalone one-function replacement files. It must preserve public `Copy`
+behavior, prompt template absence behavior, unreadable prompt template
+`prompt_template_cannot_verify` behavior, prompt packet JSON rendering,
+prompt evidence ref ordering and content fences, safe packet ref path
+rejection, digest mismatch `prompt_evidence_cannot_verify` behavior, narrow
+prompt token replacement, reviewer result text/evidence-ref sanitization,
+redacted unsafe reviewer text spelling, package boundary, dependency direction,
+CRAP < 5, MI > 70, and MI baselines. It intentionally excludes previously
+consolidated `prreview_001` through `prreview_182` behavior, role execution,
+parsed output decoding, validation/summary orchestration, citation resolution,
+packet construction, schema/CLI/public contract changes, and any new
+dependency.
+
 ## Verification
 
 ```text
