@@ -1,8 +1,6 @@
 package packet
 
-import (
-	"strings"
-)
+import "strings"
 
 func appendPromptBoundaryFinding(packet Packet, boundary PromptBoundary) Packet {
 	// appendPromptBoundaryFinding keeps packet evidence explicit and replay-bound.

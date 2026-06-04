@@ -732,7 +732,10 @@ It moves live artifact discovery orchestration and GitHub artifact payload/type
 definitions into `packet_build_pr_actions_artifacts.go`. It preserves validated
 context construction before network fetch, fetch error propagation, retained
 artifact filtering, fail-closed empty-retained-set diagnostics, package
-boundary, dependency direction, and MI baselines. It intentionally excludes
+boundary, dependency direction, and MI baselines. The GitHub build and
+prompt-boundary classification areas may split into multiple named locality
+files to keep MI above the absolute threshold without baseline changes. It
+intentionally excludes
 artifact context validation and URL/token policy (`packet_071` through
 `packet_085`), HTTP request/fetch/decode/retention helpers (`packet_086`
 through `packet_092`), fixture IO (`packet_093` onward), and shared optional
@@ -954,6 +957,22 @@ MI baselines. It intentionally excludes packet validation, GitHub bundle
 building, prompt-boundary classification behavior, rendering, digesting,
 loading, and later numbered packet files so behavioral packet responsibilities
 keep separate review trails.
+
+Slice 77 continues `internal/packet` cleanup with packet entrypoint and prompt
+boundary behavior shards (`packet_033` through `packet_046`). The slice is
+limited to validator context structs, JSON loading entrypoints, GitHub bundle
+assembly entrypoint helpers, packet shell construction, prompt-boundary theater
+finding append, bundle manifest construction, prompt-boundary classification,
+metadata completeness checks, text contamination checks, and the recorder-duty
+phrase catalog. It preserves loader error behavior, generated packet/bundle IDs,
+generated-at UTC formatting, default packet profile fields, integration-action
+extension behavior, prompt-boundary verdicts/reasons/route proof effects,
+contamination theater finding shape, bundle manifest digesting, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+rendering (`packet_047` through `packet_058`), packet digesting (`packet_059`),
+validation execution (`packet_060` onward), and downstream GitHub row/entry
+helpers (`packet_148` onward) so those behavior-heavy responsibilities keep
+separate review trails.
 
 ## Verification
 

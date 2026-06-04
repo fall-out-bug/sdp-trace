@@ -56,6 +56,24 @@ func TestLoadBundleAndGitHubInput(t *testing.T) {
 	}
 }
 
+func TestLoadBundleAndGitHubInputRejectMalformedJSON(t *testing.T) {
+	dir := t.TempDir()
+	bundlePath := filepath.Join(dir, "bundle.json")
+	inputPath := filepath.Join(dir, "github-input.json")
+	if err := os.WriteFile(bundlePath, []byte("{"), 0o644); err != nil {
+		t.Fatalf("write bundle: %v", err)
+	}
+	if err := os.WriteFile(inputPath, []byte("{"), 0o644); err != nil {
+		t.Fatalf("write input: %v", err)
+	}
+	if _, err := LoadBundle(bundlePath); err == nil {
+		t.Fatalf("LoadBundle accepted malformed JSON")
+	}
+	if _, err := LoadGitHubInput(inputPath); err == nil {
+		t.Fatalf("LoadGitHubInput accepted malformed JSON")
+	}
+}
+
 func TestPacketContractCatalogsPreserveTrustSurface(t *testing.T) {
 	if PacketSchemaVersion != "change-evidence-packet.v0" || BundleSchemaVersion != "evidence-bundle-manifest.v0" {
 		t.Fatalf("schema versions changed packet=%q bundle=%q", PacketSchemaVersion, BundleSchemaVersion)

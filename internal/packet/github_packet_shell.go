@@ -1,8 +1,6 @@
 package packet
 
-import (
-	"time"
-)
+import "time"
 
 func githubPacket(input GitHubPREvidenceInput, generatedAt time.Time, packetID, bundleID string, rows []Row) Packet {
 	// githubPacket keeps packet evidence explicit and replay-bound.

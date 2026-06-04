@@ -1,8 +1,6 @@
 package packet
 
-import (
-	"strings"
-)
+import "strings"
 
 func classifyPromptText(text string) PromptBoundaryClassification {
 	// classifyPromptText keeps packet evidence explicit and replay-bound.

@@ -2447,3 +2447,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 77 Tasks
+
+- [x] T021-5280 Confirm Slice 77 is bounded to numbered `internal/packet`
+  packet entrypoint and prompt-boundary behavior shards `packet_033` through
+  `packet_046`.
+- [x] T021-5281 Confirm Slice 77 is behavior-preserving: no changes to JSON
+  loader errors, generated packet/bundle IDs, generated-at UTC formatting,
+  default packet profile fields, integration-action extension behavior,
+  prompt-boundary verdicts/reasons/route proof effects, contamination theater
+  finding shape, bundle manifest digesting, package boundary, dependency
+  direction, or baseline changes are planned.
+- [x] T021-5282 Record Slice 77 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-77-plan-review.md`.
+- [x] T021-5290 Move validator context structs, JSON loading entrypoints,
+  GitHub bundle assembly entrypoint helpers, packet shell construction,
+  prompt-boundary classification helpers, prompt-boundary theater finding
+  append, bundle manifest construction, and recorder-duty phrase catalog into
+  cohesive locality files. Record source-shape evidence that numbered
+  `packet_033` through `packet_046` files are gone, that the replacement
+  locality filenames exist, and that `cmd/sdp-trace/FAMILY_INDEX.md` is not
+  applicable because this is non-command `internal/packet` package locality.
+- [x] T021-5300 Run `gofmt` on changed Go files.
+- [x] T021-5310 Run focused Go verification for `internal/packet`.
+- [x] T021-5311 Run focused packet behavior regression evidence covering exact
+  test existence for existing prompt-boundary classification and GitHub build
+  tests; loader behavior for `LoadBundle` and `LoadGitHubInput`; generated
+  packet/bundle IDs and UTC timestamp formatting; integration-action extension
+  preservation; contaminated prompt theater finding shape; clean/missing/
+  digest-only/malformed prompt-boundary classifications; forbidden phrase
+  catalog membership; bundle manifest schema, bundle ID, digest, and entries;
+  and no baseline changes.
+- [x] T021-5312 Run focused source-shape evidence proving numbered
+  `internal/packet/packet_033` through `internal/packet/packet_046` files no
+  longer exist and the planned replacement locality files exist.
+- [x] T021-5320 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5330 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5340 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  77 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-77-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
