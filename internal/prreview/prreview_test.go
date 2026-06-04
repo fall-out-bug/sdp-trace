@@ -299,12 +299,24 @@ func TestCitationResolvableCharacterization(t *testing.T) {
 			citation: Citation{ContextRefID: "spec", LineStart: 12},
 			want:     true,
 		},
+		"context-ref-with-hunk": {
+			citation: Citation{ContextRefID: "spec", DiffHunkID: "hunk-1"},
+			want:     true,
+		},
+		"context-ref-with-digest": {
+			citation: Citation{ContextRefID: "spec", SourceDigest: "sha256:abc"},
+			want:     true,
+		},
 		"context-ref-without-location": {
 			citation: Citation{ContextRefID: "spec"},
 			want:     false,
 		},
 		"verification-ref-with-line": {
 			citation: Citation{ContextRefID: "verify", LineStart: 4},
+			want:     true,
+		},
+		"verification-ref-with-digest": {
+			citation: Citation{ContextRefID: "verify", SourceDigest: "sha256:abc"},
 			want:     true,
 		},
 		"verification-ref-with-hunk-only": {
@@ -314,6 +326,10 @@ func TestCitationResolvableCharacterization(t *testing.T) {
 		"unknown-ref-with-digest": {
 			citation: Citation{ContextRefID: "unknown", SourceDigest: "sha256:abc"},
 			want:     true,
+		},
+		"unknown-ref-without-digest": {
+			citation: Citation{ContextRefID: "unknown"},
+			want:     false,
 		},
 		"digest-only": {
 			citation: Citation{SourceDigest: "sha256:abc"},

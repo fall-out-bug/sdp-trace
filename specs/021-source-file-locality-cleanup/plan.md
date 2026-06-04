@@ -1343,6 +1343,22 @@ sanitizer logic, validation/summary orchestration, role execution, parsed output
 handling, packet/preview/input helpers from Slice 98, and any public schema or
 CLI contract changes.
 
+Slice 100 continues `internal/prreview` cleanup with citation resolution helpers
+(`prreview_157` through `prreview_168`). The slice is limited to citation
+anchor detection, resolver dispatch, diff/context/verification ref matching,
+safe ref ID lookup, and location requirements for diff, context, and
+verification citations. It must preserve empty-citation rejection, diff alias
+matching via `diff`, packet diff ref ID matching, context and verification ref
+ID lookup, unknown ref fallback only when `source_digest` is present,
+digest-only citation acceptance, diff hunk/source digest location rules,
+context hunk/source digest/line location rules, verification source digest/line
+location rules, package boundary, dependency direction, CRAP < 5, MI > 70, and
+MI baselines. It intentionally excludes unsafe text helpers (`prreview_169`
+through `prreview_172`), command/context/content/safe ID helpers
+(`prreview_173` onward), prompt rendering, sanitizer logic,
+validation/summary orchestration, role execution, parsed output handling, and
+previously consolidated packet/preview/status helpers.
+
 ## Verification
 
 ```text

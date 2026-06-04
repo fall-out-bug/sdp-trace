@@ -3625,3 +3625,51 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 100 Tasks
+
+- [x] T021-6890 Confirm Slice 100 is bounded to numbered `internal/prreview`
+  citation resolver shards `prreview_157` through `prreview_168`.
+- [x] T021-6891 Confirm Slice 100 is behavior-preserving: no changes to
+  citation anchor requirements, diff alias and diff-ref ID matching,
+  context/verification ref ID lookup, unknown-ref source-digest fallback,
+  digest-only citation acceptance, diff/context/verification location rules,
+  package boundary, dependency direction, or baseline changes are planned.
+- [x] T021-6892 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-100-plan-review.md`.
+- [x] T021-6900 Move citation anchor, resolver dispatch,
+  diff/context/verification matching, safe ref ID lookup, and citation location
+  helpers into cohesive responsibility-named files without creating standalone
+  one-function replacement files. Record source-shape evidence that numbered
+  `prreview_157` through `prreview_168` files are gone and staged boundary
+  evidence that excluded unsafe text helpers `prreview_169` through
+  `prreview_172`, command/context/content/safe ID helpers `prreview_173`
+  onward, prompt rendering, sanitizer, validation/summary orchestration, role
+  execution, parsed output handling, and previous packet/preview/status helpers
+  are not moved or edited in Slice 100.
+- [x] T021-6910 Run `gofmt` on changed Go files.
+- [x] T021-6920 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6921 Run focused citation regression evidence with an exact-count
+  guard for named tests `TestCitationResolvableCharacterization`,
+  `TestPrreviewValidationRankingModelAndLedgerFindingContracts`, and
+  `TestPrreviewLedgerSynthesisPreservesOrderingCarryForwardAndSanitization`.
+  These tests must cover empty citation rejection, diff alias and diff-ref ID
+  matching, context and verification ref lookup, unknown ref source-digest
+  fallback, unknown ref without source digest rejection, digest-only citation
+  acceptance, context citation by diff hunk, context citation by source digest,
+  verification citation by source digest, and exact diff/context/verification
+  location rules.
+- [x] T021-6930 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-6940 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-6950 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 100 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-100-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
