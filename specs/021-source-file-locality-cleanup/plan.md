@@ -937,6 +937,24 @@ path, package boundary, dependency direction, and MI baselines. It intentionally
 excludes `internal/packet`, release, witness, wrap, query, and numbered gate
 family cleanup so later families keep separate review trails.
 
+Slice 76 starts the numbered `internal/packet` cleanup with the packet contract
+data model and catalog shards (`packet_001` through `packet_032`). The slice is
+limited to constants, enum/catalog maps, core packet/bundle structs, GitHub PR
+input structs, prompt boundary and prompt-boundary classification structs,
+integration-action structs, build result struct, and the validation result
+type. A single `packet.go` catch-all is rejected because it
+would mix catalog policy, core packet JSON shape, bundle manifest shape, and
+GitHub source input shape into one review surface. The slice instead plans
+cohesive locality files for contract constants/catalogs, core packet types,
+bundle manifest types, GitHub source input types, and validation result types.
+It preserves schema-version values, required row and decision ordering, known
+state/catalog membership, JSON field names and `omitempty` behavior, source
+input shape for GitHub PR evidence, package boundary, dependency direction, and
+MI baselines. It intentionally excludes packet validation, GitHub bundle
+building, prompt-boundary classification behavior, rendering, digesting,
+loading, and later numbered packet files so behavioral packet responsibilities
+keep separate review trails.
+
 ## Verification
 
 ```text

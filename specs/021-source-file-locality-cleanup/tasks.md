@@ -2402,3 +2402,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 76 Tasks
+
+- [x] T021-5210 Confirm Slice 76 is bounded to numbered `internal/packet`
+  packet contract data model and catalog shards `packet_001` through
+  `packet_032`.
+- [x] T021-5211 Confirm Slice 76 is behavior-preserving: no changes to
+  schema-version values, required row ordering, required decision ordering,
+  known state/catalog membership, JSON field names, `omitempty` behavior,
+  GitHub PR evidence input shape, package boundary, dependency direction, or
+  baseline change is planned.
+- [x] T021-5212 Record Slice 76 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-76-plan-review.md`.
+- [x] T021-5220 Move packet contract constants/catalogs, core packet types,
+  bundle manifest types, GitHub source input types, and validation result types
+  into cohesive locality files. Record the data-model boundary in evidence, and
+  synchronize `cmd/sdp-trace/FAMILY_INDEX.md` if applicable; otherwise record
+  why the command family index is not authoritative for `internal/packet`.
+- [x] T021-5230 Run `gofmt` on changed Go files.
+- [x] T021-5240 Run focused Go verification for `internal/packet`.
+- [x] T021-5241 Run focused packet contract regression evidence covering exact
+  test existence for `TestPacketContractCatalogsPreserveTrustSurface`,
+  `TestPacketCoreTypesPreserveJSONShape`,
+  `TestPacketBundleTypesPreserveJSONShape`, and
+  `TestGitHubEvidenceInputTypesPreserveJSONShape`; schema-version constants,
+  required row ordering, required decision ordering, state/catalog membership,
+  packet/source/projection/row/finding/gap/decision owner JSON fields and
+  `omitempty`, bundle manifest/entry/resolver JSON fields and `omitempty`,
+  GitHub PR input/commit/check/artifact/review/prompt-boundary/
+  prompt-boundary-classification/integration-action/build-result JSON fields
+  and `omitempty`, validation JSON fields and `omitempty`, exact test list
+  verification after test implementation that fails when any planned focused
+  test is missing, and no baseline changes.
+- [x] T021-5250 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-5260 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-5270 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  76 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-76-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

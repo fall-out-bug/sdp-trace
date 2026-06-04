@@ -1,5 +1,13 @@
 package packet
 
+type BundleManifest struct {
+	SchemaVersion string          `json:"schema_version"`
+	BundleID      string          `json:"bundle_id"`
+	PacketDigest  string          `json:"packet_digest,omitempty"`
+	Entries       []BundleEntry   `json:"entries"`
+	Resolvers     []ResolverEntry `json:"resolvers,omitempty"`
+}
+
 type BundleEntry struct {
 	// Ref is the stable evidence namespace used by packet rows and findings.
 	Ref                string   `json:"ref"`
@@ -20,4 +28,14 @@ type BundleEntry struct {
 	GeneratedBy        string   `json:"generated_by,omitempty"`
 	SourceCommitState  string   `json:"source_commit_state,omitempty"`
 	SourceRef          string   `json:"source_ref,omitempty"`
+}
+
+type ResolverEntry struct {
+	Ref      string `json:"ref"`
+	Resolver string `json:"resolver"`
+}
+
+type Bundle struct {
+	Packet   Packet         `json:"packet"`
+	Manifest BundleManifest `json:"manifest"`
 }

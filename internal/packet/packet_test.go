@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -53,6 +54,122 @@ func TestLoadBundleAndGitHubInput(t *testing.T) {
 	if input.PR.Number != 5 {
 		t.Fatalf("loaded PR number = %d", input.PR.Number)
 	}
+}
+
+func TestPacketContractCatalogsPreserveTrustSurface(t *testing.T) {
+	if PacketSchemaVersion != "change-evidence-packet.v0" || BundleSchemaVersion != "evidence-bundle-manifest.v0" {
+		t.Fatalf("schema versions changed packet=%q bundle=%q", PacketSchemaVersion, BundleSchemaVersion)
+	}
+	wantRows := []string{
+		"PC-CHANGE",
+		"PC-INITIATOR",
+		"PC-AGENT-ROUTE",
+		"PC-MUTATION",
+		"PC-VERIFICATION",
+		"PC-REVIEW",
+		"PC-AUTHORITY",
+		"PC-THEATER",
+		"PC-ATTESTATION",
+		"PC-DECISION",
+		"PC-RESIDUAL-GAPS",
+	}
+	if strings.Join(RequiredRows, "|") != strings.Join(wantRows, "|") {
+		t.Fatalf("required rows = %#v", RequiredRows)
+	}
+	wantDecisions := []string{"merge", "release", "risk_acceptance", "security_review"}
+	if strings.Join(requiredDecisions, "|") != strings.Join(wantDecisions, "|") {
+		t.Fatalf("required decisions = %#v", requiredDecisions)
+	}
+	assertBoolCatalog(t, "states", states, []string{StatePass, StatePartial, StateFail, StateCannotVerify, StateNotAssessed, StateNotInScope})
+	assertBoolCatalog(t, "missingReasonStates", missingReasonStates, []string{StatePartial, StateFail, StateCannotVerify, StateNotAssessed, StateNotInScope})
+	assertBoolCatalog(t, "packetStates", packetStates, []string{"draft", "review_ready", "reviewed", "superseded"})
+	assertBoolCatalog(t, "authoringMethods", authoringMethods, []string{AuthoringToolGenerated, "hand_authored_before_tooling"})
+	assertBoolCatalog(t, "retainedForms", retainedForms, []string{"raw", "redacted", "digest_only", "external_ref", "not_retained"})
+	assertBoolCatalog(t, "redactionStatuses", redactionStatuses, []string{"not_needed", "redacted", "digest_only", "withheld", StateCannotVerify})
+	assertBoolCatalog(t, "theaterReasonCodes", theaterReasonCodes, []string{"agent_claimed_verification", "unbound_intent", "ci_theater", "scope_theater", "prompt_contamination"})
+}
+
+func TestPacketCoreTypesPreserveJSONShape(t *testing.T) {
+	packet := Packet{
+		PacketVersion:   PacketSchemaVersion,
+		PacketID:        "packet-1",
+		SourceChange:    SourceChange{Repository: "repo", ChangeID: "PR-1"},
+		GeneratedAt:     "2026-06-04T00:00:00Z",
+		AuthoringMethod: AuthoringToolGenerated,
+		SelectedProfile: "default",
+		RedactionPolicy: "standard",
+		BundleRef:       "bundle-1",
+		PacketState:     "review_ready",
+		Projection:      Projection{Kind: ProjectionCanonical, Canonical: true},
+		Rows:            []Row{{ID: "PC-CHANGE", State: StatePass, Summary: "ok", EvidenceRefs: []string{"git:change"}, Owner: "maintainer"}},
+		NonApproval:     "not approval",
+	}
+	assertJSONHasKeys(t, packet, []string{"packet_version", "packet_id", "source_change", "generated_at", "authoring_method", "selected_profile", "redaction_policy", "bundle_ref", "packet_state", "projection", "rows", "non_approval"}, []string{"theater_findings", "residual_gaps", "decision_owners", "extensions"})
+	assertJSONHasKeys(t, SourceChange{Repository: "repo", ChangeID: "PR-1"}, []string{"repository", "change_id"}, []string{"url", "base_ref", "head_ref", "commit_range", "head_sha"})
+	assertJSONHasKeys(t, Projection{Kind: ProjectionCanonical, Canonical: true}, []string{"kind", "canonical"}, []string{"artifact_ref"})
+	assertJSONHasKeys(t, Row{ID: "PC-CHANGE", State: StatePass, Summary: "ok", EvidenceRefs: []string{"git:change"}, Owner: "maintainer"}, []string{"id", "state", "summary", "evidence_refs", "owner"}, []string{"reason"})
+	assertJSONHasKeys(t, TheaterFinding{ReasonCode: "ci_theater", State: StateFail, Finding: "overclaim", TriggerEvidenceRefs: []string{"ci:run"}}, []string{"reason_code", "state", "finding", "trigger_evidence_refs"}, []string{"severity", "required_closure_evidence"})
+	assertJSONHasKeys(t, ResidualGap{RowID: "PC-REVIEW", State: StateNotAssessed, Reason: "missing"}, []string{"row_id", "state", "reason"}, []string{"evidence_refs", "closure_evidence"})
+	assertJSONHasKeys(t, DecisionOwner{Decision: "merge", Owner: "cto", State: StateNotAssessed}, []string{"decision", "owner", "state"}, []string{"reason"})
+	assertJSONTags(t, Packet{}, requiredJSONFields("packet_version", "packet_id", "source_change", "generated_at", "authoring_method", "selected_profile", "redaction_policy", "bundle_ref", "packet_state", "projection", "rows", "non_approval"), optionalJSONFields("theater_findings", "residual_gaps", "decision_owners", "extensions"))
+	assertJSONTags(t, SourceChange{}, requiredJSONFields(), optionalJSONFields("repository", "change_id", "url", "base_ref", "head_ref", "commit_range", "head_sha"))
+	assertJSONTags(t, Projection{}, requiredJSONFields("kind", "canonical"), optionalJSONFields("artifact_ref"))
+	assertJSONTags(t, Row{}, requiredJSONFields("id", "state", "summary", "evidence_refs", "owner"), optionalJSONFields("reason"))
+	assertJSONTags(t, TheaterFinding{}, requiredJSONFields("reason_code", "state", "finding", "trigger_evidence_refs"), optionalJSONFields("severity", "required_closure_evidence"))
+	assertJSONTags(t, ResidualGap{}, requiredJSONFields("row_id", "state", "reason"), optionalJSONFields("evidence_refs", "closure_evidence"))
+	assertJSONTags(t, DecisionOwner{}, requiredJSONFields("decision", "owner", "state"), optionalJSONFields("reason"))
+}
+
+func TestPacketBundleTypesPreserveJSONShape(t *testing.T) {
+	manifest := BundleManifest{
+		SchemaVersion: BundleSchemaVersion,
+		BundleID:      "bundle-1",
+		Entries:       []BundleEntry{{Ref: "git:change", SourceClass: "git", RetainedForm: "raw", RedactionStatus: "not_needed"}},
+	}
+	assertJSONHasKeys(t, manifest, []string{"schema_version", "bundle_id", "entries"}, []string{"packet_digest", "resolvers"})
+	entry := BundleEntry{
+		Ref:             "git:change",
+		SourceClass:     "git",
+		RetainedForm:    "raw",
+		RedactionStatus: "not_needed",
+	}
+	assertJSONHasKeys(t, entry, []string{"ref", "source_class", "retained_form", "redaction_status"}, []string{"digest", "resolver", "expires_at", "artifact_access", "projection_role", "evidence_kind", "observed_components", "contradicts_ref", "contradicts_row_id", "actor", "write_authority", "generated_by", "source_commit_state", "source_ref"})
+	assertJSONHasKeys(t, ResolverEntry{Ref: "git:change", Resolver: "artifact"}, []string{"ref", "resolver"}, nil)
+	assertJSONHasKeys(t, Bundle{Packet: Packet{PacketID: "packet-1"}, Manifest: manifest}, []string{"packet", "manifest"}, nil)
+	assertJSONTags(t, BundleManifest{}, requiredJSONFields("schema_version", "bundle_id", "entries"), optionalJSONFields("packet_digest", "resolvers"))
+	assertJSONTags(t, BundleEntry{}, requiredJSONFields("ref", "source_class", "retained_form", "redaction_status"), optionalJSONFields("digest", "resolver", "expires_at", "artifact_access", "projection_role", "evidence_kind", "observed_components", "contradicts_ref", "contradicts_row_id", "actor", "write_authority", "generated_by", "source_commit_state", "source_ref"))
+	assertJSONTags(t, ResolverEntry{}, requiredJSONFields("ref", "resolver"), optionalJSONFields())
+	assertJSONTags(t, Bundle{}, requiredJSONFields("packet", "manifest"), optionalJSONFields())
+}
+
+func TestGitHubEvidenceInputTypesPreserveJSONShape(t *testing.T) {
+	input := GitHubPREvidenceInput{
+		SchemaVersion: "github-pr-evidence.v0",
+		PR:            GitHubPR{Number: 5, URL: "https://example.invalid/pr/5", Title: "title", Author: "dev", BaseRef: "main", HeadRef: "feature", HeadSHA: strings.Repeat("a", 40)},
+		CommitRange:   GitHubCommitRange{Base: strings.Repeat("b", 40), Head: strings.Repeat("a", 40)},
+	}
+	assertJSONHasKeys(t, input, []string{"schema_version", "pr", "commit_range", "prompt_boundary"}, []string{"checks", "artifacts", "reviews", "workflow_run_id", "require_prompt_boundary", "agent_route_refs", "agent_route_components", "agent_route_digest", "agent_route_evidence_kind", "integration_actions"})
+	assertJSONHasKeys(t, input.PR, []string{"number", "url", "title", "author", "base_ref", "head_ref", "head_sha"}, []string{"body_ref"})
+	assertJSONHasKeys(t, input.CommitRange, []string{"base", "head"}, []string{"changed_files_ref"})
+	assertJSONHasKeys(t, GitHubCheck{Name: "verify", URL: "https://example.invalid/check", Conclusion: StatePass}, []string{"name", "url", "conclusion"}, []string{"artifact_refs"})
+	assertJSONHasKeys(t, GitHubArtifact{Name: "report", Resolver: "artifact", RetainedForm: "raw"}, []string{"name", "resolver", "retained_form"}, []string{"expires_at", "digest"})
+	assertJSONHasKeys(t, GitHubReview{Reviewer: "reviewer", Resolver: "review", State: StateNotAssessed}, []string{"reviewer", "resolver", "state"}, nil)
+	assertJSONHasKeys(t, PromptBoundary{Text: "prompt"}, []string{"text"}, []string{"digest", "capture_actor", "captured_at", "capture_method"})
+	assertJSONHasKeys(t, PromptBoundaryClassification{Verdict: StateCannotVerify, RouteProofEffect: "cannot_support_route"}, []string{"verdict", "route_proof_effect"}, []string{"reasons"})
+	assertJSONHasKeys(t, IntegrationAction{Kind: "merge", Actor: "bot", Resolver: "action"}, []string{"kind", "actor", "resolver"}, nil)
+	assertJSONHasKeys(t, BuildPRResult{State: StatePass}, []string{"state"}, []string{"bundle_path", "packet_path", "result_path", "errors"})
+	assertJSONHasKeys(t, Validation{State: StatePass}, []string{"state"}, []string{"errors"})
+	assertJSONTags(t, GitHubPREvidenceInput{}, requiredJSONFields("schema_version", "pr", "commit_range"), optionalJSONFields("checks", "artifacts", "reviews", "workflow_run_id", "require_prompt_boundary", "agent_route_refs", "agent_route_components", "agent_route_digest", "agent_route_evidence_kind", "prompt_boundary", "integration_actions"))
+	assertJSONTags(t, GitHubPR{}, requiredJSONFields("number", "url", "title", "author", "base_ref", "head_ref", "head_sha"), optionalJSONFields("body_ref"))
+	assertJSONTags(t, GitHubCommitRange{}, requiredJSONFields("base", "head"), optionalJSONFields("changed_files_ref"))
+	assertJSONTags(t, GitHubCheck{}, requiredJSONFields("name", "url", "conclusion"), optionalJSONFields("artifact_refs"))
+	assertJSONTags(t, GitHubArtifact{}, requiredJSONFields("name", "resolver", "retained_form"), optionalJSONFields("expires_at", "digest"))
+	assertJSONTags(t, GitHubReview{}, requiredJSONFields("reviewer", "resolver", "state"), optionalJSONFields())
+	assertJSONTags(t, PromptBoundary{}, requiredJSONFields(), optionalJSONFields("text", "digest", "capture_actor", "captured_at", "capture_method"))
+	assertJSONTags(t, PromptBoundaryClassification{}, requiredJSONFields("verdict", "route_proof_effect"), optionalJSONFields("reasons"))
+	assertJSONTags(t, IntegrationAction{}, requiredJSONFields("kind", "actor", "resolver"), optionalJSONFields())
+	assertJSONTags(t, BuildPRResult{}, requiredJSONFields("state"), optionalJSONFields("bundle_path", "packet_path", "result_path", "errors"))
+	assertJSONTags(t, Validation{}, requiredJSONFields("state"), optionalJSONFields("errors"))
 }
 
 func TestValidateRejectsMissingVerificationPass(t *testing.T) {
@@ -459,4 +576,107 @@ func writeJSONForTest(t *testing.T, path string, value any) {
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatalf("write json: %v", err)
 	}
+}
+
+func assertJSONHasKeys(t *testing.T, value any, present, absent []string) {
+	t.Helper()
+	data, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	var fields map[string]any
+	if err := json.Unmarshal(data, &fields); err != nil {
+		t.Fatalf("unmarshal json object %s: %v", data, err)
+	}
+	for _, key := range present {
+		if _, ok := fields[key]; !ok {
+			t.Fatalf("json missing key %q in %s", key, data)
+		}
+	}
+	for _, key := range absent {
+		if _, ok := fields[key]; ok {
+			t.Fatalf("json unexpectedly included key %q in %s", key, data)
+		}
+	}
+}
+
+type jsonFieldExpectation struct {
+	name      string
+	omitempty bool
+}
+
+func requiredJSONFields(names ...string) []jsonFieldExpectation {
+	fields := make([]jsonFieldExpectation, 0, len(names))
+	for _, name := range names {
+		fields = append(fields, jsonFieldExpectation{name: name})
+	}
+	return fields
+}
+
+func optionalJSONFields(names ...string) []jsonFieldExpectation {
+	fields := make([]jsonFieldExpectation, 0, len(names))
+	for _, name := range names {
+		fields = append(fields, jsonFieldExpectation{name: name, omitempty: true})
+	}
+	return fields
+}
+
+func assertBoolCatalog(t *testing.T, name string, got map[string]bool, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("%s length = %d want %d: %#v", name, len(got), len(want), got)
+	}
+	for _, key := range want {
+		if !got[key] {
+			t.Fatalf("%s missing %q: %#v", name, key, got)
+		}
+	}
+	for key, value := range got {
+		if !value {
+			t.Fatalf("%s[%q] = false", name, key)
+		}
+		if !containsString(want, key) {
+			t.Fatalf("%s has unexpected key %q: %#v", name, key, got)
+		}
+	}
+}
+
+func assertJSONTags(t *testing.T, value any, required, optional []jsonFieldExpectation) {
+	t.Helper()
+	want := map[string]bool{}
+	for _, field := range append(required, optional...) {
+		want[field.name] = field.omitempty
+	}
+	typ := reflect.TypeOf(value)
+	if typ.Kind() == reflect.Pointer {
+		typ = typ.Elem()
+	}
+	if typ.Kind() != reflect.Struct {
+		t.Fatalf("assertJSONTags requires struct, got %s", typ.Kind())
+	}
+	if typ.NumField() != len(want) {
+		t.Fatalf("%s JSON field count = %d want %d", typ.Name(), typ.NumField(), len(want))
+	}
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		tag := field.Tag.Get("json")
+		name, omitempty := splitJSONTag(tag)
+		wantOmitEmpty, ok := want[name]
+		if !ok {
+			t.Fatalf("%s.%s has unexpected json tag %q", typ.Name(), field.Name, tag)
+		}
+		if omitempty != wantOmitEmpty {
+			t.Fatalf("%s.%s json tag = %q, omitempty = %t want %t", typ.Name(), field.Name, tag, omitempty, wantOmitEmpty)
+		}
+	}
+}
+
+func splitJSONTag(tag string) (string, bool) {
+	parts := strings.Split(tag, ",")
+	for _, option := range parts[1:] {
+		if option == "omitempty" {
+			return parts[0], true
+		}
+	}
+	return parts[0], false
 }
