@@ -773,6 +773,27 @@ helpers (`packet_086` through `packet_092`), fixture IO (`packet_093` onward),
 and shared optional JSON IO (`packet_095`) so URL policy and response
 processing keep separate review trails.
 
+Slice 67 continues `cmd/sdp-trace` cleanup with GitHub Actions artifact HTTP
+request/fetch/decode and retained artifact shaping shards (`packet_086`
+through `packet_092`). A single combined response-processing file was rejected
+because pre-change MI analysis measured file MI `66.6`, below the absolute
+threshold. The initial HTTP/retention split also failed when the HTTP file
+measured file MI `67.5`, so the slice instead moves live artifact HTTP fetch,
+request construction, HTTPS-only token attachment, status/decode helpers, and
+retained artifact shaping into `packet_build_pr_actions_fetch.go`,
+`packet_build_pr_actions_request.go`,
+`packet_build_pr_actions_authorization.go`,
+`packet_build_pr_actions_decode.go`, and
+`packet_build_pr_actions_retention.go`. It preserves credential fail-closed
+behavior for malformed or non-HTTPS API URLs, loopback-test no-token behavior,
+GitHub media type headers, non-2xx fail-closed diagnostics, JSON decode
+diagnostics, expired artifact filtering, artifact URL precedence over
+synthesized resolver URLs, missing artifact ID empty-resolver behavior, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+fixture event loading (`packet_093` through `packet_094`), shared optional JSON
+IO (`packet_095`), and CLI exit helpers (`packet_096`) so live response
+processing and fixture/shared IO keep separate review trails.
+
 ## Verification
 
 ```text

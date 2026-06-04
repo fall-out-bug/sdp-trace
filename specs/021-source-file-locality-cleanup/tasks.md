@@ -1978,3 +1978,54 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 67 Tasks
+
+- [x] T021-4580 Confirm Slice 67 is bounded to numbered `cmd/sdp-trace` GitHub
+  Actions artifact HTTP request/fetch/decode and retained artifact shaping
+  shards `packet_086` through `packet_092`.
+- [x] T021-4581 Confirm Slice 67 is behavior-preserving: no changes to
+  credential fail-closed behavior for malformed or non-HTTPS API URLs,
+  loopback-test no-token behavior, GitHub media type headers, non-2xx
+  fail-closed diagnostics, JSON decode diagnostics, expired artifact filtering,
+  artifact URL precedence over synthesized resolver URLs, missing artifact ID
+  empty-resolver behavior, package boundary, dependency direction, or baseline
+  change is planned.
+- [x] T021-4582 Record Slice 67 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-67-plan-review.md`.
+- [x] T021-4590 Move GitHub Actions artifact HTTP fetch, request,
+  authorization, decode/status, and retained artifact helpers into
+  `packet_build_pr_actions_fetch.go`, `packet_build_pr_actions_request.go`,
+  `packet_build_pr_actions_authorization.go`,
+  `packet_build_pr_actions_decode.go`, and
+  `packet_build_pr_actions_retention.go` after the single-file
+  `packet_build_pr_actions_http_retention.go` attempt failed file-level MI at
+  66.6 and the initial HTTP/retention split failed HTTP file-level MI at 67.5.
+  Record the failed commands plus revised responsibility boundary in evidence.
+- [x] T021-4600 Run `gofmt` on changed Go files.
+- [x] T021-4610 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4611 Run focused GitHub Actions artifact HTTP/retention regression
+  evidence covering exact test existence for
+  `TestGitHubActionsArtifactsRequestKeepsHTTPContract`,
+  `TestGitHubActionsArtifactsAuthorizationFailClosed`,
+  `TestSuccessfulHTTPStatusAcceptsOnly2xx`,
+  `TestDecodeGitHubActionsArtifactsKeepsDiagnostics`, and
+  `TestRetainedGitHubArtifactsKeepsResolverPolicy`; media type header and URL
+  path construction; HTTPS-only authorization with malformed/non-HTTPS
+  fail-closed behavior; loopback-test no-token behavior; 2xx-only status
+  policy; JSON decode diagnostics; expired artifact filtering; artifact URL
+  precedence; synthesized resolver URL construction; missing artifact ID empty
+  resolver behavior; exact test list verification after test implementation
+  that fails when any planned focused test is missing; and no baseline changes.
+- [x] T021-4620 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-4630 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4640 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  67 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-67-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

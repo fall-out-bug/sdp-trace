@@ -1306,6 +1306,105 @@ func TestGitHubActionsArtifactsRequestOnlySendsTokenOverHTTPS(t *testing.T) {
 	}
 }
 
+func TestGitHubActionsArtifactsRequestKeepsHTTPContract(t *testing.T) {
+	req, err := githubActionsArtifactsRequest(githubActionsArtifactContext{
+		apiURL: "https://api.github.com/",
+		repo:   "example/repo",
+		runID:  "1001",
+		token:  "test-token",
+	})
+	if err != nil {
+		t.Fatalf("githubActionsArtifactsRequest() error = %v", err)
+	}
+	if got := req.Method; got != http.MethodGet {
+		t.Fatalf("method = %q, want %q", got, http.MethodGet)
+	}
+	if got := req.URL.String(); got != "https://api.github.com/repos/example/repo/actions/runs/1001/artifacts" {
+		t.Fatalf("url = %q", got)
+	}
+	if got := req.Header.Get("Accept"); got != "application/vnd.github+json" {
+		t.Fatalf("Accept = %q", got)
+	}
+	if got := req.Header.Get("Authorization"); got != "Bearer test-token" {
+		t.Fatalf("Authorization = %q", got)
+	}
+}
+
+func TestGitHubActionsArtifactsAuthorizationFailClosed(t *testing.T) {
+	tests := []struct {
+		name   string
+		apiURL string
+	}{
+		{name: "malformed", apiURL: "://bad"},
+		{name: "plain http", apiURL: "http://github.example.com"},
+		{name: "loopback http", apiURL: "http://127.0.0.1:8080"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := githubActionsArtifactsAuthorization(tt.apiURL, "test-token"); got != "" {
+				t.Fatalf("authorization = %q, want empty", got)
+			}
+		})
+	}
+}
+
+func TestSuccessfulHTTPStatusAcceptsOnly2xx(t *testing.T) {
+	for _, status := range []int{200, 204, 299} {
+		if !successfulHTTPStatus(status) {
+			t.Fatalf("status %d rejected", status)
+		}
+	}
+	for _, status := range []int{199, 300, 404, 500} {
+		if successfulHTTPStatus(status) {
+			t.Fatalf("status %d accepted", status)
+		}
+	}
+}
+
+func TestDecodeGitHubActionsArtifactsKeepsDiagnostics(t *testing.T) {
+	payload, err := decodeGitHubActionsArtifacts(strings.NewReader(`{"artifacts":[{"id":42,"name":"packet","expired":false}]}`))
+	if err != nil {
+		t.Fatalf("decodeGitHubActionsArtifacts() error = %v", err)
+	}
+	if len(payload.Artifacts) != 1 || payload.Artifacts[0].ID != 42 || payload.Artifacts[0].Name != "packet" {
+		t.Fatalf("decoded payload = %+v", payload)
+	}
+	_, err = decodeGitHubActionsArtifacts(strings.NewReader(`{`))
+	if err == nil || !strings.Contains(err.Error(), "decode GitHub Actions artifacts") {
+		t.Fatalf("decode malformed error = %v", err)
+	}
+}
+
+func TestRetainedGitHubArtifactsKeepsResolverPolicy(t *testing.T) {
+	payload := githubActionsArtifactPayload{Artifacts: []githubActionsArtifact{
+		{ID: 1, Name: "expired", URL: "https://example.invalid/expired", Expired: true},
+		{ID: 2, Name: "direct", URL: "https://example.invalid/direct", Expired: false},
+		{ID: 3, Name: "synthesized", Expired: false},
+		{Name: "missing-id", Expired: false},
+	}}
+	artifacts := retainedGitHubArtifacts(payload, githubActionsArtifactContext{
+		apiURL: "https://api.github.com/",
+		repo:   "example/repo",
+	})
+	if len(artifacts) != 3 {
+		t.Fatalf("retained artifacts = %+v", artifacts)
+	}
+	if artifacts[0].Name != "direct" || artifacts[0].Resolver != "https://example.invalid/direct" {
+		t.Fatalf("direct artifact = %+v", artifacts[0])
+	}
+	if artifacts[1].Name != "synthesized" || artifacts[1].Resolver != "https://api.github.com/repos/example/repo/actions/artifacts/3/zip" {
+		t.Fatalf("synthesized artifact = %+v", artifacts[1])
+	}
+	if artifacts[2].Name != "missing-id" || artifacts[2].Resolver != "" {
+		t.Fatalf("missing-id artifact = %+v", artifacts[2])
+	}
+	for _, artifact := range artifacts {
+		if artifact.RetainedForm != "external_ref" {
+			t.Fatalf("retained form = %q", artifact.RetainedForm)
+		}
+	}
+}
+
 func TestPacketBuildPRDoesNotAcceptCheckedInPacketAuthority(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

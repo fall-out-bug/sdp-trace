@@ -6,6 +6,10 @@ import (
 	"io"
 )
 
+func successfulHTTPStatus(statusCode int) bool {
+	return statusCode >= 200 && statusCode <= 299
+}
+
 func decodeGitHubActionsArtifacts(reader io.Reader) (githubActionsArtifactPayload, error) {
 	var payload githubActionsArtifactPayload
 	if err := json.NewDecoder(reader).Decode(&payload); err != nil {
