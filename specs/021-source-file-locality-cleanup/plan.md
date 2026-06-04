@@ -829,6 +829,22 @@ and MI baselines. It intentionally excludes
 `pr-review run`, synthesize, validate, summarize, check, shared file helpers,
 and runner helpers so later review workflows can keep separate review trails.
 
+Slice 70 continues numbered `pr_review` cleanup in `cmd/sdp-trace` with
+`pr-review run` execution shards (`pr_review_105` through `pr_review_108`). A
+single combined `pr_review_run_command.go` was rejected because pre-change MI
+analysis measured file MI `66.1`. The slice instead moves run execution and
+reviewer runner handoff into `pr_review_run_command.go`, run argument parsing
+into `pr_review_run_args.go`, and preview-vs-run output rendering into
+`pr_review_run_output.go`. It preserves packet/profile loading, work-dir
+directory validation, repeated allowed-runner reconstruction from raw args,
+preview mode, not-assessed reason propagation, parse errors and positional
+argument rejection as usage errors, packet/profile read failures mapping to
+`cannot_verify`, preview output not implying evidence production, package
+boundary, dependency direction, and MI baselines. It intentionally excludes
+`pr-review synthesize`, validate, summarize, check, shared packet/profile
+readers, shared repeated-flag helpers, runner sets, and file helpers so each
+review workflow responsibility keeps a separate review trail.
+
 ## Verification
 
 ```text

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/fall_out_bug/sdp-trace/internal/prreview"
 )
 
 func TestPRReviewPacketSynthesizeValidateSummarizeCLI(t *testing.T) {
@@ -497,6 +499,148 @@ func TestPRReviewRunPreviewUsesPacketAndProfile(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"schema_version": "block30-pr-review-runs-v1"`) {
 		t.Fatalf("preview output missing run schema: %s", out.String())
+	}
+}
+
+func TestParsePRReviewRunArgsKeepsUsageBoundaries(t *testing.T) {
+	var errOut bytes.Buffer
+	opts, code, ok := parsePRReviewRunArgs([]string{"--packet", "packet", "--profile", "profile", "--out", "runs"}, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse run args ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if opts.stringValue("work-dir") != "." ||
+		opts.stringValue("allow-external-runner") != "" ||
+		opts.stringValue("not-assessed-reason") != "" ||
+		opts.boolValue("preview") {
+		t.Fatalf("run defaults changed")
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewRunArgs([]string{"--unknown"}, &errOut)
+	if ok || code != exitUsage {
+		t.Fatalf("unknown flag ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+
+	errOut.Reset()
+	_, code, ok = parsePRReviewRunArgs([]string{"--packet", "packet", "unexpected"}, &errOut)
+	if ok || code != exitUsage || !strings.Contains(errOut.String(), "accepts only flags") {
+		t.Fatalf("rest arg ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+}
+
+func TestExecutePRReviewRunKeepsRunnerOptions(t *testing.T) {
+	root := t.TempDir()
+	diffPath := writeFileStringForPRReviewTest(t, root, "change.diff", "diff --git a/a.go b/a.go\n")
+	profilePath := writeJSONForPRReviewTest(t, root, "profile.json", map[string]any{
+		"schema_version":  "block30-pr-review-profile-v1",
+		"profile_id":      "runner-preview",
+		"required_planes": []string{"code_correctness"},
+		"roles": []map[string]any{{
+			"role_id":         "code",
+			"plane":           "code_correctness",
+			"runner":          "opencode",
+			"requested_model": "not_assessed",
+		}},
+	})
+	packetDir := filepath.Join(root, "packet")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"pr-review", "packet",
+		"--out", packetDir,
+		"--repo-id", "demo_repo",
+		"--change-ref", "pr-123",
+		"--base", strings.Repeat("a", 40),
+		"--head", strings.Repeat("b", 40),
+		"--diff", diffPath,
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("packet exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	args := []string{
+		"--packet", packetDir,
+		"--profile", profilePath,
+		"--out", filepath.Join(root, "runs"),
+		"--work-dir", root,
+		"--allow-external-runner", "opencode",
+		"--allow-external-runner=pi",
+		"--not-assessed-reason", "ci_model_review_not_configured",
+		"--preview",
+	}
+	opts, code, ok := parsePRReviewRunArgs(args, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse preview ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	runs, preview, err := executePRReviewRun(opts, args)
+	if err != nil {
+		t.Fatalf("executePRReviewRun() error = %v", err)
+	}
+	if len(runs.Results) != 0 {
+		t.Fatalf("preview produced run results: %+v", runs)
+	}
+	if preview == nil || len(preview.Roles) != 1 || preview.Roles[0].Runner != "opencode" {
+		t.Fatalf("preview = %+v", preview)
+	}
+
+	runArgs := []string{
+		"--packet", packetDir,
+		"--profile", profilePath,
+		"--out", filepath.Join(root, "not-assessed-runs"),
+		"--work-dir", root,
+		"--not-assessed-reason", "ci_model_review_not_configured",
+	}
+	runOpts, code, ok := parsePRReviewRunArgs(runArgs, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse not assessed run ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	notAssessedRuns, preview, err := executePRReviewRun(runOpts, runArgs)
+	if err != nil {
+		t.Fatalf("executePRReviewRun(not assessed) error = %v", err)
+	}
+	if preview != nil || len(notAssessedRuns.Results) != 1 {
+		t.Fatalf("not assessed run preview=%+v runs=%+v", preview, notAssessedRuns)
+	}
+	result := notAssessedRuns.Results[0]
+	if result.Status != prreview.StatusNotAssessed || result.Reason != "ci_model_review_not_configured" {
+		t.Fatalf("not assessed override result = %+v", result)
+	}
+
+	badOpts, code, ok := parsePRReviewRunArgs([]string{
+		"--packet", packetDir,
+		"--profile", profilePath,
+		"--out", filepath.Join(root, "bad-runs"),
+		"--work-dir", filepath.Join(root, "missing"),
+	}, &errOut)
+	if !ok || code != 0 {
+		t.Fatalf("parse bad workdir ok=%v code=%d err=%s", ok, code, errOut.String())
+	}
+	if _, _, err := executePRReviewRun(badOpts, nil); err == nil || !strings.Contains(err.Error(), "work-dir:") || !strings.Contains(err.Error(), "no such file or directory") {
+		t.Fatalf("missing work-dir error = %v", err)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runPRReviewRun([]string{
+		"--packet", filepath.Join(root, "missing-packet"),
+		"--profile", profilePath,
+		"--out", filepath.Join(root, "runs"),
+	}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("missing packet run exit=%d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
+func TestWritePRReviewRunOutputKeepsPreviewBoundary(t *testing.T) {
+	var out bytes.Buffer
+	writePRReviewRunOutput(&out, prreview.RunSet{SchemaVersion: "run-set"}, nil)
+	if !strings.Contains(out.String(), `"schema_version": "run-set"`) {
+		t.Fatalf("run output = %s", out.String())
+	}
+	out.Reset()
+	writePRReviewRunOutput(&out, prreview.RunSet{SchemaVersion: "run-set"}, &prreview.RunPreview{SchemaVersion: "preview"})
+	if !strings.Contains(out.String(), `"schema_version": "preview"`) || strings.Contains(out.String(), "run-set") {
+		t.Fatalf("preview output = %s", out.String())
 	}
 }
 

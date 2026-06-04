@@ -2122,3 +2122,47 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 70 Tasks
+
+- [x] T021-4790 Confirm Slice 70 is bounded to numbered `cmd/sdp-trace`
+  `pr-review run` execution shards `pr_review_105` through `pr_review_108`.
+- [x] T021-4791 Confirm Slice 70 is behavior-preserving: no changes to
+  packet/profile loading, work-dir directory validation, repeated
+  allowed-runner reconstruction from raw args, preview mode, not-assessed
+  reason propagation, parse errors and positional-argument rejection as usage
+  errors, packet/profile read failures mapping to `cannot_verify`, preview
+  output not implying evidence production, package boundary, dependency
+  direction, or baseline change is planned.
+- [x] T021-4792 Record Slice 70 plan/task review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-70-plan-review.md`.
+- [x] T021-4800 Move `pr-review run` execution, argument parsing, and output
+  rendering into `pr_review_run_command.go`, `pr_review_run_args.go`, and
+  `pr_review_run_output.go` after the single-file `pr_review_run_command.go`
+  attempt failed file-level MI at `66.1`. Record the failed command plus
+  revised responsibility boundary in evidence, and synchronize
+  `cmd/sdp-trace/FAMILY_INDEX.md` with the renamed files.
+- [x] T021-4810 Run `gofmt` on changed Go files.
+- [x] T021-4820 Run focused Go verification for `cmd/sdp-trace`.
+- [x] T021-4821 Run focused `pr-review run` regression evidence covering exact
+  test existence for `TestParsePRReviewRunArgsKeepsUsageBoundaries`,
+  `TestExecutePRReviewRunKeepsRunnerOptions`, and
+  `TestWritePRReviewRunOutputKeepsPreviewBoundary`; parse defaults; parse
+  errors and positional argument rejection; packet/profile read failure
+  `cannot_verify` behavior; work-dir directory validation; repeated
+  allowed-runner reconstruction from raw args; preview mode and not-assessed
+  reason propagation; preview output shape not implying produced run evidence;
+  exact test list verification after test implementation that fails when any
+  planned focused test is missing; and no baseline changes.
+- [x] T021-4830 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-4840 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-4850 Run three independent reviewer lanes, fix every finding, repeat
+  affected lanes until each reviewer returns exactly `LGTM`, and record Slice
+  70 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-70-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -395,10 +395,6 @@
 - packet_validation_exits.go
 
 ### pr_review
-- pr_review_105_runrun.go
-- pr_review_106_executerun.go
-- pr_review_107_writerunoutput.go
-- pr_review_108_parserunargs.go
 - pr_review_109_runsynthesize.go
 - pr_review_110_parsesynthesizeargs.go
 - pr_review_111_synthesisinputs.go
@@ -442,6 +438,9 @@
 - pr_review_packet_flags.go
 - pr_review_packet_options.go
 - pr_review_packet_run.go
+- pr_review_run_args.go
+- pr_review_run_command.go
+- pr_review_run_output.go
 
 ### query
 - query_dispatch.go
