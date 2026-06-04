@@ -2049,6 +2049,56 @@ func TestSafeID(t *testing.T) {
 	}
 }
 
+func TestPrreviewSmallHelpersPreserveContracts(t *testing.T) {
+	if commandDigest(nil) != "" {
+		t.Fatalf("empty command digest should be empty")
+	}
+	wantCommandDigest := sha256.Sum256([]byte("go\x00test\x00./internal/prreview"))
+	if got := commandDigest([]string{"go", "test", "./internal/prreview"}); got != "sha256:"+hex.EncodeToString(wantCommandDigest[:]) {
+		t.Fatalf("commandDigest() = %q", got)
+	}
+	if got := defaultString(" \t\n", "fallback"); got != "fallback" {
+		t.Fatalf("defaultString whitespace fallback = %q", got)
+	}
+	if got := defaultString(" value ", "fallback"); got != " value " {
+		t.Fatalf("defaultString should preserve non-empty input, got %q", got)
+	}
+
+	for path, want := range map[string]string{
+		"a.JSON":   ".json",
+		"a.md":     ".md",
+		"a.txt":    ".txt",
+		"a.diff":   ".diff",
+		"a.patch":  ".patch",
+		"a.log":    ".txt",
+		"Makefile": ".txt",
+	} {
+		if got := normalizedExt(path); got != want {
+			t.Fatalf("normalizedExt(%q) = %q want %q", path, got, want)
+		}
+	}
+	for path, want := range map[string]string{
+		"payload.json":   ContentJSON,
+		"notes.md":       ContentMarkdown,
+		"notes.markdown": ContentMarkdown,
+		"run.log":        ContentText,
+	} {
+		if got := contentType(path); got != want {
+			t.Fatalf("contentType(%q) = %q want %q", path, got, want)
+		}
+	}
+	for path, want := range map[string]string{
+		"task-review.md": RefKindTask,
+		"notes.md":       RefKindDoc,
+		"schema.json":    RefKindSchema,
+		"diff.patch":     RefKindSourceExcerpt,
+	} {
+		if got := contextKind(path); got != want {
+			t.Fatalf("contextKind(%q) = %q want %q", path, got, want)
+		}
+	}
+}
+
 func TestSafeEvidenceRefPreservesRefsAndRedactsUnsafeText(t *testing.T) {
 	if got := safeEvidenceRef("diff"); got != "diff" {
 		t.Fatalf("safe ref = %q", got)

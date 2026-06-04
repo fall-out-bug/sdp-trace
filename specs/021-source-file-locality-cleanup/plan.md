@@ -1359,6 +1359,24 @@ through `prreview_172`), command/context/content/safe ID helpers
 validation/summary orchestration, role execution, parsed output handling, and
 previously consolidated packet/preview/status helpers.
 
+Slice 101 continues `internal/prreview` cleanup with unsafe text and small
+normalization helpers (`prreview_169` through `prreview_182`). The slice is
+limited to reviewer text redaction triggers, unique string normalization,
+command digest hashing, context kind and content type mapping, copied-input
+extension normalization, safe ID normalization, and default string fallback. It
+must preserve empty text/default behavior, unsafe marker and pattern redaction,
+safe text deduplication and sorting, command digest empty/non-empty behavior
+and NUL-separated hashing, markdown task/doc classification, JSON/schema and
+source-excerpt context kind mapping, JSON/Markdown/text content type mapping,
+normalized extension allow-list and `.txt` fallback, safe ID lowercase/trim/map
+behavior with `item` fallback, ASCII safe ID allowed-character behavior,
+default string whitespace fallback, package boundary, dependency direction,
+CRAP < 5, MI > 70, and MI baselines. It intentionally excludes generic `copy`
+and prompt rendering/sanitizer helpers (`prreview_183` onward), citation
+resolution from Slice 100, validation/summary orchestration, role execution,
+parsed output handling, packet/preview/status helpers, and any public schema or
+CLI contract changes.
+
 ## Verification
 
 ```text

@@ -3673,3 +3673,59 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 101 Tasks
+
+- [x] T021-6960 Confirm Slice 101 is bounded to numbered `internal/prreview`
+  unsafe text, unique string, digest, context/content type, safe ID, and default
+  string shards `prreview_169` through `prreview_182`.
+- [x] T021-6961 Confirm Slice 101 is behavior-preserving: no changes to unsafe
+  marker/pattern redaction, empty text behavior, unique string safe
+  dedupe/sorting, command digest empty/non-empty and NUL-separated hashing,
+  context kind mapping, content type mapping, normalized extension fallback,
+  safe ID mapping/fallback, default string fallback, package boundary,
+  dependency direction, or baseline changes are planned.
+- [x] T021-6962 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-101-plan-review.md`.
+- [x] T021-6970 Move unsafe text, unique string, command digest, context/content
+  type, normalized extension, safe ID, and default string helpers into cohesive
+  responsibility-named files without creating standalone one-function
+  replacement files. Record source-shape evidence that numbered `prreview_169`
+  through `prreview_182` files are gone and staged boundary evidence that
+  excluded generic `copy` and prompt rendering/sanitizer helpers
+  `prreview_183` onward, citation resolution, validation/summary
+  orchestration, role execution, parsed output handling, and previous
+  packet/preview/status helpers are not moved or edited in Slice 101.
+- [x] T021-6980 Run `gofmt` on changed Go files.
+- [x] T021-6981 Add focused helper regression coverage named
+  `TestPrreviewSmallHelpersPreserveContracts` before running the focused
+  exact-count guard. The test must assert empty command digest, NUL-separated
+  non-empty command digest hashing, whitespace-only `defaultString` fallback,
+  normalized extension allow-list and `.txt` fallback, content types for
+  JSON/Markdown/text, and context kind mapping for task Markdown, ordinary
+  Markdown, JSON, and source excerpt inputs.
+- [x] T021-6990 Run focused Go verification with `go test ./internal/prreview`.
+- [x] T021-6991 Run focused unsafe/helper regression evidence with an
+  exact-count guard for named tests `TestValidationAndSummaryRedactUnsafeMarkerClasses`,
+  `TestPrreviewLedgerSynthesisPreservesOrderingCarryForwardAndSanitization`,
+  `TestRunReviewPreviewReturnsPreviewOnly`,
+  `TestBuildPacketCopiesInputsAndComputesStableDigests`,
+  `TestPacketProfileAndSmallHelpers`, `TestSafeID`, and
+  `TestPrreviewSmallHelpersPreserveContracts`. These tests must cover unsafe
+  marker/pattern redaction, unique safe dedupe/sorting, command digest, context
+  kind, content type, normalized extension, safe ID mapping/fallback, and
+  default string fallback.
+- [x] T021-7000 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7010 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7020 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 101 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-101-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
