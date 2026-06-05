@@ -4778,3 +4778,44 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 126 Tasks
+
+- [x] T021-8740 Confirm Slice 126 is bounded to residual `_type.go` filename
+  cleanup for `internal/harnessobs/profile_type.go`.
+- [x] T021-8741 Confirm Slice 126 is behavior-preserving: no symbol moves
+  beyond the file rename, no exported name changes, no JSON tag changes, no
+  profile loading changes, no profile validation changes, no limit defaulting
+  changes, no degradation rule validation changes, no observation/validation
+  behavior changes, no schemas/examples/dependencies/package boundary changes,
+  no CRAP < 5 or MI > 70 regression, and no MI baseline changes are planned.
+- [x] T021-8742 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-126-plan-review.md`.
+- [x] T021-8750 Rename `profile_type.go` to `profile.go` without changing the
+  `Limits`, `Rule`, or `Profile` declarations. Record source-shape evidence
+  that `profile_type.go` is gone and no replacement `_type.go` shard was
+  created.
+- [x] T021-8760 Run `gofmt` on changed Go files.
+- [x] T021-8770 Run focused harness observation profile artifact verification
+  with a `go test -list` exact-count guard expecting exactly 3 tests:
+  `TestLoadProfileValidatesProfile`,
+  `TestEffectiveEventLimitsDefaultsAndOverrides`, and
+  `TestObserveValidateCompleteHarnessExport`, then run them with
+  `go test ./internal/harnessobs -run <guard> -count=1 -v`. The focused test
+  set must preserve profile loading/validation, `Limits` JSON field/tag
+  behavior, `Rule` JSON field/tag behavior, and complete
+  observation/validation behavior after the filename cleanup.
+- [x] T021-8780 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8790 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8800 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 126 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-126-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

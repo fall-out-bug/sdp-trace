@@ -1670,6 +1670,16 @@ dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, and
 MI baselines unchanged. It must preserve the exported `UnavailableField` fields
 and JSON tags: `field`, `state`, and `reason_code`.
 
+Slice 126 starts the residual `_type.go` filename cleanup for co-located
+artifact shapes. The slice is limited to renaming
+`internal/harnessobs/profile_type.go` to `internal/harnessobs/profile.go`
+without moving symbols, changing exported names, changing JSON tags, or adding
+new abstractions. The slice intentionally leaves profile loading, profile
+validation, limit defaulting, degradation rule validation, observation and
+validation behavior, schemas, examples, dependencies, package boundary,
+dependency direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must
+preserve exported `Limits`, `Rule`, and `Profile` fields and JSON tags exactly.
+
 ## Verification
 
 ```text
