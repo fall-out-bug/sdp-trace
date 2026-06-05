@@ -1464,6 +1464,30 @@ func TestValidateWritesOutPathWhenPasses(t *testing.T) {
 	if onDisk.ValidationState != StatePass || onDisk.ReasonCode != "all_required_dimensions_observed" {
 		t.Fatalf("on-disk validation = %+v", onDisk)
 	}
+	var rawValidation map[string]any
+	if err := json.Unmarshal(raw, &rawValidation); err != nil {
+		t.Fatalf("json.Unmarshal(raw validation) error = %v", err)
+	}
+	rawDimensions, ok := rawValidation["dimensions"].([]any)
+	if !ok || len(rawDimensions) != 1 {
+		t.Fatalf("raw dimensions = %#v, want one dimension", rawValidation["dimensions"])
+	}
+	rawDimension, ok := rawDimensions[0].(map[string]any)
+	if !ok {
+		t.Fatalf("raw dimension = %#v, want object", rawDimensions[0])
+	}
+	wantDimension := map[string]any{
+		"family":      "harness",
+		"required":    true,
+		"state":       StatePass,
+		"reason_code": "event_family_observed",
+		"event_count": float64(1),
+	}
+	for key, want := range wantDimension {
+		if got := rawDimension[key]; got != want {
+			t.Fatalf("raw dimension[%q] = %#v, want %#v in %#v", key, got, want, rawDimension)
+		}
+	}
 }
 
 func TestValidateCannotVerifyWhenRunFileInvalid(t *testing.T) {

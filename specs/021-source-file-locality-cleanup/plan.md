@@ -1610,6 +1610,17 @@ behavior, schemas, examples, dependencies, package boundary, dependency
 direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must preserve the
 unexported `matchResult` fields `state`, `reasonCode`, and `ruleRef`.
 
+Slice 121 starts the remaining non-numbered `internal/harnessobs` type cleanup
+with the validation dimension artifact shape. The slice is limited to
+consolidating `dimension_type.go` into `validation_type.go` so the exported
+`Dimension` JSON shape is co-located with the exported `Validation` JSON shape
+that embeds it. It intentionally leaves dimension composition, validation
+state/reason selection, validation loading, summary rendering behavior,
+schemas, examples, dependencies, package boundary, dependency direction, CRAP <
+5, MI > 70, and MI baselines unchanged. It must preserve the exported
+`Dimension` fields and JSON tags: `family`, `required`, `state`,
+`reason_code`, and `event_count`.
+
 ## Verification
 
 ```text
