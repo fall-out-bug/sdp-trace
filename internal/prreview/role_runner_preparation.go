@@ -31,8 +31,11 @@ func markNotAssessedOverride(result *ReviewerResult, reason string) bool {
 	return true
 }
 
-// runnerAllowed keeps executable runners opt-in while manual imports remain
-// local evidence.
+// runnerAllowed keeps executable runners opt-in while manual imports without
+// commands remain local evidence.
 func runnerAllowed(role ReviewRole, allowed map[string]bool) bool {
-	return role.Runner == RunnerManualExternal || allowed[role.Runner]
+	if role.Runner == RunnerManualExternal && len(role.Command) == 0 {
+		return true
+	}
+	return allowed[role.Runner]
 }

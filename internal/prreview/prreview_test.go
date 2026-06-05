@@ -1295,7 +1295,7 @@ func TestRunReviewRecordsRunnerFailureStatesAndPromptDigest(t *testing.T) {
 	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
 	runs, preview, err := RunReview(packet, profile, RunOptions{
 		OutDir:         filepath.Join(root, "runs"),
-		AllowedRunners: map[string]bool{RunnerOpenCode: true, RunnerPI: true},
+		AllowedRunners: map[string]bool{RunnerManualExternal: true, RunnerOpenCode: true, RunnerPI: true},
 		Now:            time.Date(2026, 5, 9, 12, 0, 0, 0, time.UTC),
 		WorkDir:        workDir,
 	})
@@ -1583,6 +1583,23 @@ func TestRunReviewPreservesValidationDefaultsAndOutputContracts(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(errorOutDir, "results.json")); !os.IsNotExist(err) {
 		t.Fatalf("role execution error should not write successful results.json, got %v", err)
+	}
+
+	manualCommandOutDir := filepath.Join(root, "manual-command-disallowed")
+	manualCommandProfile := cloneReviewProfile(profile)
+	manualCommandProfile.Roles = []ReviewRole{{
+		RoleID:         "manual-command",
+		Plane:          PlaneCodeCorrectness,
+		Runner:         RunnerManualExternal,
+		RequestedModel: "manual",
+		Command:        []string{os.Args[0], "-test.run=TestPRReviewFakeRunnerHelper", "--", "should-not-run"},
+	}}
+	_, _, err = RunReview(packet, manualCommandProfile, RunOptions{OutDir: manualCommandOutDir})
+	if err == nil || !strings.Contains(err.Error(), "runner_not_allowed: manual_external") {
+		t.Fatalf("manual command should require explicit runner allowance, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(manualCommandOutDir, "results.json")); !os.IsNotExist(err) {
+		t.Fatalf("disallowed manual command should not write successful results.json, got %v", err)
 	}
 }
 
@@ -1946,7 +1963,10 @@ func TestRunReviewCannotVerifyUnreadablePromptTemplate(t *testing.T) {
 			PromptTemplateRef: filepath.Join(root, "missing.md"),
 		}},
 	}
-	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs")})
+	runs, _, err := RunReview(packet, profile, RunOptions{
+		OutDir:         filepath.Join(root, "runs"),
+		AllowedRunners: map[string]bool{RunnerManualExternal: true},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1990,7 +2010,11 @@ func TestRunReviewPromptIncludesPacketEvidence(t *testing.T) {
 	}
 	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
 	t.Setenv("PR_REVIEW_EXPECTED_DIGEST", packet.PacketDigest)
-	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs"), PacketDir: packetDir})
+	runs, _, err := RunReview(packet, profile, RunOptions{
+		OutDir:         filepath.Join(root, "runs"),
+		PacketDir:      packetDir,
+		AllowedRunners: map[string]bool{RunnerManualExternal: true},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2017,7 +2041,10 @@ func TestRunReviewMapsTimeoutToTimedOut(t *testing.T) {
 		}},
 	}
 	t.Setenv("GO_WANT_PR_REVIEW_HELPER_PROCESS", "1")
-	runs, _, err := RunReview(packet, profile, RunOptions{OutDir: filepath.Join(root, "runs")})
+	runs, _, err := RunReview(packet, profile, RunOptions{
+		OutDir:         filepath.Join(root, "runs"),
+		AllowedRunners: map[string]bool{RunnerManualExternal: true},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
