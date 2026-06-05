@@ -17,7 +17,7 @@ coordination artifact, not proof that any spec is complete.
 | Spec directories | 23 |
 | SpecKit triplets | 23 / 23 |
 | Task checkboxes | 1971 / 1977 checked |
-| Formal roadmap `complete` rows | 1 |
+| Formal roadmap `complete` rows | 2 |
 
 Commands used for this audit:
 

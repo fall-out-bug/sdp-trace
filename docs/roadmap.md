@@ -45,7 +45,7 @@ Current source tree snapshot, based on direct inspection of `specs/*/tasks.md`:
 | SpecKit triplets (`spec.md`, `plan.md`, `tasks.md`) | 23 / 23 |
 | Checked task boxes | 1971 / 1977 |
 | Specs with all task boxes checked | 21 |
-| Formal `complete` roadmap rows | 1 |
+| Formal `complete` roadmap rows | 2 |
 
 Interpretation: the repository has substantial implemented work. Formal
 completion remains open because review, merge, or trust axes are not uniformly
@@ -114,7 +114,8 @@ for the claimed scope.
 
 | Spec | Capability | Status | Notes |
 | --- | --- | --- | --- |
-| *(none yet)* | | | |
+| [021](../specs/021-source-file-locality-cleanup/) | Source file locality cleanup | `complete` | Merged via PR #73; no production trust, release approval, or external attestation claimed. |
+| [023](../specs/023-numbered-code-file-locality-cleanup/) | Numbered code file locality cleanup | `complete` | Merged via PR #73; no production trust, release approval, or external attestation claimed. |
 
 ## Historical / Archived Evidence
 

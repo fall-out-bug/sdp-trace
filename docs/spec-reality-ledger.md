@@ -105,8 +105,10 @@ Specs **009, 010, 011, 012, 014** have all tasks checked and local verification 
 - **008**: Blocked on PR/final-head CI evidence.
 - **017**: Task ledger closed as implemented-local; external supply-chain trust remains out of scope and requires new evidence before any stronger claim.
 
-### No Completed Specs
-No spec is in the `complete` status. The roadmap “Completed Specs” section correctly lists *(none yet)*.
+### Completed Specs
+Specs **021** and **023** are in `complete` status after PR #73 merged with
+final-head CI and PR-review evidence. This is scoped cleanup closure only; it
+does not claim production trust, release approval, or external attestation.
 
 ---
 
