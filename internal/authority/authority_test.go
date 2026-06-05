@@ -531,6 +531,10 @@ func TestEvaluateActionReasonOrdering(t *testing.T) {
 	}{
 		{name: "envelope state first", envState: StateCannotVerify, envReason: "selected_policy_ambiguous", wantState: StateCannotVerify, wantReason: "selected_policy_ambiguous"},
 		{name: "unsupported event", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.EventType = "unknown" }, wantState: StateCannotVerify, wantReason: "unsupported_event_type"},
+		{name: "custom event accepted", mutate: func(env *AuthorityEnvelope, action *ObservedAction) {
+			env.AllowedEvents = []string{"custom:local"}
+			action.EventType = "custom:local"
+		}, wantState: StateWithinAuthority, wantReason: "event_allowed"},
 		{name: "task not assessed", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.TaskID = "" }, wantState: StateNotAssessed, wantReason: "task_not_assessed"},
 		{name: "task outside envelope", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.TaskID = "other" }, wantState: StateNotAssessed, wantReason: "task_outside_selected_envelope"},
 		{name: "external evidence", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) {

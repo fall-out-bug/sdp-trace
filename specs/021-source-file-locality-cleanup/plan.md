@@ -1588,6 +1588,18 @@ boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines unchanged.
 It must preserve the unexported `validEventSpec` fields `id`, `eventType`, and
 `sequence`, plus generated valid adapter events.
 
+Slice 119 continues non-numbered micro-file cleanup with `internal/authority`
+event type validation. The slice is limited to consolidating
+`authority_event_type.go` into `authority_event_set_validation.go` so
+`validEventType` is co-located with event-type validation callers. Consolidating
+into `authority_vars.go` was rejected after local MI verification showed that
+the catalog/regex file would fall below the absolute file-MI threshold. The
+slice intentionally leaves event-set validation behavior, pre-decision blocker
+ordering, target-rule validation, custom event prefix semantics, authority
+evaluation behavior, schemas, examples, dependencies, package boundary,
+dependency direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must
+preserve standard event membership and `custom:` event acceptance.
+
 ## Verification
 
 ```text

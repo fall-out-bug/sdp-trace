@@ -1,5 +1,7 @@
 package authority
 
+import "strings"
+
 func validateEventSet(allowed, denied []string) string {
 	// validateEventSet keeps authority envelope evidence explicit and bounded to observed inputs.
 	// Missing, conflicting, unsafe, and externally unresolved proof stays distinguishable.
@@ -10,6 +12,10 @@ func validateEventSet(allowed, denied []string) string {
 		unsupportedEventReason(denied),
 		allowDenyConflictReason(allowed, denied),
 	)
+}
+
+func validEventType(event string) bool {
+	return standardEventTypes[event] || strings.HasPrefix(event, "custom:")
 }
 
 func unsupportedEventReason(events []string) string {
