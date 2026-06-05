@@ -1695,11 +1695,22 @@ func TestCheckDemoAcceptsMiniMaxAliasesAndNormalizesComponents(t *testing.T) {
 }
 
 func TestCheckDemoRequiresVerificationOrReviewAssessed(t *testing.T) {
+	for _, state := range []string{StatePass, StatePartial, StateFail} {
+		if !rowAssessed(Row{State: state}) {
+			t.Fatalf("rowAssessed(%q) = false, want true", state)
+		}
+	}
+	for _, state := range []string{StateCannotVerify, StateNotAssessed, StateNotInScope} {
+		if rowAssessed(Row{State: state}) {
+			t.Fatalf("rowAssessed(%q) = true, want false", state)
+		}
+	}
+
 	bundle := demoGateBundle()
 	setRowState(&bundle, "PC-VERIFICATION", StateNotAssessed, "verification not assessed")
 	setRowState(&bundle, "PC-REVIEW", StateNotAssessed, "review not assessed")
 	result := CheckDemoFirstPacket(bundle, time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC))
-	if result.State != StateFail || !hasError(result.Errors, "requires PC-VERIFICATION or PC-REVIEW") {
+	if result.State != StateFail || !hasExactError(result.Errors, "demo first-packet gate requires PC-VERIFICATION or PC-REVIEW to be pass, partial, or fail") {
 		t.Fatalf("result = %+v", result)
 	}
 }
@@ -1869,6 +1880,15 @@ func setManifestEntry(bundle *Bundle, ref string, edit func(*BundleEntry)) {
 func hasError(errors []string, want string) bool {
 	for _, err := range errors {
 		if strings.Contains(err, want) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasExactError(errors []string, want string) bool {
+	for _, err := range errors {
+		if err == want {
 			return true
 		}
 	}

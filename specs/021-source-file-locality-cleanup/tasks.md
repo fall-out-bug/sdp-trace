@@ -4192,3 +4192,43 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 112 Tasks
+
+- [x] T021-7760 Confirm Slice 112 is bounded to `internal/packet`
+  demo-first closure assessment files: `demo_first_state_helpers.go` and
+  `demo_first_closure_requirements.go`.
+- [x] T021-7761 Confirm Slice 112 is behavior-preserving: no changes to
+  demo-first route evidence, row evidence, pass-count logic, closure cap logic,
+  packet schemas, examples, fixtures, dependencies, package boundary,
+  dependency direction, CRAP < 5, MI > 70, or MI baselines are planned.
+- [x] T021-7762 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-112-plan-review.md`.
+- [x] T021-7770 Consolidate `demo_first_state_helpers.go` into
+  `demo_first_closure_requirements.go` without creating replacement
+  micro-shards. Record source-shape evidence that the state helper shard is
+  gone and staged boundary evidence that excluded packet behavior files and
+  public surfaces are untouched.
+- [x] T021-7780 Run `gofmt` on changed Go files.
+- [x] T021-7790 Run focused packet demo-first closure verification with a
+  `go test -list` exact-count guard expecting exactly 1 test:
+  `TestCheckDemoRequiresVerificationOrReviewAssessed`, then run it with
+  `go test ./internal/packet -run <guard> -count=1 -v`. The test must preserve
+  the exact first-packet gate diagnostic and cover the `rowAssessed` state
+  matrix: pass, partial, and fail count as assessed for the verification/review
+  closure requirement while cannot_verify, not_assessed, and not_in_scope do
+  not.
+- [x] T021-7800 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7810 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7820 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 112 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-112-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

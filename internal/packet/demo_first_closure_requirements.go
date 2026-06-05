@@ -7,3 +7,7 @@ func (c *demoFirstPacketChecker) requireVerificationOrReviewAssessed() {
 
 	c.add("demo first-packet gate requires PC-VERIFICATION or PC-REVIEW to be pass, partial, or fail")
 }
+
+func rowAssessed(row Row) bool {
+	return row.State == StatePass || row.State == StatePartial || row.State == StateFail
+}

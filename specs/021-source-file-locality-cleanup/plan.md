@@ -1508,6 +1508,18 @@ dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, or MI
 baselines. Focused verification must include existing posture helper and
 movement row malformed tests that exercise the moved identity predicate.
 
+Slice 112 continues non-numbered micro-file cleanup with
+`internal/packet` demo-first closure assessment. The slice is limited to
+consolidating `demo_first_state_helpers.go` into
+`demo_first_closure_requirements.go` because `rowAssessed` has exactly one
+consumer in the closure requirement. It intentionally leaves demo-first route
+evidence, row evidence, pass-count logic, closure cap logic, packet schemas,
+examples, fixtures, dependencies, package boundary, dependency direction, CRAP
+< 5, MI > 70, and MI baselines unchanged. It must preserve the pass, partial,
+and fail assessed-state set, keep cannot_verify/not_assessed/not_in_scope as
+not assessed for this closure requirement, and preserve the existing
+first-packet gate diagnostic.
+
 ## Verification
 
 ```text
