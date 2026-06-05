@@ -1,5 +1,11 @@
 package harnessobs
 
+type UnavailableField struct {
+	Field      string `json:"field"`
+	State      string `json:"state"`
+	ReasonCode string `json:"reason_code"`
+}
+
 type Event struct {
 	EventID            string             `json:"event_id"`
 	EventSchemaVersion string             `json:"event_schema_version"`

@@ -1657,6 +1657,19 @@ behavior, schemas, examples, dependencies, package boundary, dependency
 direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must preserve the
 exported `Rule` fields and JSON tags: `state` and `reason_code`.
 
+Slice 125 continues the remaining non-numbered `internal/harnessobs` type
+cleanup with the unavailable event-field artifact shape. The slice is limited
+to consolidating `unavailable_field_type.go` into `run_type.go` so the exported
+`UnavailableField` JSON shape is co-located with the exported `Event` JSON
+shape that embeds it through `unavailable_fields`. Consolidating into
+`event_content_validation.go` is rejected because that file owns unavailable
+field validation behavior rather than event artifact shape. The slice
+intentionally leaves unavailable field validation, event content validation,
+event decoding, event writing behavior, run loading, schemas, examples,
+dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, and
+MI baselines unchanged. It must preserve the exported `UnavailableField` fields
+and JSON tags: `field`, `state`, and `reason_code`.
+
 ## Verification
 
 ```text

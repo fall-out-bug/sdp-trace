@@ -618,7 +618,7 @@ func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 		Field:      "raw_prompt",
 		State:      StateCannotVerify,
 		ReasonCode: "redacted",
-	}}
+	}, {}}
 	events := []Event{
 		normalizedEvent("e1", "harness", "harness_observed", "2026-05-10T12:00:00Z", "raw-000001", "opencode"),
 		normalizedEvent("e2", "model", "model_observed", "2026-05-10T12:00:01Z", "raw-000002", "qwen"),
@@ -695,21 +695,30 @@ func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 		}
 	}
 	unavailableFields, ok := rawEventWithOptional["unavailable_fields"].([]any)
-	if !ok || len(unavailableFields) != 1 {
-		t.Fatalf("unavailable_fields = %#v, want one item", rawEventWithOptional["unavailable_fields"])
+	if !ok || len(unavailableFields) != 2 {
+		t.Fatalf("unavailable_fields = %#v, want two items", rawEventWithOptional["unavailable_fields"])
 	}
-	unavailableField, ok := unavailableFields[0].(map[string]any)
-	if !ok {
-		t.Fatalf("unavailable_fields[0] = %#v, want object", unavailableFields[0])
-	}
-	wantUnavailableField := map[string]any{
+	assertRawUnavailableField(t, unavailableFields, 0, map[string]any{
 		"field":       "raw_prompt",
 		"state":       "cannot_verify",
 		"reason_code": "redacted",
+	})
+	assertRawUnavailableField(t, unavailableFields, 1, map[string]any{
+		"field":       "",
+		"state":       "",
+		"reason_code": "",
+	})
+}
+
+func assertRawUnavailableField(t *testing.T, unavailableFields []any, index int, wantField map[string]any) {
+	t.Helper()
+	unavailableField, ok := unavailableFields[index].(map[string]any)
+	if !ok {
+		t.Fatalf("unavailable_fields[%d] = %#v, want object", index, unavailableFields[index])
 	}
-	for key, want := range wantUnavailableField {
+	for key, want := range wantField {
 		if got := unavailableField[key]; got != want {
-			t.Fatalf("unavailable_fields[0][%q] = %#v, want %#v in %#v", key, got, want, unavailableField)
+			t.Fatalf("unavailable_fields[%d][%q] = %#v, want %#v in %#v", index, key, got, want, unavailableField)
 		}
 	}
 }
