@@ -1577,6 +1577,17 @@ examples, dependencies, package boundary, dependency direction, CRAP < 5, MI >
 type name, all existing JSON field names, `omitempty` behavior for optional
 fields, pointer semantics for `reconstructable`, and generated query row values.
 
+Slice 118 continues non-numbered micro-file cleanup with `internal/adaptercapture`
+valid event fixture specs. The slice is limited to consolidating
+`adaptercapture_valid_event_spec_type.go` into
+`adaptercapture_valid_event_specs.go` so the unexported `validEventSpec` shape
+is co-located with the only fixture catalog that uses it. It intentionally
+leaves valid event generation, event ordering, required event type lists,
+adapter-capture assessment behavior, schemas, examples, dependencies, package
+boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines unchanged.
+It must preserve the unexported `validEventSpec` fields `id`, `eventType`, and
+`sequence`, plus generated valid adapter events.
+
 ## Verification
 
 ```text

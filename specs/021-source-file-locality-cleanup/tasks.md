@@ -4439,3 +4439,43 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 118 Tasks
+
+- [x] T021-8180 Confirm Slice 118 is bounded to `internal/adaptercapture` valid
+  event fixture spec files: `adaptercapture_valid_event_spec_type.go` and
+  `adaptercapture_valid_event_specs.go`.
+- [x] T021-8181 Confirm Slice 118 is behavior-preserving: no changes to valid
+  event generation, event ordering, required event type lists, adapter-capture
+  assessment behavior, schemas, examples, dependencies, package boundary,
+  dependency direction, CRAP < 5, MI > 70, or MI baselines are planned.
+- [x] T021-8182 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-118-plan-review.md`.
+- [x] T021-8190 Consolidate `adaptercapture_valid_event_spec_type.go` into
+  `adaptercapture_valid_event_specs.go` without creating replacement
+  micro-shards. Record source-shape evidence that the spec type shard is gone
+  and staged boundary evidence that excluded adapter-capture behavior files and
+  public surfaces are untouched.
+- [x] T021-8200 Run `gofmt` on changed Go files.
+- [x] T021-8210 Run focused adapter-capture fixture verification with a
+  `go test -list` exact-count guard expecting exactly 2 tests:
+  `TestEvaluatePassesForBoundGenericAdapterEvents` and
+  `TestEvaluateCannotVerifyMissingRequiredAdapterEvent`, then run them with
+  `go test ./internal/adaptercapture -run <guard> -count=1 -v`. The focused
+  test set must preserve generated valid adapter events from `validEventSpecs`
+  and preserve required-event behavior without changing the separate required
+  event type list.
+- [x] T021-8220 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8230 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8240 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 118 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-118-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
