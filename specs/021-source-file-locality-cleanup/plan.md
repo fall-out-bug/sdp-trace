@@ -1680,6 +1680,16 @@ validation behavior, schemas, examples, dependencies, package boundary,
 dependency direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must
 preserve exported `Limits`, `Rule`, and `Profile` fields and JSON tags exactly.
 
+Slice 127 continues residual `_type.go` filename cleanup for co-located
+observation run artifact shapes. The slice is limited to renaming
+`internal/harnessobs/run_type.go` to `internal/harnessobs/run.go` without
+moving symbols, changing exported names, changing JSON tags, or adding new
+abstractions. The slice intentionally leaves event decoding, event writing,
+run loading, session collection, observation/validation behavior, schemas,
+examples, dependencies, package boundary, dependency direction, CRAP < 5, MI >
+70, and MI baselines unchanged. It must preserve exported `UnavailableField`,
+`Event`, and `Run` fields and JSON tags exactly.
+
 ## Verification
 
 ```text

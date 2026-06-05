@@ -4819,3 +4819,47 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 127 Tasks
+
+- [x] T021-8810 Confirm Slice 127 is bounded to residual `_type.go` filename
+  cleanup for `internal/harnessobs/run_type.go`.
+- [x] T021-8811 Confirm Slice 127 is behavior-preserving: no symbol moves
+  beyond the file rename, no exported name changes, no JSON tag changes, no
+  event decoding changes, no event writing changes, no run loading changes, no
+  session collection changes, no observation/validation behavior changes, no
+  schemas/examples/dependencies/package boundary changes, no CRAP < 5 or MI >
+  70 regression, and no MI baseline changes are planned.
+- [x] T021-8812 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-127-plan-review.md`.
+- [x] T021-8820 Rename `run_type.go` to `run.go` without changing the
+  `UnavailableField`, `Event`, or `Run` declarations. Record source-shape
+  evidence that `run_type.go` is gone and no replacement `_type.go` shard was
+  created.
+- [x] T021-8830 Run `gofmt` on changed Go files.
+- [x] T021-8840 Run focused harness observation run artifact verification with
+  a `go test -list` exact-count guard expecting exactly 3 tests:
+  `TestWriteNormalizedEventsWritesJSONL`,
+  `TestCollectSessionWritesObservedRun`, and
+  `TestLoadRunRejectsUnsafeEventRefs`, then run them with
+  `go test ./internal/harnessobs -run <guard> -count=1 -v`. The focused test
+  set must preserve persisted event JSONL, observed run construction, and run
+  event-ref loading safety after the filename cleanup. Before implementation
+  review, extend one of the three guarded tests with raw JSON assertions for
+  persisted `run.json` proving exact keys `schema_version`, `profile_id`,
+  `harness_family`, `event_schema_version`, `source_path`, `source_digest`,
+  `event_count`, `event_refs`, and `created_at` are present.
+- [x] T021-8850 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8860 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8870 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 127 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-127-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

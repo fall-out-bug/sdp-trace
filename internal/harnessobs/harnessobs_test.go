@@ -1125,8 +1125,27 @@ func TestCollectSessionWritesObservedRun(t *testing.T) {
 	if observed.EventCount != 1 || len(observed.EventRefs) != 1 {
 		t.Fatalf("observed = %+v", observed)
 	}
+	runPath := filepath.Join(dir, "session-run", "observed", "run.json")
+	var writtenRaw map[string]any
+	readJSONFixture(t, runPath, &writtenRaw)
+	for _, key := range []string{
+		"schema_version",
+		"profile_id",
+		"harness_family",
+		"event_schema_version",
+		"source_path",
+		"source_digest",
+		"event_count",
+		"event_refs",
+		"created_at",
+	} {
+		if _, ok := writtenRaw[key]; !ok {
+			t.Fatalf("written observed run missing raw JSON key %q: %+v", key, writtenRaw)
+		}
+	}
+
 	var written Run
-	readJSONFixture(t, filepath.Join(dir, "session-run", "observed", "run.json"), &written)
+	readJSONFixture(t, runPath, &written)
 	if written.SchemaVersion != RunSchemaVersion ||
 		written.ProfileID != "generic-harness-v1" ||
 		written.HarnessFamily != "generic-harness" ||
