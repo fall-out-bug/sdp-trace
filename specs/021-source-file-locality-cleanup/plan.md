@@ -1520,6 +1520,17 @@ and fail assessed-state set, keep cannot_verify/not_assessed/not_in_scope as
 not assessed for this closure requirement, and preserve the existing
 first-packet gate diagnostic.
 
+Slice 113 continues non-numbered micro-file cleanup with
+`internal/packet` bundle manifest indexing. The slice is limited to
+consolidating `validation_manifest_index.go` into
+`validation_manifest_entries.go` so manifest entry indexing and the
+manifest-level dispatcher stay co-located. It intentionally leaves resolver
+entry indexing, manifest entry validation, row validation, contradiction
+validation, residual gap validation, packet schemas, examples, fixtures,
+dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, and
+MI baselines unchanged. It must preserve that `indexManifest` still invokes
+both manifest entry indexing and resolver entry indexing.
+
 ## Verification
 
 ```text
