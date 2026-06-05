@@ -28,3 +28,11 @@ func validateMetricRowShape(row MetricRow) error {
 	}
 	return nil
 }
+
+func malformedMetricIdentity(row MetricRow) bool {
+	return row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer || !safeLabel(row.TimeWindow)
+}
+
+func malformedMetricCounts(row MetricRow) bool {
+	return row.Numerator < 0 || row.Denominator < 0 || row.Unit != "rows" || row.NotAssessedCount < 0
+}

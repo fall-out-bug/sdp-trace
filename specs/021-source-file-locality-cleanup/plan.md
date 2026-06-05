@@ -1483,6 +1483,18 @@ dependency direction, CRAP < 5, MI > 70, or MI baselines. It must preserve the
 defensive-copy contract of `EventTypes()` and include focused coverage proving
 callers cannot mutate the backing catalog.
 
+Slice 110 continues non-numbered micro-file cleanup with
+`internal/posture` metric row validation. The slice is limited to consolidating
+`posture_validate_metric_counts.go` and
+`posture_validate_metric_identity.go` into the existing
+`posture_validate_metric_row.go` responsibility. It intentionally leaves
+movement row helper shards for a later slice because the direct movement
+consolidation failed the MI gate. It must not change malformed metric row
+detection, export validation behavior, schemas, examples, fixtures,
+dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, or MI
+baselines. Focused verification must include the existing malformed metric row
+test and must cover all moved metric count predicates.
+
 ## Verification
 
 ```text

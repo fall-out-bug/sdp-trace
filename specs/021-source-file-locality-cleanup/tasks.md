@@ -4113,3 +4113,43 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 110 Tasks
+
+- [x] T021-7620 Confirm Slice 110 is bounded to `internal/posture` metric row
+  validation files: `posture_validate_metric_counts.go`,
+  `posture_validate_metric_identity.go`, and
+  `posture_validate_metric_row.go`.
+- [x] T021-7621 Confirm Slice 110 is behavior-preserving: no changes to
+  malformed metric row detection, export validation behavior, schemas,
+  examples, fixtures, dependencies, package boundary, dependency direction, or
+  MI baselines are planned.
+- [x] T021-7622 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-110-plan-review.md`.
+- [x] T021-7630 Consolidate `posture_validate_metric_counts.go` and
+  `posture_validate_metric_identity.go` into
+  `posture_validate_metric_row.go` without creating replacement micro-shards.
+  Record source-shape evidence that the metric helper shards are gone and
+  staged boundary evidence that excluded posture behavior files and public
+  surfaces are untouched.
+- [x] T021-7640 Run `gofmt` on changed Go files.
+- [x] T021-7650 Run focused posture validation verification with a
+  `go test -list` exact-count guard expecting exactly 1 test:
+  `TestValidateMetricRowShapeRejectsMalformedRows`, then run it with
+  `go test ./internal/posture -run <guard> -count=1 -v`. The metric row test
+  must cover the moved count predicates for negative numerator, negative
+  denominator, invalid unit, and negative not-assessed count.
+- [x] T021-7660 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7670 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7680 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 110 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-110-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
