@@ -319,6 +319,8 @@ func TestForensicsBasicPackSafetyClassesAreVerifiedAgainstOutput(t *testing.T) {
 	for _, class := range result.OutputSafety.VerifiedAbsentSensitiveClasses {
 		outputClasses[class] = true
 	}
+	assertOutputSafetyJSONShape(t, QueryPackOutputSafety{})
+	assertOutputSafetyJSONShape(t, QueryPackOutputSafety{RedactionPolicyDigest: "sha256:abc"})
 	payload, err := json.Marshal(result)
 	if err != nil {
 		t.Fatalf("marshal result: %v", err)
@@ -330,6 +332,30 @@ func TestForensicsBasicPackSafetyClassesAreVerifiedAgainstOutput(t *testing.T) {
 		}
 		assertMarkerAbsent(t, payload, marker)
 		assertMarkerAbsent(t, []byte(explanation), marker)
+	}
+}
+
+func assertOutputSafetyJSONShape(t *testing.T, safety QueryPackOutputSafety) {
+	t.Helper()
+	payload, err := json.Marshal(safety)
+	if err != nil {
+		t.Fatalf("marshal output safety: %v", err)
+	}
+	fields := map[string]any{}
+	if err := json.Unmarshal(payload, &fields); err != nil {
+		t.Fatalf("unmarshal output safety %s: %v", payload, err)
+	}
+	if _, ok := fields["verified_absent_sensitive_classes"]; !ok {
+		t.Fatalf("output safety missing verified_absent_sensitive_classes in %s", payload)
+	}
+	if safety.RedactionPolicyDigest == "" {
+		if _, ok := fields["redaction_policy_digest"]; ok {
+			t.Fatalf("output safety unexpectedly included redaction_policy_digest in %s", payload)
+		}
+		return
+	}
+	if got, ok := fields["redaction_policy_digest"].(string); !ok || got != safety.RedactionPolicyDigest {
+		t.Fatalf("redaction_policy_digest = %v, want %q in %s", fields["redaction_policy_digest"], safety.RedactionPolicyDigest, payload)
 	}
 }
 

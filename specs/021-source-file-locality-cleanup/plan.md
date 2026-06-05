@@ -1542,6 +1542,18 @@ MI baselines unchanged. It must preserve the exported `Validation` type name,
 JSON tags for `state` and optional `errors`, zero-value JSON behavior, and
 `Validate` return behavior.
 
+Slice 115 continues non-numbered micro-file cleanup with `internal/query`
+query-pack output safety shape. The slice is limited to consolidating
+`querypack_safety_type.go` into `querypack_safety.go` so the
+`QueryPackOutputSafety` JSON shape is co-located with the safety class catalog
+helper used to populate it. It intentionally leaves query-pack result shape,
+builder behavior, safety provider/sensitive class catalogs, schemas, examples,
+fixtures, dependencies, package boundary, dependency direction, CRAP < 5, MI >
+70, and MI baselines unchanged. It must preserve the exported
+`QueryPackOutputSafety` type name, `verified_absent_sensitive_classes` JSON
+field, optional `redaction_policy_digest` JSON field, and generated output
+safety values.
+
 ## Verification
 
 ```text
