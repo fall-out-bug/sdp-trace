@@ -4068,3 +4068,48 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 109 Tasks
+
+- [x] T021-7540 Confirm Slice 109 is bounded to `internal/interaction`
+  event type catalog files: `interaction_event_types.go`,
+  `interaction_event_types_data.go`, `interaction_event_validation_type.go`,
+  and the cohesive destination `interaction_event_catalog.go`.
+- [x] T021-7541 Confirm Slice 109 is behavior-preserving: no changes to event
+  type values, ordering, validation behavior, import/export behavior, schemas,
+  examples, fixtures, dependencies, package boundary, dependency direction, or
+  MI baselines are planned.
+- [x] T021-7542 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-109-plan-review.md`.
+- [x] T021-7550 Consolidate `interaction_event_types.go`,
+  `interaction_event_types_data.go`, and
+  `interaction_event_validation_type.go` into
+  `interaction_event_catalog.go` without creating replacement micro-shards.
+  Record source-shape evidence that the source helper shards are gone and
+  staged boundary evidence that excluded `internal/interaction` behavior files
+  and public surfaces are untouched.
+- [x] T021-7560 Run `gofmt` on changed Go files.
+- [x] T021-7570 Add focused regression coverage for `EventTypes()` proving it
+  returns event types in the existing order and returns a defensive copy that
+  callers cannot use to mutate the backing catalog, and extend moved validation
+  coverage so unsupported event type and friction-class mismatch diagnostics are
+  preserved.
+- [x] T021-7580 Run focused interaction event catalog verification with a
+  `go test -list` exact-count guard expecting exactly 2 tests:
+  `TestEventTypesReturnsStableCopy` and
+  `TestValidateEventRejectsInvalidFields`, then run them with
+  `go test ./internal/interaction -run <guard> -count=1 -v`.
+- [x] T021-7590 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7600 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7610 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 109 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-109-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

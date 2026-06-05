@@ -1471,6 +1471,18 @@ trailing newline output, stderr error propagation, standard gate exit-code
 mapping, standard preview report shape, witness preview mismatch reporting,
 package boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines.
 
+Slice 109 starts non-numbered micro-file cleanup with the
+`internal/interaction` event type catalog. The slice is limited to
+consolidating `interaction_event_types.go`,
+`interaction_event_types_data.go`, and `interaction_event_validation_type.go`
+into cohesive `interaction_event_catalog.go` ownership so the public accessor,
+backing catalog, and event type/friction validation stay co-located without
+changing event type values, ordering, validation behavior, import/export
+behavior, schemas, examples, fixtures, dependencies, package boundary,
+dependency direction, CRAP < 5, MI > 70, or MI baselines. It must preserve the
+defensive-copy contract of `EventTypes()` and include focused coverage proving
+callers cannot mutate the backing catalog.
+
 ## Verification
 
 ```text
