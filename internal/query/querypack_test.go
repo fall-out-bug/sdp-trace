@@ -29,6 +29,11 @@ func TestForensicsBasicPackDerivesRowsWithoutPolicyVerdict(t *testing.T) {
 	if len(result.InputArtifacts) != 3 {
 		t.Fatalf("input artifacts = %+v", result.InputArtifacts)
 	}
+	assertInputArtifactJSONShape(t, QueryPackInputArtifact{})
+	assertInputArtifactJSONShape(t, QueryPackInputArtifact{
+		SHA256:        "abc123",
+		SchemaVersion: "schema-v1",
+	})
 	assertNoUnsafeMarkers(t, result)
 
 	redactionRows := result.QueryRows[QueryForensicsRedactions]
@@ -356,6 +361,38 @@ func assertOutputSafetyJSONShape(t *testing.T, safety QueryPackOutputSafety) {
 	}
 	if got, ok := fields["redaction_policy_digest"].(string); !ok || got != safety.RedactionPolicyDigest {
 		t.Fatalf("redaction_policy_digest = %v, want %q in %s", fields["redaction_policy_digest"], safety.RedactionPolicyDigest, payload)
+	}
+}
+
+func assertInputArtifactJSONShape(t *testing.T, artifact QueryPackInputArtifact) {
+	t.Helper()
+	payload, err := json.Marshal(artifact)
+	if err != nil {
+		t.Fatalf("marshal input artifact: %v", err)
+	}
+	fields := map[string]any{}
+	if err := json.Unmarshal(payload, &fields); err != nil {
+		t.Fatalf("unmarshal input artifact %s: %v", payload, err)
+	}
+	for _, field := range []string{"role", "path_redacted_id", "artifact_required"} {
+		if _, ok := fields[field]; !ok {
+			t.Fatalf("input artifact missing %s in %s", field, payload)
+		}
+	}
+	assertOptionalInputArtifactField(t, fields, "sha256", artifact.SHA256, payload)
+	assertOptionalInputArtifactField(t, fields, "schema_version", artifact.SchemaVersion, payload)
+}
+
+func assertOptionalInputArtifactField(t *testing.T, fields map[string]any, field, want string, payload []byte) {
+	t.Helper()
+	if want == "" {
+		if _, ok := fields[field]; ok {
+			t.Fatalf("input artifact unexpectedly included %s in %s", field, payload)
+		}
+		return
+	}
+	if got, ok := fields[field].(string); !ok || got != want {
+		t.Fatalf("%s = %v, want %q in %s", field, fields[field], want, payload)
 	}
 }
 

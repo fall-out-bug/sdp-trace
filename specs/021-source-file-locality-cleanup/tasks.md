@@ -4354,3 +4354,46 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 116 Tasks
+
+- [x] T021-8040 Confirm Slice 116 is bounded to `internal/query` query-pack
+  input artifact files: `querypack_artifact_type.go` and
+  `querypack_artifact_schema.go`.
+- [x] T021-8041 Confirm Slice 116 is behavior-preserving: no changes to
+  artifact digesting, artifact reader control flow, input loading, builder
+  result assembly, query-pack result shape, schemas, examples, dependencies,
+  package boundary, dependency direction, CRAP < 5, MI > 70, or MI baselines
+  are planned.
+- [x] T021-8042 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-116-plan-review.md`.
+- [x] T021-8050 Consolidate `querypack_artifact_type.go` into
+  `querypack_artifact_schema.go` without creating replacement micro-shards.
+  Record source-shape evidence that the artifact type shard is gone and staged
+  boundary evidence that excluded query behavior files and public surfaces are
+  untouched.
+- [x] T021-8060 Run `gofmt` on changed Go files.
+- [x] T021-8070 Run focused query-pack input artifact verification with a
+  `go test -list` exact-count guard expecting exactly 2 tests:
+  `TestForensicsBasicPackDerivesRowsWithoutPolicyVerdict` and
+  `TestForensicsBasicPackPreservesUnreadableOptionalArtifactAsCannotVerifyRows`,
+  then run them with `go test ./internal/query -run <guard> -count=1 -v`. The
+  focused test set must preserve generated input artifact values and explicitly
+  assert the `QueryPackInputArtifact` JSON tag contract:
+  `json.Marshal(QueryPackInputArtifact{})` includes `role`, `path_redacted_id`,
+  and `artifact_required`, omits empty `sha256` and `schema_version`, and emits
+  non-empty `sha256` and `schema_version`.
+- [x] T021-8080 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8090 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8100 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 116 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-116-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

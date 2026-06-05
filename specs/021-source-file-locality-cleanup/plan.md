@@ -1554,6 +1554,18 @@ fixtures, dependencies, package boundary, dependency direction, CRAP < 5, MI >
 field, optional `redaction_policy_digest` JSON field, and generated output
 safety values.
 
+Slice 116 continues non-numbered micro-file cleanup with `internal/query`
+query-pack input artifact shape. The slice is limited to consolidating
+`querypack_artifact_type.go` into `querypack_artifact_schema.go` so the
+`QueryPackInputArtifact` JSON shape is co-located with the artifact schema
+shape helper. It intentionally leaves artifact digesting, artifact reader
+control flow, input loading, builder result assembly, query-pack result shape,
+schemas, examples, dependencies, package boundary, dependency direction, CRAP <
+5, MI > 70, and MI baselines unchanged. It must preserve the exported
+`QueryPackInputArtifact` type name, `role`, optional `sha256`,
+`path_redacted_id`, optional `schema_version`, `artifact_required` JSON fields,
+and generated input artifact values.
+
 ## Verification
 
 ```text
