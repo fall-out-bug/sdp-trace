@@ -1701,6 +1701,16 @@ package boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines
 unchanged. It must preserve exported `Dimension` and `Validation` fields and
 JSON tags exactly.
 
+Slice 129 closes the residual product `_type.go` cleanup with the
+`tools/qualitycheck` CLI options artifact shape. The slice is limited to
+consolidating `tools/qualitycheck/options_type.go` into
+`tools/qualitycheck/options.go` so the unexported immutable `options` command
+configuration is co-located with `parseOptions` and `optionsFromValues`. It
+intentionally leaves flag registration, default analysis paths, CLI exit
+behavior, threshold semantics, MI baseline behavior, report rendering,
+dependencies, package boundary, CRAP < 5, MI > 70, and MI baselines unchanged.
+It must preserve every `options` field name, type, and zero-value meaning.
+
 ## Verification
 
 ```text

@@ -4910,3 +4910,49 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 129 Tasks
+
+- [x] T021-8950 Confirm Slice 129 is bounded to residual product `_type.go`
+  cleanup for `tools/qualitycheck/options_type.go`.
+- [x] T021-8951 Confirm Slice 129 is behavior-preserving: no flag
+  registration changes, no default path changes, no CLI exit behavior changes,
+  no threshold semantic changes, no MI baseline behavior changes, no report
+  rendering changes, no dependencies/package boundary changes, no CRAP < 5 or
+  MI > 70 regression, and no MI baseline changes are planned.
+- [x] T021-8952 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-129-plan-review.md`.
+- [x] T021-8960 Consolidate `options_type.go` into `options.go` without
+  changing the unexported `options` declaration. Record source-shape evidence
+  that `options_type.go` is gone and no replacement `_type.go` shard remains
+  in product paths.
+- [x] T021-8970 Run `gofmt` on changed Go files.
+- [x] T021-8980 Run focused qualitycheck CLI option verification with a
+  `go test -list` exact-count guard expecting exactly 4 tests after adding the
+  missing focused test `TestParseOptionsPopulatesAllOptionFields`:
+  `TestParseOptionsPopulatesAllOptionFields`,
+  `TestRunFailOnlySuppressesPassingMetricRows`, and
+  `TestFunctionMaintainabilityBaselineAllowsHistoricalLowMI`, and
+  `TestFileMaintainabilityBaselineAllowsHistoricalLowMI`, then run them with
+  `go test ./tools/qualitycheck -run <guard> -count=1 -v`. The focused test set
+  must prove `parseOptions`/`optionsFromValues` field population and
+  default/zero-value behavior for every `options` field (`cycloOver`,
+  `cognitiveOver`, `miUnder`, `fileMIBaseline`, `writeFileMIBaseline`,
+  `functionMIUnder`, `functionMIBaseline`, `writeFunctionMIBaseline`,
+  `gocyclo`, `failOnly`, and `err`), default analysis paths, plus downstream
+  CLI fail-only/report and both file/function MI baseline option behavior after
+  consolidation.
+- [x] T021-8990 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-9000 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-9010 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 129 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-129-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
