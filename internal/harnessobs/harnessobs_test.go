@@ -382,10 +382,48 @@ func TestEffectiveEventLimitsDefaultsAndOverrides(t *testing.T) {
 	if maxLine != DefaultMaxLineBytes || maxEvents != DefaultMaxEvents {
 		t.Fatalf("effectiveEventLimits(defaults) = %d/%d, want %d/%d", maxLine, maxEvents, DefaultMaxLineBytes, DefaultMaxEvents)
 	}
+	zeroLimitProfile, err := json.Marshal(Profile{Limits: Limits{}})
+	if err != nil {
+		t.Fatalf("marshal zero limit profile: %v", err)
+	}
+	var rawZeroLimitProfile map[string]any
+	if err := json.Unmarshal(zeroLimitProfile, &rawZeroLimitProfile); err != nil {
+		t.Fatalf("parse zero limit profile: %v", err)
+	}
+	rawZeroLimits, ok := rawZeroLimitProfile["limits"].(map[string]any)
+	if !ok {
+		t.Fatalf("zero limits = %#v, want object", rawZeroLimitProfile["limits"])
+	}
+	for _, omitted := range []string{"max_line_bytes", "max_events"} {
+		if _, ok := rawZeroLimits[omitted]; ok {
+			t.Fatalf("zero limits include omitted key %q in %#v", omitted, rawZeroLimits)
+		}
+	}
 
 	maxLine, maxEvents = effectiveEventLimits(Limits{MaxLineBytes: 32, MaxEvents: 7})
 	if maxLine != 32 || maxEvents != 7 {
 		t.Fatalf("effectiveEventLimits(overrides) = %d/%d, want 32/7", maxLine, maxEvents)
+	}
+	nonZeroLimitProfile, err := json.Marshal(Profile{Limits: Limits{MaxLineBytes: 32, MaxEvents: 7}})
+	if err != nil {
+		t.Fatalf("marshal non-zero limit profile: %v", err)
+	}
+	var rawNonZeroLimitProfile map[string]any
+	if err := json.Unmarshal(nonZeroLimitProfile, &rawNonZeroLimitProfile); err != nil {
+		t.Fatalf("parse non-zero limit profile: %v", err)
+	}
+	rawLimits, ok := rawNonZeroLimitProfile["limits"].(map[string]any)
+	if !ok {
+		t.Fatalf("limits = %#v, want object", rawNonZeroLimitProfile["limits"])
+	}
+	wantLimits := map[string]any{
+		"max_line_bytes": float64(32),
+		"max_events":     float64(7),
+	}
+	for key, want := range wantLimits {
+		if got := rawLimits[key]; got != want {
+			t.Fatalf("limits[%q] = %#v, want %#v in %#v", key, got, want, rawLimits)
+		}
 	}
 }
 

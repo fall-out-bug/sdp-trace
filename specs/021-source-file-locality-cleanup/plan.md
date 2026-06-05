@@ -1633,6 +1633,18 @@ fields and JSON tags: `event_id`, `event_schema_version`, `event_family`,
 `event_type`, `observed_at`, `source_ref`, `source_digest`, `task_ref`,
 `operation_ref`, `actor_ref`, `content_state`, and `unavailable_fields`.
 
+Slice 123 continues the remaining non-numbered `internal/harnessobs` type
+cleanup with the observation profile limit artifact shape. The slice is limited
+to consolidating `limits_type.go` into `profile_type.go` so the exported
+`Limits` JSON shape is co-located with the exported `Profile` JSON shape that
+embeds it. Consolidating into `event_limits.go` is rejected because that file
+owns effective default/override behavior rather than profile artifact shape.
+The slice intentionally leaves limit defaulting, scan limit enforcement,
+profile loading, observation behavior, schemas, examples, dependencies,
+package boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines
+unchanged. It must preserve the exported `Limits` fields and JSON tags:
+`max_line_bytes` and `max_events`.
+
 ## Verification
 
 ```text

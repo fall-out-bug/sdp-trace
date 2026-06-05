@@ -4649,3 +4649,46 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 123 Tasks
+
+- [x] T021-8530 Confirm Slice 123 is bounded to `internal/harnessobs`
+  observation profile limit artifact shape files: `limits_type.go` and
+  `profile_type.go`.
+- [x] T021-8531 Confirm Slice 123 is behavior-preserving: no changes to limit
+  defaulting, scan limit enforcement, profile loading, observation behavior,
+  schemas, examples, dependencies, package boundary, dependency direction, CRAP
+  < 5, MI > 70, or MI baselines are planned.
+- [x] T021-8532 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-123-plan-review.md`.
+- [x] T021-8540 Consolidate `limits_type.go` into `profile_type.go` without
+  creating replacement micro-shards. Record source-shape evidence that the
+  limits type shard is gone and staged boundary evidence that excluded harness
+  observation behavior files and public surfaces are untouched.
+- [x] T021-8550 Run `gofmt` on changed Go files.
+- [x] T021-8560 Run focused harness observation profile limit verification
+  with a `go test -list` exact-count guard expecting exactly 2 tests:
+  `TestEffectiveEventLimitsDefaultsAndOverrides` and
+  `TestObserveValidateCompleteHarnessExport`, then run them with
+  `go test ./internal/harnessobs -run <guard> -count=1 -v`. The focused test
+  set must preserve the `Limits` JSON fields/tags inside the `Profile` artifact
+  shape, preserve effective limit default/override behavior, and keep complete
+  harness observation/validation behavior covered. If current coverage lacks
+  exact `Limits` field/tag assertions, extend one of the two guarded tests
+  before implementation review. The assertion must prove zero-value limits omit
+  `max_line_bytes` and `max_events`, and non-zero limits emit both exact field
+  names. Do not add a third focused test name unless this task is re-reviewed.
+- [x] T021-8570 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8580 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8590 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 123 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-123-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

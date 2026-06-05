@@ -1,5 +1,10 @@
 package harnessobs
 
+type Limits struct {
+	MaxLineBytes int `json:"max_line_bytes,omitempty"`
+	MaxEvents    int `json:"max_events,omitempty"`
+}
+
 type Profile struct {
 	SchemaVersion         string          `json:"schema_version"`
 	ProfileID             string          `json:"profile_id"`
