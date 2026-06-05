@@ -1,6 +1,6 @@
 # Plan: Numbered Code File Locality Cleanup
 
-Status: in_progress
+Status: complete
 
 ## Workstreams
 
@@ -192,3 +192,15 @@ git diff --check
 CRAP and MI gates are required before any PR claim. If a consolidated file
 creates a new MI-baseline entry or stale ratchet behavior, split the slice more
 cohesively or move baseline changes into a separate reviewed PR.
+
+## Completion Evidence
+
+Status updated to `complete` on 2026-06-05 after Slice 10 and the follow-on
+Spec 021 residual cleanup left no numbered Go source files in active product
+code paths. The current proof command is:
+
+```sh
+test -z "$(rg --files -g '*.go' | rg '(^|/)[0-9]+|_type\.go$|_[0-9]+\.go$|[0-9].*\.go$' || true)"
+```
+
+Exit status: 0.

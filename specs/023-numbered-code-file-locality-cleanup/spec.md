@@ -1,6 +1,6 @@
 # Spec 023: Numbered Code File Locality Cleanup
 
-Status: in_progress
+Status: complete
 
 ## Objective
 
@@ -45,6 +45,21 @@ The total remaining active numbered Go file count at intake is 1172.
 - Tests and quality gates pass after each slice.
 - Each slice has three independent staged-diff reviewer lanes before commit.
 - Remaining active numbered Go file count decreases monotonically.
+
+## Completion Evidence
+
+Status updated to `complete` on 2026-06-05 after current-state inventory found
+no remaining numbered Go source files in active product code paths:
+
+```sh
+test -z "$(rg --files -g '*.go' | rg '(^|/)[0-9]+|_type\.go$|_[0-9]+\.go$|[0-9].*\.go$' || true)"
+```
+
+Exit status: 0.
+
+The completion claim does not include example event JSON, SpecKit artifact
+names, checked-in review artifact numbering, PR merge approval, release
+approval, or external attestation.
 
 ## Active Slice 1
 

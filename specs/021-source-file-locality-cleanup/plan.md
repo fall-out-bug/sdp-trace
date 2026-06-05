@@ -1,6 +1,6 @@
 # Plan: Source File Locality Cleanup
 
-Status: in_progress
+Status: complete
 
 ## Workstreams
 
