@@ -17,6 +17,10 @@ If GitHub access is unavailable, record the live refresh as `not_assessed` or
 `cannot_verify` with the concrete reason. Do not infer live state from checked-in
 ledgers alone.
 
+For the `codex/022-post-merge-governance-closure` worktree, GitHub CLI access
+is available. PR #60 and PR #63 live refresh is therefore required before any
+Spec 022 `complete` claim.
+
 ## 2. Cite existing decision evidence
 
 Confirm `split_successor` is present and consistent in:
@@ -36,6 +40,9 @@ Record one of:
 
 - no residual remediation remains, with cited evidence; or
 - residual work requires reviewed successor specs before implementation.
+
+Reviewed successor specs require a retained review artifact for their
+`spec.md`, `plan.md`, and `tasks.md`; a triplet existing on disk is not enough.
 
 Do not reopen the already-recorded accept/reject/split decision unless a new
 maintainer decision explicitly supersedes `split_successor`.

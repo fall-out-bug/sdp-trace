@@ -1,16 +1,17 @@
 # Implementation Plan: Post-Merge Governance Closure
 
-**Branch**: `codex/install-github-speckit` | **Date**: 2026-05-26 |
+**Branch**: `codex/022-post-merge-governance-closure` |
+**Date**: 2026-05-26 |
 **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from
 `specs/022-post-merge-governance-closure/spec.md`
 
-**Setup Note**: `.specify/scripts/bash/setup-plan.sh --json` could not resolve
-an active feature because this checkout is on `codex/install-github-speckit`,
-not a numbered Spec Kit feature branch. The user explicitly requested
-`speckit-plan spec 22`, so this plan is bound directly to
-`specs/022-post-merge-governance-closure/`.
+**Setup Note**: Initial planning happened on `codex/install-github-speckit`,
+where `.specify/scripts/bash/setup-plan.sh --json` could not resolve an active
+feature branch. Implementation now runs in the isolated worktree branch
+`codex/022-post-merge-governance-closure`; `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks`
+resolves this feature to `specs/022-post-merge-governance-closure/`.
 
 ## Summary
 
@@ -33,8 +34,10 @@ available, Go repository tools already present in `tools/`.
 database, generated JSON, or persistent runtime store.
 
 **Testing**: `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, and
-`git diff --check` are required for the planned docs changes. Broader `go test
-./...` and `go vet ./...` are available if implementation expands beyond docs.
+`git diff --check` are required for the planned docs changes. `go test ./...`
+and `go vet ./...` remain repository default checks; for this docs-only slice
+they may be recorded as `not_assessed` only if no product code, schema, command,
+or executable examples change.
 
 **Target Platform**: Repository-local Spec Kit governance docs consumed by
 agents, maintainers, and reviewers.
@@ -131,6 +134,8 @@ Deliverable:
   it into approval.
 - Refresh live PR/CI state for the cited PRs when available; if unavailable,
   preserve the missing live evidence as `not_assessed` or `cannot_verify`.
+- In this implementation worktree GitHub CLI authentication is available, so
+  PR #60 and PR #63 live state must be refreshed before any `complete` claim.
 - Keep closure decision, reality, and roadmap surfaces synchronized.
 
 ### WS-022-B: Existing Maintainer Decision
@@ -160,6 +165,9 @@ Deliverable:
   after applying the existing `split_successor` decision.
 - If no residual work remains, record that state explicitly with the evidence
   cited by WS-022-A and WS-022-B.
+- If successor specs are required, their `spec.md`, `plan.md`, and `tasks.md`
+  must pass the same pre-implementation review loop before any successor
+  implementation can be treated as reviewed.
 
 ## Post-Design Constitution Check
 
@@ -193,3 +201,19 @@ go test ./...
 go vet ./...
 go run ./tools/schemadoc
 ```
+
+## Review Cadence
+
+Before documentation implementation starts, review this spec/plan/task set with
+independent model lanes and fix all retained findings. After each user story,
+run a focused review of the changed surfaces before proceeding to the next
+story. Before PR-ready claims, run a full diff review plus spec, constitution,
+product, quality, Clean Architecture, Clean Code, SOLID, DRY, and YAGNI drift
+review. Missing, failed, or off-task review lanes remain `cannot_verify` or
+`not_assessed` and cannot be counted as LGTM.
+
+Review artifacts must record model, provider, harness, date, prompt class,
+timeout, retries, fallback, and whether the lane was exact, unavailable, or
+substituted. External review lanes must run only after the reviewed changes are
+committed or in an isolated copy, because review harnesses may reset local
+uncommitted changes.
