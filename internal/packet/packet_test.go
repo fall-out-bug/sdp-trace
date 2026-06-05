@@ -178,6 +178,7 @@ func TestGitHubEvidenceInputTypesPreserveJSONShape(t *testing.T) {
 	assertJSONHasKeys(t, IntegrationAction{Kind: "merge", Actor: "bot", Resolver: "action"}, []string{"kind", "actor", "resolver"}, nil)
 	assertJSONHasKeys(t, BuildPRResult{State: StatePass}, []string{"state"}, []string{"bundle_path", "packet_path", "result_path", "errors"})
 	assertJSONHasKeys(t, Validation{State: StatePass}, []string{"state"}, []string{"errors"})
+	assertJSONHasKeys(t, Validation{}, []string{"state"}, []string{"errors"})
 	assertJSONTags(t, GitHubPREvidenceInput{}, requiredJSONFields("schema_version", "pr", "commit_range"), optionalJSONFields("checks", "artifacts", "reviews", "workflow_run_id", "require_prompt_boundary", "agent_route_refs", "agent_route_components", "agent_route_digest", "agent_route_evidence_kind", "prompt_boundary", "integration_actions"))
 	assertJSONTags(t, GitHubPR{}, requiredJSONFields("number", "url", "title", "author", "base_ref", "head_ref", "head_sha"), optionalJSONFields("body_ref"))
 	assertJSONTags(t, GitHubCommitRange{}, requiredJSONFields("base", "head"), optionalJSONFields("changed_files_ref"))

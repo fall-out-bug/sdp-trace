@@ -1531,6 +1531,17 @@ dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, and
 MI baselines unchanged. It must preserve that `indexManifest` still invokes
 both manifest entry indexing and resolver entry indexing.
 
+Slice 114 continues non-numbered micro-file cleanup with the public
+`internal/packet` validation result type. The slice is limited to consolidating
+`validation_types.go` into `validation_entrypoint.go` so the public
+`Validation` result shape is co-located with the public `Validate` entrypoint.
+It intentionally leaves validation orchestration, demo-first validation,
+manifest/row/resolver validation, packet schemas, examples, fixtures,
+dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, and
+MI baselines unchanged. It must preserve the exported `Validation` type name,
+JSON tags for `state` and optional `errors`, zero-value JSON behavior, and
+`Validate` return behavior.
+
 ## Verification
 
 ```text
