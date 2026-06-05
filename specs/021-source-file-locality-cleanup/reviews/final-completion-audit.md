@@ -113,4 +113,12 @@ Policy-compliant PR review is tracked separately through OpenCode review lanes:
 | code | codex-subagent + OpenCode | `kimi-for-coding/k2p6` | 2026-06-05 | `code-reviewer` | 900s | 0 | none | pass; no blocking findings |
 | security | codex-subagent + OpenCode | `minimax/MiniMax-M2.7` | 2026-06-05 | `security-reviewer` | 900s | 0 | none | LGTM |
 
-Final PR-review rerun after remediation: pending.
+Final PR-review rerun after remediation: pass.
+
+| Plane | Harness | Provider/model | Date | Prompt class | Timeout | Retries | Fallback | Result |
+|---|---|---|---|---|---|---|---|---|
+| requirements | direct OpenCode | `zai-coding-plan/glm-5.1` | 2026-06-05 | `requirements-reviewer` | manual direct run | 0 after stale/wrapper failures | direct OpenCode after codex-subagent wrapper TypeError/stale runs | LGTM |
+| code | direct OpenCode | `kimi-for-coding/k2p6` | 2026-06-05 | `code-reviewer` | manual direct run | 0 after stale/wrapper failures | direct OpenCode after codex-subagent wrapper TypeError/stale runs | LGTM |
+| security | direct OpenCode | `minimax/MiniMax-M2.7` | 2026-06-05 | `security-reviewer` | manual direct run | 0 after stale/wrapper failures | direct OpenCode after codex-subagent wrapper TypeError/stale runs | LGTM |
+
+Stale codex-subagent runs and wrapper TypeError outputs are not review evidence.
