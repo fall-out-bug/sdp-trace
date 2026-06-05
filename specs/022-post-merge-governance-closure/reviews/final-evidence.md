@@ -1,6 +1,6 @@
 # Spec 022 Final Evidence Map
 
-Date: 2026-06-01
+Date: 2026-06-05
 
 Branch: `codex/022-post-merge-governance-closure`
 
@@ -29,6 +29,7 @@ Branch: `codex/022-post-merge-governance-closure`
 | --- | --- | --- |
 | PR #60 | verified | `gh pr view 60 --json number,state,mergeCommit,headRefOid,reviewDecision,statusCheckRollup,url` on 2026-06-01 returned `state=MERGED`, merge commit `657a343a5f310538def9afd509e6c610c713cab0`, head `977179ba93e577cc51f05e634453deba80c383b6`, empty `reviewDecision`, and CI `verify` success. |
 | PR #63 | verified | `gh pr view 63 --json number,state,mergeCommit,headRefOid,reviewDecision,statusCheckRollup,url` on 2026-06-01 returned `state=MERGED`, merge commit `1ee2c7af53637c7f43bff4e0e7ef9e34d164908e`, head `9ad4640828a204e66fe056dde0950542ed00f1c4`, empty `reviewDecision`, CI `verify` success, and `pr-review-evidence-only` success. |
+| PR #72 | verified | PR #72 is open for branch `codex/022-post-merge-governance-closure`; final-head CI must be queried after each push before merge. |
 
 ## Trust Boundaries
 

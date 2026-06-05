@@ -1,6 +1,6 @@
 # Open Task Breakdown
 
-Status: working breakdown, current as of 2026-06-01.
+Status: working breakdown, current as of 2026-06-05.
 
 This file decomposes open governance closure tasks one by one. It is a working
 map for closure, not approval, merge authorization, production trust, or
@@ -13,7 +13,7 @@ external attestation.
 | Spec 022 T022-T027 | Update D006, inspect this breakdown for contradictions, record residual remediation state, and run focused US2 review. | Complete in `docs: record spec 022 governance decision state`; US2 review is recorded in `specs/022-post-merge-governance-closure/reviews/us2-review.md`. | Closed for docs-governance scope. | No further US2 action; continue with US3 and final checks. |
 | Spec 022 T028-T033 | Synchronize roadmap, decision ledger, spec reality ledger, and spec status wording. | Complete in `docs: synchronize spec 022 closure navigation`; US3 review is recorded in `specs/022-post-merge-governance-closure/reviews/us3-review.md`. | Closed for docs-governance scope. | No further US3 action; continue with final closure checks. |
 | Spec 022 T034-T038/T040 | Run local checks, forbidden-claim review, and claim-tag review. | Complete in `specs/022-post-merge-governance-closure/reviews/final-evidence.md` and `specs/022-post-merge-governance-closure/reviews/pr-ready-review.md`. | Closed for local verification scope. | No further action unless PR-ready re-review finds drift. |
-| Spec 022 T039/T041/T042 | Run drift/quality/adversarial PR-ready review and final checkbox update. | Complete in `specs/022-post-merge-governance-closure/reviews/pr-ready-review.md`; fixed-handoff re-review returned LGTM across DeepSeek, Kimi, and Z.AI fallback lanes. | Closed for PR-ready scope. | Create PR and collect live branch PR/CI evidence. |
+| Spec 022 T039/T041/T042 | Run drift/quality/adversarial PR-ready review and final checkbox update. | Complete in `specs/022-post-merge-governance-closure/reviews/pr-ready-review.md`; fixed-handoff re-review returned LGTM across DeepSeek, Kimi, and Z.AI fallback lanes. | Closed for PR-ready scope. | PR #72 is open; collect final-head PR #72 CI/merge evidence before closure. |
 
 ## Local Closure Candidate
 

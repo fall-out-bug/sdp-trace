@@ -58,7 +58,7 @@ reality notes and the spec-specific task state.
 | --- | --- | --- | --- |
 | [015](../specs/015-spec-governance-and-roadmap/) | Spec governance, lifecycle taxonomy, roadmap navigation | `in_progress` | Finalize `docs/roadmap.md`, run multi-LLM review, merge |
 | [019](../specs/019-repo-realignment-monitoring-gate-readiness/) | Repo realignment, monitoring, and gate readiness | `in_progress` | PR #60 merged partial implementation to `main` without recorded approval; integration PR #63 superseded PR #62 and PR #31 by combining post-merge closure with PR-review CI enforcement and merged after final-head CI passed. Maintainer decision `split_successor` moves residual governance debt to Spec 022 without retroactive PR #60 merge approval. See `post-merge-closure-plan.md`. |
-| [022](../specs/022-post-merge-governance-closure/) | Post-merge governance closure | `in_progress` | Active on `codex/022-post-merge-governance-closure`; plan/task review Round 2 has no retained critical or major findings; US1 evidence summary, US2 decision state, US3 navigation sync, final local verification, and fixed-handoff PR-ready re-review are recorded. Remaining work: PR creation and live branch PR/CI evidence. PR #60 merge approval remains `not_assessed`. |
+| [022](../specs/022-post-merge-governance-closure/) | Post-merge governance closure | `in_progress` | Active on PR #72 from `codex/022-post-merge-governance-closure`; plan/task review Round 2 has no retained critical or major findings; US1 evidence summary, US2 decision state, US3 navigation sync, final local verification, and fixed-handoff PR-ready re-review are recorded. Remaining work: final-head PR #72 CI/merge evidence. PR #60 merge approval remains `not_assessed`. |
 | [018](../specs/018-core-policy-split-and-pi-delivery/) | Core/policy split and Pi delivery plan | `in_progress` | Workstreams A-E, integration verification, maintainer `approve_core_extension_direction` decision, and follow-up Spec 020 / Spec 021 filing are mapped in `tasks.md` (11 / 11 checked). |
 | [017](../specs/017-oss-replacement-compatibility-and-benchmarks/) | OSS replacement compatibility and benchmarks | `in_progress` | Task ledger is 11 / 11 checked after controlled supply-chain prototype and docs index closure. Optional external tools remain `not_assessed` when absent and supply-chain conformance remains `cannot_verify`; final maintainer closure remains pending. See `docs/spec-reality-ledger.md`. |
 | [016](../specs/016-production-adoption-security-baseline/) | Production adoption and security baseline | `in_progress` | PR #59 merged; external audit and production adoption evidence remain `not_assessed`. |
@@ -146,7 +146,7 @@ Use this to find which spec owns a product surface. A capability may be touched 
 | Core query package split | 020 | Follow-up implementation spec prepared; not active closure debt |
 | Source file locality cleanup | 021 | Follow-up implementation spec prepared; not active closure debt |
 | Repo realignment / monitoring / gate readiness | 019 | Workstreams implemented; residual governance split to Spec 022 |
-| Post-merge governance closure | 022 | PR-ready governance closure; PR #60 approval remains `not_assessed`; final closure pending PR creation and live branch PR/CI evidence |
+| Post-merge governance closure | 022 | PR-ready governance closure on PR #72; PR #60 approval remains `not_assessed`; final closure pending final-head PR #72 CI/merge evidence |
 
 ## Claim-Tag Enforcement Scope
 
@@ -195,6 +195,6 @@ Historical block records in `blocks/` are exempt from these expectations. They a
 
 - Update this file when a new spec is opened or an active spec's status changes.
 - Owner: the spec author or current block worker.
-- Last updated: 2026-06-01.
+- Last updated: 2026-06-05.
 
 <!-- sdp-trace-claim: claim=profile_passed; subject=roadmap-001-015-coverage; state=pass; profile=repo_baseline_structural; evidence=command_set:block015-t030 -->
