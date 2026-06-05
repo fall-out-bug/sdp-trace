@@ -1459,6 +1459,18 @@ non-subcommand invocations, unknown-subcommand behavior from the shared optional
 subcommand dispatcher, package boundary, dependency direction, CRAP < 5, MI >
 70, and MI baselines.
 
+Slice 108 continues `cmd/sdp-trace` source-file locality cleanup with standard
+gate helper shards. The slice is limited to consolidating
+`gate_standard_run.go` and `gate_preview_standard.go` into a cohesive
+`gate_standard.go` responsibility file without changing standard gate
+evaluation, standard preview behavior, protected gate execution, protected
+preview behavior, explain, argument parsing, exit-code logic, public command
+surface docs, schema files, examples, fixtures, or dependencies. It must
+preserve `demo.WriteGate` inputs, witness handling, JSON indentation and
+trailing newline output, stderr error propagation, standard gate exit-code
+mapping, standard preview report shape, witness preview mismatch reporting,
+package boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines.
+
 ## Verification
 
 ```text

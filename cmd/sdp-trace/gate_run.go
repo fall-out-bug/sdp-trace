@@ -12,6 +12,10 @@ var gateSubcommandHandlers = map[string]subcommandHandler{
 	"preview": runGatePreview,
 }
 
+func runGateSubcommand(args []string, stdout, stderr io.Writer) (int, bool) {
+	return runOptionalSubcommand(args, stdout, stderr, gateSubcommandHandlers)
+}
+
 func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 	if code, ok := runGateSubcommand(args, stdout, stderr); ok {
 		// Gate subcommands are read-only/explanatory paths and do not evaluate a
@@ -23,13 +27,7 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 	if opts.stringValue("profile") == demo.GateProfileProtected {
-		// Protected mode requires checkpoint, policy, and witness inputs in
-		// addition to local run rows.
 		return runProtectedGate(target, outPath, opts, stdout, stderr)
 	}
 	return runStandardGate(target, outPath, opts, stdout, stderr)
-}
-
-func runGateSubcommand(args []string, stdout, stderr io.Writer) (int, bool) {
-	return runOptionalSubcommand(args, stdout, stderr, gateSubcommandHandlers)
 }

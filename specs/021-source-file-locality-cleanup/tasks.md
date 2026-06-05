@@ -4020,3 +4020,51 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 108 Tasks
+
+- [x] T021-7470 Confirm Slice 108 is bounded to `cmd/sdp-trace`
+  `gate_standard_run.go`, `gate_preview_standard.go`, and the cohesive
+  destination `gate_standard.go`.
+- [x] T021-7471 Confirm Slice 108 is behavior-preserving: no changes to
+  standard gate evaluation, standard preview behavior, protected gate
+  execution, protected preview behavior, explain, argument parsing, gate
+  exit-code logic, public command surface docs, schema files, examples,
+  fixtures, dependencies, package boundary, dependency direction, or MI
+  baselines are planned.
+- [x] T021-7472 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-108-plan-review.md`.
+- [x] T021-7480 Consolidate `gate_standard_run.go` and
+  `gate_preview_standard.go` into `gate_standard.go` without creating
+  replacement one-function shards. Record source-shape evidence that both
+  source helper shards are gone and staged boundary evidence that excluded gate
+  files and public surfaces are untouched.
+- [x] T021-7490 Run `gofmt` on changed Go files.
+- [x] T021-7495 Add or extend focused regression coverage for
+  `runStandardGate` so it directly asserts indented JSON output with trailing
+  newline and stderr/nonzero-exit propagation for a `demo.WriteGate` error.
+- [x] T021-7500 Run focused standard gate verification with a `go test -list`
+  exact-count guard expecting exactly 8 tests:
+  `TestRunStandardGatePreservesOutputAndErrors`,
+  `TestReportAndGateCommands`,
+  `TestGateCommandAcceptsWitness`,
+  `TestGateCommandFailsForWitnessArtifactMismatch`,
+  `TestGateCommandCannotVerifyWhenWitnessOmitsRunArtifact`,
+  `TestDefaultGateDoesNotEmitProtectedFields`, and
+  `TestGatePreviewStandardReportShape`, and
+  `TestGatePreviewReportsWitnessArtifactMismatch`, then run those tests with
+  `go test ./cmd/sdp-trace -run <guard> -count=1 -v`.
+- [x] T021-7510 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-7520 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-7530 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 108 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-108-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

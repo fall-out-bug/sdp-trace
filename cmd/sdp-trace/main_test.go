@@ -3534,6 +3534,43 @@ func TestRunGateSubcommandPreservesDispatch(t *testing.T) {
 	}
 }
 
+func TestRunStandardGatePreservesOutputAndErrors(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "test")
+	outPath := filepath.Join(t.TempDir(), "gate-result.json")
+	opts := newStringFlagSet("gate", gateStringFlags)
+	opts.setString("contract", writeGateContract(t, t.TempDir()))
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runStandardGate(root, outPath, opts, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("standard gate exit %d err=%s", exit, errOut.String())
+	}
+	if errOut.Len() != 0 {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
+	}
+	output := out.String()
+	if !strings.HasSuffix(output, "\n") || !strings.Contains(output, "\n  \"schema_version\"") {
+		t.Fatalf("standard gate output lost indentation/trailing newline: %q", output)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runStandardGate(root, "", opts, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("standard gate error exit %d want 1", exit)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("standard gate wrote stdout on error: %s", out.String())
+	}
+	if got := errOut.String(); got != "gate requires --out <file>\n" {
+		t.Fatalf("stderr = %q", got)
+	}
+}
+
 func runAndWrap(t *testing.T, runDir string, commandPath string, args ...string) {
 	t.Helper()
 	runAndWrapNamed(t, runDir, "fixture", commandPath, args...)
