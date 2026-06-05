@@ -573,9 +573,18 @@ func TestNormalizeOpenCodeRawLineBytesComputesDigestForEachEvent(t *testing.T) {
 func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 	dir := t.TempDir()
 	outPath := filepath.Join(dir, "nested", "events.jsonl")
+	withOptionalFields := normalizedEvent("e3", "tool", "tool_observed", "2026-05-10T12:00:02Z", "raw-000003", "codex")
+	withOptionalFields.TaskRef = "task-1"
+	withOptionalFields.OperationRef = "op-1"
+	withOptionalFields.UnavailableFields = []UnavailableField{{
+		Field:      "raw_prompt",
+		State:      StateCannotVerify,
+		ReasonCode: "redacted",
+	}}
 	events := []Event{
 		normalizedEvent("e1", "harness", "harness_observed", "2026-05-10T12:00:00Z", "raw-000001", "opencode"),
 		normalizedEvent("e2", "model", "model_observed", "2026-05-10T12:00:01Z", "raw-000002", "qwen"),
+		withOptionalFields,
 	}
 	if err := writeNormalizedEvents(outPath, events); err != nil {
 		t.Fatalf("writeNormalizedEvents() error = %v", err)
@@ -585,8 +594,8 @@ func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 		t.Fatalf("read normalized events: %v", err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 2 {
-		t.Fatalf("lines = %d, want 2\n%s", len(lines), string(data))
+	if len(lines) != 3 {
+		t.Fatalf("lines = %d, want 3\n%s", len(lines), string(data))
 	}
 	var got Event
 	if err := json.Unmarshal([]byte(lines[1]), &got); err != nil {
@@ -594,6 +603,76 @@ func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 	}
 	if got.EventID != "e2" || got.EventFamily != "model" {
 		t.Fatalf("second event = %+v", got)
+	}
+	var rawEvent map[string]any
+	if err := json.Unmarshal([]byte(lines[1]), &rawEvent); err != nil {
+		t.Fatalf("parse raw second line: %v", err)
+	}
+	wantEvent := map[string]any{
+		"event_id":             "e2",
+		"event_schema_version": EventSchemaVersion,
+		"event_family":         "model",
+		"event_type":           "model_observed",
+		"observed_at":          "2026-05-10T12:00:01Z",
+		"source_ref":           "raw-000002",
+		"source_digest":        got.SourceDigest,
+		"actor_ref":            "qwen",
+		"content_state":        "digest_only",
+	}
+	for key, want := range wantEvent {
+		if got := rawEvent[key]; got != want {
+			t.Fatalf("raw event[%q] = %#v, want %#v in %#v", key, got, want, rawEvent)
+		}
+	}
+	for _, omitted := range []string{"task_ref", "operation_ref", "unavailable_fields"} {
+		if _, ok := rawEvent[omitted]; ok {
+			t.Fatalf("raw event includes omitted optional key %q in %#v", omitted, rawEvent)
+		}
+	}
+
+	var gotOptional Event
+	if err := json.Unmarshal([]byte(lines[2]), &gotOptional); err != nil {
+		t.Fatalf("parse third line: %v", err)
+	}
+	var rawEventWithOptional map[string]any
+	if err := json.Unmarshal([]byte(lines[2]), &rawEventWithOptional); err != nil {
+		t.Fatalf("parse raw third line: %v", err)
+	}
+	wantEventWithOptional := map[string]any{
+		"event_id":             "e3",
+		"event_schema_version": EventSchemaVersion,
+		"event_family":         "tool",
+		"event_type":           "tool_observed",
+		"observed_at":          "2026-05-10T12:00:02Z",
+		"source_ref":           "raw-000003",
+		"source_digest":        gotOptional.SourceDigest,
+		"task_ref":             "task-1",
+		"operation_ref":        "op-1",
+		"actor_ref":            "codex",
+		"content_state":        "digest_only",
+	}
+	for key, want := range wantEventWithOptional {
+		if got := rawEventWithOptional[key]; got != want {
+			t.Fatalf("raw event with optional[%q] = %#v, want %#v in %#v", key, got, want, rawEventWithOptional)
+		}
+	}
+	unavailableFields, ok := rawEventWithOptional["unavailable_fields"].([]any)
+	if !ok || len(unavailableFields) != 1 {
+		t.Fatalf("unavailable_fields = %#v, want one item", rawEventWithOptional["unavailable_fields"])
+	}
+	unavailableField, ok := unavailableFields[0].(map[string]any)
+	if !ok {
+		t.Fatalf("unavailable_fields[0] = %#v, want object", unavailableFields[0])
+	}
+	wantUnavailableField := map[string]any{
+		"field":       "raw_prompt",
+		"state":       "cannot_verify",
+		"reason_code": "redacted",
+	}
+	for key, want := range wantUnavailableField {
+		if got := unavailableField[key]; got != want {
+			t.Fatalf("unavailable_fields[0][%q] = %#v, want %#v in %#v", key, got, want, unavailableField)
+		}
 	}
 }
 

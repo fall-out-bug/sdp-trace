@@ -1621,6 +1621,18 @@ schemas, examples, dependencies, package boundary, dependency direction, CRAP <
 `Dimension` fields and JSON tags: `family`, `required`, `state`,
 `reason_code`, and `event_count`.
 
+Slice 122 continues the remaining non-numbered `internal/harnessobs` type
+cleanup with the observation event artifact shape. The slice is limited to
+consolidating `event_type.go` into `run_type.go` so the exported `Event` JSON
+shape is co-located with the exported observation `Run` JSON shape. It
+intentionally leaves event decoding, identity/ref/content validation, event
+scanning, event writing behavior, run loading, normalized event generation,
+schemas, examples, dependencies, package boundary, dependency direction, CRAP <
+5, MI > 70, and MI baselines unchanged. It must preserve the exported `Event`
+fields and JSON tags: `event_id`, `event_schema_version`, `event_family`,
+`event_type`, `observed_at`, `source_ref`, `source_digest`, `task_ref`,
+`operation_ref`, `actor_ref`, `content_state`, and `unavailable_fields`.
+
 ## Verification
 
 ```text
