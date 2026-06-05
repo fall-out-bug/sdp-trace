@@ -8,10 +8,36 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestEventTypesReturnsStableCopy(t *testing.T) {
+	want := []string{
+		"clarification_answer",
+		"clarification_request",
+		"boundary_violation",
+		"corrective_feedback",
+		"evidence_correction",
+		"pause_requested",
+		"plan_approved",
+		"plan_proposed",
+		"plan_rejected",
+		"resume_approved",
+		"task_assignment",
+		"tool_or_model_drift",
+	}
+	got := EventTypes()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("EventTypes() = %#v", got)
+	}
+	got[0] = "mutated"
+	if after := EventTypes(); !reflect.DeepEqual(after, want) {
+		t.Fatalf("EventTypes() backing catalog mutated: %#v", after)
+	}
+}
 
 func TestRelayWritesBeforeForwardingAndSummarizesFriction(t *testing.T) {
 	dir := t.TempDir()
@@ -454,6 +480,13 @@ func TestValidateEventRejectsInvalidFields(t *testing.T) {
 		mutate  func(*Event)
 		wantErr string
 	}{
+		{
+			name: "unsupported event type",
+			mutate: func(event *Event) {
+				event.EventType = "approval_claimed"
+			},
+			wantErr: "unsupported event_type",
+		},
 		{
 			name: "friction class mismatch",
 			mutate: func(event *Event) {

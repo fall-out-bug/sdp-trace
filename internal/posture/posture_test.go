@@ -794,8 +794,14 @@ func TestValidateMetricRowShapeRejectsMalformedRows(t *testing.T) {
 		"count": func(row *MetricRow) {
 			row.Numerator = -1
 		},
+		"denominator": func(row *MetricRow) {
+			row.Denominator = -1
+		},
 		"unit": func(row *MetricRow) {
 			row.Unit = "bytes"
+		},
+		"not-assessed-count": func(row *MetricRow) {
+			row.NotAssessedCount = -1
 		},
 		"time-window": func(row *MetricRow) {
 			row.TimeWindow = "https://provider.example/private"

@@ -106,6 +106,64 @@ func TestAnalyzePathsSkipsTestsAndFormatsGocycloRows(t *testing.T) {
 	}
 }
 
+func TestParseOptionsPopulatesAllOptionFields(t *testing.T) {
+	var stderr bytes.Buffer
+	opts, paths, ok := parseOptions([]string{
+		"-cyclo-over", "7",
+		"-cognitive-over", "8",
+		"-mi-under", "70.5",
+		"-mi-baseline", "file-mi.json",
+		"-write-mi-baseline", "write-file-mi.json",
+		"-function-mi-under", "71.5",
+		"-function-mi-baseline", "function-mi.json",
+		"-write-function-mi-baseline", "write-function-mi.json",
+		"-gocyclo",
+		"-fail-only",
+		"target",
+	}, &stderr)
+	if !ok {
+		t.Fatalf("parseOptions() ok = false, stderr = %q", stderr.String())
+	}
+	if len(paths) != 1 || paths[0] != "target" {
+		t.Fatalf("paths = %#v, want target", paths)
+	}
+	if opts.cycloOver != 7 ||
+		opts.cognitiveOver != 8 ||
+		opts.miUnder != 70.5 ||
+		opts.fileMIBaseline != "file-mi.json" ||
+		opts.writeFileMIBaseline != "write-file-mi.json" ||
+		opts.functionMIUnder != 71.5 ||
+		opts.functionMIBaseline != "function-mi.json" ||
+		opts.writeFunctionMIBaseline != "write-function-mi.json" ||
+		!opts.gocyclo ||
+		!opts.failOnly ||
+		opts.err != &stderr {
+		t.Fatalf("opts = %+v", opts)
+	}
+
+	var defaultStderr bytes.Buffer
+	defaultOpts, defaultPaths, ok := parseOptions(nil, &defaultStderr)
+	if !ok {
+		t.Fatalf("parseOptions(defaults) ok = false, stderr = %q", defaultStderr.String())
+	}
+	if len(defaultPaths) != 1 || defaultPaths[0] != "." {
+		t.Fatalf("default paths = %#v, want .", defaultPaths)
+	}
+	if defaultOpts.cycloOver != 0 ||
+		defaultOpts.cognitiveOver != 0 ||
+		defaultOpts.miUnder != 0 ||
+		defaultOpts.fileMIBaseline != "" ||
+		defaultOpts.writeFileMIBaseline != "" ||
+		defaultOpts.functionMIUnder != 0 ||
+		defaultOpts.functionMIBaseline != "" ||
+		defaultOpts.writeFunctionMIBaseline != "" ||
+		defaultOpts.gocyclo ||
+		defaultOpts.failOnly ||
+		defaultOpts.err != &defaultStderr {
+		t.Fatalf("default opts = %+v", defaultOpts)
+	}
+}
+
 func TestCollectGoFileHandlesWalkErrorsAndSkippedDirs(t *testing.T) {
 	walkErr := errors.New("walk failed")
 	if err := collectGoFile("broken", nil, walkErr, nil); !errors.Is(err, walkErr) {

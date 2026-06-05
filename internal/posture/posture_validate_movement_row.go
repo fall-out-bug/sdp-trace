@@ -7,3 +7,7 @@ func validateMovementRow(row MovementRow) error {
 func malformedMovementRow(row MovementRow) bool {
 	return malformedMovementIdentity(row) || malformedMovementValues(row) || malformedMovementComparison(row)
 }
+
+func malformedMovementIdentity(row MovementRow) bool {
+	return row.ID == "" || !validMetricID(row.MetricID) || row.MetricVersion != ProfileVer || row.DimensionKey == ""
+}

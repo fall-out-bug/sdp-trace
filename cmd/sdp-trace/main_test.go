@@ -20,6 +20,7 @@ import (
 	"github.com/fall_out_bug/sdp-trace/internal/interaction"
 	"github.com/fall_out_bug/sdp-trace/internal/managed"
 	"github.com/fall_out_bug/sdp-trace/internal/posture"
+	"github.com/fall_out_bug/sdp-trace/internal/prreview"
 	"github.com/fall_out_bug/sdp-trace/internal/repoobserver"
 	"github.com/fall_out_bug/sdp-trace/internal/trace"
 )
@@ -438,6 +439,29 @@ func TestProtectedInputStatusBranches(t *testing.T) {
 	}
 }
 
+func TestProtectedInputErrorStatusMapsPermissionDeniedToUnreadable(t *testing.T) {
+	if got := protectedInputErrorStatus(os.ErrPermission); got != "present_unreadable" {
+		t.Fatalf("permission denied status = %s, want present_unreadable", got)
+	}
+}
+
+func TestProtectedPreviewActionsKeepStableOrder(t *testing.T) {
+	inputs := map[string]string{
+		"witness":           "present_malformed",
+		"checkpoint_policy": "present_unreadable",
+		"checkpoint":        "absent",
+	}
+	got := protectedPreviewActions(inputs)
+	want := []string{
+		"Supply checkpoint input before running protected gate.",
+		"Replace checkpoint_policy input with readable JSON.",
+		"Replace witness input with readable JSON.",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("actions = %#v, want %#v", got, want)
+	}
+}
+
 func TestCLICommandDispatchAndQueryErrorBranches(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -772,6 +796,132 @@ func TestCheckpointVerifyHelpersCoverPolicyAndExitBranches(t *testing.T) {
 	}
 }
 
+func TestRunCheckpointRejectsMissingOrUnknownSubcommand(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	if code := runCheckpoint(context.Background(), []string{}, &out, &errOut); code != exitUsage {
+		t.Fatalf("missing checkpoint command exit = %d", code)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint requires create or verify") {
+		t.Fatalf("missing checkpoint command stderr = %q", errOut.String())
+	}
+
+	out.Reset()
+	errOut.Reset()
+	if code := runCheckpoint(context.Background(), []string{"delete"}, &out, &errOut); code != exitUsage {
+		t.Fatalf("unknown checkpoint command exit = %d", code)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint requires create or verify") {
+		t.Fatalf("unknown checkpoint command stderr = %q", errOut.String())
+	}
+}
+
+func TestCheckpointCreateFlagValidation(t *testing.T) {
+	var errOut bytes.Buffer
+
+	if _, code, ok := parseCheckpointCreateArgs([]string{}, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing create flags code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint create requires --run") {
+		t.Fatalf("missing create flags stderr = %q", errOut.String())
+	}
+
+	errOut.Reset()
+	if _, code, ok := parseCheckpointCreateArgs([]string{
+		"--run", "run",
+		"--out", "checkpoint.json",
+		"--private-key", "key.json",
+		"--signer-id", "signer",
+		"extra",
+	}, &errOut); ok || code != exitUsage {
+		t.Fatalf("extra create arg code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint create accepts only flags") {
+		t.Fatalf("extra create arg stderr = %q", errOut.String())
+	}
+}
+
+func TestCheckpointCreateFailurePaths(t *testing.T) {
+	dir := t.TempDir()
+	var errOut bytes.Buffer
+
+	opts := newCheckpointCreateFlagSet()
+	if err := opts.parse([]string{
+		"--run", dir,
+		"--out", filepath.Join(dir, "checkpoint.json"),
+		"--private-key", filepath.Join(dir, "missing-key.json"),
+		"--signer-id", "local-dev",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, code, ok := createCheckpointFromOptions(opts, &errOut); ok || code != 1 {
+		t.Fatalf("missing key code=%d ok=%v", code, ok)
+	}
+
+	key, err := checkpoint.GenerateKeyPair("local-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(dir, "key.json")
+	writeJSONFileForTest(t, keyPath, key)
+	opts = newCheckpointCreateFlagSet()
+	if err := opts.parse([]string{
+		"--run", dir,
+		"--out", dir,
+		"--private-key", keyPath,
+		"--signer-id", "local-dev",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	errOut.Reset()
+	if _, code, ok := createCheckpointFromOptions(opts, &errOut); ok || code != 1 {
+		t.Fatalf("directory output code=%d ok=%v", code, ok)
+	}
+}
+
+func TestCheckpointVerifyRejectsPositionalArgs(t *testing.T) {
+	var errOut bytes.Buffer
+
+	if _, code, ok := parseCheckpointVerifyArgs([]string{"--run", "r", "--checkpoint", "c", "extra"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("checkpoint verify rest code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint verify accepts only flags") {
+		t.Fatalf("checkpoint verify rest stderr = %q", errOut.String())
+	}
+}
+
+func TestCheckpointVerifyInputLoadFailures(t *testing.T) {
+	dir := t.TempDir()
+	var errOut bytes.Buffer
+
+	if _, code, ok := parseCheckpointVerifyArgs([]string{"--checkpoint", "c"}, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing verify run code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "checkpoint verify requires --run") {
+		t.Fatalf("missing verify run stderr = %q", errOut.String())
+	}
+
+	checkpointPath := filepath.Join(dir, "checkpoint.json")
+	policyPath := filepath.Join(dir, "policy.json")
+	opts := newCheckpointVerifyFlagSet()
+	if err := opts.parse([]string{"--run", dir, "--checkpoint", checkpointPath, "--policy", policyPath}); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, code, ok := loadCheckpointVerifyInputs(opts, &errOut); ok || code != 1 {
+		t.Fatalf("missing checkpoint load code=%d ok=%v", code, ok)
+	}
+
+	writeJSONFileForTest(t, checkpointPath, checkpoint.SignedCheckpoint{})
+	if err := os.WriteFile(policyPath, []byte("{not-json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	errOut.Reset()
+	if _, _, code, ok := loadCheckpointVerifyInputs(opts, &errOut); ok || code != 1 {
+		t.Fatalf("malformed policy load code=%d ok=%v", code, ok)
+	}
+}
+
 func TestInstallRepoObserverHelpersCoverErrorAndParseBranches(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -1042,6 +1192,127 @@ func readJSONFileForTest(t *testing.T, path string, value any) {
 	}
 	if err := json.Unmarshal(raw, value); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestReadJSONFilePropagatesReadAndDecodeErrors(t *testing.T) {
+	var decoded map[string]string
+	if err := readJSONFile(filepath.Join(t.TempDir(), "missing.json"), &decoded); err == nil {
+		t.Fatalf("missing file read returned nil error")
+	}
+
+	path := filepath.Join(t.TempDir(), "bad.json")
+	if err := os.WriteFile(path, []byte("{"), 0o644); err != nil {
+		t.Fatalf("write bad json: %v", err)
+	}
+	if err := readJSONFile(path, &decoded); err == nil {
+		t.Fatalf("invalid JSON returned nil error")
+	}
+}
+
+func TestWriteJSONFileCreatesPrettyJSONWithNewline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "artifact.json")
+	if err := writeJSONFile(path, map[string]string{"b": "two", "a": "one"}); err != nil {
+		t.Fatalf("write JSON: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read JSON: %v", err)
+	}
+	want := "{\n  \"a\": \"one\",\n  \"b\": \"two\"\n}\n"
+	if string(data) != want {
+		t.Fatalf("JSON content = %q, want %q", string(data), want)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat JSON: %v", err)
+	}
+	if got := info.Mode().Perm(); got&0o111 != 0 {
+		t.Fatalf("JSON mode = %o, want no executable bits", got)
+	}
+}
+
+func TestWriteTextFileAtomicPublishesCompleteTextAndCleansTemp(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "report.md")
+	if err := writeTextFileAtomic(path, "old\n"); err != nil {
+		t.Fatalf("write old text: %v", err)
+	}
+	if err := writeTextFileAtomic(path, "new\n"); err != nil {
+		t.Fatalf("write new text: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read text: %v", err)
+	}
+	if string(data) != "new\n" {
+		t.Fatalf("text content = %q", string(data))
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat text: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o644 {
+		t.Fatalf("text mode = %o, want 644", got)
+	}
+	assertNoAtomicTextTemps(t, filepath.Dir(path), filepath.Base(path))
+}
+
+func TestFinishAtomicTextWriteNormalizesModeBeforeRename(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.md")
+	tmp, err := os.CreateTemp(dir, ".report.md.*.tmp")
+	if err != nil {
+		t.Fatalf("create temp: %v", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+
+	if err := finishAtomicTextWrite(tmp, tmpName, path, "report\n"); err != nil {
+		t.Fatalf("finish atomic write: %v", err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat final text: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o644 {
+		t.Fatalf("final text mode = %o, want 644", got)
+	}
+}
+
+func TestWriteAndCloseTempTextReturnsWriteErrorOnClosedFile(t *testing.T) {
+	tmp, err := os.CreateTemp(t.TempDir(), "closed.*.tmp")
+	if err != nil {
+		t.Fatalf("create temp: %v", err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatalf("close temp: %v", err)
+	}
+	if err := writeAndCloseTempText(tmp, "text\n"); err == nil {
+		t.Fatalf("closed temp write returned nil error")
+	}
+}
+
+func TestWriteTextFileAtomicRemovesTempOnRenameFailure(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.md")
+	if err := os.Mkdir(path, 0o755); err != nil {
+		t.Fatalf("create destination directory: %v", err)
+	}
+
+	if err := writeTextFileAtomic(path, "report\n"); err == nil {
+		t.Fatalf("rename to directory returned nil error")
+	}
+	assertNoAtomicTextTemps(t, dir, filepath.Base(path))
+}
+
+func assertNoAtomicTextTemps(t *testing.T, dir, base string) {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(dir, "."+base+".*.tmp"))
+	if err != nil {
+		t.Fatalf("glob temp files: %v", err)
+	}
+	if len(matches) != 0 {
+		t.Fatalf("atomic temp files left behind: %v", matches)
 	}
 }
 
@@ -1679,6 +1950,129 @@ func TestLoadProtectedWitnessExpectationRejectsMissingRuns(t *testing.T) {
 	}
 }
 
+func TestDemoWitnessExpectationUsesFirstRunAndRetainedDigests(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	firstRun := filepath.Join(root, "001-agent-session")
+	secondRun := filepath.Join(root, "002-verification-run")
+	runAndWrapNamed(t, firstRun, "agent-session", echo, "agent")
+	runAndWrapNamed(t, secondRun, "verification-run", echo, "test")
+
+	expected, err := demoWitnessExpectation(root)
+	if err != nil {
+		t.Fatalf("demo witness expectation: %v", err)
+	}
+	if expected.RunID == "" {
+		t.Fatalf("expected first run id to be populated")
+	}
+	firstArtifact, err := trace.OpenRunArtifact(firstRun)
+	if err != nil {
+		t.Fatalf("open first run artifact: %v", err)
+	}
+	if expected.RunID != firstArtifact.Manifest.RunID {
+		t.Fatalf("expected run id %q, want first run id %q", expected.RunID, firstArtifact.Manifest.RunID)
+	}
+	if len(expected.RunArtifacts) != 2 {
+		t.Fatalf("artifact count = %d, want 2: %#v", len(expected.RunArtifacts), expected.RunArtifacts)
+	}
+	want := map[string]string{
+		"001-agent-session/run.json":    sha256FileForTest(t, filepath.Join(firstRun, "run.json")),
+		"002-verification-run/run.json": sha256FileForTest(t, filepath.Join(secondRun, "run.json")),
+	}
+	for _, artifact := range expected.RunArtifacts {
+		if got := want[artifact.Path]; got != artifact.SHA256 {
+			t.Fatalf("artifact %s digest %s, want %s in %#v", artifact.Path, artifact.SHA256, got, expected.RunArtifacts)
+		}
+		delete(want, artifact.Path)
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing expected artifact paths: %#v", want)
+	}
+}
+
+func TestDemoWitnessExpectationPropagatesRunArtifactReadErrors(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runDir := filepath.Join(root, "001-agent-session")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+	if err := os.WriteFile(filepath.Join(runDir, "run.json"), []byte(`{not-json`), 0o644); err != nil {
+		t.Fatalf("corrupt retained run artifact: %v", err)
+	}
+
+	if _, err := demoWitnessExpectation(root); err == nil {
+		t.Fatalf("malformed retained run artifact did not fail")
+	}
+	var errOut bytes.Buffer
+	if _, _, ok := loadProtectedWitnessExpectation(root, &errOut); ok {
+		t.Fatalf("protected witness expectation loader reported ok for malformed retained run artifact")
+	}
+	if !strings.Contains(errOut.String(), "invalid character") {
+		t.Fatalf("loader error did not propagate retained run artifact decode failure: %s", errOut.String())
+	}
+}
+
+func TestProtectedGateCoreFailurePaths(t *testing.T) {
+	dir := t.TempDir()
+	var errOut bytes.Buffer
+
+	opts := &flagSet{name: "protected test"}
+	opts.setString("checkpoint", "")
+	opts.setString("checkpoint-policy", filepath.Join(dir, "policy.json"))
+	opts.setString("witness", filepath.Join(dir, "witness.json"))
+	if _, code, ok := readProtectedGateInputs(opts, &errOut); ok || code != exitUsage {
+		t.Fatalf("missing checkpoint input code=%d ok=%v", code, ok)
+	}
+	if !strings.Contains(errOut.String(), "protected gate requires --checkpoint") {
+		t.Fatalf("missing checkpoint input stderr = %q", errOut.String())
+	}
+
+	checkpointPath := filepath.Join(dir, "checkpoint.json")
+	if err := os.WriteFile(checkpointPath, []byte("{not-json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	opts.setString("checkpoint", checkpointPath)
+	errOut.Reset()
+	if _, code, ok := readProtectedGateInputs(opts, &errOut); ok || code != exitUsage {
+		t.Fatalf("malformed checkpoint input code=%d ok=%v", code, ok)
+	}
+
+	var out bytes.Buffer
+	result := demo.GateResult{ProtectedGate: demo.GatePass}
+	if code := writeProtectedGateResult(dir, result, &out, &errOut); code != 1 {
+		t.Fatalf("directory result write code=%d", code)
+	}
+}
+
+func TestProtectedGateCoreWriteAndEvaluationBranches(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "protected-gate.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	result := demo.GateResult{ProtectedGate: demo.GatePass}
+	if code := writeProtectedGateResult(outPath, result, &out, &errOut); code != 0 {
+		t.Fatalf("protected result write code=%d err=%s", code, errOut.String())
+	}
+	if !strings.Contains(out.String(), `"protected_gate": "pass"`) {
+		t.Fatalf("protected result stdout = %s", out.String())
+	}
+
+	input := protectedGateEvaluationInput(
+		checkpoint.VerificationResult{Result: checkpoint.StatePass},
+		demo.WitnessSummary{},
+		demo.WitnessExpectation{},
+	)
+	if !input.PolicyProvided {
+		t.Fatalf("protected evaluation input did not mark policy provided")
+	}
+	if input.Now.Location() != time.UTC {
+		t.Fatalf("protected evaluation time location = %v", input.Now.Location())
+	}
+	if input.Witness == nil {
+		t.Fatalf("protected evaluation input omitted witness")
+	}
+}
+
 func TestDefaultGateDoesNotEmitProtectedFields(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()
@@ -2087,6 +2481,19 @@ func TestGateExplainUnsupportedArtifactCannotVerify(t *testing.T) {
 	}
 }
 
+func TestGateExplainMalformedArtifactCannotVerify(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "malformed-gate.json")
+	if err := os.WriteFile(gatePath, []byte(`{"schema_version":`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("malformed explain exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+}
+
 func TestGateExplainDoesNotPrintRawSecretLikeCommand(t *testing.T) {
 	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
 	if err := os.WriteFile(gatePath, []byte(`{
@@ -2118,6 +2525,96 @@ func TestGateExplainDoesNotPrintRawSecretLikeCommand(t *testing.T) {
 	}
 }
 
+func TestGateExplainRendersLegacyAndCollectionFields(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	if err := os.WriteFile(gatePath, []byte(`{
+	  "schema_version": "block14-gate-result-v1",
+	  "local_gate": "fail",
+	  "ci_witness_gate": "cannot_verify",
+	  "audit_grade_gate": "cannot_verify",
+	  "gate_mode": "observation",
+	  "trust_cap": "local_observed",
+	  "required_runs": [{"id": "verification_run", "wrapper_name": "verification-run", "profile": "observation", "state": "missing_telemetry", "reasons": ["missing"]}],
+	  "witness_bindings": [{"id": "ci_witness", "state": "cannot_verify", "reason": "missing"}],
+	  "missing_audit_evidence": ["review"],
+	  "override_requests": [{"override_id": "override-1", "state": "cannot_verify"}],
+	  "reasons": ["missing required run"],
+	  "next_actions": ["Run required wrapper verification-run."],
+	  "runs": [{"name": "run-a", "command": "deploy --token SECRET_TOKEN_COLLECTIONS"}]
+	}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate explain exit %d err=%s", exit, errOut.String())
+	}
+	output := out.String()
+	for _, want := range []string{
+		"Protected profile fields: absent",
+		"Required run verification_run: missing_telemetry",
+		"Witness binding ci_witness: cannot_verify",
+		"Missing audit evidence: review",
+		"Override override-1: cannot_verify",
+		"Reason: missing required run",
+		"Next action: Run required wrapper verification-run.",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("gate explain missing %q in %s", want, output)
+		}
+	}
+	if strings.Contains(output, "SECRET_TOKEN_COLLECTIONS") {
+		t.Fatalf("gate explain leaked raw command: %s", output)
+	}
+}
+
+func TestGateExplainRestatesPersistedVerdictsWithoutReevaluation(t *testing.T) {
+	gatePath := filepath.Join(t.TempDir(), "gate-result.json")
+	if err := os.WriteFile(gatePath, []byte(`{
+	  "schema_version": "block16-gate-result-v1",
+	  "selected_profile": "protected",
+	  "local_gate": "fail",
+	  "ci_witness_gate": "pass",
+	  "audit_grade_gate": "cannot_verify",
+	  "protected_gate": "pass",
+	  "gate_mode": "protected",
+	  "trust_cap": "ci_witnessed",
+	  "required_runs": [],
+	  "required_evidence": [],
+	  "observed_evidence": [],
+	  "witness_bindings": [],
+	  "override_requests": [],
+	  "gate_conditions": [],
+	  "reasons": [],
+	  "next_actions": [],
+	  "missing_audit_evidence": [],
+	  "runs": []
+	}`), 0o644); err != nil {
+		t.Fatalf("write gate result: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "explain", "--gate-result", gatePath}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate explain exit %d err=%s", exit, errOut.String())
+	}
+	output := out.String()
+	for _, want := range []string{
+		"Local gate: fail",
+		"CI witness gate: pass",
+		"Audit-grade gate: cannot_verify",
+		"Protected gate: pass",
+		"Trust cap: ci_witnessed",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("gate explain did not restate persisted verdict %q in %s", want, output)
+		}
+	}
+}
+
 func TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()
@@ -2133,9 +2630,7 @@ func TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues(t *testing.T) {
 	if strings.Contains(out.String(), "SECRET_TOKEN_BLOCK14") {
 		t.Fatalf("preview leaked secret-like value: %s", out.String())
 	}
-	if strings.Contains(out.String(), `"local_gate": "pass"`) {
-		t.Fatalf("preview claimed pass: %s", out.String())
-	}
+	assertNoGateVerdictFields(t, out.Bytes())
 	if _, err := os.Stat(filepath.Join(root, "gate-result.json")); !os.IsNotExist(err) {
 		t.Fatalf("preview wrote gate artifact")
 	}
@@ -2147,12 +2642,135 @@ func TestGatePreviewIsReadOnlyAndDoesNotPrintSecretLikeValues(t *testing.T) {
 	}
 }
 
+func TestGatePreviewStandardReportShape(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	contractPath := writeGateContract(t, t.TempDir())
+	witnessPath := writeMismatchedWitnessSummary(t, t.TempDir())
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	var report map[string]any
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("preview json: %v\n%s", err, out.String())
+	}
+	for _, field := range []string{"required_runs", "required_evidence", "witness_inspectable", "witness_mismatches", "claim"} {
+		if _, ok := report[field]; !ok {
+			t.Fatalf("preview report missing %s: %s", field, out.String())
+		}
+	}
+	assertNoGateVerdictFields(t, out.Bytes())
+}
+
 func TestGatePreviewReportsWitnessArtifactMismatch(t *testing.T) {
 	echo := mustFindCommand(t, "echo")
 	root := t.TempDir()
 	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
 	contractPath := writeGateContract(t, t.TempDir())
-	witnessPath := filepath.Join(t.TempDir(), "ci-witness.json")
+	witnessPath := writeMismatchedWitnessSummary(t, t.TempDir())
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+	if !strings.Contains(out.String(), "ci witness artifact digest mismatch") {
+		t.Fatalf("preview did not report witness mismatch: %s", out.String())
+	}
+	assertNoGateVerdictFields(t, out.Bytes())
+}
+
+func TestGatePreviewParseAndContractFailurePaths(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		args []string
+		want int
+		err  string
+	}{
+		{
+			name: "missing target",
+			args: []string{"gate", "preview"},
+			want: exitUsage,
+			err:  "gate preview requires <runs-root-or-run-dir>",
+		},
+		{
+			name: "too many targets",
+			args: []string{"gate", "preview", "one", "two"},
+			want: exitUsage,
+			err:  "gate preview requires <runs-root-or-run-dir>",
+		},
+		{
+			name: "missing contract",
+			args: []string{"gate", "preview", "--contract", filepath.Join(t.TempDir(), "missing.json"), t.TempDir()},
+			want: 1,
+			err:  "no such file",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(tt.args, &out, &errOut)
+			if exit != tt.want {
+				t.Fatalf("gate preview exit %d want %d err=%s out=%s", exit, tt.want, errOut.String(), out.String())
+			}
+			if !strings.Contains(errOut.String(), tt.err) {
+				t.Fatalf("gate preview stderr missing %q: %s", tt.err, errOut.String())
+			}
+			if out.Len() != 0 {
+				t.Fatalf("gate preview wrote stdout on failure: %s", out.String())
+			}
+		})
+	}
+}
+
+func TestProtectedGatePreviewInputFailurePaths(t *testing.T) {
+	dir := t.TempDir()
+	readable := filepath.Join(dir, "readable.json")
+	malformed := filepath.Join(dir, "malformed.json")
+	if err := os.WriteFile(readable, []byte(`{"ok":true}`), 0o644); err != nil {
+		t.Fatalf("write readable fixture: %v", err)
+	}
+	if err := os.WriteFile(malformed, []byte(`{not-json`), 0o644); err != nil {
+		t.Fatalf("write malformed fixture: %v", err)
+	}
+	for _, tt := range []struct {
+		name string
+		flag string
+		path string
+		want string
+		exit int
+	}{
+		{"checkpoint missing", "--checkpoint", filepath.Join(dir, "missing.json"), "present_unreadable", exitCannotVerify},
+		{"policy malformed", "--checkpoint-policy", malformed, "present_malformed", exitCannotVerify},
+		{"witness readable", "--witness", readable, "present_readable", 0},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run([]string{"gate", "preview", "--profile", "protected", tt.flag, tt.path, dir}, &out, &errOut)
+			if exit != tt.exit {
+				t.Fatalf("protected preview exit %d want %d err=%s out=%s", exit, tt.exit, errOut.String(), out.String())
+			}
+			field := strings.ReplaceAll(strings.TrimPrefix(tt.flag, "--"), "-", "_")
+			if !strings.Contains(out.String(), `"`+field+`": "`+tt.want+`"`) {
+				t.Fatalf("protected preview missing %s status %s: %s", tt.flag, tt.want, out.String())
+			}
+			if strings.Contains(out.String(), `"protected_gate"`) {
+				t.Fatalf("protected preview emitted gate verdict field: %s", out.String())
+			}
+		})
+	}
+}
+
+func writeMismatchedWitnessSummary(t *testing.T, dir string) string {
+	t.Helper()
+	witnessPath := filepath.Join(dir, "ci-witness.json")
 	if err := os.WriteFile(witnessPath, []byte(`{
 	  "kind": "github-actions",
 	  "status": "pass",
@@ -2165,15 +2783,15 @@ func TestGatePreviewReportsWitnessArtifactMismatch(t *testing.T) {
 	}`), 0o644); err != nil {
 		t.Fatalf("write witness: %v", err)
 	}
+	return witnessPath
+}
 
-	var out bytes.Buffer
-	var errOut bytes.Buffer
-	exit := run([]string{"gate", "preview", "--contract", contractPath, "--witness", witnessPath, root}, &out, &errOut)
-	if exit != 0 {
-		t.Fatalf("gate preview exit %d err=%s out=%s", exit, errOut.String(), out.String())
-	}
-	if !strings.Contains(out.String(), "ci witness artifact digest mismatch") {
-		t.Fatalf("preview did not report witness mismatch: %s", out.String())
+func assertNoGateVerdictFields(t *testing.T, raw []byte) {
+	t.Helper()
+	for _, field := range []string{"local_gate", "ci_witness_gate", "audit_grade_gate", "protected_gate"} {
+		if strings.Contains(string(raw), `"`+field+`"`) {
+			t.Fatalf("preview emitted gate verdict field %s: %s", field, string(raw))
+		}
 	}
 }
 
@@ -2241,6 +2859,7 @@ func TestGateExitCodeUsesProtectedGateWhenSelected(t *testing.T) {
 		{name: "pass", protectedGate: demo.GatePass, want: 0},
 		{name: "fail", protectedGate: demo.GateFail, want: 1},
 		{name: "cannot_verify", protectedGate: demo.GateCannotVerify, want: exitCannotVerify},
+		{name: "not_assessed", protectedGate: demo.GateNotAssessed, want: exitCannotVerify},
 		{name: "unknown falls through to component fail", protectedGate: "", want: 1},
 		{name: "unknown falls through to component pass", protectedGate: "unexpected", want: 0},
 	}
@@ -2312,6 +2931,12 @@ func TestWitnessMatchesProtectedInput(t *testing.T) {
 		{name: "run", mutate: func(summary *demo.WitnessSummary, _ *demo.WitnessExpectation) {
 			summary.CIIdentity.RunID = "run-2"
 		}},
+		{name: "empty expected source fields are wildcards", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
+			expectation.Repository = ""
+			expectation.Ref = ""
+			expectation.CommitSHA = ""
+			expectation.RunID = ""
+		}, want: true},
 		{name: "missing expected artifact", mutate: func(_ *demo.WitnessSummary, expectation *demo.WitnessExpectation) {
 			expectation.RunArtifacts = append(expectation.RunArtifacts, demo.WitnessArtifactDigest{Path: "002/run.json", SHA256: "sha256-b"})
 		}},
@@ -2337,6 +2962,79 @@ func TestWitnessMatchesProtectedInput(t *testing.T) {
 			}
 			if got := witnessMatchesProtectedInput(summary, expectation); got != tc.want {
 				t.Fatalf("match = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestProtectedCheckpointTrustRejectsFailedCheckpointAndSignerMismatches(t *testing.T) {
+	result := checkpoint.VerificationResult{
+		Result:     checkpoint.StateCannotVerify,
+		TrustScope: checkpoint.TrustScopeLocalSigned,
+	}
+	signed := checkpoint.SignedCheckpoint{
+		Signature: checkpoint.Signature{PublicKey: "key-1"},
+		Signer: checkpoint.SignerIdentity{
+			SignerID:  "ci-signer",
+			Authority: checkpoint.AuthorityCIIsolatedJob,
+		},
+	}
+	policy := checkpoint.TrustedCheckpointPolicy{
+		AllowedSigners: []checkpoint.TrustedSigner{{
+			SignerID:  "ci-signer",
+			Authority: checkpoint.AuthorityCIIsolatedJob,
+			PublicKey: "key-1",
+		}},
+	}
+	witnessSummary := demo.WitnessSummary{
+		Kind:       "github-actions",
+		Status:     demo.GatePass,
+		TrustScope: "ci_witnessed",
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+	expected := demo.WitnessExpectation{
+		RunArtifacts: []demo.WitnessArtifactDigest{{
+			Path:   "001/run.json",
+			SHA256: "sha256-a",
+		}},
+	}
+
+	upgraded := protectedCheckpointVerification(result, signed, policy, witnessSummary, expected)
+	if upgraded.Result != checkpoint.StatePass || upgraded.TrustScope != checkpoint.TrustScopeCISigned || upgraded.SignerAuthorityState != checkpoint.StatePass {
+		t.Fatalf("expected protected checkpoint trust upgrade, got %+v", upgraded)
+	}
+
+	failed := result
+	failed.Result = checkpoint.StateFail
+	notUpgraded := protectedCheckpointVerification(failed, signed, policy, witnessSummary, expected)
+	if notUpgraded.Result != checkpoint.StateFail || notUpgraded.TrustScope == checkpoint.TrustScopeCISigned {
+		t.Fatalf("failed checkpoint was upgraded: %+v", notUpgraded)
+	}
+
+	for _, tt := range []struct {
+		name   string
+		mutate func(*checkpoint.TrustedSigner)
+	}{
+		{name: "signer id", mutate: func(signer *checkpoint.TrustedSigner) {
+			signer.SignerID = "other-signer"
+		}},
+		{name: "authority", mutate: func(signer *checkpoint.TrustedSigner) {
+			signer.Authority = checkpoint.AuthorityLocalDevelopment
+		}},
+		{name: "public key", mutate: func(signer *checkpoint.TrustedSigner) {
+			signer.PublicKey = "other-key"
+		}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			mismatchedPolicy := policy
+			mismatchedPolicy.AllowedSigners = append([]checkpoint.TrustedSigner(nil), policy.AllowedSigners...)
+			tt.mutate(&mismatchedPolicy.AllowedSigners[0])
+			got := protectedCheckpointVerification(result, signed, mismatchedPolicy, witnessSummary, expected)
+			if got.Result == checkpoint.StatePass || got.TrustScope == checkpoint.TrustScopeCISigned || got.SignerAuthorityState == checkpoint.StatePass {
+				t.Fatalf("signer mismatch upgraded protected trust: %+v", got)
 			}
 		})
 	}
@@ -2371,6 +3069,152 @@ func TestOverrideRequestAppendsFlightRecorderEvent(t *testing.T) {
 	}
 	if got := last.EventPayload["origin"]; got != "native_cli" {
 		t.Fatalf("origin = %v", got)
+	}
+}
+
+func TestOverrideRequestPersistsExternalReferencePayload(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"override", "request",
+		"--out", runDir,
+		"--id", "override-2",
+		"--by", "release-captain",
+		"--reason", "external approval pending",
+		"--source-ref", "refs/heads/main",
+		"--scope", "verification_run",
+		"--external-reference", "ticket/INC-42",
+	}, &out, &errOut)
+	if exit != 0 {
+		t.Fatalf("override request exit %d err=%s out=%s", exit, errOut.String(), out.String())
+	}
+
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("open run: %v", err)
+	}
+	last := artifact.Events[len(artifact.Events)-1]
+	want := map[string]string{
+		"override_id":        "override-2",
+		"producer":           "sdp-trace-cli",
+		"origin":             "native_cli",
+		"requested_by":       "release-captain",
+		"reason":             "external approval pending",
+		"source_ref":         "refs/heads/main",
+		"scope":              "verification_run",
+		"external_reference": "ticket/INC-42",
+	}
+	for key, value := range want {
+		if got := last.EventPayload[key]; got != value {
+			t.Fatalf("payload[%s] = %v, want %s", key, got, value)
+		}
+	}
+	createdAt, ok := last.EventPayload["created_at"].(string)
+	if !ok {
+		t.Fatalf("created_at missing or non-string: %#v", last.EventPayload["created_at"])
+	}
+	if _, err := time.Parse(time.RFC3339Nano, createdAt); err != nil {
+		t.Fatalf("created_at is not RFC3339Nano: %q: %v", createdAt, err)
+	}
+}
+
+func TestOverrideRequestRejectsInvalidRequestArgsBeforeAppend(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	runDir := filepath.Join(t.TempDir(), "run")
+	runAndWrapNamed(t, runDir, "agent-session", echo, "agent")
+	artifact, err := trace.OpenRunArtifact(runDir)
+	if err != nil {
+		t.Fatalf("open run: %v", err)
+	}
+	before := len(artifact.Events)
+
+	cases := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{
+			name:    "non-request",
+			args:    []string{"override", "approve", "--out", runDir},
+			wantErr: "override requires request",
+		},
+		{
+			name:    "unknown flag",
+			args:    []string{"override", "request", "--out", runDir, "--unknown", "value"},
+			wantErr: "unknown flag --unknown",
+		},
+		{
+			name: "positional text",
+			args: []string{
+				"override", "request",
+				"--out", runDir,
+				"--id", "override-3",
+				"--by", "release-captain",
+				"--reason", "reason",
+				"--source-ref", "refs/heads/main",
+				"--scope", "verification_run",
+				"extra",
+			},
+			wantErr: "override request accepts only flags",
+		},
+		{
+			name:    "missing required flag",
+			args:    []string{"override", "request", "--out", runDir},
+			wantErr: "override request requires --id",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			exit := run(tc.args, &out, &errOut)
+			if exit != exitUsage {
+				t.Fatalf("exit = %d, want %d; stdout=%s stderr=%s", exit, exitUsage, out.String(), errOut.String())
+			}
+			if !strings.Contains(errOut.String(), tc.wantErr) {
+				t.Fatalf("stderr = %q, want %q", errOut.String(), tc.wantErr)
+			}
+			if strings.Contains(out.String(), "override_event:") {
+				t.Fatalf("invalid request printed override event: %s", out.String())
+			}
+			after, err := trace.OpenRunArtifact(runDir)
+			if err != nil {
+				t.Fatalf("open run after invalid request: %v", err)
+			}
+			if len(after.Events) != before {
+				t.Fatalf("invalid request appended events: before=%d after=%d", before, len(after.Events))
+			}
+		})
+	}
+}
+
+func TestOverrideRequestAppendFailureDoesNotPrintEvent(t *testing.T) {
+	missingRunDir := filepath.Join(t.TempDir(), "missing-run")
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := run([]string{
+		"override", "request",
+		"--out", missingRunDir,
+		"--id", "override-4",
+		"--by", "release-captain",
+		"--reason", "reason",
+		"--source-ref", "refs/heads/main",
+		"--scope", "verification_run",
+	}, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("exit = %d, want 1; stdout=%s stderr=%s", exit, out.String(), errOut.String())
+	}
+	if strings.Contains(out.String(), "override_event:") {
+		t.Fatalf("append failure printed override event: %s", out.String())
+	}
+	if strings.TrimSpace(errOut.String()) == "" {
+		t.Fatalf("append failure did not print stderr")
 	}
 }
 
@@ -2556,6 +3400,174 @@ func TestFlagSetParsesBooleanLiteral(t *testing.T) {
 	}
 	if flags.boolValue("use-default-contract") {
 		t.Fatalf("expected false")
+	}
+}
+
+func TestParseGateArgsPreservesContract(t *testing.T) {
+	t.Run("success preserves all gate string flags", func(t *testing.T) {
+		var errOut bytes.Buffer
+		opts, target, outPath, code, ok := parseGateArgs([]string{
+			"--out", "gate.json",
+			"--contract", "contract.json",
+			"--witness", "witness.json",
+			"--profile", "protected",
+			"--checkpoint", "checkpoint.json",
+			"--checkpoint-policy", "policy.json",
+			"run-dir",
+		}, &errOut)
+		if !ok || code != 0 {
+			t.Fatalf("parse ok=%v code=%d err=%s", ok, code, errOut.String())
+		}
+		if target != "run-dir" || outPath != "gate.json" {
+			t.Fatalf("target/out = %q/%q", target, outPath)
+		}
+		for _, test := range []struct {
+			flag string
+			want string
+		}{
+			{"contract", "contract.json"},
+			{"witness", "witness.json"},
+			{"profile", "protected"},
+			{"checkpoint", "checkpoint.json"},
+			{"checkpoint-policy", "policy.json"},
+		} {
+			if got := opts.stringValue(test.flag); got != test.want {
+				t.Fatalf("%s = %q want %q", test.flag, got, test.want)
+			}
+		}
+		if errOut.Len() != 0 {
+			t.Fatalf("unexpected stderr: %s", errOut.String())
+		}
+	})
+
+	for _, test := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "missing target",
+			args: []string{"--out", "gate.json"},
+			want: "gate requires <runs-root-or-run-dir>\n",
+		},
+		{
+			name: "multiple targets",
+			args: []string{"--out", "gate.json", "one", "two"},
+			want: "gate requires <runs-root-or-run-dir>\n",
+		},
+		{
+			name: "missing out",
+			args: []string{"run-dir"},
+			want: "gate requires --out <file>\n",
+		},
+		{
+			name: "unknown flag",
+			args: []string{"--unknown", "value", "run-dir"},
+			want: "unknown flag --unknown\n",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			opts, target, outPath, code, ok := parseGateArgs(test.args, &errOut)
+			if ok || code != exitUsage || opts != nil || target != "" || outPath != "" {
+				t.Fatalf("parse ok=%v code=%d opts=%v target=%q out=%q", ok, code, opts, target, outPath)
+			}
+			if got := errOut.String(); got != test.want {
+				t.Fatalf("stderr = %q want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestRunGateSubcommandPreservesDispatch(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		args    []string
+		handled bool
+		code    int
+		wantErr string
+	}{
+		{
+			name:    "preview dispatch",
+			args:    []string{"preview"},
+			handled: true,
+			code:    exitUsage,
+			wantErr: "gate preview requires <runs-root-or-run-dir>",
+		},
+		{
+			name:    "explain dispatch",
+			args:    []string{"explain"},
+			handled: true,
+			code:    exitUsage,
+			wantErr: "gate explain requires --gate-result <file>",
+		},
+		{
+			name:    "empty falls back",
+			args:    nil,
+			handled: false,
+			code:    0,
+		},
+		{
+			name:    "unknown falls back",
+			args:    []string{"unknown"},
+			handled: false,
+			code:    0,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var out bytes.Buffer
+			var errOut bytes.Buffer
+			code, handled := runGateSubcommand(test.args, &out, &errOut)
+			if handled != test.handled || code != test.code {
+				t.Fatalf("handled/code = %v/%d want %v/%d", handled, code, test.handled, test.code)
+			}
+			if test.wantErr != "" && !strings.Contains(errOut.String(), test.wantErr) {
+				t.Fatalf("stderr missing %q: %s", test.wantErr, errOut.String())
+			}
+			if test.wantErr == "" && errOut.Len() != 0 {
+				t.Fatalf("unexpected stderr: %s", errOut.String())
+			}
+			if out.Len() != 0 {
+				t.Fatalf("unexpected stdout: %s", out.String())
+			}
+		})
+	}
+}
+
+func TestRunStandardGatePreservesOutputAndErrors(t *testing.T) {
+	echo := mustFindCommand(t, "echo")
+	root := t.TempDir()
+	runAndWrapNamed(t, filepath.Join(root, "001-agent-session"), "agent-session", echo, "agent")
+	runAndWrapNamed(t, filepath.Join(root, "002-verification-run"), "verification-run", echo, "test")
+	outPath := filepath.Join(t.TempDir(), "gate-result.json")
+	opts := newStringFlagSet("gate", gateStringFlags)
+	opts.setString("contract", writeGateContract(t, t.TempDir()))
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	exit := runStandardGate(root, outPath, opts, &out, &errOut)
+	if exit != exitCannotVerify {
+		t.Fatalf("standard gate exit %d err=%s", exit, errOut.String())
+	}
+	if errOut.Len() != 0 {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
+	}
+	output := out.String()
+	if !strings.HasSuffix(output, "\n") || !strings.Contains(output, "\n  \"schema_version\"") {
+		t.Fatalf("standard gate output lost indentation/trailing newline: %q", output)
+	}
+
+	out.Reset()
+	errOut.Reset()
+	exit = runStandardGate(root, "", opts, &out, &errOut)
+	if exit != 1 {
+		t.Fatalf("standard gate error exit %d want 1", exit)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("standard gate wrote stdout on error: %s", out.String())
+	}
+	if got := errOut.String(); got != "gate requires --out <file>\n" {
+		t.Fatalf("stderr = %q", got)
 	}
 }
 
@@ -2861,6 +3873,166 @@ func readTestJSON(t *testing.T, path string, value any) {
 	}
 }
 
+func TestPRReviewSharedOutputAndFileHelpers(t *testing.T) {
+	var out bytes.Buffer
+	writeIndentedPayload(&out, map[string]string{"state": "pass"})
+	if !strings.Contains(out.String(), "{\n") ||
+		!strings.Contains(out.String(), `  "state": "pass"`) ||
+		!strings.HasSuffix(out.String(), "\n") {
+		t.Fatalf("indented output changed: %q", out.String())
+	}
+
+	dir := t.TempDir()
+	if err := requireOutputFile("demo command", " "); err == nil || !strings.Contains(err.Error(), "demo command requires --out") {
+		t.Fatalf("blank output error = %v", err)
+	}
+	existing := filepath.Join(dir, "existing.txt")
+	if err := os.WriteFile(existing, []byte("exists\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := requireOutputFile("demo command", existing); err == nil || !strings.Contains(err.Error(), "output file exists") {
+		t.Fatalf("existing output error = %v", err)
+	}
+	if err := refuseExistingFile(dir); err == nil || !strings.Contains(err.Error(), "output path is a directory") {
+		t.Fatalf("directory refusal = %v", err)
+	}
+	if err := refuseExistingFile(filepath.Join(dir, "new-file")); err != nil {
+		t.Fatalf("new file refusal = %v", err)
+	}
+	if err := requireDirectory(filepath.Join(dir, "missing")); err == nil || !strings.Contains(err.Error(), "work-dir:") {
+		t.Fatalf("missing work-dir error = %v", err)
+	}
+	if err := requireDirectory(existing); err == nil || !strings.Contains(err.Error(), "work-dir is not a directory") {
+		t.Fatalf("file work-dir error = %v", err)
+	}
+}
+
+func TestPRReviewSharedPacketProfileAndExitHelpers(t *testing.T) {
+	if code := reviewValidationExitCode(prreview.Validation{ReviewCoverageState: prreview.CoverageCannotVerify}); code != exitCannotVerify {
+		t.Fatalf("cannot_verify validation exit = %d", code)
+	}
+	if code := reviewValidationExitCode(prreview.Validation{ReviewCoverageState: prreview.CoverageUnresolved}); code != exitCannotVerify {
+		t.Fatalf("coverage_unresolved validation exit = %d", code)
+	}
+	if code := reviewValidationExitCode(prreview.Validation{ReviewCoverageState: prreview.CoverageSatisfied}); code != 0 {
+		t.Fatalf("satisfied validation exit = %d", code)
+	}
+
+	dir := t.TempDir()
+	packetDir := filepath.Join(dir, "packet")
+	if err := os.MkdirAll(packetDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	packetPath := filepath.Join(packetDir, "packet.json")
+	profilePath := filepath.Join(dir, "profile.json")
+	packetDigest := "sha256:" + strings.Repeat("1", 64)
+	writeTestJSON(t, packetPath, prreview.Packet{
+		SchemaVersion: prreview.SchemaVersionPacket,
+		PacketID:      "packet-1",
+		PacketDigest:  packetDigest,
+	})
+	writeTestJSON(t, profilePath, prreview.ReviewProfile{
+		SchemaVersion:  prreview.SchemaVersionProfile,
+		ProfileID:      "default",
+		RequiredPlanes: []string{prreview.PlaneCodeCorrectness},
+		Roles: []prreview.ReviewRole{{
+			RoleID:         "code",
+			Plane:          prreview.PlaneCodeCorrectness,
+			Runner:         prreview.RunnerManualExternal,
+			RequestedModel: "not_assessed",
+		}},
+	})
+
+	opts := &flagSet{name: "shared packet profile"}
+	opts.setString("packet", packetDir)
+	opts.setString("profile", profilePath)
+	packet, profile, err := readPRReviewPacketAndProfileValues(opts)
+	if err != nil {
+		t.Fatalf("read packet/profile: %v", err)
+	}
+	if packet.PacketDigest != packetDigest || profile.ProfileID != "default" {
+		t.Fatalf("packet/profile values = %+v %+v", packet, profile)
+	}
+
+	opts.setString("packet", filepath.Join(dir, "missing-packet"))
+	if _, _, err := readPRReviewPacketAndProfileValues(opts); err == nil || !strings.Contains(err.Error(), "missing-packet") {
+		t.Fatalf("missing packet error = %v", err)
+	}
+	opts.setString("packet", packetDir)
+	opts.setString("profile", filepath.Join(dir, "missing-profile.json"))
+	packet, profile, err = readPRReviewPacketAndProfileValues(opts)
+	if err == nil || packet.PacketDigest != "" || profile.ProfileID != "" {
+		t.Fatalf("profile failure mixed partial inputs packet=%+v profile=%+v err=%v", packet, profile, err)
+	}
+}
+
+func TestPRReviewSharedRepeatedFlagsRunnerSetAndPacketDir(t *testing.T) {
+	args := []string{
+		"--runner", "opencode",
+		"--ignored", "value",
+		"--runner=kimi",
+		"--runner", "zai",
+	}
+	values := repeatedFlagValues(args, "runner", "fallback")
+	if strings.Join(values, "|") != "opencode|kimi|zai" {
+		t.Fatalf("repeated values = %#v", values)
+	}
+	if fallback := repeatedFlagValues([]string{"--other", "value"}, "runner", " fallback "); len(fallback) != 1 || fallback[0] != " fallback " {
+		t.Fatalf("fallback values = %#v", fallback)
+	}
+	if empty := repeatedFlagValues(nil, "runner", " "); len(empty) != 0 {
+		t.Fatalf("empty fallback values = %#v", empty)
+	}
+
+	allowed := allowedRunnerSet([]string{"qwen, kimi", "  ", "opencode,,zai"})
+	for _, runner := range []string{"qwen", "kimi", "opencode", "zai"} {
+		if !allowed[runner] {
+			t.Fatalf("runner %s missing from allow-list %+v", runner, allowed)
+		}
+	}
+	if allowed[""] {
+		t.Fatalf("empty runner allowed: %+v", allowed)
+	}
+
+	dir := t.TempDir()
+	packetPath := filepath.Join(dir, "packet.json")
+	if err := os.WriteFile(packetPath, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := packetDir(dir); got != dir {
+		t.Fatalf("packetDir(dir)=%q want %q", got, dir)
+	}
+	if got := packetDir(packetPath); got != dir {
+		t.Fatalf("packetDir(file)=%q want %q", got, dir)
+	}
+	missing := filepath.Join(dir, "missing", "packet.json")
+	if got := packetDir(missing); got != filepath.Dir(missing) {
+		t.Fatalf("packetDir(missing)=%q want %q", got, filepath.Dir(missing))
+	}
+}
+
+func TestSharedIndentedPayloadPreservesProtectedGateOutput(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "protected-gate.json")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+
+	result := demo.GateResult{ProtectedGate: demo.GatePass}
+	if code := writeProtectedGateResult(outPath, result, &out, &errOut); code != 0 {
+		t.Fatalf("protected result write code=%d err=%s", code, errOut.String())
+	}
+	if !strings.Contains(out.String(), `"protected_gate": "pass"`) || !strings.HasSuffix(out.String(), "\n") {
+		t.Fatalf("protected output changed: %s", out.String())
+	}
+	written, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read protected artifact: %v", err)
+	}
+	if !strings.Contains(string(written), `"protected_gate": "pass"`) {
+		t.Fatalf("protected artifact changed: %s", string(written))
+	}
+}
+
 func TestCLITailHelpersCoverErrorBranches(t *testing.T) {
 	var errOut bytes.Buffer
 	dir := t.TempDir()
@@ -2948,5 +4120,84 @@ func TestCLITailHelpersCoverErrorBranches(t *testing.T) {
 	}
 	if code := writeImportedTranscript(interaction.Trace{}, os.ErrNotExist, &out, &errOut); code != exitCannotVerify {
 		t.Fatalf("writeImportedTranscript error code=%d", code)
+	}
+}
+
+func TestPreviewGateModeSelection(t *testing.T) {
+	cases := []struct {
+		name     string
+		contract trace.Contract
+		want     string
+	}{
+		{
+			name:     "default observation",
+			contract: trace.Contract{},
+			want:     demo.GateModeObservation,
+		},
+		{
+			name: "unknown and empty profiles ignored",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: ""},
+				{Profile: "unknown"},
+			}},
+			want: demo.GateModeObservation,
+		},
+		{
+			name: "advisory ci fallback",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: "unknown"},
+				{Profile: demo.GateModeAdvisoryCI},
+			}},
+			want: demo.GateModeAdvisoryCI,
+		},
+		{
+			name: "protected future after advisory dominates",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: demo.GateModeAdvisoryCI},
+				{Profile: demo.GateModeProtectedFuture},
+			}},
+			want: demo.GateModeProtectedFuture,
+		},
+		{
+			name: "protected future before advisory dominates",
+			contract: trace.Contract{RequiredRuns: []trace.RequiredRun{
+				{Profile: demo.GateModeProtectedFuture},
+				{Profile: demo.GateModeAdvisoryCI},
+			}},
+			want: demo.GateModeProtectedFuture,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := previewGateMode(tc.contract); got != tc.want {
+				t.Fatalf("previewGateMode() = %s, want %s", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestRequiredRunIDsOmitEmptyAndKeepOrder(t *testing.T) {
+	got := requiredRunIDs(trace.Contract{RequiredRuns: []trace.RequiredRun{
+		{ID: "run-a"},
+		{ID: ""},
+		{ID: "run-b"},
+		{ID: "run-a"},
+	}})
+	want := []string{"run-a", "run-b", "run-a"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("requiredRunIDs() = %#v, want %#v", got, want)
+	}
+}
+
+func TestRequiredEvidenceIDsForCLIOmitEmptyAndKeepOrder(t *testing.T) {
+	got := requiredEvidenceIDsForCLI(trace.Contract{RequiredEvidence: []trace.EvidenceRequirement{
+		{ID: "evidence-a"},
+		{ID: ""},
+		{ID: "evidence-b"},
+		{ID: "evidence-a"},
+	}})
+	want := []string{"evidence-a", "evidence-b", "evidence-a"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("requiredEvidenceIDsForCLI() = %#v, want %#v", got, want)
 	}
 }

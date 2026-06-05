@@ -9,12 +9,16 @@ import (
 func TestFlagSetParsesQuotedStringValue(t *testing.T) {
 	flags := &flagSet{name: "wrap"}
 	flags.setString("name", "")
+	flags.setString("output-dir", "")
 
-	if err := flags.parse([]string{"--name", "agent run payload", "--", "echo", "with space"}); err != nil {
+	if err := flags.parse([]string{"--name", "agent run payload", "--output-dir=run-out", "--", "echo", "with space"}); err != nil {
 		t.Fatalf("parse returned error: %v", err)
 	}
 	if got, want := flags.stringValue("name"), "agent run payload"; got != want {
 		t.Fatalf("name = %q, want %q", got, want)
+	}
+	if got, want := flags.stringValue("output-dir"), "run-out"; got != want {
+		t.Fatalf("output-dir = %q, want %q", got, want)
 	}
 	if got, want := flags.rest(), []string{"echo", "with space"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("rest = %#v, want %#v", got, want)
@@ -60,6 +64,8 @@ func TestFlagSetParsesBooleanValues(t *testing.T) {
 		{name: "explicit one", args: []string{"--enabled=1"}, want: true},
 		{name: "explicit false", args: []string{"--enabled=false"}, want: false},
 		{name: "explicit zero", args: []string{"--enabled=0"}, want: false},
+		{name: "next false literal", args: []string{"--enabled", "false"}, want: false},
+		{name: "next true literal", args: []string{"--enabled", "true"}, want: true},
 		{name: "invalid literal", args: []string{"--enabled=maybe"}, wantErr: true, errSubstr: "invalid boolean value"},
 	}
 
