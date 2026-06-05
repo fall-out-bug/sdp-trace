@@ -1600,6 +1600,16 @@ evaluation behavior, schemas, examples, dependencies, package boundary,
 dependency direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must
 preserve standard event membership and `custom:` event acceptance.
 
+Slice 120 continues non-numbered micro-file cleanup with `internal/authority`
+match decision result shape. The slice is limited to consolidating
+`authority_match_type.go` into `authority_match_decision.go` so the unexported
+`matchResult` struct is co-located with the decision matcher that owns and
+returns it. It intentionally leaves top-level decision behavior, target-rule
+matching, approval handling, pre-decision blockers, authority evaluation
+behavior, schemas, examples, dependencies, package boundary, dependency
+direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must preserve the
+unexported `matchResult` fields `state`, `reasonCode`, and `ruleRef`.
+
 ## Verification
 
 ```text

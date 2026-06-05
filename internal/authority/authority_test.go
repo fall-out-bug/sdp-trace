@@ -528,13 +528,24 @@ func TestEvaluateActionReasonOrdering(t *testing.T) {
 		wantState   string
 		wantReason  string
 		matchedRule string
+		checkRule   bool
 	}{
-		{name: "envelope state first", envState: StateCannotVerify, envReason: "selected_policy_ambiguous", wantState: StateCannotVerify, wantReason: "selected_policy_ambiguous"},
-		{name: "unsupported event", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.EventType = "unknown" }, wantState: StateCannotVerify, wantReason: "unsupported_event_type"},
+		{name: "envelope state first", envState: StateCannotVerify, envReason: "selected_policy_ambiguous", wantState: StateCannotVerify, wantReason: "selected_policy_ambiguous", checkRule: true},
+		{name: "unsupported event", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.EventType = "unknown" }, wantState: StateCannotVerify, wantReason: "unsupported_event_type", checkRule: true},
 		{name: "custom event accepted", mutate: func(env *AuthorityEnvelope, action *ObservedAction) {
 			env.AllowedEvents = []string{"custom:local"}
 			action.EventType = "custom:local"
-		}, wantState: StateWithinAuthority, wantReason: "event_allowed"},
+		}, wantState: StateWithinAuthority, wantReason: "event_allowed", matchedRule: "allowed_events", checkRule: true},
+		{name: "top level denied", mutate: func(env *AuthorityEnvelope, _ *ObservedAction) {
+			env.TargetRules = nil
+			env.AllowedEvents = nil
+			env.DeniedEvents = []string{"direct_mutation"}
+		}, wantState: StateOutsideAuthority, wantReason: "event_denied", matchedRule: "denied_events", checkRule: true},
+		{name: "top level not assessed", mutate: func(env *AuthorityEnvelope, _ *ObservedAction) {
+			env.TargetRules = nil
+			env.AllowedEvents = nil
+			env.DeniedEvents = nil
+		}, wantState: StateNotAssessed, wantReason: "no_applicable_authority_rule", checkRule: true},
 		{name: "task not assessed", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.TaskID = "" }, wantState: StateNotAssessed, wantReason: "task_not_assessed"},
 		{name: "task outside envelope", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) { action.TaskID = "other" }, wantState: StateNotAssessed, wantReason: "task_outside_selected_envelope"},
 		{name: "external evidence", mutate: func(_ *AuthorityEnvelope, action *ObservedAction) {
@@ -551,6 +562,30 @@ func TestEvaluateActionReasonOrdering(t *testing.T) {
 			wantState:   StateOutsideAuthority,
 			wantReason:  "target_event_denied",
 			matchedRule: "rule-ci-denied",
+			checkRule:   true,
+		},
+		{
+			name: "target rule conflict",
+			mutate: func(env *AuthorityEnvelope, action *ObservedAction) {
+				env.AllowedEvents = nil
+				env.TargetRules = []TargetRule{
+					{
+						RuleID:        "rule-docs-allow",
+						TargetPattern: "docs/**",
+						AllowedEvents: []string{"direct_mutation"},
+					},
+					{
+						RuleID:        "rule-md-deny",
+						TargetPattern: "**/*.md",
+						DeniedEvents:  []string{"direct_mutation"},
+					},
+				}
+				action.Target = "docs/authority-envelope.md"
+			},
+			wantState:   StateCannotVerify,
+			wantReason:  "overlapping_target_rules_conflict",
+			matchedRule: "rule-docs-allow,rule-md-deny",
+			checkRule:   true,
 		},
 		{
 			name: "approval evidence missing",
@@ -566,6 +601,7 @@ func TestEvaluateActionReasonOrdering(t *testing.T) {
 			wantState:   StateOutsideAuthority,
 			wantReason:  "approval_evidence_missing",
 			matchedRule: "rule-ci-denied",
+			checkRule:   true,
 		},
 	}
 
@@ -580,7 +616,7 @@ func TestEvaluateActionReasonOrdering(t *testing.T) {
 			if eval.State != tt.wantState || eval.ReasonCode != tt.wantReason {
 				t.Fatalf("evaluation = %+v, want %s/%s", eval, tt.wantState, tt.wantReason)
 			}
-			if tt.matchedRule != "" && eval.MatchedRuleRef != tt.matchedRule {
+			if tt.checkRule && eval.MatchedRuleRef != tt.matchedRule {
 				t.Fatalf("matched rule = %q, want %q", eval.MatchedRuleRef, tt.matchedRule)
 			}
 		})
