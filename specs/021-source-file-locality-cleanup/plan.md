@@ -1495,6 +1495,19 @@ dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, or MI
 baselines. Focused verification must include the existing malformed metric row
 test and must cover all moved metric count predicates.
 
+Slice 111 continues non-numbered micro-file cleanup with
+`internal/posture` movement row identity validation. The slice is limited to
+consolidating `posture_validate_movement_identity.go` into
+`posture_validate_movement_row.go`. It intentionally leaves movement value and
+comparison predicates in `posture_validate_movement_values.go` because direct
+full movement validation consolidation failed the MI gate. It must not change
+malformed movement identity detection, malformed movement row detection,
+comparison-basis behavior, non-comparable reason handling, movement summary
+validation, export validation behavior, schemas, examples, fixtures,
+dependencies, package boundary, dependency direction, CRAP < 5, MI > 70, or MI
+baselines. Focused verification must include existing posture helper and
+movement row malformed tests that exercise the moved identity predicate.
+
 ## Verification
 
 ```text
