@@ -46,6 +46,136 @@ func TestSessionCollectionRejectsMismatchedProfileAndMissingOptions(t *testing.T
 	}
 }
 
+func TestLoadSessionRunAndJSONLoadingBranches(t *testing.T) {
+	dir := t.TempDir()
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	run := SessionRun{
+		SchemaVersion: SessionRunSchemaVersion,
+		ProfileID:     "session-profile",
+		CreatedAt:     "2026-05-10T12:00:00Z",
+	}
+	writeJSONFixture(t, "session.json", run)
+
+	loaded, err := LoadSessionRun("session.json")
+	if err != nil {
+		t.Fatalf("LoadSessionRun() error = %v", err)
+	}
+	if loaded.ProfileID != "session-profile" {
+		t.Fatalf("ProfileID = %q, want session-profile", loaded.ProfileID)
+	}
+
+	writeJSONFixture(t, "session.json", SessionRun{
+		SchemaVersion: "bad",
+		ProfileID:     "session-profile",
+	})
+	if _, err := LoadSessionRun("session.json"); err == nil || !strings.Contains(err.Error(), "unsupported session schema_version") {
+		t.Fatalf("LoadSessionRun(schema) error = %v, want unsupported session schema_version", err)
+	}
+
+	writeJSONFixture(t, "session.json", SessionRun{
+		SchemaVersion: SessionRunSchemaVersion,
+		ProfileID:     "../bad",
+	})
+	if _, err := LoadSessionRun("session.json"); err == nil || !strings.Contains(err.Error(), "unsafe session profile_id") {
+		t.Fatalf("LoadSessionRun(profile_id) error = %v, want unsafe session profile_id", err)
+	}
+
+	if _, err := LoadSessionRun("../session.json"); err == nil || !strings.Contains(err.Error(), "path must be relative local file without traversal") {
+		t.Fatalf("LoadSessionRun(unsafe path) error = %v, want traversal rejection", err)
+	}
+	if _, err := LoadSessionRun("missing.json"); err == nil {
+		t.Fatalf("LoadSessionRun(missing) error = nil")
+	}
+
+	if err := os.WriteFile("permissive.json", []byte(`{"profile_id":"session-profile","unexpected":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var permissive struct {
+		ProfileID string `json:"profile_id"`
+	}
+	if err := readExistingJSON("permissive.json", &permissive); err != nil {
+		t.Fatalf("readExistingJSON(permissive) error = %v", err)
+	}
+	if permissive.ProfileID != "session-profile" {
+		t.Fatalf("ProfileID = %q, want session-profile", permissive.ProfileID)
+	}
+
+	if err := os.WriteFile("bad.json", []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := readExistingJSONStrict("bad.json", &permissive); err == nil {
+		t.Fatalf("readExistingJSONStrict(malformed) error = nil")
+	}
+}
+
+func TestReadEventsFromPathBranches(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	writeEvents(t, dir, []map[string]any{eventMap("e1", "harness")})
+
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	events, sourceDigest, err := readEventsFromPath("profile.json", "events.jsonl")
+	if err != nil {
+		t.Fatalf("readEventsFromPath() error = %v", err)
+	}
+	if len(events) != 1 || events[0].EventID != "e1" {
+		t.Fatalf("events = %+v, want one e1 event", events)
+	}
+	if sourceDigest == "" {
+		t.Fatalf("sourceDigest is empty")
+	}
+
+	if _, _, err := readEventsFromPath("missing-profile.json", "events.jsonl"); err == nil {
+		t.Fatalf("readEventsFromPath(missing profile) error = nil")
+	}
+	if _, _, err := readEventsFromPath("profile.json", "missing-events.jsonl"); err == nil {
+		t.Fatalf("readEventsFromPath(missing source) error = nil")
+	}
+}
+
+func TestNewSessionRunRecordConstructionBranches(t *testing.T) {
+	now := time.Date(2026, 5, 10, 12, 0, 0, 0, time.UTC)
+	profile := SessionProfile{
+		ProfileID:          "session-profile",
+		HarnessProfilePath: "profile.json",
+		EventSourcePath:    "events.jsonl",
+		RawEventSourcePath: "raw.jsonl",
+		RawEventFormat:     OpenCodeJSONLRawFormat,
+		SetupActions: []SessionSetupAction{
+			{ID: "z-action"},
+			{ID: "a-action"},
+		},
+	}
+
+	run := newSessionRunRecord(profile, now, sessionSetupActionIDs(profile), "abc123", StatePass)
+	if run.SchemaVersion != SessionRunSchemaVersion ||
+		run.ProfileID != profile.ProfileID ||
+		run.HarnessProfilePath != profile.HarnessProfilePath ||
+		run.EventSourcePath != profile.EventSourcePath ||
+		run.RawEventSourcePath != profile.RawEventSourcePath ||
+		run.RawEventFormat != profile.RawEventFormat {
+		t.Fatalf("run copied fields = %+v, profile = %+v", run, profile)
+	}
+	if got := strings.Join(run.SetupActionIDs, ","); got != "a-action,z-action" {
+		t.Fatalf("SetupActionIDs = %q, want sorted a-action,z-action", got)
+	}
+	if run.CommandDigestState != StateCannotVerify ||
+		run.ProcessIDState != StateCannotVerify ||
+		run.CollectionState != StateCannotVerify {
+		t.Fatalf("default states = command:%s process:%s collection:%s", run.CommandDigestState, run.ProcessIDState, run.CollectionState)
+	}
+	if run.SourceCommit != "abc123" || run.SourceCommitState != StatePass {
+		t.Fatalf("source pass-through = %s/%s, want abc123/pass", run.SourceCommit, run.SourceCommitState)
+	}
+	if run.CollectionReason != "not_collected" || run.CreatedAt != now.Format(time.RFC3339) {
+		t.Fatalf("collection/time = %s/%s", run.CollectionReason, run.CreatedAt)
+	}
+}
+
 func TestRunSessionCollectsCommandGeneratedEvents(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, []string{"harness"}, nil)
@@ -109,7 +239,7 @@ func TestCollectFinishedSessionReturnsCollectedRunWithWaitError(t *testing.T) {
 	}
 }
 
-func TestRawNormalizationAndSignalUtilityBranches(t *testing.T) {
+func TestRawNormalizationBranches(t *testing.T) {
 	dir := t.TempDir()
 	rawPath := filepath.Join(dir, "raw.jsonl")
 	outPath := filepath.Join(dir, "nested", "events.jsonl")
@@ -133,7 +263,9 @@ func TestRawNormalizationAndSignalUtilityBranches(t *testing.T) {
 	if err := normalizeRawEvents(OpenCodeJSONLRawFormat, rawPath, rawPath, nil, time.Time{}); err == nil || !strings.Contains(err.Error(), "must be different files") {
 		t.Fatalf("normalizeRawEvents() same path error = %v", err)
 	}
+}
 
+func TestRawSignalUtilityBranches(t *testing.T) {
 	signals := rawSignalsAt("items", []any{map[string]any{"model": "qwen"}, "literal"})
 	if !containsString(signals, "model") || !containsString(signals, "qwen") {
 		t.Fatalf("rawSignalsAt() = %+v, want nested map signals", signals)
@@ -184,8 +316,18 @@ func TestSmallUtilityEdgeBranches(t *testing.T) {
 }
 
 func TestSetupActionAndDegradationUtilityBranches(t *testing.T) {
-	if err := validateSessionSetupAction(SessionSetupAction{ID: "setup-1", Kind: "hook"}); err != nil {
-		t.Fatalf("validateSessionSetupAction(valid) error = %v", err)
+	for _, kind := range []string{"init", "profile", "wrapper", "hook", "context_isolation"} {
+		if err := validateSessionSetupAction(SessionSetupAction{ID: "setup-1", Kind: kind}); err != nil {
+			t.Fatalf("validateSessionSetupAction(%s) error = %v", kind, err)
+		}
+	}
+	if err := validateSessionSetupActions([]SessionSetupAction{
+		{ID: "setup-1", Kind: "init"},
+		{ID: "setup-2", Kind: "profile"},
+		{ID: "setup-3", Kind: "wrapper"},
+		{ID: "setup-4", Kind: "hook"},
+	}); err == nil || !strings.Contains(err.Error(), "too many setup actions") {
+		t.Fatalf("validateSessionSetupActions(too many) error = %v", err)
 	}
 	if err := validateSessionSetupAction(SessionSetupAction{ID: "../bad", Kind: "hook"}); err == nil || !strings.Contains(err.Error(), "unsafe setup action id") {
 		t.Fatalf("validateSessionSetupAction(bad id) error = %v", err)
@@ -201,6 +343,38 @@ func TestSetupActionAndDegradationUtilityBranches(t *testing.T) {
 	}
 	if validDegradationRule(Rule{State: StateCannotVerify, ReasonCode: "../bad"}) {
 		t.Fatalf("validDegradationRule(unsafe reason) = true")
+	}
+}
+
+func TestCommandModelSafetyAndSourceDigest(t *testing.T) {
+	dir := t.TempDir()
+	sourcePath := filepath.Join(dir, "source.txt")
+	if err := os.WriteFile(sourcePath, []byte("abc"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := safeCommandModel(" qwen3-coder "); got != "qwen3-coder" {
+		t.Fatalf("safeCommandModel(trim) = %q, want qwen3-coder", got)
+	}
+	for _, model := range []string{
+		"https://example.invalid/model",
+		"qwen coder",
+		`qwen"coder`,
+		`qwen\coder`,
+		"../qwen",
+		"/tmp/qwen",
+		strings.Repeat("a", 129),
+	} {
+		if got := safeCommandModel(model); got != "" {
+			t.Fatalf("safeCommandModel(%q) = %q, want empty", model, got)
+		}
+	}
+
+	if got := digestFile(filepath.Join(dir, "missing.txt")); got != "" {
+		t.Fatalf("digestFile(missing) = %q, want empty", got)
+	}
+	if got := digestFile(sourcePath); got != "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" {
+		t.Fatalf("digestFile(abc) = %q, want SHA-256 of abc", got)
 	}
 }
 
@@ -221,9 +395,20 @@ func TestNormalizedWriteAndShellAndSourceCommitBranches(t *testing.T) {
 	if got := sourceCommit(); got != "" {
 		t.Fatalf("sourceCommit(non-git) = %q, want empty", got)
 	}
+	if commit, state := currentSourceCommitState(); commit != "" || state != StateCannotVerify {
+		t.Fatalf("currentSourceCommitState(non-git) = %q/%s, want empty/cannot_verify", commit, state)
+	}
 	oldwd()
-	if got := sourceCommit(); got != "" && len(got) != 40 {
+	got := sourceCommit()
+	if got != "" && len(got) != 40 {
 		t.Fatalf("sourceCommit(repo) = %q, want empty or full hash", got)
+	}
+	commit, state := currentSourceCommitState()
+	if commit == "" && state != StateCannotVerify {
+		t.Fatalf("currentSourceCommitState(empty repo) = %q/%s, want empty/cannot_verify", commit, state)
+	}
+	if commit != "" && state != StatePass {
+		t.Fatalf("currentSourceCommitState(repo) = %q/%s, want commit/pass", commit, state)
 	}
 }
 
@@ -260,6 +445,14 @@ func TestIsolationRuleValidationBranches(t *testing.T) {
 	}
 	if err := validateSessionIsolationRule(valid); err != nil {
 		t.Fatalf("validateSessionIsolationRule(valid) error = %v", err)
+	}
+	if err := validateSessionIsolationRules([]SessionIsolationRule{valid, {
+		ID:         "bad-rule",
+		Kind:       "json_read_deny",
+		TargetPath: "settings.json",
+		Pattern:    " \t",
+	}}); err == nil || !strings.Contains(err.Error(), "unsafe isolation rule pattern") {
+		t.Fatalf("validateSessionIsolationRules() error = %v, want unsafe isolation rule pattern", err)
 	}
 
 	for name, tc := range map[string]struct {
@@ -331,6 +524,54 @@ func TestSafeProfileRelativeIsolationFileBranches(t *testing.T) {
 	}
 }
 
+func TestSessionProfilePathSafetyBranches(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, "profiles"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "profiles", "events.jsonl"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldwd := chdir(t, dir)
+	defer oldwd()
+
+	sourcePath, err := safeProfileRelativeFile("profiles/session-profile.json", "events.jsonl")
+	if err != nil {
+		t.Fatalf("safeProfileRelativeFile() error = %v", err)
+	}
+	if sourcePath != filepath.Join("profiles", "events.jsonl") {
+		t.Fatalf("safeProfileRelativeFile() = %q", sourcePath)
+	}
+	outPath, err := safeProfileRelativeOutFile("profiles/session-profile.json", "normalized.jsonl")
+	if err != nil {
+		t.Fatalf("safeProfileRelativeOutFile() error = %v", err)
+	}
+	if outPath != filepath.Join("profiles", "normalized.jsonl") {
+		t.Fatalf("safeProfileRelativeOutFile() = %q", outPath)
+	}
+
+	for name, relPath := range map[string]string{
+		"absolute":  filepath.Join(string(filepath.Separator), "tmp", "events.jsonl"),
+		"traversal": "../events.jsonl",
+		"url":       "file://events.jsonl",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if !unsafeProfileRelativePath(relPath) {
+				t.Fatalf("unsafeProfileRelativePath(%q) = false", relPath)
+			}
+			if _, err := safeProfileRelativeFile("profiles/session-profile.json", relPath); err == nil {
+				t.Fatalf("safeProfileRelativeFile(%q) error = nil", relPath)
+			}
+			if _, err := safeProfileRelativeOutFile("profiles/session-profile.json", relPath); err == nil {
+				t.Fatalf("safeProfileRelativeOutFile(%q) error = nil", relPath)
+			}
+		})
+	}
+	if _, err := safeProfileRelativeFile("profiles/session-profile.json", "missing.jsonl"); err == nil {
+		t.Fatalf("safeProfileRelativeFile(missing) error = nil")
+	}
+}
+
 func TestEnsureJSONReadDenyRuleAndPresenceBranches(t *testing.T) {
 	dir := t.TempDir()
 	oldwd := chdir(t, dir)
@@ -396,6 +637,13 @@ func TestIsolationRulePresentBranches(t *testing.T) {
 	present, err = isolationRulePresent(SessionIsolationRule{Kind: "ignore_line", TargetPath: linePath, Pattern: ".trace/"})
 	if err != nil || present {
 		t.Fatalf("isolationRulePresent(ignore_line absent) = %v/%v, want false/nil", present, err)
+	}
+	unreadableLinePath := filepath.Join(dir, "unreadable")
+	if err := os.Mkdir(unreadableLinePath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lineIsolationRulePresent(unreadableLinePath, ".evidence/"); err == nil {
+		t.Fatalf("lineIsolationRulePresent(unreadable directory) error = nil")
 	}
 	if _, err := isolationRulePresent(SessionIsolationRule{Kind: "unknown"}); err == nil || !strings.Contains(err.Error(), "unsupported isolation rule kind") {
 		t.Fatalf("isolationRulePresent(unknown) error = %v, want unsupported kind", err)

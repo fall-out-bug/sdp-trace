@@ -43,6 +43,15 @@ func TestObserveValidateCompleteHarnessExport(t *testing.T) {
 	if validation.ValidationState != StatePass {
 		t.Fatalf("ValidationState = %s, want pass: %+v", validation.ValidationState, validation)
 	}
+	if validation.ValidationDigest == "" {
+		t.Fatalf("ValidationDigest is empty")
+	}
+	if validation.NonAuthority == "" {
+		t.Fatalf("NonAuthority is empty")
+	}
+	if _, err := os.Stat("validation.json"); !os.IsNotExist(err) {
+		t.Fatalf("Validate() without out wrote validation.json or unexpected stat error: %v", err)
+	}
 }
 
 func TestValidateZeroEventSourceIsNotAssessed(t *testing.T) {
@@ -62,6 +71,36 @@ func TestValidateZeroEventSourceIsNotAssessed(t *testing.T) {
 	}
 	if validation.ValidationState != StateNotAssessed || validation.ReasonCode != "required_event_family_absent" {
 		t.Fatalf("state = %s/%s, want not_assessed/required_event_family_absent", validation.ValidationState, validation.ReasonCode)
+	}
+}
+
+func TestValidateRequiredOptionErrors(t *testing.T) {
+	for name, tc := range map[string]struct {
+		opts    ValidateOptions
+		wantErr string
+	}{
+		"missing-profile": {
+			opts:    ValidateOptions{RunDir: "run"},
+			wantErr: "harness validate requires --profile",
+		},
+		"blank-profile": {
+			opts:    ValidateOptions{ProfilePath: " \t", RunDir: "run"},
+			wantErr: "harness validate requires --profile",
+		},
+		"missing-run": {
+			opts:    ValidateOptions{ProfilePath: "profile.json"},
+			wantErr: "harness validate requires --run",
+		},
+		"blank-run": {
+			opts:    ValidateOptions{ProfilePath: "profile.json", RunDir: "\n"},
+			wantErr: "harness validate requires --run",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := Validate(tc.opts); err == nil || err.Error() != tc.wantErr {
+				t.Fatalf("Validate() error = %v, want %q", err, tc.wantErr)
+			}
+		})
 	}
 }
 
@@ -343,10 +382,48 @@ func TestEffectiveEventLimitsDefaultsAndOverrides(t *testing.T) {
 	if maxLine != DefaultMaxLineBytes || maxEvents != DefaultMaxEvents {
 		t.Fatalf("effectiveEventLimits(defaults) = %d/%d, want %d/%d", maxLine, maxEvents, DefaultMaxLineBytes, DefaultMaxEvents)
 	}
+	zeroLimitProfile, err := json.Marshal(Profile{Limits: Limits{}})
+	if err != nil {
+		t.Fatalf("marshal zero limit profile: %v", err)
+	}
+	var rawZeroLimitProfile map[string]any
+	if err := json.Unmarshal(zeroLimitProfile, &rawZeroLimitProfile); err != nil {
+		t.Fatalf("parse zero limit profile: %v", err)
+	}
+	rawZeroLimits, ok := rawZeroLimitProfile["limits"].(map[string]any)
+	if !ok {
+		t.Fatalf("zero limits = %#v, want object", rawZeroLimitProfile["limits"])
+	}
+	for _, omitted := range []string{"max_line_bytes", "max_events"} {
+		if _, ok := rawZeroLimits[omitted]; ok {
+			t.Fatalf("zero limits include omitted key %q in %#v", omitted, rawZeroLimits)
+		}
+	}
 
 	maxLine, maxEvents = effectiveEventLimits(Limits{MaxLineBytes: 32, MaxEvents: 7})
 	if maxLine != 32 || maxEvents != 7 {
 		t.Fatalf("effectiveEventLimits(overrides) = %d/%d, want 32/7", maxLine, maxEvents)
+	}
+	nonZeroLimitProfile, err := json.Marshal(Profile{Limits: Limits{MaxLineBytes: 32, MaxEvents: 7}})
+	if err != nil {
+		t.Fatalf("marshal non-zero limit profile: %v", err)
+	}
+	var rawNonZeroLimitProfile map[string]any
+	if err := json.Unmarshal(nonZeroLimitProfile, &rawNonZeroLimitProfile); err != nil {
+		t.Fatalf("parse non-zero limit profile: %v", err)
+	}
+	rawLimits, ok := rawNonZeroLimitProfile["limits"].(map[string]any)
+	if !ok {
+		t.Fatalf("limits = %#v, want object", rawNonZeroLimitProfile["limits"])
+	}
+	wantLimits := map[string]any{
+		"max_line_bytes": float64(32),
+		"max_events":     float64(7),
+	}
+	for key, want := range wantLimits {
+		if got := rawLimits[key]; got != want {
+			t.Fatalf("limits[%q] = %#v, want %#v in %#v", key, got, want, rawLimits)
+		}
 	}
 }
 
@@ -534,9 +611,18 @@ func TestNormalizeOpenCodeRawLineBytesComputesDigestForEachEvent(t *testing.T) {
 func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 	dir := t.TempDir()
 	outPath := filepath.Join(dir, "nested", "events.jsonl")
+	withOptionalFields := normalizedEvent("e3", "tool", "tool_observed", "2026-05-10T12:00:02Z", "raw-000003", "codex")
+	withOptionalFields.TaskRef = "task-1"
+	withOptionalFields.OperationRef = "op-1"
+	withOptionalFields.UnavailableFields = []UnavailableField{{
+		Field:      "raw_prompt",
+		State:      StateCannotVerify,
+		ReasonCode: "redacted",
+	}, {}}
 	events := []Event{
 		normalizedEvent("e1", "harness", "harness_observed", "2026-05-10T12:00:00Z", "raw-000001", "opencode"),
 		normalizedEvent("e2", "model", "model_observed", "2026-05-10T12:00:01Z", "raw-000002", "qwen"),
+		withOptionalFields,
 	}
 	if err := writeNormalizedEvents(outPath, events); err != nil {
 		t.Fatalf("writeNormalizedEvents() error = %v", err)
@@ -546,8 +632,8 @@ func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 		t.Fatalf("read normalized events: %v", err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 2 {
-		t.Fatalf("lines = %d, want 2\n%s", len(lines), string(data))
+	if len(lines) != 3 {
+		t.Fatalf("lines = %d, want 3\n%s", len(lines), string(data))
 	}
 	var got Event
 	if err := json.Unmarshal([]byte(lines[1]), &got); err != nil {
@@ -555,6 +641,85 @@ func TestWriteNormalizedEventsWritesJSONL(t *testing.T) {
 	}
 	if got.EventID != "e2" || got.EventFamily != "model" {
 		t.Fatalf("second event = %+v", got)
+	}
+	var rawEvent map[string]any
+	if err := json.Unmarshal([]byte(lines[1]), &rawEvent); err != nil {
+		t.Fatalf("parse raw second line: %v", err)
+	}
+	wantEvent := map[string]any{
+		"event_id":             "e2",
+		"event_schema_version": EventSchemaVersion,
+		"event_family":         "model",
+		"event_type":           "model_observed",
+		"observed_at":          "2026-05-10T12:00:01Z",
+		"source_ref":           "raw-000002",
+		"source_digest":        got.SourceDigest,
+		"actor_ref":            "qwen",
+		"content_state":        "digest_only",
+	}
+	for key, want := range wantEvent {
+		if got := rawEvent[key]; got != want {
+			t.Fatalf("raw event[%q] = %#v, want %#v in %#v", key, got, want, rawEvent)
+		}
+	}
+	for _, omitted := range []string{"task_ref", "operation_ref", "unavailable_fields"} {
+		if _, ok := rawEvent[omitted]; ok {
+			t.Fatalf("raw event includes omitted optional key %q in %#v", omitted, rawEvent)
+		}
+	}
+
+	var gotOptional Event
+	if err := json.Unmarshal([]byte(lines[2]), &gotOptional); err != nil {
+		t.Fatalf("parse third line: %v", err)
+	}
+	var rawEventWithOptional map[string]any
+	if err := json.Unmarshal([]byte(lines[2]), &rawEventWithOptional); err != nil {
+		t.Fatalf("parse raw third line: %v", err)
+	}
+	wantEventWithOptional := map[string]any{
+		"event_id":             "e3",
+		"event_schema_version": EventSchemaVersion,
+		"event_family":         "tool",
+		"event_type":           "tool_observed",
+		"observed_at":          "2026-05-10T12:00:02Z",
+		"source_ref":           "raw-000003",
+		"source_digest":        gotOptional.SourceDigest,
+		"task_ref":             "task-1",
+		"operation_ref":        "op-1",
+		"actor_ref":            "codex",
+		"content_state":        "digest_only",
+	}
+	for key, want := range wantEventWithOptional {
+		if got := rawEventWithOptional[key]; got != want {
+			t.Fatalf("raw event with optional[%q] = %#v, want %#v in %#v", key, got, want, rawEventWithOptional)
+		}
+	}
+	unavailableFields, ok := rawEventWithOptional["unavailable_fields"].([]any)
+	if !ok || len(unavailableFields) != 2 {
+		t.Fatalf("unavailable_fields = %#v, want two items", rawEventWithOptional["unavailable_fields"])
+	}
+	assertRawUnavailableField(t, unavailableFields, 0, map[string]any{
+		"field":       "raw_prompt",
+		"state":       "cannot_verify",
+		"reason_code": "redacted",
+	})
+	assertRawUnavailableField(t, unavailableFields, 1, map[string]any{
+		"field":       "",
+		"state":       "",
+		"reason_code": "",
+	})
+}
+
+func assertRawUnavailableField(t *testing.T, unavailableFields []any, index int, wantField map[string]any) {
+	t.Helper()
+	unavailableField, ok := unavailableFields[index].(map[string]any)
+	if !ok {
+		t.Fatalf("unavailable_fields[%d] = %#v, want object", index, unavailableFields[index])
+	}
+	for key, want := range wantField {
+		if got := unavailableField[key]; got != want {
+			t.Fatalf("unavailable_fields[%d][%q] = %#v, want %#v in %#v", index, key, got, want, unavailableField)
+		}
 	}
 }
 
@@ -615,6 +780,34 @@ func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
 		t.Fatalf("StreamCapture = %s, want disabled", loaded.StreamCapture)
 	}
 
+	profile.SchemaVersion = "bad"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsupported session profile schema_version") {
+		t.Fatalf("LoadSessionProfile() schema error = %v", err)
+	}
+	profile.SchemaVersion = SessionProfileSchemaVersion
+
+	profile.ProfileID = "../bad"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsafe session profile_id") {
+		t.Fatalf("LoadSessionProfile() profile id error = %v", err)
+	}
+	profile.ProfileID = "session-profile"
+
+	profile.HarnessProfilePath = " \t"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "session profile requires harness_profile_path") {
+		t.Fatalf("LoadSessionProfile() harness path error = %v", err)
+	}
+	profile.HarnessProfilePath = "profile.json"
+
+	profile.EventSourcePath = "\n"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "session profile requires event_source_path") {
+		t.Fatalf("LoadSessionProfile() event source error = %v", err)
+	}
+	profile.EventSourcePath = "events.jsonl"
+
 	if err := os.WriteFile(path, []byte(`{"schema_version":"harness-session-profile-v1","profile_id":"session-profile","harness_profile_path":"profile.json","event_source_path":"events.jsonl","unexpected":true}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -635,6 +828,27 @@ func TestLoadSessionProfileDefaultsAndRejectsInvalidRawConfig(t *testing.T) {
 	writeJSONFixture(t, path, profile)
 	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "raw_event_source_path required") {
 		t.Fatalf("LoadSessionProfile() raw config error = %v", err)
+	}
+
+	profile.RawEventFormat = ""
+	profile.RawEventSourcePath = "raw.jsonl"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "raw_event_format required") {
+		t.Fatalf("LoadSessionProfile() raw source-only error = %v", err)
+	}
+
+	profile.RawEventFormat = "unknown"
+	profile.RawEventSourcePath = "raw.jsonl"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err == nil || !strings.Contains(err.Error(), "unsupported raw_event_format") {
+		t.Fatalf("LoadSessionProfile() unsupported raw format error = %v", err)
+	}
+
+	profile.RawEventFormat = OpenCodeJSONLRawFormat
+	profile.RawEventSourcePath = "raw.jsonl"
+	writeJSONFixture(t, path, profile)
+	if _, err := LoadSessionProfile(path); err != nil {
+		t.Fatalf("LoadSessionProfile() valid raw config error = %v", err)
 	}
 }
 
@@ -911,8 +1125,27 @@ func TestCollectSessionWritesObservedRun(t *testing.T) {
 	if observed.EventCount != 1 || len(observed.EventRefs) != 1 {
 		t.Fatalf("observed = %+v", observed)
 	}
+	runPath := filepath.Join(dir, "session-run", "observed", "run.json")
+	var writtenRaw map[string]any
+	readJSONFixture(t, runPath, &writtenRaw)
+	for _, key := range []string{
+		"schema_version",
+		"profile_id",
+		"harness_family",
+		"event_schema_version",
+		"source_path",
+		"source_digest",
+		"event_count",
+		"event_refs",
+		"created_at",
+	} {
+		if _, ok := writtenRaw[key]; !ok {
+			t.Fatalf("written observed run missing raw JSON key %q: %+v", key, writtenRaw)
+		}
+	}
+
 	var written Run
-	readJSONFixture(t, filepath.Join(dir, "session-run", "observed", "run.json"), &written)
+	readJSONFixture(t, runPath, &written)
 	if written.SchemaVersion != RunSchemaVersion ||
 		written.ProfileID != "generic-harness-v1" ||
 		written.HarnessFamily != "generic-harness" ||
@@ -1376,6 +1609,49 @@ func TestValidateWritesOutPathWhenPasses(t *testing.T) {
 	if onDisk.ValidationState != StatePass || onDisk.ReasonCode != "all_required_dimensions_observed" {
 		t.Fatalf("on-disk validation = %+v", onDisk)
 	}
+	var rawValidation map[string]any
+	if err := json.Unmarshal(raw, &rawValidation); err != nil {
+		t.Fatalf("json.Unmarshal(raw validation) error = %v", err)
+	}
+	requireRawKeys(t, rawValidation, []string{
+		"schema_version",
+		"profile_id",
+		"harness_family",
+		"event_schema_version",
+		"validation_state",
+		"reason_code",
+		"dimensions",
+		"event_count",
+		"non_authority",
+		"validation_digest",
+	})
+	rawDimensions, ok := rawValidation["dimensions"].([]any)
+	if !ok || len(rawDimensions) != 1 {
+		t.Fatalf("raw dimensions = %#v, want one dimension", rawValidation["dimensions"])
+	}
+	rawDimension, ok := rawDimensions[0].(map[string]any)
+	if !ok {
+		t.Fatalf("raw dimension = %#v, want object", rawDimensions[0])
+	}
+	requireRawKeys(t, rawDimension, []string{
+		"family",
+		"required",
+		"state",
+		"reason_code",
+		"event_count",
+	})
+	wantDimension := map[string]any{
+		"family":      "harness",
+		"required":    true,
+		"state":       StatePass,
+		"reason_code": "event_family_observed",
+		"event_count": float64(1),
+	}
+	for key, want := range wantDimension {
+		if got := rawDimension[key]; got != want {
+			t.Fatalf("raw dimension[%q] = %#v, want %#v in %#v", key, got, want, rawDimension)
+		}
+	}
 }
 
 func TestValidateCannotVerifyWhenRunFileInvalid(t *testing.T) {
@@ -1416,6 +1692,46 @@ func TestValidateCannotVerifyWhenRunFileInvalid(t *testing.T) {
 	}
 	if onDisk.ValidationState != StateCannotVerify || onDisk.ReasonCode != "source_unavailable" {
 		t.Fatalf("on-disk validation = %+v", onDisk)
+	}
+	var rawValidation map[string]any
+	if err := json.Unmarshal(raw, &rawValidation); err != nil {
+		t.Fatalf("json.Unmarshal(raw validation) error = %v", err)
+	}
+	requireRawKeys(t, rawValidation, []string{
+		"schema_version",
+		"profile_id",
+		"harness_family",
+		"event_schema_version",
+		"validation_state",
+		"reason_code",
+		"dimensions",
+		"event_count",
+		"non_authority",
+	})
+	requireValidationDigestOmittedWhenEmpty(t)
+}
+
+func requireRawKeys(t *testing.T, raw map[string]any, keys []string) {
+	t.Helper()
+	for _, key := range keys {
+		if _, ok := raw[key]; !ok {
+			t.Fatalf("raw JSON missing key %q: %#v", key, raw)
+		}
+	}
+}
+
+func requireValidationDigestOmittedWhenEmpty(t *testing.T) {
+	t.Helper()
+	raw, err := json.Marshal(Validation{})
+	if err != nil {
+		t.Fatalf("json.Marshal(empty validation) error = %v", err)
+	}
+	var rawValidation map[string]any
+	if err := json.Unmarshal(raw, &rawValidation); err != nil {
+		t.Fatalf("json.Unmarshal(empty validation) error = %v", err)
+	}
+	if _, ok := rawValidation["validation_digest"]; ok {
+		t.Fatalf("empty validation includes validation_digest: %#v", rawValidation)
 	}
 }
 
@@ -1458,6 +1774,20 @@ func TestValidateRejectsUnsafePaths(t *testing.T) {
 	}
 	if _, err := Validate(ValidateOptions{ProfilePath: "profile.json", RunDir: "run", OutPath: "../validation.json"}); err == nil || !strings.Contains(err.Error(), "unsafe out path") {
 		t.Fatalf("Validate() out error = %v, want unsafe out path", err)
+	}
+}
+
+func TestValidateRejectsUnsafeOutBasename(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, []string{"harness"}, nil)
+	oldwd := chdir(t, dir)
+	defer oldwd()
+	if err := os.Mkdir("run", 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Validate(ValidateOptions{ProfilePath: "profile.json", RunDir: "run", OutPath: "bad name.json"}); err == nil || !strings.Contains(err.Error(), "unsafe out path: unsafe output filename") {
+		t.Fatalf("Validate() out basename error = %v, want unsafe output filename", err)
 	}
 }
 

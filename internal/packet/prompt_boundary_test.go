@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
@@ -58,6 +59,73 @@ func TestClassifyPromptBoundary(t *testing.T) {
 	}
 }
 
+func TestClassifyPromptBoundaryReasons(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       PromptBoundary
+		wantVerdict string
+		wantReasons []string
+	}{
+		{
+			name:        "clean text has no reasons",
+			input:       PromptBoundary{Text: "Implement the feature and run tests."},
+			wantVerdict: "clean",
+			wantReasons: nil,
+		},
+		{
+			name:        "contaminated text names matching phrase",
+			input:       PromptBoundary{Text: "Please update provenance after the run."},
+			wantVerdict: "contaminated",
+			wantReasons: []string{"developer prompt contains recorder-duty phrase: update provenance"},
+		},
+		{
+			name:        "digest only records retained metadata reason",
+			input:       PromptBoundary{Digest: "sha256:abc", CaptureActor: "recorder", CapturedAt: "2026-05-12T00:00:00Z", CaptureMethod: "external_capture"},
+			wantVerdict: "digest_only",
+			wantReasons: []string{"prompt text unavailable; digest metadata retained"},
+		},
+		{
+			name:        "missing records missing evidence reason",
+			input:       PromptBoundary{},
+			wantVerdict: "missing",
+			wantReasons: []string{"prompt boundary evidence missing"},
+		},
+		{
+			name:        "malformed records malformed metadata reason",
+			input:       PromptBoundary{Digest: "sha256:abc", CaptureActor: "recorder", CapturedAt: "not-time", CaptureMethod: "external_capture"},
+			wantVerdict: "malformed",
+			wantReasons: []string{"prompt boundary metadata malformed"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ClassifyPromptBoundary(tt.input)
+			if got.Verdict != tt.wantVerdict || !reflect.DeepEqual(got.Reasons, tt.wantReasons) {
+				t.Fatalf("classification = %+v, want verdict %s reasons %#v", got, tt.wantVerdict, tt.wantReasons)
+			}
+		})
+	}
+}
+
+func TestForbiddenRecorderDutyPhrasesPreserveCatalog(t *testing.T) {
+	want := []string{
+		"sdp-trace",
+		".sdp-trace",
+		".evidence",
+		"write evidence",
+		"update evidence",
+		"maintain provenance",
+		"update provenance",
+		"update packet",
+		"update bundle",
+		"close gate",
+		"claim verification",
+	}
+	if got := forbiddenRecorderDutyPhrases(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("forbidden recorder-duty phrases = %#v, want %#v", got, want)
+	}
+}
+
 func TestPromptBoundaryEntryMetadata(t *testing.T) {
 	text := PromptBoundary{Text: "Implement feature"}
 	if got := promptBoundaryResolver(text); got != "prompt:text-retained" {
@@ -112,6 +180,55 @@ func TestBuildGitHubPromptBoundaryRequiredBlocksAgentRoute(t *testing.T) {
 				t.Fatalf("agent route state = %s, want %s: %+v", row.State, tt.want, row)
 			}
 		})
+	}
+}
+
+func TestBuildFromGitHubInputPreservesPacketShellAndManifest(t *testing.T) {
+	input := validGitHubInput()
+	input.IntegrationActions = []IntegrationAction{{Kind: "merge", Actor: "bot", Resolver: "action-log"}}
+	bundle := BuildFromGitHubInput(input, time.Date(2026, 5, 12, 3, 4, 5, 0, time.FixedZone("MSK", 3*60*60)))
+
+	if bundle.Packet.PacketID != "github-pr-5-change-evidence-packet" ||
+		bundle.Packet.BundleRef != "github-pr-5-change-evidence-packet-bundle" ||
+		bundle.Manifest.BundleID != "github-pr-5-change-evidence-packet-bundle" {
+		t.Fatalf("packet/bundle ids drifted: packet=%q bundle_ref=%q manifest=%q", bundle.Packet.PacketID, bundle.Packet.BundleRef, bundle.Manifest.BundleID)
+	}
+	if bundle.Packet.GeneratedAt != "2026-05-12T00:04:05Z" {
+		t.Fatalf("generated_at = %q", bundle.Packet.GeneratedAt)
+	}
+	if bundle.Packet.SelectedProfile != "change-host-rich-v0" ||
+		bundle.Packet.RedactionPolicy != "not_assessed" ||
+		bundle.Packet.PacketState != "draft" ||
+		bundle.Packet.Projection.Kind != ProjectionCanonical ||
+		!bundle.Packet.Projection.Canonical ||
+		bundle.Packet.Projection.ArtifactRef != "packet:markdown" {
+		t.Fatalf("packet shell drifted: %+v", bundle.Packet)
+	}
+	gotActions, ok := bundle.Packet.Extensions["integration_actions"].([]IntegrationAction)
+	if !ok || !reflect.DeepEqual(gotActions, input.IntegrationActions) {
+		t.Fatalf("integration actions extension = %#v", bundle.Packet.Extensions["integration_actions"])
+	}
+	if bundle.Manifest.SchemaVersion != BundleSchemaVersion ||
+		bundle.Manifest.PacketDigest != PacketDigest(bundle.Packet) ||
+		len(bundle.Manifest.Entries) == 0 {
+		t.Fatalf("manifest drifted: %+v", bundle.Manifest)
+	}
+}
+
+func TestBuildFromGitHubInputContaminatedPromptFindingShape(t *testing.T) {
+	input := validGitHubInput()
+	input.PromptBoundary = PromptBoundary{Text: "Please update packet after tests."}
+	bundle := BuildFromGitHubInput(input, testTime())
+	if len(bundle.Packet.TheaterFindings) != 1 {
+		t.Fatalf("theater findings = %#v", bundle.Packet.TheaterFindings)
+	}
+	got := bundle.Packet.TheaterFindings[0]
+	if got.ReasonCode != "prompt_contamination" ||
+		got.State != StateFail ||
+		got.Severity != "P0" ||
+		got.Finding != "developer prompt contains recorder-duty phrase: update packet" ||
+		!reflect.DeepEqual(got.TriggerEvidenceRefs, []string{"prompt:boundary"}) {
+		t.Fatalf("prompt contamination finding drifted: %+v", got)
 	}
 }
 

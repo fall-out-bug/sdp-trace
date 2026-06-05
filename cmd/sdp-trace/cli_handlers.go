@@ -1,0 +1,40 @@
+package main
+
+import (
+	"context"
+	"io"
+)
+
+type commandHandler func(context.Context, []string, io.Writer, io.Writer) int
+
+type subcommandHandler func([]string, io.Writer, io.Writer) int
+
+var commandHandlers = map[string]commandHandler{
+	"version":           runVersion,
+	"wrap":              runWrap,
+	"run":               runWrappedCommand,
+	"dry-run":           runDryRun,
+	"preview":           runPreview,
+	"doctor":            runDoctor,
+	"install":           runInstall,
+	"interaction":       runInteraction,
+	"observe":           runObserveCommand,
+	"harness":           runHarnessCommand,
+	"envelope":          runEnvelope,
+	"verify":            runVerify,
+	"explain":           runExplain,
+	"query":             runQuery,
+	"query-pack":        runQueryPack,
+	"export":            runExport,
+	"report":            runReport,
+	"gate":              runGate,
+	"assess":            runAssess,
+	"override":          runOverride,
+	"checkpoint":        runCheckpoint,
+	"witness":           runWitness,
+	"validate-fixtures": runValidateFixtures,
+	"release-proof":     runReleaseProof,
+	"pr-review":         runPRReview,
+	"packet":            runPacket,
+	"command-surface":   runCommandSurface,
+}

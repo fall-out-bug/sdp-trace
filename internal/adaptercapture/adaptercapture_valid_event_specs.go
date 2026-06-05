@@ -1,5 +1,11 @@
 package adaptercapture
 
+type validEventSpec struct {
+	id        string
+	eventType string
+	sequence  int
+}
+
 var validEventSpecs = []validEventSpec{
 	{id: "evt-run", eventType: "run_started", sequence: 1},
 	{id: "evt-task", eventType: "task_locked", sequence: 2},

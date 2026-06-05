@@ -150,7 +150,7 @@ Initial target files:
 
 - `internal/forensic/forensic_tables.go`
 - `cmd/sdp-trace/main_546_commandsurfacedrift.go`
-- `cmd/sdp-trace/wrap_415_loadpreviewcontract.go`
+- `cmd/sdp-trace/wrap_preview_args.go`
 - `internal/posture/posture_time.go`
 
 Required checks:
