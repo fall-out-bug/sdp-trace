@@ -29,6 +29,7 @@ func TestForensicsBasicPackDerivesRowsWithoutPolicyVerdict(t *testing.T) {
 	if len(result.InputArtifacts) != 3 {
 		t.Fatalf("input artifacts = %+v", result.InputArtifacts)
 	}
+	assertQueryRowJSONShape(t)
 	assertInputArtifactJSONShape(t, QueryPackInputArtifact{})
 	assertInputArtifactJSONShape(t, QueryPackInputArtifact{
 		SHA256:        "abc123",
@@ -381,6 +382,64 @@ func assertInputArtifactJSONShape(t *testing.T, artifact QueryPackInputArtifact)
 	}
 	assertOptionalInputArtifactField(t, fields, "sha256", artifact.SHA256, payload)
 	assertOptionalInputArtifactField(t, fields, "schema_version", artifact.SchemaVersion, payload)
+}
+
+func assertQueryRowJSONShape(t *testing.T) {
+	t.Helper()
+	reconstructable := false
+	row := QueryPackRow{
+		ID:                   "row.0001",
+		Query:                QueryForensicsRedactions,
+		EvidenceState:        RowStateRetentionLimited,
+		EvidenceFamily:       EvidenceFamilyRetention,
+		Reconstructable:      &reconstructable,
+		SourceRef:            "block_18.condition.critical_evidence_reconstructable",
+		SourceConditionID:    "critical_evidence_reconstructable",
+		SourceConditionState: "fail",
+		ReasonCode:           "digest_only_not_reconstructable",
+		EvidenceGap:          EvidenceFamilyRetention,
+		RelatedRows:          []string{"summary.0001"},
+	}
+	fields := marshalObjectFields(t, row, "query row")
+	for _, field := range []string{
+		"id", "query", "evidence_state", "evidence_family", "reconstructable",
+		"source_ref", "source_condition_id", "source_condition_state",
+		"reason_code", "evidence_gap", "related_rows",
+	} {
+		if _, ok := fields[field]; !ok {
+			t.Fatalf("query row missing %s in %+v", field, fields)
+		}
+	}
+	if got, ok := fields["reconstructable"].(bool); !ok || got {
+		t.Fatalf("reconstructable = %v, want false", fields["reconstructable"])
+	}
+	emptyFields := marshalObjectFields(t, QueryPackRow{}, "empty query row")
+	for _, field := range []string{
+		"reconstructable", "source_condition_id", "source_condition_state",
+		"reason_code", "evidence_gap", "related_rows",
+	} {
+		if _, ok := emptyFields[field]; ok {
+			t.Fatalf("empty query row unexpectedly included %s in %+v", field, emptyFields)
+		}
+	}
+	for _, field := range []string{"id", "query", "evidence_state", "evidence_family", "source_ref"} {
+		if _, ok := emptyFields[field]; !ok {
+			t.Fatalf("empty query row missing required json field %s in %+v", field, emptyFields)
+		}
+	}
+}
+
+func marshalObjectFields(t *testing.T, value any, label string) map[string]any {
+	t.Helper()
+	payload, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("marshal %s: %v", label, err)
+	}
+	fields := map[string]any{}
+	if err := json.Unmarshal(payload, &fields); err != nil {
+		t.Fatalf("unmarshal %s %s: %v", label, payload, err)
+	}
+	return fields
 }
 
 func assertOptionalInputArtifactField(t *testing.T, fields map[string]any, field, want string, payload []byte) {

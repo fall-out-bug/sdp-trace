@@ -1566,6 +1566,17 @@ schemas, examples, dependencies, package boundary, dependency direction, CRAP <
 `path_redacted_id`, optional `schema_version`, `artifact_required` JSON fields,
 and generated input artifact values.
 
+Slice 117 continues non-numbered micro-file cleanup with `internal/query`
+query-pack row shape. The slice is limited to consolidating
+`querypack_row_type.go` into `querypack_row_factory.go` so the `QueryPackRow`
+JSON shape is co-located with the row factory that creates populated rows. It
+intentionally leaves row ordering, row source mapping, condition conversion,
+summary rows, explanation rendering, query-pack result shape, schemas,
+examples, dependencies, package boundary, dependency direction, CRAP < 5, MI >
+70, and MI baselines unchanged. It must preserve the exported `QueryPackRow`
+type name, all existing JSON field names, `omitempty` behavior for optional
+fields, pointer semantics for `reconstructable`, and generated query row values.
+
 ## Verification
 
 ```text

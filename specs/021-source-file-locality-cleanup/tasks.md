@@ -4397,3 +4397,45 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 117 Tasks
+
+- [x] T021-8110 Confirm Slice 117 is bounded to `internal/query` query-pack row
+  files: `querypack_row_type.go` and `querypack_row_factory.go`.
+- [x] T021-8111 Confirm Slice 117 is behavior-preserving: no changes to row
+  ordering, row source mapping, condition conversion, summary rows, explanation
+  rendering, query-pack result shape, schemas, examples, dependencies, package
+  boundary, dependency direction, CRAP < 5, MI > 70, or MI baselines are
+  planned.
+- [x] T021-8112 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-117-plan-review.md`.
+- [x] T021-8120 Consolidate `querypack_row_type.go` into
+  `querypack_row_factory.go` without creating replacement micro-shards. Record
+  source-shape evidence that the row type shard is gone and staged boundary
+  evidence that excluded query behavior files and public surfaces are
+  untouched.
+- [x] T021-8130 Run `gofmt` on changed Go files.
+- [x] T021-8140 Run focused query-pack row verification with a `go test -list`
+  exact-count guard expecting exactly 2 tests:
+  `TestForensicsBasicPackDerivesRowsWithoutPolicyVerdict` and
+  `TestExplainForensicsPackRendersStableSafeRows`, then run them with
+  `go test ./internal/query -run <guard> -count=1 -v`. The focused test set
+  must preserve generated query row values and explicitly assert the
+  `QueryPackRow` JSON tag contract: required row fields emit under their
+  current JSON names, optional empty fields are omitted, non-empty optional
+  fields emit, `reconstructable` preserves pointer boolean semantics, and
+  `related_rows` omits empty slices while emitting non-empty slices.
+- [x] T021-8150 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8160 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8170 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 117 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-117-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.
