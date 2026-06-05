@@ -1645,6 +1645,18 @@ package boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines
 unchanged. It must preserve the exported `Limits` fields and JSON tags:
 `max_line_bytes` and `max_events`.
 
+Slice 124 continues the remaining non-numbered `internal/harnessobs` type
+cleanup with the observation profile degradation rule artifact shape. The slice
+is limited to consolidating `rule_type.go` into `profile_type.go` so the
+exported `Rule` JSON shape is co-located with the exported `Profile` JSON shape
+that embeds it through `degradation_rules`. Consolidating into
+`profile_degradation_validation.go` is rejected because that file owns rule
+validation behavior rather than profile artifact shape. The slice intentionally
+leaves degradation rule validation, profile loading, observation/validation
+behavior, schemas, examples, dependencies, package boundary, dependency
+direction, CRAP < 5, MI > 70, and MI baselines unchanged. It must preserve the
+exported `Rule` fields and JSON tags: `state` and `reason_code`.
+
 ## Verification
 
 ```text

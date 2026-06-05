@@ -1,6 +1,9 @@
 package harnessobs
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestLoadProfileValidatesProfile(t *testing.T) {
 	dir := t.TempDir()
@@ -12,12 +15,52 @@ func TestLoadProfileValidatesProfile(t *testing.T) {
 	if _, err := LoadProfile(path); err != nil {
 		t.Fatalf("LoadProfile() error = %v", err)
 	}
+	assertProfileRuleJSONShape(t)
 
 	profile := validProfileFixture()
 	profile.ProfileID = "../bad"
 	writeJSONFixture(t, path, profile)
 	if _, err := LoadProfile(path); err == nil || err.Error() != "unsafe profile_id" {
 		t.Fatalf("LoadProfile() validation error = %v, want unsafe profile_id", err)
+	}
+}
+
+func assertProfileRuleJSONShape(t *testing.T) {
+	t.Helper()
+	profile := Profile{DegradationRules: map[string]Rule{
+		"empty_rule":     {},
+		"populated_rule": {State: StateNotAssessed, ReasonCode: "required_event_family_absent"},
+	}}
+	data, err := json.Marshal(profile)
+	if err != nil {
+		t.Fatalf("marshal profile rule shape: %v", err)
+	}
+	var rawProfile map[string]any
+	if err := json.Unmarshal(data, &rawProfile); err != nil {
+		t.Fatalf("parse profile rule shape: %v", err)
+	}
+	rawRules, ok := rawProfile["degradation_rules"].(map[string]any)
+	if !ok {
+		t.Fatalf("degradation_rules = %#v, want object", rawProfile["degradation_rules"])
+	}
+	assertRawRule(t, rawRules, "empty_rule", "", "")
+	assertRawRule(t, rawRules, "populated_rule", StateNotAssessed, "required_event_family_absent")
+}
+
+func assertRawRule(t *testing.T, rawRules map[string]any, key, wantState, wantReasonCode string) {
+	t.Helper()
+	rawRule, ok := rawRules[key].(map[string]any)
+	if !ok {
+		t.Fatalf("degradation_rules[%q] = %#v, want object", key, rawRules[key])
+	}
+	wantRule := map[string]any{
+		"state":       wantState,
+		"reason_code": wantReasonCode,
+	}
+	for field, want := range wantRule {
+		if got := rawRule[field]; got != want {
+			t.Fatalf("degradation_rules[%q][%q] = %#v, want %#v in %#v", key, field, got, want, rawRule)
+		}
 	}
 }
 

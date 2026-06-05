@@ -4692,3 +4692,45 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 124 Tasks
+
+- [x] T021-8600 Confirm Slice 124 is bounded to `internal/harnessobs`
+  observation profile degradation rule artifact shape files: `rule_type.go`
+  and `profile_type.go`.
+- [x] T021-8601 Confirm Slice 124 is behavior-preserving: no changes to
+  degradation rule validation, profile loading, observation/validation
+  behavior, schemas, examples, dependencies, package boundary, dependency
+  direction, CRAP < 5, MI > 70, or MI baselines are planned.
+- [x] T021-8602 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-124-plan-review.md`.
+- [x] T021-8610 Consolidate `rule_type.go` into `profile_type.go` without
+  creating replacement micro-shards. Record source-shape evidence that the rule
+  type shard is gone and staged boundary evidence that excluded harness
+  observation behavior files and public surfaces are untouched.
+- [x] T021-8620 Run `gofmt` on changed Go files.
+- [x] T021-8630 Run focused harness observation profile rule verification with
+  a `go test -list` exact-count guard expecting exactly 2 tests:
+  `TestLoadProfileValidatesProfile` and `TestObserveValidateCompleteHarnessExport`,
+  then run them with `go test ./internal/harnessobs -run <guard> -count=1 -v`.
+  The focused test set must preserve the `Rule` JSON fields/tags inside the
+  `Profile` artifact shape and keep profile validation plus complete
+  observation/validation behavior covered. If current coverage lacks exact
+  `Rule` field/tag assertions, extend one of the two guarded tests before
+  implementation review. The assertion must prove zero-value `Rule{}` emits
+  both `state` and `reason_code`, and populated rules emit both exact field
+  names. Do not add a third focused test name unless this task is re-reviewed.
+- [x] T021-8640 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8650 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8660 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 124 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-124-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

@@ -5,6 +5,11 @@ type Limits struct {
 	MaxEvents    int `json:"max_events,omitempty"`
 }
 
+type Rule struct {
+	State      string `json:"state"`
+	ReasonCode string `json:"reason_code"`
+}
+
 type Profile struct {
 	SchemaVersion         string          `json:"schema_version"`
 	ProfileID             string          `json:"profile_id"`
