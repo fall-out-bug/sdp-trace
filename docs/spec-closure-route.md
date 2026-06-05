@@ -3,7 +3,7 @@
 Status: working audit snapshot from 2026-06-01; PR #72 handoff state refreshed
 on 2026-06-05.
 
-This document audits specs 001-022 against the current repository state and
+This document audits specs 001-023 against the current repository state and
 defines the route to close, defer, or repair each spec. It is a planning and
 coordination artifact, not proof that any spec is complete.
 
@@ -14,10 +14,10 @@ coordination artifact, not proof that any spec is complete.
 | Source commit inspected | Snapshot at `codex/022-post-merge-governance-closure` commit `9438080464f0103144790e0336560deeafc893b6`; PR #72 handoff state refreshed after branch update to current `main`. |
 | PR #64 | merged on 2026-05-26 after explicit maintainer approval; final PR checks passed at head `537612723f7dad7f6e3a92657336fafa4ce6bbd5` |
 | Latest `main` CI | pass, run `26453881873` at `e129515e7c4c7a4a9c4b2b53eb4d3694b41eb2bd` |
-| Spec directories | 22 |
-| SpecKit triplets | 22 / 22 |
-| Task checkboxes | 647 / 647 checked |
-| Formal roadmap `complete` rows | 0 |
+| Spec directories | 23 |
+| SpecKit triplets | 23 / 23 |
+| Task checkboxes | 1971 / 1977 checked |
+| Formal roadmap `complete` rows | 1 |
 
 Commands used for this audit:
 
@@ -63,13 +63,14 @@ Do not close a spec because task boxes are checked. A closeable spec needs:
 | 018 Core/Policy Split And Pi Delivery | Task ledger now maps 11 / 11 implemented, reviewed, and locally verified tasks to command stability, package ownership, extension boundary, source locality, core-first docs, integration verification, maintainer decision `approve_core_extension_direction`, and follow-up Spec 020 / Spec 021. | Close Spec 018 as approved core/extension direction and prepared follow-up implementation specs. Do not claim command removal, separate binaries, production readiness, release approval, or external trust. |
 | 019 Repo Realignment, Monitoring, And Gate Readiness | Tasks are 16 / 16. Major workstreams are implemented, PR #63 merged after final-head CI passed, and maintainer decision `split_successor` moves residual governance debt to Spec 022 without claiming retroactive pre-implementation approval or PR #60 merge approval. | Close Spec 019 as split-successor governance state. Do not claim full approval of PR #60, production trust, release approval, or signed external trust. |
 | 020 Core Query Package Split | Draft follow-up implementation spec prepared by Spec 018 closure. No active task checkboxes are opened in the current closure route. | Future implementation surface only; do not treat as current closure debt until explicitly taken into work. |
-| 021 Source File Locality Cleanup | Draft follow-up implementation spec prepared by Spec 018 closure. No active task checkboxes are opened in the current closure route. | Future implementation surface only; do not treat as current closure debt until explicitly taken into work. |
+| 021 Source File Locality Cleanup | Spec status is `complete`; PR #73 merged on 2026-06-05 after final-head `verify` and `pr-review-evidence-only` passed. Task ledger is 1243 / 1243 checked. | Treat as merged cleanup closure for source-file locality only. Do not claim production trust, release approval, or external attestation. |
 | 022 Post-Merge Governance Closure | Active governance closure spec on PR #72 from `codex/022-post-merge-governance-closure`. Tasks are 42 / 42 after plan/task review closure, US1 evidence summary, US2 decision-state update, US3 navigation sync, final local verification, and fixed-handoff PR-ready re-review. PR #60 and PR #63 live refresh is recorded; PR #60 merge approval remains `not_assessed`. | Collect final-head PR #72 CI/merge evidence. Do not claim retroactive PR #60 approval, production trust, release approval, or external attestation. |
+| 023 Numbered Code File Locality Cleanup | Spec status is `complete`; PR #73 merged on 2026-06-05 after final-head `verify` and `pr-review-evidence-only` passed. Task ledger is 80 / 80 checked. | Treat as merged cleanup closure for numbered active Go source files only. Do not claim production trust, release approval, or external attestation. |
 
 ## Open Task Classification
 
-Current task ledger state is 647 / 647 checked, leaving 0 open Spec 022 task
-boxes.
+Current task ledger state is 1971 / 1977 checked. Spec 022 has 42 / 42 task
+boxes checked; the remaining unchecked boxes are outside Spec 022.
 
 | Category | Specs / tasks | Closure meaning |
 | --- | --- | --- |
