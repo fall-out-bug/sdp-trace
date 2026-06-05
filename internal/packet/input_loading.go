@@ -34,5 +34,8 @@ func LoadGitHubInput(path string) (GitHubPREvidenceInput, error) {
 	if err := json.Unmarshal(raw, &input); err != nil {
 		return GitHubPREvidenceInput{}, err
 	}
+	if err := ValidateGitHubPREvidenceInputResolvers(input); err != nil {
+		return GitHubPREvidenceInput{}, err
+	}
 	return input, nil
 }

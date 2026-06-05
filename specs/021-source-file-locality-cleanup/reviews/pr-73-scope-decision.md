@@ -34,10 +34,22 @@ This decision does not weaken FR-021-001 or FR-023-001 for future work. Future
 numbered-file cleanup should open a separate PR before implementation when a new
 SpecKit artifact expands the touched package set beyond the current spec.
 
+Spec 021 also expanded internally from the original 11 command-surface slices to
+the complete package-by-package slice registry in `plan.md`. This is accepted as
+part of the same PR 73 exception because the plan and per-slice evidence files
+record the exact touched package or command family for each slice. Future work
+should not rely on `plan.md` as a late substitute for an updated spec.
+
 PR 73 is accepted as an exception only because the work already exists as
 bounded slices with separate spec, plan, task, evidence, review, and verification
 artifacts, and because the current user explicitly requested continuing through
 PR review to merge.
+
+Review remediation is also bounded to PR 73: security findings discovered during
+OpenCode PR review may add small behavior changes when the alternative is
+merging with a known trust/security defect. Those changes must be explicitly
+named in the spec and final audit instead of being described as locality-only
+file moves.
 
 ## Risk If Wrong
 
@@ -55,5 +67,6 @@ and require OpenCode PR review plus live checks before merge.
 - Scope drift finding: acknowledged and documented as an explicit PR 73
   exception, not silently dismissed.
 - Multi-PR strategy for future comparable work: required.
-- Merge approval: not_assessed in this artifact.
+- Merge approval: user_requested_merge in the active Codex thread on
+  2026-06-05; release approval remains separate.
 - Release readiness: not_assessed.

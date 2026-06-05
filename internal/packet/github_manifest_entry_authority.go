@@ -34,19 +34,6 @@ func bundleEntry(ref, sourceClass, resolver, retainedForm string) BundleEntry {
 	}
 }
 
-// The redaction check is deliberately small and conservative; it prevents
-// obvious secret-like resolver strings from being persisted in generated
-// examples or packets.
-func redactSecretLike(value string) string {
-	redacted := value
-	for _, marker := range []string{"SECRET", "TOKEN", "Authorization:"} {
-		if strings.Contains(strings.ToUpper(redacted), strings.ToUpper(marker)) {
-			return "[redacted-secret]"
-		}
-	}
-	return redacted
-}
-
 func digestPlaceholder(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return "sha256:" + fmt.Sprintf("%x", sum[:])

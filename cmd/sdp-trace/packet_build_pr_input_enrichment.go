@@ -16,6 +16,10 @@ func completePRInputFromOptions(opts *flagSet, source string, input *packet.GitH
 	if err := hydrateGitHubActionsEvidence(source, opts.stringValue("github-api-url"), input, os.Getenv); err != nil {
 		return err
 	}
+	return completePRInputRoute(opts, input)
+}
+
+func completePRInputRoute(opts *flagSet, input *packet.GitHubPREvidenceInput) error {
 	route, err := readOptionalPRRoute(opts.stringValue("route-manifest"))
 	if err != nil {
 		return fmt.Errorf("read route manifest: %w", err)
@@ -23,6 +27,9 @@ func completePRInputFromOptions(opts *flagSet, source string, input *packet.GitH
 	// Route manifests are optional enrichment; an empty manifest leaves route
 	// rows to validate as missing or cannot_verify.
 	applyPRRoute(input, route)
+	if err := packet.ValidateGitHubPREvidenceInputResolvers(*input); err != nil {
+		return fmt.Errorf("validate github evidence resolvers: %w", err)
+	}
 	return nil
 }
 

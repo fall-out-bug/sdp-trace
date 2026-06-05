@@ -1,6 +1,7 @@
 package prreview
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -1540,6 +1541,9 @@ func TestRunReviewPreservesValidationDefaultsAndOutputContracts(t *testing.T) {
 	}
 	if len(noCommandRuns.Results) != 1 || noCommandRuns.Results[0].Status != StatusNotAssessed || noCommandRuns.Results[0].Reason != "runner_command_not_configured" {
 		t.Fatalf("no-command role state drifted: %+v", noCommandRuns.Results)
+	}
+	if _, err := roleCommand(context.Background(), noCommandProfile.Roles[0], root); err == nil || !strings.Contains(err.Error(), "runner_command_not_configured") {
+		t.Fatalf("empty command guard drifted: %v", err)
 	}
 
 	dirtyWorkDir := filepath.Join(root, "dirty-work")

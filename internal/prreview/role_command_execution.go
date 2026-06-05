@@ -10,7 +10,10 @@ import (
 func runRoleCommand(packet Packet, role ReviewRole, opts RunOptions) ([]byte, bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), roleTimeout(role))
 	defer cancel()
-	cmd := roleCommand(ctx, role, opts.WorkDir)
+	cmd, err := roleCommand(ctx, role, opts.WorkDir)
+	if err != nil {
+		return nil, false, err
+	}
 	prompt, err := renderPrompt(packet, role, opts.PacketDir)
 	if err != nil {
 		return nil, false, err

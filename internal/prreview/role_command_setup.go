@@ -2,6 +2,7 @@ package prreview
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
@@ -18,10 +19,13 @@ func roleTimeout(role ReviewRole) time.Duration {
 }
 
 // roleCommand binds the role command to the caller-selected work directory.
-func roleCommand(ctx context.Context, role ReviewRole, workDir string) *exec.Cmd {
+func roleCommand(ctx context.Context, role ReviewRole, workDir string) (*exec.Cmd, error) {
+	if len(role.Command) == 0 {
+		return nil, fmt.Errorf("runner_command_not_configured")
+	}
 	cmd := exec.CommandContext(ctx, role.Command[0], role.Command[1:]...)
 	cmd.Dir = workDir
-	return cmd
+	return cmd, nil
 }
 
 // attachPromptInput sends non-empty rendered prompts to the runner stdin.

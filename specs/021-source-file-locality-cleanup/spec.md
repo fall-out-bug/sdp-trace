@@ -39,6 +39,34 @@ turns that policy into bounded cleanup slices.
 - Tests and quality gates pass after each slice.
 - `docs/package-ownership-map.md` remains accurate for touched packages.
 
+## Slice Registry
+
+Slices 1-11 are retained below as the original command-surface intake record.
+After implementation exposed a much larger active numbered-file inventory,
+`plan.md` became the authoritative complete slice registry for Spec 021. The
+per-slice evidence files in `reviews/slice-*-evidence.md` bind each completed
+slice back to that registry.
+
+This is a PR 73 exception, not the preferred future shape. Future comparable
+cleanup work should update `spec.md` before implementation or split the new
+scope into a separate PR.
+
+## PR-Review Remediation Delta
+
+Security and requirements review during PR 73 found two issues that are
+deliberately tracked as review remediation rather than behavior-preserving file
+moves:
+
+- manual external review runner commands now require explicit
+  `manual_external` opt-in before process execution;
+- GitHub PR evidence resolver URL fields are validated and redacted more
+  defensively before packet construction.
+
+These changes are outside the original locality-cleanup non-goal boundary but
+are accepted for PR 73 because the user requested continuing through PR review
+to a clean merge and because leaving known review-identified trust/security
+findings open would violate the repository review loop.
+
 ## Active Slice 1
 
 Status: implemented and pushed; targeted reviews LGTM; PR checks passed.

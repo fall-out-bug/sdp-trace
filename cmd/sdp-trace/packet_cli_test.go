@@ -375,6 +375,20 @@ func TestBuildPRInputFromOptionsAppliesOptionalEvidenceAndRoute(t *testing.T) {
 	if _, err := buildPRInputFromOptions(opts); err == nil || !strings.Contains(err.Error(), "read route manifest:") {
 		t.Fatalf("route manifest error = %v", err)
 	}
+
+	unsafeRoute := filepath.Join(root, "unsafe-route.json")
+	writeTestJSON(t, unsafeRoute, packet.GitHubPREvidenceInput{
+		IntegrationActions: []packet.IntegrationAction{{
+			Kind:     "deploy",
+			Actor:    "bot",
+			Resolver: "https://localhost/deploy",
+		}},
+	})
+	opts = packetBuildPROptionsForTest("github-fixture", eventPath)
+	opts.setString("route-manifest", unsafeRoute)
+	if _, err := buildPRInputFromOptions(opts); err == nil || !strings.Contains(err.Error(), "validate github evidence resolvers:") {
+		t.Fatalf("unsafe route resolver error = %v", err)
+	}
 }
 
 func TestGitHubPRInputFromEventUsesActionsEnvRunID(t *testing.T) {

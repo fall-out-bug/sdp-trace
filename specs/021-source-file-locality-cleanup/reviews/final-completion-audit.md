@@ -1,6 +1,6 @@
 # Final Completion Audit
 
-Date: 2026-06-05T03:55:52Z
+Date: 2026-06-05T08:45:00Z
 
 Scope: active goal to close remaining code-file locality debt from numbered Go
 source shards and residual `_type.go` product shards in active code paths.
@@ -35,10 +35,12 @@ Exit status: 0.
   `specs/021-source-file-locality-cleanup/reviews/pr-73-scope-decision.md`.
 - Added and expanded tests are contract-pinning evidence for behavior-preserving
   file moves, not new behavior requirements.
+- PR-review remediation after the original Slice 129 closeout is explicitly
+  tracked as security/requirements remediation, not as locality-only refactoring.
 
 ## Verification Evidence
 
-Latest local full verification bundle after Slice 129: pass.
+Latest local full verification bundle after PR-review remediation: pass.
 
 Command:
 
@@ -64,9 +66,26 @@ Test expansion evidence:
 - The final full verification bundle above includes these tests through
   `go test ./...`.
 
+PR-review remediation evidence:
+
+- `ca40cec` requires explicit `manual_external` opt-in for manual external
+  review runner roles that carry commands. This is a security fix accepted from
+  OpenCode PR review, not a behavior-preserving file move.
+- Current working-tree remediation validates GitHub PR evidence resolver URL
+  fields before packet construction, redacts URL credentials and token-like
+  query markers in resolver references, and adds a point-of-use command guard in
+  the PR-review command runner.
+- The explicit CLI command-runner surfaces in `wrap`, `run`,
+  `observe session`, and interaction forwarding intentionally execute
+  user-provided argv arrays. They do not invoke a shell unless the user provides
+  a shell as argv[0]. Adding a generic executable allowlist there would break the
+  product's command-observation contract; command privacy is handled by argv
+  digest retention and artifact redaction rather than command blocking.
+
 ## Not Assessed
 
-- Merge approval: not_assessed.
+- Merge approval: user_requested_merge in the active Codex thread on
+  2026-06-05; release approval remains separate.
 - Release readiness: not_assessed.
 - External attestation: not_assessed.
 - Example event JSON numbering: out of scope; those files are ordered trace
@@ -93,3 +112,5 @@ Policy-compliant PR review is tracked separately through OpenCode review lanes:
 | requirements | codex-subagent + OpenCode | `zai-coding-plan/glm-5.1` | 2026-06-05 | `requirements-reviewer` | 1800s final run | 2 after timeout/stale run | none | findings recorded for remediation |
 | code | codex-subagent + OpenCode | `kimi-for-coding/k2p6` | 2026-06-05 | `code-reviewer` | 900s | 0 | none | pass; no blocking findings |
 | security | codex-subagent + OpenCode | `minimax/MiniMax-M2.7` | 2026-06-05 | `security-reviewer` | 900s | 0 | none | LGTM |
+
+Final PR-review rerun after remediation: pending.

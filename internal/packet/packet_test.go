@@ -1531,6 +1531,62 @@ func TestGitHubResolverAndDigestHelpersPreserveSemantics(t *testing.T) {
 	if got := redactSecretLike("plain resolver"); got != "plain resolver" {
 		t.Fatalf("plain resolver redacted to %q", got)
 	}
+	for _, value := range []string{
+		"https://user:pass@example.test/artifact",
+		"https://example.test/artifact?access_token=abc",
+		"https://example.test/artifact?password=abc",
+	} {
+		if got := redactSecretLike(value); got != "[redacted-secret]" {
+			t.Fatalf("secret resolver %q redacted to %q", value, got)
+		}
+	}
+}
+
+func TestValidateGitHubPREvidenceInputResolversRejectsUnsafeURLs(t *testing.T) {
+	tests := []struct {
+		name  string
+		input GitHubPREvidenceInput
+	}{
+		{
+			name:  "check http",
+			input: GitHubPREvidenceInput{Checks: []GitHubCheck{{Name: "ci", URL: "http://example.test/check"}}},
+		},
+		{
+			name:  "artifact credentials",
+			input: GitHubPREvidenceInput{Artifacts: []GitHubArtifact{{Name: "artifact", Resolver: "https://user:pass@example.test/artifact", RetainedForm: "external_ref"}}},
+		},
+		{
+			name:  "review localhost",
+			input: GitHubPREvidenceInput{Reviews: []GitHubReview{{Reviewer: "reviewer", Resolver: "https://localhost/review", State: StatePass}}},
+		},
+		{
+			name:  "integration private ip",
+			input: GitHubPREvidenceInput{IntegrationActions: []IntegrationAction{{Kind: "deploy", Actor: "bot", Resolver: "https://10.0.0.1/deploy"}}},
+		},
+		{
+			name:  "integration link local ip",
+			input: GitHubPREvidenceInput{IntegrationActions: []IntegrationAction{{Kind: "deploy", Actor: "bot", Resolver: "https://169.254.1.10/deploy"}}},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := ValidateGitHubPREvidenceInputResolvers(test.input); err == nil {
+				t.Fatalf("expected unsafe resolver error")
+			}
+		})
+	}
+}
+
+func TestValidateGitHubPREvidenceInputResolversAllowsRelativeAndPublicHTTPS(t *testing.T) {
+	input := GitHubPREvidenceInput{
+		Checks:             []GitHubCheck{{Name: "ci", URL: "https://github.com/example/repo/actions/runs/1", Conclusion: StatePass}},
+		Artifacts:          []GitHubArtifact{{Name: "artifact", Resolver: "artifacts/report.zip", RetainedForm: "external_ref"}},
+		Reviews:            []GitHubReview{{Reviewer: "reviewer", Resolver: "reviews/review.md", State: StatePass}},
+		IntegrationActions: []IntegrationAction{{Kind: "deploy", Actor: "bot", Resolver: "https://example.test/deploy"}},
+	}
+	if err := ValidateGitHubPREvidenceInputResolvers(input); err != nil {
+		t.Fatalf("safe resolvers rejected: %v", err)
+	}
 }
 
 func TestCheckDemoRejectsSelfDeclaredRouteEvidence(t *testing.T) {
