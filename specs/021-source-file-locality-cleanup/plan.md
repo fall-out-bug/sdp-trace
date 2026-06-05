@@ -1690,6 +1690,17 @@ examples, dependencies, package boundary, dependency direction, CRAP < 5, MI >
 70, and MI baselines unchanged. It must preserve exported `UnavailableField`,
 `Event`, and `Run` fields and JSON tags exactly.
 
+Slice 128 continues residual `_type.go` filename cleanup for co-located
+validation artifact shapes. The slice is limited to renaming
+`internal/harnessobs/validation_type.go` to
+`internal/harnessobs/validation.go` without moving symbols, changing exported
+names, changing JSON tags, or adding new abstractions. The slice intentionally
+leaves validation composition, validation loading, validation summary
+rendering, observation/validation behavior, schemas, examples, dependencies,
+package boundary, dependency direction, CRAP < 5, MI > 70, and MI baselines
+unchanged. It must preserve exported `Dimension` and `Validation` fields and
+JSON tags exactly.
+
 ## Verification
 
 ```text

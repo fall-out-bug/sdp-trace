@@ -4863,3 +4863,50 @@ Status: in_progress
   including harness, agent id, model/provider if available, date, prompt class,
   timeout, retries, fallback, result, and any unavailable external/provider
   lanes as `not_assessed`.
+
+## Active Slice 128 Tasks
+
+- [x] T021-8880 Confirm Slice 128 is bounded to residual `_type.go` filename
+  cleanup for `internal/harnessobs/validation_type.go`.
+- [x] T021-8881 Confirm Slice 128 is behavior-preserving: no symbol moves
+  beyond the file rename, no exported name changes, no JSON tag changes, no
+  validation composition changes, no validation loading changes, no validation
+  summary rendering changes, no observation/validation behavior changes, no
+  schemas/examples/dependencies/package boundary changes, no CRAP < 5 or MI >
+  70 regression, and no MI baseline changes are planned.
+- [x] T021-8882 Run three independent plan/task reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record the plan review in
+  `specs/021-source-file-locality-cleanup/reviews/slice-128-plan-review.md`.
+- [x] T021-8890 Rename `validation_type.go` to `validation.go` without
+  changing the `Dimension` or `Validation` declarations. Record source-shape
+  evidence that `validation_type.go` is gone and no replacement `_type.go`
+  shard was created.
+- [x] T021-8900 Run `gofmt` on changed Go files.
+- [x] T021-8910 Run focused harness observation validation artifact
+  verification with a `go test -list` exact-count guard expecting exactly 3
+  tests: `TestValidateWritesOutPathWhenPasses`,
+  `TestValidateCannotVerifyWhenRunFileInvalid`, and
+  `TestLoadValidationRejectsUnsafePathAndSchemaVersion`, then run them with
+  `go test ./internal/harnessobs -run <guard> -count=1 -v`. The focused test
+  set must preserve validation JSON writing/loading, cannot-verify validation
+  output, unsafe path/schema rejection, and raw JSON assertions for exact
+  `Validation` and `Dimension` keys after the filename cleanup. The raw JSON
+  assertions must cover `Validation` keys `schema_version`, `profile_id`,
+  `harness_family`, `event_schema_version`, `validation_state`, `reason_code`,
+  `dimensions`, `event_count`, `non_authority`, `validation_digest` emission
+  when populated, and `validation_digest` omission when empty; they must also
+  cover exact `Dimension` keys `family`, `required`, `state`, `reason_code`,
+  and `event_count`.
+- [x] T021-8920 Run repository verification: `go test ./...`, `go vet ./...`,
+  `golangci-lint run` when available or record `not_assessed`/`cannot_verify`
+  with reason, `go run ./tools/doccheck`, `go run ./tools/hygienecheck`, `jq
+  empty schema/*.json`, and `git diff --check`.
+- [x] T021-8930 Run CRAP and MI quality gates without changing MI baselines.
+- [x] T021-8940 Run three independent implementation reviewer lanes, fix every
+  finding, repeat affected lanes until each reviewer returns exactly `LGTM`,
+  and record Slice 128 evidence in
+  `specs/021-source-file-locality-cleanup/reviews/slice-128-evidence.md`,
+  including harness, agent id, model/provider if available, date, prompt class,
+  timeout, retries, fallback, result, and any unavailable external/provider
+  lanes as `not_assessed`.

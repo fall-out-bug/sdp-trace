@@ -1613,6 +1613,18 @@ func TestValidateWritesOutPathWhenPasses(t *testing.T) {
 	if err := json.Unmarshal(raw, &rawValidation); err != nil {
 		t.Fatalf("json.Unmarshal(raw validation) error = %v", err)
 	}
+	requireRawKeys(t, rawValidation, []string{
+		"schema_version",
+		"profile_id",
+		"harness_family",
+		"event_schema_version",
+		"validation_state",
+		"reason_code",
+		"dimensions",
+		"event_count",
+		"non_authority",
+		"validation_digest",
+	})
 	rawDimensions, ok := rawValidation["dimensions"].([]any)
 	if !ok || len(rawDimensions) != 1 {
 		t.Fatalf("raw dimensions = %#v, want one dimension", rawValidation["dimensions"])
@@ -1621,6 +1633,13 @@ func TestValidateWritesOutPathWhenPasses(t *testing.T) {
 	if !ok {
 		t.Fatalf("raw dimension = %#v, want object", rawDimensions[0])
 	}
+	requireRawKeys(t, rawDimension, []string{
+		"family",
+		"required",
+		"state",
+		"reason_code",
+		"event_count",
+	})
 	wantDimension := map[string]any{
 		"family":      "harness",
 		"required":    true,
@@ -1673,6 +1692,46 @@ func TestValidateCannotVerifyWhenRunFileInvalid(t *testing.T) {
 	}
 	if onDisk.ValidationState != StateCannotVerify || onDisk.ReasonCode != "source_unavailable" {
 		t.Fatalf("on-disk validation = %+v", onDisk)
+	}
+	var rawValidation map[string]any
+	if err := json.Unmarshal(raw, &rawValidation); err != nil {
+		t.Fatalf("json.Unmarshal(raw validation) error = %v", err)
+	}
+	requireRawKeys(t, rawValidation, []string{
+		"schema_version",
+		"profile_id",
+		"harness_family",
+		"event_schema_version",
+		"validation_state",
+		"reason_code",
+		"dimensions",
+		"event_count",
+		"non_authority",
+	})
+	requireValidationDigestOmittedWhenEmpty(t)
+}
+
+func requireRawKeys(t *testing.T, raw map[string]any, keys []string) {
+	t.Helper()
+	for _, key := range keys {
+		if _, ok := raw[key]; !ok {
+			t.Fatalf("raw JSON missing key %q: %#v", key, raw)
+		}
+	}
+}
+
+func requireValidationDigestOmittedWhenEmpty(t *testing.T) {
+	t.Helper()
+	raw, err := json.Marshal(Validation{})
+	if err != nil {
+		t.Fatalf("json.Marshal(empty validation) error = %v", err)
+	}
+	var rawValidation map[string]any
+	if err := json.Unmarshal(raw, &rawValidation); err != nil {
+		t.Fatalf("json.Unmarshal(empty validation) error = %v", err)
+	}
+	if _, ok := rawValidation["validation_digest"]; ok {
+		t.Fatalf("empty validation includes validation_digest: %#v", rawValidation)
 	}
 }
 
