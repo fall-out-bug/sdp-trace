@@ -20,6 +20,13 @@ inventory still shows numbered Go files in active product code:
 
 The total remaining active numbered Go file count at intake is 1172.
 
+Spec 023 is intentionally separate from Spec 021 because the remaining numbered
+file debt expanded beyond command-surface cleanup. PR 73 keeps both specs in one
+active cleanup PR only as the documented exception recorded in
+`specs/021-source-file-locality-cleanup/reviews/pr-73-scope-decision.md`.
+Future comparable scope expansion should use a separate PR before
+implementation.
+
 ## Requirements
 
 - FR-023-001: Split cleanup by package, command family, or cohesive behavior;

@@ -27,6 +27,8 @@ func runGate(_ context.Context, args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 	if opts.stringValue("profile") == demo.GateProfileProtected {
+		// Protected mode requires checkpoint, policy, and witness inputs in
+		// addition to local run rows.
 		return runProtectedGate(target, outPath, opts, stdout, stderr)
 	}
 	return runStandardGate(target, outPath, opts, stdout, stderr)
