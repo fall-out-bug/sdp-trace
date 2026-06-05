@@ -4,8 +4,9 @@
 > states for specs 001–022.
 >
 **Date**: 2026-06-05
-**Commit**: `codex/022-post-merge-governance-closure` @
-`9438080464f0103144790e0336560deeafc893b6`
+**Baseline reconciliation commit**: `codex/022-post-merge-governance-closure`
+at `9438080464f0103144790e0336560deeafc893b6`; PR #72 handoff evidence was
+refreshed after updating the branch to current `main`.
 
 > **Note**: This checked-in file records a Spec 022 governance reconciliation
 > after PR #60 and PR #63. It is repository evidence, not merge approval
